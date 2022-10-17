@@ -8,13 +8,16 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestActionRunner(t *testing.T) {
-
+	logger := logtest.Scoped(t)
 	tests := []struct {
 		name           string
 		results        []*result.CommitMatch
@@ -37,13 +40,13 @@ func TestActionRunner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := dbtest.NewDB(t)
+			db := database.NewDB(logger, dbtest.NewDB(logger, t))
 			testQuery := "test patternType:literal"
 			externalURL := "https://www.sourcegraph.com"
 
 			// Mocks.
 			got := TemplateDataNewSearchResults{}
-			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
+			MockSendEmailForNewSearchResult = func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error {
 				got = *data
 				return nil
 			}
@@ -75,7 +78,7 @@ func TestActionRunner(t *testing.T) {
 			require.NoError(t, err)
 
 			a := actionRunner{s}
-			err = a.Handle(ctx, record)
+			err = a.Handle(ctx, logtest.Scoped(t), record)
 			require.NoError(t, err)
 
 			wantResultsPluralized := "results"

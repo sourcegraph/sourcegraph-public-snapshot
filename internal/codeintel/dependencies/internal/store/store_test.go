@@ -6,9 +6,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestUpsertDependencyRepo(t *testing.T) {
@@ -16,9 +21,10 @@ func TestUpsertDependencyRepo(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
 
 	batches := [][]shared.Repo{
 		{
@@ -68,14 +74,67 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 }
 
+func TestListDependencyRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	batches := []shared.Repo{
+		{Scheme: "npm", Name: "bar", Version: "2.0.0"},    // id=1
+		{Scheme: "npm", Name: "foo", Version: "1.0.0"},    // id=2
+		{Scheme: "npm", Name: "bar", Version: "2.0.1"},    // id=3
+		{Scheme: "npm", Name: "foo", Version: "1.0.0"},    // id=4
+		{Scheme: "npm", Name: "bar", Version: "3.0.0"},    // id=5
+		{Scheme: "npm", Name: "banana", Version: "2.0.0"}, // id=6
+		{Scheme: "npm", Name: "turtle", Version: "4.2.0"}, // id=7
+	}
+
+	if _, err := store.UpsertDependencyRepos(ctx, batches); err != nil {
+		t.Fatal(err)
+	}
+
+	var lastName reposource.PackageName
+	lastName = ""
+	for _, test := range [][]shared.Repo{
+		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
+		{{Scheme: "npm", Name: "turtle"}},
+	} {
+		depRepos, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+			Scheme:          "npm",
+			After:           lastName,
+			Limit:           3,
+			ExcludeVersions: true,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		for i := range depRepos {
+			depRepos[i].ID = 0
+		}
+
+		lastName = depRepos[len(depRepos)-1].Name
+
+		if diff := cmp.Diff(depRepos, test); diff != "" {
+			t.Fatalf("mismatch (-have, +want): %s", diff)
+		}
+	}
+}
+
 func TestDeleteDependencyReposByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-	store := TestStore(db)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
 
 	repos := []shared.Repo{
 		// Test same-set flushes

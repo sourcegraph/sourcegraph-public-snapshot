@@ -18,6 +18,7 @@ const (
 	// IsAlias flags whether the original syntax referred to an alias rather
 	// than canonical form (r: instead of repo:)
 	IsAlias
+	Standard
 )
 
 var allLabels = map[labels]string{
@@ -37,11 +38,11 @@ func (l *labels) IsSet(label labels) bool {
 	return *l&label != 0
 }
 
-func (l *labels) set(label labels) {
+func (l *labels) Set(label labels) {
 	*l |= label
 }
 
-func (l *labels) unset(label labels) {
+func (l *labels) Unset(label labels) {
 	*l &^= label
 }
 

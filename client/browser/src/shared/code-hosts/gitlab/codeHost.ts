@@ -1,12 +1,17 @@
 import * as Sentry from '@sentry/browser'
 import classNames from 'classnames'
+import { fromEvent } from 'rxjs'
+import { filter, map, mapTo, tap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { subtypeOf } from '@sourcegraph/common'
+import { fetchCache, LineOrPositionOrRange, subtypeOf } from '@sourcegraph/common'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { background } from '../../../browser-extension/web-extension-api/runtime'
+import { ResolveRepoNameResult, ResolveRepoNameVariables } from '../../../graphql-operations'
+import { isInPage } from '../../context'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -16,29 +21,18 @@ import { queryWithSelector, ViewResolver } from '../shared/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
-import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
+import {
+    getPageInfo,
+    GitLabPageKind,
+    getFilePathsFromCodeView,
+    repoNameOnSourcegraph,
+    getGitlabRepoURL,
+} from './scrape'
 
 import styles from './codeHost.module.scss'
 
 export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
-}
-
-const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
-    const header = document.querySelector('header')
-    if (header) {
-        top += header.getBoundingClientRect().height
-    }
-    // When running GitLab from source, we also need to take into account
-    // the debug header shown at the top of the page.
-    const debugHeader = document.querySelector('#js-peek.development')
-    if (debugHeader) {
-        top += debugHeader.getBoundingClientRect().height
-    }
-    return {
-        top,
-        left,
-    }
 }
 
 export const getToolbarMount = (codeView: HTMLElement, pageKind?: GitLabPageKind): HTMLElement => {
@@ -97,7 +91,7 @@ const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement
     if (element.classList.contains('discussion-wrapper')) {
         // This is a commented snippet in a merge request discussion timeline
         // (a snippet where somebody added a review comment on a piece of code in the MR),
-        // we don't support adding code intelligence on those.
+        // we don't support adding code navigation on those.
         return null
     }
     const { pageKind } = getPageInfo()
@@ -141,13 +135,30 @@ const notificationClassNames = {
  * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
  * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
  */
-export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
+export const isPrivateRepository = (
+    repoName: string,
+    _fetchCache: null | typeof fetchCache = null
+): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !repoName) {
         return Promise.resolve(true)
     }
-    return fetchCache({
+
+    const fetchCacheImpl: typeof fetchCache =
+        _fetchCache !== null
+            ? // When a fetchCache argument is supplied, it takes precedence. This is
+              // useful for test code.
+              _fetchCache
+            : isInPage
+            ? // When the script is run via the native integration, we can make
+              // the request from tha main thread.
+              fetchCache
+            : // When the script is run via the browser extension, make the
+              // request via the background thread.
+              background.fetchCache
+
+    return fetchCacheImpl({
         url: `https://gitlab.com/api/v4/projects/${encodeURIComponent(repoName)}`,
-        credentials: 'omit', // it returns different response based on auth state
+        credentials: 'omit', // Make the request as if the user is not logged-in.
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {
@@ -166,12 +177,31 @@ export const isPrivateRepository = (repoName: string, fetchCache = background.fe
         })
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^L\d+(-\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.slice(1).split('-')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
     check: checkIsGitlab,
     codeViewResolvers: [codeViewResolver],
-    adjustOverlayPosition,
     getCommandPaletteMount,
     getContext: async () => {
         const { repoName, ...pageInfo } = getPageInfo()
@@ -242,6 +272,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         className: classNames('card', styles.hoverOverlay),
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },
@@ -254,4 +285,34 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return null
     },
+    // We listen to links clicks instead of 'hashchange' event as GitLab uses anchor links
+    // to scroll to the selected line. Link click doesn't trigger 'hashchange' event
+    // despite the URL hash is updated.
+    observeLineSelection: fromEvent(document, 'click').pipe(
+        filter(event => (event.target as HTMLElement).matches('a[data-line-number]')),
+        map(() => parseHash(window.location.hash))
+    ),
+
+    prepareCodeHost: async requestGraphQL =>
+        requestGraphQL<ResolveRepoNameResult, ResolveRepoNameVariables>({
+            request: gql`
+                query ResolveRepoName($cloneURL: String!) {
+                    repository(cloneURL: $cloneURL) {
+                        name
+                    }
+                }
+            `,
+            variables: {
+                cloneURL: getGitlabRepoURL(),
+            },
+            mightContainPrivateInfo: true,
+        })
+            .pipe(
+                map(dataOrThrowErrors),
+                tap(({ repository }) => {
+                    repoNameOnSourcegraph.next(repository?.name ?? '')
+                }),
+                mapTo(true)
+            )
+            .toPromise(),
 })

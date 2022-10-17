@@ -2,13 +2,117 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-## Next Release - 2.2.2
+### Future Plans
+
+- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
+
+## Unreleased
+
+### Changes
+
+- Support for logical multiline matches in the UI for Sourcegraph instance versions >= 3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+
+### Fixes
+
+- Fix issue where pattern type was always set to `literal` for Sourcegraph instance versions earlier than v3.43.0, which was overriding regex/structural toggles [pull/43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
+
+## 2.2.12
 
 ### Changes
 
 ### Fixes
 
+- Vary search pattern type depending on Sourcegraph instance version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [pull/42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
+
+## 2.2.10
+
+### Changes
+
+- Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
+### Fixes
+
+- Fix Sourcegraph blob link generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [pull/42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
+
+## 2.2.9
+
+### Changes
+
+### Fixes
+
+- Fix an issue that prevented search results on some older Sourcegraph instance versions to not render properly [pull/40621](https://github.com/sourcegraph/sourcegraph/pull/40621)
+
+## 2.2.8
+
+### Changes
+
+- `Internal:` Automate release step for Open-VSX registry: [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+- Remove integrations banners and corresponding pings: [issues/38625](https://github.com/sourcegraph/sourcegraph/issues/38625), [pull/38715](https://github.com/sourcegraph/sourcegraph/pull/38715), [pull/38862](https://github.com/sourcegraph/sourcegraph/pull/38862)
+
+### Fixes
+
+## 2.2.7
+
+### Changes
+
+- Remove references to creating an account on cloud, or configuring a cloud account [pull/38071](https://github.com/sourcegraph/sourcegraph/pull/38071)
+
+### Fixes
+
+## 2.2.6
+
+### Changes
+
+- Remove notification to add Sourcegraph extension to the workspace [issues/37772](https://github.com/sourcegraph/sourcegraph/issues/37772)
+
+### Fixes
+
+-
+
+## 2.2.5
+
+### Changes
+
+- Update Sourcegraph logo in sidebar [issues/37710](https://github.com/sourcegraph/sourcegraph/issues/37710)
+- Sourcegraph extension is now listed in [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/sourcegraph) [issues/36477](https://github.com/sourcegraph/sourcegraph/issues/36477)
+- Sourcegraph extension is now available for installation in all Gitpod VS Code Workspaces [issues/37760](https://github.com/sourcegraph/sourcegraph/issues/37760)
+
+## 2.2.4
+
+### Changes
+
+- Optimize package size [issues/36192](https://github.com/sourcegraph/sourcegraph/issues/36192)
+
+### Fixes
+
+- Check if default branch exists when opening files [issues/36743](https://github.com/sourcegraph/sourcegraph/issues/36743)
+
+## 2.2.3
+
+### Changes
+
+- Update Access Token headers setting method --thanks @ptxmac for the contribution! [issues/34338](https://github.com/sourcegraph/sourcegraph/issues/34338)
+- Add options to choose between main branch or current branch when copy/open file. Always use default branch if set [issues/34591](https://github.com/sourcegraph/sourcegraph/issues/34591)
+- CTA for adding Sourcegraph extension to Workspace Recommendations [issues/34829](https://github.com/sourcegraph/sourcegraph/issues/34829)
+
+### Fixes
+
+- Windows file path issue [issues/34788](https://github.com/sourcegraph/sourcegraph/issues/34788)
+- Sourcegraph icon in help sidebar now shows on light theme [issues/35672](https://github.com/sourcegraph/sourcegraph/issues/35672)
+- Highlight background color for VS Code Light & Light+ Theme [issues/35767](https://github.com/sourcegraph/sourcegraph/issues/35767)
+- Display reload button when instance URL is updated [issues/35980](https://github.com/sourcegraph/sourcegraph/issues/35980)
+
+## 2.2.2
+
+### Changes
+
+- Display current extension version and instance version in frontend [issues/34729](https://github.com/sourcegraph/sourcegraph/issues/34729)
+
+### Fixes
+
 - Remove incorrect unsupported instance error messages on first load [issues/34207](https://github.com/sourcegraph/sourcegraph/issues/34207)
+- Links to open remote file in Sourcegraph web are now decoded correctly [issues/34630](https://github.com/sourcegraph/sourcegraph/issues/34630)
+- Remove pattern restriction for basePath [issues/34731](https://github.com/sourcegraph/sourcegraph/issues/34731)
 
 ## 2.2.1
 

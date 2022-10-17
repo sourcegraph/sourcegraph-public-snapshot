@@ -5,18 +5,20 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	db := database.NewMockDB()
-	got := NewGitTreeEntryResolver(db,
+	gitserverClient := gitserver.NewMockClient()
+	got := NewGitTreeEntryResolver(db, gitserverClient,
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo("a/b", true)).
 		RawZipArchiveURL()
@@ -30,18 +32,19 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
 
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+	db := database.NewMockDB()
+	gitserverClient := gitserver.NewMockClient()
+
+	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
 		return []byte(wantContent), nil
-	}
-	t.Cleanup(func() { git.Mocks.ReadFile = nil })
+	})
 
-	db := database.NewMockDB()
-	gitTree := NewGitTreeEntryResolver(db,
+	gitTree := NewGitTreeEntryResolver(db, gitserverClient,
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo(wantPath, true))
 

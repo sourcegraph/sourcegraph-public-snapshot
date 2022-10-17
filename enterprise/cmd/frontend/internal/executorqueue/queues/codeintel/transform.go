@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -14,7 +14,7 @@ const defaultOutfile = "dump.lsif"
 const uploadRoute = "/.executors/lsif/upload"
 const schemeExecutorToken = "token-executor"
 
-func transformRecord(index store.Index, accessToken string) (apiclient.Job, error) {
+func transformRecord(index types.Index, accessToken string) (apiclient.Job, error) {
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
 	for _, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
@@ -34,8 +34,7 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 		})
 	}
 
-	frontendURL := conf.Get().ExternalURL
-
+	frontendURL := conf.ExecutorsFrontendURL()
 	authorizationHeader := makeAuthHeaderValue(accessToken)
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
 
@@ -49,10 +48,18 @@ func transformRecord(index store.Index, accessToken string) (apiclient.Job, erro
 		outfile = defaultOutfile
 	}
 
+	fetchTags := false
+	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
+	if strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go") {
+		fetchTags = true
+	}
+
 	return apiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
 		RepositoryName: index.RepositoryName,
+		ShallowClone:   true,
+		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,
 		CliSteps: []apiclient.CliStep{
 			{

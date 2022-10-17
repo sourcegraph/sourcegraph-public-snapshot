@@ -11,9 +11,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,12 +29,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
+func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	logger := logtest.Scoped(t)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -49,17 +52,17 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		HeadRefName:  "batch-changes/test",
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
-	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
-	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	deletedRepo := bt.TestRepo(t, es, extsvc.KindBitbucketCloud)
 
-	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
+	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, deletedRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +94,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	var (
 		added   int32 = 77
 		deleted int32 = 88
-		changed int32 = 99
 	)
 
 	t.Run("Create", func(t *testing.T) {
@@ -133,7 +135,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			// we handle nil pointers correctly
 			if i != cap(changesets)-1 {
 				th.DiffStatAdded = &added
-				th.DiffStatChanged = &changed
 				th.DiffStatDeleted = &deleted
 
 				th.StartedAt = clock.Now()
@@ -393,6 +394,44 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		})
 
+		t.Run("State", func(t *testing.T) {
+			countOpen, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpen, 1; have != want {
+				t.Fatalf("have countOpen: %d, want: %d", have, want)
+			}
+
+			countClosed, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateClosed}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countClosed, 0; have != want {
+				t.Fatalf("have countClosed: %d, want: %d", have, want)
+			}
+
+			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countUnpublished, 2; have != want {
+				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			}
+
+			countOpenAndUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpenAndUnpublished, 3; have != want {
+				t.Fatalf("have countOpenAndUnpublished: %d, want: %d", have, want)
+			}
+		})
+
 		t.Run("TextSearch", func(t *testing.T) {
 			countMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Fix a bunch"}}})
 			if err != nil {
@@ -415,7 +454,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
+			bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -680,7 +719,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
 			// No access to repos.
-			ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
+			bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
 			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
 			if err != nil {
 				t.Fatal(err)
@@ -689,6 +728,47 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			if len(have) != 0 {
 				t.Fatalf("have %d changesets. want 0", len(have))
 			}
+		})
+
+		t.Run("RepoIDs", func(t *testing.T) {
+			// Insert two changesets temporarily that are attached to other repos.
+			createRepoChangeset := func(repo *types.Repo, baseChangeset *btypes.Changeset) *btypes.Changeset {
+				t.Helper()
+
+				c := baseChangeset.Clone()
+				c.RepoID = repo.ID
+				require.NoError(t, s.CreateChangeset(ctx, c))
+				t.Cleanup(func() { s.DeleteChangeset(ctx, c.ID) })
+
+				return c
+			}
+
+			otherChangeset := createRepoChangeset(otherRepo, changesets[1])
+			gitlabChangeset := createRepoChangeset(gitlabRepo, changesets[1])
+
+			t.Run("single repo", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{repo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, changesets, have)
+			})
+
+			t.Run("multiple repos", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{otherRepo.ID, gitlabRepo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, []*btypes.Changeset{otherChangeset, gitlabChangeset}, have)
+			})
+
+			t.Run("repo without changesets", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{deletedRepo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, []*btypes.Changeset{}, have)
+			})
 		})
 
 		statePublished := btypes.ChangesetPublicationStatePublished
@@ -714,6 +794,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			},
 			{
 				opts: ListChangesetsOpts{
+					States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished},
+				},
+				wantCount: 2,
+			},
+			{
+				opts: ListChangesetsOpts{
 					PublicationState: &stateUnpublished,
 				},
 				wantCount: 2,
@@ -735,6 +821,12 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 					ExternalStates: []btypes.ChangesetExternalState{stateOpen},
 				},
 				wantCount: 3,
+			},
+			{
+				opts: ListChangesetsOpts{
+					States: []btypes.ChangesetState{btypes.ChangesetStateOpen},
+				},
+				wantCount: 1,
 			},
 			{
 				opts: ListChangesetsOpts{
@@ -1013,10 +1105,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			c.NumResets = 987
 			c.NumFailures = 789
 
+			c.DetachedAt = clock.Now()
+
 			clone := c.Clone()
 			have = append(have, clone)
 
 			c.UpdatedAt = clock.Now()
+			c.State = btypes.ChangesetStateRetrying
 			want = append(want, c)
 
 			if err := s.UpdateChangeset(ctx, clone); err != nil {
@@ -1104,7 +1199,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	t.Run("UpdateChangesetCodeHostState", func(t *testing.T) {
 		unpublished := btypes.ChangesetUiPublicationStateUnpublished
 		published := btypes.ChangesetUiPublicationStatePublished
-		cs := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		cs := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			Repo:                repo.ID,
 			BatchChange:         123,
 			CurrentSpec:         123,
@@ -1117,7 +1212,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			ExternalReviewState: btypes.ChangesetReviewStatePending,
 			ExternalCheckState:  btypes.ChangesetCheckStatePending,
 			DiffStatAdded:       10,
-			DiffStatChanged:     10,
 			DiffStatDeleted:     10,
 			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 			UiPublicationState:  &unpublished,
@@ -1135,7 +1229,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
 		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
 		cs.DiffStatAdded = intptr(100)
-		cs.DiffStatChanged = intptr(100)
 		cs.DiffStatDeleted = intptr(100)
 		cs.Metadata = &github.PullRequest{Title: "The title"}
 		want := cs.Clone()
@@ -1174,7 +1267,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			t.Fatal(err)
 		}
 
-		baseOpts := ct.TestChangesetOpts{Repo: repo.ID}
+		baseOpts := bt.TestChangesetOpts{Repo: repo.ID}
 
 		// Closed changeset
 		opts1 := baseOpts
@@ -1182,7 +1275,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts1.ExternalState = btypes.ChangesetExternalStateClosed
 		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts1)
+		bt.CreateChangeset(t, ctx, s, opts1)
 
 		// Deleted changeset
 		opts2 := baseOpts
@@ -1190,7 +1283,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts2.ExternalState = btypes.ChangesetExternalStateDeleted
 		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts2)
+		bt.CreateChangeset(t, ctx, s, opts2)
 
 		// Open changeset
 		opts3 := baseOpts
@@ -1199,7 +1292,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts3.ExternalState = btypes.ChangesetExternalStateOpen
 		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts3)
+		bt.CreateChangeset(t, ctx, s, opts3)
 
 		// Archived & closed changeset
 		opts4 := baseOpts
@@ -1209,7 +1302,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts4.ExternalState = btypes.ChangesetExternalStateClosed
 		opts4.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts4.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts4)
+		bt.CreateChangeset(t, ctx, s, opts4)
 
 		// Marked as to-be-archived
 		opts5 := baseOpts
@@ -1219,7 +1312,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts5.ExternalState = btypes.ChangesetExternalStateOpen
 		opts5.ReconcilerState = btypes.ReconcilerStateProcessing
 		opts5.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts5)
+		bt.CreateChangeset(t, ctx, s, opts5)
 
 		// Open changeset in a deleted repository
 		opts6 := baseOpts
@@ -1229,7 +1322,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts6.ExternalState = btypes.ChangesetExternalStateOpen
 		opts6.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts6.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts6)
+		bt.CreateChangeset(t, ctx, s, opts6)
 
 		// Open changeset in a different batch change
 		opts7 := baseOpts
@@ -1237,7 +1330,16 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts7.ExternalState = btypes.ChangesetExternalStateOpen
 		opts7.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts7.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts7)
+		bt.CreateChangeset(t, ctx, s, opts7)
+
+		// Processing
+		opts8 := baseOpts
+		opts8.BatchChange = batchChangeID
+		opts8.OwnedByBatchChange = batchChangeID
+		opts8.ExternalState = btypes.ChangesetExternalStateOpen
+		opts8.ReconcilerState = btypes.ReconcilerStateProcessing
+		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts8)
 
 		haveStats, err := s.GetChangesetsStats(ctx, batchChangeID)
 		if err != nil {
@@ -1250,7 +1352,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		wantStats.Closed += 1
 		wantStats.Deleted += 1
 		wantStats.Archived += 2
-		wantStats.Total += 5
+		wantStats.Total += 6
 
 		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
 			t.Fatalf("wrong stats returned. diff=%s", diff)
@@ -1258,13 +1360,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("GetRepoChangesetsStats", func(t *testing.T) {
-		r := ct.TestRepo(t, es, extsvc.KindGitHub)
+		r := bt.TestRepo(t, es, extsvc.KindGitHub)
 
 		if err := rs.Create(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 
-		baseOpts := ct.TestChangesetOpts{Repo: r.ID, BatchChange: 4747, OwnedByBatchChange: 4747}
+		baseOpts := bt.TestChangesetOpts{Repo: r.ID, BatchChange: 4747, OwnedByBatchChange: 4747}
 
 		wantStats := btypes.RepoChangesetsStats{}
 
@@ -1273,7 +1375,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts1.ExternalState = btypes.ChangesetExternalStateClosed
 		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts1)
+		bt.CreateChangeset(t, ctx, s, opts1)
 		wantStats.Closed += 1
 
 		// Open changeset
@@ -1281,7 +1383,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts2.ExternalState = btypes.ChangesetExternalStateOpen
 		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts2)
+		bt.CreateChangeset(t, ctx, s, opts2)
 		wantStats.Open += 1
 
 		// Archived & closed changeset
@@ -1290,7 +1392,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts3.ExternalState = btypes.ChangesetExternalStateClosed
 		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts3)
+		bt.CreateChangeset(t, ctx, s, opts3)
 
 		// Marked as to-be-archived
 		opts4 := baseOpts
@@ -1298,7 +1400,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts4.ExternalState = btypes.ChangesetExternalStateOpen
 		opts4.ReconcilerState = btypes.ReconcilerStateProcessing
 		opts4.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts4)
+		bt.CreateChangeset(t, ctx, s, opts4)
 
 		// Open changeset belonging to a different batch change
 		opts5 := baseOpts
@@ -1306,41 +1408,41 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		opts5.ExternalState = btypes.ChangesetExternalStateOpen
 		opts5.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts5.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts5)
+		bt.CreateChangeset(t, ctx, s, opts5)
 		wantStats.Open += 1
 
 		// Open changeset belonging to multiple batch changes
-		opts6 := ct.TestChangesetOpts{Repo: r.ID}
+		opts6 := bt.TestChangesetOpts{Repo: r.ID}
 		opts6.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747}, {BatchChangeID: 4748}, {BatchChangeID: 4749}}
 		opts6.ExternalState = btypes.ChangesetExternalStateOpen
 		opts6.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts6.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts6)
+		bt.CreateChangeset(t, ctx, s, opts6)
 		wantStats.Open += 1
 
 		// Open changeset archived on one batch change but not on another
-		opts7 := ct.TestChangesetOpts{Repo: r.ID}
+		opts7 := bt.TestChangesetOpts{Repo: r.ID}
 		opts7.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: false}}
 		opts7.ExternalState = btypes.ChangesetExternalStateOpen
 		opts7.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts7.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts7)
+		bt.CreateChangeset(t, ctx, s, opts7)
 		wantStats.Open += 1
 
 		// Open changeset archived on multiple batch changes
-		opts8 := ct.TestChangesetOpts{Repo: r.ID}
+		opts8 := bt.TestChangesetOpts{Repo: r.ID}
 		opts8.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: true}}
 		opts8.ExternalState = btypes.ChangesetExternalStateOpen
 		opts8.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts8)
+		bt.CreateChangeset(t, ctx, s, opts8)
 
 		// Draft changeset
 		opts9 := baseOpts
 		opts9.ExternalState = btypes.ChangesetExternalStateDraft
 		opts9.ReconcilerState = btypes.ReconcilerStateCompleted
 		opts9.PublicationState = btypes.ChangesetPublicationStatePublished
-		ct.CreateChangeset(t, ctx, s, opts9)
+		bt.CreateChangeset(t, ctx, s, opts9)
 		wantStats.Draft += 1
 
 		haveStats, err := s.GetRepoChangesetsStats(ctx, r.ID)
@@ -1355,9 +1457,59 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		}
 	})
 
+	t.Run("GetGlobalChangesetsStats", func(t *testing.T) {
+		var batchChangeID int64 = 191918
+		currentBatchChangeStats, err := s.GetGlobalChangesetsStats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		baseOpts := bt.TestChangesetOpts{Repo: repo.ID}
+
+		// Closed changeset
+		opts1 := baseOpts
+		opts1.BatchChange = batchChangeID
+		opts1.ExternalState = btypes.ChangesetExternalStateClosed
+		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts1)
+
+		// Open changeset
+		opts2 := baseOpts
+		opts2.BatchChange = batchChangeID
+		opts2.ExternalState = btypes.ChangesetExternalStateOpen
+		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts2)
+
+		// Draft changeset
+		opts3 := baseOpts
+		opts3.BatchChange = batchChangeID
+		opts3.ExternalState = btypes.ChangesetExternalStateDraft
+		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts3)
+
+		haveStats, err := s.GetGlobalChangesetsStats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantStats := currentBatchChangeStats
+		wantStats.Open += 1
+		wantStats.Closed += 1
+		wantStats.Draft += 1
+		wantStats.Total += 3
+
+		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
+			t.Fatalf("wrong stats returned. diff=%s", diff)
+		}
+	})
+
 	t.Run("EnqueueChangeset", func(t *testing.T) {
-		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 			ReconcilerState:  btypes.ReconcilerStateCompleted,
+			PublicationState: btypes.ChangesetPublicationStatePublished,
+			ExternalState:    btypes.ChangesetExternalStateOpen,
 			Repo:             repo.ID,
 			NumResets:        1234,
 			NumFailures:      4567,
@@ -1377,8 +1529,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			t.Fatalf("unexpected error: %s", err)
 		}
 
-		ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
+		bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
 			ReconcilerState:  btypes.ReconcilerStateQueued,
+			PublicationState: btypes.ChangesetPublicationStatePublished,
+			ExternalState:    btypes.ChangesetExternalStateOpen,
 			Repo:             repo.ID,
 			FailureMessage:   nil,
 			NumResets:        0,
@@ -1388,9 +1542,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("UpdateChangesetBatchChanges", func(t *testing.T) {
-		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			ReconcilerState: btypes.ReconcilerStateCompleted,
-			Repo:            repo.ID,
+		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			ReconcilerState:  btypes.ReconcilerStateCompleted,
+			PublicationState: btypes.ChangesetPublicationStatePublished,
+			ExternalState:    btypes.ChangesetExternalStateOpen,
+			Repo:             repo.ID,
 		})
 
 		// Add 3 batch changes
@@ -1417,9 +1573,10 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 
 	t.Run("UpdateChangesetUiPublicationState", func(t *testing.T) {
-		c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-			ReconcilerState: btypes.ReconcilerStateCompleted,
-			Repo:            repo.ID,
+		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			ReconcilerState:  btypes.ReconcilerStateCompleted,
+			PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			Repo:             repo.ID,
 		})
 
 		// Update the UiPublicationState
@@ -1444,7 +1601,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	logger := logtest.Scoped(t)
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
@@ -1484,11 +1642,11 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 		IncludesCreatedEdit: false,
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
-	githubRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
-	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+	githubRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
 
 	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -1712,7 +1870,7 @@ func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store,
 	})
 }
 
-func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	// This is similar to the setup in testStoreChangesets(), but we need a more
 	// fine grained set of changesets to handle the different scenarios. Namely,
 	// we need to cover:
@@ -1723,12 +1881,14 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	// 3. Repo name search.
 	// 4. Negation of all of the above.
 
+	logger := logtest.Scoped(t)
+
 	// Let's define some helpers.
 	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
 		spec := &btypes.ChangesetSpec{
-			Spec: &batcheslib.ChangesetSpec{
-				Title: title,
-			},
+			Title:      title,
+			ExternalID: "123",
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)
@@ -1740,7 +1900,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		esType string,
 		repo *types.Repo,
 		externalID string,
-		metadata interface{},
+		metadata any,
 		spec *btypes.ChangesetSpec,
 	) *btypes.Changeset {
 		var specID int64
@@ -1771,14 +1931,14 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		return cs
 	}
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	// Set up repositories for each code host type we want to test.
 	var (
-		githubRepo = ct.TestRepo(t, es, extsvc.KindGitHub)
-		bbsRepo    = ct.TestRepo(t, es, extsvc.KindBitbucketServer)
-		gitlabRepo = ct.TestRepo(t, es, extsvc.KindGitLab)
+		githubRepo = bt.TestRepo(t, es, extsvc.KindGitHub)
+		bbsRepo    = bt.TestRepo(t, es, extsvc.KindBitbucketServer)
+		gitlabRepo = bt.TestRepo(t, es, extsvc.KindGitLab)
 	)
 	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
@@ -1848,7 +2008,7 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		extsvc.TypeGitHub,
 		githubRepo,
 		"",
-		map[string]interface{}{},
+		map[string]any{},
 		createChangesetSpec("Eventually fix some bugs, but not a bunch"),
 	)
 
@@ -2017,16 +2177,17 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 // testStoreChangesetScheduling provides tests for schedule-related methods on
 // the Store.
-func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	// Like testStoreListChangesetsTextSearch(), this is similar to the setup
 	// in testStoreChangesets(), but we need a more fine grained set of
 	// changesets to handle the different scenarios.
 
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	logger := logtest.Scoped(t)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	// We can just pre-can a repo. The kind doesn't matter here.
-	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
 	if err := rs.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
@@ -2036,9 +2197,9 @@ func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, c
 	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
 		// First, we need to create a changeset spec.
 		spec := &btypes.ChangesetSpec{
-			Spec: &batcheslib.ChangesetSpec{
-				Title: "fake spec",
-			},
+			Title:      "fake spec",
+			ExternalID: "123",
+			Type:       btypes.ChangesetSpecTypeExisting,
 		}
 		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
 			t.Fatalf("creating changeset spec: %v", err)
@@ -2157,24 +2318,25 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// want to access the database from different connections and the other
 	// integration/store tests all execute in a single transaction.
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := New(db, &observation.TestContext, nil)
 
-	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
-	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	user := bt.CreateTestUser(t, db, true)
+	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	c1 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: batchChange.ID,
 		ReconcilerState:    btypes.ReconcilerStateQueued,
 	})
 
-	c2 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c2 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: batchChange.ID,
@@ -2182,14 +2344,16 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 		NumFailures:        1,
 	})
 
-	c3 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c3 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: batchChange.ID,
 		ReconcilerState:    btypes.ReconcilerStateCompleted,
+		PublicationState:   btypes.ChangesetPublicationStatePublished,
+		ExternalState:      btypes.ChangesetExternalStateOpen,
 	})
 
-	c4 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c4 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: 0,
@@ -2200,18 +2364,20 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// These two changesets will not be canceled in the first iteration of
 	// the loop in CancelQueuedBatchChangeChangesets, because they're both
 	// processing.
-	c5 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c5 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: batchChange.ID,
 		ReconcilerState:    btypes.ReconcilerStateProcessing,
+		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 	})
 
-	c6 := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+	c6 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 		Repo:               repo.ID,
 		BatchChange:        batchChange.ID,
 		OwnedByBatchChange: batchChange.ID,
 		ReconcilerState:    btypes.ReconcilerStateProcessing,
+		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 	})
 
 	// We start this goroutine to simulate the processing of these
@@ -2239,7 +2405,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c1, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		ReconcilerState:    btypes.ReconcilerStateFailed,
 		OwnedByBatchChange: batchChange.ID,
@@ -2247,7 +2413,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 		AttachedTo:         []int64{batchChange.ID},
 	})
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c2, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c2, bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		ReconcilerState:    btypes.ReconcilerStateFailed,
 		OwnedByBatchChange: batchChange.ID,
@@ -2256,31 +2422,35 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 		AttachedTo:         []int64{batchChange.ID},
 	})
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c3, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c3, bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		ReconcilerState:    btypes.ReconcilerStateCompleted,
+		PublicationState:   btypes.ChangesetPublicationStatePublished,
+		ExternalState:      btypes.ChangesetExternalStateOpen,
 		OwnedByBatchChange: batchChange.ID,
 		AttachedTo:         []int64{batchChange.ID},
 	})
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c4, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c4, bt.ChangesetAssertions{
 		Repo:             repo.ID,
 		ReconcilerState:  btypes.ReconcilerStateQueued,
 		PublicationState: btypes.ChangesetPublicationStateUnpublished,
 		AttachedTo:       []int64{batchChange.ID},
 	})
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c5, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c5, bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		ReconcilerState:    btypes.ReconcilerStateFailed,
+		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 		FailureMessage:     &CanceledChangesetFailureMessage,
 		OwnedByBatchChange: batchChange.ID,
 		AttachedTo:         []int64{batchChange.ID},
 	})
 
-	ct.ReloadAndAssertChangeset(t, ctx, s, c6, ct.ChangesetAssertions{
+	bt.ReloadAndAssertChangeset(t, ctx, s, c6, bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		ReconcilerState:    btypes.ReconcilerStateCompleted,
+		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
 		OwnedByBatchChange: batchChange.ID,
 		AttachedTo:         []int64{batchChange.ID},
 	})
@@ -2291,17 +2461,18 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// want to access the database from different connections and the other
 	// integration/store tests all execute in a single transaction.
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := New(db, &observation.TestContext, nil)
 
-	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID)
-	batchChange := ct.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	user := bt.CreateTestUser(t, db, true)
+	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
-	wantEnqueued := ct.ChangesetAssertions{
+	wantEnqueued := bt.ChangesetAssertions{
 		Repo:               repo.ID,
 		OwnedByBatchChange: batchChange.ID,
 		ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -2312,22 +2483,22 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	}
 
 	tests := []struct {
-		have ct.TestChangesetOpts
-		want ct.ChangesetAssertions
+		have bt.TestChangesetOpts
+		want bt.ChangesetAssertions
 	}{
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
 			want: wantEnqueued,
 		},
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ReconcilerState:  btypes.ReconcilerStateProcessing,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
-			want: ct.ChangesetAssertions{
+			want: bt.ChangesetAssertions{
 				Repo:               repo.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -2337,7 +2508,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 			},
 		},
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ReconcilerState:  btypes.ReconcilerStateErrored,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				FailureMessage:   "failed",
@@ -2346,12 +2517,12 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 			want: wantEnqueued,
 		},
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ExternalState:    btypes.ChangesetExternalStateOpen,
 				ReconcilerState:  btypes.ReconcilerStateCompleted,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
-			want: ct.ChangesetAssertions{
+			want: bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 				Closing:          true,
@@ -2359,37 +2530,37 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 			},
 		},
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ExternalState:    btypes.ChangesetExternalStateClosed,
 				ReconcilerState:  btypes.ReconcilerStateCompleted,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
-			want: ct.ChangesetAssertions{
+			want: bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateCompleted,
 				ExternalState:    btypes.ChangesetExternalStateClosed,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
 		},
 		{
-			have: ct.TestChangesetOpts{
+			have: bt.TestChangesetOpts{
 				ReconcilerState:  btypes.ReconcilerStateCompleted,
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
-			want: ct.ChangesetAssertions{
+			want: bt.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateCompleted,
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 		},
 	}
 
-	changesets := make(map[*btypes.Changeset]ct.ChangesetAssertions)
+	changesets := make(map[*btypes.Changeset]bt.ChangesetAssertions)
 	for _, tc := range tests {
 		opts := tc.have
 		opts.Repo = repo.ID
 		opts.BatchChange = batchChange.ID
 		opts.OwnedByBatchChange = batchChange.ID
 
-		c := ct.CreateChangeset(t, ctx, s, opts)
+		c := bt.CreateChangeset(t, ctx, s, opts)
 		changesets[c] = tc.want
 
 		// If we have a changeset that's still processing we need to make
@@ -2416,6 +2587,87 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 		want.Repo = repo.ID
 		want.OwnedByBatchChange = batchChange.ID
 		want.AttachedTo = []int64{batchChange.ID}
-		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
+		bt.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
+	}
+}
+
+func TestCleanDetachedChangesets(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	s := New(db, &observation.TestContext, nil)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
+
+	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
+	err := rs.Create(ctx, repo)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		cs          *btypes.Changeset
+		wantDeleted bool
+	}{
+		{
+			name: "old detached changeset deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+				// Set beyond the retention period
+				DetachedAt: time.Now().Add(-48 * time.Hour),
+			},
+			wantDeleted: true,
+		},
+		{
+			name: "new detached changeset not deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+				// Set to now, within the retention period
+				DetachedAt: time.Now(),
+			},
+			wantDeleted: false,
+		},
+		{
+			name: "regular changeset not deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+			},
+			wantDeleted: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Create the changeset
+			err = s.CreateChangeset(ctx, test.cs)
+			require.NoError(t, err)
+
+			// Attempt to delete old changesets
+			err = s.CleanDetachedChangesets(ctx, 24*time.Hour)
+			assert.NoError(t, err)
+
+			// check if deleted
+			actual, err := s.GetChangesetByID(ctx, test.cs.ID)
+
+			if test.wantDeleted {
+				assert.Error(t, err)
+				assert.Nil(t, actual)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, actual)
+			}
+
+			// cleanup for next test
+			err = s.DeleteChangeset(ctx, test.cs.ID)
+			require.NoError(t, err)
+		})
 	}
 }

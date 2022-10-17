@@ -3,6 +3,7 @@ package licensing
 import (
 	"log"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -52,6 +53,10 @@ func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *
 // key (publicKey in this package).
 func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, err error) {
 	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
+}
+
+func GetFreeLicenseInfo() (info *Info) {
+	return &Info{license.Info{Tags: []string{"plan:free-0"}, UserCount: 10, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
 }
 
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
@@ -118,7 +123,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 				return nil, "", err
 			}
 
-			if err = info.hasUnknownPlan(); EnforceTiers && err != nil {
+			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
 			}
 
@@ -127,9 +132,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastSignature = signature
 		}
 		return info, signature, nil
+	} else {
+		// If no license key, default to free tier
+		return GetFreeLicenseInfo(), "", nil
 	}
-	// No license key.
-	return nil, "", nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for
@@ -160,19 +166,19 @@ var licenseGenerationPrivateKey = func() ssh.Signer {
 
 // GenerateProductLicenseKey generates a product license key using the license generation private
 // key configured in site configuration.
-func GenerateProductLicenseKey(info license.Info) (string, error) {
+func GenerateProductLicenseKey(info license.Info) (licenseKey string, version int, err error) {
 	if envLicenseGenerationPrivateKey == "" {
 		const msg = "no product license generation private key was configured"
 		if env.InsecureDev {
 			// Show more helpful error message in local dev.
-			return "", errors.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
+			return "", 0, errors.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
 		}
-		return "", errors.New(msg)
+		return "", 0, errors.New(msg)
 	}
 
-	licenseKey, err := license.GenerateSignedKey(info, licenseGenerationPrivateKey)
+	licenseKey, version, err = license.GenerateSignedKey(info, licenseGenerationPrivateKey)
 	if err != nil {
-		return "", err
+		return "", 0, errors.Wrap(err, "generate signed key")
 	}
-	return licenseKey, nil
+	return licenseKey, version, nil
 }

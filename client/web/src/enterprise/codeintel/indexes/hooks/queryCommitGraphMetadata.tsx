@@ -43,7 +43,7 @@ export const queryCommitGraphMetadata = (
                 throw new Error(`The given ID is ${node.__typename}, not Repository`)
             }
             if (!node.codeIntelligenceCommitGraph) {
-                throw new Error('Missing code intelligence commit graph value')
+                throw new Error('Missing code navigation commit graph value')
             }
 
             return {

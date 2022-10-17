@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -51,7 +52,7 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 					}
 				}
 			`,
-			Variables: map[string]interface{}{"value": map[string]int{"x": 123}},
+			Variables: map[string]any{"value": map[string]int{"x": 123}},
 			ExpectedResult: `
 				{
 					"settingsMutation": {
@@ -98,7 +99,7 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 					}
 				}
 			`,
-			Variables: map[string]interface{}{"contents": "x"},
+			Variables: map[string]any{"contents": "x"},
 			ExpectedResult: `
 				{
 					"settingsMutation": {
@@ -157,7 +158,7 @@ func TestSettingsMutation(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SettingsMutation(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SettingsMutation(
 					test.ctx,
 					&settingsMutationArgs{
 						Input: &settingsMutationGroupInput{

@@ -10,9 +10,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -138,17 +140,16 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitLab,
-				Config: marshalJSON(t, &schema.GitLabConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
 					Url: "https://gitlab.com",
-				}),
+				})),
 			}
 
-			gitlabSrc, err := NewGitLabSource(svc, cf)
+			ctx := context.Background()
+			db := database.NewMockDB()
+			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -175,26 +176,30 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitLab}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitLab,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
-		schmea *schema.GitLabConnection
+		schema *schema.GitLabConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url: "https://gitlab.com",
 			},
 		}, {
 			name: "ssh",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:        "https://gitlab.com",
 				GitURLType: "ssh",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.GitLabConnection{
+			schema: &schema.GitLabConnection{
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
 			},
@@ -203,10 +208,10 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGitLabSource(&svc, test.schmea, nil)
+			ctx := context.Background()
+			db := database.NewMockDB()
+			s, err := newGitLabSource(ctx, logtest.Scoped(t), db, &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -222,9 +227,13 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
-		src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
+
+		ctx := context.Background()
+		db := database.NewMockDB()
+		src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
@@ -248,7 +257,10 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				var src Source
-				src, err := newGitLabSource(&types.ExternalService{}, &schema.GitLabConnection{}, nil)
+
+				ctx := context.Background()
+				db := database.NewMockDB()
+				src, err := newGitLabSource(ctx, logger, db, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}

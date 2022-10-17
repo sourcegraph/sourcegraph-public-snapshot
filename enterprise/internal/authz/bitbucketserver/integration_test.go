@@ -11,8 +11,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	cli, save := newClient(t, "BitbucketServer")
-	defer save()
+	cli := newClient(t, "BitbucketServer")
 
 	f := newFixtures()
 	f.load(t, cli)

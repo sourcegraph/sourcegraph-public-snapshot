@@ -45,6 +45,7 @@ func TestCommitMatchMarshaling(t *testing.T) {
 				Content:       "/dev/null drinks/coffee.md",
 				MatchedRanges: Ranges{{Start: Location{Offset: 17, Line: 0, Column: 17}, End: Location{Offset: 23, Line: 0, Column: 23}}},
 			},
+			Diff:          func() []DiffFile { dfs, _ := ParseDiffString("/dev/null drinks/coffee.md"); return dfs }(),
 			ModifiedFiles: []string{"drinks/coffee.md", "drinks/tea.md"},
 		}
 

@@ -6,14 +6,22 @@ import classNames from 'classnames'
 import { ForwardReferenceComponent } from '../../types'
 import { createRectangle, PopoverContent, PopoverContentProps, Position } from '../Popover'
 
+import styles from './MenuList.module.scss'
+
 const DEFAULT_MENU_LIST_PADDING = createRectangle(0, 0, 2, 2)
 
 export interface MenuListProps extends Omit<PopoverProps, 'popoverPosition'> {
     position?: Position
 }
 
-export const MenuList = React.forwardRef((props, reference) => {
-    const { children, position = Position.bottomStart, targetPadding = DEFAULT_MENU_LIST_PADDING, ...rest } = props
+export const MenuList = React.forwardRef(function MenuList(props, reference) {
+    const {
+        children,
+        position = Position.bottomStart,
+        targetPadding = DEFAULT_MENU_LIST_PADDING,
+        className,
+        ...rest
+    } = props
 
     return (
         <ReachMenuPopover
@@ -23,6 +31,7 @@ export const MenuList = React.forwardRef((props, reference) => {
             portal={false}
             targetPadding={targetPadding}
             popoverPosition={position}
+            className={classNames(className, styles.menuList)}
         >
             {children}
         </ReachMenuPopover>
@@ -38,13 +47,15 @@ export interface PopoverProps extends PopoverContentProps {
     popoverPosition: Position
 }
 
-const Popover = React.forwardRef(({ popoverPosition, ...props }, reference) => (
-    <PopoverContent
-        {...props}
-        as={MenuItems}
-        ref={reference}
-        position={popoverPosition}
-        focusLocked={false}
-        className={classNames('py-1', props.className)}
-    />
-)) as ForwardReferenceComponent<'div', PopoverProps>
+const Popover = React.forwardRef(function Popover({ popoverPosition, ...props }, reference) {
+    return (
+        <PopoverContent
+            {...props}
+            as={MenuItems}
+            ref={reference}
+            position={popoverPosition}
+            focusLocked={false}
+            className={classNames('py-1', props.className)}
+        />
+    )
+}) as ForwardReferenceComponent<'div', PopoverProps>

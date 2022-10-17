@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -136,7 +136,7 @@ func TestFileOrDir(t *testing.T) {
 			db := database.NewMockDB()
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			links, err := FileOrDir(context.Background(), db, repo, rev, path, isDir)
+			links, err := FileOrDir(context.Background(), db, gitserver.NewClient(db), repo, rev, path, isDir)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -164,12 +164,10 @@ func TestFileOrDir(t *testing.T) {
 		db := database.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		git.Mocks.GetDefaultBranchShort = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
-			return "mybranch", "", nil
-		}
-		defer git.ResetMocks()
+		gsClient := gitserver.NewMockClient()
+		gsClient.GetDefaultBranchFunc.SetDefaultReturn("mybranch", "", nil)
 
-		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), db, gsClient, &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -191,7 +189,7 @@ func TestFileOrDir(t *testing.T) {
 		db := database.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		links, err := FileOrDir(context.Background(), db, &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Background(), db, gitserver.NewClient(db), &types.Repo{Name: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)
 		}

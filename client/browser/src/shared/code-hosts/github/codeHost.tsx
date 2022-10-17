@@ -1,13 +1,12 @@
-import React from 'react'
-
 import classNames from 'classnames'
 import { trimStart } from 'lodash'
-import { render } from 'react-dom'
-import { defer, of } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
+import { createRoot } from 'react-dom/client'
+import { defer, fromEvent, of } from 'rxjs'
+import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { LineOrPositionOrRange } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
@@ -196,7 +195,13 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+        /**
+         * The element matching the latter selector replaces the one matching the former selector
+         * on GitHub when navigating through the repo tree using the client-side navigation.
+         * GitHub Enterprise always uses the former one.
+         */
+        const repositoryContent =
+            fileLineContainer.closest('.repository-content') || fileLineContainer.closest('#repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -236,7 +241,7 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
     },
     resolveView: (element: HTMLElement): CodeView | null => {
         if (element.querySelector('article.markdown-body')) {
-            // This code view is rendered markdown, we shouldn't add code intelligence
+            // This code view is rendered markdown, we shouldn't add code navigation
             return null
         }
 
@@ -511,6 +516,24 @@ const queryByIdOrCreate = (id: string, className = ''): HTMLElement => {
     return element
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    const matches = hash.match(/(L\d+)/g)
+
+    if (!matches || matches.length > 2) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = matches.map(string => string.slice(1))
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
@@ -535,8 +558,9 @@ function enhanceSearchPage(sourcegraphURL: string): void {
             utm_source: getPlatformName(),
             utm_campaign: utmCampaign,
         })
+        const root = createRoot(container)
 
-        render(
+        root.render(
             <SourcegraphIconButton
                 label="Search on Sourcegraph"
                 title="Search on Sourcegraph to get hover tooltips, go to definition and more"
@@ -553,8 +577,7 @@ function enhanceSearchPage(sourcegraphURL: string): void {
                         searchQuery ? `&q=${searchQuery}` : ''
                     }`
                 }}
-            />,
-            container
+            />
         )
     }
 
@@ -702,9 +725,9 @@ export const githubCodeHost: GithubCodeHost = {
     notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: 'Box',
+        popoverClassName: classNames('Box', styles.commandPalettePopover),
         formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field',
+        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
         listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:
@@ -727,6 +750,7 @@ export const githubCodeHost: GithubCodeHost = {
         className: 'Box',
         actionItemClassName: 'btn btn-sm btn-secondary',
         actionItemPressedClassName: 'active',
+        closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
         badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
@@ -788,5 +812,9 @@ export const githubCodeHost: GithubCodeHost = {
             : ''
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
     codeViewsRequireTokenization: true,
 }

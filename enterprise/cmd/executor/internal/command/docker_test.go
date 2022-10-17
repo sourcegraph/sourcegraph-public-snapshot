@@ -71,3 +71,72 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}
 }
+
+func TestFormatRawOrDockerCommandDockerScriptWithoutResourceAllocation(t *testing.T) {
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Operation:  makeTestOperation(),
+		},
+		"/proj/src",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs: 0,
+				Memory:  "0",
+			},
+		},
+	)
+
+	expected := command{
+		Command: []string{
+			"docker", "run", "--rm",
+			"-v", "/proj/src:/data",
+			"-w", "/data/subdir",
+			"--entrypoint",
+			"/bin/sh",
+			"alpine:latest",
+			"/data/.sourcegraph-executor/myscript.sh",
+		},
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatRawOrDockerCommandDockerScriptWithDockerHostMountPath(t *testing.T) {
+	actual := formatRawOrDockerCommand(
+		CommandSpec{
+			Image:      "alpine:latest",
+			ScriptPath: "myscript.sh",
+			Dir:        "subdir",
+			Operation:  makeTestOperation(),
+		},
+		"/my/local/workspace",
+		Options{
+			ResourceOptions: ResourceOptions{
+				NumCPUs:             4,
+				Memory:              "20G",
+				DockerHostMountPath: "/containers/rootfs/mount_fs",
+			},
+		},
+	)
+
+	expected := command{
+		Command: []string{
+			"docker", "run", "--rm",
+			"--cpus", "4",
+			"--memory", "20G",
+			"-v", "/containers/rootfs/mount_fs/workspace:/data",
+			"-w", "/data/subdir",
+			"--entrypoint",
+			"/bin/sh",
+			"alpine:latest",
+			"/data/.sourcegraph-executor/myscript.sh",
+		},
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}

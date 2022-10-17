@@ -13,7 +13,11 @@ interface ListItemProps {
     onClick?: () => void
 }
 
-export const ListItem: React.FunctionComponent<ListItemProps> = ({ className, children, onClick }) => {
+export const ListItem: React.FunctionComponent<React.PropsWithChildren<ListItemProps>> = ({
+    className,
+    children,
+    onClick,
+}) => {
     if (!onClick) {
         return <li className={classNames(styles.listGroupItem, className)}>{children}</li>
     }

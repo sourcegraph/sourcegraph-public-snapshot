@@ -3,19 +3,19 @@ package structural
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,11 +60,12 @@ type searchRepos struct {
 // getJob returns a function parameterized by ctx to search over repos.
 func (s *searchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.Searcher{
+		searcherJob := &searcher.TextSearchJob{
 			PatternInfo:     s.args.PatternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
 			UseFullDeadline: s.args.UseFullDeadline,
+			Features:        s.args.Features,
 		}
 
 		_, err := searcherJob.Run(ctx, s.clients, s.stream)
@@ -87,6 +88,7 @@ func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, arg
 		searcherArgs := &search.SearcherParameters{
 			PatternInfo:     args.PatternInfo,
 			UseFullDeadline: args.UseFullDeadline,
+			Features:        args.Features,
 		}
 
 		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
@@ -105,15 +107,13 @@ func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args
 	return streamStructuralSearch(ctx, clients, args, repos, stream)
 }
 
-func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
-	if args.PatternInfo.FileMatchLimit != limits.DefaultMaxSearchResults {
-		// streamStructuralSearch performs a streaming search when the user sets a value
-		// for `count`. The first return parameter indicates whether the request was
-		// serviced with streaming.
+func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, batchRetry bool, repos []repoData, stream streaming.Sender) error {
+	if !batchRetry {
+		// stream search results
 		return streamStructuralSearch(ctx, clients, args, repos, stream)
 	}
 
-	// For structural search with default limits we retry if we get no results.
+	// For batching structural search we use retry logic if we get no results.
 	agg := streaming.NewAggregatingStream()
 	err := streamStructuralSearch(ctx, clients, args, repos, agg)
 
@@ -129,7 +129,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			clients.Logger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
@@ -137,7 +137,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	matches := make([]result.Match, 0, len(event.Results))
 	for _, fm := range event.Results {
 		if _, ok := fm.(*result.FileMatch); !ok {
-			return errors.Errorf("StructuralSearch failed to convert results")
+			return errors.Errorf("StructuralSearchJob failed to convert results")
 		}
 		matches = append(matches, fm)
 	}
@@ -149,23 +149,24 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 	return err
 }
 
-type StructuralSearch struct {
-	ZoektArgs        *search.ZoektParameters
+type SearchJob struct {
 	SearcherArgs     *search.SearcherParameters
 	UseIndex         query.YesNoOnly
 	ContainsRefGlobs bool
+	BatchRetry       bool
 
 	RepoOpts search.RepoOptions
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return nil, repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
+			clients.Logger,
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,
@@ -180,10 +181,31 @@ func (s *StructuralSearch) Run(ctx context.Context, clients job.RuntimeClients, 
 		if indexed != nil {
 			repoSet = append(repoSet, IndexedMap(indexed.RepoRevs))
 		}
-		return runStructuralSearch(ctx, clients, s.SearcherArgs, repoSet, stream)
+		return runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
 	})
 }
 
-func (*StructuralSearch) Name() string {
-	return "Structural"
+func (*SearchJob) Name() string {
+	return "StructuralSearchJob"
 }
+
+func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+			log.String("useIndex", string(s.UseIndex)),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+		)
+	}
+	return res
+}
+
+func (s *SearchJob) Children() []job.Describer       { return nil }
+func (s *SearchJob) MapChildren(job.MapFunc) job.Job { return s }

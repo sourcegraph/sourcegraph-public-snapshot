@@ -1,9 +1,7 @@
-import React from 'react'
-
+import { mdiArrowRight } from '@mdi/js'
 import { DecoratorFn, Meta } from '@storybook/react'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../WebStory'
 
@@ -20,12 +18,12 @@ export default config
 
 export const Basic = (): JSX.Element => (
     <MarketingBlock>
-        <h3 className="pr-3">Need help getting started?</h3>
+        <H3 className="pr-3">Need help getting started?</H3>
 
         <div>
             <Link to="https://sourcegraph.com/search">
                 Speak to an engineer
-                <Icon className="ml-2" as={ArrowRightIcon} />
+                <Icon className="ml-2" aria-hidden={true} svgPath={mdiArrowRight} />
             </Link>
         </div>
     </MarketingBlock>

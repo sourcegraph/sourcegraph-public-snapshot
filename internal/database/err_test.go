@@ -23,6 +23,6 @@ func TestErrorsInterface(t *testing.T) {
 	}
 }
 
-func functionName(i interface{}) string {
+func functionName(i any) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

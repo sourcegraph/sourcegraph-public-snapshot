@@ -34,10 +34,10 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "resetting passwords is not enabled",
-						Path:    []interface{}{"randomizeUserPassword"},
+						Path:    []any{"randomizeUserPassword"},
 					},
 				},
-				Variables: map[string]interface{}{"user": userIDBase64},
+				Variables: map[string]any{"user": userIDBase64},
 			},
 		})
 	})
@@ -64,10 +64,10 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "unable to reset password because email sending is not configured",
-						Path:    []interface{}{"randomizeUserPassword"},
+						Path:    []any{"randomizeUserPassword"},
 					},
 				},
-				Variables: map[string]interface{}{"user": userIDBase64},
+				Variables: map[string]any{"user": userIDBase64},
 			},
 		})
 	})
@@ -95,10 +95,10 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "must be site admin",
-						Path:    []interface{}{string("randomizeUserPassword")},
+						Path:    []any{string("randomizeUserPassword")},
 					},
 				},
-				Variables: map[string]interface{}{"user": userIDBase64},
+				Variables: map[string]any{"user": userIDBase64},
 			},
 		})
 	})
@@ -122,10 +122,10 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "cannot parse user ID: illegal base64 data at input byte 4",
-						Path:    []interface{}{string("randomizeUserPassword")},
+						Path:    []any{string("randomizeUserPassword")},
 					},
 				},
-				Variables: map[string]interface{}{"user": "alice"},
+				Variables: map[string]any{"user": "alice"},
 			},
 		})
 	})
@@ -152,7 +152,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
 					}
 				}`,
-				Variables: map[string]interface{}{"user": userIDBase64},
+				Variables: map[string]any{"user": userIDBase64},
 			},
 		})
 	})
@@ -196,7 +196,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 						"resetPasswordURL": null
 					}
 				}`,
-				Variables: map[string]interface{}{"user": userIDBase64},
+				Variables: map[string]any{"user": userIDBase64},
 			},
 		})
 	})

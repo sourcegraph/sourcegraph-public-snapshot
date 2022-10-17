@@ -1,12 +1,12 @@
 import { useCallback, useContext, useState } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import { ErrorLike, logger } from '@sourcegraph/common'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodeInsightsBackendContext, Insight } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 
-type DeletionInsight = Pick<Insight, 'id' | 'title' | 'type'>
+type DeletionInsight = Pick<Insight, 'id' | 'type'>
 
 export interface UseDeleteInsightAPI {
     delete: (insight: DeletionInsight) => Promise<void>
@@ -41,7 +41,7 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
                 eventLogger.log('InsightRemoval', { insightType }, { insightType })
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
-                console.error(error)
+                logger.error(error)
                 setError(error)
             }
         },

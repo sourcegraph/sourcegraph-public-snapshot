@@ -2,16 +2,12 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-import React, { useState } from 'react'
-
 import { action } from '@storybook/addon-actions'
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import classNames from 'classnames'
 import 'storybook-addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
-import { TextArea, Button, ButtonGroup, Link, Select, BUTTON_SIZES } from '@sourcegraph/wildcard'
+import { TextArea, Button, Link, Select, Checkbox, Input, Text, Code, H1, H2, H3, H4 } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -19,7 +15,6 @@ import { Form } from '../../components/Form'
 
 import { ColorVariants } from './ColorVariants'
 import { FormFieldVariants } from './FormFieldVariants'
-import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
 
 registerHighlightContributions()
@@ -39,40 +34,21 @@ const config: Meta = {
 
 export default config
 
-export const Text: Story = () => (
+export const CodeTypography: Story = () => (
     <>
-        <h1>Typography</h1>
+        <H1>Code</H1>
 
-        <TextStory />
-    </>
-)
+        <H2>Inline Code</H2>
+        <Text>
+            Example of <Code>inline code</Code> that can be achieved with the <Code>{'<code>'}</Code> element.
+        </Text>
 
-Text.parameters = {
-    design: {
-        name: 'Figma',
-        type: 'figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-    },
-}
+        <H2>Highlighted multi-line code</H2>
+        <Text>Custom highlight.js themes are defined for both light and dark themes.</Text>
 
-type ButtonSizesType = typeof BUTTON_SIZES[number] | undefined
-
-export const Code: Story = () => (
-    <>
-        <h1>Code</h1>
-
-        <h2>Inline Code</h2>
-        <p>
-            Example of <code>inline code</code> that can be achieved with the <code>{'<code>'}</code> element.
-        </p>
-
-        <h2>Highlighted multi-line code</h2>
-        <p>Custom highlight.js themes are defined for both light and dark themes.</p>
-
-        <h3>TypeScript</h3>
+        <H3>TypeScript</H3>
         <pre>
-            <code
+            <Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         ['const foo = 123', 'const bar = "Hello World!"', 'console.log(foo)'].join('\n'),
@@ -82,9 +58,9 @@ export const Code: Story = () => (
             />
         </pre>
 
-        <h3>JSON</h3>
+        <H3>JSON</H3>
         <pre>
-            <code
+            <Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         ['{', '  "someString": "Hello World!",', '  "someNumber": 123', '}'].join('\n'),
@@ -94,9 +70,9 @@ export const Code: Story = () => (
             />
         </pre>
 
-        <h3>Diffs</h3>
+        <H3>Diffs</H3>
         <pre>
-            <code
+            <Code
                 dangerouslySetInnerHTML={{
                     __html: highlightCodeSafe(
                         [
@@ -111,26 +87,26 @@ export const Code: Story = () => (
             />
         </pre>
 
-        <h2>Keyboard shortcuts</h2>
-        <p>
-            Keyboard shortcuts should use <code>{'<kbd>'}</code>, not <code>{'<code>'}</code>. For example,{' '}
+        <H2>Keyboard shortcuts</H2>
+        <Text>
+            Keyboard shortcuts should use <Code>{'<kbd>'}</Code>, not <Code>{'<code>'}</Code>. For example,{' '}
             <kbd>cmd</kbd>+<kbd>C</kbd> is used to copy text to the clipboard.
-        </p>
-        <h3>Code snippets</h3>
-        <p>
+        </Text>
+        <H3>Code snippets</H3>
+        <Text>
             Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}
-            <code>{'<CodeSnippet />'}</code> for these uses.
-        </p>
+            <Code>{'<CodeSnippet />'}</Code> for these uses.
+        </Text>
         <CodeSnippet code="property: 1" language="yaml" />
     </>
 )
 
 export const Colors: Story = () => (
     <>
-        <h1>Colors</h1>
+        <H1>Colors</H1>
 
-        <h2>Semantic colors</h2>
-        <p>These can be used to give semantic clues and always work both in light and dark theme.</p>
+        <H2>Semantic colors</H2>
+        <Text>These can be used to give semantic clues and always work both in light and dark theme.</Text>
         <ColorVariants />
     </>
 )
@@ -146,11 +122,11 @@ Colors.parameters = {
 
 export const Layout: Story = () => (
     <>
-        <h1>Layout</h1>
+        <H1>Layout</H1>
 
-        <h2>Spacing</h2>
-        <p>
-            Use margin <code>m-*</code> and padding <code>p-*</code> utilities to align with the{' '}
+        <H2>Spacing</H2>
+        <Text>
+            Use margin <Code>m-*</Code> and padding <Code>p-*</Code> utilities to align with the{' '}
             <Link
                 to="https://builttoadapt.io/intro-to-the-8-point-grid-system-d2573cde8632"
                 target="_blank"
@@ -158,11 +134,11 @@ export const Layout: Story = () => (
             >
                 8pt grid
             </Link>
-            . When hand-writing CSS, use <code>rem</code> units in multiples of <code>0.25</code>.
-        </p>
+            . When hand-writing CSS, use <Code>rem</Code> units in multiples of <Code>0.25</Code>.
+        </Text>
 
-        <h2>One-dimensional layout</h2>
-        <p>
+        <H2>One-dimensional layout</H2>
+        <Text>
             Use{' '}
             <Link
                 to="https://css-tricks.com/snippets/css/a-guide-to-flexbox/"
@@ -176,10 +152,10 @@ export const Layout: Story = () => (
                 utility classes
             </Link>{' '}
             for simple flexbox layouts.
-        </p>
+        </Text>
 
-        <h3>Row layout</h3>
-        <h4>Equally distributed</h4>
+        <H3>Row layout</H3>
+        <H4>Equally distributed</H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}
@@ -189,7 +165,7 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 flex-grow-1 d-flex justify-content-center align-items-center border">Column 3</div>
         </div>
 
-        <h4>Middle column growing</h4>
+        <H4>Middle column growing</H4>
         <div
             className="d-flex p-1 border mb-2 overflow-hidden"
             style={{ resize: 'both', minWidth: '16rem', minHeight: '3rem' }}
@@ -201,7 +177,7 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 d-flex justify-content-center align-items-center border border">Column 3</div>
         </div>
 
-        <h3>Column layout</h3>
+        <H3>Column layout</H3>
         <div
             className="d-flex flex-column p-1 border mb-2 overflow-hidden"
             style={{ minHeight: '8rem', height: '12rem', minWidth: '6rem', width: '12rem', resize: 'both' }}
@@ -211,10 +187,10 @@ export const Layout: Story = () => (
             <div className="p-1 m-1 flex-grow-1 border d-flex align-items-center justify-content-center">Row 3</div>
         </div>
 
-        <h2>Two-dimensional layout</h2>
-        <p>
+        <H2>Two-dimensional layout</H2>
+        <Text>
             Use <Link to="https://learncssgrid.com/">CSS Grid</Link> for complex two-dimensional layouts.
-        </p>
+        </Text>
         <div
             className="p-2 border overflow-hidden"
             style={{
@@ -239,150 +215,20 @@ export const Layout: Story = () => (
     </>
 )
 
-export const ButtonGroups: Story = () => {
-    const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
-    const buttonSizes: ButtonSizesType[] = ['lg', undefined, 'sm']
-    return (
-        <>
-            <h1>Button groups</h1>
-            <p>
-                Group a series of buttons together on a single line with the button group.{' '}
-                <Link to="https://getbootstrap.com/docs/4.5/components/buttons/">Bootstrap documentation</Link>
-            </p>
-
-            <h2>Example</h2>
-            <div className="mb-2">
-                <p>
-                    Button groups have no styles on their own, they just group buttons together. This means they can be
-                    used to group any other semantic or outline button variant.
-                </p>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button variant="secondary">Left</Button>
-                        <Button variant="secondary">Middle</Button>
-                        <Button variant="secondary">Right</Button>
-                    </ButtonGroup>{' '}
-                    Example with <code>btn-secondary</code>
-                </div>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button outline={true} variant="secondary">
-                            Left
-                        </Button>
-                        <Button outline={true} variant="secondary">
-                            Middle
-                        </Button>
-                        <Button outline={true} variant="secondary">
-                            Right
-                        </Button>
-                    </ButtonGroup>{' '}
-                    Example with <code>btn-outline-secondary</code>
-                </div>
-                <div className="mb-2">
-                    <ButtonGroup aria-label="Basic example">
-                        <Button outline={true} variant="primary">
-                            Left
-                        </Button>
-                        <Button outline={true} variant="primary">
-                            Middle
-                        </Button>
-                        <Button outline={true} variant="primary">
-                            Right
-                        </Button>
-                    </ButtonGroup>{' '}
-                    Example with <code>btn-outline-primary</code>
-                </div>
-            </div>
-
-            <h2 className="mt-3">Sizing</h2>
-            <p>
-                Just like buttons, button groups have <code>sm</code> and <code>lg</code> size variants.
-            </p>
-            <div className="mb-2">
-                {buttonSizes.map(size => (
-                    <div key={size} className="mb-2">
-                        <ButtonGroup aria-label="Sizing example">
-                            <Button size={size} outline={true} variant="primary">
-                                Left
-                            </Button>
-                            <Button size={size} outline={true} variant="primary">
-                                Middle
-                            </Button>
-                            <Button size={size} outline={true} variant="primary">
-                                Right
-                            </Button>
-                        </ButtonGroup>
-                    </div>
-                ))}
-            </div>
-
-            <h2 className="mt-3">Active state</h2>
-            <p>
-                The <code>active</code> class can be used to craft toggles out of button groups.
-            </p>
-            <div className="mb-2">
-                <ButtonGroup aria-label="Basic example">
-                    {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <Button
-                            key={option}
-                            className={classNames(option === active && 'active')}
-                            onClick={() => setActive(option)}
-                            aria-pressed={option === active}
-                            outline={true}
-                            variant="secondary"
-                        >
-                            {option}
-                        </Button>
-                    ))}
-                </ButtonGroup>{' '}
-                Example with <code>btn-outline-secondary</code>
-            </div>
-            <div className="mb-2">
-                <ButtonGroup aria-label="Basic example">
-                    {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <Button
-                            key={option}
-                            className={classNames(option === active && 'active')}
-                            onClick={() => setActive(option)}
-                            aria-pressed={option === active}
-                            outline={true}
-                            variant="primary"
-                        >
-                            {option}
-                        </Button>
-                    ))}
-                </ButtonGroup>{' '}
-                Example with <code>btn-outline-primary</code>
-            </div>
-        </>
-    )
-}
-
-ButtonGroups.storyName = 'Button groups'
-
-ButtonGroups.parameters = {
-    design: {
-        type: 'figma',
-        name: 'Figma',
-        url:
-            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-    },
-}
-
 export const InputGroups: Story = () => (
     <>
-        <h1>Input groups</h1>
+        <H1>Input groups</H1>
 
-        <p>
+        <Text>
             Easily extend form controls by adding text, buttons, or button groups on either side of textual inputs,
             custom selects, and custom file inputs.{' '}
             <Link to="https://getbootstrap.com/docs/4.5/components/input-group/">Bootstrap documentation</Link>
-        </p>
+        </Text>
 
-        <h2>Example</h2>
+        <H2>Example</H2>
         <div>
             <div className="input-group" style={{ maxWidth: '24rem' }}>
-                <input type="search" className="form-control" placeholder="Search code..." aria-label="Search query" />
+                <Input type="search" placeholder="Search code..." aria-label="Search query" />
                 <div className="input-group-append">
                     <Button type="submit" variant="primary">
                         Submit
@@ -397,31 +243,30 @@ InputGroups.storyName = 'Input groups'
 
 export const Forms: Story = () => (
     <>
-        <h1>Forms</h1>
-        <p>
+        <H1>Forms</H1>
+        <Text>
             Forms are validated using native HTML validation. Submit the below form with invalid input to try it out.{' '}
             <Link to="https://getbootstrap.com/docs/4.5/components/forms/" target="_blank" rel="noopener noreferrer">
                 Bootstrap documentation
             </Link>
-        </p>
+        </Text>
         <Form onSubmit={preventDefault}>
-            <div className="form-group">
-                <label htmlFor="example-email-input">Email address</label>
-                <input
-                    type="email"
-                    className="form-control"
-                    id="example-email-input"
-                    aria-describedby="email-help"
-                    placeholder="me@example.com"
-                />
-                <small id="email-help" className="form-text text-muted">
-                    We'll never share your email with anyone else.
-                </small>
-            </div>
-            <div className="form-group">
-                <label htmlFor="example-input-password">Password</label>
-                <input type="password" className="form-control" id="example-input-password" />
-            </div>
+            <Input
+                type="email"
+                id="example-email-input"
+                placeholder="me@example.com"
+                label="Email address"
+                message="We'll never share your email with anyone else."
+                className="form-group"
+                inputClassName="mb-0"
+            />
+            <Input
+                type="password"
+                id="example-input-password"
+                className="form-group"
+                inputClassName="mb-0"
+                label="Password"
+            />
 
             <Select isCustomStyle={true} aria-label="Example select" label="Example select">
                 <option>Option A</option>
@@ -432,24 +277,24 @@ export const Forms: Story = () => (
             <div className="form-group">
                 <TextArea label="Example textarea" id="example-textarea" rows={3} />
             </div>
-            <div className="form-group form-check">
-                <input type="checkbox" className="form-check-input" id="exampleCheck1" />
-                <label className="form-check-label" htmlFor="exampleCheck1">
-                    Check me out
-                </label>
-            </div>
+
+            <Checkbox label="Check me out" wrapperClassName="mb-3" id="exampleCheck1" />
+
             <Button type="submit" variant="primary">
                 Submit
             </Button>
         </Form>
 
-        <h2 className="mt-3">Disabled</h2>
+        <H2 className="mt-3">Disabled</H2>
         <Form>
             <fieldset disabled={true}>
-                <div className="form-group">
-                    <label htmlFor="disabledTextInput">Disabled input</label>
-                    <input type="text" id="disabledTextInput" className="form-control" placeholder="Disabled input" />
-                </div>
+                <Input
+                    id="disabledTextInput"
+                    placeholder="Disabled input"
+                    className="form-group"
+                    inputClassName="mb-0"
+                    label="Disabled input"
+                />
 
                 <Select
                     isCustomStyle={true}
@@ -461,17 +306,7 @@ export const Forms: Story = () => (
                 </Select>
 
                 <div className="form-group">
-                    <div className="form-check">
-                        <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="disabledFieldsetCheck"
-                            disabled={true}
-                        />
-                        <label className="form-check-label" htmlFor="disabledFieldsetCheck">
-                            Can't check this
-                        </label>
-                    </div>
+                    <Checkbox label="Can't check this" id="disabledFieldsetCheck" disabled={true} />
                 </div>
                 <Button type="submit" variant="primary">
                     Submit
@@ -479,15 +314,14 @@ export const Forms: Story = () => (
             </fieldset>
         </Form>
 
-        <h2 className="mt-3">Readonly</h2>
-        <input className="form-control" type="text" value="I'm a readonly value" readOnly={true} />
-
-        <h2 className="mt-3">Sizing</h2>
-        <p>Form fields can be made smaller</p>
+        <H2 className="mt-3">Readonly</H2>
+        <Input value="I'm a readonly value" readOnly={true} />
+        <H2 className="mt-3">Sizing</H2>
+        <Text>Form fields can be made smaller</Text>
         <div className="d-flex">
             <fieldset>
                 <div className="form-group">
-                    <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
+                    <Input className="mb-1" placeholder="Small input" variant="small" />
                     <TextArea size="small" className="mb-1" placeholder="Small textarea" />
                     <Select
                         isCustomStyle={true}
@@ -502,7 +336,7 @@ export const Forms: Story = () => (
                 </div>
             </fieldset>
         </div>
-        <h2 className="mt-3">Field reference</h2>
+        <H2 className="mt-3">Field reference</H2>
         <FormFieldVariants />
     </>
 )
@@ -516,11 +350,11 @@ Forms.parameters = {
 
 export const ListGroups: Story = () => (
     <>
-        <h1>List groups</h1>
-        <p>
+        <H1>List groups</H1>
+        <Text>
             List groups are a flexible and powerful component for displaying a series of content. Modify and extend them
             to support just about any content within.
-        </p>
+        </Text>
         <ul className="list-group mb-3">
             <li className="list-group-item">Cras justo odio</li>
             <li className="list-group-item">Dapibus ac facilisis in</li>
@@ -529,7 +363,7 @@ export const ListGroups: Story = () => (
             <li className="list-group-item">Vestibulum at eros</li>
         </ul>
 
-        <h2>Interactive</h2>
+        <H2>Interactive</H2>
         <div className="list-group">
             <button
                 type="button"
@@ -574,49 +408,67 @@ export const ListGroups: Story = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = () => {
-    const min = number('min', 0)
-    const max = number('max', 1)
-    const high = number('high', 0.8)
-    const low = number('low', 0.2)
-    const optimum = number('optimum', 1)
-    const value = number('value', 0.1)
+export const Meter: Story = args => (
+    <>
+        <H1>Meter</H1>
+        <Text>
+            The HTML{' '}
+            <Link
+                to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <Code>{'<meter>'}</Code>
+            </Link>{' '}
+            element represents either a scalar value within a known range or a fractional value.
+        </Text>
+        <H2>Examples</H2>
+        <hr />
+        <div className="pb-3">
+            <H3>Optimum</H3>
+            <meter min={0} max={1} optimum={1} value={1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Sub sub optimum</H3>
+            <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
+        </div>
+        <hr />
+        <div className="pb-3">
+            <H3>Customize with controls</H3>
+            <meter {...args} />
+        </div>
+    </>
+)
 
-    return (
-        <>
-            <h1>Meter</h1>
-            <p>
-                The HTML{' '}
-                <Link
-                    to="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <code>{'<meter>'}</code>
-                </Link>{' '}
-                element represents either a scalar value within a known range or a fractional value.
-            </p>
-            <h2>Examples</h2>
-            <hr />
-            <div className="pb-3">
-                <h3>Optimum</h3>
-                <meter min={0} max={1} optimum={1} value={1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <h3>Sub optimum</h3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.6} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <h3>Sub sub optimum</h3>
-                <meter min={0} max={1} high={0.8} low={0.2} optimum={1} value={0.1} />
-            </div>
-            <hr />
-            <div className="pb-3">
-                <h3>Customize with knobs</h3>
-                <meter min={min} max={max} high={high} low={low} optimum={optimum} value={value} />
-            </div>
-        </>
-    )
+Meter.argTypes = {
+    min: {
+        type: 'number',
+        defaultValue: 0,
+    },
+    max: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    high: {
+        type: 'number',
+        defaultValue: 0.8,
+    },
+    low: {
+        type: 'number',
+        defaultValue: 0.2,
+    },
+    optimum: {
+        type: 'number',
+        defaultValue: 1,
+    },
+    value: {
+        type: 'number',
+        defaultValue: 0.1,
+    },
 }

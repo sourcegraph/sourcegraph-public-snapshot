@@ -21,6 +21,7 @@ export * from './searchQueryState'
 export * from './helpers'
 export * from './graphql-operations'
 export * from './helpers/queryExample'
+export * from './integration/streaming-search-mocks'
 
 export interface SearchPatternTypeProps {
     patternType: SearchPatternType
@@ -37,8 +38,6 @@ export interface CaseSensitivityProps {
 
 export interface SearchContextProps {
     searchContextsEnabled: boolean
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
@@ -56,8 +55,6 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'searchContextsEnabled'
-    | 'hasUserAddedRepositories'
-    | 'hasUserAddedExternalServices'
     | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'

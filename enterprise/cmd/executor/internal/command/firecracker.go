@@ -2,21 +2,25 @@ package command
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
+	shellquote "github.com/kballard/go-shellquote"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type commandRunner interface {
-	RunCommand(ctx context.Context, command command, logger *Logger) error
+	RunCommand(ctx context.Context, command command, logger Logger) error
 }
 
 const firecrackerContainerDir = "/work"
@@ -33,7 +37,7 @@ const firecrackerContainerDir = "/work"
 func formatFirecrackerCommand(spec CommandSpec, name string, options Options) command {
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
-	innerCommand := strings.Join(rawOrDockerCommand.Command, " ")
+	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
 	if len(rawOrDockerCommand.Env) > 0 {
 		// If we have env vars that are arguments to the command we need to escape them
 		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
@@ -50,27 +54,136 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	}
 }
 
+// defaultCNIConfig is the CNI config used for our firecracker VMs.
+// TODO: Can we remove the portmap completely?
+const defaultCNIConfig = `
+{
+  "cniVersion": "0.4.0",
+  "name": "ignite-cni-bridge",
+  "plugins": [
+    {
+  	  "type": "bridge",
+  	  "bridge": "ignite0",
+  	  "isGateway": true,
+  	  "isDefaultGateway": true,
+  	  "promiscMode": false,
+  	  "ipMasq": true,
+  	  "ipam": {
+  	    "type": "host-local",
+  	    "subnet": %q
+  	  }
+    },
+    {
+  	  "type": "portmap",
+  	  "capabilities": {
+  	    "portMappings": true
+  	  }
+    },
+    {
+  	  "type": "firewall"
+    },
+    {
+  	  "type": "isolation"
+    },
+    {
+  	  "name": "slowdown",
+  	  "type": "bandwidth",
+  	  "ingressRate": %d,
+  	  "ingressBurst": %d,
+  	  "egressRate": %d,
+  	  "egressBurst": %d
+    }
+  ]
+}
+`
+
+// cniConfig generates a config file that configures the CNI explicitly and adds
+// the isolation plugin to the chain.
+// This is used to prevent cross-network communication (which currently doesn't
+// happen as we only have 1 bridge).
+// We also set the maximum bandwidth usable per VM to the configured value to avoid
+// abuse and to make sure multiple VMs on the same host won't starve others.
+func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
+	return fmt.Sprintf(
+		defaultCNIConfig,
+		config.CNISubnetCIDR,
+		maxIngressBandwidth,
+		2*maxIngressBandwidth,
+		maxEgressBandwidth,
+		2*maxEgressBandwidth,
+	)
+}
+
+// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
+type dockerDaemonConfig struct {
+	RegistryMirrors []string `json:"registry-mirrors"`
+}
+
+// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
+// for the optional docker daemon config file.
+const dockerDaemonConfigFilename = "docker-daemon.json"
+
+func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
+	if err != nil {
+		return "", errors.Wrap(err, "marshalling docker daemon config")
+	}
+
+	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename)
+	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
+	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
+}
+
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
-func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name, repoDir string, options Options, operations *Operations) error {
-	// Start the VM and wait for the SSH server to become available
+func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
+	var daemonConfigFile string
+	if len(options.FirecrackerOptions.DockerRegistryMirrorURLs) > 0 {
+		var err error
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURLs)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Make subdirectory called "cni" to store CNI config in. All files from a directory
+	// will be considered so this has to be it's own directory with just our config file.
+	cniConfigDir := path.Join(tmpDir, "cni")
+	err := os.Mkdir(cniConfigDir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+	cniConfigFile := path.Join(tmpDir, "10-sourcegraph-executors.conflist")
+	err = os.WriteFile(cniConfigFile, []byte(cniConfig(options.ResourceOptions.MaxIngressBandwidth, options.ResourceOptions.MaxEgressBandwidth)), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	// Start the VM and wait for the SSH server to become available.
 	startCommand := command{
 		Key: "setup.firecracker.start",
+		// Tell ignite to use our temporary config file for maximum isolation of
+		// envs.
+		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
 		Command: flatten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
 			firecrackerResourceFlags(options.ResourceOptions),
-			firecrackerCopyfileFlags(repoDir, options.FirecrackerOptions.VMStartupScriptPath),
+			firecrackerCopyfileFlags(options.FirecrackerOptions.VMStartupScriptPath, daemonConfigFile),
+			firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir),
 			"--ssh",
 			"--name", name,
+			"--kernel-image", sanitizeImage(options.FirecrackerOptions.KernelImage),
+			"--kernel-args", config.FirecrackerKernelArgs,
+			"--sandbox-image", sanitizeImage(options.FirecrackerOptions.SandboxImage),
 			sanitizeImage(options.FirecrackerOptions.Image),
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
 
-	if err := callWithInstrumentedLock(operations, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+	if err := runner.RunCommand(ctx, startCommand, logger); err != nil {
 		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
@@ -88,33 +201,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 	return nil
 }
 
-// We've recently seen issues with concurent VM creation. It's likely we
-// can do better here and run an empty VM at application startup, but I
-// want to do this quick and dirty to see if we can raise our concurrency
-// without other issues.
-//
-// https://github.com/weaveworks/ignite/issues/559
-// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
-var igniteRunLock sync.Mutex
-
-// callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
-// and active portions of this method are emitted as prometheus metrics.
-func callWithInstrumentedLock(operations *Operations, f func() error) error {
-	lockRequestedAt := time.Now()
-	igniteRunLock.Lock()
-	lockAcquiredAt := time.Now()
-	err := f()
-	lockReleasedAt := time.Now()
-	igniteRunLock.Unlock()
-
-	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
-	operations.RunLockHeldTotal.Add(float64(lockReleasedAt.Sub(lockAcquiredAt) / time.Millisecond))
-	return err
-}
-
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
-// the given name.
-func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logger, name string, operations *Operations) error {
+// the given name and removes the tmpDir.
+func teardownFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, tmpDir string, operations *Operations) error {
 	removeCommand := command{
 		Key:       "teardown.firecracker.remove",
 		Command:   flatten("ignite", "rm", "-f", name),
@@ -122,6 +211,10 @@ func teardownFirecracker(ctx context.Context, runner commandRunner, logger *Logg
 	}
 	if err := runner.RunCommand(ctx, removeCommand, logger); err != nil {
 		log15.Error("Failed to remove firecracker vm", "name", name, "err", err)
+	}
+
+	if err := os.RemoveAll(tmpDir); err != nil {
+		log15.Error("Failed to remove firecracker state tmp dir", "name", name, "tmpDir", tmpDir, "err", err)
 	}
 
 	return nil
@@ -135,17 +228,22 @@ func firecrackerResourceFlags(options ResourceOptions) []string {
 	}
 }
 
-func firecrackerCopyfileFlags(dir, vmStartupScriptPath string) []string {
+func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile string) []string {
 	copyfiles := make([]string, 0, 2)
-	if dir != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dir, firecrackerContainerDir))
-	}
 	if vmStartupScriptPath != "" {
 		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
 	}
 
+	if daemonConfigFile != "" {
+		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
+	}
+
 	sort.Strings(copyfiles)
 	return intersperse("--copy-files", copyfiles)
+}
+
+func firecrackerVolumeFlags(workspaceDevice, firecrackerContainerDir string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, firecrackerContainerDir)}
 }
 
 var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)

@@ -40,7 +40,7 @@ func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observat
 }
 
 func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
+	db, err := dbconn.ConnectInternal(observationContext.Logger, dsn, appName, dbName)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, 
 func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) error {
 	ctx := context.Background()
 	storeFactory := newStoreFactory(observationContext)
-	migrationRunner := runnerFromDB(storeFactory, db, schema)
+	migrationRunner := runnerFromDB(observationContext.Logger, storeFactory, db, schema)
 
 	if err := migrationRunner.Validate(ctx, schema.Name); err != nil {
 		outOfDateError := new(runner.SchemaOutOfDateError)

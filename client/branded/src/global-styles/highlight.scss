@@ -486,26 +486,29 @@
     // .hl-typed-$SYNTAX_KIND
 
     .hl-typed-Comment {
-        color: var(--hl-dark-green);
+        color: var(--hl-gray-0);
     }
     .hl-typed-PunctuationDelimiter {
-        color: var(--hl-orange);
+        color: var(--hl-gray-0);
     }
     .hl-typed-PunctuationBracket {
-        color: var(--hl-orange);
+        color: var(--hl-gray-0);
     }
     .hl-typed-IdentifierKeyword {
-        color: var(--hl-dark-blue-3);
+        color: var(--hl-green);
     }
     .hl-typed-IdentifierOperator {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-gray-3);
     }
     .hl-typed-Identifier {
         color: var(--hl-blue);
     }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-pink);
         // filter: brightness(105%);
+    }
+    .hl-typed-IdentifierBuiltinType {
+        color: var(--hl-green);
     }
     .hl-typed-IdentifierNull {
         color: var(--hl-orange);
@@ -515,7 +518,7 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-yellow);
     }
     .hl-typed-IdentifierMutableGlobal {
         color: var(--hl-dark-blue-1);
@@ -545,13 +548,10 @@
         color: var(--hl-yellow);
     }
     .hl-typed-IdentifierType {
-        color: var(--hl-blue);
-    }
-    .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-blue);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
-        color: var(--hl-purple);
+        color: var(--hl-pink);
     }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
@@ -567,7 +567,7 @@
     // }
 
     .hl-typed-StringLiteral {
-        color: var(--hl-red);
+        color: var(--hl-cyan);
     }
     .hl-typed-StringLiteralEscape {
         color: var(--hl-red);
@@ -582,13 +582,15 @@
         color: var(--hl-red);
     }
     .hl-typed-NumericLiteral {
-        color: var(--hl-green-1);
+        color: var(--hl-purple);
+    }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-2);
     }
 
+    // color: var(--hl-gray-3);
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
-    // }
-    // .hl-typed-TagAttribute {
     // }
     // .hl-typed-TagDelimiter {
     // }
@@ -901,27 +903,34 @@
     //
     // Each group should exactly match the name of the spec.
     // .hl-typed-$SYNTAX_KIND
+    --hl-scip-identifier: #859900;
 
     .hl-typed-Comment {
         color: var(--hl-dark-green);
     }
     .hl-typed-PunctuationDelimiter {
-        color: var(--hl-orange);
+        color: var(--hl-gray-2);
     }
     .hl-typed-PunctuationBracket {
-        color: var(--hl-orange);
+        color: var(--hl-gray-2);
     }
     .hl-typed-IdentifierKeyword {
-        color: var(--hl-dark-blue-3);
+        color: var(--hl-dark-blue-2);
     }
     .hl-typed-IdentifierOperator {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-gray-0);
     }
     .hl-typed-Identifier {
         color: var(--hl-blue);
     }
+    .hl-typed-IdentifierFunction {
+        color: var(--hl-dark-yellow);
+    }
+    .hl-typed-IdentifierType {
+        color: var(--hl-gray-1);
+    }
     .hl-typed-IdentifierBuiltin {
-        color: var(--hl-blue);
+        color: var(--hl-purple);
         // filter: brightness(105%);
     }
     .hl-typed-IdentifierNull {
@@ -932,10 +941,10 @@
         color: var(--hl-orange);
     }
     .hl-typed-IdentifierConstant {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierMutableGlobal {
-        color: var(--hl-dark-blue-1);
+        color: var(--hl-blue);
     }
     .hl-typed-IdentifierParameter {
         color: var(--hl-blue);
@@ -949,9 +958,6 @@
     .hl-typed-IdentifierModule {
         color: var(--hl-blue);
     }
-    .hl-typed-IdentifierFunction {
-        color: var(--hl-yellow);
-    }
     .hl-typed-IdentifierFunctionDefinition {
         color: var(--hl-yellow);
     }
@@ -961,11 +967,8 @@
     .hl-typed-IdentifierMacroDefinition {
         color: var(--hl-yellow);
     }
-    .hl-typed-IdentifierType {
-        color: var(--hl-blue);
-    }
     .hl-typed-IdentifierBuiltinType {
-        color: var(--hl-blue);
+        color: var(--hl-orange);
     }
     .hl-typed-IdentifierAttribute {
         color: var(--hl-purple);
@@ -1001,12 +1004,86 @@
     .hl-typed-NumericLiteral {
         color: var(--hl-green-1);
     }
+    .hl-typed-TagAttribute {
+        color: var(--hl-gray-3);
+    }
 
     // TODO: Followup for https://github.com/sourcegraph/sourcegraph/issues/30995
     // .hl-typed-Tag {
     // }
-    // .hl-typed-TagAttribute {
-    // }
     // .hl-typed-TagDelimiter {
     // }
+}
+
+// Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+// https://github.com/sourcegraph/sourcegraph/issues/36251
+.theme-light .theme-contrast-compliant-syntax-highlighting {
+    --hl-property: #d33682;
+    --hl-string: #058356;
+    --hl-function: #886700;
+    --hl-object: #677700;
+    --hl-keyword: #c44e06;
+    --hl-type: #2178b6;
+    --hl-const-num: #5f66e0;
+    --hl-punctuation: #767676;
+    --hl-symbol: #6d6c6c;
+    --hl-comment: #767676;
+    --hl-modifier: #1626b8;
+
+    // Color variable = Semantic variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
+    --hl-pink: var(--hl-property);
+    --hl-cyan: var(--hl-string);
+    --hl-yellow: var(--hl-function);
+    --hl-green: var(--hl-object);
+    --hl-orange: var(--hl-keyword);
+    --hl-blue: var(--hl-type);
+    --hl-purple: var(--hl-purple);
+    --hl-gray-0: var(--hl-comment);
+    --hl-gray-1: var(--hl-comment);
+    --hl-gray-2: var(--hl-comment);
+    --hl-gray-3: var(--hl-symbol);
+
+    // surrounding quotes
+    .hl-punctuation.hl-definition.hl-string {
+        color: var(--hl-punctuation);
+    }
+
+    // const, public, inline
+    .hl-storage.hl-modifier {
+        color: var(--hl-modifier);
+    }
+}
+.theme-dark .theme-contrast-compliant-syntax-highlighting {
+    --hl-property: #eb519c;
+    --hl-string: #fb90c4;
+    --hl-function: #b58900;
+    --hl-object: #859900;
+    --hl-keyword: #329af0;
+    --hl-type: #329af0;
+    --hl-const-num: #777dec;
+    --hl-punctuation: #d66f6d;
+    --hl-symbol: #bbbbbb;
+    --hl-comment: #3ba04f;
+    --hl-other: #d08770;
+
+    // Color variable = Semantic variable for backwards compatibility.
+    // TODO: Use semantic variables directly in the code instead.
+    --hl-pink: var(--hl-property);
+    --hl-yellow: var(--hl-function);
+    --hl-dark-blue-3: var(--hl-keyword);
+    --hl-dark-blue-1: var(--hl-type);
+    --hl-purple: var(--hl-const-num);
+    --hl-gray-3: var(--hl-symbol);
+    --hl-dark-green: var(--hl-comment);
+    --hl-red: var(--hl-string);
+
+    .hl-keyword.hl-other.hl-unit {
+        color: var(--hl-other);
+    }
+
+    .hl-punctuation.hl-section.hl-embedded,
+    .hl-variable.hl-interpolation {
+        color: var(--hl-gray-2);
+    }
 }

@@ -9,10 +9,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type RepoIterator interface {
+	ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error
+}
 
 // IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
 type IndexableReposLister interface {
@@ -100,7 +105,6 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 
 // cachedRepoStoreList calls a.repoStore.List to do a paginated list of repositories, and caches the
 // results in-memory for some time.
-//
 func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page database.LimitOffset) ([]*types.Repo, error) {
 	if a.cachedPageRequests == nil {
 		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}
@@ -110,15 +114,15 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		return cacheEntry.results, nil
 	}
 
-	trueP := true
-	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{
-		Index: &trueP,
-
-		LimitOffset: &page,
-	})
-	if err != nil {
-		return nil, err
+	var repos []*types.Repo
+	if conf.SearchIndexEnabled() {
+		var err error
+		repos, err = a.RepoStore.List(ctx, database.ReposListOptions{LimitOffset: &page})
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	a.cachedPageRequests[page] = cachedPageRequest{
 		age:     a.Clock(),
 		results: repos,

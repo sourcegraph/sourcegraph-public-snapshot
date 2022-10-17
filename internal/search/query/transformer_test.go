@@ -1,102 +1,41 @@
 package query
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 )
-
-func toJSON(node Node) interface{} {
-	switch n := node.(type) {
-	case Operator:
-		var jsons []interface{}
-		for _, o := range n.Operands {
-			jsons = append(jsons, toJSON(o))
-		}
-
-		switch n.Kind {
-		case And:
-			return struct {
-				And []interface{} `json:"and"`
-			}{
-				And: jsons,
-			}
-		case Or:
-			return struct {
-				Or []interface{} `json:"or"`
-			}{
-				Or: jsons,
-			}
-		case Concat:
-			return struct {
-				Concat []interface{} `json:"concat"`
-			}{
-				Concat: jsons,
-			}
-		}
-	case Parameter:
-		return struct {
-			Field   string   `json:"field"`
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-		}{
-			Field:   n.Field,
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-		}
-	case Pattern:
-		return struct {
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-		}{
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-		}
-	}
-	// unreachable.
-	return struct{}{}
-}
-
-func nodesToJSON(nodes []Node) string {
-	var jsons []interface{}
-	for _, node := range nodes {
-		jsons = append(jsons, toJSON(node))
-	}
-	json, err := json.Marshal(jsons)
-	if err != nil {
-		return ""
-	}
-	return string(json)
-}
 
 func TestSubstituteAliases(t *testing.T) {
 	test := func(input string, searchType SearchType) string {
 		query, _ := ParseSearchType(input, searchType)
-		return nodesToJSON(query)
+		json, _ := ToJSON(query)
+		return json
 	}
 
 	autogold.Want(
 		"basic substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"field":"file","value":"file","negated":false,"labels":["IsAlias"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
 		Equal(t, test("r:repo f:file", SearchTypeRegex))
 
 	autogold.Want(
 		"special case for content substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
 	autogold.Want(
 		"substitution honors literal search pattern",
-		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+
+	autogold.Want(
+		"substitution honors path",
+		`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
+		Equal(t, test("path:foo", SearchTypeLiteral))
 }
 
 func TestLowercaseFieldNames(t *testing.T) {
@@ -120,12 +59,8 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (or "a" "b")`,
 		},
 		{
-			input: `repo:foo a or b file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b")`,
-		},
-		{
-			input: `repo:foo a or b or c file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+			input: `repo:foo file:bar a and b or c`,
+			want:  `"repo:foo" "file:bar" (or (and "a" "b") "c")`,
 		},
 		{
 			input: "repo:foo bar { and baz {",
@@ -136,32 +71,45 @@ func TestHoist(t *testing.T) {
 			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{") (concat "qux" "{"))`,
 		},
 		{
+			input: `repo:foo a or b file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b")`,
+		},
+		{
+			input: `repo:foo a or b or c file:bar`,
+			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+		},
+		{
 			input: `repo:foo a and b or c and d or e file:bar`,
 			want:  `"repo:foo" "file:bar" (or (and "a" "b") (and "c" "d") "e")`,
 		},
-		// This next pattern is valid for the heuristic, even though the ordering of the
-		// patterns 'a' and 'c' in the first and last position are not ordered next to the
-		// 'or' keyword. This because no ordering is assumed for patterns vs. field:value
-		// parameters in the grammar. To preserve relative ordering and check this would
-		// impose significant complexity to PartitionParameters function during parsing, and
-		// the PartitionSearchPattern helper function that the heurstic relies on. So: we
-		// accept this heuristic behavior here.
-		{
-			input: `a repo:foo or b or file:bar c`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
-		},
 		// Errors.
 		{
+			input:      "a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "a repo:foo q or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      "repo:bar a repo:foo or b",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
+			input:      `a repo:foo or b or file:bar c`,
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
+		},
+		{
 			input:      "repo:foo or a",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a or repo:foo",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "unnatural order: patterns not followed by parameter",
 		},
 		{
 			input:      "repo:foo or repo:bar",
-			wantErrMsg: "could not partition first or last expression",
+			wantErrMsg: "could not partition first expression",
 		},
 		{
 			input:      "a b",
@@ -170,6 +118,10 @@ func TestHoist(t *testing.T) {
 		{
 			input:      "repo:foo a or repo:foobar b or c file:bar",
 			wantErrMsg: `inner expression (and "repo:foobar" "b") is not a pure pattern expression`,
+		},
+		{
+			input:      "repo:a b or c repo:b d or e",
+			wantErrMsg: `inner expression (and "repo:b" (concat "c" "d")) is not a pure pattern expression`,
 		},
 	}
 	for _, c := range cases {
@@ -183,7 +135,7 @@ func TestHoist(t *testing.T) {
 					leafParser: SearchTypeRegex,
 				}
 				nodes, _ := parser.parseOr()
-				return newOperator(nodes, And)
+				return NewOperator(nodes, And)
 			}
 			query := parse(c.input)
 			hoistedQuery, err := Hoist(query)
@@ -208,31 +160,31 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}{
 		{
 			input: "foo or bar",
-			want:  `"(foo)|(bar)"`,
+			want:  `"(?:foo)|(?:bar)"`,
 		},
 		{
 			input: "(foo or (bar or baz))",
-			want:  `"(foo)|(bar)|(baz)"`,
+			want:  `"(?:foo)|(?:bar)|(?:baz)"`,
 		},
 		{
 			input: "repo:foobar foo or (bar or baz)",
-			want:  `(or "(bar)|(baz)" (and "repo:foobar" "foo"))`,
+			want:  `(or "(?:bar)|(?:baz)" (and "repo:foobar" "foo"))`,
 		},
 		{
 			input: "(foo or (bar or baz)) and foobar",
-			want:  `(and "(foo)|(bar)|(baz)" "foobar")`,
+			want:  `(and "(?:foo)|(?:bar)|(?:baz)" "foobar")`,
 		},
 		{
 			input: "(foo or (bar and baz))",
-			want:  `(or "(foo)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)" (and "bar" "baz"))`,
 		},
 		{
 			input: "foo or (bar and baz) or foobar",
-			want:  `(or "(foo)|(foobar)" (and "bar" "baz"))`,
+			want:  `(or "(?:foo)|(?:foobar)" (and "bar" "baz"))`,
 		},
 		{
 			input: "repo:foo a or b",
-			want:  `(and "repo:foo" "(a)|(b)")`,
+			want:  `(and "repo:foo" "(?:a)|(?:b)")`,
 		},
 	}
 	for _, c := range cases {
@@ -246,62 +198,48 @@ func TestSubstituteOrForRegexp(t *testing.T) {
 	}
 }
 
-func TestSubstituteConcat(t *testing.T) {
-	cases := []struct {
-		input  string
-		concat func([]Pattern) Pattern
-		want   string
-	}{
-		{
-			input:  "a b c d e f",
-			concat: space,
-			want:   `"a b c d e f"`,
-		},
-		{
-			input:  "a (b and c) d",
-			concat: space,
-			want:   `"a" (and "b" "c") "d"`,
-		},
-		{
-			input:  "a b (c and d) e f (g or h) (i j k)",
-			concat: space,
-			want:   `"a b" (and "c" "d") "e f" (or "g" "h") "(i j k)"`,
-		},
-		{
-			input:  "(((a b c))) and d",
-			concat: space,
-			want:   `(and "(((a b c)))" "d")`,
-		},
-		{
-			input:  `foo\d "bar*"`,
-			concat: fuzzyRegexp,
-			want:   `"(?:foo\\d).*?(?:bar\\*)"`,
-		},
-		{
-			input:  `"bar*" foo\d "bar*" foo\d`,
-			concat: fuzzyRegexp,
-			want:   `"(?:bar\\*).*?(?:foo\\d).*?(?:bar\\*).*?(?:foo\\d)"`,
-		},
-		{
-			input:  "a b (c and d) e f (g or h) (i j k)",
-			concat: fuzzyRegexp,
-			want:   `"(?:a).*?(?:b)" (and "c" "d") "(?:e).*?(?:f)" (or "g" "h") "(i j k)"`,
-		},
-		{
-			input:  "(a not b not c d)",
-			concat: space,
-			want:   `"a" (not "b") (not "c") "d"`,
-		},
+func TestConcat(t *testing.T) {
+	test := func(input string, searchType SearchType) string {
+		query, _ := ParseSearchType(input, searchType)
+		json, _ := PrettyJSON(query)
+		return json
 	}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			got := toString(Map(query, substituteConcat(c.concat)))
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
-			}
-		})
-	}
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("a b c d e f", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("(a not b not c d)", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("(((a b c))) and d", SearchTypeLiteral)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`foo\d "bar*"`, SearchTypeRegex)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`"bar*" foo\d "bar*" foo\d`, SearchTypeRegex)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeStandard)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
+	})
+
+	t.Run("", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
+	})
 }
 
 func TestEllipsesForHoles(t *testing.T) {
@@ -382,53 +320,65 @@ func TestConvertEmptyGroupsToLiteral(t *testing.T) {
 	}
 }
 
-func TestExpandOr(t *testing.T) {
+func TestPipeline(t *testing.T) {
 	cases := []struct {
 		input string
 		want  string
-	}{
-		{
-			input: `a or b`,
-			want:  `("a") OR ("b")`,
-		},
-		{
-			input: `a and b AND c OR d`,
-			want:  `("a" "b" "c") OR ("d")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c))",
-			want:  `("repo:a" "file:b") OR ("repo:a" "file:c")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c) (file:d or file:e))",
-			want:  `("repo:a" "file:b" "file:d") OR ("repo:a" "file:c" "file:d") OR ("repo:a" "file:b" "file:e") OR ("repo:a" "file:c" "file:e")`,
-		},
-		{
-			input: "(repo:a (file:b or file:c) (a b) (x z))",
-			want:  `("repo:a" "file:b" "(a b)" "(x z)") OR ("repo:a" "file:c" "(a b)" "(x z)")`,
-		},
-		{
-			input: `a and b AND c or d and (e OR f) g h i or j`,
-			want:  `("a" "b" "c") OR ("d" "e" "g" "h" "i") OR ("d" "f" "g" "h" "i") OR ("j")`,
-		},
-		{
-			input: "(repo:a (file:b (file:c or file:d) (file:e or file:f)))",
-			want:  `("repo:a" "file:b" "file:c" "file:e") OR ("repo:a" "file:b" "file:d" "file:e") OR ("repo:a" "file:b" "file:c" "file:f") OR ("repo:a" "file:b" "file:d" "file:f")`,
-		},
-		{
-			input: "(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))",
-			want:  `("repo:a" "file:b" "file:c" "file:q" "file:e") OR ("repo:a" "file:b" "file:d" "file:q" "file:e") OR ("repo:a" "file:b" "file:c" "file:q" "file:f") OR ("repo:a" "file:b" "file:d" "file:q" "file:f")`,
-		},
-	}
+	}{{
+		input: `a or b`,
+		want:  `(or "a" "b")`,
+	}, {
+		input: `a and b AND c OR d`,
+		want:  `(or (and "a" "b" "c") "d")`,
+	}, {
+		input: `(repo:a (file:b or file:c))`,
+		want:  `(or (and "repo:a" "file:b") (and "repo:a" "file:c"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (file:d or file:e))`,
+		want:  `(or (and "repo:a" "file:b" "file:d") (and "repo:a" "file:c" "file:d") (and "repo:a" "file:b" "file:e") (and "repo:a" "file:c" "file:e"))`,
+	}, {
+		input: `(repo:a (file:b or file:c) (a b) (x z))`,
+		want:  `(or (and "repo:a" "file:b" "(a b) (x z)") (and "repo:a" "file:c" "(a b) (x z)"))`,
+	}, {
+		input: `a and b AND c or d and (e OR f) and g h i or j`,
+		want:  `(or (and "a" "b" "c") (and "d" (or "e" "f") "g h i") "j")`,
+	}, {
+		input: `(a or b) and c`,
+		want:  `(and (or "a" "b") "c")`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:e") (and "repo:a" "file:b" "file:d" "file:e") (and "repo:a" "file:b" "file:c" "file:f") (and "repo:a" "file:b" "file:d" "file:f"))`,
+	}, {
+		input: `(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))`,
+		want:  `(or (and "repo:a" "file:b" "file:c" "file:q" "file:e") (and "repo:a" "file:b" "file:d" "file:q" "file:e") (and "repo:a" "file:b" "file:c" "file:q" "file:f") (and "repo:a" "file:b" "file:d" "file:q" "file:f"))`,
+	}, {
+		input: `(repo:a b) or (repo:c d)`,
+		want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+		// Bug. See: https://github.com/sourcegraph/sourcegraph/issues/34018
+		// }, {
+		// 	input: `repo:a b or repo:c d`,
+		// 	want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+	}, {
+		input: `(repo:a b) and (repo:c d)`,
+		want:  `(and "repo:a" "repo:c" "b" "d")`,
+	}, {
+		input: `(repo:a or repo:b) (c or d)`,
+		want:  `(or (and "repo:a" (or "c" "d")) (and "repo:b" (or "c" "d")))`,
+	}, {
+		input: `(repo:a (b or c)) or (repo:d e f)`,
+		want:  `(or (and "repo:a" (or "b" "c")) (and "repo:d" "e f"))`,
+	}, {
+		input: `((repo:a b) or c) or (repo:d e f)`,
+		want:  `(or (and "repo:a" "b") "c" (and "repo:d" "e f"))`,
+	}, {
+		input: `(repo:a or repo:b) (c and (d or e))`,
+		want:  `(or (and "repo:a" "c" (or "d" "e")) (and "repo:b" "c" (or "d" "e")))`,
+	}}
 	for _, c := range cases {
 		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			queries := Dnf(query)
-			var queriesStr []string
-			for _, q := range queries {
-				queriesStr = append(queriesStr, toString(q))
-			}
-			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
+			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+			require.NoError(t, err)
+			got := plan.ToQ().String()
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Fatal(diff)
 			}
@@ -873,8 +823,7 @@ func TestConcatRevFilters(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			plan, _ := ToPlan(Dnf(query))
+			plan, _ := Pipeline(InitRegexp(c.input))
 
 			var queriesStr []string
 			for _, basic := range plan {
@@ -909,10 +858,9 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			plan, _ := ToPlan(Dnf(query))
+			plan, _ := Pipeline(InitRegexp(c.input))
 			p := MapPlan(plan, ConcatRevFilters)
-			if diff := cmp.Diff(c.want, toString(p.ToParseTree())); diff != "" {
+			if diff := cmp.Diff(c.want, toString(p.ToQ())); diff != "" {
 				t.Error(diff)
 			}
 		})

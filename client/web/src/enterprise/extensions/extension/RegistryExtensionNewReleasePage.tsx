@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
@@ -17,13 +17,26 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner, useLocalStorage, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useLocalStorage,
+    useEventObservable,
+    Link,
+    Icon,
+    Label,
+    Code,
+    H2,
+    H3,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { RegistryExtensionFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 const publishExtension = (
@@ -51,7 +64,7 @@ const publishExtension = (
 
 interface Props extends ThemeProps, TelemetryProps {
     /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<RegistryExtensionFields>
 
     authenticatedUser: AuthenticatedUser
     history: H.History
@@ -131,33 +144,33 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
         ) : (
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
-                <h2>Publish new release</h2>
-                <p>
+                <H2>Publish new release</H2>
+                <Text>
                     Use the{' '}
                     <Link to="https://github.com/sourcegraph/src-cli" target="_blank" rel="noopener noreferrer">
-                        <code>src</code> CLI tool
+                        <Code>src</Code> CLI tool
                     </Link>{' '}
                     to publish a new release:
-                </p>
+                </Text>
                 <pre>
-                    <code>$ src extensions publish</code>
+                    <Code>$ src extensions publish</Code>
                 </pre>
                 {showEditor ? (
                     <>
                         <hr className="my-4" />
-                        <h2>Extension editor (experimental)</h2>
-                        <p>
+                        <H2>Extension editor (experimental)</H2>
+                        <Text>
                             Edit or paste in an extension JSON manifest and JavaScript bundle. The JavaScript bundle
                             source must be self-contained; dependency bundling and TypeScript transpilation is not yet
                             supported.
-                        </p>
+                        </Text>
                         <Form onSubmit={onSubmit} className="mb-3">
                             <div className="row">
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__manifest">
-                                            <h3>Manifest</h3>
-                                        </label>
+                                        <Label htmlFor="registry-extension-new-release-page__manifest">
+                                            <H3>Manifest</H3>
+                                        </Label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
                                             className="d-block"
@@ -173,9 +186,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__bundle">
-                                            <h3>Source</h3>
-                                        </label>
+                                        <Label htmlFor="registry-extension-new-release-page__bundle">
+                                            <H3>Source</H3>
+                                        </Label>
                                         {bundleOrError === undefined ? (
                                             <div>
                                                 <LoadingSpinner />
@@ -201,7 +214,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                     </div>
                                 </div>
                             </div>
-                            <div className="d-flex align-items-center">
+                            <div aria-live="polite" className="d-flex align-items-center">
                                 <Button
                                     type="submit"
                                     disabled={updateOrError === LOADING || isErrorLike(bundleOrError)}
@@ -216,7 +229,8 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
-                                            <Icon as={CheckCircleIcon} /> Published release successfully.
+                                            <Icon aria-hidden={true} svgPath={mdiCheckCircle} /> Published release
+                                            successfully.
                                         </span>
                                     ))}
                             </div>

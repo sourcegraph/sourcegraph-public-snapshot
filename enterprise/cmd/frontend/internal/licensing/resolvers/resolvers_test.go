@@ -13,7 +13,7 @@ import (
 
 func TestEnterpriseLicenseHasFeature(t *testing.T) {
 	r := &LicenseResolver{}
-	schema, err := graphqlbackend.NewSchema(nil, nil, nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchemaWithLicenseResolver(nil, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestEnterpriseLicenseHasFeature(t *testing.T) {
 			}()
 
 			var have struct{ EnterpriseLicenseHasFeature bool }
-			if err := apitest.Exec(ctx, t, schema, map[string]interface{}{
+			if err := apitest.Exec(ctx, t, schema, map[string]any{
 				"feature": tc.feature,
 			}, &have, query); err != nil {
 				if !tc.wantErr {

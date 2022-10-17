@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -19,18 +19,20 @@ export interface HiddenChangesetApplyPreviewNodeProps {
     node: HiddenChangesetApplyPreviewFields
 }
 
-export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChangesetApplyPreviewNodeProps> = ({
-    node,
-}) => (
+export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
+    React.PropsWithChildren<HiddenChangesetApplyPreviewNodeProps>
+> = ({ node }) => (
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
         <div className="p-2">
+            {/* eslint-disable-next-line no-restricted-syntax*/}
             <InputTooltip
                 id="select-changeset-hidden"
                 type="checkbox"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to publish to this repository."
+                placement="right"
             />
         </div>
         <HiddenChangesetApplyPreviewNodeStatusCell
@@ -56,7 +58,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
                 ' d-flex flex-column'
             )}
         >
-            <h3 className="text-muted">
+            <H3 className="text-muted">
                 {node.targets.__typename === 'HiddenApplyPreviewTargetsAttach' ||
                 node.targets.__typename === 'HiddenApplyPreviewTargetsUpdate' ? (
                     <>
@@ -70,10 +72,15 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
                 ) : (
                     <>Detach changeset in a private repository</>
                 )}
-            </h3>
+            </H3>
             <span className="text-danger">
                 No action will be taken on apply.{' '}
-                <Icon data-tooltip="You have no permissions to access this repository." as={InfoCircleOutlineIcon} />
+                <Tooltip content="You have no permissions to access this repository.">
+                    <Icon
+                        aria-label="You have no permissions to access this repository."
+                        svgPath={mdiInformationOutline}
+                    />
+                </Tooltip>
             </span>
         </div>
         <span />
@@ -82,7 +89,7 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<HiddenChan
 )
 
 const HiddenChangesetApplyPreviewNodeStatusCell: React.FunctionComponent<
-    HiddenChangesetApplyPreviewNodeProps & { className?: string }
+    React.PropsWithChildren<HiddenChangesetApplyPreviewNodeProps & { className?: string }>
 > = ({ node, className }) => {
     if (node.targets.__typename === 'HiddenApplyPreviewTargetsAttach') {
         return <ChangesetStatusCell state={ChangesetState.UNPUBLISHED} className={className} />

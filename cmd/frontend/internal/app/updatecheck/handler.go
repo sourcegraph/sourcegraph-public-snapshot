@@ -2,6 +2,7 @@ package updatecheck
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -11,9 +12,9 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
@@ -33,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.39.0")
+	latestReleaseDockerServerImageBuild = newBuild("4.0.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.39.0")
+	latestReleaseKubernetesBuild = newBuild("4.0.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.39.0")
+	latestReleaseDockerComposeOrPureDocker = newBuild("4.0.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -57,25 +58,34 @@ func getLatestRelease(deployType string) build {
 	}
 }
 
-// Handler is an HTTP handler that responds with information about software updates
+// HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
+// logger is created and the handler that is returned uses the logger internally.
+func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
+	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(scopedLog, w, r)
+	}
+}
+
+// handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
-func Handler(w http.ResponseWriter, r *http.Request) {
+func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
 	if err != nil {
-		log15.Error("updatecheck: malformed request", "error", err)
+		logger.Error("malformed request", log.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if pr.ClientSiteID == "" {
-		log15.Error("updatecheck: no site ID specified")
+		logger.Error("no site ID specified")
 		http.Error(w, "no site ID specified", http.StatusBadRequest)
 		return
 	}
 	if pr.ClientVersionString == "" {
-		log15.Error("updatecheck: no version specified")
+		logger.Error("no version specified")
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
@@ -89,7 +99,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	hasUpdate, err := canUpdate(pr.ClientVersionString, latestReleaseBuild)
 
 	// Always log, even on malformed version strings
-	logPing(r, pr, hasUpdate)
+	logPing(logger, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -105,7 +115,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json; charset=utf-8")
 	body, err := json.Marshal(latestReleaseBuild)
 	if err != nil {
-		log15.Error("updatecheck: error preparing update check response", "error", err)
+		logger.Error("error preparing update check response", log.Error(err))
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -181,7 +191,6 @@ type pingRequest struct {
 	// AutomationUsage (campaigns) is deprecated, but here so we can receive pings from older instances
 	AutomationUsage               json.RawMessage `json:"automationUsage"`
 	GrowthStatistics              json.RawMessage `json:"growthStatistics"`
-	CTAUsage                      json.RawMessage `json:"ctaUsage"`
 	SavedSearches                 json.RawMessage `json:"savedSearches"`
 	HomepagePanels                json.RawMessage `json:"homepagePanels"`
 	SearchOnboarding              json.RawMessage `json:"searchOnboarding"`
@@ -194,9 +203,11 @@ type pingRequest struct {
 	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage"`
+	NotebooksUsage                json.RawMessage `json:"notebooksUsage"`
 	CodeHostVersions              json.RawMessage `json:"codeHostVersions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"codeHostIntegrationUsage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ideExtensionsUsage"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migratedExtensionsUsage"`
 	InitialAdminEmail             string          `json:"initAdmin"`
 	TosAccepted                   bool            `json:"tosAccepted"`
 	TotalUsers                    int32           `json:"totalUsers"`
@@ -295,7 +306,6 @@ type pingPayload struct {
 	NewCodeIntelUsage             json.RawMessage `json:"new_code_intel_usage"`
 	SearchUsage                   json.RawMessage `json:"search_usage"`
 	GrowthStatistics              json.RawMessage `json:"growth_statistics"`
-	CTAUsage                      json.RawMessage `json:"cta_usage"`
 	SavedSearches                 json.RawMessage `json:"saved_searches"`
 	HomepagePanels                json.RawMessage `json:"homepage_panels"`
 	RetentionStatistics           json.RawMessage `json:"retention_statistics"`
@@ -306,9 +316,11 @@ type pingPayload struct {
 	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
+	NotebooksUsage                json.RawMessage `json:"notebooks_usage"`
 	CodeHostVersions              json.RawMessage `json:"code_host_versions"`
 	CodeHostIntegrationUsage      json.RawMessage `json:"code_host_integration_usage"`
 	IDEExtensionsUsage            json.RawMessage `json:"ide_extensions_usage"`
+	MigratedExtensionsUsage       json.RawMessage `json:"migrated_extensions_usage"`
 	InstallerEmail                string          `json:"installer_email"`
 	AuthProviders                 string          `json:"auth_providers"`
 	ExtServices                   string          `json:"ext_services"`
@@ -322,10 +334,11 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 }
 
-func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
+	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
 		if r := recover(); r != nil {
-			log15.Warn("logPing: panic", "recover", r)
+			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", r)))
 			errorCounter.Inc()
 		}
 	}()
@@ -340,12 +353,13 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
 		errorCounter.Inc()
-		log15.Warn("logPing.Marshal: failed to Marshal payload", "error", err)
+		logger.Warn("failed to Marshal payload", log.Error(err))
 	} else if pubsub.Enabled() {
 		err := pubsub.Publish(pubSubPingsTopicID, string(message))
 		if err != nil {
 			errorCounter.Inc()
-			log15.Warn("pubsub.Publish: failed to Publish", "message", message, "error", err)
+			logger.Scoped("pubsub.Publish", "").
+				Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
 		}
 	}
 
@@ -382,7 +396,6 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		NewCodeIntelUsage:             codeIntelUsage,
 		SearchUsage:                   searchUsage,
 		GrowthStatistics:              pr.GrowthStatistics,
-		CTAUsage:                      pr.CTAUsage,
 		SavedSearches:                 pr.SavedSearches,
 		HomepagePanels:                pr.HomepagePanels,
 		RetentionStatistics:           pr.RetentionStatistics,
@@ -394,6 +407,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		CodeInsightsUsage:             pr.CodeInsightsUsage,
 		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
 		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
+		NotebooksUsage:                pr.NotebooksUsage,
 		CodeHostVersions:              pr.CodeHostVersions,
 		CodeHostIntegrationUsage:      pr.CodeHostIntegrationUsage,
 		IDEExtensionsUsage:            pr.IDEExtensionsUsage,
@@ -433,8 +447,13 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	var eventSummaries []jsonEventSummary
-	for _, es := range codeIntelUsage.EventSummaries {
-		eventSummaries = append(eventSummaries, translateEventSummary(es))
+	for _, event := range codeIntelUsage.EventSummaries {
+		eventSummaries = append(eventSummaries, translateEventSummary(event))
+	}
+
+	var investigationEvents []jsonCodeIntelInvestigationEvent
+	for _, event := range codeIntelUsage.InvestigationEvents {
+		investigationEvents = append(investigationEvents, translateInvestigationEvent(event))
 	}
 
 	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
@@ -466,6 +485,17 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		numRepositoriesWithoutUploadRecords = &val
 	}
 
+	languageRequests := make([]jsonLanguageRequest, 0, len(codeIntelUsage.LanguageRequests))
+	for _, request := range codeIntelUsage.LanguageRequests {
+		// note: do not capture loop var by ref
+		request := request
+
+		languageRequests = append(languageRequests, jsonLanguageRequest{
+			LanguageID:  &request.LanguageID,
+			NumRequests: &request.NumRequests,
+		})
+	}
+
 	return json.Marshal(jsonCodeIntelUsage{
 		StartOfWeek:                                  codeIntelUsage.StartOfWeek,
 		WAUs:                                         codeIntelUsage.WAUs,
@@ -484,6 +514,9 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		NumRepositoriesWithIndexConfigurationRecords: codeIntelUsage.NumRepositoriesWithAutoIndexConfigurationRecords,
 		CountsByLanguage:                             countsByLanguage,
 		SettingsPageViewCount:                        codeIntelUsage.SettingsPageViewCount,
+		UsersWithRefPanelRedesignEnabled:             codeIntelUsage.UsersWithRefPanelRedesignEnabled,
+		LanguageRequests:                             languageRequests,
+		InvestigationEvents:                          investigationEvents,
 	})
 }
 
@@ -541,6 +574,9 @@ type jsonCodeIntelUsage struct {
 	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
 	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
 	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
+	UsersWithRefPanelRedesignEnabled             *int32                                    `json:"users_with_ref_panel_redesign_enabled"`
+	LanguageRequests                             []jsonLanguageRequest                     `json:"language_requests"`
+	InvestigationEvents                          []jsonCodeIntelInvestigationEvent         `json:"investigation_events"`
 }
 
 type jsonCodeIntelRepositoryCountsByLanguage struct {
@@ -549,6 +585,17 @@ type jsonCodeIntelRepositoryCountsByLanguage struct {
 	NumRepositoriesWithFreshUploadRecords *int32  `json:"num_repositories_with_fresh_upload_records"`
 	NumRepositoriesWithIndexRecords       *int32  `json:"num_repositories_with_index_records"`
 	NumRepositoriesWithFreshIndexRecords  *int32  `json:"num_repositories_with_fresh_index_records"`
+}
+
+type jsonLanguageRequest struct {
+	LanguageID  *string `json:"language_id"`
+	NumRequests *int32  `json:"num_requests"`
+}
+
+type jsonCodeIntelInvestigationEvent struct {
+	Type  string `json:"type"`
+	WAUs  int32  `json:"waus"`
+	Total int32  `json:"total"`
 }
 
 type jsonEventSummary struct {
@@ -571,14 +618,28 @@ var codeIntelSourceNames = map[types.CodeIntelSource]string{
 	types.SearchSource:  "search",
 }
 
-func translateEventSummary(es types.CodeIntelEventSummary) jsonEventSummary {
+var codeIntelInvestigationTypeNames = map[types.CodeIntelInvestigationType]string{
+	types.CodeIntelIndexerSetupInvestigationType: "CodeIntelligenceIndexerSetupInvestigated",
+	types.CodeIntelUploadErrorInvestigationType:  "CodeIntelligenceUploadErrorInvestigated",
+	types.CodeIntelIndexErrorInvestigationType:   "CodeIntelligenceIndexErrorInvestigated",
+}
+
+func translateEventSummary(event types.CodeIntelEventSummary) jsonEventSummary {
 	return jsonEventSummary{
-		Action:          codeIntelActionNames[es.Action],
-		Source:          codeIntelSourceNames[es.Source],
-		LanguageID:      es.LanguageID,
-		CrossRepository: es.CrossRepository,
-		WAUs:            es.WAUs,
-		TotalActions:    es.TotalActions,
+		Action:          codeIntelActionNames[event.Action],
+		Source:          codeIntelSourceNames[event.Source],
+		LanguageID:      event.LanguageID,
+		CrossRepository: event.CrossRepository,
+		WAUs:            event.WAUs,
+		TotalActions:    event.TotalActions,
+	}
+}
+
+func translateInvestigationEvent(event types.CodeIntelInvestigationEvent) jsonCodeIntelInvestigationEvent {
+	return jsonCodeIntelInvestigationEvent{
+		Type:  codeIntelInvestigationTypeNames[event.Type],
+		WAUs:  event.WAUs,
+		Total: event.Total,
 	}
 }
 

@@ -2,17 +2,18 @@ package background
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -21,7 +22,7 @@ import (
 // newInsightEnqueuer returns a background goroutine which will periodically find all of the search
 // and webhook insights across all user settings, and enqueue work for the query runner and webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, featureFlagStore database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_enqueuer",
@@ -41,42 +42,54 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
 		"insights_enqueuer",
 		func(ctx context.Context) error {
-			queryRunnerEnqueueJob := func(ctx context.Context, job *queryrunner.Job) error {
-				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
-				return err
-			}
-			now := time.Now
+			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
-			return discoverAndEnqueueInsights(ctx, now, insightStore, queryRunnerEnqueueJob)
+			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
 		},
 	), operation)
 }
 
-func discoverAndEnqueueInsights(
-	ctx context.Context,
-	now func() time.Time,
-	insightStore store.DataSeriesStore,
-	queryRunnerEnqueueJob func(ctx context.Context, job *queryrunner.Job) error) error {
+type InsightEnqueuer struct {
+	now                   func() time.Time
+	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
+}
 
+func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) *InsightEnqueuer {
+	return &InsightEnqueuer{
+		now: now,
+		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
+			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
+			return err
+		},
+	}
+}
+
+func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
+	ctx context.Context,
+	insightStore store.DataSeriesStore,
+	ffs database.FeatureFlagStore,
+) error {
 	var multi error
 
 	log15.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now(), GlobalOnly: true})
+	recordingArgs := store.GetDataSeriesArgs{NextRecordingBefore: ie.now(), ExcludeJustInTime: true}
+	recordingSeries, err := insightStore.GetDataSeries(ctx, recordingArgs)
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
 	}
-	err = enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording, queryRunnerEnqueueJob)
+	err = ie.Enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording)
 	if err != nil {
 		multi = errors.Append(multi, err)
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now(), GlobalOnly: true})
+	snapshotArgs := store.GetDataSeriesArgs{NextSnapshotBefore: ie.now(), ExcludeJustInTime: true}
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, snapshotArgs)
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
 	}
-	err = enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot, queryRunnerEnqueueJob)
+	err = ie.Enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot)
 	if err != nil {
 		multi = errors.Append(multi, err)
 	}
@@ -84,9 +97,12 @@ func discoverAndEnqueueInsights(
 	return multi
 }
 
-func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.PersistMode,
+func (ie *InsightEnqueuer) Enqueue(
+	ctx context.Context,
+	dataSeries []types.InsightSeries,
+	mode store.PersistMode,
 	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
-	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error) error {
+) error {
 
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
 	// unique data (i.e. use the same exact search query or webhook URL.)
@@ -102,41 +118,68 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 		}
 		uniqueSeries[seriesID] = series
 
-		err := enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-			SeriesID:    seriesID,
-			SearchQuery: withCountUnlimited(series.Query),
-			State:       "queued",
-			Priority:    int(priority.High),
-			Cost:        int(priority.Indexed),
-			PersistMode: string(mode),
-		})
-		if err != nil {
-			multi = errors.Append(multi, errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID))
-			continue
+		if err := ie.EnqueueSingle(ctx, series, mode, stampFunc); err != nil {
+			multi = errors.Append(multi, err)
 		}
-
-		// The timestamp update can't be transactional because this is a separate database currently, so we will use
-		// at-least-once semantics by waiting until the queue transaction is complete and without error.
-		_, err = stampFunc(ctx, series)
-		if err != nil {
-			multi = errors.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
-			continue // might as well try the other insights and just skip this one
-		}
-		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
 	}
 
 	return multi
 }
 
-// withCountUnlimited adds `count:9999999` to the given search query string iff `count:` does not
-// exist in the query string. This is extremely important as otherwise the number of results our
-// search query would return would be incomplete and fluctuate.
-//
-// TODO(slimsag): future: we should pull in the search query parser to avoid cases where `count:`
-// is actually e.g. a search query like `content:"count:"`.
-func withCountUnlimited(s string) string {
-	if strings.Contains(s, "count:") {
-		return s
+func (ie *InsightEnqueuer) EnqueueSingle(
+	ctx context.Context,
+	series types.InsightSeries,
+	mode store.PersistMode,
+	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
+) error {
+	// Construct the search query that will generate data for this repository and time (revision) tuple.
+	defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
+	seriesID := series.SeriesID
+	var err error
+
+	basicQuery := querybuilder.BasicQuery(series.Query)
+	var modifiedQuery querybuilder.BasicQuery
+	var finalQuery string
+
+	if len(series.Repositories) > 0 {
+		modifiedQuery, err = querybuilder.MultiRepoQuery(basicQuery, series.Repositories, defaultQueryParams)
+	} else {
+		modifiedQuery, err = querybuilder.GlobalQuery(basicQuery, defaultQueryParams)
 	}
-	return s + " count:all"
+	if err != nil {
+		return errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID)
+	}
+	finalQuery = modifiedQuery.String()
+	if series.GroupBy != nil {
+		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
+		if err != nil {
+			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
+		}
+		finalQuery = computeQuery.String()
+	}
+
+	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    seriesID,
+			SearchQuery: finalQuery,
+			PersistMode: string(mode),
+		},
+		State:    "queued",
+		Priority: int(priority.High),
+		Cost:     int(priority.Indexed),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID)
+	}
+
+	// The timestamp update can't be transactional because this is a separate database currently, so we will use
+	// at-least-once semantics by waiting until the queue transaction is complete and without error.
+	_, err = stampFunc(ctx, series)
+	if err != nil {
+		// might as well try the other insights and just skip this one
+		return errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID)
+	}
+
+	log15.Info("queued global search for insight "+string(mode), "series_id", series.SeriesID)
+	return nil
 }

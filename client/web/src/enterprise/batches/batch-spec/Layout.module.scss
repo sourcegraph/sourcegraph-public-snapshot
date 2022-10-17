@@ -1,0 +1,30 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.page-container {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    width: 100%;
+    height: 100%;
+}
+
+.header-container {
+    display: flex;
+    flex: 0;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+
+    @media (--lg-breakpoint-down) {
+        margin-bottom: 1rem;
+    }
+}
+
+.action-buttons-container {
+    display: flex;
+    flex-direction: column;
+    flex: 0;
+    justify-content: center;
+    align-items: center;
+}

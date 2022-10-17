@@ -9,9 +9,147 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var testChanges = &git.Changes{
+// TODO: Is renamed_files intentionally omitted from the docs?
+func TestValidateBatchSpecTemplate(t *testing.T) {
+	tests := []struct {
+		name      string
+		batchSpec string
+		wantValid bool
+		wantErr   error
+	}{
+		{
+			name: "full batch spec, all valid template variables",
+			batchSpec: `name: valid-batch-spec
+				on:
+				- repository: github.com/fake/fake
+
+				steps:
+				- run: |
+						${{ repository.search_result_paths }}
+						${{ repository.name }}
+						${{ batch_change.name }}
+						${{ batch_change.description }}
+						${{ previous_step.modified_files }}
+						${{ previous_step.added_files }}
+						${{ previous_step.deleted_files }}
+						${{ previous_step.renamed_files }}
+						${{ previous_step.stdout }}
+						${{ previous_step.stderr}}
+						${{ step.modified_files }}
+						${{ step.added_files }}
+						${{ step.deleted_files }}
+						${{ step.renamed_files }}
+						${{ step.stdout}}
+						${{ step.stderr}}
+						${{ steps.modified_files }}
+						${{ steps.added_files }}
+						${{ steps.deleted_files }}
+						${{ steps.renamed_files }}
+						${{ steps.path }}
+					container: my-container
+
+				changesetTemplate:
+				title: |
+					${{ repository.search_result_paths }}
+					${{ repository.name }}
+					${{ repository.branch }}
+					${{ batch_change.name }}
+					${{ batch_change.description }}
+					${{ steps.modified_files }}
+					${{ steps.added_files }}
+					${{ steps.deleted_files }}
+					${{ steps.renamed_files }}
+					${{ steps.path }}
+					${{ batch_change_link }}
+					body: I'm a changeset yay!
+					branch: my-branch
+					commit:
+						message: I'm a changeset yay!
+					`,
+			wantValid: true,
+		},
+		{
+			name: "valid template helpers",
+			batchSpec: `${{ join repository.search_result_paths "\n" }}
+				${{ join_if "---" "a" "b" "" "d" }}
+				${{ replace "a/b/c/d" "/" "-" }}
+				${{ split repository.name "/" }}
+				${{ matches repository.name "github.com/my-org/terra*" }}
+				${{ index steps.modified_files 1 }}`,
+			wantValid: true,
+		},
+		{
+			name:      "invalid step template variable",
+			batchSpec: `${{ resipotory.search_result_paths }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'resipotory'"),
+		},
+		{
+			name:      "invalid step template variable, 1 level nested",
+			batchSpec: `${{ repository.search_resalt_paths }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'repository.search_resalt_paths'"),
+		},
+		{
+			name:      "invalid changeset template variable",
+			batchSpec: `${{ batch_chang_link }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'batch_chang_link'"),
+		},
+		{
+			name:      "invalid changeset template variable, 1 level nested",
+			batchSpec: `${{ steps.mofidied_files }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'steps.mofidied_files'"),
+		},
+		{
+			name:      "escaped templating (github expression syntax) is ignored",
+			batchSpec: `${{ "${{ ignore_me }}" }}`,
+			wantValid: true,
+		},
+		{
+			name: "output variables are ignored",
+			batchSpec: `${{ outputs.IDontExist }}
+						${{OUTPUTS.anotherOne}}
+						${{ join outputs.myArray "," }}
+						${{ index outputs.env.something 1 }}`,
+			wantValid: true,
+		},
+		{
+			name:      "output variables are ignored, but invalid step template variable still fails",
+			batchSpec: `${{ outputs.unknown }} ${{ outputz.unknown }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'outputz'"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gotValid, gotErr := ValidateBatchSpecTemplate(tc.batchSpec)
+
+			if tc.wantValid != gotValid {
+				t.Fatalf("unexpected valid status. want valid=%t, got valid=%t\nerror message: %s", tc.wantValid, gotValid, gotErr)
+			}
+
+			if tc.wantErr == nil && gotErr != nil {
+				t.Fatalf("unexpected non-nil error.\nwant=nil\n---\ngot=%s", gotErr)
+			}
+
+			if tc.wantErr != nil && gotErr == nil {
+				t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+			}
+
+			if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
+				t.Fatalf("unexpected error message\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+			}
+		})
+	}
+}
+
+var testChanges = git.Changes{
 	Modified: []string{"go.mod"},
 	Added:    []string{"main.go.swp"},
 	Deleted:  []string{".DS_Store"},
@@ -24,16 +162,16 @@ func TestEvalStepCondition(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
 		Steps: StepsContext{
 			Changes: testChanges,
 			Path:    "sub/directory/of/repo",
 		},
-		Outputs: map[string]interface{}{},
+		Outputs: map[string]any{},
 		// Step is not set when evalStepCondition is called
 		Repository: *testRepo1,
 	}
@@ -79,7 +217,7 @@ func TestRenderStepTemplate(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -89,19 +227,19 @@ func TestRenderStepTemplate(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
-		Step: execution.StepResult{
-			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is current step's stdout"),
-			Stderr: bytes.NewBufferString("this is current step's stderr"),
+		Step: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is current step's stdout",
+			Stderr:       "this is current step's stderr",
 		},
 		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
 		Repository: *testRepo1,
@@ -176,8 +314,6 @@ ${{ previous_step.deleted_files }}
 ${{ previous_step.renamed_files }}
 ${{ previous_step.stdout }}
 ${{ previous_step.stderr}}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ step.modified_files }}
 ${{ step.added_files }}
 ${{ step.deleted_files }}
@@ -198,8 +334,6 @@ ${{ steps.path }}
 []
 
 
-<no value>
-<no value>
 []
 []
 []
@@ -233,12 +367,12 @@ ${{ steps.path }}
 
 func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: bytes.NewBufferString("this is previous step's stdout"),
-			Stderr: bytes.NewBufferString("this is previous step's stderr"),
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
-		Outputs:    map[string]interface{}{},
+		Outputs:    map[string]any{},
 		Repository: *testRepo1,
 	}
 
@@ -268,7 +402,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 	// To avoid bugs due to differences between test setup and actual code, we
 	// do the actual parsing of YAML here to get an interface{} which we'll put
 	// in the StepContext.
-	var parsedYaml interface{}
+	var parsedYaml any
 	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
 		t.Fatalf("failed to parse YAML: %s", err)
 	}
@@ -278,13 +412,13 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		Outputs: map[string]interface{}{
+		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
 		Repository: *testRepo1,
 		Steps: StepsContext{
-			Changes: &git.Changes{
+			Changes: git.Changes{
 				Modified: []string{"modified-file.txt"},
 				Added:    []string{"added-file.txt"},
 				Deleted:  []string{"deleted-file.txt"},
@@ -314,6 +448,7 @@ ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 ${{ steps.path }}
+${{ batch_change_link }}
 `,
 			want: `README.md main.go
 github.com/sourcegraph/src-cli
@@ -325,26 +460,25 @@ CGO_ENABLED=0
 [added-file.txt]
 [deleted-file.txt]
 [renamed-file.txt]
-infrastructure/sub-project`,
+infrastructure/sub-project
+${{ batch_change_link }}`,
 		},
 		{
 			name:    "empty context",
 			tmplCtx: &ChangesetTemplateContext{},
 			tmpl: `${{ repository.search_result_paths }}
 ${{ repository.name }}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
+${{ batch_change_link }}
 `,
-			want: `<no value>
-<no value>
+			want: `[]
 []
 []
 []
-[]`,
+${{ batch_change_link }}`,
 		},
 	}
 

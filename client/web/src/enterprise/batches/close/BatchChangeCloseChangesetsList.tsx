@@ -60,7 +60,7 @@ interface Props
 /**
  * A list of a batch change's changesets that may be closed.
  */
-export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
+export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChangeID,
     viewerCanAdminister,
     history,
@@ -169,7 +169,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     emptyElement={<CloseChangesetsListEmptyElement />}
                     withCenteredSummary={true}
                 />
-                {hoverState?.hoverOverlayProps && (
+                {hoverState?.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         nav={url => history.push(url)}

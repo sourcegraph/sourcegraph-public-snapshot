@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/settings.schema'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Input } from '@sourcegraph/wildcard'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -24,8 +25,10 @@ const CodemirrorQueryInput = lazyComponent(() => import('./CodeMirrorQueryInput'
  * It has no suggestions, but still allows to type in and submit queries.
  */
 export const PlainQueryInput: React.FunctionComponent<
-    Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className'>
-> = ({ queryState, autoFocus, onChange, className }) => {
+    React.PropsWithChildren<
+        Pick<MonacoQueryInputProps, 'queryState' | 'autoFocus' | 'onChange' | 'className' | 'placeholder'>
+    >
+> = ({ queryState, autoFocus, onChange, className, placeholder }) => {
     const onInputChange = React.useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
             onChange({ query: event.target.value })
@@ -33,13 +36,14 @@ export const PlainQueryInput: React.FunctionComponent<
         [onChange]
     )
     return (
-        <input
-            type="text"
+        <Input
             autoFocus={autoFocus}
-            className={classNames('form-control text-code', styles.lazyMonacoQueryInputIntermediateInput, className)}
+            inputClassName={classNames('text-code', styles.lazyMonacoQueryInputIntermediateInput, className)}
+            className="w-100"
             value={queryState.query}
             onChange={onInputChange}
             spellCheck={false}
+            placeholder={placeholder}
         />
     )
 }
@@ -54,14 +58,15 @@ export interface LazyMonacoQueryInputProps extends MonacoQueryInputProps {
 /**
  * A lazily-loaded {@link MonacoQueryInput}, displaying a read-only query field as a fallback during loading.
  */
-export const LazyMonacoQueryInput: React.FunctionComponent<LazyMonacoQueryInputProps> = ({
+export const LazyMonacoQueryInput: React.FunctionComponent<React.PropsWithChildren<LazyMonacoQueryInputProps>> = ({
     editorComponent,
     ...props
 }) => {
-    const QueryInput = editorComponent === 'codemirror6' ? CodemirrorQueryInput : MonacoQueryInput
+    const isCodeMirror = editorComponent === 'codemirror6'
+    const QueryInput = isCodeMirror ? CodemirrorQueryInput : MonacoQueryInput
 
     return (
-        <Suspense fallback={<PlainQueryInput {...props} />}>
+        <Suspense fallback={<PlainQueryInput {...props} placeholder={isCodeMirror ? props.placeholder : undefined} />}>
             <QueryInput {...props} />
         </Suspense>
     )

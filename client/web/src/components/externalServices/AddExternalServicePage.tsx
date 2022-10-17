@@ -2,11 +2,11 @@ import React, { useEffect, useCallback, useState } from 'react'
 
 import * as H from 'history'
 
-import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
+import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, H2, H3, H4 } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -23,6 +23,8 @@ interface Props extends ThemeProps, TelemetryProps {
     routingPrefix: string
     afterCreateRoute: string
     userID?: Scalars['ID']
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -31,7 +33,7 @@ interface Props extends ThemeProps, TelemetryProps {
 /**
  * Page for adding a single external service.
  */
-export const AddExternalServicePage: React.FunctionComponent<Props> = ({
+export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     afterCreateRoute,
     externalService,
     history,
@@ -40,12 +42,14 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
 
     useEffect(() => {
-        telemetryService.logViewEvent('AddExternalService')
+        telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
 
     const getExternalServiceInput = useCallback(
@@ -92,15 +96,15 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => console.error(error) })
+            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
             history.push(afterCreateRoute)
         }
     }, [afterCreateRoute, createdExternalService, history])
 
     return (
-        <div className="mt-3">
+        <>
             <PageTitle title="Add repositories" />
-            <h2>Add repositories</h2>
+            <H2>Add repositories</H2>
             {createdExternalService?.warning ? (
                 <div>
                     <div className="mb-3">
@@ -112,16 +116,16 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                         />
                     </div>
                     <Alert variant="warning">
-                        <h4>Warning</h4>
+                        <H4>Warning</H4>
                         <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
                     </Alert>
                 </div>
             ) : (
-                <div>
+                <>
                     <div className="mb-3">
                         <ExternalServiceCard {...externalService} />
                     </div>
-                    <h3>Instructions:</h3>
+                    <H3>Instructions:</H3>
                     <div className="mb-4">{externalService.instructions}</div>
                     <ExternalServiceForm
                         history={history}
@@ -136,9 +140,11 @@ export const AddExternalServicePage: React.FunctionComponent<Props> = ({
                         onChange={onChange}
                         loading={isCreating === true}
                         autoFocus={autoFocusForm}
+                        externalServicesFromFile={externalServicesFromFile}
+                        allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                     />
-                </div>
+                </>
             )}
-        </div>
+        </>
     )
 }

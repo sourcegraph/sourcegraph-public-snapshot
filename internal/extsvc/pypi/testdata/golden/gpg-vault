@@ -1,0 +1,62 @@
+[
+  {
+   "Name": "gpg-vault-1.0.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/c8/c8/611e54d9f1d19b87d922af790e6f1d266e57ab34e739500c5909a9274c7b/gpg-vault-1.0.tar.gz#sha256=11e4a66bef919eaaa410e482df69ef757dffd85e398bea9f5ca5b48d26df0137",
+   "DataGPGSig": null,
+   "DataRequiresPython": ""
+  },
+  {
+   "Name": "gpg-vault-1.1.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/10/c1/589fc889365431a8ab6a61fcc18f109722ca4110c6f2033b341fa8884ca2/gpg-vault-1.1.tar.gz#sha256=6ea1df98c9c6bb0928b6f93add0135bb9c10c9b65505a09b6682d02b2d29499a",
+   "DataGPGSig": null,
+   "DataRequiresPython": ""
+  },
+  {
+   "Name": "gpg-vault-1.2.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/7c/1b/86109f9edc5c44cf6e51e08a7f7bf73960b28cb5b15cbaa95220879b9978/gpg-vault-1.2.tar.gz#sha256=7c0573f2a0c50d5261d8aafc5e39667243b8f84544baeed63018aba4d8bc04a6",
+   "DataGPGSig": null,
+   "DataRequiresPython": ""
+  },
+  {
+   "Name": "gpg-vault-1.3.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/04/8d/b5429a7da7531133324a0a2d4a8206fbb632e909a825db34aa664f113616/gpg-vault-1.3.tar.gz#sha256=62c13ff3cb13985b895b0797c16275577379b631d94a3870ad2d168a313446fc",
+   "DataGPGSig": null,
+   "DataRequiresPython": ""
+  },
+  {
+   "Name": "gpg-vault-1.4.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/6b/96/e76e300880268612f619c667860536aa16ff384f392d260376dca0908bb7/gpg-vault-1.4.tar.gz#sha256=22836aed004f07f15df8670c95d2673870ad6d10840f43598c3927b9bc379791",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  },
+  {
+   "Name": "gpg_vault-1.4-py3-none-any.whl",
+   "URL": "https://files.pythonhosted.org/packages/66/3c/25763a641bcc6ff6a4e9fe9e0a2d8a7b409afea8a2fd6bb9456ba84f5873/gpg_vault-1.4-py3-none-any.whl#sha256=8a0e940945fe60a67e3028f3470c3018b6c3916100f59614e481bad754308b4a",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  },
+  {
+   "Name": "gpg-vault-1.5.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/72/3f/b5ac7c6947570d9c485accf1d9258d3e0b4813a403a64d59bab7224c3081/gpg-vault-1.5.tar.gz#sha256=0b5717bece432ab1a1cd33e88516b37360d8fd6c4ef23c4e284f65aa877132b8",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  },
+  {
+   "Name": "gpg_vault-1.5-py3-none-any.whl",
+   "URL": "https://files.pythonhosted.org/packages/c2/fb/e0ad3434cd4b85088d5f3f79d6c2b0950886882ca2b6fdd06e9260d30f94/gpg_vault-1.5-py3-none-any.whl#sha256=09934589389eed4ced1f2eef0e15f9040f6cace031f81ac078f0de26f8e4af1d",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  },
+  {
+   "Name": "gpg-vault-1.5.1.tar.gz",
+   "URL": "https://files.pythonhosted.org/packages/71/12/9180a8055ba7de5784737d695dd366553b420a474d71c2084a7ae8f2f164/gpg-vault-1.5.1.tar.gz#sha256=41fb2df5bb16811eb1638372f01f06bbf101af88eb1d0316aacf1ad6dc89d672",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  },
+  {
+   "Name": "gpg_vault-1.5.1-py3-none-any.whl",
+   "URL": "https://files.pythonhosted.org/packages/4b/f9/f2cc5b8eb1caa7bb9d340bc8163358f702b372181e1cbd9883902c3dc43c/gpg_vault-1.5.1-py3-none-any.whl#sha256=2b0058dbefe26411b57800be6e0ff8c9a02efdb2df6fba5a98f3b70858892f55",
+   "DataGPGSig": null,
+   "DataRequiresPython": "\u003e3.7"
+  }
+ ]

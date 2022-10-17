@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { settingsID, testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -7,7 +8,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 describe('Settings', () => {
     let driver: Driver
@@ -89,19 +90,8 @@ describe('Settings', () => {
                 }),
             })
 
-            const getSettingsEditorContent = async (): Promise<string | null | undefined> => {
-                await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
-                return driver.page.evaluate(
-                    () =>
-                        document
-                            .querySelector<HTMLElement>('.test-settings-file .monaco-editor .view-lines')
-                            ?.textContent?.replace(/\u00A0/g, ' ') // Monaco replaces all spaces with &nbsp;
-                )
-            }
-
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings')
 
-            await driver.page.waitForSelector('.test-settings-file .monaco-editor')
             await driver.page.waitForSelector('.test-save-toolbar-save')
 
             assert.strictEqual(
@@ -112,18 +102,18 @@ describe('Settings', () => {
                 'Expected save button to be disabled'
             )
 
+            // The editor API needs to be created before taking the screenshot
+            // (waits for the editor to be ready)
+            const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+
             await percySnapshotWithVariants(driver.page, 'Settings page')
+            await accessibilityAudit(driver.page)
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'
-            await driver.replaceText({
-                selector: '.test-settings-file .monaco-editor .view-lines',
-                newText: newSettings,
-                selectMethod: 'keyboard',
-                enterTextMethod: 'type',
-            })
+            await editor.replace(newSettings, 'paste')
             await retry(async () => {
-                const currentSettings = await getSettingsEditorContent()
+                const currentSettings = await editor.getValue()
                 assert.strictEqual(currentSettings, newSettings)
             })
 
@@ -137,7 +127,7 @@ describe('Settings', () => {
 
             // Assert mutation is done when save button is clicked
             const overrideSettingsVariables = await testContext.waitForGraphQLRequest(async () => {
-                await driver.findElementWithText('Save changes', { action: 'click' })
+                await driver.findElementWithText('Save', { action: 'click' })
             }, 'OverwriteSettings')
 
             assert.deepStrictEqual(overrideSettingsVariables, {

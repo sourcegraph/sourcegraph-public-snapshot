@@ -1,18 +1,16 @@
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import {
-    QueryChangeSource,
     SearchQueryState,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
     QueryExample,
+    EditorHint,
 } from '@sourcegraph/search'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,10 +30,11 @@ import {
     CollapseHeader,
     CollapsePanel,
     Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
+import sidebarStyles from './SearchFilterSection.module.scss'
 import styles from './SearchReference.module.scss'
-import sidebarStyles from './SearchSidebarSection.module.scss'
 
 const SEARCH_REFERENCE_TAB_KEY = 'SearchProduct.SearchReference.Tab'
 
@@ -138,10 +137,10 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         examples: ['file:.js$ httptest', 'file:internal/ httptest', 'file:.js$ -file:test http'],
     },
     {
-        ...createQueryExampleFromString('contains.content({regexp-pattern})'),
+        ...createQueryExampleFromString('has.content({regexp-pattern})'),
         field: FilterType.file,
         description: 'Search only inside files that contain content matching the provided regexp pattern.',
-        examples: ['file:contains.content(github.com/sourcegraph/sourcegraph)'],
+        examples: ['file:has.content(github.com/sourcegraph/sourcegraph)'],
     },
     {
         ...createQueryExampleFromString('{yes/only}'),
@@ -180,41 +179,55 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createQueryExampleFromString('contains.file({path})'),
+        ...createQueryExampleFromString('has.path({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',
-        examples: ['repo:contains.file(README)'],
+        examples: ['repo:has.path(README)', 'repo:has.path(src/main/)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.content({content})'),
+        ...createQueryExampleFromString('has.content({content})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain file content matching the regular expression.',
-        examples: ['repo:contains.content(TODO)'],
+        examples: ['repo:has.content(TODO)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains({file:path content:content})'),
+        ...createQueryExampleFromString('has.file({path:path content:content})'),
         field: FilterType.repo,
         description:
-            'Search only inside repositories that contain a file matching the `file:` with `content:` filters.',
-        examples: ['repo:contains(file:CHANGELOG content:fix)'],
+            'Search only inside repositories that contain a file path matching the `path:` and/or `content:` filters.',
+        examples: ['repo:has.file(path:README content:fix)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('contains.commit.after({date})'),
+        ...createQueryExampleFromString('has.commit.after({date})'),
         field: FilterType.repo,
         description:
             'Search only inside repositories that contain a a commit after some specified time. See [git date formats](https://github.com/git/git/blob/master/Documentation/date-formats.txt) for accepted formats. Use this to filter out stale repositories that don’t contain commits past the specified time frame. This parameter is experimental.',
-        examples: ['repo:contains.commit.after(1 month ago)', 'repo:contains.commit.after(june 25 2017)'],
+        examples: ['repo:has.commit.after(1 month ago)', 'repo:has.commit.after(june 25 2017)'],
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('dependencies({regex-pattern})'),
+        ...createQueryExampleFromString('has.description({regex-pattern})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that have a description matched by the provided regex pattern.',
+        examples: ['repo:has.description(linux kernel)', 'repo:has.description(go.*library)'],
+        showSuggestions: false,
+    },
+    {
+        ...createQueryExampleFromString('has.tag({any string})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that are tagged with the provided string.',
+        examples: ['repo:has.tag(ocaml)', '-repo:has.tag(golang)'],
+        showSuggestions: false,
+    },
+    {
+        ...createQueryExampleFromString('has({key:value})'),
         field: FilterType.repo,
         description:
-            'Search inside repositories that are dependencies of repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:deps(^github\\.com/sourcegraph/sourcegraph$@3.36:3.35)'],
+            'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
+        examples: ['repo:has(owner:jordan)', '-repo:has(team:search)'],
         showSuggestions: false,
     },
     {
@@ -341,9 +354,11 @@ interface SearchReferenceExampleProps {
     onClick?: (example: string) => void
 }
 
-const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProps> = ({ example, onClick }) => {
-    // All current examples are literal queries
-    const scanResult = scanSearchQuery(example, false, SearchPatternType.literal)
+const SearchReferenceExample: React.FunctionComponent<React.PropsWithChildren<SearchReferenceExampleProps>> = ({
+    example,
+    onClick,
+}) => {
+    const scanResult = scanSearchQuery(example, false, SearchPatternType.standard)
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (
@@ -385,9 +400,9 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     onExampleClick,
 }: SearchReferenceEntryProps<T>): ReactElement | null => {
     const [collapsed, setCollapsed] = useState(true)
-    const CollapseIcon = collapsed ? ChevronLeftIcon : ChevronDownIcon
+    const collapseIcon = collapsed ? mdiChevronLeft : mdiChevronDown
 
-    const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
+    const handleOpenChange = useCallback((collapsed: boolean) => setCollapsed(!collapsed), [])
 
     let buttonTextPrefix: ReactElement | null = null
     if (isFilterInfo(searchReference)) {
@@ -419,53 +434,55 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                         aria-label={collapsed ? 'Show filter description' : 'Hide filter description'}
                     >
                         <small className="text-monospace">i</small>
-                        <Icon as={CollapseIcon} />
+                        <Icon aria-hidden={true} svgPath={collapseIcon} />
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
-                    <div className={styles.description}>
-                        {searchReference.description && (
-                            <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
-                        )}
-                        {searchReference.alias && (
-                            <p>
-                                Alias:{' '}
-                                <span className="text-code search-filter-keyword">
-                                    {searchReference.alias}
-                                    {isFilterInfo(searchReference) ? ':' : ''}
-                                </span>
-                            </p>
-                        )}
-                        {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                            <p>
-                                Negation:{' '}
-                                <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
-                                {searchReference.alias && (
-                                    <>
-                                        {' '}
-                                        |{' '}
-                                        <span className="test-code search-filter-keyword">
-                                            -{searchReference.alias}:
-                                        </span>
-                                    </>
-                                )}
-                                <br />
-                                <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                            </p>
-                        )}
-                        {searchReference.examples && (
-                            <>
-                                <div className="font-weight-medium">Examples</div>
-                                <div className={classNames('text-code', styles.examples)}>
-                                    {searchReference.examples.map(example => (
-                                        <p key={example}>
-                                            <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                        </p>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    {!collapsed && (
+                        <div className={styles.description}>
+                            {searchReference.description && (
+                                <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
+                            )}
+                            {searchReference.alias && (
+                                <Text>
+                                    Alias:{' '}
+                                    <span className="text-code search-filter-keyword">
+                                        {searchReference.alias}
+                                        {isFilterInfo(searchReference) ? ':' : ''}
+                                    </span>
+                                </Text>
+                            )}
+                            {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
+                                <Text>
+                                    Negation:{' '}
+                                    <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
+                                    {searchReference.alias && (
+                                        <>
+                                            {' '}
+                                            |{' '}
+                                            <span className="test-code search-filter-keyword">
+                                                -{searchReference.alias}:
+                                            </span>
+                                        </>
+                                    )}
+                                    <br />
+                                    <span className={styles.placeholder}>(opt + click filter in reference list)</span>
+                                </Text>
+                            )}
+                            {searchReference.examples && (
+                                <>
+                                    <div className="font-weight-medium">Examples</div>
+                                    <div className={classNames('text-code', styles.examples)}>
+                                        {searchReference.examples.map(example => (
+                                            <Text key={example}>
+                                                <SearchReferenceExample example={example} onClick={onExampleClick} />
+                                            </Text>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </CollapsePanel>
             </Collapse>
         </li>
@@ -525,11 +542,12 @@ const SearchReference = React.memo(
                         }
                     )
                     return {
-                        changeSource: QueryChangeSource.searchReference,
                         query: updatedQuery.query,
                         selectionRange: updatedQuery.placeholderRange,
                         revealRange: updatedQuery.filterRange,
-                        showSuggestions: shouldShowSuggestions(searchReference),
+                        hint:
+                            (shouldShowSuggestions(searchReference) ? EditorHint.ShowSuggestions : 0) |
+                            EditorHint.Focus,
                     }
                 })
             },
@@ -558,7 +576,7 @@ const SearchReference = React.memo(
                 {hasFilter ? (
                     filterList
                 ) : (
-                    <Tabs defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
+                    <Tabs className={styles.tabs} defaultIndex={persistedTabIndex} onChange={setPersistedTabIndex}>
                         <TabList>
                             <Tab>Common</Tab>
                             <Tab>All filters</Tab>
@@ -588,13 +606,13 @@ const SearchReference = React.memo(
                         </TabPanels>
                     </Tabs>
                 )}
-                <p className={sidebarStyles.sidebarSectionFooter}>
+                <Text className={sidebarStyles.sidebarSectionFooter}>
                     <small>
                         <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                            Search syntax <Icon as={ExternalLinkIcon} />
+                            Search syntax <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                         </Link>
                     </small>
-                </p>
+                </Text>
             </div>
         )
     }
@@ -602,6 +620,6 @@ const SearchReference = React.memo(
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>
-): (filter: string) => ReactElement {
+): (filter: string) => React.ReactNode {
     return (filter: string) => <SearchReference {...props} filter={filter} />
 }

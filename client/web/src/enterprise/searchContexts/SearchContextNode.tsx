@@ -17,10 +17,10 @@ export interface SearchContextNodeProps {
     history: H.History
 }
 
-export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> = ({
+export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
 }: SearchContextNodeProps) => (
-    <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
+    <li className={classNames('py-3', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
                 <Link to={`/contexts/${node.spec}`}>
@@ -50,5 +50,5 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                 Updated <Timestamp date={node.updatedAt} noAbout={true} />
             </div>
         </div>
-    </div>
+    </li>
 )

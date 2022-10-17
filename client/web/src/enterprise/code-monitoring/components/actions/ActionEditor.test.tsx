@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -9,7 +7,6 @@ import { ActionEditor, ActionEditorProps } from './ActionEditor'
 describe('ActionEditor', () => {
     const props: ActionEditorProps = {
         title: 'Send email notifications',
-        label: 'Send email notifications',
         subtitle: 'Send notifications to specified recipients.',
         disabled: false,
         completed: false,

@@ -59,7 +59,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 									Owner:      project,
 									Type:       fmt.Sprintf("%s::%s", instance.Kind, machineType),
 									Created:    created,
-									Meta: map[string]interface{}{
+									Meta: map[string]any{
 										"labels": instance.Labels,
 									},
 								}
@@ -87,7 +87,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 									Owner:      project,
 									Type:       fmt.Sprintf("%s::%s::%dGB", disk.Kind, diskType, disk.SizeGb),
 									Created:    created,
-									Meta: map[string]interface{}{
+									Meta: map[string]any{
 										"labels": disk.Labels,
 									},
 								}
@@ -131,7 +131,7 @@ var gcpResources = map[string]GCPResourceFetchFunc{
 					Owner:      project,
 					Location:   cluster.Zone,
 					Created:    created,
-					Meta: map[string]interface{}{
+					Meta: map[string]any{
 						"labels": cluster.ResourceLabels,
 					},
 				}

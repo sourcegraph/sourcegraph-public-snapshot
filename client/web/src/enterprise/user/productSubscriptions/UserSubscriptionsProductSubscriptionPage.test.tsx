@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { act } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import { of } from 'rxjs'
@@ -9,9 +7,6 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
-jest.mock('./ProductSubscriptionHistory', () => ({
-    ProductSubscriptionHistory: 'ProductSubscriptionHistory',
-}))
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
         const history = createMemoryHistory()

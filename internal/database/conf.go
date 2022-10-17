@@ -93,7 +93,7 @@ func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, con
 	return tx.createIfUpToDate(ctx, lastID, contents)
 }
 
-func (s *confStore) SiteGetLatest(ctx context.Context) (*SiteConfig, error) {
+func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error) {
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return nil, err

@@ -1,24 +1,28 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { Observable, timer } from 'rxjs'
+import { Observable, Subscription, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
+import { tabbable } from 'tabbable'
+import { useMergeRefs } from 'use-callback-ref'
 
+import { isDefined, logger } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Badge, Button, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Badge, Button, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 
 import styles from './StatusBar.module.scss'
 
-interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
+interface StatusBarProps
+    extends RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
     statusBarItemClassName?: string
@@ -38,9 +42,12 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
 
     /** If specified, this text will be displayed in a badge left of the status bar items */
     badgeText?: string
+
+    /** If true, the status bar will be focusable through the command palette. */
+    isBlobPage?: boolean
 }
 
-export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
+export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBarProps>> = ({
     getStatusBarItems,
     className,
     statusBarItemClassName,
@@ -50,7 +57,10 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     statusBarRef,
     hideWhileInitializing,
     badgeText,
+    isBlobPage,
 }) => {
+    const mergedReferences = useMergeRefs([statusBarRef].filter(isDefined))
+
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
     // Wait a generous amount of time on top of initial extension loading
@@ -70,6 +80,54 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
             [uri, extensionsController]
         )
     )
+
+    // Add "focus status bar" action to command palette.
+    useEffect(() => {
+        const subscription = new Subscription()
+
+        // Only when one status bar is rendered (i.e. is blob page).
+        if (isBlobPage) {
+            extensionsController.extHostAPI
+                .then(extensionHostAPI => {
+                    subscription.add(
+                        syncRemoteSubscription(
+                            extensionHostAPI.registerContributions({
+                                menus: {
+                                    commandPalette: [
+                                        {
+                                            action: 'focusStatusBar',
+                                        },
+                                    ],
+                                },
+                                actions: [
+                                    {
+                                        id: 'focusStatusBar',
+                                        title: 'Focus status bar',
+                                        command: 'focusStatusBar',
+                                    },
+                                ],
+                            })
+                        )
+                    )
+
+                    subscription.add(
+                        extensionsController.registerCommand({
+                            command: 'focusStatusBar',
+                            run: () => {
+                                const statusBarElement = mergedReferences.current
+                                if (statusBarElement) {
+                                    tabbable(statusBarElement)[0]?.focus()
+                                }
+                                return Promise.resolve()
+                            },
+                        })
+                    )
+                })
+                .catch(error => logger.error('Error registering "Focus status bar" command', error))
+        }
+
+        return () => subscription.unsubscribe()
+    }, [extensionsController, isBlobPage, mergedReferences])
 
     const {
         carouselReference,
@@ -91,7 +149,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
-            ref={statusBarRef}
+            ref={mergedReferences}
         >
             <ErrorBoundary
                 location={location}
@@ -108,8 +166,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className={classNames('border-0', styles.scroll)}
                         onClick={onNegativeClicked}
                         variant="link"
+                        aria-label="Scroll left"
                     >
-                        <Icon as={ChevronLeftIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronLeft} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -144,8 +203,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className={classNames('border-0', styles.scroll)}
                         onClick={onPositiveClicked}
                         variant="link"
+                        aria-label="Scroll right"
                     >
-                        <Icon as={ChevronRightIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     </Button>
                 )}
             </ErrorBoundary>
@@ -154,12 +214,14 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
 }
 
 const StatusBarItem: React.FunctionComponent<
-    {
-        statusBarItem: StatusBarItemWithKey
-        className?: string
-        component?: JSX.Element
-        location: H.Location
-    } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    React.PropsWithChildren<
+        {
+            statusBarItem: StatusBarItemWithKey
+            className?: string
+            component?: JSX.Element
+            location: H.Location
+        } & RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+    >
 > = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 
@@ -191,24 +253,25 @@ const StatusBarItem: React.FunctionComponent<
     const noop = !command
 
     return (
-        <ButtonLink
-            className={classNames(
-                'h-100 d-flex align-items-center px-1',
-                styles.item,
-                noop && classNames('text-decoration-none', styles.itemNoop),
-                className
-            )}
-            data-tooltip={statusBarItem.tooltip}
-            onSelect={handleCommand}
-            tabIndex={noop ? -1 : 0}
-            to={to}
-            disabled={commandState === 'loading'}
-        >
-            {component || (
-                <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
-                    {statusBarItem.text}
-                </small>
-            )}
-        </ButtonLink>
+        <Tooltip content={statusBarItem.tooltip}>
+            <ButtonLink
+                className={classNames(
+                    'h-100 d-flex align-items-center px-1',
+                    styles.item,
+                    noop && classNames('text-decoration-none', styles.itemNoop),
+                    className
+                )}
+                onSelect={handleCommand}
+                tabIndex={noop ? -1 : 0}
+                to={to}
+                disabled={commandState === 'loading'}
+            >
+                {component || (
+                    <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
+                        {statusBarItem.text}
+                    </small>
+                )}
+            </ButtonLink>
+        </Tooltip>
     )
 }

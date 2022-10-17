@@ -1,102 +1,75 @@
 import React from 'react'
 
-import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import TagIcon from 'mdi-react/TagIcon'
+import { mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount, mdiBrain, mdiCog } from '@mdi/js'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, ButtonGroup, Icon, Link } from '@sourcegraph/wildcard'
 
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
-import { TreePageRepositoryFields } from '../../graphql-operations'
-import { useExperimentalFeatures } from '../../stores'
 
 interface TreeNavigationProps {
-    repo: TreePageRepositoryFields
+    repoName: string
+    viewerCanAdminister: boolean | undefined
     revision: string
     tree: TreeFields
     codeIntelligenceEnabled: boolean
     batchChangesEnabled: boolean
 }
 
-export const TreeNavigation: React.FunctionComponent<TreeNavigationProps> = ({
-    repo,
+export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<TreeNavigationProps>> = ({
+    repoName,
+    viewerCanAdminister,
     revision,
     tree,
     codeIntelligenceEnabled,
     batchChangesEnabled,
-}) => {
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
-
-    return (
-        <ButtonGroup>
-            {enableAPIDocs && (
-                <Button to={`${tree.url}/-/docs`} variant="secondary" outline={true} as={Link}>
-                    <Icon as={BookOpenBlankVariantIcon} /> API docs
-                </Button>
-            )}
-            <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
-                <Icon as={SourceCommitIcon} /> Commits
-            </Button>
+}) => (
+    <ButtonGroup>
+        <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
+            <Icon aria-hidden={true} svgPath={mdiSourceCommit} /> Commits
+        </Button>
+        <Button to={`/${encodeURIPathComponent(repoName)}/-/branches`} variant="secondary" outline={true} as={Link}>
+            <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> Branches
+        </Button>
+        <Button to={`/${encodeURIPathComponent(repoName)}/-/tags`} variant="secondary" outline={true} as={Link}>
+            <Icon aria-hidden={true} svgPath={mdiTag} /> Tags
+        </Button>
+        <Button
+            to={
+                revision
+                    ? `/${encodeURIPathComponent(repoName)}/-/compare/...${encodeURIComponent(revision)}`
+                    : `/${encodeURIPathComponent(repoName)}/-/compare`
+            }
+            variant="secondary"
+            outline={true}
+            as={Link}
+        >
+            <Icon aria-hidden={true} svgPath={mdiHistory} /> Compare
+        </Button>
+        <Button
+            to={`/${encodeURIPathComponent(repoName)}/-/stats/contributors`}
+            variant="secondary"
+            outline={true}
+            as={Link}
+        >
+            <Icon aria-hidden={true} svgPath={mdiAccount} /> Contributors
+        </Button>
+        {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
+                to={`/${encodeURIPathComponent(repoName)}/-/code-graph`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon as={SourceBranchIcon} /> Branches
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code graph data
             </Button>
-            <Button to={`/${encodeURIPathComponent(repo.name)}/-/tags`} variant="secondary" outline={true} as={Link}>
-                <Icon as={TagIcon} /> Tags
+        )}
+        {batchChangesEnabled && <RepoBatchChangesButton repoName={repoName} />}
+        {viewerCanAdminister && (
+            <Button to={`/${encodeURIPathComponent(repoName)}/-/settings`} variant="secondary" outline={true} as={Link}>
+                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
             </Button>
-            <Button
-                to={
-                    revision
-                        ? `/${encodeURIPathComponent(repo.name)}/-/compare/...${encodeURIComponent(revision)}`
-                        : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                }
-                variant="secondary"
-                outline={true}
-                as={Link}
-            >
-                <Icon as={HistoryIcon} /> Compare
-            </Button>
-            <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                variant="secondary"
-                outline={true}
-                as={Link}
-            >
-                <Icon as={AccountIcon} /> Contributors
-            </Button>
-            {codeIntelligenceEnabled && (
-                <Button
-                    to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                    variant="secondary"
-                    outline={true}
-                    as={Link}
-                >
-                    <Icon as={BrainIcon} /> Code Intelligence
-                </Button>
-            )}
-            {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
-            {repo.viewerCanAdminister && (
-                <Button
-                    to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                    variant="secondary"
-                    outline={true}
-                    as={Link}
-                >
-                    <Icon as={SettingsIcon} /> Settings
-                </Button>
-            )}
-        </ButtonGroup>
-    )
-}
+        )}
+    </ButtonGroup>
+)

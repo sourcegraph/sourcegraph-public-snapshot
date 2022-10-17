@@ -7,11 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -39,7 +40,7 @@ func (r *extensionDBResolver) ExtensionIDWithoutRegistry() string {
 }
 
 func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.RegistryPublisher, error) {
-	return getRegistryPublisher(ctx, database.NewDB(r.db), r.v.Publisher)
+	return getRegistryPublisher(ctx, r.db, r.v.Publisher)
 }
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }
@@ -54,23 +55,23 @@ func (r *extensionDBResolver) Manifest(ctx context.Context) (graphqlbackend.Exte
 	return registry.NewExtensionManifest(&release.Manifest), nil
 }
 
-func (r *extensionDBResolver) CreatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.CreatedAt}
+func (r *extensionDBResolver) CreatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
-func (r *extensionDBResolver) UpdatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.UpdatedAt}
+func (r *extensionDBResolver) UpdatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.UpdatedAt}
 }
 
-func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	release, err := r.release(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if release == nil {
-		return &graphqlbackend.DateTime{Time: time.Time{}}, nil
+		return &gqlutil.DateTime{Time: time.Time{}}, nil
 	}
-	return &graphqlbackend.DateTime{Time: release.CreatedAt}, nil
+	return &gqlutil.DateTime{Time: release.CreatedAt}, nil
 }
 
 func (r *extensionDBResolver) URL() string {
@@ -90,10 +91,10 @@ func (r *extensionDBResolver) IsWorkInProgress() bool {
 
 func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx, r.db)
-	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
+	if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAnOrgMember || err == auth.ErrNotAuthenticated {
 		return false, nil
 	}
-	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+	if errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 		return false, nil
 	}
 	return err == nil, err

@@ -6,10 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // resultsPerResultChunk is the number of target keys in a single result chunk. This may
@@ -32,7 +30,6 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"export"}, func(r Range) int { return r.DefinitionResultID })
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, []string{"import", "export"}, func(r Range) int { return r.ReferenceResultID })
 	implementationRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"implementation"}, func(r Range) int { return r.DefinitionResultID })
-	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
 	if err != nil {
@@ -40,17 +37,14 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	}
 
 	return &precise.GroupedBundleDataChans{
-		Meta:                  meta,
-		Documents:             documents,
-		ResultChunks:          resultChunks,
-		Definitions:           definitionRows,
-		References:            referenceRows,
-		Implementations:       implementationRows,
-		DocumentationPages:    documentation.pages,
-		DocumentationPathInfo: documentation.pathInfo,
-		DocumentationMappings: documentation.mappings,
-		Packages:              packages,
-		PackageReferences:     packageReferences,
+		Meta:              meta,
+		Documents:         documents,
+		ResultChunks:      resultChunks,
+		Definitions:       definitionRows,
+		References:        referenceRows,
+		Implementations:   implementationRows,
+		Packages:          packages,
+		PackageReferences: packageReferences,
 	}, nil
 }
 
@@ -123,7 +117,6 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 			ReferenceResultID:      toID(rangeData.ReferenceResultID),
 			ImplementationResultID: toID(rangeData.ImplementationResultID),
 			HoverResultID:          toID(rangeData.HoverResultID),
-			DocumentationResultID:  toID(rangeData.DocumentationResultID),
 			MonikerIDs:             monikerIDs,
 		}
 
@@ -443,18 +436,12 @@ func gatherPackageReferences(state *State, packageDefinitions []precise.Package)
 
 	packageReferences := make([]precise.PackageReference, 0, len(uniques))
 	for _, v := range uniques {
-		filter, err := bloomfilter.CreateFilter(v.Identifiers)
-		if err != nil {
-			return nil, errors.Wrap(err, "bloomfilter.CreateFilter")
-		}
-
 		packageReferences = append(packageReferences, precise.PackageReference{
 			Package: precise.Package{
 				Scheme:  v.Scheme,
 				Name:    v.Name,
 				Version: v.Version,
 			},
-			Filter: filter,
 		})
 	}
 

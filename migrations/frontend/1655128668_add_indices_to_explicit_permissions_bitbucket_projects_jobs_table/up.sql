@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS explicit_permissions_bitbucket_projects_jobs_queued_at_idx ON explicit_permissions_bitbucket_projects_jobs (queued_at);
+CREATE INDEX IF NOT EXISTS explicit_permissions_bitbucket_projects_jobs_state_idx ON explicit_permissions_bitbucket_projects_jobs (state);

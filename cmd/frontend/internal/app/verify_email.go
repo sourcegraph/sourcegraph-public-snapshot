@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func serveVerifyEmail(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveVerifyEmail(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		email := r.URL.Query().Get("email")
@@ -86,10 +86,10 @@ func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, user
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	database.SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

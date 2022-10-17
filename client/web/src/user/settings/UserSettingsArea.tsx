@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -7,13 +7,14 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -21,7 +22,6 @@ import {
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
@@ -30,17 +30,17 @@ import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSid
 
 import styles from './UserSettingsArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 export interface UserSettingsAreaRoute extends RouteDescriptor<UserSettingsAreaRouteContext> {}
 
 export interface UserSettingsAreaProps
     extends UserAreaRouteContext,
-        FeatureFlagProps,
         RouteComponentProps<{}>,
         ThemeProps,
-        TelemetryProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]
@@ -94,7 +94,9 @@ const USER_SETTINGS_AREA_USER_PROFILE = gql`
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettingsAreaProps> = props => {
+export const AuthenticatedUserSettingsArea: React.FunctionComponent<
+    React.PropsWithChildren<UserSettingsAreaProps>
+> = props => {
     const { authenticatedUser, sideBarItems } = props
 
     const { data, error, loading, previousData } = useQuery<
@@ -106,6 +108,20 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
             siteAdmin: authenticatedUser.siteAdmin,
         },
     })
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const memoizedRoutes = useMemo((): readonly UserSettingsAreaRoute[] => {
+        if (!isOpenBetaEnabled) {
+            return props.routes
+        }
+        return [
+            ...props.routes,
+            {
+                path: '/organizations',
+                render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
+                exact: true,
+            },
+        ]
+    }, [isOpenBetaEnabled, props.routes])
 
     // Accept stale data if recently updated, avoids unmounting components due to a brief lack of data
     const user =
@@ -159,7 +175,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
-                                {props.routes.map(
+                                {memoizedRoutes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route

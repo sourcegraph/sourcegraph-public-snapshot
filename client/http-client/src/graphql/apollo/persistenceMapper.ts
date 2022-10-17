@@ -64,7 +64,7 @@ export const persistenceMapper = (data: string): Promise<string> => {
         const entryToPersist = initialData[ROOT_QUERY_KEY][queryName]
 
         if (entryToPersist) {
-            Object.assign(dataToPersist[ROOT_QUERY_KEY], {
+            Object.assign(dataToPersist[ROOT_QUERY_KEY] as object, {
                 [queryName]: entryToPersist,
             })
 

@@ -1,4 +1,4 @@
-import { mkdtemp as original_mkdtemp } from 'fs'
+import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -6,16 +6,24 @@ import { promisify } from 'util'
 import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
+import fetch from 'node-fetch'
 import * as semver from 'semver'
 
 import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
+let githubPAT: string
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
-    const githubPAT = await readLine(
-        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        `${cacheFolder}/github.txt`
-    )
+    const cacheFile = `${cacheFolder}/github.txt`
+    if (existsSync(cacheFile) && (await validateToken()) === true) {
+        githubPAT = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    } else {
+        githubPAT = await readLine(
+            'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
+            cacheFile
+        )
+    }
+
     const trimmedGithubPAT = githubPAT.trim()
     return new Octokit({ auth: trimmedGithubPAT })
 }
@@ -37,13 +45,16 @@ export enum IssueLabel {
     RELEASE = 'release',
     PATCH = 'patch',
     MANAGED = 'managed-instances',
-    DELIVERY_TEAM = 'team/delivery',
+    DEVOPS_TEAM = 'team/devops',
+    SECURITY_TEAM = 'team/security',
+    RELEASE_BLOCKER = 'release-blocker',
 }
 
 enum IssueTitleSuffix {
     RELEASE_TRACKING = 'release tracking issue',
     PATCH_TRACKING = 'patch release tracking issue',
     MANAGED_TRACKING = 'upgrade managed instances tracking issue',
+    SECURITY_TRACKING = 'container image vulnerability assessment tracking issue',
 }
 
 /**
@@ -79,7 +90,7 @@ interface IssueTemplateArguments {
     /**
      * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
      */
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     /**
      * Available as `$RELEASE_DATE`
      */
@@ -100,25 +111,25 @@ const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
+        path: 'content/departments/engineering/dev/process/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
-    const upgradeManagedInstanceIssue: IssueTemplate = {
+    const securityAssessmentIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
-        titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
-        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED, IssueLabel.DELIVERY_TEAM],
+        path: 'content/departments/engineering/dev/process/releases/security_assessment.md',
+        titleSuffix: IssueTitleSuffix.SECURITY_TRACKING,
+        labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.SECURITY_TEAM, IssueLabel.RELEASE_BLOCKER],
     }
-    return { releaseIssue, patchReleaseIssue, upgradeManagedInstanceIssue }
+    return { releaseIssue, patchReleaseIssue, securityAssessmentIssue }
 }
 
 function dateMarkdown(date: Date, name: string): string {
@@ -128,7 +139,7 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    { version, oneWorkingDayBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
+    { version, threeWorkingDaysBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -138,8 +149,8 @@ async function execTemplate(
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
         .replace(
-            /\$ONE_WORKING_DAY_BEFORE_RELEASE/g,
-            dateMarkdown(oneWorkingDayBeforeRelease, `One working day before ${name} release`)
+            /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
+            dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
         )
         .replace(/\$RELEASE_DATE/g, dateMarkdown(releaseDate, `${name} release date`))
         .replace(
@@ -164,14 +175,14 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
-    oneWorkingDayBeforeRelease,
+    threeWorkingDaysBeforeRelease,
     oneWorkingDayAfterRelease,
     dryRun,
 }: {
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
-    oneWorkingDayBeforeRelease: Date
+    threeWorkingDaysBeforeRelease: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
 }): Promise<MaybeIssue[]> {
@@ -183,9 +194,9 @@ export async function ensureTrackingIssues({
     // tracking issue, and subsequent issues will contain references to it.
     let issueTemplates: IssueTemplate[]
     if (version.patch === 0) {
-        issueTemplates = [templates.releaseIssue, templates.upgradeManagedInstanceIssue]
+        issueTemplates = [templates.releaseIssue]
     } else {
-        issueTemplates = [templates.patchReleaseIssue, templates.upgradeManagedInstanceIssue]
+        issueTemplates = [templates.patchReleaseIssue]
     }
 
     // Release milestones are not as emphasised now as they used to be, since most teams
@@ -207,7 +218,7 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
-            oneWorkingDayBeforeRelease,
+            threeWorkingDaysBeforeRelease,
             oneWorkingDayAfterRelease,
         })
         const issue = await ensureIssue(
@@ -228,25 +239,6 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
-
-        // close previous iterations of this issue
-        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
-        for (const previousIssue of previous) {
-            if (previousIssue.number === issue.number) {
-                // don't close self
-                continue
-            }
-
-            if (dryRun) {
-                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
-                continue
-            }
-            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
-            console.log(
-                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
-            )
-            await closeIssue(octokit, previousIssue)
-        }
     }
     return created
 }
@@ -343,7 +335,7 @@ export async function commentOnIssue(client: Octokit, issue: Issue, body: string
         owner: issue.owner,
         repo: issue.repo,
     })
-    return comment.data.url
+    return comment.data.html_url
 }
 
 async function closeIssue(client: Octokit, issue: Issue): Promise<void> {
@@ -690,4 +682,38 @@ export async function createLatestRelease(
     }
     const response = await octokit.repos.createRelease(request)
     return response.data.html_url
+}
+
+async function validateToken(): Promise<boolean> {
+    const githubPAT: string = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    const trimmedGithubPAT = githubPAT.trim()
+    const response = await fetch('https://api.github.com/repos/sourcegraph/sourcegraph', {
+        method: 'GET',
+        headers: {
+            Authorization: `token ${trimmedGithubPAT}`,
+        },
+    })
+
+    if (response.status !== 200) {
+        console.log(`Existing GitHub token is invalid, got status ${response.statusText}`)
+        return false
+    }
+    return true
+}
+
+export async function closeTrackingIssue(version: semver.SemVer): Promise<void> {
+    const octokit = await getAuthenticatedGitHubClient()
+    const release = releaseName(version)
+    const labels = [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE]
+    // close old tracking issue
+    const previous = await queryIssues(octokit, release, labels)
+    for (const previousIssue of previous) {
+        const comment = await commentOnIssue(
+            octokit,
+            previousIssue,
+            `Issue closed by release tool. #${previousIssue.number}`
+        )
+        console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
+        await closeIssue(octokit, previousIssue)
+    }
 }

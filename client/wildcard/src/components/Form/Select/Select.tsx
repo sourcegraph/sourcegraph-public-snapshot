@@ -14,7 +14,7 @@ export const SELECT_SIZES = ['sm', 'lg'] as const
 export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSelectElement>> &
     React.RefAttributes<HTMLSelectElement> & {
         /**
-         * Use the Bootstrap custom <select> styles
+         * Use the global `custom-select` class.
          */
         isCustomStyle?: boolean
         /**
@@ -29,10 +29,14 @@ export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSe
          * Optional label position. Default is 'inline'
          */
         labelVariant?: 'inline' | 'block'
+        /**
+         * Custom class name for label element.
+         */
+        labelClassName?: string
     }
 
 /**
- * Returns the Bootstrap specific style to differentiate between native and custom <select> styles.
+ * Returns the global CSS class to differentiate between native and custom <select> styles.
  */
 export const getSelectStyles = ({
     isCustomStyle,
@@ -53,24 +57,28 @@ export const getSelectStyles = ({
  *
  * Please note that this component takes <option> elements as children. This is to easily support advanced functionality such as usage of <optgroup>.
  */
-export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
-    (
-        {
-            children,
-            className,
-            selectClassName,
-            message,
-            isValid,
-            isCustomStyle,
-            selectSize,
-            labelVariant = 'inline',
-            ...props
-        },
-        reference
-    ) => (
+export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps>> = React.forwardRef(function Select(
+    {
+        children,
+        className,
+        selectClassName,
+        labelClassName,
+        message,
+        isValid,
+        isCustomStyle,
+        selectSize,
+        labelVariant = 'inline',
+        ...props
+    },
+    reference
+) {
+    return (
         <div className={classNames('form-group', className)}>
             {'label' in props && (
-                <FormFieldLabel htmlFor={props.id} className={labelVariant === 'block' ? styles.labelBlock : undefined}>
+                <FormFieldLabel
+                    htmlFor={props.id}
+                    className={classNames(labelVariant === 'block' && styles.labelBlock, labelClassName)}
+                >
                     {props.label}
                 </FormFieldLabel>
             )}
@@ -89,4 +97,4 @@ export const Select: React.FunctionComponent<SelectProps> = React.forwardRef(
             {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
         </div>
     )
-)
+})

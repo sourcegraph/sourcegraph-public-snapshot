@@ -27,8 +27,8 @@ describe('decodeSearchInsightUrl', () => {
             title: 'Insight title',
             allRepos: true,
             series: [
-                { id: 1, edit: false, valid: true, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: 2, edit: false, valid: true, name: 'series 2', query: 'test2', stroke: 'blue' },
+                { id: 1, edit: false, valid: true, autofocus: false, name: 'series 1', query: 'test1', stroke: 'red' },
+                { id: 2, edit: false, valid: true, autofocus: false, name: 'series 2', query: 'test2', stroke: 'blue' },
             ],
         })
     })
@@ -51,8 +51,24 @@ describe('encodeSearchInsightUrl', () => {
             title: 'Insight title',
             allRepos: true,
             series: [
-                { id: '1', edit: false, valid: true, name: 'series 1', query: 'test1', stroke: 'red' },
-                { id: '2', edit: false, valid: true, name: 'series 2', query: 'test2', stroke: 'blue' },
+                {
+                    id: '1',
+                    edit: false,
+                    valid: true,
+                    autofocus: false,
+                    name: 'series 1',
+                    query: 'test1',
+                    stroke: 'red',
+                },
+                {
+                    id: '2',
+                    edit: false,
+                    valid: true,
+                    autofocus: false,
+                    name: 'series 2',
+                    query: 'test2',
+                    stroke: 'blue',
+                },
             ],
         })
     })

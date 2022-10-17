@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { catchError } from 'rxjs/operators'
 
 import { gql } from '@sourcegraph/http-client'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
-import { Icon, useObservable } from '@sourcegraph/wildcard'
+import { Icon, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { SavedSearchesResult, SavedSearchesVariables, SearchPatternType } from '../../../../graphql-operations'
 import { HistorySidebarProps } from '../HistorySidebarView'
@@ -35,7 +34,7 @@ const savedSearchQuery = gql`
     }
 `
 
-export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const SavedSearchesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     extensionCoreAPI,
 }) => {
@@ -73,7 +72,7 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
             .streamSearch(query, {
                 // Debt: using defaults here. The saved search should override these, though.
                 caseSensitive: false,
-                patternType: SearchPatternType.literal,
+                patternType: SearchPatternType.standard,
                 version: LATEST_VERSION,
                 trace: undefined,
             })
@@ -85,18 +84,16 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
 
     return (
         <div className={styles.sidebarSection}>
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+            <Button
+                variant="secondary"
+                outline={true}
+                className={styles.sidebarSectionCollapseButton}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} saved searches`}
             >
-                <h5 className="flex-grow-1">Saved Searches</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
-            </button>
+                <H5 className="flex-grow-1">Saved Searches</H5>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
+            </Button>
 
             {!collapsed && savedSearches && (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
@@ -105,13 +102,13 @@ export const SavedSearchesSection: React.FunctionComponent<HistorySidebarProps> 
                         .map(search => (
                             <div key={search.id}>
                                 <small className={styles.sidebarSectionListItem}>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link p-0 text-left text-decoration-none"
+                                    <Button
+                                        variant="link"
+                                        className="p-0 text-left text-decoration-none"
                                         onClick={() => onSavedSearchClick(search.query)}
                                     >
                                         {search.description}
-                                    </button>
+                                    </Button>
                                 </small>
                             </div>
                         ))}

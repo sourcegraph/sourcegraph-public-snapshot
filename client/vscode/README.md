@@ -8,7 +8,7 @@ Sourcegraph’s code search allows you to find & fix things fast across all your
 
 Sourcegraph for VS Code allows you to search millions of open source repositories right from your VS Code IDE—for free. You can learn from helpful code examples, search best practices, and re-use code from millions of repositories across the open source universe.
 
-Plus, with a free Sourcegraph Cloud account, you can sync your own private and public repositories and search all of your code in a single view in VS Code. Sourcegraph’s Code Intelligence feature provides fast, cross-repository navigation with “Go to definition” and “Find references” features, allowing you to understand new code quickly and find answers in your code across codebases of any size.
+Sourcegraph’s Code Intelligence feature provides fast, cross-repository navigation with “Go to definition” and “Find references” features, allowing you to understand new code quickly and find answers in your code across codebases of any size.
 
 You can read more about Sourcegraph on our [website](https://about.sourcegraph.com/).
 
@@ -23,6 +23,11 @@ You can read more about Sourcegraph on our [website](https://about.sourcegraph.c
 
 1. Open the extensions tab on the left side of VS Code (<kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd> or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd>).
 2. Search for `Sourcegraph` -> `Install` and `Reload`.
+
+### From Gitpod VS Code Workspaces:
+
+1. Open the `Extensions view` by clicking on the Extensions icon in the [Activity Bar](https://code.visualstudio.com/api/ux-guidelines/overview#activity-bar) on the side of your Gitpod VS Code workspace
+2. Search for [Sourcegraph](https://open-vsx.org/extension/sourcegraph/sourcegraph) -> `Install` and `Reload`.
 
 ## Using the Sourcegraph extension
 
@@ -50,30 +55,34 @@ repo:sourcegraph/sourcegraph lang:go auth provider
 
 ### Creating an account
 
-In addition to searching open source code, you can create a Sourcegraph Cloud account to search your own private and public repositories. You can create an account and sync your repositories with the following steps:
+In addition to searching open source code, you can create a Sourcegraph account to search your own private and public repositories. You can create an account and sync your repositories with the following steps:
 
 1. Click the `Create an account` button in the sidebar of the Sourcegraph extension. You will be directed to sourcegraph.com in your browser.
-2. Create an account using your email or connect directly to your code host.
-3. Once you have created an account, navigate to Sourcegraph Cloud. Click on your profile icon in the navigation bar to go to `Your repositories`.
-4. Click `Manage repositories`. From here, you can add your repositories to be synced to Sourcegraph.
+2. Follow the instructions to create and configure your Sourcegraph instance
 
-### Connecting Sourcegraph Cloud account
-
-Once you have repositories synced to Sourcegraph, you can generate an access token to connect your VS Code extension back to your Sourcegraph Cloud account.
-
-1. Back in Sourcegraph Cloud, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
-2. Once you have generated a token, navigate back to the Sourcegraph extension. In the sidebar, under `Create an account`, click `Have an account?`.
-3. Copy and paste the generated token from step 4 into the input field in the sidebar.
-4. Alternatively, you can copy and paste the generated token from step 4 in this format: `“sourcegraph.accessToken": "e4234234123112312”` into your VS Code Setting by going to `Code` > `Preference` > `Settings` > Search for "Sourcegraph" > `Edit in settings.json`.
-5. The Editor will be reloaded automatically to use the newly added token.
-
-### Connecting to a private Sourcegraph instance
+### Connecting to your Sourcegraph instance
 
 1.  In Sourcegraph, in your account settings, navigate to `Access tokens`, then click `Generate new token`.
 2.  Once you have generated a token, navigate to your VS Code Settings, then navigate to "Extension settings".
 3.  Navigate to `Code preferences`, then click `Settings`.
 4.  Search for `Sourcegraph`, and enter the newly generated access token as well as your Sourcegraph instance URL.
 5.  Add custom headers using the `sourcegraph.requestHeaders` setting (added in v2.0.9) if a specific header is required to make connection to your private instance.
+
+### Adding it to your workspace's recommended extensions
+
+1. Create a `.vscode` folder (if not already present) in the root of your repository
+2. Inside that folder, create a new file named `extensions.json` (if it doesn't already exist) with the following structure.
+
+```
+{
+	"recommendations": ["sourcegraph.sourcegraph"]
+}
+```
+
+3. If the file does exist, append `"sourcegraph.sourcegraph"` to the `"recommendations"` array.
+4. Push the changes to your repository for your other colleagues to share.
+
+Alternatively you can use the `Extensions: Configure Recommended Extensions (Workspace Folder)` command from within VS Code.
 
 ## Keyboard Shortcuts:
 
@@ -87,20 +96,20 @@ Once you have repositories synced to Sourcegraph, you can generate an access tok
 
 This extension contributes the following settings:
 
-| Setting                           | Description                                                                                                                                     | Example                                                      |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| sourcegraph.url                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default.                  | "https://your-sourcegraph.com"                               |
-| sourcegraph.accessToken           | The access token to query the Sourcegraph API. Required to use this extension with private instances.                                           | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
-| sourcegraph.remoteUrlReplacements | Object, where each `key` is replaced by `value` in the remote url.                                                                              | {"github": "gitlab", "master": "main"}                       |
-| sourcegraph.defaultBranch         | String to set the name of the default branch. Always open files in the default branch.                                                          | "master"                                                     |
-| sourcegraph.requestHeaders        | Takes object, where each value pair will be added to the request headers made to your instance.                                                 | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
-| sourcegraph.basePath              | The file path on the machine to the folder that is expected to contain all repositories. We will try to open search results using the basePath. | "/Users/USERNAME/Documents/"                                 |
+| Setting                           | Description                                                                                                                                                                                          | Example                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| sourcegraph.url                   | Specify your on-premises Sourcegraph instance here, if applicable. The extension is connected to Sourcegraph Cloud by default.                                                                       | "https://your-sourcegraph.com"                               |
+| sourcegraph.accessToken           | The access token to query the Sourcegraph API. Required to use this extension with private instances. Create a new access token at `${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens` | "6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"                   |
+| sourcegraph.remoteUrlReplacements | Object, where each `key` is replaced by `value` in the remote url.                                                                                                                                   | {"github": "gitlab", "master": "main"}                       |
+| sourcegraph.defaultBranch         | String to set the name of the default branch. Always open files in the default branch.                                                                                                               | "master"                                                     |
+| sourcegraph.requestHeaders        | Takes object, where each value pair will be added to the request headers made to your instance.                                                                                                      | {"Cache-Control": "no-cache", "Proxy-Authenticate": "Basic"} |
+| sourcegraph.basePath              | The file path on the machine to the folder that is expected to contain all repositories. We will try to open search results using the basePath.                                                      | "/Users/USERNAME/Documents/"                                 |
 
 ## Questions & Feedback
 
 Please take a look at our [troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension) for [known issues](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#unsupported-features-by-sourcegraph-version) and common issues in the VS Code extension.
 
-New issues and feature requests can be submitted at https://github.com/sourcegraph/sourcegraph-vscode/issues/new.
+Feedback and feature requests can be submitted to our [VS Code Extension Feedback Discussion Board](https://github.com/sourcegraph/sourcegraph/discussions/34821) on GitHub.
 
 ## Uninstallation
 

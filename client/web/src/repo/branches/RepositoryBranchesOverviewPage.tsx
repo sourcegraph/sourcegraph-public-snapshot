@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { mdiChevronRight } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike, memoizeObservable } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -105,7 +105,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
         this.componentUpdates.next(this.props)
@@ -133,16 +133,23 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             <Card className={styles.card}>
                                 <CardHeader>Default branch</CardHeader>
                                 <ul className="list-group list-group-flush">
-                                    <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
+                                    <GitReferenceNode
+                                        node={this.state.dataOrError.defaultBranch}
+                                        ariaLabel={`View this repository using ${this.state.dataOrError.defaultBranch.displayName} as the selected revision`}
+                                    />
                                 </ul>
                             </Card>
                         )}
                         {this.state.dataOrError.activeBranches.length > 0 && (
                             <Card className={styles.card}>
                                 <CardHeader>Active branches</CardHeader>
-                                <div className="list-group list-group-flush">
+                                <ul className="list-group list-group-flush" data-testid="active-branches-list">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (
-                                        <GitReferenceNode key={index} node={gitReference} />
+                                        <GitReferenceNode
+                                            key={index}
+                                            node={gitReference}
+                                            ariaLabel={`View this repository using ${gitReference.displayName} as the selected revision`}
+                                        />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link
@@ -150,10 +157,10 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
-                                            <Icon as={ChevronRightIcon} />
+                                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                                         </Link>
                                     )}
-                                </div>
+                                </ul>
                             </Card>
                         )}
                     </div>

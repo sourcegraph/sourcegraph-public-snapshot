@@ -58,8 +58,8 @@ type ExpandedGitCommitDescription struct {
 }
 
 type ImportChangeset struct {
-	Repository  string        `json:"repository" yaml:"repository"`
-	ExternalIDs []interface{} `json:"externalIDs" yaml:"externalIDs"`
+	Repository  string `json:"repository" yaml:"repository"`
+	ExternalIDs []any  `json:"externalIDs" yaml:"externalIDs"`
 }
 
 type WorkspaceConfiguration struct {
@@ -93,8 +93,8 @@ type Step struct {
 	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
 	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
 	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-
-	If interface{} `json:"if,omitempty" yaml:"if,omitempty"`
+	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`
+	If        any               `json:"if,omitempty" yaml:"if,omitempty"`
 }
 
 func (s *Step) IfCondition() string {
@@ -128,17 +128,16 @@ type Group struct {
 	Repository string `json:"repository,omitempty" yaml:"repository"`
 }
 
-type ParseBatchSpecOptions struct {
-	AllowArrayEnvironments bool
-	AllowTransformChanges  bool
-	AllowConditionalExec   bool
+type Mount struct {
+	Mountpoint string `json:"mountpoint" yaml:"mountpoint"`
+	Path       string `json:"path" yaml:"path"`
 }
 
-func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
-	return parseBatchSpec(schema.BatchSpecJSON, data, opts)
+func ParseBatchSpec(data []byte) (*BatchSpec, error) {
+	return parseBatchSpec(schema.BatchSpecJSON, data)
 }
 
-func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
+func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
 		var multiErr errors.MultiError
@@ -162,33 +161,17 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 
 	var errs error
 
-	if !opts.AllowArrayEnvironments {
-		for i, step := range spec.Steps {
-			if !step.Env.IsStatic() {
-				errs = errors.Append(errs, NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
-			}
-		}
-	}
-
 	if len(spec.Steps) != 0 && spec.ChangesetTemplate == nil {
 		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes steps but no changesetTemplate")))
 	}
 
-	if spec.TransformChanges != nil && !opts.AllowTransformChanges {
-		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes transformChanges, which is not supported in this Sourcegraph version")))
-	}
-
-	if len(spec.Workspaces) != 0 && !opts.AllowTransformChanges {
-		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes workspaces, which is not supported in this Sourcegraph version")))
-	}
-
-	if !opts.AllowConditionalExec {
-		for i, step := range spec.Steps {
-			if step.IfCondition() != "" {
-				errs = errors.Append(errs, NewValidationError(errors.Newf(
-					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
-					i+1,
-				)))
+	for i, step := range spec.Steps {
+		for _, mount := range step.Mount {
+			if strings.Contains(mount.Path, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path contains invalid characters", i+1)))
+			}
+			if strings.Contains(mount.Mountpoint, invalidMountCharacters) {
+				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount mountpoint contains invalid characters", i+1)))
 			}
 		}
 	}
@@ -196,11 +179,13 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 	return &spec, errs
 }
 
+const invalidMountCharacters = ","
+
 func (on *OnQueryOrRepository) String() string {
 	if on.RepositoriesMatchingQuery != "" {
 		return on.RepositoriesMatchingQuery
 	} else if on.Repository != "" {
-		return "r:" + on.Repository
+		return "repository:" + on.Repository
 	}
 
 	return fmt.Sprintf("%v", *on)
@@ -228,7 +213,7 @@ func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string)
 	skipped = map[int32]struct{}{}
 
 	for idx, step := range spec.Steps {
-		// If no if condition is given, just go ahead and add the step to the list.
+		// If no if condition is set the step is always run.
 		if step.IfCondition() == "" {
 			continue
 		}

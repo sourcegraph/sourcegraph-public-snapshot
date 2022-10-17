@@ -11,14 +11,162 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func TestList(t *testing.T) {
-	t.Parallel()
+func TestSynchronizeMetadata(t *testing.T) {
+	// Note: package globals block test parallelism
+	testEnterprise(t)
 
-	db := dbtest.NewDB(t)
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStoreWithDB(db)
+
+	compareMigrations := func() {
+		migrations, err := store.List(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting migrations: %s", err)
+		}
+
+		var yamlizedMigrations []yamlMigration
+		for _, migration := range migrations {
+			yamlMigration := yamlMigration{
+				ID:                     migration.ID,
+				Team:                   migration.Team,
+				Component:              migration.Component,
+				Description:            migration.Description,
+				NonDestructive:         migration.NonDestructive,
+				IsEnterprise:           migration.IsEnterprise,
+				IntroducedVersionMajor: migration.Introduced.Major,
+				IntroducedVersionMinor: migration.Introduced.Minor,
+			}
+
+			if migration.Deprecated != nil {
+				yamlMigration.DeprecatedVersionMajor = &migration.Deprecated.Major
+				yamlMigration.DeprecatedVersionMinor = &migration.Deprecated.Minor
+			}
+
+			yamlizedMigrations = append(yamlizedMigrations, yamlMigration)
+		}
+
+		sort.Slice(yamlizedMigrations, func(i, j int) bool {
+			return yamlizedMigrations[i].ID < yamlizedMigrations[j].ID
+		})
+
+		if diff := cmp.Diff(yamlMigrations, yamlizedMigrations); diff != "" {
+			t.Errorf("unexpected migrations (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		UPDATE out_of_band_migrations SET
+			team = 'overwritten',
+			component = 'overwritten',
+			description = 'overwritten',
+			non_destructive = false,
+			is_enterprise = false,
+			introduced_version_major = -1,
+			introduced_version_minor = -1,
+			deprecated_version_major = -1,
+			deprecated_version_minor = -1
+	`)); err != nil {
+		t.Fatalf("unexpected error updating migrations: %s", err)
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+}
+
+func TestSynchronizeMetadataFallback(t *testing.T) {
+	// Note: package globals block test parallelism
+	testEnterprise(t)
+
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := NewStoreWithDB(db)
+
+	if err := store.Exec(ctx, sqlf.Sprintf(`
+		ALTER TABLE out_of_band_migrations
+			DROP COLUMN is_enterprise,
+			DROP COLUMN introduced_version_major,
+			DROP COLUMN introduced_version_minor,
+			DROP COLUMN deprecated_version_major,
+			DROP COLUMN deprecated_version_minor,
+			ADD COLUMN introduced text NOT NULL,
+			ADD COLUMN deprecated text
+	`)); err != nil {
+		t.Fatalf("failed to alter table: %s", err)
+	}
+
+	compareMigrations := func() {
+		migrations, err := store.List(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error getting migrations: %s", err)
+		}
+
+		var yamlizedMigrations []yamlMigration
+		for _, migration := range migrations {
+			yamlMigration := yamlMigration{
+				ID:                     migration.ID,
+				Team:                   migration.Team,
+				Component:              migration.Component,
+				Description:            migration.Description,
+				NonDestructive:         migration.NonDestructive,
+				IsEnterprise:           migration.IsEnterprise,
+				IntroducedVersionMajor: migration.Introduced.Major,
+				IntroducedVersionMinor: migration.Introduced.Minor,
+			}
+
+			if migration.Deprecated != nil {
+				yamlMigration.DeprecatedVersionMajor = &migration.Deprecated.Major
+				yamlMigration.DeprecatedVersionMinor = &migration.Deprecated.Minor
+			}
+
+			yamlizedMigrations = append(yamlizedMigrations, yamlMigration)
+		}
+
+		sort.Slice(yamlizedMigrations, func(i, j int) bool {
+			return yamlizedMigrations[i].ID < yamlizedMigrations[j].ID
+		})
+
+		expectedMigrations := make([]yamlMigration, len(yamlMigrations))
+		copy(expectedMigrations, yamlMigrations)
+		for i := range expectedMigrations {
+			expectedMigrations[i].IsEnterprise = true
+		}
+
+		if diff := cmp.Diff(expectedMigrations, yamlizedMigrations); diff != "" {
+			t.Errorf("unexpected migrations (-want +got):\n%s", diff)
+		}
+	}
+
+	if err := store.SynchronizeMetadata(ctx); err != nil {
+		t.Fatalf("unexpected error synchronizing metadata: %s", err)
+	}
+
+	compareMigrations()
+}
+
+func TestList(t *testing.T) {
+	// Note: package globals block test parallelism
+	withMigrationIDs(t, []int{1, 2, 3})
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
@@ -38,11 +186,13 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(t, db)
+	// Note: package globals block test parallelism
+	testEnterprise(t)
+	withMigrationIDs(t, []int{1, 2, 3, 4, 5})
 
-	ReturnEnterpriseMigrations = true
-	defer func() { ReturnEnterpriseMigrations = false }()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStore(t, db)
 
 	migrations, err := store.List(context.Background())
 	if err != nil {
@@ -63,7 +213,8 @@ func TestListEnterprise(t *testing.T) {
 
 func TestUpdateDirection(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	if err := store.UpdateDirection(context.Background(), 3, true); err != nil {
@@ -89,7 +240,8 @@ func TestUpdateDirection(t *testing.T) {
 func TestUpdateProgress(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	if err := store.updateProgress(context.Background(), 3, 0.7, now); err != nil {
@@ -116,7 +268,8 @@ func TestUpdateProgress(t *testing.T) {
 func TestUpdateMetadata(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 7)
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	type sampleMeta = struct {
@@ -164,7 +317,8 @@ func TestUpdateMetadata(t *testing.T) {
 func TestAddError(t *testing.T) {
 	t.Parallel()
 	now := testTime.Add(time.Hour * 8)
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	if err := store.addError(context.Background(), 2, "oops", now); err != nil {
@@ -196,7 +350,8 @@ func TestAddErrorBounded(t *testing.T) {
 	t.Parallel()
 
 	now := testTime.Add(time.Hour * 9)
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStore(t, db)
 
 	var expectedErrors []MigrationError
@@ -252,6 +407,7 @@ var testMigrations = []Migration{
 		Created:        testTime,
 		LastUpdated:    nil,
 		NonDestructive: false,
+		IsEnterprise:   false,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -267,6 +423,7 @@ var testMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
+		IsEnterprise:   false,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
@@ -285,6 +442,7 @@ var testMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 3),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 4)),
 		NonDestructive: false,
+		IsEnterprise:   false,
 		ApplyReverse:   true,
 		Metadata:       json.RawMessage(`{}`),
 		Errors: []MigrationError{
@@ -306,6 +464,7 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime,
 		LastUpdated:    nil,
 		NonDestructive: false,
+		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -321,6 +480,7 @@ var testEnterpriseMigrations = []Migration{
 		Created:        testTime.Add(time.Hour * 1),
 		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
+		IsEnterprise:   true,
 		ApplyReverse:   false,
 		Metadata:       json.RawMessage(`{}`),
 		Errors:         []MigrationError{},
@@ -335,7 +495,18 @@ func newVersionPtr(major, minor int) *Version {
 	return &v
 }
 
-func testStore(t *testing.T, db dbutil.DB) *Store {
+func testEnterprise(t *testing.T) {
+	ReturnEnterpriseMigrations = true
+	t.Cleanup(func() { ReturnEnterpriseMigrations = false })
+}
+
+func withMigrationIDs(t *testing.T, ids []int) {
+	old := yamlMigrationIDs
+	yamlMigrationIDs = ids
+	t.Cleanup(func() { yamlMigrationIDs = old })
+}
+
+func testStore(t *testing.T, db database.DB) *Store {
 	store := NewStoreWithDB(db)
 
 	if _, err := db.ExecContext(context.Background(), "DELETE FROM out_of_band_migrations CASCADE"); err != nil {

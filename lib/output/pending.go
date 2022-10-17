@@ -7,7 +7,7 @@ type Pending interface {
 
 	// Update and Updatef change the message shown after the spinner.
 	Update(s string)
-	Updatef(format string, args ...interface{})
+	Updatef(format string, args ...any)
 
 	// Complete stops the spinner and replaces the pending line with the given
 	// message.

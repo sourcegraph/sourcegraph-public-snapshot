@@ -9,6 +9,7 @@
 package types
 
 import (
+	"context"
 	"net/url"
 	"reflect"
 
@@ -23,12 +24,16 @@ import (
 const RedactedSecret = "REDACTED"
 
 // RedactedConfig returns the external service config with all secret fields replaces by RedactedSecret.
-func (e *ExternalService) RedactedConfig() (string, error) {
-	if e.Config == "" {
+func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
+	rawConfig, err := e.Config.Decrypt(ctx)
+	if err != nil {
+		return "", err
+	}
+	if rawConfig == "" {
 		return "", nil
 	}
 
-	cfg, err := e.Configuration()
+	cfg, err := e.Configuration(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -39,6 +44,7 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		es.redactString(c.Token, "token")
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
+		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
@@ -62,6 +68,17 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 				return "", err
 			}
 		}
+	case *schema.PythonPackagesConnection:
+		for i := range c.Urls {
+			err = es.redactURL(c.Urls[i], "urls", i)
+			if err != nil {
+				return "", err
+			}
+		}
+	case *schema.RustPackagesConnection:
+		// Nothing to redact
+	case *schema.RubyPackagesConnection:
+		es.redactString(c.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -80,31 +97,40 @@ func (e *ExternalService) RedactedConfig() (string, error) {
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
 	}
 
-	return es.apply(e.Config)
+	return es.apply(rawConfig)
 }
 
 // UnredactConfig will replace redacted fields with their unredacted form from the 'old' ExternalService.
 // You should call this when accepting updated config from a user that may have been
 // previously redacted, and pass in the unredacted form directly from the DB as the 'old' parameter
-func (e *ExternalService) UnredactConfig(old *ExternalService) error {
-	if e == nil || old == nil || e.Config == "" || old.Config == "" {
+func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalService) error {
+	if e == nil || old == nil {
 		return nil
+	}
+
+	eConfig, err := e.Config.Decrypt(ctx)
+	if err != nil || eConfig == "" {
+		return err
+	}
+	oldConfig, err := old.Config.Decrypt(ctx)
+	if err != nil || oldConfig == "" {
+		return err
 	}
 
 	if old.Kind != e.Kind {
 		return errors.Errorf(
-			"UnRedactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
+			"UnredactExternalServiceConfig: unmatched external service kinds, old: %q, e: %q",
 			old.Kind,
 			e.Kind,
 		)
 	}
 
-	newCfg, err := e.Configuration()
+	newCfg, err := e.Configuration(ctx)
 	if err != nil {
 		return err
 	}
 
-	oldCfg, err := old.Configuration()
+	oldCfg, err := old.Configuration(ctx)
 	if err != nil {
 		return err
 	}
@@ -118,6 +144,7 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitLabConnection:
 		o := oldCfg.(*schema.GitLabConnection)
 		es.unredactString(c.Token, o.Token, "token")
+		es.unredactString(c.TokenOauthRefresh, o.TokenOauthRefresh, "token.oauth.refresh")
 	case *schema.BitbucketServerConnection:
 		o := oldCfg.(*schema.BitbucketServerConnection)
 		es.unredactString(c.Password, o.Password, "password")
@@ -138,33 +165,20 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
-		o := oldCfg.(*schema.GoModulesConnection)
-		m := make(map[string]string, len(o.Urls))
-
-		for _, oldURL := range o.Urls {
-			if oldURL == "" {
-				continue
-			}
-
-			redactedOldURL, err := redactedURL(oldURL)
-			if err != nil {
-				return err
-			}
-
-			m[redactedOldURL] = oldURL
+		err = es.unredactURLs(c.Urls, oldCfg.(*schema.GoModulesConnection).Urls)
+		if err != nil {
+			return err
 		}
-
-		for i := range c.Urls {
-			oldURL, ok := m[c.Urls[i]]
-			if !ok {
-				continue
-			}
-
-			err = es.unredactURL(c.Urls[i], oldURL, "urls", i)
-			if err != nil {
-				return err
-			}
+	case *schema.PythonPackagesConnection:
+		err = es.unredactURLs(c.Urls, oldCfg.(*schema.PythonPackagesConnection).Urls)
+		if err != nil {
+			return err
 		}
+	case *schema.RustPackagesConnection:
+		// Nothing to unredact
+	case *schema.RubyPackagesConnection:
+		o := oldCfg.(*schema.RubyPackagesConnection)
+		es.unredactString(c.Repository, o.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {
@@ -187,12 +201,12 @@ func (e *ExternalService) UnredactConfig(old *ExternalService) error {
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))
 	}
 
-	unredacted, err := es.apply(e.Config)
+	unredacted, err := es.apply(eConfig)
 	if err != nil {
 		return err
 	}
 
-	e.Config = unredacted
+	e.Config.Set(unredacted)
 	return nil
 }
 
@@ -208,23 +222,23 @@ func (es edits) apply(input string) (output string, err error) {
 	return
 }
 
-func (es *edits) edit(v interface{}, path ...interface{}) {
+func (es *edits) edit(v any, path ...any) {
 	*es = append(*es, edit{jsonx.MakePath(path...), v})
 }
 
-func (es *edits) redactString(s string, path ...interface{}) {
+func (es *edits) redactString(s string, path ...any) {
 	if s != "" {
 		es.edit(redactedString(s), path...)
 	}
 }
 
-func (es *edits) unredactString(new, old string, path ...interface{}) {
+func (es *edits) unredactString(new, old string, path ...any) {
 	if new != "" && old != "" {
 		es.edit(unredactedString(new, old), path...)
 	}
 }
 
-func (es *edits) redactURL(s string, path ...interface{}) error {
+func (es *edits) redactURL(s string, path ...any) error {
 	if s == "" {
 		return nil
 	}
@@ -238,7 +252,38 @@ func (es *edits) redactURL(s string, path ...interface{}) error {
 	return nil
 }
 
-func (es *edits) unredactURL(new, old string, path ...interface{}) error {
+func (es *edits) unredactURLs(new, old []string) (err error) {
+	m := make(map[string]string, len(old))
+
+	for _, oldURL := range old {
+		if oldURL == "" {
+			continue
+		}
+
+		redactedOldURL, err := redactedURL(oldURL)
+		if err != nil {
+			return err
+		}
+
+		m[redactedOldURL] = oldURL
+	}
+
+	for i := range new {
+		oldURL, ok := m[new[i]]
+		if !ok {
+			continue
+		}
+
+		err = es.unredactURL(new[i], oldURL, "urls", i)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (es *edits) unredactURL(new, old string, path ...any) error {
 	if new == "" || old == "" {
 		return nil
 	}
@@ -254,7 +299,7 @@ func (es *edits) unredactURL(new, old string, path ...interface{}) error {
 
 type edit struct {
 	path  jsonx.Path
-	value interface{}
+	value any
 }
 
 func (p edit) apply(input string) (string, error) {

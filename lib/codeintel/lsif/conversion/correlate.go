@@ -8,11 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -194,10 +190,6 @@ var vertexHandlers = map[string]vertexHandler{
 	"moniker":              correlateMoniker,
 	"packageInformation":   correlatePackageInformation,
 	"diagnosticResult":     correlateDiagnosticResult,
-
-	// Sourcegraph extensions
-	string(protocol.VertexSourcegraphDocumentationResult): correlateDocumentationResult,
-	string(protocol.VertexSourcegraphDocumentationString): correlateDocumentationString,
 }
 
 // correlateElement maps a single vertex element into the correlation state.
@@ -228,10 +220,6 @@ var edgeHandlers = map[string]func(state *wrappedState, id int, edge Edge) error
 	"nextMoniker":                 correlateNextMonikerEdge,
 	"packageInformation":          correlatePackageInformationEdge,
 	"textDocument/diagnostic":     correlateDiagnosticEdge,
-
-	// Sourcegraph extensions
-	string(protocol.EdgeSourcegraphDocumentationResult):   correlateDocumentationResultEdge,
-	string(protocol.EdgeSourcegraphDocumentationChildren): correlateDocumentationChildrenEdge,
 }
 
 // correlateElement maps a single edge element into the correlation state.
@@ -244,10 +232,8 @@ func correlateEdge(state *wrappedState, element Element) error {
 			return nil
 		}
 		return handler(state, element.ID, payload)
-	case reader.DocumentationStringEdge:
-		return correlateDocumentationStringEdge(state, element.ID, payload)
 	default:
-		return ErrUnexpectedPayload
+		return nil
 	}
 }
 
@@ -462,7 +448,6 @@ func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
 		return malformedDump(id, edge.OutV, "vertex")
 	}
 
-	log15.Debug("Skipping edge from an unsupported vertex")
 	return nil
 }
 

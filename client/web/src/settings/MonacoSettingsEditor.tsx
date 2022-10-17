@@ -1,7 +1,7 @@
 import * as React from 'react'
 
-import * as jsonc from '@sqs/jsonc-parser'
 import classNames from 'classnames'
+import * as jsonc from 'jsonc-parser'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
@@ -264,6 +264,15 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 }
 
 function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
+    const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
+    if (!window.context.enableLegacyExtensions) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
+        // @ts-ignore
+        delete schema.properties.extensions
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
+        // @ts-ignore
+        delete schema.properties['extensions.activeLoggers']
+    }
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
@@ -281,11 +290,11 @@ function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | u
             },
             {
                 uri: 'settings.schema.json#',
-                schema: settingsSchema,
+                schema,
             },
             {
                 uri: 'settings.schema.json',
-                schema: settingsSchema,
+                schema,
             },
         ],
     })

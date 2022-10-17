@@ -4,7 +4,7 @@ Site admins can sync Git repositories on any Git repository host (by Git clone U
 
 To connect generic Git host to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Generic Git host**.
 1. Configure the connection to generic Git host the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.

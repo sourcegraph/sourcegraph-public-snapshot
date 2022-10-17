@@ -22,8 +22,8 @@ const create = <T extends object>(createState: StateCreator<T>): UseStore<T> => 
 // Reset all stores after each test run
 afterEach(() => {
     actToUse(() => {
-        for (const resetFn of storeResetFns) {
-            resetFn()
+        for (const resetFunc of storeResetFns) {
+            resetFunc()
         }
     })
 })

@@ -9,16 +9,20 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,7 +41,8 @@ func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
 var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 
 type batchSpecResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	batchSpec          *btypes.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
@@ -144,6 +149,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 
 	return &changesetApplyPreviewConnectionResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		opts:              opts,
 		action:            (*btypes.ReconcilerOperation)(args.Action),
 		batchSpecID:       r.batchSpec.ID,
@@ -183,12 +189,12 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 	return &url, nil
 }
 
-func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchSpec.CreatedAt}
+func (r *batchSpecResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchSpec.CreatedAt}
 }
 
-func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.batchSpec.ExpiresAt()}
+func (r *batchSpecResolver) ExpiresAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.batchSpec.ExpiresAt()}
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -208,35 +214,15 @@ func (r *batchChangeDescriptionResolver) Description() string {
 }
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	specsConnection := &changesetSpecConnectionResolver{
-		store: r.store,
-		opts:  store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID},
-	}
-
-	specs, err := specsConnection.Nodes(ctx)
+	added, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	totalStat := &graphqlbackend.DiffStat{}
-	for _, spec := range specs {
-		// If we can't convert it, that means it's hidden from the user and we
-		// can simply skip it.
-		if _, ok := spec.ToVisibleChangesetSpec(); !ok {
-			continue
-		}
-
-		resolver, ok := spec.(*changesetSpecResolver)
-		if !ok {
-			// This should never happen.
-			continue
-		}
-
-		stat := resolver.changesetSpec.DiffStat()
-		totalStat.AddStat(stat)
-	}
-
-	return totalStat, nil
+	return graphqlbackend.NewDiffStat(diff.Stat{
+		Added:   int32(added),
+		Deleted: int32(deleted),
+	}), nil
 }
 
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
@@ -250,8 +236,9 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 	}
 
 	return &batchChangeResolver{
-		store:       r.store,
-		batchChange: batchChange,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		batchChange:     batchChange,
 	}, nil
 }
 
@@ -296,19 +283,18 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+		return nil, auth.ErrNotAuthenticated
 	}
 
-	specs, _, err := r.store.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID})
+	repoIDs, err := r.store.ListBatchSpecRepoIDs(ctx, r.batchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	repoIDs := specs.RepoIDs()
-
-	// If no changeset specs match, we don't need to compute anything.
+	// If there are no code hosts, then we don't have to compute anything
+	// further.
 	if len(repoIDs) == 0 {
-		return &emptyEatchChangesCodeHostConnectionResolver{}, nil
+		return &emptyBatchChangesCodeHostConnectionResolver{}, nil
 	}
 
 	offset := 0
@@ -361,7 +347,7 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	return state.ToGraphQL(), nil
 }
 
-func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -383,10 +369,10 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
+	return &gqlutil.DateTime{Time: stats.StartedAt}, nil
 }
 
-func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -408,7 +394,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
+	return &gqlutil.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
@@ -426,9 +412,13 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 		return &message, nil
 	}
 
+	f := false
 	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
 		OnlyWithFailureMessage: true,
 		BatchSpecID:            r.batchSpec.ID,
+		// Omit canceled, they don't contain useful error messages.
+		Cancel:      &f,
+		ExcludeRank: true,
 	})
 	if err != nil {
 		return nil, err
@@ -508,7 +498,19 @@ func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
+	// If the spec finished successfully, there's nothing to retry.
+	if state == btypes.BatchSpecStateCompleted {
+		return false, nil
+	}
+
 	return state.Finished(), nil
+}
+
+func (r *batchSpecResolver) Source() string {
+	if r.batchSpec.CreatedFromRaw {
+		return btypes.BatchSpecSourceRemote.ToGraphQL()
+	}
+	return btypes.BatchSpecSourceLocal.ToGraphQL()
 }
 
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
@@ -610,9 +612,31 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 }
 
 func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
-	// TODO: This should only check namespace access.
 	r.canAdministerOnce.Do(func() {
-		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
+		svc := service.New(r.store)
+		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
 	})
 	return r.canAdminister, r.canAdministerErr
+}
+
+func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListBatchSpecWorkspaceFilesArgs) (_ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver, err error) {
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts := store.ListBatchSpecWorkspaceFileOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+		BatchSpecRandID: r.batchSpec.RandID,
+	}
+
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &batchSpecWorkspaceFileConnectionResolver{store: r.store, opts: opts}, nil
 }

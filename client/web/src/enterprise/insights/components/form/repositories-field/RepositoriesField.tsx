@@ -1,13 +1,4 @@
-import React, {
-    ChangeEvent,
-    FocusEvent,
-    forwardRef,
-    MouseEvent,
-    Ref,
-    useImperativeHandle,
-    useRef,
-    useState,
-} from 'react'
+import { ChangeEvent, FocusEvent, forwardRef, MouseEvent, Ref, useImperativeHandle, useRef, useState } from 'react'
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 

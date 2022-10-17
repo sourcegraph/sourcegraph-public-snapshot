@@ -1,0 +1,12 @@
+.banner {
+    box-shadow: var(--box-shadow);
+
+    &__description {
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+}
+
+.icon {
+    margin-right: 1.25rem;
+}

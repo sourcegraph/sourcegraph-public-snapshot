@@ -17,7 +17,11 @@ export interface Props {
     requestOrStatusCode: WebhookLogRequestFields | number
 }
 
-export const MessagePanel: React.FunctionComponent<Props> = ({ className, message, requestOrStatusCode }) => {
+export const MessagePanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    className,
+    message,
+    requestOrStatusCode,
+}) => {
     const [headers, language, body] = useMemo(() => {
         const headers = []
         let language = 'nohighlight'

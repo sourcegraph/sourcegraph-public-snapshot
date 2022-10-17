@@ -18,7 +18,7 @@ type ListCodeHostsOpts struct {
 }
 
 func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs []*btypes.CodeHost, err error) {
-	ctx, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listCodeHostsQuery(opts)
@@ -37,7 +37,6 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs [
 }
 
 var listCodeHostsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:ListCodeHosts
 WITH
 	-- esr_with_ssh includes all external_service_repos records where the
 	-- external service is cloned over SSH.
@@ -156,7 +155,7 @@ type GetExternalServiceIDsOpts struct {
 }
 
 func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServiceIDsOpts) (ids []int64, err error) {
-	ctx, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := getExternalServiceIDsQuery(opts)
@@ -182,7 +181,6 @@ func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServi
 }
 
 const getExternalServiceIDsQueryFmtstr = `
--- source: enterprise/internal/batches/store/codehost.go:GetExternalServiceIDs
 SELECT
 	external_services.id
 FROM external_services

@@ -1,0 +1,17 @@
+.code {
+    // Ensure we only render one line but keep the whitespace
+    white-space: pre;
+
+    &-highlight {
+        // These settings mimic the native find in files higlight options but we could not find them
+        // inside the theme config.
+        background-color: rgb(255, 222, 122);
+        border: 1px solid rgb(225, 197, 117);
+        color: rgb(50, 50, 50);
+        border-radius: 3px;
+    }
+}
+
+.matches {
+    color: var(--jb-secondary-info-text-color);
+}

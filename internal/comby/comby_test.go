@@ -2,12 +2,14 @@ package comby
 
 import (
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -107,12 +109,12 @@ func main() {
 	}
 
 	for _, test := range cases {
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, test.args, w)
+		var b bytes.Buffer
+		err := runWithoutPipes(ctx, test.args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		got := b.String()
 		if got != test.want {
 			t.Errorf("got %v, want %v", got, test.want)
@@ -130,12 +132,13 @@ func Test_stdin(t *testing.T) {
 	test := func(args Args) string {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		b := new(bytes.Buffer)
-		w := bufio.NewWriter(b)
-		err := PipeTo(ctx, args, w)
+
+		var b bytes.Buffer
+		err := runWithoutPipes(ctx, args, &b)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		return b.String()
 	}
 
@@ -225,4 +228,26 @@ func tempZipFromFiles(t *testing.T, files map[string]string) string {
 	}
 
 	return path
+}
+
+func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
+	if !Exists() {
+		return errors.New("comby is not installed")
+	}
+
+	rawArgs := rawArgs(args)
+	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
+	// Ensure forked child processes are killed
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
+	cmd.Stdout = b
+
+	if err = StartAndWaitForCompletion(cmd); err != nil {
+		return err
+	}
+
+	return nil
 }

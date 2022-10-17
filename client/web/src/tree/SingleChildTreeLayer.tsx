@@ -10,7 +10,7 @@ import { TreeLayerTable } from './components'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, SingleChildGitTree } from './util'
+import { SingleChildGitTree } from './util'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
@@ -130,8 +130,10 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                 <TreeLayerTable onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         <Directory
-                            {...this.props}
-                            maxEntries={maxEntries}
+                            entryInfo={this.props.entryInfo}
+                            depth={this.props.depth}
+                            index={this.props.index}
+                            isLightTheme={this.props.isLightTheme}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
@@ -139,6 +141,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             fileDecorations={this.props.fileDecorations}
                             isActive={isActive}
                             isSelected={isSelected}
+                            isExpanded={this.props.isExpanded}
                         />
                         {this.props.isExpanded && (
                             <tr>

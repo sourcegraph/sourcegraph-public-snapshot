@@ -29,7 +29,7 @@ The most common use-case for `src serve-git` is to create git repos that do not 
 
 1. [Install Sourcegraph CLI](https://github.com/sourcegraph/src-cli#installation) (`src`).
 1. Run `src serve-git` in a directory with git repositories. Ensure the address is reachable by Sourcegraph.
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Sourcegraph CLI Serve-Git**.
 1. Configure the URL field to the address for `src serve-git`.
 1. Press **Add repositories**.

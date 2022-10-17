@@ -12,13 +12,13 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -30,7 +30,7 @@ import (
 // GitDir is an absolute path to a GIT_DIR.
 // They will all follow the form:
 //
-//    ${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${name}/.git
 type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
@@ -80,6 +80,11 @@ func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
 }
 
+func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return (strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest"))
+}
+
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
 func checkSpecArgSafety(spec string) error {
@@ -103,9 +108,13 @@ type tlsConfig struct {
 	SSLCAInfo string
 }
 
-var tlsExternal = conf.Cached(func() interface{} {
+// getTlsExternalDoNotInvoke as the name suggests, exists as a function instead of being passed
+// directly to conf.Cached below just so that we can test it.
+func getTlsExternalDoNotInvoke() *tlsConfig {
 	exp := conf.ExperimentalFeatures()
 	c := exp.TlsExternal
+
+	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
 
 	if c == nil {
 		return &tlsConfig{}
@@ -118,10 +127,25 @@ var tlsExternal = conf.Cached(func() interface{} {
 			b.WriteString(cert)
 			b.WriteString("\n")
 		}
+
+		// git will ignore the system certificates when specifying SSLCAInfo,
+		// so we additionally include the system certificates. Note: this only
+		// works on linux, see cacert package for more information.
+		root, err := cacert.System()
+		if err != nil {
+			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.", log.Error(err))
+		} else if len(root) == 0 {
+			logger.Warn("no system certificates found for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.")
+		}
+		for _, cert := range root {
+			b.Write(cert)
+			b.WriteString("\n")
+		}
+
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			log15.Error("failed to create file holding tls.external.certificates for git", "error", err)
+			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
 		} else {
 			sslCAInfo = p
 		}
@@ -131,14 +155,15 @@ var tlsExternal = conf.Cached(func() interface{} {
 		SSLNoVerify: c.InsecureSkipVerify,
 		SSLCAInfo:   sslCAInfo,
 	}
-})
-
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	return runWith(ctx, cmd, true, progress)
 }
 
-// runWithRemoteOpts runs the command after applying the remote options.
-// If progress is not nil, all output is written to it in a separate goroutine.
+// tlsExternal will create a new cache for this gitserer process and store the certificates set in
+// the site config.
+// This creates a long lived
+var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
+
+// runWith runs the command after applying the remote options. If progress is not
+// nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
@@ -146,12 +171,14 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		if cmd.Env == nil {
 			cmd.Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+		configureRemoteGitCommand(cmd, tlsExternal())
 	}
 
 	var b interface {
 		Bytes() []byte
 	}
+
+	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
 
 	if progress != nil {
 		var pw progressWriter
@@ -162,7 +189,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		cmd.Stderr = mr
 		go func() {
 			if _, err := io.Copy(progress, r); err != nil {
-				log15.Error("error while copying progress", "error", err)
+				logger.Error("error while copying progress", log.Error(err))
 			}
 		}()
 		b = &pw
@@ -217,7 +244,37 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
+	if executable == "p4-fusion" {
+		extraArgs = removeUnsupportedP4Args(extraArgs)
+	}
+
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+}
+
+// removeUnsupportedP4Args removes all -c arguments as `p4-fusion` command doesn't
+// support -c argument and passing this causes warning logs.
+func removeUnsupportedP4Args(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+
+	idx := 0
+	foundC := false
+	for _, arg := range args {
+		if arg == "-c" {
+			// removing any -c
+			foundC = true
+		} else if foundC {
+			// removing the argument following -c and resetting the flag
+			foundC = false
+		} else {
+			// keep the argument
+			args[idx] = arg
+			idx++
+		}
+	}
+	args = args[:idx]
+	return args
 }
 
 // writeTempFile writes data to the TempFile with pattern. Returns the path of
@@ -393,12 +450,13 @@ var logUnflushableResponseWriterOnce sync.Once
 // must call Close to free the resources created by the writer.
 //
 // If w does not support flushing, it returns nil.
-func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
+func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
-			log15.Warn("Unable to flush HTTP response bodies. Diff search performance and completeness will be affected.", "type", reflect.TypeOf(w).String())
+			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
+				log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
@@ -532,23 +590,16 @@ func (w *progressWriter) Bytes() []byte {
 	return w.buf
 }
 
-// mapToLog15Ctx translates a map to log15 context fields.
-func mapToLog15Ctx(m map[string]interface{}) []interface{} {
-	// sort so its stable
-	keys := make([]string, len(m))
-	i := 0
-	for k := range m {
-		keys[i] = k
-		i++
+// mapToLoggerField translates a map to log context fields.
+func mapToLoggerField(m map[string]any) []log.Field {
+	LogFields := []log.Field{}
+
+	for i, v := range m {
+
+		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
 	}
-	sort.Strings(keys)
-	ctx := make([]interface{}, len(m)*2)
-	for i, k := range keys {
-		j := i * 2
-		ctx[j] = k
-		ctx[j+1] = m[k]
-	}
-	return ctx
+
+	return LogFields
 }
 
 // isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
@@ -573,13 +624,14 @@ func isPaused(dir string) (string, bool) {
 // disappears between readdir and the stat of the file. In either case this
 // error can be ignored for best effort code.
 func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) error) error {
+	logger := log.Scoped("bestEffortWalk", "bestEffortWalk is a filepath.Walk which ignores errors that can be passed to walkFn")
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}
 
 		if msg, ok := isPaused(path); ok {
-			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			logger.Warn("bestEffortWalk paused", log.String("dir", path), log.String("reason", msg))
 			return filepath.SkipDir
 		}
 

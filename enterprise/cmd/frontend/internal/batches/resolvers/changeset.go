@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -19,14 +18,17 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	changeset *btypes.Changeset
 
@@ -47,19 +49,20 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, changeset, repo)
+func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
+	r := NewChangesetResolver(store, gitserverClient, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
-		store:        store,
-		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
-		changeset:    changeset,
+		store:           store,
+		gitserverClient: gitserverClient,
+		repo:            repo,
+		repoResolver:    graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
+		changeset:       changeset,
 	}
 }
 
@@ -177,30 +180,30 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
+	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
+	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
 		return nil, err
 	}
-	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
+	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.CreatorID = actor.UID
+			opts.OnlyAdministeredByUserID = actor.UID
 		}
 	}
 
-	return &batchChangesConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
 }
 
-func (r *changesetResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.changeset.CreatedAt}
+func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.changeset.CreatedAt}
 }
 
-func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.changeset.UpdatedAt}
+func (r *changesetResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.changeset.UpdatedAt}
 }
 
-func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *changesetResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	// If code host syncs are disabled, the syncer is not actively syncing
 	// changesets and the next sync time cannot be determined.
 	if conf.Get().DisableAutoCodeHostSyncs {
@@ -214,7 +217,7 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*graphqlbackend.Dat
 	if nextSyncAt.IsZero() {
 		return nil, nil
 	}
-	return &graphqlbackend.DateTime{Time: nextSyncAt}, nil
+	return &gqlutil.DateTime{Time: nextSyncAt}, nil
 }
 
 func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
@@ -286,70 +289,21 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*batcheslib.ChangesetSpec, error) {
+func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if spec.Spec.IsImportingExisting() {
+	if spec.Type == btypes.ChangesetSpecTypeExisting {
 		return nil, errors.New("ChangesetSpec imports a changeset")
 	}
 
-	return spec.Spec, nil
+	return spec, nil
 }
 
-func (r *changesetResolver) PublicationState() string {
-	return string(r.changeset.PublicationState)
-}
-
-func (r *changesetResolver) ReconcilerState() string {
-	return string(r.changeset.ReconcilerState)
-}
-
-func (r *changesetResolver) ExternalState() *string {
-	if !r.changeset.Published() {
-		return nil
-	}
-	state := string(r.changeset.ExternalState)
-	return &state
-}
-
-func (r *changesetResolver) State() (string, error) {
-	// Note that there's an inverse version of this function in
-	// getRewirerMappingCurrentState(): if one changes, so should the other.
-
-	switch r.changeset.ReconcilerState {
-	case btypes.ReconcilerStateErrored:
-		return string(btypes.ChangesetStateRetrying), nil
-	case btypes.ReconcilerStateFailed:
-		return string(btypes.ChangesetStateFailed), nil
-	case btypes.ReconcilerStateScheduled:
-		return string(btypes.ChangesetStateScheduled), nil
-	default:
-		if r.changeset.ReconcilerState != btypes.ReconcilerStateCompleted {
-			return string(btypes.ChangesetStateProcessing), nil
-		}
-	}
-
-	if r.changeset.PublicationState == btypes.ChangesetPublicationStateUnpublished {
-		return string(btypes.ChangesetStateUnpublished), nil
-	}
-
-	switch r.changeset.ExternalState {
-	case btypes.ChangesetExternalStateDraft:
-		return string(btypes.ChangesetStateDraft), nil
-	case btypes.ChangesetExternalStateOpen:
-		return string(btypes.ChangesetStateOpen), nil
-	case btypes.ChangesetExternalStateClosed:
-		return string(btypes.ChangesetStateClosed), nil
-	case btypes.ChangesetExternalStateMerged:
-		return string(btypes.ChangesetStateMerged), nil
-	case btypes.ChangesetExternalStateDeleted:
-		return string(btypes.ChangesetStateDeleted), nil
-	default:
-		return "", errors.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
-	}
+func (r *changesetResolver) State() string {
+	return string(r.changeset.State)
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -401,7 +355,7 @@ func (r *changesetResolver) Error() *string { return r.changeset.FailureMessage 
 
 func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
 
-func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	// We need to find out how deep in the queue this changeset is.
 	place, err := r.store.GetChangesetPlaceInSchedulerQueue(ctx, r.changeset.ID)
 	if err == store.ErrNoResults {
@@ -412,7 +366,7 @@ func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*graphqlbac
 
 	// Now we can ask the scheduler to estimate where this item would fall in
 	// the schedule.
-	return graphqlbackend.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
+	return gqlutil.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
 }
 
 func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
@@ -488,23 +442,20 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		return nil, nil
 	}
 
+	db := r.store.DatabaseDB()
 	if r.changeset.Unpublished() {
 		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		diff, err := desc.Diff()
-		if err != nil {
-			return nil, errors.New("ChangesetSpec has no diff")
-		}
-
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
-			r.store.DatabaseDB(),
+			db,
+			r.gitserverClient,
 			r.repoResolver,
 			desc.BaseRev,
-			diff,
+			string(desc.Diff),
 		)
 	}
 
@@ -536,7 +487,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DatabaseDB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	return graphqlbackend.NewRepositoryComparison(ctx, db, r.gitserverClient, r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,

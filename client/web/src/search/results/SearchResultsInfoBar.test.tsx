@@ -1,11 +1,10 @@
-import React from 'react'
-
 import { createMemoryHistory, createLocation } from 'history'
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -15,7 +14,7 @@ import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResults
 const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
-    platformContext: { forceUpdateTooltip: noop, settings: NEVER },
+    platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },
@@ -25,63 +24,62 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     onSaveQueryClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     caseSensitive: false,
+    setSidebarCollapsed: noop,
+    sidebarCollapsed: false,
 }
 
+const renderSearchResultsInfoBar = (
+    props: Pick<SearchResultsInfoBarProps, 'enableCodeMonitoring'> & Partial<SearchResultsInfoBarProps>
+) =>
+    renderWithBrandedContext(
+        <MockedTestProvider>
+            <SearchResultsInfoBar {...COMMON_PROPS} {...props} />
+        </MockedTestProvider>,
+        { history }
+    )
+
 describe('SearchResultsInfoBar', () => {
+    beforeAll(() => {
+        window.context = {
+            enableLegacyExtensions: false,
+        } as any
+    })
+
     test('code monitoring feature flag disabled', () => {
         expect(
-            renderWithBrandedContext(
-                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={false} query="foo type:diff" />,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: false }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, cannot create monitor from query', () => {
-        expect(
-            renderWithBrandedContext(
-                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo" />,
-                { history }
-            ).asFragment()
-        ).toMatchSnapshot()
+        expect(renderSearchResultsInfoBar({ query: 'foo', enableCodeMonitoring: true }).asFragment()).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query', () => {
         expect(
-            renderWithBrandedContext(
-                <SearchResultsInfoBar {...COMMON_PROPS} enableCodeMonitoring={true} query="foo type:diff" />,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({ query: 'foo type:diff', enableCodeMonitoring: true }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('code monitoring feature flag enabled, can create monitor from query, user not logged in', () => {
         expect(
-            renderWithBrandedContext(
-                <SearchResultsInfoBar
-                    {...COMMON_PROPS}
-                    enableCodeMonitoring={true}
-                    query="foo type:diff"
-                    authenticatedUser={null}
-                />,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: true,
+                authenticatedUser: null,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 
     test('unauthenticated user', () => {
         expect(
-            renderWithBrandedContext(
-                <SearchResultsInfoBar
-                    {...COMMON_PROPS}
-                    enableCodeMonitoring={true}
-                    query="foo type:diff"
-                    authenticatedUser={null}
-                />,
-                { history }
-            ).asFragment()
+            renderSearchResultsInfoBar({
+                query: 'foo type:diff',
+                enableCodeMonitoring: true,
+                authenticatedUser: null,
+            }).asFragment()
         ).toMatchSnapshot()
     })
 })

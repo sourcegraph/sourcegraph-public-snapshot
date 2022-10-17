@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Modal, Icon } from '@sourcegraph/wildcard'
+import { Button, Modal, Icon, H3 } from '@sourcegraph/wildcard'
 
 import styles from './ModalVideo.module.scss'
 
@@ -19,7 +19,7 @@ interface ModalVideoProps {
     assetsRoot?: string
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
+export const ModalVideo: React.FunctionComponent<React.PropsWithChildren<ModalVideoProps>> = ({
     id,
     title,
     src,
@@ -32,7 +32,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
-        isOpen => {
+        (isOpen: boolean) => {
             setIsOpen(isOpen)
             if (onToggle) {
                 onToggle(isOpen)
@@ -43,7 +43,12 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
 
     let thumbnailElement = thumbnail ? (
         <button type="button" className={classNames('pb-2', styles.thumbnailButton)} onClick={() => toggleDialog(true)}>
-            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <img
+                src={`${assetsRoot}/${thumbnail.src}`}
+                alt={thumbnail.alt}
+                className={styles.thumbnailImage}
+                aria-hidden={true}
+            />
             <div className={styles.playIconWrapper}>
                 <PlayIcon />
             </div>
@@ -79,15 +84,15 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                 >
                     <div className={styles.modalContent} data-testid="modal-video">
                         <div className={styles.modalHeader}>
-                            <h3 id={id}>{title}</h3>
+                            <H3 id={id}>{title}</H3>
                             <Button
                                 variant="icon"
                                 className="p-1"
-                                data-testId="modal-video-close"
+                                data-testid="modal-video-close"
                                 onClick={() => toggleDialog(false)}
                                 aria-label="Close"
                             >
-                                <Icon as={CloseIcon} />
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
                             </Button>
                         </div>
                         <div className="w-100">

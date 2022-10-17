@@ -43,12 +43,14 @@
    "title": {
     "raw": "Sourcegraph test branch-00",
     "markup": "markdown",
-    "html": "\u003cp\u003eSourcegraph test branch-00\u003c/p\u003e"
+    "html": "\u003cp\u003eSourcegraph test branch-00\u003c/p\u003e",
+    "type": "rendered"
    },
    "description": {
     "raw": "This is a PR created by the Sourcegraph test suite.",
     "markup": "markdown",
-    "html": "\u003cp\u003eThis is a PR created by the Sourcegraph test suite.\u003c/p\u003e"
+    "html": "\u003cp\u003eThis is a PR created by the Sourcegraph test suite.\u003c/p\u003e",
+    "type": "rendered"
    },
    "reason": {
     "raw": "",
@@ -59,7 +61,8 @@
   "summary": {
    "raw": "This is a PR created by the Sourcegraph test suite.",
    "markup": "markdown",
-   "html": "\u003cp\u003eThis is a PR created by the Sourcegraph test suite.\u003c/p\u003e"
+   "html": "\u003cp\u003eThis is a PR created by the Sourcegraph test suite.\u003c/p\u003e",
+   "type": "rendered"
   },
   "state": "OPEN",
   "author": {

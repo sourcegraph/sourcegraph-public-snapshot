@@ -1,0 +1,10 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.panel {
+    // The primary 3-column layout is adopted above the lg breakpoint
+    @media (--lg-breakpoint-up) {
+        min-height: 60px;
+        max-height: 15%;
+        overflow-y: auto;
+    }
+}

@@ -7,7 +7,7 @@ import styles from './ConnectionPopoverForm.module.scss'
 
 type ConnectionPopoverFormProps = ConnectionFormProps
 
-export const ConnectionPopoverForm: React.FunctionComponent<ConnectionPopoverFormProps> = ({
+export const ConnectionPopoverForm: React.FunctionComponent<React.PropsWithChildren<ConnectionPopoverFormProps>> = ({
     inputClassName,
     formClassName,
     ...rest

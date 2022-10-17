@@ -2,13 +2,11 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { useWildcardTheme } from '../../hooks/useWildcardTheme'
+import { useWildcardTheme } from '../../hooks'
 import { ForwardReferenceComponent } from '../../types'
 
 import { BUTTON_VARIANTS, BUTTON_SIZES, BUTTON_DISPLAY } from './constants'
-import { getButtonSize, getButtonStyle, getButtonDisplay } from './utils'
-
-import styles from './Button.module.scss'
+import { getButtonClassName } from './utils'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /**
@@ -27,10 +25,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
-    /**
-     * A tooltip to display when the user hovers the button.
-     */
-    ['data-tooltip']?: string
 }
 
 /**
@@ -49,6 +43,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
+
 export const Button = React.forwardRef(
     (
         {
@@ -66,17 +61,11 @@ export const Button = React.forwardRef(
         },
         reference
     ) => {
-        const tooltip = attributes['data-tooltip']
         const { isBranded } = useWildcardTheme()
 
-        const brandedButtonClassname = classNames(
-            styles.btn,
-            variant && getButtonStyle({ variant, outline }),
-            display && getButtonDisplay({ display }),
-            size && getButtonSize({ size })
-        )
+        const brandedButtonClassname = getButtonClassName({ variant, outline, display, size })
 
-        const buttonComponent = (
+        return (
             <Component
                 ref={reference}
                 className={classNames(isBranded && brandedButtonClassname, className)}
@@ -87,24 +76,6 @@ export const Button = React.forwardRef(
                 {children}
             </Component>
         )
-
-        // Disabled elements don't fire mouse events, but the `Tooltip` relies on mouse
-        // events. This restores the tooltip behavior for disabled buttons by rendering an
-        // invisible `div` with the tooltip on top of the button, in the case that it is
-        // disabled. See https://stackoverflow.com/a/3100395 for more.
-        if (disabled && tooltip) {
-            return (
-                <div className={styles.container}>
-                    {/* We set a tabIndex for the tooltip-producing div so that keyboard
-                        users can still trigger it. */}
-                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-                    <div className={styles.disabledTooltip} data-tooltip={tooltip} tabIndex={0} />
-                    {buttonComponent}
-                </div>
-            )
-        }
-
-        return buttonComponent
     }
 ) as ForwardReferenceComponent<'button', ButtonProps>
 

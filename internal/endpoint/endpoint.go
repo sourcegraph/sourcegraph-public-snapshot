@@ -47,10 +47,9 @@ type endpoints struct {
 //
 // Examples URL specifiers:
 //
-// 	"k8s+http://searcher"
-// 	"k8s+rpc://indexed-searcher?kind=sts"
-// 	"http://searcher-0 http://searcher-1 http://searcher-2"
-//
+//	"k8s+http://searcher"
+//	"k8s+rpc://indexed-searcher?kind=sts"
+//	"http://searcher-0 http://searcher-1 http://searcher-2"
 func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)

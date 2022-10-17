@@ -7,7 +7,7 @@ import (
 
 // flatten combines string values and (non-recursive) string slice values
 // into a single string slice.
-func flatten(values ...interface{}) []string {
+func flatten(values ...any) []string {
 	union := make([]string, 0, len(values))
 	for _, value := range values {
 		switch v := value.(type) {

@@ -1,14 +1,13 @@
 import * as React from 'react'
 
+import { mdiInformationOutline, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
-import EyeIcon from 'mdi-react/EyeIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -76,17 +75,19 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                 <PageTitle title={`Manifest of ${this.props.extension.id}`} />
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
-                        <h3 className="mb-0 mr-1">Manifest</h3>
-                        <Icon
-                            className="text-muted"
-                            data-tooltip="The published JSON description of how to run or access the extension"
-                            as={InformationOutlineIcon}
-                        />
+                        <H3 className="mb-0 mr-1">Manifest</H3>
+                        <Tooltip content="The published JSON description of how to run or access the extension">
+                            <Icon
+                                className="text-muted"
+                                aria-label="The published JSON description of how to run or access the extension"
+                                svgPath={mdiInformationOutline}
+                            />
+                        </Tooltip>
                     </div>
                     <div>
                         {this.props.extension.manifest && (
                             <Button onClick={this.onViewModeButtonClick} variant="secondary">
-                                <Icon as={EyeIcon} /> Use{' '}
+                                <Icon aria-hidden={true} svgPath={mdiEye} /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </Button>
                         )}{' '}
@@ -117,7 +118,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                         />
                     ) : (
                         <pre className={classNames('form-control', styles.plainViewer)}>
-                            <code>{this.props.extension.rawManifest}</code>
+                            <Code>{this.props.extension.rawManifest}</Code>
                         </pre>
                     )}
                 </div>

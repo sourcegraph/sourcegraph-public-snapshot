@@ -1,7 +1,4 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { FileDiffHunkFields, DiffHunkLineType } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
@@ -54,38 +51,58 @@ export const DEMO_HUNKS: FileDiffHunkFields[] = [
     },
 ]
 
-const { add } = storiesOf('web/diffs/FileDiffHunks', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
-add('One diff unified hunk', () => (
+const config: Meta = {
+    title: 'web/diffs/FileDiffHunks',
+    decorators: [decorator],
+    includeStories: ['OneDiffUnifiedHunk', 'OneDiffSplitHunk'],
+    argTypes: {
+        persistLines: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        lineNumbers: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
+}
+
+export default config
+
+export const OneDiffUnifiedHunk: Story = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
                 diffMode="unified"
                 {...webProps}
-                persistLines={boolean('persistLines', true)}
+                persistLines={args.persistLines}
                 fileDiffAnchor="abc"
-                lineNumbers={boolean('lineNumbers', true)}
+                lineNumbers={args.lineNumbers}
                 hunks={DEMO_HUNKS}
                 className="abcdef"
             />
         )}
     </WebStory>
-))
+)
 
-add('One diff split hunk', () => (
+OneDiffUnifiedHunk.storyName = 'One diff unified hunk'
+
+export const OneDiffSplitHunk: Story = args => (
     <WebStory>
         {webProps => (
             <FileDiffHunks
                 diffMode="split"
                 {...webProps}
-                persistLines={boolean('persistLines', true)}
+                persistLines={args.persistLines}
                 fileDiffAnchor="abc"
-                lineNumbers={boolean('lineNumbers', true)}
+                lineNumbers={args.lineNumbers}
                 hunks={DEMO_HUNKS}
                 className="abcdef"
             />
         )}
     </WebStory>
-))
+)
+
+OneDiffSplitHunk.storyName = 'One diff split hunk'

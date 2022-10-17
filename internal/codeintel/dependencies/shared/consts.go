@@ -1,7 +1,10 @@
 package shared
 
 const (
-	GoModulesScheme   = "go"
-	JVMPackagesScheme = "semanticdb"
-	NpmPackagesScheme = "npm"
+	GoPackagesScheme     = "go"
+	JVMPackagesScheme    = "semanticdb"
+	NpmPackagesScheme    = "npm"
+	PythonPackagesScheme = "python"
+	RustPackagesScheme   = "rust-analyzer"
+	RubyPackagesScheme   = "scip-ruby"
 )

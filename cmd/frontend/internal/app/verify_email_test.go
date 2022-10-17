@@ -32,6 +32,7 @@ func TestServeVerifyEmail(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 		db.AuthzFunc.SetDefaultReturn(authz)
+		db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
@@ -63,6 +64,7 @@ func TestServeVerifyEmail(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 		db.AuthzFunc.SetDefaultReturn(authz)
+		db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})

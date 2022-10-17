@@ -1,13 +1,21 @@
-import React, { useEffect } from 'react'
+import { FC, useEffect, useMemo } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader } from '@sourcegraph/wildcard'
+import { Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { MinimalCaptureGroupInsightData } from '../../../../core/backend/code-insights-backend-types'
+import {
+    CodeInsightCreationMode,
+    CodeInsightsCreationActions,
+    CodeInsightsPage,
+    FORM_ERROR,
+    FormChangeEvent,
+    SubmissionErrors,
+} from '../../../../components'
+import { MinimalCaptureGroupInsightData } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
@@ -17,12 +25,15 @@ import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-s
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
-    onSuccessfulCreation: (insight: MinimalCaptureGroupInsightData) => void
+    onSuccessfulCreation: () => void
     onCancel: () => void
 }
 
-export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
+export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
 
     const [initialFormValues, setInitialFormValues] = useCaptureInsightInitialValues()
 
@@ -33,7 +44,11 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     const handleSubmit = async (values: CaptureGroupFormFields): Promise<SubmissionErrors | void> => {
         const insight = getSanitizedCaptureGroupInsight(values)
 
-        await onInsightCreateRequest({ insight })
+        try {
+            await onInsightCreateRequest({ insight })
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
 
         setInitialFormValues(undefined)
         telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
@@ -43,7 +58,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
             { insightType: CodeInsightTrackType.CaptureGroupInsight }
         )
 
-        onSuccessfulCreation(insight)
+        onSuccessfulCreation()
     }
 
     const handleCancel = (): void => {
@@ -80,13 +95,25 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
             />
 
             <CaptureGroupCreationContent
-                mode="creation"
-                className="pb-5"
+                touched={false}
                 initialValues={initialFormValues}
+                className="pb-5"
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 onChange={handleChange}
-            />
+            >
+                {form => (
+                    <CodeInsightsCreationActions
+                        mode={CodeInsightCreationMode.Creation}
+                        licensed={licensed}
+                        available={creationPermission?.available}
+                        submitting={form.submitting}
+                        errors={form.submitErrors?.[FORM_ERROR]}
+                        clear={form.isFormClearActive}
+                        onCancel={handleCancel}
+                    />
+                )}
+            </CaptureGroupCreationContent>
         </CodeInsightsPage>
     )
 }

@@ -7,6 +7,10 @@
     display: inline;
     padding: 0;
     font-size: inherit;
+
+    &:hover {
+        color: var(--link-hover-color);
+    }
 }
 
 .only-you-container {

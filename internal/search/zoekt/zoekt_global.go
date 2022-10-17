@@ -1,8 +1,8 @@
 package zoekt
 
 import (
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -48,9 +48,9 @@ func DefaultGlobalQueryScope(repoOptions search.RepoOptions) (zoektquery.Q, erro
 // ensure repo privacy filters). A `Generate` method converts the object to a
 // Zoekt query that ensures appropriate repo privacy scopes.
 type GlobalZoektQuery struct {
-	query          zoektquery.Q
-	repoScope      []zoektquery.Q
-	includePrivate bool
+	Query          zoektquery.Q
+	RepoScope      []zoektquery.Q
+	IncludePrivate bool
 }
 
 func NewGlobalZoektQuery(query zoektquery.Q, scope zoektquery.Q, includePrivate bool) *GlobalZoektQuery {
@@ -59,9 +59,9 @@ func NewGlobalZoektQuery(query zoektquery.Q, scope zoektquery.Q, includePrivate 
 		repoScope = append(repoScope, scope)
 	}
 	return &GlobalZoektQuery{
-		query:          query,
-		repoScope:      repoScope,
-		includePrivate: includePrivate,
+		Query:          query,
+		RepoScope:      repoScope,
+		IncludePrivate: includePrivate,
 	}
 }
 
@@ -71,12 +71,12 @@ func NewGlobalZoektQuery(query zoektquery.Q, scope zoektquery.Q, includePrivate 
 // construction of a GlobalZoektQuery was permitted to includePrivate
 // repositories.
 func (q *GlobalZoektQuery) ApplyPrivateFilter(userPrivateRepos []types.MinimalRepo) {
-	if q.includePrivate && len(userPrivateRepos) > 0 {
+	if q.IncludePrivate && len(userPrivateRepos) > 0 {
 		ids := make([]uint32, 0, len(userPrivateRepos))
 		for _, r := range userPrivateRepos {
 			ids = append(ids, uint32(r.ID))
 		}
-		q.repoScope = append(q.repoScope, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
+		q.RepoScope = append(q.RepoScope, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 }
 
@@ -84,5 +84,5 @@ func (q *GlobalZoektQuery) ApplyPrivateFilter(userPrivateRepos []types.MinimalRe
 // scope (i.e., whether to either exclusively public, exclusively private, or
 // either public or private repositories)
 func (q *GlobalZoektQuery) Generate() zoektquery.Q {
-	return zoektquery.Simplify(zoektquery.NewAnd(q.query, zoektquery.NewOr(q.repoScope...)))
+	return zoektquery.Simplify(zoektquery.NewAnd(q.Query, zoektquery.NewOr(q.RepoScope...)))
 }

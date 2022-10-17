@@ -9,17 +9,18 @@ import (
 )
 
 type PaginatedResultSet struct {
-	client    *Client
 	mu        sync.Mutex
 	initial   *url.URL
 	pageToken *PageToken
-	nodes     []interface{}
-	fetch     func(context.Context, *http.Request) (*PageToken, []interface{}, error)
+	nodes     []any
+	fetch     func(context.Context, *http.Request) (*PageToken, []any, error)
 }
 
-func newResultSet(c *Client, initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []interface{}, error)) *PaginatedResultSet {
+// NewPaginatedResultSet instantiates a new result set. This is intended for
+// internal use only, and is exported only to simplify testing in other
+// packages.
+func NewPaginatedResultSet(initial *url.URL, fetch func(context.Context, *http.Request) (*PageToken, []any, error)) *PaginatedResultSet {
 	return &PaginatedResultSet{
-		client:  c,
 		initial: initial,
 		fetch:   fetch,
 	}
@@ -28,11 +29,11 @@ func newResultSet(c *Client, initial *url.URL, fetch func(context.Context, *http
 // All walks the result set, returning all entries as a single slice.
 //
 // Note that this essentially consumes the result set.
-func (rs *PaginatedResultSet) All(ctx context.Context) ([]interface{}, error) {
+func (rs *PaginatedResultSet) All(ctx context.Context) ([]any, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 
-	var nodes []interface{}
+	var nodes []any
 	for {
 		node, err := rs.next(ctx)
 		if err != nil {
@@ -49,7 +50,7 @@ func (rs *PaginatedResultSet) All(ctx context.Context) ([]interface{}, error) {
 // necessary.
 //
 // If nil, nil is returned, then there are no further results.
-func (rs *PaginatedResultSet) Next(ctx context.Context) (interface{}, error) {
+func (rs *PaginatedResultSet) Next(ctx context.Context) (any, error) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 
@@ -67,7 +68,7 @@ func (rs *PaginatedResultSet) WithPageLength(pageLen int) *PaginatedResultSet {
 	values.Set("pagelen", strconv.Itoa(pageLen))
 	initial.RawQuery = values.Encode()
 
-	return newResultSet(rs.client, &initial, rs.fetch)
+	return NewPaginatedResultSet(&initial, rs.fetch)
 }
 
 func (rs *PaginatedResultSet) reqPage(ctx context.Context) error {
@@ -104,7 +105,7 @@ func (rs *PaginatedResultSet) nextPageRequest() (*http.Request, error) {
 	return http.NewRequest("GET", rs.initial.String(), nil)
 }
 
-func (rs *PaginatedResultSet) next(ctx context.Context) (interface{}, error) {
+func (rs *PaginatedResultSet) next(ctx context.Context) (any, error) {
 	// Check if we need to request the next page.
 	if len(rs.nodes) == 0 {
 		if err := rs.reqPage(ctx); err != nil {

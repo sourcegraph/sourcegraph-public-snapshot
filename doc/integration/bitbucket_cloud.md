@@ -6,7 +6,7 @@ Feature | Supported?
 ------- | ----------
 [Repository syncing](../admin/external_service/bitbucket_cloud.md) | ✅
 Repository permissions | Coming soon
-Browser extension | Coming soon
+Browser extension | ✅
 Native extension | ❌ Not supported on Bitbucket.org
 
 ## Repository syncing

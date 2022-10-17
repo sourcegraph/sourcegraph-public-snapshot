@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.12:142406_2022-04-14_8836ac3499f4@sha256:4681a48d1fb9a73fef1b540c08b3411f797351bbeda749f5dca21213a1e71526 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:174825_2022-09-28_291dca5d9725@sha256:0bfed82a206a1f313b7276521375dc4d27caa45c324f99e7da0453cecbd31980 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -27,8 +27,7 @@ LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
 # hadolint ignore=DL3020
 ADD config /sg_config_grafana
-COPY home.json /usr/share/grafana/public/dashboards/home.json
-
+COPY --from=monitoring_builder /generated/grafana/home.json /usr/share/grafana/public/dashboards/home.json
 COPY --from=monitoring_builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3020
@@ -43,7 +42,15 @@ RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_conf
 
 # @FIXME: Update redis image
 # Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache apk-tools>=2.12 krb5-libs>=1.18.4 libssl1.1>=1.1.1l openssl>=1.1.1l busybox>=1.32.1
+RUN apk add --upgrade --no-cache \
+    'apk-tools>=2.12' \
+    'krb5-libs>=1.18.4' \
+    'libssl1.1>=1.1.1l' \
+    'openssl>=1.1.1l' \
+    'busybox>=1.32.1' \
+    'ncurses-libs>=6.2_p20210109-r1' \
+    'ncurses-terminfo-base>=6.2_p20210109-r1' \
+    'libtirpc>=1.3.1-r1'
 
 EXPOSE 3370
 USER grafana

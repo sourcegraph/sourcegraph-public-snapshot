@@ -1,12 +1,12 @@
-import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { applyEdits, JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { ExternalServiceKind } from '../graphql-operations'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
@@ -14,7 +14,7 @@ import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helper
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Code intelligence regression test suite', () => {
+describe('Code graph regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
     const config = getConfig(
         'gitHubToken',
@@ -30,12 +30,12 @@ describe('Code intelligence regression test suite', () => {
         'testUserPassword'
     )
     const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+        kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',
@@ -100,7 +100,7 @@ describe('Code intelligence regression test suite', () => {
         }
     })
 
-    describe('Basic code intelligence regression test suite', () => {
+    describe('Basic code graph regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
         before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
@@ -111,7 +111,8 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('File sidebar, multiple levels of directories', async () => {
+        // Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/39000
+        test.skip('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
@@ -418,10 +419,12 @@ async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unk
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, path, value, {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        modify(oldContents, path, value, {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 

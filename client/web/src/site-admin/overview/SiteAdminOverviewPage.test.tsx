@@ -1,22 +1,15 @@
-import React from 'react'
-
 import { waitFor } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISiteUsagePeriod } from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
-import { PageTitle } from '../../components/PageTitle'
+import { SiteUsagePeriodFields } from '../../graphql-operations'
 
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 
 describe('SiteAdminOverviewPage', () => {
-    afterEach(() => {
-        PageTitle.titleSet = false
-    })
-
     const baseProps = {
         history: H.createMemoryHistory(),
         isLightTheme: true,
@@ -104,12 +97,11 @@ describe('SiteAdminOverviewPage', () => {
     })
 
     test('>= 2 users', async () => {
-        const usageStat: ISiteUsagePeriod = {
+        const usageStat: SiteUsagePeriodFields = {
             __typename: 'SiteUsagePeriod',
             userCount: 10,
             registeredUserCount: 8,
             anonymousUserCount: 2,
-            integrationUserCount: 0,
             startTime: new Date().toISOString(),
         }
 
@@ -140,9 +132,7 @@ describe('SiteAdminOverviewPage', () => {
                 _fetchWeeklyActiveUsers={() =>
                     of({
                         __typename: 'SiteUsageStatistics',
-                        daus: [],
                         waus: [usageStat, usageStat],
-                        maus: [],
                     })
                 }
             />

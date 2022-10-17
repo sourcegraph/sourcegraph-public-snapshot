@@ -1,7 +1,5 @@
-import React from 'react'
-
-import { createMemoryHistory, createLocation } from 'history'
-import { MemoryRouter } from 'react-router'
+import { within } from '@testing-library/dom'
+import { Route, Routes } from 'react-router-dom-v5-compat'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
@@ -11,59 +9,133 @@ import { SourcegraphContext } from '../jscontext'
 import { SignInPage } from './SignInPage'
 
 describe('SignInPage', () => {
-    const commonProps = {
-        history: createMemoryHistory(),
-        location: createLocation('/'),
-    }
     const authProviders: SourcegraphContext['authProviders'] = [
         {
             displayName: 'Builtin username-password authentication',
             isBuiltin: true,
             serviceType: 'builtin',
+            authenticationURL: '',
+            serviceID: '',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
+            authenticationURL: '/.auth/github/login?pc=f00bar',
+            serviceID: 'https://github.com',
         },
     ]
 
     it('renders sign in page (server)', () => {
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            authProviders,
-                            resetPasswordEnabled: true,
-                            xhrHeaders: {},
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: {},
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
+    })
+
+    describe('with Sourcegraph auth provider', () => {
+        it('renders page with 3 providers (experimentalFeature disabled)', () => {
+            const rendered = render(false, '/sign-in')
+
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        it('renders page with 2 providers (experimentalFeature enabled)', () => {
+            const rendered = render(true, '/sign-in')
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).not.toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        it('renders page with 3 providers (experimentalFeature enabled & url-param present)', () => {
+            const rendered = render(true, '/sign-in?sourcegraph-operator')
+            expect(
+                within(rendered.baseElement).queryByText(txt => txt.includes('Sourcegraph Employee'))
+            ).toBeInTheDocument()
+            expect(rendered.asFragment()).toMatchSnapshot()
+        })
+
+        function render(hideSourcegraphOperatorLogin: boolean, route: string) {
+            const withSourcegraphOperator: SourcegraphContext['authProviders'] = [
+                ...authProviders,
+                {
+                    displayName: 'Sourcegraph Employee',
+                    isBuiltin: false,
+                    serviceType: 'openidconnect',
+                    authenticationURL: '',
+                    serviceID: '',
+                },
+            ]
+
+            return renderWithBrandedContext(
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders: withSourcegraphOperator,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: { hideSourcegraphOperatorLogin },
+                                }}
+                            />
+                        }
+                    />
+                </Routes>,
+                { route }
+            )
+        }
     })
 
     it('renders sign in page (cloud)', () => {
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={null}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: true,
-                            authProviders,
-                            resetPasswordEnabled: true,
-                            xhrHeaders: {},
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={null}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: true,
+                                    authProviders,
+                                    resetPasswordEnabled: true,
+                                    xhrHeaders: {},
+                                    experimentalFeatures: {},
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
     })
@@ -79,19 +151,25 @@ describe('SignInPage', () => {
 
         expect(
             renderWithBrandedContext(
-                <MemoryRouter>
-                    <SignInPage
-                        {...commonProps}
-                        authenticatedUser={mockUser}
-                        context={{
-                            allowSignup: true,
-                            sourcegraphDotComMode: false,
-                            authProviders,
-                            xhrHeaders: {},
-                            resetPasswordEnabled: true,
-                        }}
+                <Routes>
+                    <Route
+                        path="/sign-in"
+                        element={
+                            <SignInPage
+                                authenticatedUser={mockUser}
+                                context={{
+                                    allowSignup: true,
+                                    sourcegraphDotComMode: false,
+                                    authProviders,
+                                    xhrHeaders: {},
+                                    resetPasswordEnabled: true,
+                                    experimentalFeatures: {},
+                                }}
+                            />
+                        }
                     />
-                </MemoryRouter>
+                </Routes>,
+                { route: '/sign-in' }
             ).asFragment()
         ).toMatchSnapshot()
     })

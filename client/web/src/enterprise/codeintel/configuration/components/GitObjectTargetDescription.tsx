@@ -1,12 +1,10 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
-import { GitObjectType } from '@sourcegraph/shared/src/schema'
+import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
 
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
-
-export const GitObjectTargetDescription: FunctionComponent<{ policy: CodeIntelligenceConfigurationPolicyFields }> = ({
-    policy,
-}) =>
+export const GitObjectTargetDescription: FunctionComponent<
+    React.PropsWithChildren<{ policy: CodeIntelligenceConfigurationPolicyFields }>
+> = ({ policy }) =>
     policy.type === GitObjectType.GIT_COMMIT ? (
         <>the matching commit</>
     ) : policy.type === GitObjectType.GIT_TAG ? (

@@ -19,7 +19,7 @@ func TestGroupAggregatedCodeIntelStats(t *testing.T) {
 		{Name: "codeintel.searchDefinitions", Week: t1, TotalWeek: 20, UniquesWeek: 2, LanguageID: &lang1},
 		{Name: "codeintel.lsifDefinitions", Week: t1, TotalWeek: 30, UniquesWeek: 3},
 		{Name: "codeintel.searchReferences.xrepo", Week: t1, TotalWeek: 40, UniquesWeek: 4, LanguageID: &lang2},
-	})
+	}, nil)
 
 	expectedCodeIntelStats := &types.NewCodeIntelUsageStatistics{
 		StartOfWeek: t1,

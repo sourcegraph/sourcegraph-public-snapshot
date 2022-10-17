@@ -3,9 +3,7 @@ package usagestats
 import (
 	"context"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
-
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -49,12 +47,11 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	if search.Indexed() == nil {
+	if !conf.SearchIndexEnabled() {
 		return &total, nil
 	}
 
-	opts := &zoekt.ListOptions{Minimal: true}
-	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, opts)
+	repos, err := search.ListAllIndexed(ctx)
 	if err != nil {
 		return nil, err
 	}

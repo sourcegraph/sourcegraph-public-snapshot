@@ -51,7 +51,7 @@ function init(): void {
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription
     injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION).catch(error => {
-        console.error('Error injecting Sourcegraph code intelligence:', error)
+        console.error('Error injecting Sourcegraph code navigation:', error)
     })
 }
 

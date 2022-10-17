@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -17,6 +19,9 @@ import (
 )
 
 const pushEndpoint = "/loki/api/v1/push"
+
+// On Grafana cloud Loki rejects log entries that are longer that 65536 bytes.
+const maxEntrySize = math.MaxUint16
 
 // To point at a custom instance, e.g. one on Grafana Cloud, refer to:
 // https://grafana.com/orgs/sourcegraph/hosted-logs/85581#sending-logs
@@ -101,18 +106,84 @@ func NewStreamFromJobLogs(log *bk.JobLogs) (*Stream, error) {
 
 		ts := strings.Replace(tsMatches[0], "t=", "", 1)
 		if ts == previousTimestamp {
-			values[len(values)-1][1] = values[len(values)-1][1] + fmt.Sprintf("\n%s", line)
+			value := values[len(values)-1]
+			value[1] = value[1] + fmt.Sprintf("\n%s", line)
+			// Check that the current entry is not larger than maxEntrySize (65536) in bytes.
+			// If it is, we take the entry split into chunks of maxEntrySize bytes.
+			//
+			// To ensure that each chunked entry doesn't clash with a previous entry in Loki, the nanoseconds of
+			// each entry is incremented by 1 for each chunked entry.
+			chunkedEntries, err := chunkEntry(value, maxEntrySize)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
+			}
+
+			// replace the value we split into chunks with the first chunk 0, then add the rest
+			values[len(values)-1] = chunkedEntries[0]
+			if len(chunkedEntries) > 1 {
+				values = append(values, chunkedEntries[1:]...)
+			}
 		} else {
 			// buildkite timestamps are in ms, so convert to ns with a lot of zeros
-			values = append(values, [2]string{ts + "000000", line})
+			value := [2]string{ts + "000000", line}
+			chunkedEntries, err := chunkEntry(value, maxEntrySize)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to split value entry into chunks")
+			}
+			values = append(values, chunkedEntries...)
 			previousTimestamp = ts
 		}
+
 	}
 
 	return &Stream{
 		Stream: stream,
 		Values: values,
 	}, nil
+}
+
+func chunkEntry(entry [2]string, chunkSize int) ([][2]string, error) {
+	if len(entry[1]) < chunkSize {
+		return [][2]string{entry}, nil
+	}
+	// the first item in an entry is the timestamp
+	epoch, err := strconv.ParseInt(entry[0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(burmudar): Use runes instead since with bytes we might split on a UTF-8 char
+	chunks := splitIntoChunks([]byte(entry[1]), chunkSize)
+
+	results := make([][2]string, len(chunks))
+	for i, c := range chunks {
+		ts := fmt.Sprintf("%d", epoch+int64(i))
+		results[i] = [2]string{ts, string(c)}
+	}
+
+	return results, nil
+}
+
+func splitIntoChunks(data []byte, chunkSize int) [][]byte {
+	count := math.Ceil(float64(len(data)) / float64(chunkSize))
+
+	if count <= 1 {
+		return [][]byte{data}
+	}
+
+	chunks := make([][]byte, int(count))
+
+	for i := 0; i < int(count); i++ {
+		start := i * chunkSize
+		end := start + chunkSize
+
+		if end <= len(data) {
+			chunks[i] = data[start:end]
+		} else {
+			chunks[i] = data[start:]
+		}
+	}
+
+	return chunks
 }
 
 // https://grafana.com/docs/loki/latest/api/#post-lokiapiv1push
@@ -133,6 +204,7 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 	if err != nil {
 		return err
 	}
+
 	req, err := http.NewRequest(http.MethodPost, c.lokiURL.String()+pushEndpoint, bytes.NewBuffer(body))
 	if err != nil {
 		return err

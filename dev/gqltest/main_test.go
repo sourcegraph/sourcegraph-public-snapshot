@@ -7,11 +7,13 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var client *gqltestutil.Client
@@ -61,13 +63,13 @@ func TestMain(m *testing.M) {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		log.Fatal("Failed to check if site needs init: ", err)
+		log.Fatal("Failed to check if site needs init:", err)
 	}
 
 	if needsSiteInit {
 		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
 		if err != nil {
-			log.Fatal("Failed to create site admin: ", err)
+			log.Fatal("Failed to create site admin:", err)
 		}
 		log.Println("Site admin has been created:", *username)
 	} else {
@@ -78,13 +80,56 @@ func TestMain(m *testing.M) {
 		log.Println("Site admin authenticated:", *username)
 	}
 
+	licenseKey := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
+	if licenseKey != "" {
+		siteConfig, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			log.Fatal("Failed to get site configuration:", err)
+		}
+
+		err = func() error {
+			// Update site configuration to set up a test license key if the instance doesn't have one yet.
+			if siteConfig.LicenseKey != "" {
+				return nil
+			}
+
+			siteConfig.LicenseKey = licenseKey
+			err = client.UpdateSiteConfiguration(siteConfig, lastID)
+			if err != nil {
+				return errors.Wrap(err, "update site configuration")
+			}
+
+			// Verify the provided license is valid, retry because the configuration update
+			// endpoint is eventually consistent.
+			err = gqltestutil.Retry(5*time.Second, func() error {
+				ps, err := client.ProductSubscription()
+				if err != nil {
+					return errors.Wrap(err, "get product subscription")
+				}
+
+				if ps.License == nil {
+					return gqltestutil.ErrContinueRetry
+				}
+				return nil
+			})
+			if err != nil {
+				return errors.Wrap(err, "verify license")
+			}
+			return nil
+		}()
+		if err != nil {
+			log.Fatal("Failed to update license:", err)
+		}
+		log.Println("License key added and verified")
+	}
+
 	if !testing.Verbose() {
 		log15.Root().SetHandler(log15.DiscardHandler())
 	}
 	os.Exit(m.Run())
 }
 
-func mustMarshalJSONString(v interface{}) string {
+func mustMarshalJSONString(v any) string {
 	str, err := jsoniter.MarshalToString(v)
 	if err != nil {
 		panic(err)

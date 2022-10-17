@@ -58,7 +58,7 @@ on:
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: IFS=$'\n'; echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
 
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
@@ -161,6 +161,20 @@ src batch preview -workspace volume -f my-spec.yaml
 ```
 
 If you're using SELinux then neither workspace is fully supported. See [this issue](https://github.com/sourcegraph/src-cli/issues/570) for more details.
+
+### Are the Docker images running as different users?
+
+Running steps with images that run with different user IDs is unsupported.
+
+While doing so may work in `bind` workspace mode on macOS due to specific implementation details of how Docker for Mac mounts from the host filesystem, this is a common source of confusing permission errors similar to [the previous step](#does-it-work-if-you-switch-to-using-the-workspace-mode-using-docker-volumes).
+
+### Are you on the latest version of Docker?
+
+If not, please update to the latest version of [Docker Desktop](https://docs.docker.com/desktop/release-notes/).
+
+### Have you pruned your Docker Build Cache and restarted the Docker Daemon?
+
+If you're experiencing `src-cli` hanging at the "Determining Workspace Type" step of the Batch Change we have found that clearing the Docker build cache using `docker builder prune` and restarting the Docker Daemon has resolved the issue. Please contact support if this does not resolve your issue. 
 
 ## Publishing changesets
 

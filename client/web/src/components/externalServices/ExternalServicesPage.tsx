@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -17,6 +17,8 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { PageTitle } from '../PageTitle'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
 interface Props extends ActivationProps, TelemetryProps {
@@ -27,6 +29,9 @@ interface Props extends ActivationProps, TelemetryProps {
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
 
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
+
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
 }
@@ -34,7 +39,7 @@ interface Props extends ActivationProps, TelemetryProps {
 /**
  * A page displaying the external services on this site.
  */
-export const ExternalServicesPage: React.FunctionComponent<Props> = ({
+export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     afterDeleteRoute,
     history,
     location,
@@ -43,6 +48,8 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     userID,
     telemetryService,
     authenticatedUser,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
@@ -79,6 +86,8 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
         }
     }, [])
 
+    const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
+
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
     if (!isManagingOtherUser && noExternalServices) {
@@ -87,45 +96,60 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     return (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="mb-0">Manage code hosts</h2>
-                {!isManagingOtherUser && (
-                    <Button
-                        className="test-goto-add-external-service-page"
-                        to={`${routingPrefix}/external-services/new`}
-                        variant="primary"
-                        as={Link}
-                    >
-                        <Icon as={AddIcon} /> Add code host
-                    </Button>
-                )}
-            </div>
-            <p className="mt-2">Manage code host connections to sync repositories.</p>
-            <FilteredConnection<
-                ListExternalServiceFields,
-                Omit<ExternalServiceNodeProps, 'node'>,
-                {},
-                ExternalServicesResult['externalServices']
-            >
-                className="list-group list-group-flush mt-3"
-                noun="code host"
-                pluralNoun="code hosts"
-                queryConnection={queryConnection}
-                nodeComponent={ExternalServiceNode}
-                nodeComponentProps={{
-                    onDidUpdate: onDidUpdateExternalServices,
-                    history,
-                    routingPrefix,
-                    afterDeleteRoute,
-                }}
-                hideSearch={true}
-                noSummaryIfAllNodesVisible={true}
-                cursorPaging={true}
-                updates={updates}
-                history={history}
-                location={location}
-                onUpdate={onUpdate}
+            <PageHeader
+                path={[{ text: 'Manage code hosts' }]}
+                description="Manage code host connections to sync repositories."
+                headingElement="h2"
+                actions={
+                    <>
+                        {!isManagingOtherUser && (
+                            <ButtonLink
+                                className="test-goto-add-external-service-page"
+                                to={`${routingPrefix}/external-services/new`}
+                                variant="primary"
+                                as={Link}
+                                disabled={editingDisabled}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                            </ButtonLink>
+                        )}
+                    </>
+                }
+                className="mb-3"
             />
+
+            {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
+
+            <Container className="mb-3">
+                <FilteredConnection<
+                    ListExternalServiceFields,
+                    Omit<ExternalServiceNodeProps, 'node'>,
+                    {},
+                    ExternalServicesResult['externalServices']
+                >
+                    className="mb-0"
+                    listClassName="list-group list-group-flush mb-0"
+                    noun="code host"
+                    pluralNoun="code hosts"
+                    withCenteredSummary={true}
+                    queryConnection={queryConnection}
+                    nodeComponent={ExternalServiceNode}
+                    nodeComponentProps={{
+                        onDidUpdate: onDidUpdateExternalServices,
+                        history,
+                        routingPrefix,
+                        afterDeleteRoute,
+                        editingDisabled,
+                    }}
+                    hideSearch={true}
+                    cursorPaging={true}
+                    updates={updates}
+                    history={history}
+                    location={location}
+                    onUpdate={onUpdate}
+                />
+            </Container>
         </div>
     )
 }

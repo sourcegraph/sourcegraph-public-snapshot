@@ -11,9 +11,9 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -32,7 +32,7 @@ func TestStoreQueuedCount(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -56,7 +56,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true, nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -81,37 +81,12 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, nil)
+	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
-	if count != 2 {
-		t.Errorf("unexpected count. want=%d have=%d", 2, count)
-	}
-}
-
-func TestStoreQueuedCountConditions(t *testing.T) {
-	db := setupStoreTest(t)
-
-	if _, err := db.ExecContext(context.Background(), `
-		INSERT INTO workerutil_test (id, state, created_at)
-		VALUES
-			(1, 'queued', NOW() - '1 minute'::interval),
-			(2, 'queued', NOW() - '2 minute'::interval),
-			(3, 'state2', NOW() - '3 minute'::interval),
-			(4, 'queued', NOW() - '4 minute'::interval),
-			(5, 'state2', NOW() - '5 minute'::interval)
-	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
-	}
-
-	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false, conditions)
-	if err != nil {
-		t.Fatalf("unexpected error getting queued count: %s", err)
-	}
-	if count != 2 {
-		t.Errorf("unexpected count. want=%d have=%d", 2, count)
+	if count != 3 {
+		t.Errorf("unexpected count. want=%d have=%d", 3, count)
 	}
 }
 
@@ -173,9 +148,8 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 			(2, 'errored', NOW(),                          NOW() - '30 minutes'::interval, 2), -- oldest retryable error'd
 			(3, 'errored', NOW(),                          NOW() - '10 minutes'::interval, 2), -- retryable, but too young to be queued
 			(4, 'state2',  NOW() - '40 minutes'::interval, NULL,                           0), -- wrong state
-			(5, 'errored', NOW(),                          NOW() - '50 minutes'::interval, 3), -- non-retryable (max attempts exceeded)
-			(6, 'queued',  NOW() - '20 minutes'::interval, NULL,                           0), -- oldest queued
-			(7, 'failed',  NOW(),                          NOW() - '60 minutes'::interval, 1)  -- wrong state
+			(5, 'queued',  NOW() - '20 minutes'::interval, NULL,                           0), -- oldest queued
+			(6, 'failed',  NOW(),                          NOW() - '60 minutes'::interval, 1)  -- wrong state
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
@@ -257,7 +231,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	conditions := []*sqlf.Query{sqlf.Sprintf("w.id < 4")}
+	conditions := []*sqlf.Query{sqlf.Sprintf("workerutil_test.id < 4")}
 	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", conditions)
 	assertDequeueRecordResult(t, 3, record, ok, err)
 }
@@ -314,7 +288,7 @@ func TestStoreDequeueView(t *testing.T) {
 
 	options := defaultTestStoreOptions(nil)
 	options.ViewName = "workerutil_test_view v"
-	options.Scan = testScanFirstRecordView
+	options.Scan = BuildWorkerScan(testScanRecordView)
 	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
@@ -359,10 +333,10 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("expected a second dequeueable record")
 	}
 
-	if val := record1.(TestRecord).ID; val != 1 {
+	if val := record1.(*TestRecord).ID; val != 1 {
 		t.Errorf("unexpected id. want=%d have=%d", 1, val)
 	}
-	if val := record2.(TestRecord).ID; val != 2 {
+	if val := record2.(*TestRecord).ID; val != 2 {
 		t.Errorf("unexpected id. want=%d have=%d", 2, val)
 	}
 
@@ -384,20 +358,20 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 		VALUES
 			(1, 'errored', NOW() - '6 minute'::interval, 'error', 3, NOW() - '2 minutes'::interval),
 			(2, 'errored', NOW() - '4 minute'::interval, 'error', 0, NOW() - '3 minutes'::interval),
-			(3, 'errored', NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
+			(3, 'failed',  NOW() - '6 minute'::interval, 'error', 5, NOW() - '4 minutes'::interval),
 			(4, 'queued',                          NULL,    NULL, 0, NOW() - '1 minutes'::interval)
 	`); err != nil {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 5 * time.Minute
 	options.ColumnExpressions = []*sqlf.Query{
-		sqlf.Sprintf("w.id"),
-		sqlf.Sprintf("w.state"),
-		sqlf.Sprintf("w.num_resets"),
+		sqlf.Sprintf("workerutil_test.id"),
+		sqlf.Sprintf("workerutil_test.state"),
+		sqlf.Sprintf("workerutil_test.num_resets"),
 	}
 	store := testStore(db, options)
 
@@ -430,13 +404,13 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 0
 	options.ColumnExpressions = []*sqlf.Query{
-		sqlf.Sprintf("w.id"),
-		sqlf.Sprintf("w.state"),
-		sqlf.Sprintf("w.num_resets"),
+		sqlf.Sprintf("workerutil_test.id"),
+		sqlf.Sprintf("workerutil_test.state"),
+		sqlf.Sprintf("workerutil_test.num_resets"),
 	}
 
 	store := testStore(db, options)
@@ -966,7 +940,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	tx, err := db.(dbutil.TxBeginner).BeginTx(context.Background(), nil)
+	tx, err := db.BeginTx(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1111,4 +1085,30 @@ func TestStoreHeartbeat(t *testing.T) {
 		2: 5 * time.Second, // not in known ID list
 		3: 0,               // updated
 	})
+}
+
+func TestStoreCanceledJobs(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, worker_hostname, cancel)
+		VALUES
+			-- not processing
+			(1, 'queued', 'worker1', false),
+			-- not canceling
+			(2, 'processing', 'worker1', false),
+			-- this one should be returned
+			(3, 'processing', 'worker1', true),
+			-- other worker
+			(4, 'processing', 'worker2', true)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	toCancel, err := testStore(db, defaultTestStoreOptions(nil)).CanceledJobs(context.Background(), []int{1, 2, 3}, CanceledJobsOptions{WorkerHostname: "worker1"})
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+
+	require.ElementsMatch(t, toCancel, []int{3}, "invalid set of jobs returned")
 }

@@ -2,13 +2,11 @@ import * as os from 'os'
 import * as path from 'path'
 
 import realPercySnapshot from '@percy/puppeteer'
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
-import getFreePort from 'get-port'
+import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile, mkdir } from 'mz/fs'
+import { readFile } from 'mz/fs'
 import puppeteer, {
     PageEventObject,
     Page,
@@ -16,17 +14,14 @@ import puppeteer, {
     LaunchOptions,
     ConsoleMessage,
     Target,
-    PuppeteerNode,
     BrowserLaunchArgumentOptions,
     BrowserConnectOptions,
 } from 'puppeteer'
-import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import webExt from 'web-ext'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
 import { ExternalServiceKind } from '../graphql-operations'
@@ -65,7 +60,7 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  */
 type EnterTextMethod = 'type' | 'paste'
 
-interface PageFnOptions {
+interface PageFuncOptions {
     timeout?: number
 }
 
@@ -88,7 +83,7 @@ interface FindElementOptions {
     /**
      * Specifies whether to wait (and how long) for the element to appear.
      */
-    wait?: PageFnOptions | boolean
+    wait?: PageFuncOptions | boolean
 }
 
 function findElementRegexpStrings(
@@ -137,12 +132,26 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
     )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
+// Console logs with these keywords will be removed from the console output.
+const MUTE_CONSOLE_KEYWORDS = [
+    '[webpack-dev-server]',
+    'Download the React DevTools',
+    '[HMR]',
+    '[WDS]',
+    'Warning: componentWillReceiveProps has been renamed',
+    'Download the Apollo DevTools',
+    'Compiled in DEBUG mode',
+    'Cache data may be lost',
+    'Failed to decode downloaded font',
+    'OTS parsing error',
+]
+
 export class Driver {
     /** The pages that were visited since the creation of the driver. */
     public visitedPages: Readonly<URL>[] = []
 
     public sourcegraphBaseUrl: string
-    public browserType: 'chrome' | 'firefox'
+    public browserType: 'chrome'
     private keepBrowser: boolean
     private subscriptions = new Subscription()
 
@@ -175,27 +184,22 @@ export class Driver {
                             fromEvent<ConsoleMessage>(page, 'console').pipe(
                                 filter(
                                     message =>
-                                        !message.text().includes('Download the React DevTools') &&
-                                        !message.text().includes('[HMR]') &&
-                                        !message.text().includes('[WDS]') &&
-                                        !message
-                                            .text()
-                                            .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('Download the Apollo DevTools') &&
-                                        !message.text().includes('debug') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
-                                        message.location().url !== 'chrome-extension://invalid/'
+                                        message.location().url !== 'chrome-extension://invalid/' &&
+                                        // Ignore React development build warnings.
+                                        !message.text().startsWith('Warning: ') &&
+                                        !MUTE_CONSOLE_KEYWORDS.some(keyword => message.text().includes(keyword))
                                 ),
-                                // Immediately format remote handles to strings, but maintain order.
                                 map(message =>
-                                    formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
+                                    // Immediately format remote handles to strings, but maintain order.
+                                    formatPuppeteerConsoleMessage(page, message)
                                 ),
                                 concatAll(),
                                 takeUntil(fromEvent(page, 'close'))
                             )
                         )
                     )
-                    .subscribe(formattedLine => console.log(formattedLine))
+                    .subscribe(formattedLine => logger.log(formattedLine))
             )
         }
     }
@@ -291,13 +295,13 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
-        console.log(
-            '\nVisited routes:\n' +
+        logger.log(
+            '\n  Visited routes:\n' +
                 [
                     ...new Set(
                         this.visitedPages
                             .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
-                            .map(url => url.pathname)
+                            .map(url => `    ${url.pathname}`)
                     ),
                 ].join('\n')
         )
@@ -403,7 +407,7 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
-        console.log('Adding external service of kind', kind)
+        logger.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
@@ -725,7 +729,7 @@ export class Driver {
         )
     }
 
-    public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
+    public async waitUntilURL(url: string, options: PageFuncOptions = {}): Promise<void> {
         await this.page.waitForFunction((url: string) => document.location.href === url, options, url)
     }
 }
@@ -734,37 +738,23 @@ export function modifyJSONC(
     text: string,
     path: jsonc.JSONPath,
     editFunction: (oldValue: jsonc.Node | undefined) => any
-): any {
-    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+): string | undefined {
+    const tree = jsonc.parseTree(text)
+    const old = tree ? jsonc.findNodeAtLocation(tree, path) : undefined
     return jsonc.applyEdits(
         text,
-        jsoncEdit.setProperty(text, path, editFunction(old), {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        jsonc.modify(text, path, editFunction(old), {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 }
 
-// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
-async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
-    let configPath: string
-    if (process.platform === 'darwin') {
-        configPath = path.join(firefoxFolder, '..', 'Resources')
-    } else if (process.platform === 'linux') {
-        await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'), { recursive: true })
-        configPath = firefoxFolder
-    } else if (process.platform === 'win32') {
-        configPath = firefoxFolder
-    } else {
-        throw new Error('Unsupported platform: ' + process.platform)
-    }
-    return path.join(configPath, 'puppeteer.cfg')
-}
-
 interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLaunchArgumentOptions {
-    browser?: 'chrome' | 'firefox'
+    browser?: 'chrome'
 
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
@@ -779,10 +769,19 @@ interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLau
 }
 
 export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
-    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+    const config = getConfig(
+        'sourcegraphBaseUrl',
+        'headless',
+        'slowMo',
+        'keepBrowser',
+        'browser',
+        'devtools',
+        'windowWidth',
+        'windowHeight'
+    )
 
     // Apply defaults
-    const resolvedOptions: typeof config & typeof options = {
+    const resolvedOptions: DriverOptions = {
         ...config,
         ...options,
     }
@@ -796,61 +795,28 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         defaultViewport: null,
         timeout: 300000,
     }
-    let browser: puppeteer.Browser
-    if (resolvedOptions.browser === 'firefox') {
-        // Make sure CSP is disabled in FF preferences,
-        // because Puppeteer uses new Function() to evaluate code
-        // which is not allowed by the github.com CSP.
-        // The pref option does not work to disable CSP for some reason.
-        const cfgPath = await getFirefoxCfgPath()
-        const disableCspPreference = '\npref("security.csp.enable", false);\n'
-        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
-            await appendFile(cfgPath, disableCspPreference)
-        }
-        if (loadExtension) {
-            const cdpPort = await getFreePort()
-            const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
-            // webExt.util.logger.consoleStream.makeVerbose()
-            args.push(`-juggler=${cdpPort}`)
-            if (launchOptions.headless) {
-                args.push('-headless')
-            }
-            await webExt.cmd.run(
-                {
-                    sourceDir: firefoxExtensionPath,
-                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
-                    args,
-                },
-                { shouldExitProgram: false }
-            )
-            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
-            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
-        } else {
-            browser = await puppeteerFirefox.launch(launchOptions)
-        }
-    } else {
-        // Chrome
-        args.push('--window-size=1280,1024')
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args.push('--no-sandbox', '--disable-setuid-sandbox')
-        }
-        if (loadExtension) {
-            const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-            const manifest = JSON.parse(
-                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
-            ) as { permissions: string[] }
-            if (!manifest.permissions.includes('<all_urls>')) {
-                throw new Error(
-                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
-                )
-            }
-            args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
-        }
 
-        browser = await puppeteer.launch({ ...launchOptions })
+    // Chrome
+    args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
+    if (process.getuid() === 0) {
+        // TODO don't run as root in CI
+        logger.warn('Running as root, disabling sandbox')
+        args.push('--no-sandbox', '--disable-setuid-sandbox')
     }
+    if (loadExtension) {
+        const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')) as {
+            permissions: string[]
+        }
+        if (!manifest.permissions.includes('<all_urls>')) {
+            throw new Error(
+                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+            )
+        }
+        args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
+    }
+
+    const browser: puppeteer.Browser = await puppeteer.launch({ ...launchOptions })
 
     const page = await browser.newPage()
 

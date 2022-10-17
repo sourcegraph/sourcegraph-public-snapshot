@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,6 +17,7 @@ import (
 
 func TestEditorRev(t *testing.T) {
 	repoName := api.RepoName("myRepo")
+	logger := logtest.Scoped(t)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
 		if rev == "branch" {
 			return api.CommitID(strings.Repeat("b", 40)), nil
@@ -48,7 +51,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got := editorRev(ctx, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
+		got := editorRev(ctx, logger, database.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if got != c.expEditorRev {
 			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
 		}
@@ -57,7 +60,7 @@ func TestEditorRev(t *testing.T) {
 
 func TestEditorRedirect(t *testing.T) {
 	repos := database.NewMockRepoStore()
-	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
+	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultReturn("", nil)
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
@@ -66,19 +69,19 @@ func TestEditorRedirect(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "GITHUB #1",
-				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
 			{
 				ID:          2,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherPretty",
-				Config:      `{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`),
 			},
 			{
 				ID:          3,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherDefault",
-				Config:      `{"url": "https://default.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://default.com"}`),
 			},
 			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoName returned an error when
 			// Phabricator was iterated over before the actual code host (e.g. The clone URL is handled by reposource.GitLab).
@@ -86,14 +89,14 @@ func TestEditorRedirect(t *testing.T) {
 				ID:          4,
 				Kind:        extsvc.KindPhabricator,
 				DisplayName: "PHABRICATOR #1",
-				Config:      `{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`),
 			},
 			// Code host with SCP-style remote URLs
 			{
 				ID:          5,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherSCP",
-				Config:      `{"url":"ssh://git@git.codehost.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url":"ssh://git@git.codehost.com"}`),
 			},
 		},
 		nil,

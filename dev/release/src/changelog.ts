@@ -19,3 +19,8 @@ export const releaseTemplate = `${divider}
 ### Removed
 
 -`
+
+export const simpleReleaseTemplate = `${divider}
+
+## Unreleased
+`

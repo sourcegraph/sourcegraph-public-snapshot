@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
-	libhoney "github.com/honeycombio/libhoney-go"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -35,6 +33,7 @@ func (f *Flags) Parse() {
 	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
+
 	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
 	flag.Parse()
@@ -48,8 +47,8 @@ func main() {
 
 	checkFlags := &cmdCheckFlags{}
 	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
+	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "Slack token used for resolving Slack handles to mention")
 	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
 	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
 
@@ -61,6 +60,8 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
+	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
 
@@ -80,9 +81,9 @@ func main() {
 }
 
 type cmdCheckFlags struct {
-	slackToken  string
 	githubToken string
 
+	slackToken             string
 	slackAnnounceWebhooks  string
 	slackDebugWebhook      string
 	slackDiscussionChannel string
@@ -100,9 +101,6 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: checkFlags.githubToken},
 	)))
-
-	// Slack client
-	slc := slack.New(checkFlags.slackToken)
 
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
@@ -123,7 +121,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", flags.Branch),
-		team.NewTeammateResolver(ghc, slc),
+		team.NewTeammateResolver(ghc, slack.New(checkFlags.slackToken)),
 		builds,
 		opts,
 	)
@@ -135,7 +133,7 @@ func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := slackSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
+		summary := generateBranchEventSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
 		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
 
 		// Post update first to avoid invisible changes
@@ -174,6 +172,10 @@ type cmdHistoryFlags struct {
 	resultsCsvPath   string
 	honeycombDataset string
 	honeycombToken   string
+
+	okayHQToken string
+
+	slackReportWebHook string
 }
 
 func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
@@ -286,60 +288,29 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		FailuresThreshold: flags.FailuresThreshold,
 		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
 	}
-	log.Printf("running analyses with options: %+v\n", checkOpts)
+	log.Printf("running analysis with options: %+v\n", checkOpts)
 	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
 
-	// Prepare output
+	// Prepare history reporting destinations
+	reporters := []reporter{}
 	if historyFlags.resultsCsvPath != "" {
-		// Write to files
-		log.Printf("Writing CSV results to %s\n", historyFlags.resultsCsvPath)
-		var errs error
-		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "totals.csv"), mapToRecords(totals)))
-		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "flakes.csv"), mapToRecords(flakes)))
-		errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "incidents.csv"), mapToRecords(incidents)))
-		if errs != nil {
-			log.Fatal("csv.WriteAll: ", errs)
-		}
+		reporters = append(reporters, reportToCSV)
 	}
 	if historyFlags.honeycombDataset != "" {
-		// Send to honeycomb
-		log.Printf("Sending results to honeycomb dataset %q\n", historyFlags.honeycombDataset)
-		hc, err := libhoney.NewClient(libhoney.ClientConfig{
-			Dataset: historyFlags.honeycombDataset,
-			APIKey:  historyFlags.honeycombToken,
-		})
-		if err != nil {
-			log.Fatal("libhoney.NewClient: ", err)
-		}
-		var events []*libhoney.Event
-		for _, record := range mapToRecords(totals) {
-			recordDateString := record[0]
-			ev := hc.NewEvent()
-			ev.Timestamp, _ = time.Parse(dateFormat, recordDateString)
-			ev.AddField("build_count", totals[recordDateString])         // date:count
-			ev.AddField("incident_minutes", incidents[recordDateString]) // date:minutes
-			ev.AddField("flake_count", flakes[recordDateString])         // date:count
-			events = append(events, ev)
-		}
+		reporters = append(reporters, reportToHoneycomb)
+	}
+	if historyFlags.okayHQToken != "" {
+		reporters = append(reporters, reportToOkayHQ)
+	}
+	if historyFlags.slackReportWebHook != "" {
+		reporters = append(reporters, reportToSlack)
+	}
 
-		// send all at once
-		log.Printf("Sending %d events to Honeycomb\n", len(events))
-		var errs error
-		for _, ev := range events {
-			if err := ev.Send(); err != nil {
-				errs = errors.Append(errs, err)
-			}
-		}
-		hc.Close()
-		if err != nil {
-			log.Fatal("honeycomb.Send: ", err)
-		}
-		// log events that do not send
-		for _, ev := range events {
-			if strings.Contains(ev.String(), "sent:false") {
-				log.Printf("An event did not send: %s", ev.String())
-			}
-		}
+	// Deliver reports
+	log.Printf("sending reports to %d reporters", len(reporters))
+	var mErrs error
+	for _, report := range reporters {
+		errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
 	}
 
 	log.Println("done!")

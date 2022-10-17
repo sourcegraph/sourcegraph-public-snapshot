@@ -8,10 +8,13 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,7 +64,6 @@ var (
 		"log",
 		"--decorate=full",
 		"-z",
-		"--no-merges",
 		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
@@ -80,11 +82,13 @@ const (
 )
 
 type CommitSearcher struct {
+	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
 	Revisions            []protocol.RevisionSpecifier
 	IncludeDiff          bool
 	IncludeModifiedFiles bool
+	RepoName             api.RepoName
 }
 
 // Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
@@ -152,7 +156,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String()))
+			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
 		}
 	}()
 
@@ -186,7 +190,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	return scanner.Err()
 }
 
-func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
 	if ctx.Err() != nil {
 		// Ignore errors when context is cancelled
 		return nil
@@ -195,8 +199,18 @@ func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) 
 		// Ignore no commits error error
 		return nil
 	}
-	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
+	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
 	return err
+}
+
+func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) func(string) (bool, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return nil
+	}
+	a := actor.FromContext(ctx)
+	return func(filePath string) (bool, error) {
+		return authz.FilterActorPath(ctx, checker, a, repo, filePath)
+	}
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
@@ -228,7 +242,7 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				return err
 			}
 			if mergedResult.Satisfies() {
-				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
+				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker, cs.RepoName))
 				if err != nil {
 					return err
 				}
@@ -364,7 +378,7 @@ func (c *CommitScanner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*protocol.CommitMatch, error) {
+func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMatch, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return nil, err
@@ -381,6 +395,7 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 		if err != nil {
 			return nil, err
 		}
+		rawDiff = filterRawDiff(rawDiff, filterFunc)
 		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
@@ -406,4 +421,24 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool) (*pro
 		Diff:          diff,
 		ModifiedFiles: lc.ModifiedFiles(),
 	}, nil
+}
+
+func filterRawDiff(rawDiff []*diff.FileDiff, filterFunc func(string) (bool, error)) []*diff.FileDiff {
+	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
+	if filterFunc == nil {
+		return rawDiff
+	}
+	filtered := make([]*diff.FileDiff, 0, len(rawDiff))
+	for _, fileDiff := range rawDiff {
+		if filterFunc != nil {
+			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
+				logger.Error("error filtering files in raw diff", log.Error(err))
+				continue
+			} else if !isAllowed {
+				continue
+			}
+		}
+		filtered = append(filtered, fileDiff)
+	}
+	return filtered
 }

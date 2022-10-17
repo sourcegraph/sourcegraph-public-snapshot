@@ -27,7 +27,6 @@ func init() {
 	}
 
 	acronymsReplacer = strings.NewReplacer(pairs...)
-	TestOperation = TestContext.Operation(Op{Name: "test.context"})
 }
 
 // kebab transforms a string into lower-kebab-case.

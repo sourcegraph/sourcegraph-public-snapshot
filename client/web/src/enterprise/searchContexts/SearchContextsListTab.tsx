@@ -35,7 +35,7 @@ export interface SearchContextsListTabProps
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTabProps> = ({
+export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChildren<SearchContextsListTabProps>> = ({
     isSourcegraphDotCom,
     authenticatedUser,
     getUserSearchContextNamespaces,
@@ -213,8 +213,10 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 pluralNoun="search contexts"
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}
-                inputClassName={styles.filterInput}
+                inputClassName={classNames(styles.filterInput)}
                 inputPlaceholder="Filter search contexts..."
+                inputAriaLabel="Filter search contexts"
+                formClassName={styles.filtersForm}
             />
         </>
     )

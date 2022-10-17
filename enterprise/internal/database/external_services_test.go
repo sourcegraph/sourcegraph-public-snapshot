@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/kylelemons/godebug/pretty"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -377,7 +378,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			desc: "valid with url, username, token, repositoryQuery",
 			config: `
 			{
-				"url": "https://bitbucket.com/",
+				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"token": "secret-token",
 				"repositoryQuery": ["none"]
@@ -389,7 +390,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			desc: "valid with url, username, token, repos",
 			config: `
 			{
-				"url": "https://bitbucket.com/",
+				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"token": "secret-token",
 				"repos": ["sourcegraph/sourcegraph"]
@@ -403,7 +404,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: includes(
 				"url is required",
 				"username is required",
-				"at least one of repositoryQuery or repos must be set",
+				"at least one of: repositoryQuery, projectKeys, or repos must be set",
 			),
 		},
 		{
@@ -421,7 +422,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		{
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "bad url scheme",
-			config: `{"url": "badscheme://bitbucket.com"}`,
+			config: `{"url": "badscheme://bitbucket.org"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
 		},
 		{
@@ -1275,6 +1276,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: equals("<nil>"),
 		},
 	} {
+		licensing.MockCheckFeatureError("")
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string

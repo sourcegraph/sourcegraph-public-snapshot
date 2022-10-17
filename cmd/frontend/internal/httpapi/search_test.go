@@ -12,12 +12,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -32,17 +32,19 @@ func TestServeConfiguration(t *testing.T) {
 		Name:  "6",
 		Stars: 6,
 	}}
+
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID("!" + spec), nil
+	})
+
 	srv := &searchIndexerServer{
-		RepoStore: &fakeRepoStore{Repos: repos},
+		RepoStore:       &fakeRepoStore{Repos: repos},
+		gitserverClient: gsClient,
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
 	}
-
-	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("!" + spec), nil
-	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 
 	data := url.Values{
 		"repoID": []string{"1", "5", "6"},

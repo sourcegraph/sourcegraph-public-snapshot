@@ -4,8 +4,9 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
+
+	"github.com/grafana/regexp"
 
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -30,7 +31,8 @@ func update(name string) bool {
 // Note that assertGolden can only be called once in a single test. (It's safe
 // to use from multiple sub-tests at the same level, though, provided they have
 // unique names.)
-func assertGolden(t testing.TB, expected interface{}) {
+func assertGolden(t testing.TB, expected any) {
+	t.Helper()
 	testutil.AssertGolden(
 		t,
 		filepath.Join("testdata/golden/", normalize(t.Name())),
@@ -41,7 +43,7 @@ func assertGolden(t testing.TB, expected interface{}) {
 
 // newTestClient returns a bitbucketcloud.Client that records its interactions
 // to testdata/vcr/.
-func newTestClient(t testing.TB) (*Client, func()) {
+func newTestClient(t testing.TB) *client {
 	t.Helper()
 
 	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))
@@ -49,13 +51,18 @@ func newTestClient(t testing.TB) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		if err := rec.Stop(); err != nil {
+			t.Errorf("failed to update test data: %s", err)
+		}
+	})
 
 	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", &schema.BitbucketCloudConnection{
+	cli, err := newClient("urn", &schema.BitbucketCloudConnection{
 		ApiURL:      "https://api.bitbucket.org",
 		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
@@ -64,11 +71,7 @@ func newTestClient(t testing.TB) (*Client, func()) {
 		t.Fatal(err)
 	}
 
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
-		}
-	}
+	return cli
 }
 
 var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")

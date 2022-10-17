@@ -1,23 +1,24 @@
 import React, { useContext, useMemo, useEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
-import { useField } from '../../../../../components/form/hooks/useField'
-import { useForm } from '../../../../../components/form/hooks/useForm'
-import { InsightQueryInput } from '../../../../../components/form/query-input/InsightQueryInput'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { CodeInsightsBackendContext } from '../../../../../core'
-import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import {
-    repositoriesExistValidator,
-    repositoriesFieldValidator,
-} from '../../../../insights/creation/search-insight/components/search-insight-creation-content/validators'
+    getDefaultInputProps,
+    useField,
+    useForm,
+    InsightQueryInput,
+    RepositoriesField,
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+} from '../../../../../components'
+import { CodeInsightsBackendContext } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
+import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 
 import { DynamicInsightPreview } from './DynamicInsightPreview'
 
@@ -30,18 +31,18 @@ interface CodeInsightExampleFormValues {
 
 const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     repositories: 'github.com/sourcegraph/sourcegraph',
-    query: 'TODO archived:no fork:no',
+    query: 'TODO',
 }
 
 interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
-export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsightExampleProps> = props => {
+export const DynamicCodeInsightExample: React.FunctionComponent<
+    React.PropsWithChildren<DynamicCodeInsightExampleProps>
+> = props => {
     const { telemetryService, ...otherProps } = props
 
-    const {
-        getFirstExampleRepository,
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -53,8 +54,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
-            sync: repositoriesFieldValidator,
-            async: repositoriesExistValidator,
+            sync: insightRepositoriesValidator,
+            async: insightRepositoriesAsyncValidator,
         },
     })
 
@@ -129,17 +130,17 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
             </form>
 
             <section>
-                <h2 className={classNames(styles.cardTitle)}>
+                <H2 className={classNames(styles.cardTitle)}>
                     Draw insights from your codebase about how different initiatives track over time
-                </h2>
+                </H2>
 
-                <p>
+                <Text>
                     Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
                     questions about how your code is changing and what’s in your code {'\u2014'} questions that were
                     difficult or impossible to answer before.
-                </p>
+                </Text>
 
-                <h3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</h3>
+                <H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</H3>
 
                 <ul>
                     <li>Track migrations, adoption, and deprecations</li>
@@ -151,7 +152,7 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
                 <footer className={styles.footer}>
                     {licensed ? (
                         <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon as={PlusIcon} /> Create your first insight
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
                         </Button>
                     ) : (
                         <Button
@@ -181,8 +182,8 @@ export const DynamicCodeInsightExample: React.FunctionComponent<DynamicCodeInsig
     )
 }
 
-const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
-    <p className={classNames(styles.calloutBlock, props.className)}>
+const CalloutArrow: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = props => (
+    <Text className={classNames(styles.calloutBlock, props.className)}>
         <svg
             width="59"
             height="41"
@@ -197,5 +198,5 @@ const CalloutArrow: React.FunctionComponent<{ className?: string }> = props => (
             />
         </svg>
         <span className="text-muted">This insight is interactive! Type any search query or change the repo.</span>
-    </p>
+    </Text>
 )

@@ -2,6 +2,7 @@ package authz
 
 import (
 	"container/heap"
+	"strconv"
 	"sync"
 	"time"
 
@@ -29,6 +30,16 @@ const (
 	requestTypeRepo requestType = iota + 1
 	requestTypeUser
 )
+
+func (t requestType) String() string {
+	switch t {
+	case requestTypeRepo:
+		return "repo"
+	case requestTypeUser:
+		return "user"
+	}
+	return strconv.Itoa(int(t))
+}
 
 // higherPriorityThan returns true if the current request type has higher priority
 // than the other one.
@@ -227,7 +238,7 @@ func (q *requestQueue) Swap(i, j int) {
 	q.heap[j].index = j
 }
 
-func (q *requestQueue) Push(x interface{}) {
+func (q *requestQueue) Push(x any) {
 	n := len(q.heap)
 	request := x.(*syncRequest)
 	request.index = n
@@ -240,7 +251,7 @@ func (q *requestQueue) Push(x interface{}) {
 	q.index[key] = request
 }
 
-func (q *requestQueue) Pop() interface{} {
+func (q *requestQueue) Pop() any {
 	n := len(q.heap)
 	request := q.heap[n-1]
 	request.index = -1 // for safety

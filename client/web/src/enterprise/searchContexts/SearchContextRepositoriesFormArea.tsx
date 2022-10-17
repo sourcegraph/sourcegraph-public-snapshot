@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import CheckIcon from 'mdi-react/CheckIcon'
+import { mdiCheck } from '@mdi/js'
+import * as jsonc from 'jsonc-parser'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextRepositoryRevisisonsFields } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
@@ -52,10 +51,12 @@ export const REPOSITORIES_REVISIONS_CONFIG_SCHEMA = {
     },
 }
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: jsonc.ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 const actions: {
@@ -68,25 +69,21 @@ const actions: {
         label: 'Add repository',
         run: config => {
             const value = { [REPOSITORY_KEY]: 'github.com/example/repository-name', [REVISIONS_KEY]: ['HEAD'] }
-            const edits = setProperty(config, [-1], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, [-1], value, defaultModificationOptions)
             return { edits, selectText: 'github.com/example/repository-name' }
         },
     },
 ]
 
 export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, TelemetryProps {
-    repositories: ISearchContextRepositoryRevisions[] | undefined
+    repositories: SearchContextRepositoryRevisisonsFields[] | undefined
     validateRepositories: () => Observable<Error[]>
     onChange: (config: string, isInitialValue?: boolean) => void
 }
 
-export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchContextRepositoriesFormAreaProps> = ({
-    isLightTheme,
-    telemetryService,
-    repositories,
-    onChange,
-    validateRepositories,
-}) => {
+export const SearchContextRepositoriesFormArea: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextRepositoriesFormAreaProps>
+> = ({ isLightTheme, telemetryService, repositories, onChange, validateRepositories }) => {
     const [hasTestedConfig, setHasTestedConfig] = useState(false)
     const [triggerTestConfig, triggerTestConfigErrors] = useEventObservable(
         useCallback(
@@ -168,8 +165,13 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
             >
                 {isValidConfig ? (
                     <span className="d-flex align-items-center">
-                        <Icon as="span" data-testid="repositories-config-success" className="text-success mr-1">
-                            <CheckIcon />{' '}
+                        <Icon
+                            aria-hidden={true}
+                            as="span"
+                            data-testid="repositories-config-success"
+                            className="text-success mr-1"
+                        >
+                            <Icon svgPath={mdiCheck} inline={false} aria-hidden={true} />{' '}
                         </Icon>
                         <span>Valid configuration</span>
                     </span>

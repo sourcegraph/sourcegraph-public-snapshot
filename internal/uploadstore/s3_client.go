@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/credentials/ec2rolecreds"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
@@ -37,6 +36,7 @@ var _ Store = &s3Store{}
 type S3Config struct {
 	Region          string
 	Endpoint        string
+	UsePathStyle    bool
 	AccessKeyID     string
 	SecretAccessKey string
 	SessionToken    string
@@ -49,7 +49,7 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 		return nil, err
 	}
 
-	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.Backend, config.S3))
+	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.S3))
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
 	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, s3BucketLifecycleConfiguration(config.Backend, config.TTL), operations), nil
@@ -91,7 +91,7 @@ const maxZeroReads = 3
 var errNoDownloadProgress = errors.New("no download progress")
 
 func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -134,6 +134,8 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 	var bytesRange *string
 	if byteOffset > 0 {
 		bytesRange = aws.String(fmt.Sprintf("bytes=%d-", byteOffset))
+	} else if byteOffset < 0 {
+		bytesRange = aws.String(fmt.Sprintf("bytes=%d", byteOffset))
 	}
 
 	resp, err := s.client.GetObject(ctx, &s3.GetObjectInput{
@@ -150,7 +152,7 @@ func (s *s3Store) readObjectInto(ctx context.Context, w io.Writer, key string, b
 }
 
 func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -169,7 +171,7 @@ func (s *s3Store) Upload(ctx context.Context, key string, r io.Reader) (_ int64,
 }
 
 func (s *s3Store) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("destination", destination),
 		log.String("sources", strings.Join(sources, ", ")),
 	}})
@@ -258,7 +260,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 }
 
 func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
-	ctx, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -320,31 +322,28 @@ func (r *countingReader) Read(p []byte) (n int, err error) {
 }
 
 func s3ClientConfig(ctx context.Context, s3config S3Config) (aws.Config, error) {
-	var credentialsProvider aws.CredentialsProvider
+	optFns := []func(*awsconfig.LoadOptions) error{
+		awsconfig.WithRegion(s3config.Region),
+	}
+
 	if s3config.AccessKeyID != "" {
-		credentialsProvider = credentials.NewStaticCredentialsProvider(
+		optFns = append(optFns, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			s3config.AccessKeyID,
 			s3config.SecretAccessKey,
 			s3config.SessionToken,
-		)
-	} else {
-		credentialsProvider = ec2rolecreds.New()
-	}
-
-	optFns := []func(*awsconfig.LoadOptions) error{
-		awsconfig.WithRegion(s3config.Region),
-		awsconfig.WithCredentialsProvider(aws.NewCredentialsCache(credentialsProvider)),
+		)))
 	}
 
 	return awsconfig.LoadDefaultConfig(ctx, optFns...)
 }
 
-func s3ClientOptions(backend string, config S3Config) func(o *s3.Options) {
+func s3ClientOptions(config S3Config) func(o *s3.Options) {
 	return func(o *s3.Options) {
-		if backend == "minio" {
+		if config.Endpoint != "" {
 			o.EndpointResolver = s3.EndpointResolverFromURL(config.Endpoint)
-			o.UsePathStyle = true
 		}
+
+		o.UsePathStyle = config.UsePathStyle
 	}
 }
 

@@ -1,0 +1,21 @@
+.modal-body {
+    width: 60vw;
+    max-height: calc(100vh - 4rem);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: var(--modal-body-padding) var(--modal-body-padding) 0.5rem var(--modal-body-padding);
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.modal-content {
+    overflow: auto;
+    flex: 1;
+    padding: 0 var(--modal-body-padding) var(--modal-body-padding) var(--modal-body-padding);
+    width: 100%;
+}

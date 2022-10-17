@@ -6,6 +6,7 @@ import { QueryState } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Card, Text } from '@sourcegraph/wildcard'
 
 import { ModalVideo } from '../alias/ModalVideo'
 
@@ -24,7 +25,7 @@ interface SearchExamplesProps extends TelemetryProps {
     setQuery: (newState: QueryState) => void
 }
 
-const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
+const SearchExamples: React.FunctionComponent<React.PropsWithChildren<SearchExamplesProps>> = ({
     title,
     subtitle,
     examples,
@@ -48,9 +49,9 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.queryPreview} className="search-example-card-wrapper">
-                        <button
-                            type="button"
-                            className={classNames('card p-0 w-100', styles.searchExampleCard)}
+                        <Card
+                            as="button"
+                            className={classNames('p-0 w-100', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName, example.fullQuery)}
                         >
                             <div className={classNames('search-example-example-icons', styles.searchExampleIcon)}>
@@ -61,8 +62,8 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.queryPreview} />
                                 </div>
                             </div>
-                        </button>
-                        <p className={styles.searchExampleLabel}>{example.label}</p>
+                        </Card>
+                        <Text className={styles.searchExampleLabel}>{example.label}</Text>
                     </div>
                 ))}
             </div>
@@ -70,7 +71,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     )
 }
 
-export const HomeFooter: React.FunctionComponent<HomeFooterProps> = props => (
+export const HomeFooter: React.FunctionComponent<React.PropsWithChildren<HomeFooterProps>> = props => (
     <>
         <div className={styles.footerContainer}>
             <div className={styles.helpContent}>

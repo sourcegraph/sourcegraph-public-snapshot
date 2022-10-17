@@ -5,7 +5,6 @@ import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTo
 import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
 
 let invalidated = false
-
 /**
  * To be called when Sourcegraph URL changes.
  */
@@ -24,29 +23,24 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
             'Sourcegraph GraphQL Client has been invalidated due to instance URL change. Restart VS Code to fix.'
         )
     }
-
+    const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
+    const accessToken = overrideAccessToken || accessTokenSetting()
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
-    // load custom headers from user setting if any
     const customHeaders = endpointRequestHeadersSetting()
-    // return empty array if no custom header is provided in configuration
-    const headers: HeadersInit = Object.entries(customHeaders)
-    const sourcegraphURL = overrideSourcegraphURL || endpointSetting()
-    const accessToken = accessTokenSetting()
-
-    // Add Access Token to request header
-    // Used to validate access token.
-    if (overrideAccessToken) {
-        headers.push(['Authorization', `token ${overrideAccessToken}`])
-    } else if (accessToken) {
-        headers.push(['Authorization', `token ${accessToken}`])
-    } else {
-        headers.push(['Content-Type', 'application/json'])
+    // create a headers container based on the custom headers configuration if there are any
+    // then add Access Token to request header, contributed by @ptxmac!
+    const headers = new Headers(customHeaders as HeadersInit)
+    headers.set('Content-Type', 'application/json')
+    if (accessToken) {
+        headers.set('Authorization', `token ${accessToken}`)
     }
-
     try {
         const url = new URL(apiURL, sourcegraphURL).href
-        const response = checkOk(
+        // Debt: intercepted requests in integration tests
+        // have 0 status codes, so don't check in test environment.
+        const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
+        const response = checkFunction(
             await fetch(url, {
                 body: JSON.stringify({
                     query: request,
@@ -57,14 +51,13 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
             })
         )
         // TODO request cancellation w/ VS Code cancellation tokens.
-
         // eslint-disable-next-line @typescript-eslint/return-await
         return response.json() as Promise<GraphQLResult<any>>
     } catch (error) {
         // If `overrideAccessToken` is set, we're validating the token
         // and errors will be displayed in the UI.
         if (isHTTPAuthError(error) && !overrideAccessToken) {
-            handleAccessTokenError(accessToken).then(
+            handleAccessTokenError(accessToken, sourcegraphURL).then(
                 () => {},
                 () => {}
             )

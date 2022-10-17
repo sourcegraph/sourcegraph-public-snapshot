@@ -30,7 +30,7 @@ func init() {
 		once sync.Once
 	)
 
-	newCapabilityWatcher = func() chan capabilities {
+	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
 		// Lazily initialise the required global state if we haven't already.
 		once.Do(func() {
 			mu.Lock()
@@ -46,7 +46,7 @@ func init() {
 			go func() {
 				for {
 					<-c
-					caps, err := detectCapabilities()
+					caps, err := detectCapabilities(opts)
 					// We won't bother reporting an error here; there's no harm
 					// in the previous capabilities being used besides possibly
 					// being ugly.

@@ -2,21 +2,20 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -26,14 +25,16 @@ func TestPerformPurge(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
 	clock := timeutil.Now
-	insightsDB := dbtest.NewInsightsDB(t)
-	postgres := dbtest.NewDB(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := store.NewInsightPermissionStore(postgres)
 	timeseriesStore := store.NewWithClock(insightsDB, permStore, clock)
 	insightStore := store.NewInsightStore(insightsDB)
-	workerBaseStore := basestore.NewWithDB(postgres, sql.TxOptions{})
+	workerBaseStore := basestore.NewWithHandle(postgres.Handle())
 
 	getTimeSeriesCountForSeries := func(ctx context.Context, seriesId string) int {
 		q := sqlf.Sprintf("select count(*) from series_points where series_id = %s;", seriesId)
@@ -107,7 +108,6 @@ func TestPerformPurge(t *testing.T) {
 			SeriesID: doNotWantSeries,
 			Time:     now,
 			Value:    15,
-			Metadata: nil,
 			Capture:  nil,
 		},
 		RepoName:    &repoName,
@@ -123,7 +123,6 @@ func TestPerformPurge(t *testing.T) {
 			SeriesID: wantSeries,
 			Time:     now,
 			Value:    10,
-			Metadata: nil,
 			Capture:  nil,
 		},
 		RepoName:    &repoName,
@@ -135,12 +134,16 @@ func TestPerformPurge(t *testing.T) {
 	}
 
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    doNotWantSeries,
-		SearchQuery: "delete_me",
-		RecordTime:  &now,
-		Cost:        5,
-		Priority:    5,
-		PersistMode: string(store.RecordMode),
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    doNotWantSeries,
+			SearchQuery: "delete_me",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
+		Cost:     5,
+		Priority: 5,
+
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,
@@ -149,12 +152,15 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    wantSeries,
-		SearchQuery: "should_remain",
-		RecordTime:  &now,
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    wantSeries,
+			SearchQuery: "should_remain",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
 		Cost:        3,
 		Priority:    3,
-		PersistMode: string(store.RecordMode),
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,

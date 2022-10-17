@@ -1,0 +1,24 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.header {
+    @media (--lg-breakpoint-down) {
+        flex-basis: 100%;
+    }
+}
+
+.stats-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.state-badge {
+    @media (--md-breakpoint-down) {
+        flex-basis: 100%;
+    }
+}
+
+.duration-icon {
+    --icon-inline-size: 1.5rem;
+}

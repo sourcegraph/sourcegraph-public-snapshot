@@ -1,8 +1,8 @@
-import React, { useState, FunctionComponent } from 'react'
+import { useState, FunctionComponent } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Badge, Button, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -28,7 +28,7 @@ interface Props {
     onEmailResendVerification?: () => void
 }
 
-export const UserEmail: FunctionComponent<Props> = ({
+export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
     user,
     email: { email, isPrimary, verified, verificationPending, viewerCanManuallyVerify },
     onError,
@@ -62,6 +62,7 @@ export const UserEmail: FunctionComponent<Props> = ({
 
             setIsLoading(false)
             eventLogger.log('UserEmailAddressDeleted')
+            screenReaderAnnounce('Email address removed')
 
             if (onDidRemove) {
                 onDidRemove(email)
@@ -135,8 +136,13 @@ export const UserEmail: FunctionComponent<Props> = ({
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                     <span className="mr-2">{email}</span>
+                    {/*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast)
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */}
                     {verified && (
-                        <Badge variant="success" className="mr-1">
+                        <Badge variant="success" className="mr-1 a11y-ignore">
                             Verified
                         </Badge>
                     )}

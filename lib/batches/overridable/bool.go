@@ -48,7 +48,7 @@ func (b *Bool) UnmarshalJSON(data []byte) error {
 }
 
 // UnmarshalYAML unmarshalls a YAML value into a Bool.
-func (b *Bool) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (b *Bool) UnmarshalYAML(unmarshal func(any) error) error {
 	var all bool
 	if err := unmarshal(&all); err == nil {
 		*b = Bool{rules: rules{simpleRule(all)}}

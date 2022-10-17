@@ -16,14 +16,14 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           data-diff-marker=" "
         >
           <code
-            class="content"
+            class="code content"
           >
             @@ -159,7 +159,7 @@ export async function register({
           </code>
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -35,7 +35,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L159"
+            href="#anchor_L159"
           >
             159
           </a>
@@ -49,7 +49,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R159"
+            href="#anchor_R159"
           >
             159
           </a>
@@ -58,6 +58,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -66,7 +71,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -78,7 +83,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L160"
+            href="#anchor_L160"
           >
             160
           </a>
@@ -92,7 +97,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R160"
+            href="#anchor_R160"
           >
             160
           </a>
@@ -101,6 +106,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -109,7 +119,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -121,7 +131,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L161"
+            href="#anchor_L161"
           >
             161
           </a>
@@ -135,7 +145,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R161"
+            href="#anchor_R161"
           >
             161
           </a>
@@ -144,6 +154,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -152,7 +167,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -164,7 +179,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L162"
+            href="#anchor_L162"
           >
             162
           </a>
@@ -176,6 +191,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker="-"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            deleted line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -184,7 +204,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -199,7 +219,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R162"
+            href="#anchor_R162"
           >
             162
           </a>
@@ -208,6 +228,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker="+"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            added line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -216,7 +241,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -228,7 +253,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L163"
+            href="#anchor_L163"
           >
             163
           </a>
@@ -242,7 +267,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R163"
+            href="#anchor_R163"
           >
             163
           </a>
@@ -251,6 +276,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -259,7 +289,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -271,7 +301,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L164"
+            href="#anchor_L164"
           >
             164
           </a>
@@ -285,7 +315,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R164"
+            href="#anchor_R164"
           >
             164
           </a>
@@ -294,6 +324,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -302,7 +337,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -314,7 +349,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L165"
+            href="#anchor_L165"
           >
             165
           </a>
@@ -328,7 +363,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R165"
+            href="#anchor_R165"
           >
             165
           </a>
@@ -337,6 +372,11 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -365,14 +405,14 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           data-diff-marker=" "
         >
           <code
-            class="content"
+            class="code content"
           >
             @@ -159,7 +159,7 @@ export async function register({
           </code>
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -384,7 +424,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L159"
+            href="#anchor_L159"
           >
             159
           </a>
@@ -398,7 +438,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R159"
+            href="#anchor_R159"
           >
             159
           </a>
@@ -408,6 +448,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           data-diff-marker=" "
           style="background-color: red; border: 1px solid blue;"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -416,7 +461,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
            
           <span
             class=""
-            data-tooltip="base hover msg"
+            data-state="closed"
             style="background-color: black;"
           >
             head content
@@ -424,7 +469,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -436,7 +481,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L160"
+            href="#anchor_L160"
           >
             160
           </a>
@@ -450,7 +495,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R160"
+            href="#anchor_R160"
           >
             160
           </a>
@@ -459,6 +504,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -467,7 +517,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -479,7 +529,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L161"
+            href="#anchor_L161"
           >
             161
           </a>
@@ -493,7 +543,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R161"
+            href="#anchor_R161"
           >
             161
           </a>
@@ -502,6 +552,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -510,7 +565,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -522,7 +577,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L162"
+            href="#anchor_L162"
           >
             162
           </a>
@@ -535,6 +590,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           data-diff-marker="-"
           style="background-color: blue; border: 1px solid blue;"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            deleted line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -543,7 +603,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
            
           <span
             class=""
-            data-tooltip="base hover msg"
+            data-state="closed"
             style="background-color: black;"
           >
             base content
@@ -551,7 +611,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -566,7 +626,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R162"
+            href="#anchor_R162"
           >
             162
           </a>
@@ -575,6 +635,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker="+"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            added line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -583,7 +648,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -595,7 +660,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L163"
+            href="#anchor_L163"
           >
             163
           </a>
@@ -609,7 +674,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R163"
+            href="#anchor_R163"
           >
             163
           </a>
@@ -618,6 +683,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -626,7 +696,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -638,7 +708,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L164"
+            href="#anchor_L164"
           >
             164
           </a>
@@ -652,7 +722,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R164"
+            href="#anchor_R164"
           >
             164
           </a>
@@ -661,6 +731,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -669,7 +744,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -681,7 +756,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L165"
+            href="#anchor_L165"
           >
             165
           </a>
@@ -695,7 +770,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R165"
+            href="#anchor_R165"
           >
             165
           </a>
@@ -704,6 +779,11 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -732,14 +812,14 @@ exports[`DiffHunk renders decorations if given 1`] = `
           data-diff-marker=" "
         >
           <code
-            class="content"
+            class="code content"
           >
             @@ -159,7 +159,7 @@ export async function register({
           </code>
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -751,7 +831,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L159"
+            href="#anchor_L159"
           >
             159
           </a>
@@ -765,7 +845,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R159"
+            href="#anchor_R159"
           >
             159
           </a>
@@ -775,6 +855,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           data-diff-marker=" "
           style="background-color: red;"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -783,7 +868,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
            
           <span
             class=""
-            data-tooltip="base hover msg"
+            data-state="closed"
             style="background-color: black;"
           >
             head content
@@ -791,7 +876,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -803,7 +888,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L160"
+            href="#anchor_L160"
           >
             160
           </a>
@@ -817,7 +902,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R160"
+            href="#anchor_R160"
           >
             160
           </a>
@@ -826,6 +911,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -834,7 +924,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -846,7 +936,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L161"
+            href="#anchor_L161"
           >
             161
           </a>
@@ -860,7 +950,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R161"
+            href="#anchor_R161"
           >
             161
           </a>
@@ -869,6 +959,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -877,7 +972,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineDeletion"
+        class="a11y-ignore lineDeletion"
         data-hunk-line-kind="DELETED"
       >
         <td
@@ -889,7 +984,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L162"
+            href="#anchor_L162"
           >
             162
           </a>
@@ -902,6 +997,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           data-diff-marker="-"
           style="background-color: blue;"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            deleted line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -910,7 +1010,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
            
           <span
             class=""
-            data-tooltip="base hover msg"
+            data-state="closed"
             style="background-color: black;"
           >
             base content
@@ -918,7 +1018,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineAddition"
+        class="a11y-ignore lineAddition"
         data-hunk-line-kind="ADDED"
       >
         <td
@@ -933,7 +1033,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R162"
+            href="#anchor_R162"
           >
             162
           </a>
@@ -942,6 +1042,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker="+"
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            added line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -950,7 +1055,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -962,7 +1067,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L163"
+            href="#anchor_L163"
           >
             163
           </a>
@@ -976,7 +1081,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R163"
+            href="#anchor_R163"
           >
             163
           </a>
@@ -985,6 +1090,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -993,7 +1103,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -1005,7 +1115,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L164"
+            href="#anchor_L164"
           >
             164
           </a>
@@ -1019,7 +1129,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R164"
+            href="#anchor_R164"
           >
             164
           </a>
@@ -1028,6 +1138,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >
@@ -1036,7 +1151,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         </td>
       </tr>
       <tr
-        class="lineBoth"
+        class="a11y-ignore lineBoth"
         data-hunk-line-kind="UNCHANGED"
       >
         <td
@@ -1048,7 +1163,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_L165"
+            href="#anchor_L165"
           >
             165
           </a>
@@ -1062,7 +1177,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
         >
           <a
             class="numLine"
-            href="/#anchor_R165"
+            href="#anchor_R165"
           >
             165
           </a>
@@ -1071,6 +1186,11 @@ exports[`DiffHunk renders decorations if given 1`] = `
           class="content"
           data-diff-marker=" "
         >
+          <span
+            style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+          >
+            unchanged line
+          </span>
           <div
             class="d-inline-block"
           >

@@ -2,36 +2,33 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/hexops/autogold"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 // TestResolver_InsightSeries tests that the InsightSeries GraphQL resolver works.
 func TestResolver_InsightSeries(t *testing.T) {
-	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver, *store.MockInterface) {
+	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver) {
 		// Setup the GraphQL resolver.
 		ctx := actor.WithInternalActor(context.Background())
 		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
-		insightsDB := dbtest.NewInsightsDB(t)
-		postgres := dbtest.NewDB(t)
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
-
-		// Create a mock store, delegating any un-mocked methods to the DB store.
-		dbStore := resolver.timeSeriesStore
-		mockStore := store.NewMockInterfaceFrom(dbStore)
-		resolver.timeSeriesStore = mockStore
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
 		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
@@ -72,46 +69,21 @@ func TestResolver_InsightSeries(t *testing.T) {
 		for _, node := range nodes {
 			series = append(series, node.Series())
 		}
-		return ctx, series, mockStore
+		return ctx, series
 	}
 
 	t.Run("Points", func(t *testing.T) {
-		ctx, insights, mock := testSetup(t)
+		ctx, insights := testSetup(t)
 		autogold.Want("insights length", int(1)).Equal(t, len(insights))
 
 		autogold.Want("insights[0].length", int(1)).Equal(t, len(insights[0]))
 
-		args := &graphqlbackend.InsightsPointsArgs{
-			From: &graphqlbackend.DateTime{Time: time.Now().Add(-7 * 24 * time.Hour)},
-			To:   &graphqlbackend.DateTime{Time: time.Now()},
-		}
-
 		// Issue a query against the actual DB.
-		points, err := insights[0][0].Points(ctx, args)
+		points, err := insights[0][0].Points(ctx, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 		autogold.Want("insights[0][0].Points", []graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
 
-		// Mock the store and confirm args got passed through as expected.
-		args.From.Time, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-		args.To.Time, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
-		mock.SeriesPointsFunc.SetDefaultHook(func(ctx context.Context, opts store.SeriesPointsOpts) ([]store.SeriesPoint, error) {
-			json, err := json.Marshal(opts)
-			if err != nil {
-				t.Fatal(err)
-			}
-			autogold.Want("insights[0][0].Points store opts", `{"SeriesID":"1234567","RepoID":null,"Excluded":null,"Included":null,"IncludeRepoRegex":null,"ExcludeRepoRegex":null,"From":"2006-01-02T15:04:05Z","To":"2006-01-03T15:04:05Z","Limit":0}`).Equal(t, string(json))
-			return []store.SeriesPoint{
-				{Time: args.From.Time, Value: 1},
-				{Time: args.From.Time, Value: 2},
-				{Time: args.From.Time, Value: 3},
-			}, nil
-		})
-		points, err = insights[0][0].Points(ctx, args)
-		if err != nil {
-			t.Fatal(err)
-		}
-		autogold.Want("insights[0][0].Points mocked", "[{p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:1 Metadata:[] Capture:<nil>}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:2 Metadata:[] Capture:<nil>}} {p:{SeriesID: Time:{wall:0 ext:63271811045 loc:<nil>} Value:3 Metadata:[] Capture:<nil>}}]").Equal(t, fmt.Sprintf("%+v", points))
 	})
 }

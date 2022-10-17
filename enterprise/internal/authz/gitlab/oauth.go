@@ -3,11 +3,15 @@ package gitlab
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,6 +28,7 @@ type OAuthProvider struct {
 	clientProvider *gitlab.ClientProvider
 	clientURL      *url.URL
 	codeHost       *extsvc.CodeHost
+	db             database.DB
 }
 
 type OAuthProviderOp struct {
@@ -40,9 +45,11 @@ type OAuthProviderOp struct {
 
 	// TokenType is the type of the access token. Default is gitlab.TokenTypePAT.
 	TokenType gitlab.TokenType
+
+	DB database.DB
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
@@ -51,6 +58,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		db:             op.DB,
 	}
 }
 
@@ -78,6 +86,9 @@ func (p *OAuthProvider) FetchAccount(context.Context, *types.User, []*extsvc.Acc
 // has read access to. The project ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private project IDs.
 //
+// The client used by this method will be in charge of updating the OAuth token
+// if it has expired and retrying the request.
+//
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.
 //
@@ -90,21 +101,21 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
+	_, tok, err := gitlab.GetExternalAccountData(ctx, &account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	} else if tok == nil {
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	client := p.clientProvider.GetOAuthClient(tok.AccessToken)
-	return listProjects(ctx, client)
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *OAuthProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
+	token := &auth.OAuthBearerToken{
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		NeedsRefreshBuffer: 5,
+	}
+	client := p.clientProvider.NewClient(token)
 	return listProjects(ctx, client)
 }
 

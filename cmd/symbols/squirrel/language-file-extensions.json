@@ -284,6 +284,7 @@
   ],
   "ruby": [
     "rb",
+    "rbi",
     "builder",
     "eye",
     "gemspec",
@@ -333,6 +334,12 @@
   ],
   "sql": [
     "sql"
+  ],
+  "starlark": [
+    "bzl",
+    "bazel",
+    "BUILD",
+    "WORKSPACE"
   ],
   "stylus": [
     "styl"

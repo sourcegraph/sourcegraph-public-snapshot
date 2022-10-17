@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -19,18 +17,6 @@ describe('StreamingProgressSkippedButton', () => {
                 ownerDocument: document,
             },
         })
-    })
-
-    it('should not show if no skipped items', () => {
-        const progress: Progress = {
-            durationMs: 0,
-            matchCount: 0,
-            skipped: [],
-        }
-
-        renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(screen.queryByTestId('streaming-progress-skipped')).not.toBeInTheDocument()
-        expect(screen.queryByTestId('streaming-progress-skipped-popover')).not.toBeInTheDocument()
     })
 
     it('should be in info state with only info items', () => {
@@ -107,8 +93,8 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutlineDanger')
-        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutlineSecondary')
+        expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutline btnDanger')
+        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutline btnSecondary')
     })
 
     it('should open and close popover when button is clicked', async () => {
@@ -198,7 +184,7 @@ describe('StreamingProgressSkippedButton', () => {
 
         // Trigger onSearchAgain event and check for changes
         // Find `archived:yes` checkbox
-        userEvent.click(screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1], undefined, {
+        userEvent.click(screen.getAllByTestId(/^streaming-progress-skipped-suggest-check/)[1], undefined, {
             skipPointerEventsCheck: true,
         })
         userEvent.click(screen.getByTestId('skipped-popover-form-submit-btn'), undefined, {

@@ -2,9 +2,9 @@ import React, { useMemo } from 'react'
 
 import * as H from 'history'
 
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { PageHeader, H2, useObservable, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -39,7 +39,7 @@ interface BatchChangeRepoPageProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPageProps> = ({
+export const BatchChangeRepoPage: React.FunctionComponent<React.PropsWithChildren<BatchChangeRepoPageProps>> = ({
     repo,
     queryRepoBatchChangeStats = _queryRepoBatchChangeStats,
     ...context
@@ -66,15 +66,15 @@ export const BatchChangeRepoPage: React.FunctionComponent<BatchChangeRepoPagePro
             />
             {hasChangesets && stats?.batchChangesDiffStat && stats?.changesetsStats ? (
                 <div className="d-flex align-items-center mt-4 mb-3">
-                    <h2 className="mb-0 pb-1">{repoDisplayName}</h2>
+                    <H2 className="mb-0 pb-1">{repoDisplayName}</H2>
                     <DiffStat className="d-flex flex-1 ml-2" expandedCounts={true} {...stats.batchChangesDiffStat} />
                     <StatsBar stats={stats.changesetsStats} />
                 </div>
             ) : null}
             {hasChangesets ? (
-                <p>
+                <Text>
                     Batch changes has created {stats?.changesetsStats.total} changesets on {repoDisplayName}
-                </p>
+                </Text>
             ) : (
                 <div className="mb-3" />
             )}
@@ -89,7 +89,7 @@ interface StatsBarProps {
     stats: RepoBatchChangeStats['changesetsStats']
 }
 
-const StatsBar: React.FunctionComponent<StatsBarProps> = ({
+const StatsBar: React.FunctionComponent<React.PropsWithChildren<StatsBarProps>> = ({
     stats: { total, draft, open, unpublished, closed, merged },
 }) => (
     <div className="d-flex flex-wrap align-items-center">

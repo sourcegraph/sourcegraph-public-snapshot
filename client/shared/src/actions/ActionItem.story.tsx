@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { action } from '@storybook/addon-actions'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
@@ -18,7 +16,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
 }
 

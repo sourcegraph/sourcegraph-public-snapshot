@@ -11,7 +11,9 @@ import { RepositoryFields } from '../../../graphql-operations'
 
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 /**
  * Properties passed to all page components in the repository batch changes area.
@@ -27,11 +29,9 @@ export interface RepositoryBatchChangesAreaPageProps extends ThemeProps, RouteCo
 /**
  * Renders pages related to repository batch changes.
  */
-export const RepositoryBatchChangesArea: React.FunctionComponent<RepositoryBatchChangesAreaPageProps> = ({
-    match,
-    useBreadcrumb,
-    ...props
-}) => {
+export const RepositoryBatchChangesArea: React.FunctionComponent<
+    React.PropsWithChildren<RepositoryBatchChangesAreaPageProps>
+> = ({ match, useBreadcrumb, ...props }) => {
     useBreadcrumb(useMemo(() => ({ key: 'batch-changes', element: 'Batch Changes' }), []))
 
     return (

@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiMagnify, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -45,7 +44,9 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
     }
 }
 
-export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = props => {
+export const SearchContextsListPage: React.FunctionComponent<
+    React.PropsWithChildren<SearchContextsListPageProps>
+> = props => {
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(getSelectedTabFromLocation(props.location.search))
 
     const setTab = useCallback(
@@ -68,18 +69,9 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
         <div data-testid="search-contexts-list-page" className="w-100">
             <Page>
                 <PageHeader
-                    path={[
-                        {
-                            icon: MagnifyIcon,
-                            to: '/search',
-                        },
-                        {
-                            text: 'Contexts',
-                        },
-                    ]}
                     actions={
                         <Button to="/contexts/new" variant="primary" as={Link}>
-                            <Icon as={PlusIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
                             Create search context
                         </Button>
                     }
@@ -96,14 +88,21 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         </span>
                     }
                     className="mb-3"
-                />
+                >
+                    <PageHeader.Heading as="h2" styleAs="h1">
+                        <PageHeader.Breadcrumb icon={mdiMagnify} to="/search" aria-label="Code Search" />
+                        <PageHeader.Breadcrumb>Contexts</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 <div className="mb-4">
-                    <div className="nav nav-tabs">
+                    <div id="search-context-tabs-list" className="nav nav-tabs">
                         <div className="nav-item">
                             {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                             <Link
                                 to=""
-                                role="button"
+                                role="tab"
+                                aria-selected={selectedTab === 'list'}
+                                aria-controls="search-context-tabs-list"
                                 onClick={onSelectSearchContextsList}
                                 className={classNames('nav-link', selectedTab === 'list' && 'active')}
                             >

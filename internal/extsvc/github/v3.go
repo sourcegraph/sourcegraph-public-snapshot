@@ -5,21 +5,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,6 +29,8 @@ import (
 // same Redis cache entries (provided they were computed with the same API URL and access
 // token). The cache keys are agnostic of the http.RoundTripper transport.
 type V3Client struct {
+	log log.Logger
+
 	// The URN of the external service that the client is derived from.
 	urn string
 
@@ -54,8 +55,8 @@ type V3Client struct {
 	// rateLimitMonitor is the API rate limit monitor.
 	rateLimitMonitor *ratelimit.Monitor
 
-	// rateLimit is our self imposed rate limiter
-	rateLimit *rate.Limiter
+	// rateLimit is our self-imposed rate limiter
+	rateLimit *ratelimit.InstrumentedLimiter
 
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
@@ -67,8 +68,8 @@ type V3Client struct {
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(urn, apiURL, a, "rest", cli)
+func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, apiURL, a, "rest", cli)
 }
 
 // NewV3SearchClient creates a new GitHub API client intended for use with the
@@ -76,11 +77,11 @@ func NewV3Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for
 // V3Client.apiURL.
-func NewV3SearchClient(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(urn, apiURL, a, "search", cli)
+func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, apiURL, a, "search", cli)
 }
 
-func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
+func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -109,6 +110,11 @@ func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource str
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
+		log: logger.Scoped("github.v3", "github v3 client").
+			With(
+				log.String("urn", urn),
+				log.String("resource", resource),
+			),
 		urn:              urn,
 		apiURL:           apiURL,
 		githubDotCom:     urlIsGitHubDotCom(apiURL),
@@ -124,7 +130,7 @@ func newV3Client(urn string, apiURL *url.URL, a auth.Authenticator, resource str
 // the current V3Client, except authenticated as the GitHub user with the given
 // authenticator instance (most likely a token).
 func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.urn, c.apiURL, a, c.resource, c.httpClient)
+	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
 }
 
 // RateLimitMonitor exposes the rate limit monitor.
@@ -132,7 +138,7 @@ func (c *V3Client) RateLimitMonitor() *ratelimit.Monitor {
 	return c.rateLimitMonitor
 }
 
-func (c *V3Client) get(ctx context.Context, requestURI string, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return nil, err
@@ -142,7 +148,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 }
 
 //nolint:unparam // Return *httpResponseState for consistency with other methods
-func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling payload")
@@ -158,7 +164,18 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (*httpResponseState, error) {
+func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
+	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, struct{}{})
+}
+
+func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -184,31 +201,11 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result interf
 			return nil, ctx.Err()
 		}
 
-		log15.Warn("internal rate limiter error", "error", err, "urn", c.urn)
+		c.log.Warn("internal rate limiter error", log.Error(err))
 		return nil, errInternalRateLimitExceeded
 	}
 
-	return doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
-}
-
-// newRepoCache creates a new cache for GitHub repository metadata. The backing
-// store is Redis. A checksum of the authenticator and API URL are used as a
-// Redis key prefix to prevent collisions with caches for different
-// authentication and API URLs.
-func newRepoCache(apiURL *url.URL, a auth.Authenticator) *rcache.Cache {
-	var cacheTTL time.Duration
-	if urlIsGitHubDotCom(apiURL) {
-		cacheTTL = 10 * time.Minute
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
-	}
-
-	key := ""
-	if a != nil {
-		key = a.Hash()
-	}
-	return rcache.NewWithTTL("gh_repo:"+key, int(cacheTTL/time.Second))
+	return doRequest(ctx, c.log, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, result)
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -232,6 +229,10 @@ func (e *APIError) AccountSuspended() bool {
 	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
 }
 
+func (e *APIError) UnavailableForLegalReasons() bool {
+	return e.Code == http.StatusUnavailableForLegalReasons
+}
+
 func (e *APIError) Temporary() bool { return IsRateLimitExceeded(e) }
 
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
@@ -250,7 +251,7 @@ func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
 		return "unknown", nil
 	}
 
-	var empty interface{}
+	var empty any
 
 	respState, err := c.get(ctx, "/", &empty)
 	if err != nil {
@@ -286,29 +287,38 @@ func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail
 	return emails, nil
 }
 
-func (c *V3Client) getAuthenticatedUserOrgs(ctx context.Context, page int) (
+var MockGetAuthenticatedUserOrgs struct {
+	FnMock    func(ctx context.Context) ([]*Org, bool, int, error)
+	PagesMock map[int][]*Org
+}
+
+// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// authenticated user.
+func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
 	err error,
 ) {
+	// checking whether the function is mocked
+	if MockGetAuthenticatedUserOrgs.FnMock != nil || MockGetAuthenticatedUserOrgs.PagesMock != nil {
+		if MockGetAuthenticatedUserOrgs.FnMock != nil {
+			return MockGetAuthenticatedUserOrgs.FnMock(ctx)
+		}
+
+		orgsPage, ok := MockGetAuthenticatedUserOrgs.PagesMock[page]
+		if !ok {
+			err = errors.New("cannot find orgs page mock")
+			return
+		}
+		return orgsPage, page < len(MockGetAuthenticatedUserOrgs.PagesMock), 1, err
+	}
+
 	_, err = c.get(ctx, fmt.Sprintf("/user/orgs?per_page=100&page=%d", page), &orgs)
 	if err != nil {
 		return
 	}
 	return orgs, len(orgs) > 0, 1, err
-}
-
-var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
-
-// GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
-	if MockGetAuthenticatedUserOrgs != nil {
-		return MockGetAuthenticatedUserOrgs(ctx)
-	}
-	orgs, _, _, err := c.getAuthenticatedUserOrgs(ctx, 1)
-	return orgs, err
 }
 
 // OrgDetailsAndMembership is a results container for the results from the API calls made
@@ -328,7 +338,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.getAuthenticatedUserOrgs(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
 	if err != nil {
 		return
 	}
@@ -366,6 +376,8 @@ func (t *restTeam) convert() *Team {
 	}
 }
 
+var MockGetAuthenticatedUserTeams func(ctx context.Context, page int) ([]*Team, bool, int, error)
+
 // GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
 //
 // The page is the page of results to return, and is 1-indexed (so the first call should
@@ -376,15 +388,21 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 	rateLimitCost int,
 	err error,
 ) {
+	if MockGetAuthenticatedUserTeams != nil {
+		return MockGetAuthenticatedUserTeams(ctx, 1)
+	}
+
 	var restTeams []*restTeam
 	_, err = c.get(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &restTeams)
 	if err != nil {
 		return
 	}
+
 	teams = make([]*Team, len(restTeams))
 	for i, t := range restTeams {
 		teams[i] = t.convert()
 	}
+
 	return teams, len(teams) > 0, 1, err
 }
 
@@ -445,11 +463,7 @@ func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, 
 
 // GetRepository gets a repository from GitHub by owner and repository name.
 func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
-	if GetRepositoryMock != nil {
-		return GetRepositoryMock(ctx, owner, name)
-	}
 	return c.getRepositoryFromAPI(ctx, owner, name)
-
 }
 
 // GetOrganization gets an org from GitHub by its login.
@@ -669,9 +683,8 @@ func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
 	return repos, len(repos) > 0, 1, nil
 }
 
-// listRepositories is a generic method that unmarshals the given
-// JSON HTTP endpoint into a []restRepository. It will return an
-// error if it fails.
+// listRepositories is a generic method that unmarshalls the given JSON HTTP
+// endpoint into a []restRepository. It will return an error if it fails.
 //
 // This is used to extract repositories from the GitHub API endpoints:
 // - /users/:user/repos
@@ -734,7 +747,7 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 // API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
 func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
 	var token github.InstallationToken
-	if _, err := c.post(ctx, fmt.Sprintf("/app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+	if _, err := c.post(ctx, fmt.Sprintf("app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
 		return nil, err
 	}
 	return &token, nil
@@ -752,4 +765,152 @@ func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installat
 	}
 
 	return resultStruct.Installations, nil
+}
+
+type WebhookPayload struct {
+	Name   string   `json:"name"`
+	ID     int      `json:"id,omitempty"`
+	Config Config   `json:"config"`
+	Events []string `json:"events"`
+	Active bool     `json:"active"`
+	URL    string   `json:"url"`
+}
+
+type Config struct {
+	URL         string `json:"url"`
+	ContentType string `json:"content_type"`
+	Secret      string `json:"secret"`
+	InsecureSSL string `json:"insecure_ssl"`
+	Token       string `json:"token"`
+	Digest      string `json:"digest,omitempty"`
+}
+
+// CreateSyncWebhook returns the id of the newly created webhook, or 0 if there
+// was an error
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
+func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
+	url, err := webhookURLBuilder(repoName)
+	if err != nil {
+		return 0, err
+	}
+
+	payload := WebhookPayload{
+		Name:   "web",
+		Active: true,
+		Config: Config{
+			URL:         fmt.Sprintf("https://%s/github-webhooks", targetHost),
+			ContentType: "json",
+			Secret:      secret,
+			InsecureSSL: "0",
+		},
+		Events: []string{
+			"push",
+		},
+	}
+
+	var result WebhookPayload
+	resp, err := c.post(ctx, url, payload, &result)
+	if err != nil {
+		return 0, err
+	}
+
+	if resp.statusCode != http.StatusCreated {
+		return 0, errors.Newf("expected status code 201, got %d", resp.statusCode)
+	}
+
+	return result.ID, nil
+}
+
+// ListSyncWebhooks returns an array of WebhookPayloads
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
+func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
+	url, err := webhookURLBuilder(repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []WebhookPayload
+	resp, err := c.get(ctx, url, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.statusCode != http.StatusOK {
+		return nil, errors.Newf("expected status code 200, got %d", resp.statusCode)
+	}
+
+	return results, nil
+}
+
+// FindSyncWebhook looks for any webhook with the targetURL ending in
+// /github-webhooks
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*WebhookPayload, error) {
+	payloads, err := c.ListSyncWebhooks(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, payload := range payloads {
+		if strings.Contains(payload.Config.URL, "github-webhooks") {
+			return &payload, nil
+		}
+	}
+
+	return nil, errors.New("unable to find webhook")
+}
+
+// DeleteSyncWebhook returns a boolean answer as to whether the target repo was
+// deleted or not
+//
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
+func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	url, err := webhookURLBuilderWithID(repoName, hookID)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.delete(ctx, url)
+	if err != nil && err != io.EOF {
+		return false, err
+	}
+
+	if resp.statusCode != http.StatusNoContent {
+		return false, errors.Newf("expected status code 204, got %d", resp.statusCode)
+	}
+
+	return true, nil
+}
+
+// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API
+func webhookURLBuilder(repoName string) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks", u.Path), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
+}
+
+// webhookURLBuilderWithID builds the URL to interface with the GitHub Webhooks
+// API but with a hook ID
+func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks/%d", u.Path, hookID), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks/%d", u.Host, u.Path, hookID), nil
 }

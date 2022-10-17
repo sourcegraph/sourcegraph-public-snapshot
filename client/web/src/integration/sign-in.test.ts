@@ -1,3 +1,4 @@
+import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
@@ -34,5 +35,6 @@ describe('SignIn', () => {
         await driver.page.waitForSelector('input[name="password"]')
 
         await percySnapshotWithVariants(driver.page, 'Sign in page')
+        await accessibilityAudit(driver.page)
     })
 })

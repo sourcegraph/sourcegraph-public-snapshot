@@ -3,6 +3,7 @@ import React, { useCallback, useContext, useEffect, useRef } from 'react'
 import * as H from 'history'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Input } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
@@ -19,17 +20,25 @@ export interface PreviewFilterRowProps {
     location: H.Location
 }
 
-export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({ history, location }) => {
+export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<PreviewFilterRowProps>> = ({
+    history,
+    location,
+}) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
 
-    const { filters, setFilters } = useContext(BatchChangePreviewContext)
+    // `BatchChangePreviewContext` is responsible for managing the filter arguments for
+    // the `applyPreview` connection query.
+    const { filters, setFilters, setFiltersChanged } = useContext(BatchChangePreviewContext)
 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
             event.preventDefault()
             setFilters({ ...filters, search: searchElement.current?.value || null })
+            if (filters.search !== searchElement.current?.value) {
+                setFiltersChanged(true)
+            }
         },
-        [setFilters, filters]
+        [setFilters, filters, setFiltersChanged]
     )
 
     const setAction = useCallback(
@@ -80,12 +89,14 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
         <div className="row no-gutters">
             <div className="m-0 col">
                 <Form className="form-inline d-flex mb-2" onSubmit={onSubmit}>
-                    <input
-                        className="form-control flex-grow-1"
+                    <Input
+                        className="flex-grow-1"
+                        inputClassName="flex-grow-1"
                         type="search"
                         ref={searchElement}
                         defaultValue={filters.search ?? undefined}
                         placeholder="Search title and repository name"
+                        aria-label="Search title and repository name"
                     />
                 </Form>
             </div>

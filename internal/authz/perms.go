@@ -156,6 +156,7 @@ type RepoPermissions struct {
 	PendingUserIDs map[int64]struct{} // The pending user IDs
 	UpdatedAt      time.Time          // The last updated time
 	SyncedAt       time.Time          // The last repo-centric synced time
+	Unrestricted   bool               // Anyone can see the repo, overrides all other permissions
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.

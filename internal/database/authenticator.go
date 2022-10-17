@@ -33,7 +33,7 @@ const (
 type NullAuthenticator struct{ A *auth.Authenticator }
 
 // Scan implements the Scanner interface.
-func (n *NullAuthenticator) Scan(value interface{}) (err error) {
+func (n *NullAuthenticator) Scan(value any) (err error) {
 	switch value := value.(type) {
 	case string:
 		*n.A, err = UnmarshalAuthenticator(value)
@@ -50,31 +50,23 @@ func (n NullAuthenticator) Value() (driver.Value, error) {
 	if *n.A == nil {
 		return nil, nil
 	}
-	return marshalAuthenticator(*n.A)
+	return MarshalAuthenticator(*n.A)
 }
 
-// EncryptAuthenticator encodes _and_ encrypts an Authenticator into a byte
-// slice.
-func EncryptAuthenticator(ctx context.Context, enc encryption.Encrypter, a auth.Authenticator) ([]byte, error) {
-	raw, err := marshalAuthenticator(a)
+// EncryptAuthenticator encodes an authenticator into a byte slice. If the given
+// key is non-nil, it will also be encrypted.
+func EncryptAuthenticator(ctx context.Context, key encryption.Key, a auth.Authenticator) ([]byte, string, error) {
+	raw, err := MarshalAuthenticator(a)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling authenticator")
+		return nil, "", errors.Wrap(err, "marshalling authenticator")
 	}
 
-	if enc == nil {
-		return []byte(raw), nil
-	}
-
-	secret, err := enc.Encrypt(ctx, []byte(raw))
-	if err != nil {
-		return nil, errors.Wrap(err, "encrypting credential")
-	}
-
-	return secret, nil
+	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
+	return []byte(data), keyID, err
 }
 
-// marshalAuthenticator encodes an Authenticator into a JSON string.
-func marshalAuthenticator(a auth.Authenticator) (string, error) {
+// MarshalAuthenticator encodes an Authenticator into a JSON string.
+func MarshalAuthenticator(a auth.Authenticator) (string, error) {
 	var t AuthenticatorType
 	switch a.(type) {
 	case *auth.OAuthClient:
@@ -121,7 +113,7 @@ func UnmarshalAuthenticator(raw string) (auth.Authenticator, error) {
 		return nil, err
 	}
 
-	var a interface{}
+	var a any
 	switch partial.Type {
 	case AuthenticatorTypeOAuthClient:
 		a = &auth.OAuthClient{}

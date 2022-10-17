@@ -1,14 +1,27 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
-import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
+import { mdiCloudDownload, mdiCog } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Button,
+    Link,
+    Alert,
+    Icon,
+    H4,
+    Text,
+    Tooltip,
+    Container,
+    LoadingSpinner,
+    PageHeader,
+} from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -16,57 +29,60 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
+import {
+    RepositoriesResult,
+    RepositoryStatsResult,
+    RepositoryStatsVariables,
+    SiteAdminRepositoryFields,
+} from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
-import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { ValueLegendList, ValueLegendListProps } from './analytics/components/ValueLegendList'
+import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning, REPOSITORY_STATS, REPO_PAGE_POLL_INTERVAL } from './backend'
+import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
+import { RepoMirrorInfo as RepoMirrorInfo } from './components/RepoMirrorInfo'
+
+import styles from './SiteAdminRepositoriesPage.module.scss'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) => (
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
     <li
-        className="repository-node list-group-item py-2"
+        className="repository-node list-group-item px-0 py-2"
         data-test-repository={node.name}
         data-test-cloned={node.mirrorInfo.cloned}
     >
         <div className="d-flex align-items-center justify-content-between">
             <div>
+                <ExternalRepositoryIcon externalRepo={node.externalRepository} />
                 <RepoLink repoName={node.name} to={node.url} />
-                {node.mirrorInfo.cloneInProgress && (
-                    <small className="ml-2 text-success">
-                        <LoadingSpinner /> Cloning
-                    </small>
-                )}
-                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <small
-                        className="ml-2 text-muted"
-                        data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                    >
-                        <Icon as={CloudOutlineIcon} /> Not yet cloned
-                    </small>
-                )}
+                <RepoMirrorInfo mirrorInfo={node.mirrorInfo} />
             </div>
+
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} /> Clone now
+                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
-                {
-                    <Button
-                        to={`/${node.name}/-/settings`}
-                        data-tooltip="Repository settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} /> Settings
+                <Tooltip content="Repository settings">
+                    <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                     </Button>
-                }{' '}
+                </Tooltip>
             </div>
         </div>
+
+        {node.mirrorInfo.lastError && (
+            <div className={styles.alertWrapper}>
+                <Alert variant="warning">
+                    <Text className="font-weight-bold">Error syncing repository:</Text>
+                    <Code className={styles.alertContent}>{node.mirrorInfo.lastError.replaceAll('\r', '\n')}</Code>
+                </Alert>
+            </div>
+        )}
     </li>
 )
 
@@ -76,7 +92,7 @@ const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'status',
         label: 'Status',
-        type: 'radio',
+        type: 'select',
         values: [
             {
                 label: 'All',
@@ -88,13 +104,19 @@ const FILTERS: FilteredConnectionFilter[] = [
                 label: 'Cloned',
                 value: 'cloned',
                 tooltip: 'Show cloned repositories only',
-                args: { cloned: true, notCloned: false },
+                args: { cloneStatus: 'CLONED' },
+            },
+            {
+                label: 'Cloning',
+                value: 'cloning',
+                tooltip: 'Show repositories currently being cloned only',
+                args: { cloneStatus: 'CLONING' },
             },
             {
                 label: 'Not cloned',
                 value: 'not-cloned',
                 tooltip: 'Show only repositories that have not been cloned yet',
-                args: { cloned: false, notCloned: true },
+                args: { cloneStatus: 'NOT_CLONED' },
             },
             {
                 label: 'Needs index',
@@ -115,22 +137,90 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A page displaying the repositories on this site.
  */
-export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ history, location, telemetryService }) => {
+export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    history,
+    location,
+    telemetryService,
+}) => {
     useEffect(() => {
-        telemetryService.logViewEvent('SiteAdminRepos')
+        telemetryService.logPageView('SiteAdminRepos')
     }, [telemetryService])
 
     // Refresh global alert about enabling repositories when the user visits & navigates away from this page.
     useEffect(() => {
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, error => logger.error(error))
         return () => {
             refreshSiteFlags()
                 .toPromise()
-                .then(null, error => console.error(error))
+                .then(null, error => logger.error(error))
         }
     }, [])
+
+    const { data, loading, error, startPolling, stopPolling } = useQuery<
+        RepositoryStatsResult,
+        RepositoryStatsVariables
+    >(REPOSITORY_STATS, {})
+
+    useEffect(() => {
+        if (data?.repositoryStats?.total === 0 || data?.repositoryStats?.cloning !== 0) {
+            startPolling(REPO_PAGE_POLL_INTERVAL)
+        } else {
+            stopPolling()
+        }
+    }, [data, startPolling, stopPolling])
+
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!data) {
+            return undefined
+        }
+        return [
+            {
+                value: data.repositoryStats.total,
+                description: 'Repositories',
+                color: 'var(--purple)',
+                tooltip:
+                    'Total number of repositories in the Sourcegraph instance. This number might be higher than the total number of repositories in the list below in case repository permissions do not allow you to view some repositories.',
+            },
+            {
+                value: data.repositoryStats.notCloned,
+                description: 'Not cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that haven not been cloned yet.',
+            },
+            {
+                value: data.repositoryStats.cloning,
+                description: 'Cloning',
+                color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that are currently being cloned.',
+            },
+            {
+                value: data.repositoryStats.cloned,
+                description: 'Cloned',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been cloned.',
+            },
+            {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
+            },
+            {
+                value: data.repositoryStats.failedFetch,
+                description: 'Failed',
+                color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+            },
+        ]
+    }, [data])
+
     const queryRepositories = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoriesResult['repositories']> =>
             fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(args),
@@ -138,33 +228,68 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
     )
     const showRepositoriesAddedBanner = new URLSearchParams(location.search).has('repositoriesUpdated')
 
+    const licenseInfo = window.context.licenseInfo
+
     return (
         <div className="site-admin-repositories-page">
             <PageTitle title="Repositories - Admin" />
             {showRepositoriesAddedBanner && (
                 <Alert variant="success" as="p">
-                    Updating repositories. It may take a few moments to clone and index each repository. Repository
+                    Syncing repositories. It may take a few moments to clone and index each repository. Repository
                     statuses are displayed below.
                 </Alert>
             )}
-            <h2>Repositories</h2>
-            <p>
-                Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
-                    code host connections
-                </Link>
-                .
-            </p>
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                nodeComponent={RepositoryNode}
-                filters={FILTERS}
-                history={history}
-                location={location}
+            <PageHeader
+                path={[{ text: 'Repositories' }]}
+                headingElement="h2"
+                description={
+                    <>
+                        Repositories are synced from connected{' '}
+                        <Link
+                            to="/site-admin/external-services"
+                            data-testid="test-repositories-code-host-connections-link"
+                        >
+                            code hosts
+                        </Link>
+                        .
+                    </>
+                }
+                className="mb-3"
             />
+            {licenseInfo && (licenseInfo.codeScaleCloseToLimit || licenseInfo.codeScaleExceededLimit) && (
+                <Alert variant={licenseInfo.codeScaleExceededLimit ? 'danger' : 'warning'}>
+                    <H4>
+                        {licenseInfo.codeScaleExceededLimit ? (
+                            <>You've used all 100GiB of storage</>
+                        ) : (
+                            <>Your Sourcegraph is almost full</>
+                        )}
+                    </H4>
+                    {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
+                    Upgrade to <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
+                    unlimited storage for your code.
+                </Alert>
+            )}
+
+            <Container className="mb-3">
+                {error && !loading && <ErrorAlert error={error} />}
+                {loading && !error && <LoadingSpinner />}
+                {legends && <ValueLegendList className="mb-3" items={legends} />}
+                <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
+                    className="mb-0"
+                    listClassName="list-group list-group-flush mb-0"
+                    summaryClassName="mt-2"
+                    withCenteredSummary={true}
+                    noun="repository"
+                    pluralNoun="repositories"
+                    queryConnection={queryRepositories}
+                    nodeComponent={RepositoryNode}
+                    inputClassName="flex-1"
+                    filters={FILTERS}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </div>
     )
 }

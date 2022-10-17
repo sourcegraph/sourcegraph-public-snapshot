@@ -1,31 +1,41 @@
 import React from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
-import { mockWorkspace } from '../create/workspaces-preview/WorkspacesPreview.mock'
+import { mockPreviewWorkspace } from '../batch-spec/batch-spec.mock'
 
 import { Descriptor } from './Descriptor'
 import { CachedIcon, ExcludeIcon } from './Icons'
 import { ListItem } from './ListItem'
 
-const { add } = storiesOf('web/batches/workspaces-list/ListItem', module).addDecorator(story => (
-    <div className="list-group w-100">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="list-group w-100">{story()}</div>
 
-add('basic', () => (
+const config: Meta = {
+    title: 'web/batches/workspaces-list/ListItem',
+    decorators: [decorator],
+}
+
+export default config
+
+const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent<React.PropsWithChildren<unknown>>][] = [
+    ['cached', CachedIcon],
+    ['exclude', ExcludeIcon],
+]
+
+export const Basic: Story = () => (
     <WebStory>
         {props => (
             <>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1)} />
+                    <Descriptor workspace={mockPreviewWorkspace(1)} />
                 </ListItem>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(2)} />
+                    <Descriptor workspace={mockPreviewWorkspace(2)} />
                 </ListItem>
                 <ListItem {...props}>
                     <Descriptor
-                        workspace={mockWorkspace(3, {
+                        workspace={mockPreviewWorkspace(3, {
                             repository: {
                                 __typename: 'Repository',
                                 id: 'with-long-name',
@@ -39,18 +49,18 @@ add('basic', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-add('non-root path', () => (
+export const NonRootPath: Story = () => (
     <WebStory>
         {props => (
             <>
                 <ListItem {...props}>
-                    <Descriptor workspace={mockWorkspace(1, { path: 'path/to/workspace' })} />
+                    <Descriptor workspace={mockPreviewWorkspace(1, { path: 'path/to/workspace' })} />
                 </ListItem>
                 <ListItem {...props}>
                     <Descriptor
-                        workspace={mockWorkspace(2, {
+                        workspace={mockPreviewWorkspace(2, {
                             path:
                                 'a/really/deeply/nested/path/that/is/super/long/and/obnoxious/like/it/just/keeps/going/and-what-the-heck-is-this-folder-name-its-just-so-long/path/to/workspace',
                         })}
@@ -59,38 +69,39 @@ add('non-root path', () => (
             </>
         )}
     </WebStory>
-))
+)
 
-const STATUS_INDICATORS: [key: string, icon: React.FunctionComponent][] = [
-    ['cached', CachedIcon],
-    ['exclude', ExcludeIcon],
-]
+NonRootPath.storyName = 'non-root path'
 
-add('with status indicator', () => (
+export const WithStatusIndicator: Story = () => (
     <WebStory>
         {props => (
             <>
                 {STATUS_INDICATORS.map(([key, Component], index) => (
                     <ListItem {...props} key={key}>
-                        <Descriptor workspace={mockWorkspace(index + 1)} statusIndicator={<Component />} />
+                        <Descriptor workspace={mockPreviewWorkspace(index + 1)} statusIndicator={<Component />} />
                     </ListItem>
                 ))}
             </>
         )}
     </WebStory>
-))
+)
 
-add('with click handler', () => (
+WithStatusIndicator.storyName = 'with status indicator'
+
+export const WithClickHandler: Story = () => (
     <WebStory>
         {props => (
             <>
                 <ListItem {...props} onClick={() => alert('Clicked workspace 1!')}>
-                    <Descriptor workspace={mockWorkspace(1)} />
+                    <Descriptor workspace={mockPreviewWorkspace(1)} />
                 </ListItem>
                 <ListItem {...props} onClick={() => alert('Clicked workspace 2!')}>
-                    <Descriptor workspace={mockWorkspace(2)} />
+                    <Descriptor workspace={mockPreviewWorkspace(2)} />
                 </ListItem>
             </>
         )}
     </WebStory>
-))
+)
+
+WithClickHandler.storyName = 'with click handler'

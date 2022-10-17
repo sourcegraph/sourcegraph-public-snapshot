@@ -6,14 +6,14 @@ Site admins can associate Git repositories on [Phabricator](https://phabricator.
 
 To connect Phabricator to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Phabricator**.
 1. Configure the connection to Phabricator using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
 ## Repository association
 
-Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as a connection (in **Site admin > Manage repositories**).
+Sourcegraph can provide users with links to various Phabricator pages (for files, commits, branches, etc.) if you add Phabricator as a connection (in **Site admin > Manage code hosts**).
 
 A Phabricator configuration consists of the following fields:
 

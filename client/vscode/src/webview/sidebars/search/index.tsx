@@ -2,15 +2,15 @@ import '../../platform/polyfills'
 
 import React, { useMemo, useState } from 'react'
 
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext, Tooltip } from '@sourcegraph/wildcard'
+import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../../contract'
 import { createEndpointsForWebToNode } from '../../comlink/webviewEndpoint'
@@ -41,7 +41,7 @@ setLinkComponent(AnchorLink)
 
 const themes = adaptSourcegraphThemeToEditorTheme()
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     // Debt: make sure we only rerender on necessary changes
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
@@ -118,12 +118,12 @@ const Main: React.FC = () => {
     )
 }
 
-render(
+const root = createRoot(document.querySelector('#root')!)
+
+root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             <Main />
-            <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
-    </ShortcutProvider>,
-    document.querySelector('#root')
+    </ShortcutProvider>
 )

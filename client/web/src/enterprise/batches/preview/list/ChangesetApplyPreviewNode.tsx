@@ -29,12 +29,9 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
     expandChangesetDescriptions?: boolean
 }
 
-export const ChangesetApplyPreviewNode: React.FunctionComponent<ChangesetApplyPreviewNodeProps> = ({
-    node,
-    queryChangesetSpecFileDiffs,
-    expandChangesetDescriptions,
-    ...props
-}) => {
+export const ChangesetApplyPreviewNode: React.FunctionComponent<
+    React.PropsWithChildren<ChangesetApplyPreviewNodeProps>
+> = ({ node, queryChangesetSpecFileDiffs, expandChangesetDescriptions, ...props }) => {
     if (node.__typename === 'HiddenChangesetApplyPreview') {
         return (
             <>

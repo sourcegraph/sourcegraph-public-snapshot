@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export REDIS_ENDPOINT="127.0.0.1:6379"
+
 data="${SG_DATA_DIR:-$HOME/.sourcegraph}/redis"
 
 if [ ! -d "$data" ]; then

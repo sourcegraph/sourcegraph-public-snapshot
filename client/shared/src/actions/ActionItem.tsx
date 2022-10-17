@@ -1,18 +1,26 @@
 import * as React from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { ActionContribution, Evaluated } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
-import { LoadingSpinner, ButtonLink, ButtonLinkProps, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
+import {
+    LoadingSpinner,
+    Button,
+    ButtonLink,
+    ButtonLinkProps,
+    WildcardThemeContext,
+    Icon,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { urlForOpenPanel } from '../commands/commands'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 
@@ -45,8 +53,8 @@ export interface ActionItemStyleProps {
 }
 
 export interface ActionItemComponentProps
-    extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+    extends RequiredExtensionsControllerProps<'executeCommand'>,
+        PlatformContextProps<'settings'> {
     location: H.Location
 
     iconClassName?: string
@@ -107,6 +115,12 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     tabIndex?: number
 
     hideExternalLinkIcon?: boolean
+
+    /**
+     * Class applied to tooltip trigger `<span>`,
+     * which is wrapped around action item content.
+     */
+    tooltipClassName?: string
 }
 
 const LOADING = 'loading' as const
@@ -147,27 +161,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
-    }
-
-    public componentDidUpdate(previousProps: ActionItemProps, previousState: State): void {
-        // If the tooltip changes while it's visible, we need to force-update it to show the new value.
-        const previousTooltip = previousProps.action.actionItem?.description
-        const tooltip = this.props.action.actionItem?.description
-        const descriptionTooltipChanged = previousTooltip !== tooltip
-
-        const errorTooltipChanged =
-            this.props.showInlineError &&
-            (isErrorLike(previousState.actionOrError) !== isErrorLike(this.state.actionOrError) ||
-                (isErrorLike(previousState.actionOrError) &&
-                    isErrorLike(this.state.actionOrError) &&
-                    previousState.actionOrError.message !== this.state.actionOrError.message))
-
-        if (descriptionTooltipChanged || errorTooltipChanged) {
-            this.props.platformContext.forceUpdateTooltip()
-        }
     }
 
     public componentWillUnmount(): void {
@@ -222,14 +218,15 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         // Simple display if the action is a noop.
         if (!this.props.action.command) {
             return (
-                <span
-                    data-tooltip={tooltip}
-                    data-content={this.props.dataContent}
-                    className={this.props.className}
-                    tabIndex={this.props.tabIndex}
-                >
-                    {content}
-                </span>
+                <Tooltip content={tooltip}>
+                    <span
+                        data-content={this.props.dataContent}
+                        className={this.props.className}
+                        tabIndex={this.props.tabIndex}
+                    >
+                        {content}
+                    </span>
+                </Tooltip>
             )
         }
 
@@ -250,56 +247,103 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
                       rel: 'noopener noreferrer',
                   }
                 : {}
-        const buttonLinkProps: Partial<ButtonLinkProps> = this.context.isBranded
+        const buttonLinkProps: Pick<ButtonLinkProps, 'variant' | 'size' | 'outline'> = this.context.isBranded
             ? {
                   variant: this.props.actionItemStyleProps?.actionItemVariant ?? 'link',
                   size: this.props.actionItemStyleProps?.actionItemSize,
                   outline: this.props.actionItemStyleProps?.actionItemOutline,
               }
             : {}
+        const disabled = this.isDisabled()
+
+        // TODO don't run action when disabled
+
+        // Props shared between button and link
+        const sharedProps = {
+            disabled:
+                !this.props.active ||
+                ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+                    this.state.actionOrError === LOADING) ||
+                this.props.disabledWhen,
+            tabIndex: this.props.tabIndex,
+        }
+
+        const tooltipOrErrorMessage =
+            this.props.showInlineError && isErrorLike(this.state.actionOrError)
+                ? `Error: ${this.state.actionOrError.message}`
+                : tooltip
+
+        if (!to) {
+            return (
+                <Tooltip content={tooltipOrErrorMessage}>
+                    <Button
+                        {...sharedProps}
+                        {...buttonLinkProps}
+                        className={classNames(
+                            'test-action-item',
+                            this.props.className,
+                            showLoadingSpinner && styles.actionItemLoading,
+                            pressed && [this.props.pressedClassName],
+                            sharedProps.disabled && this.props.inactiveClassName
+                        )}
+                        onClick={this.runAction}
+                        data-action-item-pressed={pressed}
+                        aria-pressed={pressed}
+                        aria-label={tooltipOrErrorMessage}
+                    >
+                        {content}{' '}
+                        {showLoadingSpinner && (
+                            <div className={styles.loader} data-testid="action-item-spinner">
+                                <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                            </div>
+                        )}
+                    </Button>
+                </Tooltip>
+            )
+        }
 
         return (
-            <ButtonLink
-                data-tooltip={
-                    this.props.showInlineError && isErrorLike(this.state.actionOrError)
-                        ? `Error: ${this.state.actionOrError.message}`
-                        : tooltip
-                }
-                data-content={this.props.dataContent}
-                disabled={
-                    !this.props.active ||
-                    ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                        this.state.actionOrError === LOADING) ||
-                    this.props.disabledWhen
-                }
-                disabledClassName={this.props.inactiveClassName}
-                data-action-item-pressed={pressed}
-                className={classNames(
-                    'test-action-item',
-                    this.props.className,
-                    showLoadingSpinner && styles.actionItemLoading,
-                    pressed && [this.props.pressedClassName],
-                    buttonLinkProps.variant === 'link' && styles.actionItemLink
-                )}
-                pressed={pressed}
-                onSelect={this.runAction}
-                // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
-                // it as a button that executes the command.
-                to={to}
-                {...newTabProps}
-                {...buttonLinkProps}
-                tabIndex={this.props.tabIndex}
-            >
-                {content}{' '}
-                {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
-                    <OpenInNewIcon className={this.props.iconClassName} />
-                )}
-                {showLoadingSpinner && (
-                    <div className={styles.loader} data-testid="action-item-spinner">
-                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
-                    </div>
-                )}
-            </ButtonLink>
+            <Tooltip content={tooltipOrErrorMessage}>
+                <span>
+                    <ButtonLink
+                        data-content={this.props.dataContent}
+                        disabledClassName={this.props.inactiveClassName}
+                        aria-disabled={disabled}
+                        data-action-item-pressed={pressed}
+                        className={classNames(
+                            'test-action-item',
+                            this.props.className,
+                            showLoadingSpinner && styles.actionItemLoading,
+                            pressed && [this.props.pressedClassName],
+                            buttonLinkProps.variant === 'link' && styles.actionItemLink,
+                            disabled && this.props.inactiveClassName
+                        )}
+                        pressed={pressed}
+                        onSelect={this.runAction}
+                        // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                        // it as a button that executes the command.
+                        to={to}
+                        {...newTabProps}
+                        {...buttonLinkProps}
+                        {...sharedProps}
+                    >
+                        {content}{' '}
+                        {!this.props.hideExternalLinkIcon && primaryTo && isExternalLink(primaryTo) && (
+                            <Icon
+                                className={this.props.iconClassName}
+                                svgPath={mdiOpenInNew}
+                                inline={false}
+                                aria-hidden={true}
+                            />
+                        )}
+                        {showLoadingSpinner && (
+                            <div className={styles.loader} data-testid="action-item-spinner">
+                                <LoadingSpinner inline={false} className={this.props.iconClassName} />
+                            </div>
+                        )}
+                    </ButtonLink>
+                </span>
+            </Tooltip>
         )
     }
 
@@ -309,6 +353,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         if (!action.command) {
             // Unexpectedly arrived here; noop actions should not have event handlers that trigger
             // this.
+            return
+        }
+
+        if (this.isDisabled()) {
             return
         }
 
@@ -341,6 +389,12 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
             args: action.commandArguments,
         })
     }
+
+    private isDisabled = (): boolean | undefined =>
+        !this.props.active ||
+        ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
+            this.state.actionOrError === LOADING) ||
+        this.props.disabledWhen
 }
 
 export function urlForClientCommandOpen(

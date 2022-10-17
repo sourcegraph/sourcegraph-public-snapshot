@@ -1,10 +1,9 @@
 import React from 'react'
 
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { mdiCheckCircle, mdiAlertCircle } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
-import { LoadingSpinner, CardBody, Card } from '@sourcegraph/wildcard'
+import { LoadingSpinner, CardBody, Card, Icon } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -22,11 +21,15 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
     now?: () => Date
 }
 
-export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
+export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<ExecutionLogEntryProps>> = ({
+    logEntry,
+    children,
+    now,
+}) => (
     <Card className="mb-3">
         <CardBody>
             {logEntry.command.length > 0 ? (
-                <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
+                <LogOutput text={logEntry.command.join(' ')} className="mb-3" logDescription="Executed command:" />
             ) : (
                 <div className="mb-3">
                     <span className="text-muted">Internal step {logEntry.key}.</span>
@@ -38,9 +41,19 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                 {logEntry.exitCode !== null && (
                     <>
                         {logEntry.exitCode === 0 ? (
-                            <CheckCircleIcon className="text-success mr-1" />
+                            <Icon
+                                className="text-success mr-1"
+                                svgPath={mdiCheckCircle}
+                                inline={false}
+                                aria-label="Success"
+                            />
                         ) : (
-                            <AlertCircleIcon className="text-danger mr-1" />
+                            <Icon
+                                className="text-danger mr-1"
+                                svgPath={mdiAlertCircle}
+                                inline={false}
+                                aria-label="Failed"
+                            />
                         )}
                     </>
                 )}
@@ -59,7 +72,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
         <div className="p-2">
             {logEntry.out ? (
                 <Collapsible title="Log output" titleAtStart={true} buttonClassName="p-2">
-                    <LogOutput text={logEntry.out} />
+                    <LogOutput text={logEntry.out} logDescription="Log output:" />
                 </Collapsible>
             ) : (
                 <div className="p-2">

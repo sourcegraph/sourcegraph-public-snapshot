@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -13,15 +14,18 @@ import (
 )
 
 const (
-	executorsAccessToken              = "executorsAccessToken"
-	authOpenIDClientSecret            = "authOpenIDClientSecret"
-	authGitHubClientSecret            = "authGitHubClientSecret"
-	authGitLabClientSecret            = "authGitLabClientSecret"
-	emailSMTPPassword                 = "emailSMTPPassword"
-	organizationInvitationsSigningKey = "organizationInvitationsSigningKey"
-	githubClientSecret                = "githubClientSecret"
-	dotcomGitHubAppCloudClientSecret  = "dotcomGitHubAppCloudClientSecret"
-	dotcomGitHubAppCloudPrivateKey    = "dotcomGitHubAppCloudPrivateKey"
+	executorsAccessToken                        = "executorsAccessToken"
+	authOpenIDClientSecret                      = "authOpenIDClientSecret"
+	authGitHubClientSecret                      = "authGitHubClientSecret"
+	authGitLabClientSecret                      = "authGitLabClientSecret"
+	emailSMTPPassword                           = "emailSMTPPassword"
+	organizationInvitationsSigningKey           = "organizationInvitationsSigningKey"
+	githubClientSecret                          = "githubClientSecret"
+	dotcomGitHubAppCloudClientSecret            = "dotcomGitHubAppCloudClientSecret"
+	dotcomGitHubAppCloudPrivateKey              = "dotcomGitHubAppCloudPrivateKey"
+	authUnlockAccountLinkSigningKey             = "authUnlockAccountLinkSigningKey"
+	dotcomSrcCliVersionCacheGitHubToken         = "dotcomSrcCliVersionCacheGitHubToken"
+	dotcomSrcCliVersionCacheGitHubWebhookSecret = "dotcomSrcCliVersionCacheGitHubWebhookSecret"
 )
 
 func TestValidate(t *testing.T) {
@@ -95,6 +99,64 @@ func TestValidateCustom(t *testing.T) {
 	}
 }
 
+func TestValidateSettings(t *testing.T) {
+	tests := map[string]struct {
+		input        string
+		wantProblems []string
+	}{
+		"valid": {
+			input:        `{}`,
+			wantProblems: []string{},
+		},
+		"comment only": {
+			input:        `// a`,
+			wantProblems: []string{"must be a JSON object (use {} for empty)"},
+		},
+		"invalid per JSON Schema": {
+			input:        `{"experimentalFeatures":123}`,
+			wantProblems: []string{"experimentalFeatures: Invalid type. Expected: object, given: integer"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			problems := ValidateSettings(test.input)
+			if !reflect.DeepEqual(problems, test.wantProblems) {
+				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+			}
+		})
+	}
+}
+
+func TestDoValidate(t *testing.T) {
+	schema := schema.SiteSchemaJSON
+
+	tests := map[string]struct {
+		input        string
+		wantProblems []string
+	}{
+		"valid": {
+			input:        `{}`,
+			wantProblems: []string{},
+		},
+		"invalid root": {
+			input:        `null`,
+			wantProblems: []string{`must be a JSON object (use {} for empty)`},
+		},
+		"invalid per JSON Schema": {
+			input:        `{"externalURL":123}`,
+			wantProblems: []string{"externalURL: Invalid type. Expected: string, given: integer"},
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			problems := doValidate([]byte(test.input), schema)
+			if !reflect.DeepEqual(problems, test.wantProblems) {
+				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+			}
+		})
+	}
+}
+
 func TestProblems(t *testing.T) {
 	siteProblems := NewSiteProblems(
 		"siteProblem1",
@@ -151,12 +213,30 @@ func TestRedactSecrets(t *testing.T) {
 				githubClientSecret,
 				dotcomGitHubAppCloudClientSecret,
 				dotcomGitHubAppCloudPrivateKey,
+				dotcomSrcCliVersionCacheGitHubToken,
+				dotcomSrcCliVersionCacheGitHubWebhookSecret,
+				authUnlockAccountLinkSigningKey,
 			),
 		},
 	)
 	require.NoError(t, err)
 
 	want := getTestSiteWithRedactedSecrets()
+	assert.Equal(t, want, redacted.Site)
+}
+
+func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
+	const cfgWithoutAuthProviders = `{
+  "executors.accessToken": "%s"
+}`
+	redacted, err := RedactSecrets(
+		conftypes.RawUnified{
+			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
+		},
+	)
+	require.NoError(t, err)
+
+	want := fmt.Sprintf(cfgWithoutAuthProviders, "REDACTED")
 	assert.Equal(t, want, redacted.Site)
 }
 
@@ -169,25 +249,31 @@ func TestUnredactSecrets(t *testing.T) {
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret,
 		dotcomGitHubAppCloudPrivateKey,
+		dotcomSrcCliVersionCacheGitHubToken,
+		dotcomSrcCliVersionCacheGitHubWebhookSecret,
+		authUnlockAccountLinkSigningKey,
 	)
 
 	t.Run("replaces REDACTED with corresponding secret", func(t *testing.T) {
 		input := getTestSiteWithRedactedSecrets()
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
-		assert.NotContains(t, unredactedSite, RedactedSecret)
+		assert.NotContains(t, unredactedSite, redactedSecret)
 		assert.Equal(t, previousSite, unredactedSite)
 	})
 
 	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
@@ -201,6 +287,9 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			dotcomSrcCliVersionCacheGitHubToken,
+			dotcomSrcCliVersionCacheGitHubWebhookSecret,
+			authUnlockAccountLinkSigningKey,
 		)
 		assert.Equal(t, want, unredactedSite)
 	})
@@ -209,12 +298,15 @@ func TestUnredactSecrets(t *testing.T) {
 		const newEmail = "new_email@example.com"
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 			newEmail,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
@@ -229,6 +321,9 @@ func TestUnredactSecrets(t *testing.T) {
 			githubClientSecret,
 			dotcomGitHubAppCloudClientSecret,
 			dotcomGitHubAppCloudPrivateKey,
+			dotcomSrcCliVersionCacheGitHubToken,
+			dotcomSrcCliVersionCacheGitHubWebhookSecret,
+			authUnlockAccountLinkSigningKey,
 			newEmail,
 		)
 		assert.Equal(t, want, unredactedSite)
@@ -236,7 +331,7 @@ func TestUnredactSecrets(t *testing.T) {
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+	return getTestSiteWithSecrets(redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret)
 }
 
 func getTestSiteWithSecrets(
@@ -245,15 +340,16 @@ func getTestSiteWithSecrets(
 	emailSMTPPassword,
 	organizationInvitationsSigningKey,
 	githubClientSecret,
-	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey string,
+	dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+	dotcomSrcCliVersionCacheGitHubToken, dotcomSrcCliVersionCacheGitHubWebhookSecret,
+	authUnlockAccountLinkSigningKey string,
 	optionalEdit ...string,
 ) string {
 	email := "noreply+dev@sourcegraph.com"
 	if len(optionalEdit) > 0 {
 		email = optionalEdit[0]
 	}
-	return fmt.Sprintf(`
-{
+	return fmt.Sprintf(`{
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "email.address": "%s",
@@ -287,10 +383,11 @@ func getTestSiteWithSecrets(
     }
   ],
   "observability.tracing": {
-    "sampling":"selective"
+    "sampling": "selective"
   },
   "externalService.userMode": "all",
   "email.smtp": {
+    "username": "%s",
     "password": "%s"
   },
   "organizationInvitations": {
@@ -301,17 +398,26 @@ func getTestSiteWithSecrets(
     "githubApp.cloud": {
       "clientSecret": "%s",
       "privateKey": "%s"
+    },
+    "srcCliVersionCache": {
+      "github": {
+        "token": "%s",
+        "webhookSecret": "%s"
+      }
     }
-  }
-}
-`,
+  },
+  "auth.unlockAccountLinkSigningKey": "%s",
+}`,
 		email,
 		executorsAccessToken,
 		authOpenIDClientSecret, authGitHubClientSecret, authGitLabClientSecret,
+		emailSMTPPassword, // used again as username
 		emailSMTPPassword,
 		organizationInvitationsSigningKey,
 		githubClientSecret,
 		dotcomGitHubAppCloudClientSecret, dotcomGitHubAppCloudPrivateKey,
+		dotcomSrcCliVersionCacheGitHubToken, dotcomSrcCliVersionCacheGitHubWebhookSecret,
+		authUnlockAccountLinkSigningKey,
 	)
 
 }

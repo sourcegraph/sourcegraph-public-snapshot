@@ -1,0 +1,67 @@
+[
+  {
+   "ID": 0,
+   "Name": "bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2",
+   "URI": "bitbucket.sgdev.org/SOURCEGRAPH/jsonrpc2",
+   "Description": "jsonrpc2",
+   "Fork": false,
+   "Archived": false,
+   "Private": true,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "10066",
+    "ServiceType": "bitbucketServer",
+    "ServiceID": "https://bitbucket.sgdev.org/"
+   },
+   "Sources": {
+    "extsvc:bitbucketserver:1": {
+     "ID": "extsvc:bitbucketserver:1",
+     "CloneURL": "https://bitbucket.sgdev.org/scm/sourcegraph/jsonrpc2.git"
+    }
+   },
+   "Metadata": {
+    "slug": "jsonrpc2",
+    "id": 10066,
+    "name": "jsonrpc2",
+    "scmId": "git",
+    "state": "AVAILABLE",
+    "statusMessage": "Available",
+    "forkable": true,
+    "origin": null,
+    "project": {
+     "key": "SOURCEGRAPH",
+     "id": 28,
+     "name": "Sourcegraph e2e testing",
+     "public": false,
+     "type": "NORMAL",
+     "links": {
+      "self": [
+       {
+        "href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH"
+       }
+      ]
+     }
+    },
+    "public": false,
+    "links": {
+     "clone": [
+      {
+       "href": "ssh://git@bitbucket.sgdev.org:7999/sourcegraph/jsonrpc2.git",
+       "name": "ssh"
+      },
+      {
+       "href": "https://bitbucket.sgdev.org/scm/sourcegraph/jsonrpc2.git",
+       "name": "http"
+      }
+     ],
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/SOURCEGRAPH/repos/jsonrpc2/browse"
+      }
+     ]
+    }
+   }
+  }
+ ]

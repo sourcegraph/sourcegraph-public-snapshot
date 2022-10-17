@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ButtonLink } from '@sourcegraph/wildcard'
+import { ButtonLink, Text } from '@sourcegraph/wildcard'
 
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { SettingsCascadeOrError } from '../settings/settings'
@@ -14,20 +14,23 @@ interface Props {
     sourcegraphURL: string
 }
 
-export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCascade, sourcegraphURL }) => {
+export const EmptyCommandList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    settingsCascade,
+    sourcegraphURL,
+}) => {
     // if no settings cascade, default to 'no active extensions'
     const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
 
     return (
         <EmptyCommandListContainer>
-            <p className={styles.title}>
+            <Text className={styles.title}>
                 {onlyDefault ? "You don't have any extensions enabled" : "You don't have any active actions"}
-            </p>
-            <p className={styles.text}>
+            </Text>
+            <Text className={styles.text}>
                 {onlyDefault
                     ? 'Enable Sourcegraph extensions to get additional functionality, integrations, and make special actions available from this menu.'
                     : 'Commands from your installed extensions will be shown when you navigate to certain pages.'}
-            </p>
+            </Text>
 
             <ButtonLink to={sourcegraphURL + '/extensions'} variant="primary">
                 Explore extensions

@@ -1,15 +1,14 @@
-import React from 'react'
-
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { MemoryRouter } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { AnchorLink, RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
@@ -55,17 +54,17 @@ describe('UserNavItem', () => {
         expect(
             render(
                 <MemoryRouter>
-                    <UserNavItem
-                        showRepositorySection={true}
-                        isLightTheme={true}
-                        onThemePreferenceChange={() => undefined}
-                        themePreference={ThemePreference.Light}
-                        authenticatedUser={USER}
-                        showDotComMarketing={true}
-                        isExtensionAlertAnimating={false}
-                        featureFlags={new Map()}
-                        codeHostIntegrationMessaging="browser-extension"
-                    />
+                    <CompatRouter>
+                        <UserNavItem
+                            isLightTheme={true}
+                            onThemePreferenceChange={() => undefined}
+                            showKeyboardShortcutsHelp={() => undefined}
+                            themePreference={ThemePreference.Light}
+                            authenticatedUser={USER}
+                            showDotComMarketing={true}
+                            codeHostIntegrationMessaging="browser-extension"
+                        />
+                    </CompatRouter>
                 </MemoryRouter>
             ).asFragment()
         ).toMatchSnapshot()
@@ -74,14 +73,12 @@ describe('UserNavItem', () => {
     test('logout click triggers page refresh instead of performing client-side only navigation', async () => {
         renderWithBrandedContext(
             <UserNavItem
-                showRepositorySection={true}
                 isLightTheme={true}
                 onThemePreferenceChange={() => undefined}
+                showKeyboardShortcutsHelp={() => undefined}
                 themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
                 showDotComMarketing={true}
-                isExtensionAlertAnimating={false}
-                featureFlags={new Map()}
                 codeHostIntegrationMessaging="browser-extension"
             />,
             {

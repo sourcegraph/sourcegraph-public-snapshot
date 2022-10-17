@@ -127,6 +127,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		"/.api/github-webhooks",
 		"/.api/gitlab-webhooks",
 		"/.api/bitbucket-server-webhooks",
+		"/.api/bitbucket-cloud-webhooks",
 	} {
 		if strings.HasPrefix(req.URL.Path, prefix) {
 			return true

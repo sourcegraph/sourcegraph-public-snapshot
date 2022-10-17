@@ -7,7 +7,7 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -23,7 +23,6 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import {
     OrganizationResult,
     OrganizationVariables,
@@ -100,7 +99,7 @@ function queryMembersFFlag(args: { orgID: string; flagName: string }): Observabl
     )
 }
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
@@ -117,7 +116,6 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        FeatureFlagProps,
         ExtensionsControllerProps,
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
@@ -149,7 +147,6 @@ export interface OrgAreaPageProps
         TelemetryProps,
         NamespaceProps,
         BreadcrumbsProps,
-        FeatureFlagProps,
         BreadcrumbSetters,
         BatchChangesProps {
     /** The org that is the subject of the page. */
@@ -244,7 +241,7 @@ export class OrgArea extends React.Component<Props> {
                             this.setState(stateUpdate)
                         }
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -291,7 +288,6 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
             newMembersInviteEnabled: this.state.newMembersInviteEnabled,
-            featureFlags: this.props.featureFlags,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

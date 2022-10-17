@@ -13,14 +13,13 @@ import styles from './FilePathBreadcrumbs.module.scss'
 interface Props extends RepoRevision, TelemetryProps {
     filePath: string
     isDir: boolean
-    repoUrl: string
 }
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
+export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repoName,
     revision,
     filePath,

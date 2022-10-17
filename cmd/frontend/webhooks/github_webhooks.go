@@ -26,7 +26,7 @@ type Registerer interface {
 // WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler
-type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event interface{}) error
+type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event any) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
@@ -80,7 +80,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e interface{}) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -129,26 +129,17 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	if err != nil {
 		return nil, err
 	}
-	c, err := e.Configuration()
+	c, err := e.Configuration(r.Context())
 	if err != nil {
 		return nil, err
 	}
 	gc, ok := c.(*schema.GitHubConnection)
 	if !ok {
-		return nil, errors.Errorf("invalid configuration, recieved github webhook for non-github external service: %v", externalServiceID)
+		return nil, errors.Errorf("invalid configuration, received github webhook for non-github external service: %v", externalServiceID)
 	}
 
-	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
-	// If there are no secrets or no secret managed to authenticate the request,
-	// we return an error to the client.
-	for _, hook := range gc.Webhooks {
-		if hook.Secret == "" {
-			continue
-		}
-
-		if err = gh.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
-			return e, nil
-		}
+	if err := validateAnyConfiguredSecret(gc, sig, body); err != nil {
+		return nil, errors.Wrap(err, "validating webhook payload")
 	}
 	return e, nil
 }
@@ -169,8 +160,8 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 	}
 
 	for _, e := range es {
-		var c interface{}
-		c, err = e.Configuration()
+		var c any
+		c, err = e.Configuration(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -179,15 +170,36 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 			continue
 		}
 
-		for _, hook := range gc.Webhooks {
-			if hook.Secret == "" {
-				continue
-			}
-
-			if err = gh.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
-				return e, nil
-			}
+		if err := validateAnyConfiguredSecret(gc, sig, body); err == nil {
+			return e, nil
 		}
 	}
 	return nil, errors.Errorf("couldn't find any external service for webhook")
+}
+
+func validateAnyConfiguredSecret(c *schema.GitHubConnection, sig string, body []byte) error {
+	if sig == "" {
+		// No signature, this implies no secret was configured
+		return nil
+	}
+
+	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
+	// If there are no secrets or no secret managed to authenticate the request,
+	// we return an error to the client.
+	if len(c.Webhooks) == 0 {
+		return errors.Errorf("no webhooks defined")
+	}
+
+	for _, hook := range c.Webhooks {
+		if hook.Secret == "" {
+			continue
+		}
+
+		if err := gh.ValidateSignature(sig, body, []byte(hook.Secret)); err == nil {
+			return nil
+		}
+	}
+
+	// If we make it here then none of our webhook secrets were valid
+	return errors.Errorf("unable to validate webhook signature")
 }

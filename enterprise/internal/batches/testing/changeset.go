@@ -11,7 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type TestChangesetOpts struct {
@@ -30,7 +30,6 @@ type TestChangesetOpts struct {
 	ExternalCheckState    btypes.ChangesetCheckState
 
 	DiffStatAdded   int32
-	DiffStatChanged int32
 	DiffStatDeleted int32
 
 	PublicationState   btypes.ChangesetPublicationState
@@ -49,7 +48,7 @@ type TestChangesetOpts struct {
 	IsArchived bool
 	Archive    bool
 
-	Metadata interface{}
+	Metadata any
 }
 
 type CreateChangeseter interface {
@@ -109,7 +108,7 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 	}
 
 	if opts.ExternalBranch != "" {
-		changeset.ExternalBranch = git.EnsureRefPrefix(opts.ExternalBranch)
+		changeset.ExternalBranch = gitdomain.EnsureRefPrefix(opts.ExternalBranch)
 	}
 
 	if opts.ExternalForkNamespace != "" {
@@ -126,9 +125,8 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 		}
 	}
 
-	if opts.DiffStatAdded > 0 || opts.DiffStatChanged > 0 || opts.DiffStatDeleted > 0 {
+	if opts.DiffStatAdded > 0 || opts.DiffStatDeleted > 0 {
 		changeset.DiffStatAdded = &opts.DiffStatAdded
-		changeset.DiffStatChanged = &opts.DiffStatChanged
 		changeset.DiffStatDeleted = &opts.DiffStatDeleted
 	}
 

@@ -13,6 +13,8 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
+import { useExperimentalFeatures } from '../../stores'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined
@@ -37,17 +39,26 @@ export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     query: string,
     options: StreamSearchOptions,
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
+    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+        features => features.enableGoImportsSearchQueryTransform
+    )
 
     const history = useHistory()
 
-    const transformedQuery = useMemo(() => transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI }), [
-        query,
-        extensionHostAPI,
-    ])
+    const transformedQuery = useMemo(
+        () =>
+            transformSearchQuery({
+                query,
+                extensionHostAPIPromise: extensionHostAPI,
+                enableGoImportsSearchQueryTransform,
+                eventLogger,
+            }),
+        [query, extensionHostAPI, enableGoImportsSearchQueryTransform]
+    )
 
     const results = useObservable(
         useMemo(() => {
@@ -111,7 +122,7 @@ export function useCachedSearchResults(
     return results
 }
 
-export const SearchResultsCacheProvider: React.FunctionComponent<{}> = ({ children }) => {
+export const SearchResultsCacheProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => {
     const cachedResultsState = useState<CachedResults | null>(null)
 
     return (

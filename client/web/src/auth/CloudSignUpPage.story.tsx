@@ -1,37 +1,41 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { EMPTY_FEATURE_FLAGS } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 
 import { CloudSignUpPage } from './CloudSignUpPage'
 
-const { add } = storiesOf('web/auth/CloudSignUpPage', module)
+const config: Meta = {
+    title: 'web/auth/CloudSignUpPage',
+}
 
-const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
+export default config
+
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
             authenticationURL: '/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F',
+            serviceID: 'https://github.com',
         },
         {
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
+            serviceID: 'https://gitlab.com',
         },
     ],
     experimentalFeatures: {},
+    authMinPasswordLength: 0,
 }
 
-add('default', () => (
+export const Default: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -41,13 +45,12 @@ add('default', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
             />
         )}
     </WebStory>
-))
+)
 
-add('email form', () => (
+export const EmailForm: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -57,13 +60,12 @@ add('email form', () => (
                 context={context}
                 showEmailForm={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
             />
         )}
     </WebStory>
-))
+)
 
-add('invalid source', () => (
+export const InvalidSource: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -73,13 +75,12 @@ add('invalid source', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={EMPTY_FEATURE_FLAGS}
             />
         )}
     </WebStory>
-))
+)
 
-add('Optimization signup', () => (
+export const OptimizationSignup: Story = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -89,8 +90,7 @@ add('Optimization signup', () => (
                 context={context}
                 showEmailForm={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                featureFlags={new Map([])}
             />
         )}
     </WebStory>
-))
+)

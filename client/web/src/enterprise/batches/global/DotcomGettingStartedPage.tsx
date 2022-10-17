@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { PageHeader, CardBody, Card } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Text } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
@@ -17,7 +17,9 @@ export interface DotcomGettingStartedPageProps {
     // Nothing for now.
 }
 
-export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStartedPageProps> = () => {
+export const DotcomGettingStartedPage: React.FunctionComponent<
+    React.PropsWithChildren<DotcomGettingStartedPageProps>
+> = () => {
     useEffect(() => eventLogger.logViewEvent('BatchChangesCloudLandingPage'), [])
 
     return (
@@ -33,13 +35,13 @@ export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStar
     )
 }
 
-const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
+const DotcomGettingStartedPageFooter: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="d-flex justify-content-between">
         <Card className={classNames(styles.requirementsCard, 'mr-3')}>
             <CardBody>
-                <p>
+                <Text>
                     <strong>Batch Changes requirements</strong>
-                </p>
+                </Text>
                 <ul className={classNames(styles.narrowList, 'mb-0')}>
                     <li>On prem installation</li>
                     <li>Unlicensed users can create 5 changesets per batch change</li>
@@ -59,7 +61,7 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
     </div>
 )
 
-const DownloadSourcegraphIcon: React.FunctionComponent<{}> = () => (
+const DownloadSourcegraphIcon: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <svg width="51" height="82" viewBox="0 0 51 82" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             d="M24.2188 49.7734C24.2188 49.2212 24.6665 48.7734 25.2188 48.7734H26.5313C27.0835 48.7734 27.5312 49.2212 27.5312 49.7734V66.2898C27.5312 67.1814 28.6099 67.6273 29.2394 66.9958L35.9324 60.2823C36.3232 59.8904 36.958 59.8904 37.3488 60.2823L38.2555 61.1918C38.6446 61.5821 38.6446 62.2136 38.2555 62.6039L26.5832 74.3119C26.1924 74.7038 25.5576 74.7038 25.1668 74.3119L13.4945 62.6039C13.1054 62.2136 13.1054 61.5821 13.4945 61.1918L14.4012 60.2823C14.792 59.8904 15.4268 59.8904 15.8176 60.2823L22.5106 66.9958C23.1401 67.6273 24.2188 67.1814 24.2188 66.2898V49.7734Z"

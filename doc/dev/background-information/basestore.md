@@ -90,7 +90,7 @@ func NewStoreWithDB(db dbutil.DB) *Store {
 }
 ```
 
-Next, ensure that your store enables the transaction behaviors as descried above. This functionality is already implemented by the basestore, but needs a bit of tweaking to ensure that the return types are correct.
+Next, ensure that your store enables the transaction behaviors as described above. This functionality is already implemented by the basestore, but needs a bit of tweaking to ensure that the return types are correct.
 
 Both the `With` and `Transact` methods need to be re-defined by your containing struct so that the methods return a `*MyStore` instead of a `*basestore.Store`. If you have any additional fields defined on your store that should exist across transaction boundaries, they must be assigned to the new store instance as well.
 
@@ -127,7 +127,7 @@ func (s *MyStore) ThingsForDomain(ctx context.Context, domain string, limit, off
 		return nil, 0, err
 	}
 	defer func() { err = tx.Done(err) }()
-	
+
 	// Call count method defined above within current transaction
 	totalCount, err := tx.CountThingsForDomain(ctx, domain)
 	if err != nil {
@@ -139,7 +139,7 @@ func (s *MyStore) ThingsForDomain(ctx context.Context, domain string, limit, off
 	if err != nil {
 		return nil, 0, err
 	}
-	
+
 	return values, totalCount, nil
 }
 

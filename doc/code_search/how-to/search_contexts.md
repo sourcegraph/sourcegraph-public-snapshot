@@ -76,7 +76,3 @@ You can now create new search contexts right from the search results page. Once 
 ## Managing search contexts with the API
 
 Learn how to [manage search contexts with the GraphQL API](../../api/graphql/managing-search-contexts-with-api.md).
-
-## Search contexts on Sourcegraph Cloud
-
-Sourcegraph Cloud is the Software-as-a-Service version of Sourcegraph designed to be used by individuals for personal use. Search contexts are still under active development on Sourcegraph Cloud. Learn more about [searching across repositories you've added to Sourcegraph Cloud with search contexts](./searching_with_search_contexts.md).

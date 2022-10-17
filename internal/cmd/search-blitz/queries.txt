@@ -61,6 +61,9 @@ patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
 # and_regex
 patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
 
+# and_literal_simple
+patterntype:literal readUInt16LE and readUInt8
+
 # or_regex
 patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b
 

@@ -157,7 +157,7 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             return state
         },
         /**
-         * This provides query methods that allows to you run your request in parallel with
+         * This provides query methods that allow to you run your request in parallel with
          * other request that have been made with useParallelRequests request calls.
          */
         lazyQuery: <D>(): LazyQueryResult<D> => {

@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -65,7 +64,7 @@ func (e ErrResolutionJobAlreadyExists) Error() string {
 
 // CreateBatchSpecResolutionJob creates the given batch spec resolutionjob jobs.
 func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.BatchSpecResolutionJob) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	q := s.createBatchSpecResolutionJobQuery(wj)
@@ -80,7 +79,6 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 }
 
 var createBatchSpecResolutionJobQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_jobs.go:CreateBatchSpecResolutionJob
 INSERT INTO batch_spec_resolution_jobs (%s)
 VALUES ` + batchSpecResolutionJobInsertColsFmt + `
 RETURNING %s
@@ -120,7 +118,7 @@ type GetBatchSpecResolutionJobOpts struct {
 
 // GetBatchSpecResolutionJob gets a BatchSpecResolutionJob matching the given options.
 func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpecResolutionJobOpts) (job *btypes.BatchSpecResolutionJob, err error) {
-	ctx, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 		log.Int("BatchSpecID", int(opts.BatchSpecID)),
 	}})
@@ -143,7 +141,6 @@ func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpec
 }
 
 var getBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolution_job.go:GetBatchSpecResolutionJob
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 LIMIT 1
@@ -176,7 +173,7 @@ type ListBatchSpecResolutionJobsOpts struct {
 
 // ListBatchSpecResolutionJobs lists batch changes with the given filters.
 func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchSpecResolutionJobsOpts) (cs []*btypes.BatchSpecResolutionJob, err error) {
-	ctx, endObservation := s.operations.listBatchSpecResolutionJobs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchSpecResolutionJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBatchSpecResolutionJobsQuery(opts)
@@ -195,7 +192,6 @@ func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchS
 }
 
 var listBatchSpecResolutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_resolutionjob_job.go:ListBatchSpecResolutionJobs
 SELECT %s FROM batch_spec_resolution_jobs
 WHERE %s
 ORDER BY id ASC
@@ -255,21 +251,4 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	}
 
 	return nil
-}
-
-func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecResolutionJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.BatchSpecResolutionJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecResolutionJob
-		if err = scanBatchSpecResolutionJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }

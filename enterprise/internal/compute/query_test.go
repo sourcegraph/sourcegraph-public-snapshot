@@ -63,14 +63,14 @@ func TestToSearchQuery(t *testing.T) {
 	}
 
 	autogold.Want("convert match-only to search query",
-		"(repo:foo file:bar and carolado)").
+		"(repo:foo file:bar AND carolado)").
 		Equal(t, test("repo:foo file:bar carolado"))
 
 	autogold.Want("convert replace-in-place to search query",
-		"(repo:foo file:bar and colarado)").
+		"(repo:foo file:bar AND colarado)").
 		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar"))
 
 	autogold.Want("allow expressions on search parameters (filters)",
-		"((repo:foo file:bar lang:go or repo:foo file:bar lang:text) and colarado)").
+		"((repo:foo file:bar lang:go OR repo:foo file:bar lang:text) AND colarado)").
 		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar (lang:go or lang:text)"))
 }

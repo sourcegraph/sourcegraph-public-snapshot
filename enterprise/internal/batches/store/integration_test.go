@@ -3,6 +3,8 @@ package store
 import (
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -15,21 +17,26 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t)
+	logger := logtest.Scoped(t)
+
+	db := dbtest.NewDB(logger, t)
 
 	t.Run("Store", func(t *testing.T) {
 		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
+		t.Run("BatchChangesDeletedNamespace", storeTest(db, nil, testBatchChangesDeletedNamespace))
 		t.Run("Changesets", storeTest(db, nil, testStoreChangesets))
 		t.Run("ChangesetEvents", storeTest(db, nil, testStoreChangesetEvents))
 		t.Run("ChangesetScheduling", storeTest(db, nil, testStoreChangesetScheduling))
 		t.Run("ListChangesetSyncData", storeTest(db, nil, testStoreListChangesetSyncData))
 		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
 		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
+		t.Run("BatchSpecWorkspaceFiles", storeTest(db, nil, testStoreBatchSpecWorkspaceFiles))
 		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
 		t.Run("GetRewirerMappingWithArchivedChangesets", storeTest(db, nil, testStoreGetRewirerMappingWithArchivedChangesets))
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))
 		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, nil, testStoreChangesetSpecsCurrentStateAndTextSearch))
 		t.Run("ChangesetSpecsTextSearch", storeTest(db, nil, testStoreChangesetSpecsTextSearch))
+		t.Run("ChangesetSpecsPublishedValues", storeTest(db, nil, testStoreChangesetSpecsPublishedValues))
 		t.Run("CodeHosts", storeTest(db, nil, testStoreCodeHost))
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))

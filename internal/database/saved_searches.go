@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,12 +32,7 @@ type savedSearchStore struct {
 	*basestore.Store
 }
 
-// SavedSearches instantiates and returns a new SavedSearchStore with prepared statements.
-func SavedSearches(db dbutil.DB) SavedSearchStore {
-	return &savedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore using the other store handle.
+// SavedSearchesWith instantiates and returns a new SavedSearchStore using the other store handle.
 func SavedSearchesWith(other basestore.ShareableStore) SavedSearchStore {
 	return &savedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
 }
@@ -57,7 +51,7 @@ func (s *savedSearchStore) Transact(ctx context.Context) (SavedSearchStore, erro
 func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
-	err := s.Handle().DB().QueryRowContext(ctx, q).Scan(&isNotEmpty)
+	err := s.Handle().QueryRowContext(ctx, q).Scan(&isNotEmpty)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return true, nil
@@ -127,7 +121,7 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 // only makes it to users with proper permissions to access the saved search.
 func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	var sq api.SavedQuerySpecAndConfig
-	err := s.Handle().DB().QueryRowContext(ctx, `SELECT
+	err := s.Handle().QueryRowContext(ctx, `SELECT
 		id,
 		description,
 		query,
@@ -271,7 +265,7 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 		OrgID:       newSavedSearch.OrgID,
 	}
 
-	err = s.Handle().DB().QueryRowContext(ctx, `INSERT INTO saved_searches(
+	err = s.Handle().QueryRowContext(ctx, `INSERT INTO saved_searches(
 			description,
 			query,
 			notify_owner,
@@ -343,6 +337,6 @@ func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	_, err = s.Handle().DB().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
+	_, err = s.Handle().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
 	return err
 }

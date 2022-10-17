@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -16,10 +17,10 @@ type GitTarget struct {
 
 type DiffRange struct{ StartLine, Lines int }
 
-type DiffStat struct{ Added, Deleted, Changed int32 }
+type DiffStat struct{ Added, Deleted int32 }
 
 func (ds DiffStat) ToDiffStat() *diff.Stat {
-	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted, Changed: ds.Changed}
+	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted}
 }
 
 type FileDiffHunk struct {
@@ -213,8 +214,8 @@ type BatchSpec struct {
 	// Alias for the above.
 	OnlyWithoutCredential BatchChangesCodeHostsConnection
 
-	CreatedAt graphqlbackend.DateTime
-	ExpiresAt *graphqlbackend.DateTime
+	CreatedAt gqlutil.DateTime
+	ExpiresAt *gqlutil.DateTime
 
 	// NEW
 	SupersedingBatchSpec *BatchSpec
@@ -223,8 +224,8 @@ type BatchSpec struct {
 	State               string
 	WorkspaceResolution BatchSpecWorkspaceResolution
 
-	StartedAt      graphqlbackend.DateTime
-	FinishedAt     graphqlbackend.DateTime
+	StartedAt      gqlutil.DateTime
+	FinishedAt     gqlutil.DateTime
 	FailureMessage string
 	ViewerCanRetry bool
 }
@@ -264,7 +265,7 @@ type ChangesetSpec struct {
 
 	Description ChangesetSpecDescription
 
-	ExpiresAt *graphqlbackend.DateTime
+	ExpiresAt *gqlutil.DateTime
 }
 
 type ChangesetSpecConnection struct {
@@ -316,8 +317,7 @@ type ChangesetSpecDescription struct {
 	ExternalID     string
 	BaseRef        string
 
-	HeadRepository Repository
-	HeadRef        string
+	HeadRef string
 
 	Title string
 	Body  string
@@ -423,8 +423,8 @@ type BatchSpecWorkspace struct {
 	Unsupported        bool
 
 	State          string
-	StartedAt      graphqlbackend.DateTime
-	FinishedAt     graphqlbackend.DateTime
+	StartedAt      gqlutil.DateTime
+	FinishedAt     gqlutil.DateTime
 	FailureMessage string
 	PlaceInQueue   int
 }

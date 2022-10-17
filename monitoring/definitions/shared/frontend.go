@@ -16,7 +16,7 @@ var FrontendInternalAPIErrorResponses sharedObservable = func(containerName stri
 		Warning:     monitoring.Alert().GreaterOrEqual(2).For(5 * time.Minute),
 		Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
 		Owner:       owner,
-		PossibleSolutions: strings.ReplaceAll(`
+		NextSteps: strings.ReplaceAll(`
 			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.
 			- **Kubernetes:**
 				- Confirm that 'kubectl get pods' shows the 'frontend' pods are healthy.

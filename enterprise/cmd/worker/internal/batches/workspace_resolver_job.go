@@ -3,9 +3,10 @@ package batches
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
@@ -22,14 +23,18 @@ func NewWorkspaceResolverJob() job.Job {
 	return &workspaceResolverJob{}
 }
 
+func (j *workspaceResolverJob) Description() string {
+	return ""
+}
+
 func (j *workspaceResolverJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *workspaceResolverJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Logger:     logger.Scoped("routines", "workspace resolver job routines"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	workCtx := actor.WithInternalActor(context.Background())

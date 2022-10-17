@@ -1,28 +1,29 @@
 import * as React from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, ButtonLink, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection, FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { registryExtensionFragment } from '../../extensions/extension/ExtensionArea'
+import { RegistryExtensionFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
 
 interface RegistryExtensionNodeSiteAdminProps {
-    node: GQL.IRegistryExtension
+    node: RegistryExtensionFields
     onDidUpdate: () => void
     history: H.History
 }
@@ -66,7 +67,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -188,21 +189,21 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
             <div className="registry-extensions-page">
                 <PageTitle title="Registry extensions" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mb-0">Registry extensions</h2>
+                    <H2 className="mb-0">Registry extensions</H2>
                     <div>
                         <Button className="mr-sm-2" to="/extensions" variant="link" as={Link}>
                             View extensions
                         </Button>
                         <Button to="/extensions/registry/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} /> Publish new extension
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Publish new extension
                         </Button>
                     </div>
                 </div>
-                <p>
+                <Text>
                     Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts, and
                     code review tools).
-                </p>
-                <FilteredConnection<GQL.IRegistryExtension, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
+                </Text>
+                <FilteredConnection<RegistryExtensionFields, Omit<RegistryExtensionNodeSiteAdminProps, 'node'>>
                     className="list-group list-group-flush registry-extensions-list"
                     listComponent="ul"
                     noun="extension"

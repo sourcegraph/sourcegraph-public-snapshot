@@ -18,7 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -88,7 +88,7 @@ interface TreePageContentProps extends ExtensionsControllerProps, ThemeProps, Te
     revision: string
 }
 
-export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
+export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = ({
     filePath,
     tree,
     repo,
@@ -139,7 +139,7 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
         <>No commits in this tree.</>
     ) : (
         <div className="test-tree-page-no-recent-commits">
-            <p className="mb-2">No commits in this tree in the past year.</p>
+            <Text className="mb-2">No commits in this tree in the past year.</Text>
             <Button
                 className="test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
@@ -151,7 +151,9 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
         </div>
     )
 
-    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+    const TotalCountSummary: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({
+        totalCount,
+    }) => (
         <div className="mt-2">
             {showOlderCommits ? (
                 <>
@@ -159,9 +161,9 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                 </>
             ) : (
                 <>
-                    <p className="mb-2">
+                    <Text className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                    </p>
+                    </Text>
                     <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
                         Show all commits
                     </Button>
@@ -170,10 +172,14 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
         </div>
     )
 
+    const { extensionsController } = props
+
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <h2>Files and directories</h2>
+                <Heading as="h3" styleAs="h2">
+                    Files and directories
+                </Heading>
                 <TreeEntriesSection
                     parentPath={filePath}
                     entries={tree.entries}
@@ -181,29 +187,41 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                     isLightTheme={props.isLightTheme}
                 />
             </section>
-            <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                {items => (
-                    <section className={styles.section}>
-                        <h2>Actions</h2>
-                        {items.map(item => (
-                            <Button
-                                {...props}
-                                key={item.action.id}
-                                {...item}
-                                className="mr-1 mb-1"
-                                variant="secondary"
-                                as={ActionItem}
-                            />
-                        ))}
-                    </section>
-                )}
-            </ActionsContainer>
+            {extensionsController !== null && window.context.enableLegacyExtensions ? (
+                <ActionsContainer
+                    {...props}
+                    extensionsController={extensionsController}
+                    menu={ContributableMenu.DirectoryPage}
+                    empty={null}
+                >
+                    {items => (
+                        <section className={styles.section}>
+                            <Heading as="h3" styleAs="h2">
+                                Actions
+                            </Heading>
+                            {items.map(item => (
+                                <Button
+                                    {...props}
+                                    extensionsController={extensionsController}
+                                    key={item.action.id}
+                                    {...item}
+                                    className="mr-1 mb-1"
+                                    variant="secondary"
+                                    as={ActionItem}
+                                />
+                            ))}
+                        </section>
+                    )}
+                </ActionsContainer>
+            ) : null}
 
             <div className={styles.section}>
-                <h2>Changes</h2>
+                <Heading as="h3" styleAs="h2">
+                    Changes
+                </Heading>
                 <FilteredConnection<
                     GitCommitFields,
-                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>
                 >
                     location={props.location}
                     className="mt-2"
@@ -216,6 +234,7 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                         className: classNames('list-group-item', styles.gitCommitNode),
                         messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                         compact: true,
+                        wrapperElement: 'li',
                     }}
                     updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}
                     defaultFirst={7}
@@ -223,7 +242,6 @@ export const TreePageContent: React.FunctionComponent<TreePageContentProps> = ({
                     hideSearch={true}
                     emptyElement={emptyElement}
                     totalCountSummaryComponent={TotalCountSummary}
-                    listComponent="div"
                 />
             </div>
         </>

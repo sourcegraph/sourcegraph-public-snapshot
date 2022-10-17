@@ -7,8 +7,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SettingsMigrationJob struct {
@@ -28,12 +28,8 @@ type DBSettingsMigrationJobsStore struct {
 	Now func() time.Time
 }
 
-func NewSettingsMigrationJobsStore(db dbutil.DB) *DBSettingsMigrationJobsStore {
-	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
-}
-
-func (s *DBSettingsMigrationJobsStore) Handle() *basestore.TransactableHandle {
-	return s.Store.Handle()
+func NewSettingsMigrationJobsStore(db database.DB) *DBSettingsMigrationJobsStore {
+	return &DBSettingsMigrationJobsStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
 
 func (s *DBSettingsMigrationJobsStore) With(other basestore.ShareableStore) *DBSettingsMigrationJobsStore {
@@ -60,7 +56,6 @@ func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.
 }
 
 const getSettingsMigrationJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:GetSettingsMigrationJob
 SELECT user_id, org_id, (CASE WHEN global IS NULL THEN FALSE ELSE TRUE END) AS global, total_insights, migrated_insights,
 total_dashboards, migrated_dashboards, runs, (CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
 FROM insights_settings_migration_jobs
@@ -106,7 +101,6 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, 
 }
 
 const updateTotalInsightsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateTotalInsights
 UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s
 `
 
@@ -120,7 +114,6 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Contex
 }
 
 const updateMigratedInsightsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateMigratedInsights
 UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s
 `
 
@@ -134,7 +127,6 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context
 }
 
 const updateTotalDashboardsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateTotalDashboards
 UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s
 `
 
@@ -148,7 +140,6 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Cont
 }
 
 const updateMigratedDashboardsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateMigratedDashboards
 UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s
 `
 
@@ -162,7 +153,6 @@ func (s *DBSettingsMigrationJobsStore) UpdateRuns(ctx context.Context, userId *i
 }
 
 const updateRunsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateRuns
 UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s
 `
 
@@ -176,7 +166,6 @@ func (s *DBSettingsMigrationJobsStore) MarkCompleted(ctx context.Context, userId
 }
 
 const markCompletedSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:MarkCompleted
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
@@ -186,7 +175,6 @@ func (s *DBSettingsMigrationJobsStore) CountSettingsMigrationJobs(ctx context.Co
 }
 
 const countSettingsMigrationJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
 SELECT COUNT(*) from insights_settings_migration_jobs;
 `
 
@@ -199,7 +187,6 @@ func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jo
 }
 
 const countIncompleteJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:IsJobTypeComplete
 SELECT COUNT(*) FROM insights_settings_migration_jobs
 WHERE %s AND completed_at IS NULL;
 `

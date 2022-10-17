@@ -1,10 +1,10 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -21,7 +21,7 @@ export interface RetentionMatchNodeProps {
 export const retentionByUploadTitle = 'Retention by reference'
 export const retentionByBranchTipTitle = 'Retention by tip of default branch'
 
-export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({ node }) => {
+export const RetentionMatchNode: FunctionComponent<React.PropsWithChildren<RetentionMatchNodeProps>> = ({ node }) => {
     if (node.matchType === 'RetentionPolicy') {
         return <RetentionPolicyRetentionMatchNode match={node} />
     }
@@ -32,7 +32,9 @@ export const RetentionMatchNode: FunctionComponent<RetentionMatchNodeProps> = ({
     throw new Error(`invalid node type ${JSON.stringify(node as object)}`)
 }
 
-const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPolicyMatch }> = ({ match }) => (
+const RetentionPolicyRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: RetentionPolicyMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 
@@ -40,10 +42,10 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
             <div className="m-0">
                 {match.configurationPolicy ? (
                     <Link to={`../configuration/${match.configurationPolicy.id}`} className="p-0">
-                        <h3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</h3>
+                        <H3 className="m-0 d-block d-md-inline">{match.configurationPolicy.name}</H3>
                     </Link>
                 ) : (
-                    <h3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</h3>
+                    <H3 className="m-0 d-block d-md-inline">{retentionByBranchTipTitle}</H3>
                 )}
                 <div className="mr-2 d-block d-mdinline-block">
                     Retained: {match.matches ? 'yes' : 'no'}
@@ -55,19 +57,23 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
                                 .slice(0, 4)
                                 .map(hash => hash.slice(0, 7))
                                 .join(', ')}
-                            <Icon
-                                className="ml-1"
-                                data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                as={InformationOutlineIcon}
-                            />
+                            <Tooltip content="This upload is retained to service code-intel queries for commit(s) with applicable retention policies.">
+                                <Icon
+                                    aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
+                                    className="ml-1"
+                                    svgPath={mdiInformationOutline}
+                                />
+                            </Tooltip>
                         </>
                     )}
                     {!match.configurationPolicy && (
-                        <Icon
-                            className="ml-1"
-                            data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
-                            as={InformationOutlineIcon}
-                        />
+                        <Tooltip content="Uploads at the tip of the default branch are always retained indefinitely.">
+                            <Icon
+                                aria-label="Uploads at the tip of the default branch are always retained indefinitely."
+                                className="ml-1"
+                                svgPath={mdiInformationOutline}
+                            />
+                        </Tooltip>
                     )}
                 </div>
             </div>
@@ -75,28 +81,32 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<{ match: RetentionPol
     </>
 )
 
-const UploadReferenceRetentionMatchNode: FunctionComponent<{ match: UploadReferenceMatch }> = ({ match }) => (
+const UploadReferenceRetentionMatchNode: FunctionComponent<
+    React.PropsWithChildren<{ match: UploadReferenceMatch }>
+> = ({ match }) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</h3>
+                <H3 className="m-0 d-block d-md-inline">{retentionByUploadTitle}</H3>
                 <div className="mr-2 d-block d-mdinline-block">
                     Referenced by {match.total} {pluralize('upload', match.total, 'uploads')}, including{' '}
                     {match.uploadSlice
                         .slice(0, 3)
                         .map<React.ReactNode>(upload => (
-                            <Link key={upload.id} to={`/site-admin/code-intelligence/uploads/${upload.id}`}>
+                            <Link key={upload.id} to={`/site-admin/code-graph/uploads/${upload.id}`}>
                                 {upload.projectRoot?.repository.name ?? 'unknown'}
                             </Link>
                         ))
                         .reduce((previous, current) => [previous, ', ', current])}
-                    <Icon
-                        className="ml-1"
-                        data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                        as={InformationOutlineIcon}
-                    />
+                    <Tooltip content="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries.">
+                        <Icon
+                            aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
+                            className="ml-1"
+                            svgPath={mdiInformationOutline}
+                        />
+                    </Tooltip>
                 </div>
             </div>
         </div>

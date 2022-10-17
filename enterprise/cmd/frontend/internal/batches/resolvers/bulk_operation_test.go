@@ -7,10 +7,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,34 +25,35 @@ func TestBulkOperationResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
-	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, db, 3)
-	changeset1 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
+	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
+	changeset1 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repos[0].ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
-	changeset2 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset2 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repos[1].ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
-	changeset3 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+	changeset3 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:             repos[2].ID,
 		BatchChange:      batchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 	})
-	ct.MockRepoPermissions(t, db, userID, repos[0].ID, repos[1].ID)
+	bt.MockRepoPermissions(t, db, userID, repos[0].ID, repos[1].ID)
 
 	bulkGroupID := "test-group"
 	errorMsg := "Very bad error."
@@ -95,11 +97,11 @@ func TestBulkOperationResolver(t *testing.T) {
 			FinishedAt:     now,
 		},
 	}
-	if err := cstore.CreateChangesetJob(ctx, jobs...); err != nil {
+	if err := bstore.CreateChangesetJob(ctx, jobs...); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +128,7 @@ func TestBulkOperationResolver(t *testing.T) {
 		FinishedAt: "",
 	}
 
-	input := map[string]interface{}{"bulkOperation": bulkOperationAPIID}
+	input := map[string]any{"bulkOperation": bulkOperationAPIID}
 	var response struct{ Node apitest.BulkOperation }
 	apitest.MustExec(actor.WithActor(ctx, actor.FromUser(userID)), t, s, input, &response, queryBulkOperation)
 

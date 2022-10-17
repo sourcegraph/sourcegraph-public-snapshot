@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { act } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
@@ -26,10 +24,8 @@ describe('SiteAdminProductSubscriptionPage', () => {
                 _queryProductSubscription={() =>
                     of<GQL.IProductSubscription>({
                         __typename: 'ProductSubscription',
-                        events: [] as GQL.IProductSubscription['events'],
                         createdAt: '2020-01-01',
                         url: '/s',
-                        urlForSiteAdminBilling: null,
                     } as GQL.IProductSubscription)
                 }
                 _queryProductLicenses={() =>

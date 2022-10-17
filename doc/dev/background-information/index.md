@@ -13,6 +13,7 @@
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
+  - [Full `sg` reference](./sg/reference.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -28,7 +29,6 @@
 - [Developing code insights](insights/index.md)
 - [Developing code monitoring](codemonitoring/index.md)
 - [Developing observability](observability/index.md)
-- [Developing Sourcegraph extensions](sourcegraph_extensions.md)
 - [Dependencies and generated code](dependencies_and_codegen.md)
 - [Pull request reviews](pull_request_reviews.md)
 - [Commit messages](commit_messages.md)
@@ -57,6 +57,7 @@
 ## Testing
 
 - [Continuous Integration](ci/index.md)
+- [Testing a pull request](testing_pr.md)
 - [Testing Principles](testing_principles.md)
 - [Testing Go code](languages/testing_go_code.md)
 - [Testing web code](testing_web_code.md)
@@ -71,4 +72,6 @@
 
 - [Telemetry](telemetry.md)
 - [Adding, changing and debugging pings](adding_ping_data.md)
-- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/install/kubernetes/helm.md)
+- [Deploy Sourcegraph with Helm chart (BETA)](../../admin/deploy/kubernetes/helm.md)
+- [Event level data usage pipeline](data-usage-pipeline.md)
+- [Adding, changing and debugging user event data](adding_event_level_data.md)

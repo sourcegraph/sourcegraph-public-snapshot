@@ -13,7 +13,7 @@ type CollapseControlledProps =
     | { isOpen: boolean; onOpenChange: (opened: boolean) => void; openByDefault?: boolean }
 
 interface CollapseCommonProps {
-    children: React.FunctionComponent<{ isOpen?: boolean }> | ReactNode
+    children: React.FunctionComponent<React.PropsWithChildren<{ isOpen?: boolean }>> | ReactNode
 }
 
 export type CollapseProps = CollapseControlledProps & CollapseCommonProps
@@ -29,7 +29,7 @@ const DEFAULT_CONTEXT_VALUE: CollapseContextData = {
 
 const CollapseContext = createContext<CollapseContextData>(DEFAULT_CONTEXT_VALUE)
 
-export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(props => {
+export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(function Collapse(props) {
     const { children, isOpen, openByDefault, onOpenChange = noop } = props
     const [isInternalOpen, setInternalOpen] = useState<boolean>(Boolean(openByDefault))
     const isControlled = isOpen !== undefined
@@ -38,7 +38,7 @@ export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(props
     const collapseContent = ChildrenComponent ? <ChildrenComponent isOpen={isCollapseOpen} /> : children
 
     const setOpen = useCallback(
-        opened => {
+        (opened: boolean) => {
             if (!isControlled) {
                 setInternalOpen(opened)
                 return
@@ -64,7 +64,7 @@ interface CollapseHeaderProps extends React.HTMLAttributes<HTMLButtonElement> {
     focusLocked?: boolean
 }
 
-export const CollapseHeader = React.forwardRef((props, reference) => {
+export const CollapseHeader = React.forwardRef(function CollapseHeader(props, reference) {
     const { children, className, as: Component = 'button', onClick = noop, focusLocked, ...attributes } = props
     const { setOpen, isOpen } = useContext(CollapseContext)
     const [focusLock, setFocusLock] = useState(false)
@@ -110,18 +110,30 @@ export const CollapseHeader = React.forwardRef((props, reference) => {
     )
 }) as ForwardReferenceComponent<'button', CollapseHeaderProps>
 
-export const CollapsePanel = React.forwardRef(
-    ({ children, className, as: Component = 'div', ...attributes }, reference) => {
-        const { isOpen } = useContext(CollapseContext)
+interface CollapsePanelProps {
+    forcedRender?: boolean
+}
 
-        return (
-            <Component
-                className={classNames(styles.collapse, isOpen && styles.show, className)}
-                ref={reference}
-                {...attributes}
-            >
-                {children}
-            </Component>
-        )
+export const CollapsePanel = React.forwardRef(function CollapsePanel(props, reference) {
+    const { forcedRender = true, children, className, as: Component = 'div', ...attributes } = props
+    const { isOpen } = useContext(CollapseContext)
+
+    // When we enforce rendering we always render a DOM element and hide it with
+    // display: none CSS rule, on other cases when we explicitly say forcedRender={false}
+    // we render/not render DOM element based on isOpen state
+    const shouldRender = forcedRender ? true : isOpen
+
+    if (!shouldRender) {
+        return null
     }
-) as ForwardReferenceComponent<'div'>
+
+    return (
+        <Component
+            className={classNames(styles.collapse, isOpen && styles.show, className)}
+            ref={reference}
+            {...attributes}
+        >
+            {children}
+        </Component>
+    )
+}) as ForwardReferenceComponent<'div', CollapsePanelProps>

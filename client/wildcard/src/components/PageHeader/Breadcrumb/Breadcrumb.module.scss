@@ -1,0 +1,33 @@
+// Scale icon size with heading size. 26px font size (h1) -> 22px icon size
+:root {
+    --path-icon-size: calc(22em / 26);
+}
+
+.wrapper {
+    display: inline-flex;
+    align-items: center;
+
+    // Separator shown between breadcrumbs.
+    &:not(:last-child)::after {
+        content: '/';
+        display: block;
+        margin-right: 0.5rem;
+        color: var(--icon-color);
+        font-weight: 400;
+    }
+}
+
+.path {
+    display: inline-flex;
+    align-items: center;
+}
+
+.icon {
+    margin-right: 0.5rem;
+    height: var(--path-icon-size);
+    width: var(--path-icon-size);
+}
+
+.text {
+    margin-right: 0.5rem;
+}

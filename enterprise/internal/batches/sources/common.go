@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // ChangesetNotFoundError is returned by LoadChangeset if the changeset
@@ -26,6 +25,16 @@ func (e ChangesetNotFoundError) Error() string {
 }
 
 func (e ChangesetNotFoundError) NonRetryable() bool { return true }
+
+// ArchivableChangesetSource represents a changeset source that has a
+// concept of archived repositories.
+type ArchivableChangesetSource interface {
+	ChangesetSource
+
+	// IsArchivedPushError parses the given error output from `git push` to
+	// detect whether the error was caused by the repository being archived.
+	IsArchivedPushError(output string) bool
+}
 
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
@@ -56,7 +65,7 @@ type ForkableChangesetSource interface {
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
 	// commits to the code host.
-	GitserverPushConfig(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
 	// WithAuthenticator returns a copy of the original Source configured to use
 	// the given authenticator, provided that authenticator type is supported by
 	// the code host.
@@ -149,7 +158,7 @@ func (c *Changeset) IsOutdated() (bool, error) {
 		return false, err
 	}
 
-	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+	if gitdomain.EnsureRefPrefix(currentBaseRef) != gitdomain.EnsureRefPrefix(c.BaseRef) {
 		return true, nil
 	}
 

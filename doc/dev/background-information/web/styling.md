@@ -35,18 +35,16 @@ This means when one of the code hosts tweaks its design, or supports multiple th
 
 CSS classes as an approach represent the _lowest common denominator_ for styling between all environments, by staying close to the native web platform.
 
-You may also notice that multiple of the above code hosts define the same or very similar classes to [Bootstrap](#host-specific-ui), which makes it easy to map classes between our web app and code host environments.
+You may also notice that multiple of the above code hosts define the same or very similar classes to [our global CSS classes](#host-specific-ui), which makes it easy to map classes between our web app and code host environments.
 
 ### Host-specific UI
 
-In the environments we control ourselves (such as our webapp, the options page of the browser extension, or our marketing website), we use a customized version of [Bootstrap](https://getbootstrap.com/) as a CSS framework.
-Any code inside our webapp can and should make use of the CSS classes that Bootstrap provides as building blocks (and should generally do so instead of writing custom styles).
-This includes classes like [cards](https://getbootstrap.com/docs/4.5/components/card/), [buttons](https://getbootstrap.com/docs/4.5/components/buttons/) or [input groups](https://getbootstrap.com/docs/4.5/components/input-group/), but also utility classes for [layout](https://getbootstrap.com/docs/4.5/utilities/flex/) and [spacing](https://getbootstrap.com/docs/4.5/utilities/spacing/).
-Please refer to the excellent [Bootstrap documentation](https://getbootstrap.com/docs/4.5/) for everything that is available for use.
-To see what our customizations look like visually (in both light and dark theme), you can find a [showcase in our Storybook](https://main--5f0f381c0e50750022dc6bf7.chromatic.com/?path=/story/branded-global-styles).
+In the environments we control ourselves (such as our webapp, the options page of the browser extension, or our marketing website), we use components from [the Wildcard design system](https://storybook.sgdev.org/) and a set of global CSS classes extracted from [Bootstrap](https://getbootstrap.com/).
+Any code inside our webapp can and should make use [Wildcard components](./wildcard.md) and global CSS classes defined in the `branded` package as building blocks (and should generally do so instead of writing custom styles).
+This includes classes like [input groups](https://getbootstrap.com/docs/4.5/components/input-group/) and utility classes for [layout](https://getbootstrap.com/docs/4.5/utilities/flex/) and [spacing](https://getbootstrap.com/docs/4.5/utilities/spacing/). Check out available global CSS classes in the `branded` package.
 
 Components only used in a specific host environment do not need to support customization through class names.
-They can however utilize environment-agnostic components by passing our Bootstrap classes as custom `className` values.
+They can however utilize environment-agnostic components by passing our global CSS classes as custom `className` values.
 
 ## Our approach to styling
 
@@ -72,7 +70,7 @@ In some cases these can be overridden by passing another class name for that ele
 
 #### CSS Modules
 
-[CSS modules](https://github.com/css-modules/css-modules) is the **preferred** way to avoid name conflicts in CSS classes.
+[CSS modules](https://github.com/css-modules/css-modules) is the way to avoid name conflicts in CSS classes.
 To use this approach, colocate a SCSS stylesheet with the React component and use the `.module.scss.` suffix in a file name.
 
 Example:
@@ -87,28 +85,18 @@ import styles from './PageSelector.module.scss'
 <button className={styles.pageSelectorButton} />
 ```
 
-To use mixins/functions provided by Bootstrap in CSS modules use explicit imports to the required module.
+To use SCSS mixins/functions provided by the `branded` package in CSS modules use explicit imports to the required module.
 
 ```scss
-@import 'bootstrap/scss/functions';
-@import 'bootstrap/scss/mixins/caret';
+@import 'branded/src/global-styles/functions.scss';
 ```
 
-It's not safe to import all global Bootstrap helpers and variables into the CSS module because we redefine many Bootstrap variables on our side.
-If mixin relies on Bootstrap variables, create a separate SCSS file for the target mixin, ensuring that it uses correct SCSS variables.
-This file should not contain any real CSS rules so that it can be included in multiple CSS modules without additional overhead.
+#### CSS classes naming convention
 
-```scss
-@import 'branded/src/global-styles/breakpoints';
-```
+We do not use the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier) fully in CSS modules.
 
-Do not use BEM convention in CSS modules. Use short descriptive classes specific only for the corresponding component because CSS modules provide scoping out of the box. It outputs shorter classes that are more readable in the component markup.
-
-#### BEM convention
-
-The older approach is the [BEM convention](http://getbem.com/naming/) (Block - Element - Modifier).
-The _block_ name is always the React component name, _elements_ and _modifiers_ are used as specified in BEM.
-A _block_ must not be referenced in any other React component than the one with the matching name.
+1. Prefer short descriptive classes specific only for the corresponding component because CSS modules provide scoping out of the box. It outputs shorter classes that are more readable in the component markup.
+2. The use **modifiers**  is encouraged when it's needed. E.g. `--loading` or `--closed`
 
 Example:
 
@@ -116,21 +104,15 @@ Example:
 .some-component {
     // ... styles ...
 
-    &__element {
+    &--modifier {
         // ... styles ...
-
-        &--modifier {
-            // ... styles ...
-        }
     }
 }
+
+.another-component {
+    // ... styles ...
+}
 ```
-
-- **Block**: A React component name in kebab-case. This class is always assigned to the root DOM element of the component.
-- **Element**: A sub-element of the component. This should be a name that describes the semantic of this element within the component.
-- **Modifier**: A modifier of the _element_, e.g. `--loading` or `--closed`. This is only rarely needed.
-
-Please note that there is no hierarchy in _elements_, as that would couple the styling to the DOM structure. Element names should be unambiguous within their component/_block_, or be split into a separate component/_block_.
 
 ### Typography
 
@@ -153,7 +135,7 @@ Example:
     :global(.theme-dark) & {
         // ... styles ...
     }
-    
+
     :global(.theme-light) & {
         // ... styles ...
     }

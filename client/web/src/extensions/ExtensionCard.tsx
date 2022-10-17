@@ -1,26 +1,30 @@
 import React, { useState, useCallback, useMemo, memo } from 'react'
 
+import { mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import WarningIcon from 'mdi-react/WarningIcon'
 
 import { isErrorLike, isEncodedImage } from '@sourcegraph/common'
-import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
+import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     ExtensionHeaderColor,
     ExtensionManifest,
     EXTENSION_HEADER_COLORS,
 } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import {
+    SettingsCascadeProps,
+    SettingsSubject,
+    SettingsSubjectCommonFields,
+} from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { useTimeoutManager, Link, CardBody, Card, Alert, Icon } from '@sourcegraph/wildcard'
+import { useTimeoutManager, Link, CardBody, Card, Alert, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
 import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { ExtensionStatusBadge } from './extension/ExtensionStatusBadge'
+import { MinimalConfiguredRegistryExtension } from './extensions'
 import { ExtensionToggle, OptimisticUpdateFailure } from './ExtensionToggle'
 import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExtensionIcon } from './icons'
 
@@ -28,16 +32,8 @@ import styles from './ExtensionCard.module.scss'
 import headerColorStyles from './ExtensionHeader.module.scss'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'>, ThemeProps {
-    node: Pick<
-        ConfiguredRegistryExtension<
-            Pick<
-                GQL.IRegistryExtension,
-                'id' | 'extensionIDWithoutRegistry' | 'isWorkInProgress' | 'viewerCanAdminister' | 'url'
-            >
-        >,
-        'id' | 'manifest' | 'registryExtension'
-    >
-    subject: Pick<GQL.SettingsSubject, 'id' | 'viewerCanAdminister'>
+    node: MinimalConfiguredRegistryExtension
+    subject: SettingsSubjectCommonFields
     viewerSubject: SettingsSubject | undefined
     siteSubject: SettingsSubject | undefined
     enabled: boolean
@@ -214,19 +210,21 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 {/* Section 2: Extension details. This should be the section that grows to fill remaining space. */}
                 <div className={classNames('w-100 flex-grow-1', styles.detailsSection)}>
                     <div className="mb-2">
-                        <h3 className="mb-0 mr-1 text-truncate flex-1">
+                        <H3 className="mb-0 mr-1 text-truncate flex-1">
                             <Link to={`/extensions/${extension.id}`}>{name}</Link>
-                        </h3>
+                        </H3>
                         <span>
                             by {publisher}
-                            {isSourcegraphExtension && <Icon className={styles.logo} as={SourcegraphExtensionIcon} />}
+                            {isSourcegraphExtension && (
+                                <Icon className={styles.logo} as={SourcegraphExtensionIcon} aria-hidden={true} />
+                            )}
                         </span>
                     </div>
                     <div className={classNames('mt-3', styles.description, featured && styles.descriptionFeatured)}>
                         {extension.manifest ? (
                             isErrorLike(extension.manifest) ? (
                                 <span className="text-danger small" title={extension.manifest.message}>
-                                    <Icon as={WarningIcon} /> Invalid manifest
+                                    <Icon aria-hidden={true} svgPath={mdiAlert} /> Invalid manifest
                                 </span>
                             ) : (
                                 extension.manifest.description && (
@@ -235,7 +233,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                             )
                         ) : (
                             <span className="text-warning small">
-                                <Icon as={WarningIcon} /> No manifest
+                                <Icon aria-hidden={true} svgPath={mdiAlert} /> No manifest
                             </span>
                         )}
                     </div>

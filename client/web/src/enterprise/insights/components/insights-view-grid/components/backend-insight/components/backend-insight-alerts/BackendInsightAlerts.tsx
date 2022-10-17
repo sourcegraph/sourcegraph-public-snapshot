@@ -5,7 +5,7 @@ import ProgressWrench from 'mdi-react/ProgressWrenchIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/common'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, H4 } from '@sourcegraph/wildcard'
 
 import { InsightInProcessError } from '../../../../../../core/backend/utils/errors'
 
@@ -17,7 +17,9 @@ interface BackendAlertOverLayProps {
     className?: string
 }
 
-export const BackendAlertOverlay: React.FunctionComponent<BackendAlertOverLayProps> = props => {
+export const BackendAlertOverlay: React.FunctionComponent<
+    React.PropsWithChildren<BackendAlertOverLayProps>
+> = props => {
     const { isFetchingHistoricalData, hasNoData, className } = props
 
     if (isFetchingHistoricalData) {
@@ -51,14 +53,14 @@ export interface AlertOverlayProps {
     className?: string
 }
 
-const AlertOverlay: React.FunctionComponent<AlertOverlayProps> = props => {
+const AlertOverlay: React.FunctionComponent<React.PropsWithChildren<AlertOverlayProps>> = props => {
     const { title, description, icon, className } = props
 
     return (
         <div className={classNames(className, styles.alertContainer)}>
             <div className={styles.alertContent}>
                 {icon && <div className={styles.icon}>{icon}</div>}
-                <h4 className={styles.title}>{title}</h4>
+                <H4 className={styles.title}>{title}</H4>
                 <small className={styles.description}>{description}</small>
             </div>
         </div>
@@ -69,7 +71,9 @@ interface BackendInsightErrorAlertProps {
     error: ErrorLike
 }
 
-export const BackendInsightErrorAlert: React.FunctionComponent<BackendInsightErrorAlertProps> = props =>
+export const BackendInsightErrorAlert: React.FunctionComponent<
+    React.PropsWithChildren<BackendInsightErrorAlertProps>
+> = props =>
     props.error instanceof InsightInProcessError ? (
         <Alert variant="info">{props.error.message}</Alert>
     ) : (

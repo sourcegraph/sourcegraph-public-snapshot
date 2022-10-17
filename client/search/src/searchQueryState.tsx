@@ -2,10 +2,11 @@ import React, { createContext, useContext } from 'react'
 
 import { StoreApi, UseBoundStore } from 'zustand'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+
+import { SearchPatternType } from './graphql-operations'
 
 import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
 
@@ -21,9 +22,11 @@ export const SearchQueryStateStoreContext = createContext<SearchQueryStateStore 
  * Example: Both the VS Code extension and the web app render `<SearchSidebar>`, so it needs to
  * reference the appropriate zustand store through context (provided here).
  */
-export const SearchQueryStateStoreProvider: React.FunctionComponent<{
-    useSearchQueryState: SearchQueryStateStore
-}> = ({ children, useSearchQueryState }) => (
+export const SearchQueryStateStoreProvider: React.FunctionComponent<
+    React.PropsWithChildren<{
+        useSearchQueryState: SearchQueryStateStore
+    }>
+> = ({ children, useSearchQueryState }) => (
     <SearchQueryStateStoreContext.Provider value={useSearchQueryState}>
         {children}
     </SearchQueryStateStoreContext.Provider>
@@ -120,6 +123,10 @@ export type QueryUpdate =
           type: 'toggleSubquery'
           value: string
       }
+    | {
+          type: 'replaceQuery'
+          value: string
+      }
 
 export function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
@@ -133,6 +140,8 @@ export function updateQuery(query: string, updates: QueryUpdate[]): string {
                 return updateFilter(query, update.field, update.value)
             case 'toggleSubquery':
                 return toggleSubquery(query, update.value)
+            case 'replaceQuery':
+                return update.value
         }
         return query
     }, query)

@@ -4,26 +4,35 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) Users(args *struct {
+type usersArgs struct {
 	graphqlutil.ConnectionArgs
-	Query        *string
-	Tag          *string
-	ActivePeriod *string
-}) *userConnectionResolver {
+	Query         *string
+	Tag           *string
+	ActivePeriod  *string
+	InactiveSince *gqlutil.DateTime
+}
+
+func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
 	if args.Tag != nil {
 		opt.Tag = *args.Tag
+	}
+	if args.InactiveSince != nil {
+		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
@@ -72,19 +81,19 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.users, err = database.Users(r.db).List(ctx, &r.opt)
+		r.users, err = r.db.Users().List(ctx, &r.opt)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = database.Users(r.db).Count(ctx, &r.opt)
+		r.totalCount, r.err = r.db.Users().Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins can list users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -104,6 +113,9 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 		l = append(l, &UserResolver{
 			db:   r.db,
 			user: user,
+			logger: log.Scoped("userResolver", "resolves a specific user").With(
+				log.Object("repo",
+					log.String("user", user.Username))),
 		})
 	}
 	return l, nil
@@ -111,7 +123,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 

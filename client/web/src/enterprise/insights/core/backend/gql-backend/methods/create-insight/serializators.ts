@@ -2,14 +2,16 @@ import {
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
+    TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
-import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard } from '../../../../types'
+import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
+import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
 import {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalLangStatsInsightData,
-    MinimalSearchBackendBasedInsightData,
-    MinimalSearchRuntimeBasedInsightData,
+    MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
@@ -27,6 +29,8 @@ export function getInsightCreateGqlInput(
             return getSearchInsightCreateInput(insight, dashboard)
         case InsightType.CaptureGroup:
             return getCaptureGroupInsightCreateInput(insight, dashboard)
+        case InsightType.Compute:
+            return getComputeInsightCreateInput(insight, dashboard)
         case InsightType.LangStats:
             return getLangStatsInsightCreateInput(insight, dashboard)
     }
@@ -49,6 +53,15 @@ export function getCaptureGroupInsightCreateInput(
             },
         ],
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {
@@ -59,10 +72,10 @@ export function getCaptureGroupInsightCreateInput(
 }
 
 export function getSearchInsightCreateInput(
-    insight: MinimalSearchRuntimeBasedInsightData | MinimalSearchBackendBasedInsightData,
+    insight: MinimalSearchBasedInsightData,
     dashboard: InsightDashboard | null
 ): LineChartSearchInsightInput {
-    const repositories = insight.executionType !== InsightExecutionType.Backend ? insight.repositories : []
+    const repositories = insight.repositories
 
     const [unit, value] = getStepInterval(insight.step)
     const input: LineChartSearchInsightInput = {
@@ -76,6 +89,15 @@ export function getSearchInsightCreateInput(
             timeScope: { stepInterval: { unit, value } },
         })),
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {
@@ -98,6 +120,41 @@ export function getLangStatsInsightCreateInput(
         presentationOptions: {
             title: insight.title,
             otherThreshold: insight.otherThreshold,
+        },
+    }
+
+    if (dashboard && !isVirtualDashboard(dashboard)) {
+        input.dashboards = [dashboard.id]
+    }
+
+    return input
+}
+
+export function getComputeInsightCreateInput(
+    insight: MinimalComputeInsightData,
+    dashboard: InsightDashboard | null
+): LineChartSearchInsightInput {
+    const input: LineChartSearchInsightInput = {
+        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            query: series.query,
+            options: {
+                label: series.name,
+                lineColor: series.stroke,
+            },
+            repositoryScope: { repositories: insight.repositories },
+            timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            groupBy: insight.groupBy,
+            generatedFromCaptureGroups: true,
+        })),
+        options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
         },
     }
 

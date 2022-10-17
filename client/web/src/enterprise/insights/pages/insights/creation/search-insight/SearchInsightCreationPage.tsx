@@ -1,20 +1,26 @@
-import React, { useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Link, PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { MinimalSearchBasedInsightData } from '../../../../core/backend/code-insights-backend-types'
+import {
+    FORM_ERROR,
+    FormChangeEvent,
+    CodeInsightsPage,
+    CodeInsightsCreationActions,
+    CodeInsightCreationMode,
+} from '../../../../components'
+import { MinimalSearchBasedInsightData } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     SearchInsightCreationContent,
     SearchInsightCreationContentProps,
-} from './components/search-insight-creation-content/SearchInsightCreationContent'
+} from './components/SearchInsightCreationContent'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
@@ -37,7 +43,7 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: MinimalSearchBasedInsightData) => void
+    onSuccessfulCreation: () => void
 
     /**
      * Whenever the user click on cancel button
@@ -45,8 +51,11 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
+export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
 
@@ -71,7 +80,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
 
-                onSuccessfulCreation(insight)
+                onSuccessfulCreation()
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
@@ -122,13 +131,25 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                         />
 
                         <SearchInsightCreationContent
-                            className="pb-5"
-                            dataTestId="search-insight-create-page-content"
+                            touched={false}
                             initialValue={initialValues}
+                            dataTestId="search-insight-create-page-content"
+                            className="pb-5"
                             onSubmit={handleSubmit}
-                            onCancel={handleCancel}
                             onChange={handleChange}
-                        />
+                        >
+                            {form => (
+                                <CodeInsightsCreationActions
+                                    mode={CodeInsightCreationMode.Creation}
+                                    licensed={licensed}
+                                    available={creationPermission?.available}
+                                    submitting={form.submitting}
+                                    errors={form.submitErrors?.[FORM_ERROR]}
+                                    clear={form.isFormClearActive}
+                                    onCancel={handleCancel}
+                                />
+                            )}
+                        </SearchInsightCreationContent>
                     </>
                 )
             }

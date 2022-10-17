@@ -11,9 +11,7 @@ import (
 
 func TestClient_Ping(t *testing.T) {
 	ctx := context.Background()
-
-	cli, save := newTestClient(t)
-	defer save()
+	cli := newTestClient(t)
 
 	t.Run("unauthorised", func(t *testing.T) {
 		unauthCli := cli.WithAuthenticator(&auth.BasicAuth{

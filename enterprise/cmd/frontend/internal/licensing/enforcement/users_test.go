@@ -7,19 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestEnforcement_PreCreateUser(t *testing.T) {
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
-
 	expiresAt := time.Now().Add(time.Hour)
 	tests := []struct {
 		license         *license.Info
@@ -105,10 +103,7 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 }
 
 func TestEnforcement_AfterCreateUser(t *testing.T) {
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
+	logger := logtest.Scoped(t)
 
 	tests := []struct {
 		name                  string
@@ -136,7 +131,8 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 			wantSiteAdmin:         false,
 		},
 		{
-			name:                  "no license sets new user to be site admin",
+			name:                  "free license sets new user to be site admin",
+			license:               &licensing.GetFreeLicenseInfo().Info,
 			wantCalledExecContext: true,
 			wantSiteAdmin:         true,
 		},
@@ -154,7 +150,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			calledExecContext := false
 			db := &fakeDB{
-				execContext: func(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+				execContext: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
 					calledExecContext = true
 					return nil, nil
 				},
@@ -163,7 +159,7 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 
 			hook := NewAfterCreateUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), database.NewDB(db), user)
+				err := NewAfterCreateUserHook()(context.Background(), database.NewDBWith(logger, basestore.NewWithHandle(db)), user)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -180,27 +176,15 @@ func TestEnforcement_AfterCreateUser(t *testing.T) {
 }
 
 type fakeDB struct {
-	execContext func(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+	basestore.TransactableHandle
+	execContext func(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-func (db *fakeDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
-	panic("implement me")
-}
-
-func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+func (db *fakeDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	return db.execContext(ctx, query, args...)
 }
 
-func (db *fakeDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	panic("implement me")
-}
-
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
-	if !licensing.EnforceTiers {
-		licensing.EnforceTiers = true
-		defer func() { licensing.EnforceTiers = false }()
-	}
-
 	tests := []struct {
 		name        string
 		license     *license.Info

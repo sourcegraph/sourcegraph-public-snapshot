@@ -1,6 +1,4 @@
-import React from 'react'
-
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { addDays } from 'date-fns'
 
@@ -11,13 +9,18 @@ import { NODES } from './testData'
 
 import styles from './BatchSpecsPage.module.scss'
 
-const { add } = storiesOf('web/batches/settings/specs', module).addDecorator(story => (
-    <div className={classNames(styles.specsGrid, 'p-3 container')}>{story()}</div>
-))
-
 const NOW = () => addDays(new Date(), 1)
 
-add('BatchSpecNode', () => (
+const decorator: DecoratorFn = story => <div className={classNames(styles.specsGrid, 'p-3 container')}>{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/specs',
+    decorators: [decorator],
+}
+
+export default config
+
+export const BatchSpecNodeStory: Story = () => (
     <WebStory>
         {props => (
             <>
@@ -27,4 +30,6 @@ add('BatchSpecNode', () => (
             </>
         )}
     </WebStory>
-))
+)
+
+BatchSpecNodeStory.storyName = 'BatchSpecNode'

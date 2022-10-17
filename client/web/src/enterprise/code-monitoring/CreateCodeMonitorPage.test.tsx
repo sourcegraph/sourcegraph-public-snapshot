@@ -1,9 +1,6 @@
-import * as React from 'react'
-
-import { getByRole, screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
-import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -39,94 +36,62 @@ describe('CreateCodeMonitorPage', () => {
         isLightTheme: true,
         isSourcegraphDotCom: false,
     }
-    let clock: sinon.SinonFakeTimers
 
+    const origContext = window.context
     beforeEach(() => {
-        clock = sinon.useFakeTimers()
+        window.context = {
+            emailEnabled: true,
+        } as any
     })
-
     afterEach(() => {
-        clock.restore()
-    })
-
-    afterEach(() => {
+        window.context = origContext
         props.createCodeMonitor.resetHistory()
     })
 
-    test('createCodeMonitor is called on submit', () => {
+    test('createCodeMonitor is called on submit', async () => {
+        const search = new URLSearchParams({
+            'trigger-query': 'test type:diff repo:test',
+        }).toString()
+
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} />
+                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
             </MockedTestProvider>
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
-        userEvent.click(screen.getByTestId('trigger-button'))
 
         const triggerInput = screen.getByTestId('trigger-query-edit')
         expect(triggerInput).toBeInTheDocument()
-
-        const textbox = getByRole(triggerInput, 'textbox')
-        userEvent.type(textbox, 'test type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
-
-        expect(triggerInput).toHaveClass('test-is-valid')
+        await waitFor(() => expect(triggerInput).toHaveClass('test-is-valid'))
 
         userEvent.click(screen.getByTestId('submit-trigger'))
-
         userEvent.click(screen.getByTestId('form-action-toggle-email'))
-
         userEvent.click(screen.getByTestId('submit-action-email'))
 
-        act(() => {
-            clock.tick(600)
-        })
-
         userEvent.click(screen.getByTestId('submit-monitor'))
-
         sinon.assert.called(props.createCodeMonitor)
     })
 
-    test('createCodeMonitor is not called on submit when trigger or action is incomplete', () => {
+    test('createCodeMonitor is not called on submit when action is incomplete', () => {
+        const search = new URLSearchParams({
+            'trigger-query': 'test type:diff repo:test',
+        }).toString()
+
         renderWithBrandedContext(
             <MockedTestProvider>
-                <CreateCodeMonitorPage {...props} />
+                <CreateCodeMonitorPage {...props} location={{ ...history.location, search }} />
             </MockedTestProvider>
         )
         const nameInput = screen.getByTestId('name-input')
         userEvent.type(nameInput, 'Test updated')
         userEvent.click(screen.getByTestId('submit-monitor'))
 
-        // Pressing enter does not call createCodeMonitor because other fields not complete
-        sinon.assert.notCalled(props.createCodeMonitor)
-
-        userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        expect(triggerInput).toBeInTheDocument()
-
-        const textbox = getByRole(triggerInput, 'textbox')
-
-        userEvent.type(textbox, 'test type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
-        expect(triggerInput).toHaveClass('test-is-valid')
-        userEvent.click(screen.getByTestId('submit-trigger'))
-
-        userEvent.click(screen.getByTestId('submit-monitor'))
-
-        // Pressing enter still does not call createCodeMonitor
+        // Pressing enter does not call createCodeMonitor
         sinon.assert.notCalled(props.createCodeMonitor)
 
         userEvent.click(screen.getByTestId('form-action-toggle-email'))
         userEvent.click(screen.getByTestId('submit-action-email'))
-
-        act(() => {
-            clock.tick(600)
-        })
 
         // Pressing enter calls createCodeMonitor when all sections are complete
         userEvent.click(screen.getByTestId('submit-monitor'))

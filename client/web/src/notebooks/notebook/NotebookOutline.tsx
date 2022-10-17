@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiChevronRight, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
 import { marked, Slugger } from 'marked'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { Block, MarkdownBlock } from '..'
 
@@ -31,8 +30,8 @@ function getHeadingStyle(depth: number): string {
     return ''
 }
 
-export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = React.memo(
-    ({ notebookElement, outlineContainerElement, blocks }) => {
+export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<NotebookOutlineProps>> = React.memo(
+    function NotebookOutline({ notebookElement, outlineContainerElement, blocks }) {
         const scrollableContainer = useRef<HTMLUListElement>(null)
         const [visibleHeadings, setVisibleHeadings] = useState<string[]>([])
         const [isOpen, setIsOpen] = useState(true)
@@ -146,7 +145,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             className={styles.toggleOutlineButton}
                             aria-label="Open Outline panel"
                         >
-                            <Icon as={ChevronRightIcon} size="sm" />
+                            <Icon aria-hidden={true} size="sm" svgPath={mdiChevronRight} />
                         </Button>
                     </div>
                 </nav>,
@@ -162,7 +161,7 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                         className={styles.toggleOutlineButton}
                         aria-label="Close Outline panel"
                     >
-                        <Icon as={ChevronLeftIcon} size="sm" />
+                        <Icon aria-hidden={true} size="sm" svgPath={mdiChevronLeft} />
                     </Button>
                     <span>Outline</span>
                 </div>
@@ -178,15 +177,13 @@ export const NotebookOutline: React.FunctionComponent<NotebookOutlineProps> = Re
                             )}
                             aria-current={highlightedHeading === heading.id}
                         >
-                            <Link
-                                className={classNames(styles.headingLink)}
-                                to={`#${heading.id}`}
-                                data-tooltip={heading.text}
-                            >
+                            <Link className={classNames(styles.headingLink)} to={`#${heading.id}`}>
                                 {highlightedHeading === heading.id && (
                                     <span className={styles.highlightDot}>&middot;</span>
                                 )}
-                                <span>{heading.text}</span>
+                                <Tooltip content={heading.text} placement="right">
+                                    <span className={classNames(styles.headingLinkText)}>{heading.text}</span>
+                                </Tooltip>
                             </Link>
                         </li>
                     ))}

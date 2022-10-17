@@ -37,7 +37,7 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"temporarySettings"},
+					Path:          []any{"temporarySettings"},
 					Message:       wantErr.Error(),
 					ResolverError: wantErr,
 				},
@@ -111,7 +111,7 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []interface{}{"overwriteTemporarySettings"},
+					Path:          []any{"overwriteTemporarySettings"},
 					Message:       wantErr.Error(),
 					ResolverError: wantErr,
 				},

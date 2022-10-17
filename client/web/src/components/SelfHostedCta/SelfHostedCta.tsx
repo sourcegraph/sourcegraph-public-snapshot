@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../MarketingBlock'
 
@@ -17,7 +17,7 @@ export interface SelfHostedCtaProps extends TelemetryProps {
     page: string
 }
 
-export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
+export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<SelfHostedCtaProps>> = ({
     className,
     contentClassName,
     telemetryService,
@@ -28,10 +28,6 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
 
     const gettingStartedCTAOnClick = (): void => {
         telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
-    }
-
-    const selfVsCloudDocumentsLinkOnClick = (): void => {
-        telemetryService.log('SelfVsCloudDocsLink', { page }, { page })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
@@ -58,20 +54,11 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                             Learn how to install
                         </Link>
                     </li>
-                    <li>
-                        <Link
-                            onClick={selfVsCloudDocumentsLinkOnClick}
-                            to="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud#who-is-sourcegraph-cloud-for-why-should-i-use-this-over-sourcegraph-self-hosted"
-                            {...linkProps}
-                        >
-                            Self-hosted vs. cloud features
-                        </Link>
-                    </li>
                 </ul>
             </div>
 
             <MarketingBlock wrapperClassName="flex-md-shrink-0 mt-md-0 mt-sm-2 w-sm-100">
-                <h3 className="pr-3">Need help getting started?</h3>
+                <H3 className="pr-3">Need help getting started?</H3>
 
                 <div>
                     <Link
@@ -80,7 +67,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                         {...linkProps}
                     >
                         Speak to an engineer
-                        <Icon className="ml-2" as={ArrowRightIcon} />
+                        <Icon className="ml-2" aria-hidden={true} svgPath={mdiArrowRight} />
                     </Link>
                 </div>
             </MarketingBlock>

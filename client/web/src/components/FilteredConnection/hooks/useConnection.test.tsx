@@ -1,11 +1,10 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { Text } from '@sourcegraph/wildcard'
 
 import {
     TestConnectionQueryFields,
@@ -16,18 +15,16 @@ import {
 import { useConnection } from './useConnection'
 
 const TEST_CONNECTION_QUERY = gql`
-    query TestConnectionQuery($username: String!, $first: Int) {
-        user(username: $username) {
-            repositories(first: $first) {
-                nodes {
-                    id
-                    name
-                }
-                totalCount
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
+    query TestConnectionQuery($first: Int) {
+        repositories(first: $first) {
+            nodes {
+                id
+                name
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
             }
         }
     }
@@ -47,14 +44,10 @@ const TestComponent = () => {
         query: TEST_CONNECTION_QUERY,
         variables: {
             first: 1,
-            username: 'username',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            if (!data.user) {
-                throw new Error('User not found')
-            }
-            return data.user.repositories
+            return data.repositories
         },
         options: {
             useURL: true,
@@ -69,7 +62,7 @@ const TestComponent = () => {
                 ))}
             </ul>
 
-            {connection?.totalCount && <p>Total count: {connection.totalCount}</p>}
+            {connection?.totalCount && <Text>Total count: {connection.totalCount}</Text>}
             {hasNextPage && (
                 <button type="button" onClick={fetchMore}>
                     Fetch more
@@ -88,7 +81,6 @@ const generateMockRequest = ({
 }): MockedResponse<TestConnectionQueryResult>['request'] => ({
     query: getDocumentNode(TEST_CONNECTION_QUERY),
     variables: {
-        username: 'username',
         after,
         first,
     },
@@ -106,15 +98,13 @@ const generateMockResult = ({
     totalCount: number
 }): MockedResponse<TestConnectionQueryResult>['result'] => ({
     data: {
-        user: {
-            repositories: {
-                nodes,
-                pageInfo: {
-                    endCursor,
-                    hasNextPage,
-                },
-                totalCount,
+        repositories: {
+            nodes,
+            pageInfo: {
+                endCursor,
+                hasNextPage,
             },
+            totalCount,
         },
     },
 })

@@ -146,8 +146,10 @@ func TestSerializeBasic(t *testing.T) {
 		BatchChangesUsage:        nil,
 		CodeIntelUsage:           nil,
 		CodeMonitoringUsage:      nil,
+		NotebooksUsage:           nil,
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
+		MigratedExtensionsUsage:  nil,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
 		SavedSearches:            nil,
@@ -183,9 +185,10 @@ func TestSerializeBasic(t *testing.T) {
 		"code_insights_usage": null,
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -251,9 +254,10 @@ func TestSerializeFromQuery(t *testing.T) {
 		"code_insights_usage": null,
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -291,8 +295,10 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		BatchChangesUsage:        json.RawMessage([]byte(`{"baz":"bonk"}`)),
 		CodeIntelUsage:           nil,
 		CodeMonitoringUsage:      nil,
+		NotebooksUsage:           nil,
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
+		MigratedExtensionsUsage:  nil,
 		NewCodeIntelUsage:        nil,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
@@ -329,9 +335,10 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 		"code_insights_usage": null,
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -432,7 +439,25 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				NumRepositoriesWithFreshIndexRecords:  int32Ptr(45),
 			},
 		},
-		SettingsPageViewCount: int32Ptr(1489),
+		SettingsPageViewCount:            int32Ptr(1489),
+		UsersWithRefPanelRedesignEnabled: int32Ptr(46),
+		LanguageRequests: []types.LanguageRequest{
+			{
+				LanguageID:  "frob",
+				NumRequests: 123,
+			},
+			{
+				LanguageID:  "borf",
+				NumRequests: 321,
+			},
+		},
+		InvestigationEvents: []types.CodeIntelInvestigationEvent{
+			{
+				Type:  types.CodeIntelUploadErrorInvestigationType,
+				WAUs:  25,
+				Total: 42,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
@@ -452,8 +477,10 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 		BatchChangesUsage:        nil,
 		CodeIntelUsage:           nil,
 		CodeMonitoringUsage:      nil,
+		NotebooksUsage:           nil,
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
+		MigratedExtensionsUsage:  nil,
 		NewCodeIntelUsage:        testUsage,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
@@ -564,12 +591,31 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 					"num_repositories_with_fresh_index_records": 45
 				}
 			],
-			"settings_page_view_count": 1489
+			"settings_page_view_count": 1489,
+			"users_with_ref_panel_redesign_enabled": 46,
+			"language_requests": [
+				{
+					"language_id": "frob",
+					"num_requests": 123
+				},
+				{
+					"language_id": "borf",
+					"num_requests": 321
+				}
+			],
+			"investigation_events": [
+				{
+					"type": "CodeIntelligenceUploadErrorInvestigated",
+					"waus": 25,
+					"total": 42
+				}
+			]
 		},
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -633,8 +679,10 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 		BatchChangesUsage:        nil,
 		CodeIntelUsage:           json.RawMessage([]byte(`{"Weekly": [` + period + `]}`)),
 		CodeMonitoringUsage:      nil,
+		NotebooksUsage:           nil,
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
+		MigratedExtensionsUsage:  nil,
 		NewCodeIntelUsage:        nil,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
@@ -730,12 +778,16 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 			"num_repositories_with_fresh_index_records": null,
 			"num_repositories_with_index_configuration_records": null,
 			"counts_by_language": null,
-			"settings_page_view_count": null
+			"settings_page_view_count": null,
+			"users_with_ref_panel_redesign_enabled": null,
+			"language_requests": null,
+			"investigation_events": null
 		},
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"dependency_versions": null,
 		"extensions_usage": null,
 		"code_insights_usage": null,
@@ -777,8 +829,10 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		BatchChangesUsage:        nil,
 		CodeIntelUsage:           nil,
 		CodeMonitoringUsage:      nil,
+		NotebooksUsage:           nil,
 		CodeHostIntegrationUsage: nil,
 		IDEExtensionsUsage:       nil,
+		MigratedExtensionsUsage:  nil,
 		NewCodeIntelUsage:        nil,
 		SearchUsage:              nil,
 		GrowthStatistics:         nil,
@@ -815,9 +869,10 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 		"code_insights_usage": null,
 		"code_insights_critical_telemetry": null,
 		"code_monitoring_usage": null,
+		"notebooks_usage": null,
 		"code_host_integration_usage": null,
 		"ide_extensions_usage": null,
-		"cta_usage": null,
+		"migrated_extensions_usage": null,
 		"search_usage": null,
 		"growth_statistics": null,
 		"saved_searches": null,
@@ -841,12 +896,12 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 }
 
 func compareJSON(t *testing.T, actual []byte, expected string) {
-	var o1 interface{}
+	var o1 any
 	if err := json.Unmarshal(actual, &o1); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
 
-	var o2 interface{}
+	var o2 any
 	if err := json.Unmarshal([]byte(expected), &o2); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}

@@ -4,7 +4,7 @@ import * as H from 'history'
 
 import { Connection } from './ConnectionType'
 import { ConnectionList, ShowMoreButton, SummaryContainer, ConnectionSummary } from './ui'
-import { hasID, hasNextPage } from './utils'
+import { hasID, hasNextPage, hasDisplayName } from './utils'
 
 /**
  * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
@@ -15,16 +15,16 @@ import { hasID, hasNextPage } from './utils'
  */
 export interface ConnectionProps<N, NP = {}, HP = {}> extends ConnectionNodesDisplayProps {
     /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[]; totalCount?: number | null } & HP>
+    headComponent?: React.ComponentType<React.PropsWithChildren<{ nodes: N[]; totalCount?: number | null } & HP>>
 
     /** Props to pass to each headComponent in addition to `{ nodes: N[]; totalCount?: number | null }`. */
     headComponentProps?: HP
 
     /** Footer row to appear below all nodes. */
-    footComponent?: React.ComponentType<{ nodes: N[] }>
+    footComponent?: React.ComponentType<React.PropsWithChildren<{ nodes: N[] }>>
 
     /** The component type to use to display each node. */
-    nodeComponent: React.ComponentType<{ node: N } & NP>
+    nodeComponent: React.ComponentType<React.PropsWithChildren<{ node: N } & NP>>
 
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
@@ -77,11 +77,14 @@ export interface ConnectionNodesDisplayProps {
     emptyElement?: JSX.Element | null
 
     /** The component displayed when all nodes have been fetched. */
-    totalCountSummaryComponent?: React.ComponentType<{ totalCount: number }>
+    totalCountSummaryComponent?: React.ComponentType<React.PropsWithChildren<{ totalCount: number }>>
 
     compact?: boolean
 
     withCenteredSummary?: boolean
+
+    /** A function that generates an aria label given a node display name */
+    ariaLabelFunction?: (displayName: string) => string
 }
 
 interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}, HP = {}>
@@ -117,6 +120,7 @@ export const getTotalCount = <N,>({ totalCount, nodes, pageInfo }: Connection<N>
 export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     nodeComponent: NodeComponent,
     nodeComponentProps,
+    ariaLabelFunction,
     listComponent = 'ul',
     listClassName,
     summaryClassName,
@@ -157,7 +161,12 @@ export const ConnectionNodes = <C extends Connection<N>, N, NP = {}, HP = {}>({
     )
 
     const nodes = connection.nodes.map((node, index) => (
-        <NodeComponent key={hasID(node) ? node.id : index} node={node} {...nodeComponentProps!} />
+        <NodeComponent
+            key={hasID(node) ? node.id : index}
+            node={node}
+            ariaLabel={hasDisplayName(node) && ariaLabelFunction?.(node.displayName)}
+            {...nodeComponentProps!}
+        />
     ))
 
     return (

@@ -1,13 +1,12 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
-import { RouteComponentProps } from 'react-router-dom'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { Button, Link, LoadingSpinner, Alert, Text, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -31,15 +30,11 @@ interface ResetPasswordInitFormState {
     submitOrError: undefined | 'loading' | ErrorLike | null
 }
 
-interface ResetPasswordInitFormProps {
-    history: H.History
-}
-
 /**
  * A form where the user can initiate the reset-password flow. This is the 1st step in the
  * reset-password flow; ResetPasswordCodePage is the 2nd step.
  */
-class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormProps, ResetPasswordInitFormState> {
+class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFormState> {
     public state: ResetPasswordInitFormState = {
         email: '',
         submitOrError: undefined,
@@ -53,7 +48,9 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         className={classNames('border rounded p-4 mb-3', signInSignUpCommonStyles.signinSignupForm)}
                         data-testid="reset-password-page-form"
                     >
-                        <p className="text-left mb-0">Check your email for a link to reset your password.</p>
+                        <Text alignment="left" className="mb-0">
+                            Check your email for a link to reset your password.
+                        </Text>
                     </div>
                     <span className="form-text text-muted">
                         <Link to="/sign-in">Return to sign in</Link>
@@ -76,28 +73,29 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPasswordInit}
                 >
-                    <p className="text-left">
-                        Enter your account email address and we will send you a password reset link
-                    </p>
-                    <div className="form-group">
-                        <input
-                            className="form-control"
-                            onChange={this.onEmailFieldChange}
-                            value={this.state.email}
-                            type="email"
-                            name="email"
-                            autoFocus={true}
-                            spellCheck={false}
-                            required={true}
-                            autoComplete="email"
-                            disabled={this.state.submitOrError === 'loading'}
-                        />
-                    </div>
+                    <Input
+                        onChange={this.onEmailFieldChange}
+                        value={this.state.email}
+                        type="email"
+                        name="email"
+                        autoFocus={true}
+                        spellCheck={false}
+                        required={true}
+                        autoComplete="email"
+                        disabled={this.state.submitOrError === 'loading'}
+                        className="form-group"
+                        label={
+                            <Text className="text-left">
+                                Enter your account email address and we will send you a password reset link
+                            </Text>
+                        }
+                    />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
+                        display="block"
                     >
                         {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
                     </Button>
@@ -139,7 +137,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         .text()
                         .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
-                        .catch(error => console.error(error))
+                        .catch(error => logger.error(error))
                 }
             })
             .catch(error => this.setState({ submitOrError: asError(error) }))
@@ -149,7 +147,6 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
 interface ResetPasswordCodeFormProps {
     userID: number
     code: string
-    history: H.History
 }
 
 interface ResetPasswordCodeFormState {
@@ -192,21 +189,21 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                     data-testid="reset-password-page-form"
                     onSubmit={this.handleSubmitResetPassword}
                 >
-                    <p className="text-left">Enter a new password for your account.</p>
-                    <div className="form-group">
-                        <PasswordInput
-                            name="password"
-                            onChange={this.onPasswordFieldChange}
-                            value={this.state.password}
-                            required={true}
-                            autoFocus={true}
-                            autoComplete="new-password"
-                            placeholder=" "
-                            disabled={this.state.submitOrError === 'loading'}
-                        />
-                    </div>
+                    <PasswordInput
+                        name="password"
+                        onChange={this.onPasswordFieldChange}
+                        value={this.state.password}
+                        className="form-group"
+                        label={<Text alignment="left">Enter a new password for your account.</Text>}
+                        required={true}
+                        autoFocus={true}
+                        autoComplete="new-password"
+                        placeholder=" "
+                        disabled={this.state.submitOrError === 'loading'}
+                    />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
+                        display="block"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
@@ -251,7 +248,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
     }
 }
 
-interface ResetPasswordPageProps extends RouteComponentProps<{}> {
+interface ResetPasswordPageProps {
     authenticatedUser: AuthenticatedUser | null
 }
 
@@ -259,49 +256,47 @@ interface ResetPasswordPageProps extends RouteComponentProps<{}> {
  * A page that implements the reset-password flow for a user: (1) initiate the flow by providing the email address
  * of the account whose password to reset, and (2) complete the flow by providing the password-reset code.
  */
-export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProps> {
-    public componentDidMount(): void {
-        eventLogger.logViewEvent('ResetPassword', false)
-    }
+export const ResetPasswordPage: React.FunctionComponent<ResetPasswordPageProps> = props => {
+    const location = useLocation()
 
-    public render(): JSX.Element | null {
-        let body: JSX.Element
-        if (this.props.authenticatedUser) {
-            body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
-        } else if (window.context.resetPasswordEnabled) {
-            const searchParameters = new URLSearchParams(this.props.location.search)
-            if (searchParameters.has('code') || searchParameters.has('userID')) {
-                const code = searchParameters.get('code')
-                const userID = parseInt(searchParameters.get('userID') || '', 10)
-                if (code && !isNaN(userID)) {
-                    body = <ResetPasswordCodeForm code={code} userID={userID} history={this.props.history} />
-                } else {
-                    body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
-                }
+    React.useEffect(() => {
+        eventLogger.logViewEvent('ResetPassword', false)
+    }, [])
+
+    let body: JSX.Element
+    if (props.authenticatedUser) {
+        body = <Alert variant="danger">Authenticated users may not perform password reset.</Alert>
+    } else if (window.context.resetPasswordEnabled) {
+        const searchParameters = new URLSearchParams(location.search)
+        if (searchParameters.has('code') || searchParameters.has('userID')) {
+            const code = searchParameters.get('code')
+            const userID = parseInt(searchParameters.get('userID') || '', 10)
+            if (code && !isNaN(userID)) {
+                body = <ResetPasswordCodeForm code={code} userID={userID} />
             } else {
-                body = <ResetPasswordInitForm history={this.props.history} />
+                body = <Alert variant="danger">The password reset link you followed is invalid.</Alert>
             }
         } else {
-            body = (
-                <Alert variant="warning">
-                    Password reset is disabled. Ask a site administrator to manually reset your password.
-                </Alert>
-            )
+            body = <ResetPasswordInitForm />
         }
-
-        return (
-            <>
-                <PageTitle title="Reset your password" />
-                <HeroPage
-                    icon={SourcegraphIcon}
-                    iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
-                    iconClassName="bg-transparent"
-                    title="Reset your password"
-                    body={
-                        <div className={classNames('mt-4', signInSignUpCommonStyles.signinPageContainer)}>{body}</div>
-                    }
-                />
-            </>
+    } else {
+        body = (
+            <Alert variant="warning">
+                Password reset is disabled. Ask a site administrator to manually reset your password.
+            </Alert>
         )
     }
+
+    return (
+        <>
+            <PageTitle title="Reset your password" />
+            <HeroPage
+                icon={SourcegraphIcon}
+                iconLinkTo={window.context.sourcegraphDotComMode ? '/search' : undefined}
+                iconClassName="bg-transparent"
+                title="Reset your password"
+                body={<div className={classNames('mt-4', signInSignUpCommonStyles.signinPageContainer)}>{body}</div>}
+            />
+        </>
+    )
 }

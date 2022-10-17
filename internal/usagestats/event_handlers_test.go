@@ -16,17 +16,17 @@ func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
 		{
 			name: "path redacted",
 			url:  "https://sourcegraph.com/github.com/test/test",
-			want: "https://sourcegraph.com/redacted",
+			want: "https://sourcegraph.com/github.com/redacted",
 		},
 		{
 			name: "path and non-approved query param redacted",
 			url:  "https://sourcegraph.com/search?q=abcd",
-			want: "https://sourcegraph.com/redacted?q=redacted",
+			want: "https://sourcegraph.com/search/redacted?q=redacted",
 		},
 		{
 			name: "path and non-approved query param redacted, approved params retained",
 			url:  "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
-			want: "https://sourcegraph.com/redacted?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
+			want: "https://sourcegraph.com/search/redacted?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
 		},
 	}
 

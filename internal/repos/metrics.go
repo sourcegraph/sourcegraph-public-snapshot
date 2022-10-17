@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -92,7 +93,7 @@ var (
 	})
 )
 
-func MustRegisterMetrics(db dbutil.DB, sourcegraphDotCom bool) {
+func MustRegisterMetrics(logger log.Logger, db dbutil.DB, sourcegraphDotCom bool) {
 	scanCount := func(sql string) (float64, error) {
 		row := db.QueryRowContext(context.Background(), sql)
 		var count int64
@@ -115,12 +116,11 @@ func MustRegisterMetrics(db dbutil.DB, sourcegraphDotCom bool) {
 		Help: "The total number of external services added",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_external_services_total
 SELECT COUNT(*) FROM external_services
 WHERE deleted_at IS NULL
 `)
 		if err != nil {
-			log15.Error("Failed to get total external services", "err", err)
+			logger.Error("Failed to get total external services", log.Error(err))
 			return 0
 		}
 		return count
@@ -131,13 +131,12 @@ WHERE deleted_at IS NULL
 		Help: "The total number of external services added by users",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_user_external_services_total
 SELECT COUNT(*) FROM external_services
 WHERE namespace_user_id IS NOT NULL
 AND deleted_at IS NULL
 `)
 		if err != nil {
-			log15.Error("Failed to get total user external services", "err", err)
+			logger.Error("Failed to get total user external services", log.Error(err))
 			return 0
 		}
 		return count
@@ -148,13 +147,12 @@ AND deleted_at IS NULL
 		Help: "The total number of repositories added by users",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_user_repos_total
 SELECT COUNT(*)
 FROM external_service_repos
 WHERE user_id IS NOT NULL
 `)
 		if err != nil {
-			log15.Error("Failed to get total user repositories", "err", err)
+			logger.Error("Failed to get total user repositories", log.Error(err))
 			return 0
 		}
 		return count
@@ -165,14 +163,13 @@ WHERE user_id IS NOT NULL
 		Help: "The total number of users who have added external services",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_user_with_external_services_total
 SELECT COUNT(DISTINCT(namespace_user_id)) AS total
 FROM external_services
 WHERE namespace_user_id IS NOT NULL
 AND deleted_at IS NULL
 `)
 		if err != nil {
-			log15.Error("Failed to get total users with external services", "err", err)
+			logger.Error("Failed to get total users with external services", log.Error(err))
 			return 0
 		}
 		return count
@@ -183,11 +180,10 @@ AND deleted_at IS NULL
 		Help: "The total number of queued sync jobs",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_queued_sync_jobs_total
 SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 `)
 		if err != nil {
-			log15.Error("Failed to get total queued sync jobs", "err", err)
+			logger.Error("Failed to get total queued sync jobs", log.Error(err))
 			return 0
 		}
 		return count
@@ -198,11 +194,10 @@ SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
 		Help: "The total number of completed sync jobs",
 	}, func() float64 {
 		count, err := scanCount(`
--- source: internal/repos/metrics.go:src_repoupdater_completed_sync_jobs_total
 SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
 `)
 		if err != nil {
-			log15.Error("Failed to get total completed sync jobs", "err", err)
+			logger.Error("Failed to get total completed sync jobs", log.Error(err))
 			return 0
 		}
 		return count
@@ -223,7 +218,7 @@ select round((select cast(count(*) as float) from latest_state where state = 'er
              nullif((select cast(count(*) as float) from latest_state), 0) * 100)
 `)
 		if err != nil {
-			log15.Error("Failed to get total errored sync jobs", "err", err)
+			logger.Error("Failed to get total errored sync jobs", log.Error(err))
 			return 0
 		}
 		if !percentage.Valid {
@@ -233,7 +228,6 @@ select round((select cast(count(*) as float) from latest_state where state = 'er
 	})
 
 	backoffQuery := `
--- source: internal/repos/metrics.go:src_repoupdater_errored_sync_jobs_total
 SELECT extract(epoch from max(now() - last_sync_at))
 FROM external_services AS es
 WHERE deleted_at IS NULL
@@ -255,7 +249,7 @@ AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id 
 	}, func() float64 {
 		seconds, err := scanNullFloat(backoffQuery)
 		if err != nil {
-			log15.Error("Failed to get max sync backoff", "err", err)
+			logger.Error("Failed to get max sync backoff", log.Error(err))
 			return 0
 		}
 		if !seconds.Valid {
@@ -298,7 +292,27 @@ where last_fetched < now() - interval '8 hours'
     )
 `)
 		if err != nil {
-			log15.Error("Failed to count stale repos", "err", err)
+			logger.Error("Failed to count stale repos", log.Error(err))
+			return 0
+		}
+		return count
+	})
+
+	// Count the number of repos that are deleted but still cloned on disk. These
+	// repos are eligible to be purged.
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_repoupdater_purgeable_repos",
+		Help: "The number of deleted repos that are still cloned on disk",
+	}, func() float64 {
+		count, err := scanCount(`
+select count(*) from
+gitserver_repos
+where clone_status = 'cloned'
+and exists
+  (select from repo where id = repo_id and (deleted_at is not null or blocked is not null))
+`)
+		if err != nil {
+			logger.Error("Failed to count purgeable repos", log.Error(err))
 			return 0
 		}
 		return count

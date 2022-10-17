@@ -1,11 +1,12 @@
-import React, { useContext } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
+import { Input, H3, Text } from '@sourcegraph/wildcard'
+
 import {
-    CodeInsightsBackendContext,
     CustomInsightDashboard,
     InsightDashboard,
     isCustomDashboard,
@@ -14,10 +15,20 @@ import {
     isPersonalDashboard,
     isVirtualDashboard,
 } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 
 import { MenuButton, SelectDashboardOption, SelectOption } from './components'
 
 import styles from './DashboardSelect.module.scss'
+
+const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+    // ReachUI intercepts the space key to use for selecting menu items
+    // This prevents that from happening if the search input is focused
+    // so that the user can enter a space character in the search input
+    if (document.activeElement === event.currentTarget && event.code === 'Space') {
+        event.stopPropagation()
+    }
+}
 
 export interface DashboardSelectProps {
     value: string | undefined
@@ -29,19 +40,33 @@ export interface DashboardSelectProps {
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
-export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect, className } = props
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<DashboardSelectProps>> = props => {
+    const { value, dashboards: rawDashboards, onSelect, className } = props
+    const [filter, setFilter] = useState('')
+    const [dashboards, setDashboards] = useState(rawDashboards)
+    const { licensed } = useUiFeatures()
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
         if (dashboard) {
+            setFilter('')
+            setDashboards(rawDashboards)
             onSelect(dashboard)
         }
     }
+
+    const handleFilter: React.ChangeEventHandler<HTMLInputElement> = event => {
+        setFilter(event.target.value)
+    }
+
+    useEffect(() => {
+        if (filter === '') {
+            setDashboards(rawDashboards)
+            return
+        }
+        setDashboards(rawDashboards.filter(({ title }) => title.toLowerCase().includes(filter.toLowerCase())))
+    }, [filter, rawDashboards])
 
     const customDashboards = dashboards.filter(isCustomDashboard)
     const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
@@ -55,15 +80,27 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                 value={value ?? 'unknown'}
                 onChange={handleChange}
             >
-                <MenuButton dashboards={dashboards} />
+                <MenuButton dashboards={rawDashboards} data-testid="dashboard-select-button" />
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
-                    <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
+                    <ListboxList
+                        id="insights-dashboard-select-content"
+                        className={classNames(styles.list, 'dropdown-menu')}
+                    >
+                        <Input
+                            name="filter"
+                            value={filter}
+                            placeholder="Find dashboard..."
+                            className="mx-1"
+                            onChange={handleFilter}
+                            onKeyDown={handleKeyDown}
+                        />
                         {dashboards.filter(isVirtualDashboard).map(dashboard => (
                             <SelectOption
                                 key={dashboard.id}
                                 value={dashboard.id}
                                 label={dashboard.title}
+                                filter={filter}
                                 className={styles.option}
                             />
                         ))}
@@ -78,6 +115,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -94,6 +132,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -110,6 +149,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
+                                        filter={filter}
                                         className={styles.option}
                                     />
                                 ))}
@@ -121,8 +161,8 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                                 <hr />
 
                                 <div className={classNames(styles.limitedAccess)}>
-                                    <h3>Limited access</h3>
-                                    <p>Unlock for unlimited custom dashboards.</p>
+                                    <H3>Limited access</H3>
+                                    <Text>Unlock for unlimited custom dashboards.</Text>
                                 </div>
                             </ListboxGroup>
                         )}

@@ -1,6 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback } from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import shallow from 'zustand/shallow'
 
@@ -8,7 +7,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,10 +14,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FuzzyFinder } from '../../components/fuzzyFinder/FuzzyFinder'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
-import { getExperimentalFeatures } from '../../util/get-experimental-features'
+
+import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends ActivationProps,
@@ -51,12 +49,11 @@ const selectQueryState = ({
 /**
  * The search item in the navbar
  */
-export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) => {
+export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const autoFocus = props.isSearchAutoFocusRequired ?? true
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
         selectQueryState,
         shallow
@@ -65,7 +62,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
+    const { addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -74,10 +75,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
+                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(
@@ -88,20 +90,6 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [submitSearchOnChange]
     )
 
-    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
-    useEffect(() => {
-        if (isSearchPage && isFuzzyFinderVisible) {
-            setIsFuzzyFinderVisible(false)
-        }
-    }, [isSearchPage, isFuzzyFinderVisible])
-
-    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
-    if (fuzzyFinder === undefined) {
-        // Happens even when `"default": true` is defined in
-        // settings.schema.json.
-        fuzzyFinder = true
-    }
-
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
@@ -110,6 +98,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             <SearchBox
                 {...props}
                 editorComponent={editorComponent}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
@@ -123,29 +112,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={setIsFuzzyFinderVisible}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => {
-                    setIsFuzzyFinderVisible(true)
-                    setRetainFuzzyFinderCache(true)
-                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                    input?.focus()
-                    input?.select()
-                }}
-            />
-            {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
-                <FuzzyFinder
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    isVisible={isFuzzyFinderVisible}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
-                />
-            )}
         </Form>
     )
 }

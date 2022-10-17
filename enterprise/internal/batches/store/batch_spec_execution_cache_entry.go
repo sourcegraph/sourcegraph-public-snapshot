@@ -39,7 +39,7 @@ var BatchSpecExecutionCacheEntryColums = SQLColumns{
 
 // CreateBatchSpecExecutionCacheEntry creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecExecutionCacheEntry(ctx context.Context, ce *btypes.BatchSpecExecutionCacheEntry) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.createBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("Key", ce.Key),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -81,7 +81,6 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 }
 
 var createBatchSpecExecutionCacheEntryQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
 ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique
@@ -100,7 +99,7 @@ type ListBatchSpecExecutionCacheEntriesOpts struct {
 
 // ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
 func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts ListBatchSpecExecutionCacheEntriesOpts) (cs []*btypes.BatchSpecExecutionCacheEntry, err error) {
-	ctx, endObservation := s.operations.listBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("Count", len(opts.Keys)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -129,7 +128,6 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 }
 
 var listBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:ListBatchSpecExecutionCacheEntries
 SELECT %s FROM batch_spec_execution_cache_entries
 WHERE %s
 `
@@ -150,7 +148,6 @@ func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEn
 }
 
 const markUsedBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntries
 UPDATE
 	batch_spec_execution_cache_entries
 SET last_used_at = %s
@@ -160,7 +157,7 @@ WHERE
 
 // MarkUsedBatchSpecExecutionCacheEntries updates the LastUsedAt of the given cache entries.
 func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids []int64) (err error) {
-	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("count", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -178,7 +175,6 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids 
 // maxCacheSize again. Also, cache entries from older cache versions are always
 // deleted.
 const cleanBatchSpecExecutionEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
 WITH total_size AS (
   SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries
 ),
@@ -212,7 +208,7 @@ DELETE FROM batch_spec_execution_cache_entries WHERE id IN (SELECT id FROM ids)
 `
 
 func (s *Store) CleanBatchSpecExecutionCacheEntries(ctx context.Context, maxCacheSize int64) (err error) {
-	ctx, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("MaxTableSize", int(maxCacheSize)),
 	}})
 	defer endObservation(1, observation.Args{})

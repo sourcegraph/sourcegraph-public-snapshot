@@ -3,25 +3,56 @@
 package security
 
 import (
-	"errors"
 	"fmt"
+	"net"
+	"strconv"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
+// It validates the hostname by attempting to resolve it.
+func ValidateRemoteAddr(raddr string) bool {
+	host, port, err := net.SplitHostPort(raddr)
+
+	if err == nil {
+		raddr = host
+		_, err := strconv.Atoi(port)
+
+		// return false if port is not an int
+		if err != nil {
+			return false
+		}
+	}
+
+	validIP := net.ParseIP(raddr) != nil
+	validHost := true
+
+	_, err = net.LookupHost(raddr)
+
+	if err != nil {
+		// we cannot resolve the addr
+		validHost = false
+	}
+
+	return validIP || validHost
+}
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
 const maxPasswordRunes = 256
 
-// Validate Password: Validates that a password meets the required criteria
+// ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
 
-	if policy := conf.ExperimentalFeatures().PasswordPolicy; policy != nil && policy.Enabled {
+	if conf.PasswordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
+
 	return validatePasswordUsingDefaultMethod(passwd)
 }
 
@@ -35,6 +66,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 	// Check for minimum/maximum length only
 	pwLen := utf8.RuneCountInString(passwd)
 	minPasswordRunes := conf.AuthMinPasswordLength()
+
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
@@ -45,7 +77,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 
 // This validates the password using the Password Policy configured
 func validatePasswordUsingPolicy(passwd string) error {
-	letters := 0
+	chars := 0
 	numbers := false
 	upperCase := false
 	special := 0
@@ -54,34 +86,34 @@ func validatePasswordUsingPolicy(passwd string) error {
 		switch {
 		case unicode.IsNumber(c):
 			numbers = true
-			letters++
+			chars++
 		case unicode.IsUpper(c):
 			upperCase = true
-			letters++
+			chars++
 		case unicode.IsPunct(c) || unicode.IsSymbol(c):
 			special++
-			letters++
+			chars++
 		case unicode.IsLetter(c) || c == ' ':
-			letters++
+			chars++
 		default:
 			//ignore
 		}
 	}
 	// Check for blank password
-	if letters == 0 {
+	if chars == 0 {
 		return errors.New("password empty")
 	}
 
 	// Get a reference to the password policy
-	policy := conf.ExperimentalFeatures().PasswordPolicy
+	policy := conf.AuthPasswordPolicy()
 
 	// Minimum Length Check
-	if letters < policy.MinimumLength {
+	if chars < policy.MinimumLength {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d characters.", policy.MinimumLength))
 	}
 
 	// Maximum Length Check
-	if letters > maxPasswordRunes {
+	if chars > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be more than %d characters.", maxPasswordRunes))
 	}
 

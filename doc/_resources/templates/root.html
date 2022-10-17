@@ -13,28 +13,13 @@
             <script src="{{asset "docsite.js"}}"></script>
             <script src="{{asset "railroad.js"}}"></script>
 			<meta name="viewport" content="width=device-width, initial-scale=1" />
-      {{block "seo" . }}{{end}}
-
-            <!-- Google Tag Manager -->
-            <script>(function (w, d, s, l, i) {
-                    w[l] = w[l] || []; w[l].push({
-                        'gtm.start':
-                            new Date().getTime(), event: 'gtm.js'
-                    }); var f = d.getElementsByTagName(s)[0],
-                        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
-                            'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-                })(window, document, 'script', 'dataLayer', 'GTM-TB4NLS7');</script>
-            <!-- End Google Tag Manager -->
-
+			{{block "seo" . }}{{end}}
 			{{block "head" .}}{{end}}
+            <script defer data-domain="docs.sourcegraph.com" src="https://plausible.io/js/plausible.js"></script>
 		</head>
 
         <!-- Default to light theme if no JavaScript -->
 		<body class="theme-light">
-            <!-- Google Tag Manager (noscript) -->
-            <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-            <!-- End Google Tag Manager (noscript) -->
-
 			<aside id="sidebar">
                 <header>
 				    <h1 id="logo"><a href="/">
@@ -112,12 +97,12 @@
                 <li><a href="code_search/reference">Reference</a></li>
             </ul>
         </li>
-        <li><a href="/code_intelligence">Code intelligence</a>
+        <li><a href="/code_navigation">Code navigation</a>
             <ul>
-                <li><a href="code_intelligence/tutorials">Tutorials</a></li>
-                <li><a href="code_intelligence/how-to">How-to guides</a></li>
-                <li><a href="code_intelligence/explanations">Explanations</a></li>
-                <li><a href="code_intelligence/reference">Reference</a></li>
+                <li><a href="code_navigation/tutorials">Tutorials</a></li>
+                <li><a href="code_navigation/how-to">How-to guides</a></li>
+                <li><a href="code_navigation/explanations">Explanations</a></li>
+                <li><a href="code_navigation/reference">Reference</a></li>
             </ul>
         </li>
         <li><a href="/batch_changes">Batch changes</a>

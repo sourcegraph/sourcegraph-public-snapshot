@@ -1,18 +1,17 @@
 import React, { ReactNode, useEffect } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
+import { mdiCheckCircle, mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     GetStartedPageDataResult,
     GetStartedPageDataVariables,
@@ -31,13 +30,6 @@ const GET_STARTED_INFO_QUERY = gql`
         membersSummary: orgMembersSummary(organization: $organization) {
             membersCount
             invitesCount
-        }
-        repoCount: node(id: $organization) {
-            ... on Org {
-                total: repositories(cloned: true, notCloned: true) {
-                    totalCount(precise: true)
-                }
-            }
         }
         extServices: externalServices(namespace: $organization) {
             totalCount
@@ -64,10 +56,6 @@ export const calculateLeftGetStartedSteps = (info: OrgSummary | undefined, orgNa
 
     let leftSteps = 0
     if (info.membersSummary.invitesCount === 0 && info.membersSummary.membersCount < 2) {
-        leftSteps += 1
-    }
-    if (info.repoCount.total.totalCount === 0) {
-        setSearchStep(orgName, 'incomplete')
         leftSteps += 1
     }
     if (info.extServices.totalCount === 0) {
@@ -106,7 +94,6 @@ export const showGetStartPage = (
 
     const firstStepsPending =
         (info.membersSummary.membersCount === 1 && info.membersSummary.invitesCount === 0) ||
-        info.repoCount.total.totalCount === 0 ||
         info.extServices.totalCount === 0
     let searchStatusPending = true
     try {
@@ -117,13 +104,13 @@ export const showGetStartPage = (
     return firstStepsPending || searchStatusPending
 }
 
-interface Props extends RouteComponentProps, FeatureFlagProps {
+interface Props extends RouteComponentProps {
     authenticatedUser: AuthenticatedUser
     org: OrgAreaOrganizationFields
     isSourcegraphDotCom: boolean
 }
 
-const LinkableContainer: React.FunctionComponent<{ to?: string; onClick?: () => void }> = ({
+const LinkableContainer: React.FunctionComponent<React.PropsWithChildren<{ to?: string; onClick?: () => void }>> = ({
     to,
     onClick,
     children,
@@ -139,41 +126,50 @@ const LinkableContainer: React.FunctionComponent<{ to?: string; onClick?: () => 
     return <>{children}</>
 }
 
-const Step: React.FunctionComponent<{
-    complete: boolean
-    textMuted: boolean
-    label: string
-    to?: string
-    onClick?: () => void
-}> = ({ complete, label, textMuted, to, onClick }) => (
+const Step: React.FunctionComponent<
+    React.PropsWithChildren<{
+        complete: boolean
+        textMuted: boolean
+        label: string
+        to?: string
+        onClick?: () => void
+    }>
+> = ({ complete, label, textMuted, to, onClick }) => (
     <li className={styles.entryItem}>
         <LinkableContainer to={to} onClick={onClick}>
             <div className={styles.iconContainer}>
-                {complete && <CheckCircleIcon className="text-success" size={14} />}
+                {complete && (
+                    <Icon
+                        className="text-success"
+                        svgPath={mdiCheckCircle}
+                        inline={false}
+                        aria-label="Success"
+                        height={14}
+                        width={14}
+                    />
+                )}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
-            <h3
+            <H3
                 className={classNames({
                     [`${styles.stepText}`]: true,
                     'text-muted': textMuted,
                 })}
             >
                 {label}
-            </h3>
+            </H3>
             {to && (
                 <div className={styles.linkContainer}>
-                    <ArrowRightIcon />
+                    <Icon svgPath={mdiArrowRight} inline={false} aria-hidden={true} />
                 </div>
             )}
         </LinkableContainer>
     </li>
 )
 
-const InviteLink: React.FunctionComponent<{ orgName: string; orgId: string; membersCount: number }> = ({
-    membersCount,
-    orgId,
-    orgName,
-}) => {
+const InviteLink: React.FunctionComponent<
+    React.PropsWithChildren<{ orgName: string; orgId: string; membersCount: number }>
+> = ({ membersCount, orgId, orgName }) => {
     const preText = membersCount === 1 ? 'It’s just you so far! ' : null
     const linkText = membersCount === 1 ? 'Invite your teammates' : 'Invite the rest of your teammates'
     return (
@@ -216,15 +212,15 @@ const setSearchStep = (orgName: string, status: 'complete' | 'incomplete'): void
     }
 }
 
-export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
+export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     org,
-    featureFlags,
     history,
     isSourcegraphDotCom,
 }) => {
     const emitter = useEventBus()
-    const openBetaEnabled = !!featureFlags.get('open-beta-enabled')
+
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
     const { data, loading, error } = useQuery<GetStartedPageDataResult, GetStartedPageDataVariables>(
         GET_STARTED_INFO_QUERY,
         {
@@ -235,7 +231,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     const queryResult = data ? (data as OrgSummary & { membersList: { members: { nodes: Member[] } } }) : undefined
 
     const codeHostsCompleted = !!queryResult && queryResult.extServices.totalCount > 0
-    const repoCompleted = !!queryResult && queryResult.repoCount.total.totalCount > 0
+    // TODO: This is set to false after removal of org-owned repositories. Once we remove more of this, we can remove the whole file
+    const repoCompleted = false
     const membersCompleted =
         !!queryResult && (queryResult.membersSummary.membersCount > 1 || queryResult.membersSummary.invitesCount > 0)
     const allowSearch = codeHostsCompleted && repoCompleted
@@ -243,8 +240,8 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
     const otherMembers =
         membersResult.length > 1 ? membersResult.filter(user => user.username !== authenticatedUser.username) : []
     const shouldRedirect =
-        !openBetaEnabled ||
-        (queryResult && !showGetStartPage(queryResult, org.name, openBetaEnabled, isSourcegraphDotCom))
+        !isOpenBetaEnabled ||
+        (queryResult && !showGetStartPage(queryResult, org.name, isOpenBetaEnabled, isSourcegraphDotCom))
 
     useEffect(() => {
         eventLogger.logPageView('OrganizationGetStarted', { organizationId: org.id })
@@ -364,25 +361,23 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<Props> = ({
                             <div className="d-flex  flex-0 justify-content-center align-items-center mb-3 flex-wrap">
                                 <div className={styles.membersList}>
                                     <div className={styles.avatarContainer}>
-                                        <UserAvatar
-                                            size={36}
-                                            className={styles.avatar}
-                                            user={authenticatedUser}
-                                            data-tooltip={authenticatedUser.displayName || authenticatedUser.username}
-                                        />
+                                        <Tooltip content={authenticatedUser.displayName || authenticatedUser.username}>
+                                            <UserAvatar size={36} className={styles.avatar} user={authenticatedUser} />
+                                        </Tooltip>
                                     </div>
                                     {otherMembers.length > 0 && (
                                         <div className={styles.avatarContainer}>
                                             <div className={classNames(styles.avatarEllipse)} />
                                             <div className={classNames(styles.avatarContainer, styles.secondAvatar)}>
-                                                <UserAvatar
-                                                    size={36}
-                                                    className={styles.avatar}
-                                                    user={otherMembers[0]}
-                                                    data-tooltip={
-                                                        otherMembers[0].displayName || otherMembers[0].username
-                                                    }
-                                                />
+                                                <Tooltip
+                                                    content={otherMembers[0].displayName || otherMembers[0].username}
+                                                >
+                                                    <UserAvatar
+                                                        size={36}
+                                                        className={styles.avatar}
+                                                        user={otherMembers[0]}
+                                                    />
+                                                </Tooltip>
                                             </div>
                                         </div>
                                     )}

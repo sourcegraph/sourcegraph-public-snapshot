@@ -3,7 +3,6 @@ package reposource
 import (
 	"fmt"
 	"net/url"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,8 +30,8 @@ func (m *MavenModule) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
 }
 
-func (m *MavenModule) PackageSyntax() string {
-	return m.CoursierSyntax()
+func (m *MavenModule) PackageSyntax() PackageName {
+	return PackageName(m.CoursierSyntax())
 }
 
 func (m *MavenModule) SortText() string {
@@ -44,6 +43,12 @@ func (m *MavenModule) LsifJavaKind() string {
 		return "jdk"
 	}
 	return "maven"
+}
+
+func (m *MavenModule) Description() string { return "" }
+
+type MavenMetadata struct {
+	Module *MavenModule
 }
 
 func (m *MavenModule) RepoName() api.RepoName {
@@ -59,84 +64,86 @@ func (m *MavenModule) CloneURL() string {
 }
 
 // See [NOTE: Dependency-terminology]
-type MavenDependency struct {
+type MavenVersionedPackage struct {
 	*MavenModule
 	Version string
 }
 
-// SortDependencies sorts the dependencies by the semantic version in descending
-// order. The latest version of a dependency becomes the first element of the
-// slice
-func SortDependencies(dependencies []*MavenDependency) {
-	sort.Slice(dependencies, func(i, j int) bool {
-		if dependencies[i].MavenModule.Equal(dependencies[j].MavenModule) {
-			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
-		}
-		return dependencies[i].MavenModule.SortText() > dependencies[j].MavenModule.SortText()
-	})
+func (d *MavenVersionedPackage) Equal(o *MavenVersionedPackage) bool {
+	return d == o || (d != nil && o != nil &&
+		d.MavenModule.Equal(o.MavenModule) &&
+		d.Version == o.Version)
 }
 
-func (m *MavenDependency) Equal(other *MavenDependency) bool {
-	return m == other || (m != nil && other != nil &&
-		m.MavenModule.Equal(other.MavenModule) &&
-		m.Version == other.Version)
+func (d *MavenVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*MavenVersionedPackage)
+
+	if d.MavenModule.Equal(o.MavenModule) {
+		return versionGreaterThan(d.Version, o.Version)
+	}
+
+	// TODO: This SortText method is quite inefficient and allocates.
+	return d.SortText() > o.SortText()
 }
 
-func (d *MavenDependency) PackageManagerSyntax() string {
+func (d *MavenVersionedPackage) VersionedPackageSyntax() string {
 	return fmt.Sprintf("%s:%s", d.PackageSyntax(), d.Version)
 }
 
-func (d *MavenDependency) PackageVersion() string {
+func (d *MavenVersionedPackage) String() string {
+	return d.VersionedPackageSyntax()
+}
+
+func (d *MavenVersionedPackage) PackageVersion() string {
 	return d.Version
 }
 
-func (d *MavenDependency) Scheme() string {
+func (d *MavenVersionedPackage) Scheme() string {
 	return "semanticdb"
 }
 
-func (d *MavenDependency) GitTagFromVersion() string {
+func (d *MavenVersionedPackage) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *MavenDependency) LsifJavaDependencies() []string {
+func (d *MavenVersionedPackage) LsifJavaDependencies() []string {
 	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{d.PackageManagerSyntax()}
+	return []string{d.VersionedPackageSyntax()}
 }
 
-// ParseMavenDependency parses a dependency string in the Coursier format (colon seperated group ID, artifact ID and version)
-// into a MavenDependency.
-func ParseMavenDependency(dependency string) (*MavenDependency, error) {
-	parts := strings.Split(dependency, ":")
-	if len(parts) < 3 {
-		return nil, errors.Newf("dependency %q must contain at least two colon ':' characters", dependency)
-	}
-	version := parts[2]
+// ParseMavenVersionedPackage parses a dependency string in the Coursier format
+// (colon seperated group ID, artifact ID and an optional version) into a MavenVersionedPackage.
+func ParseMavenVersionedPackage(dependency string) (*MavenVersionedPackage, error) {
+	dep := &MavenVersionedPackage{MavenModule: &MavenModule{}}
 
-	return &MavenDependency{
-		MavenModule: &MavenModule{
-			GroupID:    parts[0],
-			ArtifactID: parts[1],
-		},
-		Version: version,
-	}, nil
+	switch ps := strings.Split(dependency, ":"); len(ps) {
+	case 3:
+		dep.Version = ps[2]
+		fallthrough
+	case 2:
+		dep.MavenModule.GroupID = ps[0]
+		dep.MavenModule.ArtifactID = ps[1]
+	default:
+		return nil, errors.Newf("dependency %q must contain at least one colon ':' character", dependency)
+	}
+
+	return dep, nil
 }
 
-// ParseMavenModule returns a parsed JVM module from the provided URL path, without a leading `/`
-func ParseMavenModule(urlPath string) (*MavenModule, error) {
-	if urlPath == "jdk" {
-		return jdkModule(), nil
-	}
-	parts := strings.SplitN(strings.TrimPrefix(urlPath, "maven/"), "/", 2)
-	if len(parts) != 2 {
-		return nil, errors.Newf("failed to parse a maven module from the path %s", urlPath)
+func ParseMavenPackageFromRepoName(name api.RepoName) (*MavenVersionedPackage, error) {
+	return ParseMavenPackageFromName(PackageName(strings.ReplaceAll(strings.TrimPrefix(string(name), "maven/"), "/", ":")))
+}
+
+// ParseMavenPackageFromRepoName is a convenience function to parse a repo name in a
+// 'maven/<name>' format into a MavenVersionedPackage.
+func ParseMavenPackageFromName(name PackageName) (*MavenVersionedPackage, error) {
+	if name == "jdk" {
+		return &MavenVersionedPackage{MavenModule: jdkModule()}, nil
 	}
 
-	return &MavenModule{
-		GroupID:    parts[0],
-		ArtifactID: parts[1],
-	}, nil
+	return ParseMavenVersionedPackage(string(name))
 }
 
 // jdkModule returns the module for the Java standard library (JDK). This module

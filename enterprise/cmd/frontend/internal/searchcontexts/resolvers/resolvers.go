@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -151,7 +153,7 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 		}
 		repoIDs = append(repoIDs, repoID)
 	}
-	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	idToRepo, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +309,7 @@ func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbac
 		return a.UID == searchContext.NamespaceUserID, nil
 	} else {
 		// Is search context created by one of the users' organizations
-		orgs, err := database.Orgs(r.db).GetByUserID(ctx, a.UID)
+		orgs, err := r.db.Orgs().GetByUserID(ctx, a.UID)
 		if err != nil {
 			return false, err
 		}
@@ -363,8 +365,8 @@ func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.sc.UpdatedAt}
+func (r *searchContextResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.sc.UpdatedAt}
 }
 
 func (r *searchContextResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
@@ -395,14 +397,14 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
 	}
 
-	repoRevs, err := database.SearchContexts(r.db).GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	repoRevs, err := r.db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
 	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
+		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
 }

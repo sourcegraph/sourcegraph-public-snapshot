@@ -88,10 +88,39 @@ echo "database schema do not allow for continued proper operation of"
 echo "Sourcegraph instances deployed at the previous release."
 echo ""
 
+### HERE IS SOME LSIF GARBAGE
+###
+### We're removing API Docs references from the schema in https://github.com/sourcegraph/sourcegraph/pull/42851
+### We don't reference these in code or tests, but we DO unfortunately reference them when loading a canned SQL
+### dump in particular tests.
+###
+### Generally, we'd recommend removing the references from the test files and waiting for the next release. We
+### can fast track this by jump overwriting the test data for the 4.0 -> 4.1 testing cycle. This means we don't
+### have to add flakefile entries while we are also working on SCIP migration. Making this change without needing
+### to disable the tests in this domain is worth the temporary hard-coding of conditions in this script (for now).
+###
+### Will clean up in https://github.com/sourcegraph/sourcegraph/issues/42956
+
+LSIF_TEST_NAME='lsif-go@ad3507cb.sql'
+LSIF_TEST_DATA="internal/codeintel/uploads/internal/lsifstore/testdata/${LSIF_TEST_NAME}"
+
+function post_checkout_hook() {
+  for clobber_path in 'internal/codeintel/codenav/internal/lsifstore/testdata' 'internal/codeintel/stores/lsifstore/testdata'; do
+    mkdir -p "${clobber_path}"
+    rm -f "${clobber_path}/${LSIF_TEST_NAME}"
+    cp "${LSIF_TEST_DATA}" "${clobber_path}/${LSIF_TEST_NAME}"
+  done
+}
+
+###
+### DONE WITH LSIF GARBAGE, RESUME BACKCOMPATTING AS NORMAL
+###
+
 PROTECTED_FILES=(
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
   ./dev/ci/asdf-install.sh
+  "${LSIF_TEST_DATA}"
 )
 
 # Rewrite the current migrations into a temporary folder that we can force
@@ -102,6 +131,7 @@ go run ./dev/ci/go-backcompat/reorganize.go "${MIGRATION_STAGING}"
 # the current version of the protected files are.
 git checkout "${latest_minor_release_tag}"
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
+post_checkout_hook
 
 # Remove the languages submodules, because they mess these tests up
 rm -rf ./docker-images/syntax-highlighter/crates/sg-syntax/languages/
@@ -124,7 +154,8 @@ if [ -f "${flakefile}" ]; then
   echo ""
   echo "Disabling tests listed in flakefile ${flakefile}"
 
-  for pair in $(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}"); do
+  pairs=$(jq -r '.[] | "\(.path):\(.prefix)"' <"${flakefile}")
+  for pair in $pairs; do
     IFS=' ' read -ra parts <<<"${pair/:/ }"
     disable_test_path "${parts[0]}" "${parts[1]}"
   done
@@ -134,6 +165,7 @@ fi
 # run the currently checked out version of the Go unit tests.
 echo "--- asdf install checked out tools"
 ./dev/ci/asdf-install.sh
+go version
 
 echo "--- run tests"
 if ! ./dev/ci/go-test.sh "$@"; then
@@ -142,7 +174,7 @@ if ! ./dev/ci/go-test.sh "$@"; then
 This commit contains database schema definitions that caused an unexpected
 failure of one or more unit tests at tagged commit \`${latest_minor_release_tag}\`.
 Rewrite these schema changes to be backwards compatible. For help,
-see [the migrations guide](docs.sourcegraph.com/dev/background-information/sql/migrations).
+see [the migrations guide](https://docs.sourcegraph.com/dev/background-information/sql/migrations).
 
 If this backwards incompatibility is intentional or if the test is flaky,
 an exception for this test can be added to the following flakefile:
@@ -151,6 +183,9 @@ an exception for this test can be added to the following flakefile:
 ${flakefile}
 \`\`\`
 
+⚠️ If by the time you are adding an exception, the release has already been cut, but it has not
+been published yet, the best course of action is to postpone merging the commit creating the issue
+until the release process is complete.
 EOF
   )
   mkdir -p ./annotations/

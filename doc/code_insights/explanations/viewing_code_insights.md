@@ -1,11 +1,5 @@
 # Viewing Code Insights
 
-Code Insights can display in 3 areas of Sourcegraph:
-
-- On the insight dashboard pages, which begin with `/insights/dashboards`; enabled by default
-- On repository and directly pages for insights that run over that repository; enabled by default
-- On the search home page, at `/search`; disabled by default
-
 ## Insights dashboards
 
 The main way to view code insights is on a dashboard page. Dashboards have a unique name and visibility level.
@@ -15,6 +9,14 @@ There are three possible visibility levels:
 - Private: visible only to you
 - Shared with [an organization](../../../admin/organizations.md): visible to everyone in the organization
 - Global: visible to everyone on the Sourcegraph instance
+
+## Sharing links to individual insights
+
+You can share links to individual insights by clicking the three-dots context menu on an insight and selecting the shareable link. 
+
+In order to share a code insight with someone else, the insight must already be on a dashboard visible to them: either a global or organization's dashboard. 
+
+The share link box will indicate which other users will be able to view the insight, or if the insight is private and must first be added to a more public dashboard in order to share it. 
 
 ### Built-in dashboards
 
@@ -37,22 +39,4 @@ If you change a private-visible dashboard so that the dashboard is now visible t
 ### Insights can be on multiple dashboards
 
 You can attach insights to multiple dashboards.
-
-## Repository and directory pages
-
-On repository pages, any code insight that runs over that repository can display. On directory pages, code insights defined for that repository can display **and** run only over files that are children of the directory.
-
-This is disabled by default as it is the not the primary way to view insights and there are (yet) no ways to select only showing a subset of possible insights, but it can be enabled with a flag in your global, organization, or user settings:
-
-```json
-"insights.displayLocation.directory": true
-```
-
-## Search home page
-
-Code insights can display below the search bar on the search home page. This is disabled by default because we have not yet built the capability to select which insights display on the search home page (so they all do). This can be enabled with a flag in your global, organization, or user settings:
-
-```json
-"insights.displayLocation.directory": true
-```
 

@@ -16,8 +16,8 @@ type step func([]Node) ([]Node, error)
 // A pass is a step that never fails.
 type pass func([]Node) []Node
 
-// sequence sequences zero or more steps to create a single step.
-func sequence(steps ...step) step {
+// Sequence sequences zero or more steps to create a single step.
+func Sequence(steps ...step) step {
 	return func(nodes []Node) ([]Node, error) {
 		var err error
 		for _, step := range steps {
@@ -93,6 +93,8 @@ func SubstituteSearchContexts(lookupQueryString func(contextValue string) (strin
 func For(searchType SearchType) step {
 	var processType step
 	switch searchType {
+	case SearchTypeStandard, SearchTypeLucky, SearchTypeKeyword:
+		processType = succeeds(substituteConcat(standard))
 	case SearchTypeLiteral:
 		processType = succeeds(substituteConcat(space))
 	case SearchTypeRegex:
@@ -101,7 +103,7 @@ func For(searchType SearchType) step {
 		processType = succeeds(labelStructural, ellipsesForHoles, substituteConcat(space))
 	}
 	normalize := succeeds(LowercaseFieldNames, SubstituteAliases(searchType), SubstituteCountAll)
-	return sequence(normalize, processType)
+	return Sequence(normalize, processType)
 }
 
 // Init creates a step from an input string and search type. It parses the
@@ -110,7 +112,7 @@ func Init(in string, searchType SearchType) step {
 	parser := func([]Node) ([]Node, error) {
 		return Parse(in, searchType)
 	}
-	return sequence(parser, For(searchType))
+	return Sequence(parser, For(searchType))
 }
 
 // InitLiteral is Init where SearchType is Literal.
@@ -132,9 +134,9 @@ func Run(step step) ([]Node, error) {
 	return step(nil)
 }
 
-func Validate(disjuncts [][]Node) error {
-	for _, disjunct := range disjuncts {
-		if err := validate(disjunct); err != nil {
+func ValidatePlan(plan Plan) error {
+	for _, basic := range plan {
+		if err := validate(basic.ToParseTree()); err != nil {
 			return err
 		}
 	}
@@ -154,33 +156,16 @@ func MapPlan(plan Plan, pass BasicPass) Plan {
 	return Plan(updated)
 }
 
-func ToPlan(disjuncts [][]Node) (Plan, error) {
-	plan := make([]Basic, 0, len(disjuncts))
-	for _, disjunct := range disjuncts {
-		basic, err := ToBasicQuery(disjunct)
-		if err != nil {
-			return nil, err
-		}
-		plan = append(plan, basic)
-	}
-	return plan, nil
-}
-
 // Pipeline processes zero or more steps to produce a query. The first step must
 // be Init, otherwise this function is a no-op.
 func Pipeline(steps ...step) (Plan, error) {
-	nodes, err := sequence(steps...)(nil)
+	nodes, err := Sequence(steps...)(nil)
 	if err != nil {
 		return nil, err
 	}
 
-	disjuncts := Dnf(nodes)
-	if err := Validate(disjuncts); err != nil {
-		return nil, err
-	}
-
-	plan, err := ToPlan(disjuncts)
-	if err != nil {
+	plan := BuildPlan(nodes)
+	if err := ValidatePlan(plan); err != nil {
 		return nil, err
 	}
 	plan = MapPlan(plan, ConcatRevFilters)

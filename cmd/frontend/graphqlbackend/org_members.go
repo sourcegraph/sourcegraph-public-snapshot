@@ -5,10 +5,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,10 +17,10 @@ import (
 func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
 	// organisation memberships.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	memberships, err := database.OrgMembers(r.db).GetByUserID(ctx, r.user.ID)
+	memberships, err := r.db.OrgMembers().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +114,12 @@ func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolve
 	return UserByIDInt32(ctx, r.db, r.membership.UserID)
 }
 
-func (r *organizationMembershipResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.membership.CreatedAt}
+func (r *organizationMembershipResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.membership.CreatedAt}
 }
 
-func (r *organizationMembershipResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.membership.UpdatedAt}
+func (r *organizationMembershipResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.membership.UpdatedAt}
 }
 
 type OrgMemberAutocompleteSearchItemResolver struct {

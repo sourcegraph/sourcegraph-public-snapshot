@@ -27,17 +27,12 @@ func newStoreShim(store store.Store) workerutil.Store {
 }
 
 // QueuedCount calls into the inner store.
-func (s *storeShim) QueuedCount(ctx context.Context, extraArguments interface{}) (int, error) {
-	conditions, err := convertArguments(extraArguments)
-	if err != nil {
-		return 0, err
-	}
-
-	return s.Store.QueuedCount(ctx, false, conditions)
+func (s *storeShim) QueuedCount(ctx context.Context) (int, error) {
+	return s.Store.QueuedCount(ctx, false)
 }
 
 // Dequeue calls into the inner store.
-func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments interface{}) (workerutil.Record, bool, error) {
+func (s *storeShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (workerutil.Record, bool, error) {
 	conditions, err := convertArguments(extraArguments)
 	if err != nil {
 		return nil, false, err
@@ -70,11 +65,15 @@ func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string
 	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
 }
 
+func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
+	return s.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
+}
+
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 
 // convertArguments converts the given interface value into a slice of *sqlf.Query values.
-func convertArguments(v interface{}) ([]*sqlf.Query, error) {
+func convertArguments(v any) ([]*sqlf.Query, error) {
 	if v == nil {
 		return nil, nil
 	}

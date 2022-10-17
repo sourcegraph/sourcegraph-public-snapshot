@@ -29,6 +29,7 @@ var (
 	StyleLogo       = Fg256Color(57)
 	StylePending    = Fg256Color(4)
 	StyleWarning    = Fg256Color(124)
+	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
 	StyleSuccess    = Fg256Color(2)
 	StyleSuggestion = Fg256Color(244)
 
@@ -47,6 +48,9 @@ var (
 	StyleSearchCommitAuthor  = Fg256Color(2)
 	StyleSearchCommitSubject = Fg256Color(68)
 	StyleSearchCommitDate    = Fg256Color(23)
+
+	StyleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
+	StyleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
 
 	// Search alert specific colors.
 	StyleSearchAlertTitle               = Fg256Color(124)

@@ -8,8 +8,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -22,14 +23,13 @@ var (
 var generateCommand = &cli.Command{
 	Name:      "generate",
 	ArgsUsage: "[target]",
-	Usage:     "Run code and docs generation tasks",
-	Description: `Run code and docs generation tasks - if no target is provided, all target are run with default arguments.
-
-Verbose mode can be enabled with the global verbose flag, e.g.
-
-	sg --verbose generate ...
+	UsageText: `
+sg --verbose generate ... # Enable verbose output
 `,
-	Category: CategoryDev,
+	Usage:       "Run code and docs generation tasks",
+	Description: "If no target is provided, all target are run with default arguments.",
+	Aliases:     []string{"gen"},
+	Category:    CategoryDev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "quiet",
@@ -46,7 +46,7 @@ Verbose mode can be enabled with the global verbose flag, e.g.
 	},
 	Action: func(cmd *cli.Context) error {
 		if cmd.NArg() > 0 {
-			writeFailureLinef("unrecognized command %q provided", cmd.Args().First())
+			std.Out.WriteFailuref("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
 		return allGenerateTargets.RunAll(cmd.Context)
@@ -59,11 +59,11 @@ func runGenerateAndReport(ctx context.Context, t generate.Target, args []string)
 	if err != nil {
 		return err
 	}
-	writeFingerPointingLinef("Running target %q (%s)", t.Name, t.Help)
+	std.Out.WriteNoticef("Running target %q (%s)", t.Name, t.Help)
 	report := t.Runner(ctx, args)
 	fmt.Printf(report.Output)
-	writeSuccessLinef("Target %q done (%ds)", t.Name, report.Duration/time.Second)
-	return nil
+	std.Out.WriteSuccessf("Target %q done (%ds)", t.Name, report.Duration/time.Second)
+	return report.Err
 }
 
 type generateTargets []generate.Target
@@ -85,17 +85,22 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 			if err != nil {
 				return err
 			}
-			report := c.Runner(cmd.Context, cmd.Args().Tail())
+			report := c.Runner(cmd.Context, cmd.Args().Slice())
 			fmt.Printf(report.Output)
-			stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
+			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
 			return nil
 		}
 	}
 	for _, c := range gt {
+		var completions cli.BashCompleteFunc
+		if c.Completer != nil {
+			completions = cliutil.CompleteOptions(c.Completer)
+		}
 		cmds = append(cmds, &cli.Command{
-			Name:   c.Name,
-			Usage:  c.Help,
-			Action: actionFactory(c),
+			Name:         c.Name,
+			Usage:        c.Help,
+			Action:       actionFactory(c),
+			BashComplete: completions,
 		})
 	}
 	return cmds

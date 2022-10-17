@@ -64,7 +64,7 @@ TODO: Update these instructions once we move to sourcegraph/syntect.
 
 #### 1) Find an open-source `.tmLanguage` or `.sublime-syntax` file and send a PR to our package registry
 
-https://github.com/slimsag/Packages is the package registry we use which holds all of the syntax definitions we use in syntect_server and Sourcegraph. Send a PR there by following [these steps](https://github.com/slimsag/Packages/blob/master/README.md#adding-a-new-language)
+https://github.com/sourcegraph/Packages is the package registry we use which holds all of the syntax definitions we use in syntect_server and Sourcegraph. Send a PR there by following [these steps](https://github.com/sourcegraph/Packages/blob/master/README.md#adding-a-new-language)
 
 #### 2) Update our temporary fork of `syntect`
 

@@ -1,14 +1,12 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiBookmarkOutline, mdiLink } from '@mdi/js'
 import classNames from 'classnames'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
-import LinkIcon from 'mdi-react/LinkIcon'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../graphql-operations'
 import { WebviewPageProps } from '../../platform/context'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
@@ -35,47 +33,33 @@ export interface SearchResultsInfoBarProps
 interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
     showExperimentalVersion: boolean
     nonExperimentalLinkTo?: string
-    isNonExperimentalLinkDisabled?: boolean
+    disabled?: boolean
     onNonExperimentalLinkClick?: () => void
     className?: string
 }
 
-const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+const ExperimentalActionButton: React.FunctionComponent<
+    React.PropsWithChildren<ExperimentalActionButtonProps>
+> = props => {
     if (props.showExperimentalVersion) {
         return <ButtonDropdownCta {...props} />
     }
     return (
-        <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary text-decoration-none"
+        <Button
+            variant="secondary"
+            outline={true}
+            size="sm"
             onClick={props.onNonExperimentalLinkClick}
-            disabled={props.isNonExperimentalLinkDisabled}
+            disabled={props.disabled}
         >
             {props.button}
-        </button>
+        </Button>
     )
 }
 
-/**
- * A notice for when the user is searching literally and has quotes in their
- * query, in which case it is possible that they think their query `"foobar"`
- * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
- */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
-    props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
-        <small
-            className={styles.notice}
-            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-        >
-            <span>
-                <Icon className="mr-1" as={FormatQuoteOpenIcon} />
-                Searching literally <strong>(including quotes)</strong>
-            </span>
-        </small>
-    ) : null
-
-export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => {
+export const SearchResultsInfoBar: React.FunctionComponent<
+    React.PropsWithChildren<SearchResultsInfoBarProps>
+> = props => {
     const {
         extensionCoreAPI,
         platformContext,
@@ -131,32 +115,35 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         searchParameters.set('trigger-query', `${fullQuery} patternType:${patternType}`)
         return (
             <li className={classNames('mr-2', styles.navItem)}>
-                <ExperimentalActionButton
-                    extensionCoreAPI={extensionCoreAPI}
-                    showExperimentalVersion={showActionButtonExperimentalVersion}
-                    onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
-                    className="test-save-search-link"
-                    data-tooltip={
+                <Tooltip
+                    content={
                         !canCreateMonitorFromQuery
                             ? 'Code monitors only support type:diff or type:commit searches.'
                             : undefined
                     }
-                    button={
-                        <>
-                            <Icon className="mr-1" as={CodeMonitoringLogo} />
-                            Monitor
-                        </>
-                    }
-                    icon={<BookmarkRadialGradientIcon />}
-                    title="Monitor code for changes"
-                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
-                    source="CodeMonitor"
-                    viewEventName="VSCECodeMonitorCTAShown"
-                    returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
-                    telemetryService={platformContext.telemetryService}
-                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
-                    instanceURL={instanceURL}
-                />
+                >
+                    <ExperimentalActionButton
+                        extensionCoreAPI={extensionCoreAPI}
+                        showExperimentalVersion={showActionButtonExperimentalVersion}
+                        onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
+                        className="test-save-search-link"
+                        button={
+                            <>
+                                <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
+                                Monitor
+                            </>
+                        }
+                        icon={<BookmarkRadialGradientIcon />}
+                        title="Monitor code for changes"
+                        copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                        source="CodeMonitor"
+                        viewEventName="VSCECodeMonitorCTAShown"
+                        returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
+                        telemetryService={platformContext.telemetryService}
+                        disabled={!canCreateMonitorFromQuery}
+                        instanceURL={instanceURL}
+                    />
+                </Tooltip>
             </li>
         )
     }, [
@@ -180,7 +167,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
                             Save search
                         </>
                     }
@@ -191,7 +178,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     viewEventName="VSCESaveSearchCTAShown"
                     returnTo=""
                     telemetryService={platformContext.telemetryService}
-                    isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
+                    disabled={showActionButtonExperimentalVersion}
                     instanceURL={instanceURL}
                     onToggle={() => setShowSavedSearchForm(!showSavedSearchForm)}
                 />
@@ -210,16 +197,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const ShareLinkButton = useMemo(
         () => (
-            <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
-                <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary text-decoration-none"
-                    onClick={onShareResultsClick}
-                >
-                    <Icon className="mr-1" as={LinkIcon} />
-                    Share
-                </button>
-            </li>
+            <Tooltip content="Share results link">
+                <li className={classNames('mr-2', styles.navItem)}>
+                    <Button variant="secondary" outline={true} size="sm" onClick={onShareResultsClick}>
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
+                        Share
+                    </Button>
+                </li>
+            </Tooltip>
         ),
         [onShareResultsClick]
     )
@@ -228,7 +213,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         <div className={classNames('flex-grow-1 my-2', styles.searchResultsInfoBar)} data-testid="results-info-bar">
             <div className={styles.row}>
                 {stats}
-                <QuotesInterpretedLiterallyNotice {...props} />
                 <div className={styles.expander} />
                 <ul className="nav align-items-center">
                     {createCodeMonitorButton}

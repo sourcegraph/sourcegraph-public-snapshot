@@ -5,10 +5,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func SyntectServer() *monitoring.Container {
+func SyntectServer() *monitoring.Dashboard {
 	const containerName = "syntect-server"
 
-	return &monitoring.Container{
+	return &monitoring.Dashboard{
 		Name:                     "syntect-server",
 		Title:                    "Syntect Server",
 		Description:              "Handles syntax highlighting for code files.",
@@ -60,9 +60,9 @@ func SyntectServer() *monitoring.Container {
 				},
 			},
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 		},
 	}
 }

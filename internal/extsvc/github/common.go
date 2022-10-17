@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -16,17 +15,20 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/inconshreveable/log15"
 	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -457,7 +459,7 @@ type TimelineItemConnection struct {
 // TimelineItem is a union type of all supported pull request timeline items.
 type TimelineItem struct {
 	Type string
-	Item interface{}
+	Item any
 }
 
 // UnmarshalJSON knows how to unmarshal a TimelineItem as produced
@@ -568,7 +570,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		} `json:"createPullRequest"`
 	}
 
-	compatibleInput := map[string]interface{}{
+	compatibleInput := map[string]any{
 		"repositoryId": in.RepositoryID,
 		"baseRefName":  in.BaseRefName,
 		"headRefName":  in.HeadRefName,
@@ -582,14 +584,10 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
 	}
 
-	input := map[string]interface{}{"input": compatibleInput}
+	input := map[string]any{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, errs
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -645,14 +643,10 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 		} `json:"updatePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": in}
+	input := map[string]any{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		var errs graphqlErrors
-		if errors.As(err, &errs) && len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for") {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, err
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.UpdatePullRequest.PullRequest.TimelineItems
@@ -696,7 +690,7 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 		} `json:"markPullRequestReadyForReview"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -745,7 +739,7 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 		} `json:"closePullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -794,7 +788,7 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 		} `json:"reopenPullRequest"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
@@ -847,7 +841,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 		}
 	}
 
-	err = c.requestGraphQL(ctx, q, map[string]interface{}{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	err = c.requestGraphQL(ctx, q, map[string]any{"owner": owner, "name": repo, "number": pr.Number}, &result)
 	if err != nil {
 		var errs graphqlErrors
 		if errors.As(err, &errs) {
@@ -954,7 +948,7 @@ func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest
 		} `json:"addComment"`
 	}
 
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		SubjectID string `json:"subjectId"`
 		Body      string `json:"body"`
 	}{SubjectID: pr.ID, Body: body}}
@@ -993,7 +987,7 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 	if squash {
 		mergeMethod = "SQUASH"
 	}
-	input := map[string]interface{}{"input": struct {
+	input := map[string]any{"input": struct {
 		PullRequestID string `json:"pullRequestId"`
 		MergeMethod   string `json:"mergeMethod,omitempty"`
 	}{
@@ -1471,17 +1465,21 @@ func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
 
 var (
 	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
-	githubProxyURL   = func() *url.URL {
-		url, err := url.Parse(env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)"))
-		if err != nil {
-			log.Fatal("Error parsing GITHUB_BASE_URL:", err)
-		}
-		return url
-	}()
 
 	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
+
+	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
+	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
+
+func getGithubProxyURL() *url.URL {
+	url, err := url.Parse(githubProxyRawURL)
+	if err != nil {
+		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
+	}
+	return url
+}
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
 func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
@@ -1508,12 +1506,20 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result interface{}) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+
+	var autherWithRefresh auth.AuthenticatorWithRefresh
+	if auther != nil {
+		var ok bool
+		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
+		// Check if we should pre-emptively refresh
+		if ok && autherWithRefresh.NeedsRefresh() {
+			autherWithRefresh.Refresh(ctx, httpClient)
+		}
+		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1532,13 +1538,22 @@ func doRequest(ctx context.Context, apiURL *url.URL, auth auth.Authenticator, ra
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
+	if autherWithRefresh != nil {
+		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
+		if err != nil {
+			return nil, errors.Wrap(err, "do request with refresh and retry")
+		}
+	} else {
+		resp, err = httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer resp.Body.Close()
 
-	log15.Debug("doRequest", "status", resp.Status, "x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining"))
+	logger.Debug("doRequest",
+		log.String("status", resp.Status),
+		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
 
 	// For 401 responses we receive a remaining limit of 0. This will cause the next
 	// call to block for up to an hour because it believes we have run out of tokens.
@@ -1575,14 +1590,14 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	if urlIsGitHubDotCom(apiURL) {
 		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
 		// rate limit).
-		return githubProxyURL
+		return getGithubProxyURL()
 	}
 	return apiURL
 }
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}
@@ -1672,6 +1687,18 @@ func (e ErrPullRequestNotFound) Error() string {
 	return fmt.Sprintf("GitHub pull request not found: %d", e)
 }
 
+// ErrRepoArchived is returned when a mutation is performed on an archived
+// repo.
+type ErrRepoArchived struct{}
+
+func (ErrRepoArchived) Archived() bool { return true }
+
+func (ErrRepoArchived) Error() string {
+	return "GitHub repository is archived"
+}
+
+func (ErrRepoArchived) NonRetryable() bool { return true }
+
 type disabledClient struct{}
 
 func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
@@ -1733,9 +1760,6 @@ type Repository struct {
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
 }
-
-// GetRepositoryMock is set by tests to mock (*Client).GetRepository.
-var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
 
 type restRepositoryPermissions struct {
 	Admin bool `json:"admin"`
@@ -1865,30 +1889,41 @@ type restTopicsResponse struct {
 	Names []string `json:"names"`
 }
 
-func GetExternalAccountData(data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
-	var (
-		u github.User
-		t oauth2.Token
-	)
-
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		if err := data.GetAccountData(&u); err != nil {
+		var u github.User
+		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
 			return nil, nil, err
 		}
+
 		usr = &u
 	}
+
 	if data.AuthData != nil {
-		if err := data.GetAuthData(&t); err != nil {
+		var t oauth2.Token
+		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
 			return nil, nil, err
 		}
+
 		tok = &t
 	}
+
 	return usr, tok, nil
 }
 
-func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) {
-	data.SetAccountData(user)
-	data.SetAuthData(token)
+func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
+	serializedUser, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	serializedToken, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+
+	data.Data = extsvc.NewUnencryptedData(serializedUser)
+	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	return nil
 }
 
 type User struct {
@@ -1961,4 +1996,66 @@ func normalizeURL(rawURL string) string {
 		parsed.Path += "/"
 	}
 	return parsed.String()
+}
+
+func isArchivedError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 &&
+		errs[0].Type == "UNPROCESSABLE" &&
+		strings.Contains(errs[0].Message, "Repository was archived")
+}
+
+func isPullRequestAlreadyExistsError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
+}
+
+func handlePullRequestError(err error) error {
+	if isArchivedError(err) {
+		return ErrRepoArchived{}
+	}
+	if isPullRequestAlreadyExistsError(err) {
+		return ErrPullRequestAlreadyExists
+	}
+	return err
+}
+
+// IsGitHubAppAccessToken checks whether the access token starts with "ghu",
+// which is used for GitHub App access tokens.
+func IsGitHubAppAccessToken(token string) bool {
+	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+			}
+		}
+	}
+	return nil
 }

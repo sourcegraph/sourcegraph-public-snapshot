@@ -40,6 +40,7 @@ func (r *batchSpecConnectionResolver) TotalCount(ctx context.Context) (int32, er
 	count, err := r.store.CountBatchSpecs(ctx, store.CountBatchSpecsOpts{
 		BatchChangeID:                       r.opts.BatchChangeID,
 		ExcludeCreatedFromRawNotOwnedByUser: r.opts.ExcludeCreatedFromRawNotOwnedByUser,
+		IncludeLocallyExecutedSpecs:         r.opts.IncludeLocallyExecutedSpecs,
 	})
 	return int32(count), err
 }

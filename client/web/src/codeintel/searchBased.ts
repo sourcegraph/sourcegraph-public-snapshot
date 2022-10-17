@@ -2,14 +2,10 @@ import { extname } from 'path'
 
 import escapeRegExp from 'lodash/escapeRegExp'
 
-import {
-    appendLineRangeQueryParameter,
-    appendSubtreeQueryParameter,
-    toPositionOrRangeQueryParameter,
-} from '@sourcegraph/common'
+import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-types'
+import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
-import { LanguageSpec } from './language-specs/languagespec'
 import { raceWithDelayOffset } from './promise'
 import { SettingsGetter } from './settings'
 import { isDefined } from './util/helpers'
@@ -30,7 +26,7 @@ export function definitionQuery({
         `^${searchToken}$`,
         'type:symbol',
         'patternType:regexp',
-        'count:500',
+        'count:50',
         'case:yes',
         fileExtensionTerm(path, fileExts),
     ]
@@ -404,7 +400,7 @@ function lineMatchesToResults(
 ): Result[] {
     return offsetAndLengths.map(([offset, length]) => {
         const url = appendLineRangeQueryParameter(
-            appendSubtreeQueryParameter(fileUrl),
+            fileUrl,
             toPositionOrRangeQueryParameter({
                 position: { line: lineNumber + 1, character: offset + 1 },
             })

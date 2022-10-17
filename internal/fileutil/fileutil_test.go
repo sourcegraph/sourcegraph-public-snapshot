@@ -7,11 +7,7 @@ import (
 )
 
 func TestUpdateFileIfDifferent(t *testing.T) {
-	dir, err := os.MkdirTemp("", t.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	target := filepath.Join(dir, "sg_refhash")
 

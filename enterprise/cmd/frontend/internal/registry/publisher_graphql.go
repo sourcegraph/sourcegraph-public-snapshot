@@ -6,11 +6,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,18 +27,18 @@ func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]g
 	}
 
 	var publishers []graphqlbackend.RegistryPublisher
-	user, err := graphqlbackend.CurrentUser(ctx, database.NewDB(db))
+	user, err := graphqlbackend.CurrentUser(ctx, db)
 	if err != nil || user == nil {
 		return nil, err
 	}
 	publishers = append(publishers, &registryPublisher{user: user})
 
-	orgs, err := database.Orgs(db).GetByUserID(ctx, user.DatabaseID())
+	orgs, err := db.Orgs().GetByUserID(ctx, user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
 	for _, org := range orgs {
-		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(database.NewDB(db), org)})
+		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(db, org)})
 	}
 	return publishers, nil
 }
@@ -139,10 +139,10 @@ func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db databa
 	switch {
 	case p.userID != 0:
 		// 🚨 SECURITY: Check that the current user is either the publisher or a site admin.
-		return backend.CheckSiteAdminOrSameUser(ctx, db, p.userID)
+		return auth.CheckSiteAdminOrSameUser(ctx, db, p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)
+		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

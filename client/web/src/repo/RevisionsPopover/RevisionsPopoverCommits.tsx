@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
 import { useLocation } from 'react-router'
 
@@ -74,7 +73,7 @@ interface GitCommitNodeProps {
     onClick?: React.MouseEventHandler<HTMLAnchorElement>
 }
 
-const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
+const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitCommitNodeProps>> = ({
     node,
     currentCommitID,
     location,
@@ -83,14 +82,13 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 }) => {
     const isCurrent = currentCommitID === node.oid
     return (
-        <ConnectionPopoverNode key={node.oid} className={classNames(styles.link, styles.message)}>
+        <ConnectionPopoverNode key={node.oid}>
             <ConnectionPopoverNodeLink
                 to={getPathFromRevision(location.pathname + location.search + location.hash, node.oid)}
                 active={isCurrent}
-                className={styles.link}
                 onClick={onClick}
             >
-                <Badge title={node.oid} as="code">
+                <Badge title={node.oid} className="px-1 py-0" as="code">
                     {node.abbreviatedOID}
                 </Badge>
                 <small title={node.author.date} className={styles.message}>
@@ -115,11 +113,15 @@ interface RevisionsPopoverCommitsProps {
     currentCommitID?: string
 
     onSelect?: (node: GitCommitAncestorFields) => void
+
+    tabLabel: string
 }
 
 const BATCH_COUNT = 15
 
-export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCommitsProps> = ({
+export const RevisionsPopoverCommits: React.FunctionComponent<
+    React.PropsWithChildren<RevisionsPopoverCommitsProps>
+> = ({
     repo,
     defaultBranch,
     getPathFromRevision,
@@ -128,6 +130,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
     pluralNoun,
     currentCommitID,
     onSelect,
+    tabLabel,
 }) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
@@ -190,6 +193,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<RevisionsPopoverCo
             summary={summary}
             inputValue={searchValue}
             onInputChange={setSearchValue}
+            inputAriaLabel={tabLabel}
         >
             {response.connection?.nodes?.map((node, index) => (
                 <GitCommitNode

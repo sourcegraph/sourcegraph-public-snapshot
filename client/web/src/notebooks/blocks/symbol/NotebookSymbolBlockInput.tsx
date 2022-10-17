@@ -1,41 +1,49 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
-import * as Monaco from 'monaco-editor'
+import { EditorView } from '@codemirror/view'
 
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { createDefaultSuggestions, RepoFileLink } from '@sourcegraph/search-ui'
 import { getFileMatchUrl, getRepositoryUrl, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Code } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
+import { useExperimentalFeatures } from '../../../stores'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
-import { useFocusMonacoEditorOnMount } from '../useFocusMonacoEditorOnMount'
 
 import styles from './NotebookSymbolBlockInput.module.scss'
 
 interface NotebookSymbolBlockInputProps extends ThemeProps, Pick<BlockProps, 'onRunBlock'> {
     id: string
-    sourcegraphSearchLanguageId: string
-    editor: Monaco.editor.IStandaloneCodeEditor | undefined
     queryInput: string
-    setEditor: (editor: Monaco.editor.IStandaloneCodeEditor) => void
+    onEditorCreated: (editor: EditorView) => void
     setQueryInput: (value: string) => void
-    debouncedSetQueryInput: (value: string) => void
     onSymbolSelected: (symbol: SymbolBlockInput) => void
+    globbing: boolean
+    isSourcegraphDotCom: boolean
 }
 
 function getSymbolSuggestionsQuery(queryInput: string): string {
     return `${queryInput} fork:yes type:symbol count:50`
 }
 
-export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlockInputProps> = ({
-    editor,
-    onSymbolSelected,
-    ...props
-}) => {
-    useFocusMonacoEditorOnMount({ editor, isEditing: true })
+const editorAttributes = [
+    EditorView.editorAttributes.of({
+        'data-testid': 'notebook-symbol-block-input',
+    }),
+    EditorView.contentAttributes.of({
+        'arial-label': 'Symbol search input',
+    }),
+]
+
+export const NotebookSymbolBlockInput: React.FunctionComponent<
+    React.PropsWithChildren<NotebookSymbolBlockInputProps>
+> = ({ onSymbolSelected, isSourcegraphDotCom, globbing, ...inputProps }) => {
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>
@@ -59,25 +67,39 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<NotebookSymbolBlo
         [onSymbolSelected]
     )
 
+    const queryCompletion = useMemo(
+        () =>
+            createDefaultSuggestions({
+                isSourcegraphDotCom,
+                globbing,
+                fetchSuggestions: fetchStreamSuggestions,
+                applyOnEnter: applySuggestionsOnEnter,
+                disableSymbolCompletion: true,
+            }),
+        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
+    )
+
     return (
         <div className={styles.input}>
             <SearchTypeSuggestionsInput<SymbolMatch>
                 label="Find a symbol using a Sourcegraph search query"
                 queryPrefix="type:symbol"
-                editor={editor}
                 fetchSuggestions={fetchSymbolSuggestions}
                 countSuggestions={countSuggestions}
                 renderSuggestions={renderSuggestions}
-                {...props}
+                extension={useMemo(() => [queryCompletion, editorAttributes], [queryCompletion])}
+                {...inputProps}
             />
         </div>
     )
 }
 
-const SymbolSuggestions: React.FunctionComponent<{
-    suggestions: SymbolMatch[]
-    onSymbolSelected: (symbol: SymbolBlockInput) => void
-}> = ({ suggestions, onSymbolSelected }) => (
+const SymbolSuggestions: React.FunctionComponent<
+    React.PropsWithChildren<{
+        suggestions: SymbolMatch[]
+        onSymbolSelected: (symbol: SymbolBlockInput) => void
+    }>
+> = ({ suggestions, onSymbolSelected }) => (
     <div className={styles.symbolSuggestions}>
         {suggestions.map(suggestion => (
             <div key={`${suggestion.repository}_${suggestion.path}`} className="pr-2">
@@ -108,10 +130,10 @@ const SymbolSuggestions: React.FunctionComponent<{
                         data-testid="symbol-suggestion-button"
                     >
                         <SymbolIcon kind={symbol.kind} className="mr-1" />
-                        <code>
+                        <Code>
                             {symbol.name}{' '}
                             {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
-                        </code>
+                        </Code>
                     </Button>
                 ))}
             </div>

@@ -10,20 +10,20 @@ export interface BatchChangeChangesetsHeaderProps {
     disabled?: boolean
 }
 
-export const BatchChangeChangesetsHeader: React.FunctionComponent<BatchChangeChangesetsHeaderProps> = ({
-    allSelected,
-    toggleSelectAll,
-    disabled,
-}) => (
+export const BatchChangeChangesetsHeader: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangeChangesetsHeaderProps>
+> = ({ allSelected, toggleSelectAll, disabled }) => (
     <>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
+            // eslint-disable-next-line no-restricted-syntax
             <InputTooltip
                 type="checkbox"
                 className="ml-2"
                 checked={allSelected}
                 onChange={toggleSelectAll}
                 disabled={!!disabled}
+                placement="right"
                 tooltip={
                     disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
                 }

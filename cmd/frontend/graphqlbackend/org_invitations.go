@@ -15,10 +15,10 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -127,7 +127,7 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that we get the invitations for
-	if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +168,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 		return nil, errors.Newf("signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.")
 	}
 
-	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(args.Token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
 		return base64.StdEncoding.DecodeString(conf.SiteConfig().OrganizationInvitations.SigningKey)
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 
@@ -213,7 +213,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
@@ -371,7 +371,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -440,7 +440,7 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -513,7 +513,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		// Basic abuse prevention for Sourcegraph.com.
 
 		// Only allow email-verified users to send invites.
-		if _, senderEmailVerified, err := database.UserEmails(db).GetPrimaryEmail(ctx, sender.ID); err != nil {
+		if _, senderEmailVerified, err := db.UserEmails().GetPrimaryEmail(ctx, sender.ID); err != nil {
 			return err
 		} else if !senderEmailVerified {
 			return errors.New("must verify your email address to invite a user to an organization")
@@ -523,7 +523,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		//
 		// There is no user invite quota for on-prem instances because we assume they can
 		// trust their users to not abuse invites.
-		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
+		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, sender.ID); err != nil {
 			return err
 		} else if !ok {
 			return errors.New("invite quota exceeded (contact support to increase the quota)")

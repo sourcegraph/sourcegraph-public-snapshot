@@ -406,6 +406,60 @@ func TestMiddleware(t *testing.T) {
 	})
 }
 
+func TestAllowSignin(t *testing.T) {
+	allowedGroups := []string{"foo"}
+	providerConfig := schema.SAMLAuthProvider{
+		AllowGroups: allowedGroups,
+	}
+	mockProvider := &provider{
+		config: providerConfig,
+	}
+
+	t.Run("Sign in is allowed if allowGroups is not configured", func(t *testing.T) {
+		p := &provider{
+			config: schema.SAMLAuthProvider{},
+		}
+		result := allowSignin(p, make(map[string]bool))
+		if !result {
+			t.Errorf("Expected allowSigning to be true, got %v", result)
+		}
+	})
+	t.Run("Sign in is allowed if user belongs to a group", func(t *testing.T) {
+		groups := make(map[string]bool)
+		groups["foo"] = true
+		result := allowSignin(mockProvider, groups)
+		if !result {
+			t.Errorf("Expected allowSigning to be true, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if user does not belong to any group in allowGroups", func(t *testing.T) {
+		groups := make(map[string]bool)
+		groups["bar"] = true
+		groups["baz"] = true
+		result := allowSignin(mockProvider, groups)
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if allowGroups is empty", func(t *testing.T) {
+		p := &provider{
+			config: schema.SAMLAuthProvider{
+				AllowGroups: []string{},
+			},
+		}
+		result := allowSignin(p, make(map[string]bool))
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
+		}
+	})
+	t.Run("Sign in is not allowed if user groups are empty", func(t *testing.T) {
+		result := allowSignin(mockProvider, make(map[string]bool))
+		if result {
+			t.Errorf("Expected allowSigning to be false, got %v", result)
+		}
+	})
+}
+
 // unexpiredCookies returns the list of unexpired cookies set by the response
 func unexpiredCookies(resp *http.Response) (cookies []*http.Cookie) {
 	for _, cookie := range resp.Cookies() {

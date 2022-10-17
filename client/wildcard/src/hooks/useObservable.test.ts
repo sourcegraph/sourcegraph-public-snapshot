@@ -3,7 +3,7 @@
 
 import { useMemo, useCallback } from 'react'
 
-import { renderHook, act } from '@testing-library/react-hooks'
+import { renderHook, act } from '@testing-library/react'
 import { Observable, Subscriber } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as sinon from 'sinon'
@@ -46,9 +46,14 @@ describe('useObservable()', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.error(error)
         })
-        const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
-        expect(result.error).toBe(error)
-        sinon.assert.calledOnce(subscribe)
+
+        try {
+            renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
+            fail('expected error to be thrown')
+        } catch (error) {
+            expect(error).toBe(error)
+            sinon.assert.calledOnce(subscribe)
+        }
     })
 
     it('should subscribe if component rerenders and observable changed', () => {

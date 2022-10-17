@@ -3,9 +3,10 @@ package batches
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
@@ -24,14 +25,18 @@ func NewBulkOperationProcessorJob() job.Job {
 	return &bulkOperationProcessorJob{}
 }
 
+func (j *bulkOperationProcessorJob) Description() string {
+	return ""
+}
+
 func (j *bulkOperationProcessorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *bulkOperationProcessorJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *bulkOperationProcessorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
-		Logger:     log15.Root(),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Logger:     logger.Scoped("routines", "bulk operation processor job routines"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	workCtx := actor.WithInternalActor(context.Background())
@@ -50,7 +55,9 @@ func (j *bulkOperationProcessorJob) Routines(_ context.Context) ([]goroutine.Bac
 		workCtx,
 		bstore,
 		resStore,
-		sources.NewSourcer(httpcli.NewExternalClientFactory()),
+		sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		observationContext,
 	)
 

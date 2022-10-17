@@ -11,11 +11,31 @@ import (
 )
 
 func TestEmptyCustomGitFetch(t *testing.T) {
-	customGitFetch = func() interface{} {
+	customGitFetch = func() map[string][]string {
 		return buildCustomFetchMappings(nil)
 	}
 
 	remoteURL, _ := vcs.ParseURL("git@github.com:sourcegraph/sourcegraph.git")
+	customCmd := customFetchCmd(context.Background(), remoteURL)
+	if customCmd != nil {
+		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
+	}
+}
+
+func TestDisabledCustomGitFetch(t *testing.T) {
+	mapping := []*schema.CustomGitFetchMapping{
+		{
+			DomainPath: "github.com/foo/normal/one",
+			Fetch:      "echo normal one",
+		},
+	}
+	remoteUrl := "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one"
+
+	customGitFetch = func() map[string][]string {
+		return buildCustomFetchMappings(mapping)
+	}
+
+	remoteURL, _ := vcs.ParseURL(remoteUrl)
 	customCmd := customFetchCmd(context.Background(), remoteURL)
 	if customCmd != nil {
 		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
@@ -66,7 +86,12 @@ func TestCustomGitFetch(t *testing.T) {
 		},
 	}
 
-	customGitFetch = func() interface{} {
+	// env var ENABLE_CUSTOM_GIT_FETCH is set to true
+	enableCustomGitFetch = "true"
+	t.Cleanup(func() {
+		enableCustomGitFetch = "false"
+	})
+	customGitFetch = func() map[string][]string {
 		return buildCustomFetchMappings(mappings)
 	}
 

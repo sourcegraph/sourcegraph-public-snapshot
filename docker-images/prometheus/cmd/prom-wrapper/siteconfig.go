@@ -138,7 +138,7 @@ func (c *SiteConfigSubscriber) Handler() http.Handler {
 				conf.NewSiteProblem("`observability`: unable to reach Alertmanager - please refer to the Prometheus logs for more details"))
 		}
 
-		b, err := json.Marshal(map[string]interface{}{
+		b, err := json.Marshal(map[string]any{
 			"problems": problems,
 		})
 		if err != nil {

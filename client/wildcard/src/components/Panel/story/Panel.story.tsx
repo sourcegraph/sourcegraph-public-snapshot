@@ -1,16 +1,17 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { useState } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent.fixtures'
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { H1, H2, Tooltip } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -51,10 +52,9 @@ const config: Meta = {
 
 export default config
 
-const PanelBodyContent: React.FunctionComponent<{ position: typeof PANEL_POSITIONS[number] }> = ({
-    position,
-    children,
-}) => (
+const PanelBodyContent: React.FunctionComponent<
+    React.PropsWithChildren<{ position: typeof PANEL_POSITIONS[number] }>
+> = ({ position, children }) => (
     <div
         className={classNames(
             'p-2',
@@ -78,8 +78,8 @@ export const Simple: Story = () => {
             <Grid columnCount={4}>
                 <div />
                 <div>
-                    <h1>Panel</h1>
-                    <h2>Positions</h2>
+                    <H1>Panel</H1>
+                    <H2>Positions</H2>
                     <div className="mb-2">
                         <Button variant="secondary" onClick={() => showPanelWithPosition('left')}>
                             Show left panel
@@ -105,6 +105,7 @@ export const Simple: Story = () => {
                 defaultSize={200}
                 storageKey={`size-cache-${position}`}
                 className={styles.panel}
+                ariaLabel="Storybook panel"
             >
                 <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
@@ -114,14 +115,16 @@ export const Simple: Story = () => {
     )
 }
 
-export const WithChildren: Story = props => {
+// props must be undefined somewhere, and Storybook docs addon causes Storybook to crash.
+// Setting a default parameter is a workaround to this issue
+export const WithChildren: Story = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 
     const closePanel = () => setTabIndex(-1)
 
     return (
-        <Panel {...props}>
+        <Panel {...props} ariaLabel="Storybook panel">
             <Tabs index={tabIndex} size="small">
                 <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top')}>
                     <TabList>
@@ -138,16 +141,16 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <Button
-                            onClick={closePanel}
-                            className={classNames('ml-2')}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                            variant="icon"
-                        >
-                            <Icon as={CloseIcon} />
-                        </Button>
+                        <Tooltip content="Close panel" placement="left">
+                            <Button
+                                onClick={closePanel}
+                                className={classNames('ml-2')}
+                                title="Close panel"
+                                variant="icon"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        </Tooltip>
                     </div>
                 </div>
                 <TabPanels>

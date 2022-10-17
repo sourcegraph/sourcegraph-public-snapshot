@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../../../auth'
+import { useExperimentalFeatures } from '../../../../../stores'
 
 import { InsightCreationPageType } from './InsightCreationPage'
 
@@ -24,10 +25,11 @@ interface CreationRoutesProps extends TelemetryProps {
  * Code insight sub-router for the creation area/routes.
  * Renders code insights creation routes (insight creation UI pages, creation intro page)
  */
-export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = props => {
+export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<CreationRoutesProps>> = props => {
     const { telemetryService } = props
 
     const match = useRouteMatch()
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     return (
         <Switch>
@@ -67,6 +69,18 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
                     />
                 )}
             />
+
+            {codeInsightsCompute && (
+                <Route
+                    path={`${match.url}/group-results`}
+                    render={() => (
+                        <InsightCreationLazyPage
+                            mode={InsightCreationPageType.Compute}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                />
+            )}
         </Switch>
     )
 }

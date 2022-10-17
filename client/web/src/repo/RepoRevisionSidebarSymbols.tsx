@@ -33,7 +33,11 @@ interface SymbolNodeProps {
     isActive: boolean
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
+const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProps>> = ({
+    node,
+    onHandleClick,
+    isActive,
+}) => {
     const isActiveFunc = (): boolean => isActive
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode}>
@@ -44,8 +48,10 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleCl
                 activeClassName={styles.linkActive}
                 onClick={onHandleClick}
             >
-                <SymbolIcon kind={node.kind} className="mr-1 test-symbol-icon" />
-                <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
+                <SymbolIcon kind={node.kind} className="mr-1" />
+                <span className={styles.name} data-testid="symbol-name">
+                    {node.name}
+                </span>
                 {node.containerName && (
                     <span className={styles.containerName}>
                         <small>{node.containerName}</small>
@@ -114,12 +120,9 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     onHandleSymbolClick: () => void
 }
 
-export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
-    repoID,
-    revision = '',
-    activePath,
-    onHandleSymbolClick,
-}) => {
+export const RepoRevisionSidebarSymbols: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionSidebarSymbolsProps>
+> = ({ repoID, revision = '', activePath, onHandleSymbolClick }) => {
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)

@@ -20,18 +20,21 @@ export interface SuccessGraphQLResult<T> {
     data: T
     errors: undefined
 }
-export interface ErrorGraphQLResult {
-    data: undefined
+export interface ErrorGraphQLResult<T = unknown> {
+    // It might be possible that even with errored response we have
+    // a partially resolved data
+    // See https://github.com/sourcegraph/sourcegraph/pull/36033
+    data: T | null
     errors: readonly GraphQLError[]
 }
 
-export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult
+export type GraphQLResult<T> = SuccessGraphQLResult<T> | ErrorGraphQLResult<T>
 
 /**
  * Guarantees that the GraphQL query resulted in an error.
  */
-export function isErrorGraphQLResult<T>(result: GraphQLResult<T>): result is ErrorGraphQLResult {
-    return !!(result as ErrorGraphQLResult).errors && (result as ErrorGraphQLResult).errors.length > 0
+export function isErrorGraphQLResult<T>(result: GraphQLResult<T>): result is ErrorGraphQLResult<T> {
+    return !!(result as ErrorGraphQLResult<T>).errors && (result as ErrorGraphQLResult<T>).errors.length > 0
 }
 
 export function dataOrThrowErrors<T>(result: GraphQLResult<T>): T {

@@ -14,11 +14,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -58,6 +59,7 @@ type UserStore interface {
 	CreatePassword(ctx context.Context, id int32, password string) error
 	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
+	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
 	Done(error) error
 	Exec(ctx context.Context, query *sqlf.Query) error
@@ -68,8 +70,10 @@ type UserStore interface {
 	GetByUsernames(context.Context, ...string) ([]*types.User, error)
 	GetByVerifiedEmail(context.Context, string) (*types.User, error)
 	HardDelete(context.Context, int32) error
+	HardDeleteList(context.Context, []int32) error
 	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
+	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
 	List(context.Context, *UsersListOptions) (_ []*types.User, err error)
 	ListDates(context.Context) ([]types.UserDates, error)
@@ -87,33 +91,40 @@ type UserStore interface {
 }
 
 type userStore struct {
+	logger log.Logger
 	*basestore.Store
 }
 
 var _ UserStore = (*userStore)(nil)
 
 // Users instantiates and returns a new RepoStore with prepared statements.
-func Users(db dbutil.DB) UserStore {
-	return &userStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Users(logger log.Logger, db dbutil.DB) UserStore {
+	return &userStore{
+		logger: logger,
+		Store:  &basestore.Store{},
+	}
 }
 
 // UsersWith instantiates and returns a new RepoStore using the other store handle.
-func UsersWith(other basestore.ShareableStore) UserStore {
-	return &userStore{Store: basestore.NewWithHandle(other.Handle())}
+func UsersWith(logger log.Logger, other basestore.ShareableStore) UserStore {
+	return &userStore{
+		logger: logger,
+		Store:  basestore.NewWithHandle(other.Handle()),
+	}
 }
 
 func (u *userStore) With(other basestore.ShareableStore) UserStore {
-	return &userStore{Store: u.Store.With(other)}
+	return &userStore{logger: u.logger, Store: u.Store.With(other)}
 }
 
 func (u *userStore) Transact(ctx context.Context) (UserStore, error) {
 	txBase, err := u.Store.Transact(ctx)
-	return &userStore{Store: txBase}, err
+	return &userStore{logger: u.logger, Store: txBase}, err
 }
 
 // userNotFoundErr is the error that is returned when a user is not found.
 type userNotFoundErr struct {
-	args []interface{}
+	args []any
 }
 
 func (err userNotFoundErr) Error() string {
@@ -127,7 +138,7 @@ func (err userNotFoundErr) NotFound() bool {
 // NewUserNotFoundError returns a new error indicating that the user with the given user ID was not
 // found.
 func NewUserNotFoundError(userID int32) error {
-	return userNotFoundErr{args: []interface{}{"userID", userID}}
+	return userNotFoundErr{args: []any{"userID", userID}}
 }
 
 // errCannotCreateUser is the error that is returned when
@@ -199,7 +210,7 @@ type NewUser struct {
 // username/email and password. If no password is given, a non-builtin auth provider must be used to
 // sign into the account.
 //
-// CREATION OF SITE ADMINS
+// # CREATION OF SITE ADMINS
 //
 // The new user is made to be a site admin if the following are both true: (1) this user would be
 // the first and only user on the server, and (2) the site has not yet been initialized. Otherwise,
@@ -218,7 +229,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	defer func() { err = tx.Done(err) }()
 	newUser, err = tx.CreateInTransaction(ctx, info)
 	if err == nil {
-		logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, u), newUser, "")
 	}
 	return newUser, err
 }
@@ -283,7 +294,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
+		if err := BeforeCreateUser(ctx, NewDBWith(u.logger, u.Store)); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -362,7 +373,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
 		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
 		for _, err := range errs {
-			log15.Warn(err.Error())
+			u.logger.Warn("Error ensuring user is joined to orgs", log.Error(err))
 		}
 		if err := OrgMembersWith(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
 			return nil, err
@@ -370,7 +381,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 		// Run AfterCreateUser hook
 		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
+			if err := AfterCreateUser(ctx, NewDBWith(u.logger, u.Store), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
@@ -379,7 +390,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	return user, nil
 }
 
-func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, serviceType string) {
+func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceType string) {
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
 		Creator     int32  `json:"creator"`
@@ -401,7 +412,7 @@ func logAccountCreatedEvent(ctx context.Context, db dbutil.DB, u *types.User, se
 		Timestamp:       time.Now(),
 	}
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 // orgsForAllUsersToJoin returns the list of org names that all users should be joined to. The second return value
@@ -488,20 +499,32 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 		return err
 	}
 	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+		return userNotFoundErr{args: []any{id}}
 	}
 	return nil
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
+	return u.DeleteList(ctx, []int32{id})
+}
+
+// DeleteList performs a bulk "Delete" action.
+func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=now() WHERE id=%s AND deleted_at IS NULL", id))
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+
+	idsCond := sqlf.Join(userIDs, ",")
+
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET deleted_at=now() WHERE id IN (%s) AND deleted_at IS NULL", idsCond))
 	if err != nil {
 		return err
 	}
@@ -509,37 +532,42 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	if err != nil {
 		return err
 	}
-	if rows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+	if rows != int64(len(ids)) {
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to delete %d users, but deleted only %d", +len(ids), rows)}}
 	}
 
 	// Release the username so it can be used by another user or org.
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id=%s OR creator_user_id=%s", id, id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id=%s AND deleted_at IS NULL", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id=%s OR recipient_user_id=%s)", id, id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 
-	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountDeleted)
+	logUserDeletionEvents(ctx, NewDBWith(u.logger, u), ids, SecurityEventNameAccountDeleted)
 
 	return nil
 }
 
 // HardDelete removes the user and all resources associated with this user.
 func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
+	return u.HardDeleteList(ctx, []int32{id})
+}
+
+// HardDeleteList performs a bulk "HardDelete" action.
+func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -547,51 +575,60 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id=%s", id)); err != nil {
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
+
+	idsCond := sqlf.Join(userIDs, ",")
+
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM names WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM access_tokens WHERE subject_user_id=%s OR creator_user_id=%s", id, id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM access_tokens WHERE subject_user_id IN (%s) OR creator_user_id IN (%s)", idsCond, idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_external_accounts WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_external_accounts WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM survey_responses WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM survey_responses WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM registry_extension_releases WHERE registry_extension_id IN (SELECT id FROM registry_extensions WHERE publisher_user_id=%s)", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM registry_extension_releases WHERE registry_extension_id IN (SELECT id FROM registry_extensions WHERE publisher_user_id IN (%s))", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM registry_extensions WHERE publisher_user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM registry_extensions WHERE publisher_user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM org_invitations WHERE sender_user_id=%s OR recipient_user_id=%s", id, id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM org_invitations WHERE sender_user_id IN (%s) OR recipient_user_id IN (%s)", idsCond, idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM org_members WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM org_members WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM settings WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM settings WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM saved_searches WHERE user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM saved_searches WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 	// Anonymize all entries for the deleted user
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id = %s", uuid.New().String(), id)); err != nil {
-		return err
+	for _, uid := range userIDs {
+		if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id=%s", uuid.New().String(), uid)); err != nil {
+			return err
+		}
 	}
 	// Settings that were merely authored by this user should not be deleted. They may be global or
 	// org settings that apply to other users, too. There is currently no way to hard-delete
 	// settings for an org or globally, but we can handle those rare cases manually.
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE settings SET author_user_id=NULL WHERE author_user_id=%s", id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE settings SET author_user_id=NULL WHERE author_user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf("DELETE FROM users WHERE id=%s", id))
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf("DELETE FROM users WHERE id IN (%s)", idsCond))
 	if err != nil {
 		return err
 	}
@@ -599,16 +636,16 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 	if err != nil {
 		return err
 	}
-	if rows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+	if rows != int64(len(ids)) {
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to hard delete %d users, but deleted only %d", +len(ids), rows)}}
 	}
 
-	logUserDeletionEvent(ctx, u.Handle().DB(), id, SecurityEventNameAccountNuked)
+	logUserDeletionEvents(ctx, NewDBWith(u.logger, u), ids, SecurityEventNameAccountNuked)
 
 	return nil
 }
 
-func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name SecurityEventName) {
+func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name SecurityEventName) {
 	// The actor deleting the user could be a different user, for example a site
 	// admin
 	a := actor.FromContext(ctx)
@@ -618,17 +655,20 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 		Deleter: a.UID,
 	})
 
-	event := &SecurityEvent{
-		Name:            name,
-		URL:             "",
-		UserID:          uint32(id),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
+	now := time.Now()
+	events := make([]*SecurityEvent, len(ids))
+	for index, id := range ids {
+		events[index] = &SecurityEvent{
+			Name:            name,
+			URL:             "",
+			UserID:          uint32(id),
+			AnonymousUserID: "",
+			Argument:        arg,
+			Source:          "BACKEND",
+			Timestamp:       now,
+		}
 	}
-
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEventList(ctx, events)
 }
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
@@ -707,19 +747,27 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {
+	return u.InvalidateSessionsByIDs(ctx, []int32{id})
+}
+
+func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
+	userIDs := make([]*sqlf.Query, len(ids))
+	for i := range ids {
+		userIDs[i] = sqlf.Sprintf("%d", ids[i])
+	}
 	query := sqlf.Sprintf(`
 		UPDATE users
 		SET
 			updated_at=now(),
 			invalidated_sessions_at=now()
-		WHERE id=%d
-		`, id)
+		WHERE id IN (%d)`, sqlf.Join(userIDs, ","))
+
 	res, err := tx.ExecResult(ctx, query)
 	if err != nil {
 		return err
@@ -728,8 +776,8 @@ func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 	if err != nil {
 		return err
 	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{id}}
+	if nrows != int64(len(ids)) {
+		return userNotFoundErr{args: []any{fmt.Sprintf("Some users were not found. Expected to invalidate sessions of %d users, but invalidated sessions only %d", +len(ids), nrows)}}
 	}
 	return nil
 }
@@ -756,6 +804,12 @@ type UsersListOptions struct {
 	UserIDs []int32
 
 	Tag string // only include users with this tag
+
+	// InactiveSince filters out users that have had an eventlog entry with a
+	// `timestamp` greater-than-or-equal to the given timestamp.
+	InactiveSince time.Time
+
+	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
 
 	*LimitOffset
 }
@@ -803,10 +857,18 @@ func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ e
 }
 
 const listDatesQuery = `
--- source: internal/database/users.go:ListDates
 SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
+`
+const listUsersInactiveCond = `
+(NOT EXISTS (
+	SELECT 1 FROM event_logs
+	WHERE
+		event_logs.user_id = u.id
+	AND
+		timestamp >= %s
+))
 `
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
@@ -830,6 +892,43 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
+	}
+
+	if !opt.InactiveSince.IsZero() {
+		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
+	}
+
+	// NOTE: This is a hack which should be replaced when we have proper user types.
+	// However, for billing purposes and more accurate ping data, we need a way to
+	// exclude Sourcegraph (employee) admins when counting users. The following
+	// username patterns, in conjunction with the presence of a corresponding
+	// "@sourcegraph.com" email address, are used to filter out Sourcegraph admins:
+	//
+	// - managed-*
+	// - sourcegraph-management-*
+	// - sourcegraph-admin
+	//
+	// This method of filtering is imperfect and may still incur false positives, but
+	// the two together should help prevent that in the majority of cases, and we
+	// acknowledge this risk as we would prefer to undercount rather than overcount.
+	if opt.ExcludeSourcegraphAdmins {
+		conds = append(conds, sqlf.Sprintf(`
+-- The user does not...
+NOT(
+	-- ...have a known Sourcegraph admin username pattern
+	(u.username ILIKE 'managed-%%'
+		OR u.username ILIKE 'sourcegraph-management-%%'
+		OR u.username = 'sourcegraph-admin')
+	-- ...and have a matching sourcegraph email address
+	AND EXISTS (
+		SELECT
+			1 FROM user_emails
+		WHERE
+			user_emails.user_id = u.id
+			AND user_emails.email ILIKE '%%@sourcegraph.com')
+)
+`))
+
 	}
 	return conds
 }
@@ -1045,12 +1144,12 @@ func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.
 	// can't be reused, and so a new valid reset code can be generated afterward.
 	err = u.Exec(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=%s WHERE id=%s", passwd, id))
 	if err == nil {
-		LogPasswordEvent(ctx, u.Handle().DB(), nil, SecurityEventNamPasswordRandomized, id)
+		LogPasswordEvent(ctx, NewDBWith(u.logger, u), nil, SecurityEventNamPasswordRandomized, id)
 	}
 	return err
 }
 
-func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name SecurityEventName, userID int32) {
+func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name SecurityEventName, userID int32) {
 	a := actor.FromContext(ctx)
 	args, _ := json.Marshal(struct {
 		Requester int32 `json:"requester"`
@@ -1072,7 +1171,7 @@ func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name S
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
-	SecurityEventLogs(db).LogEvent(ctx, event)
+	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1124,7 +1223,7 @@ func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, presen
 		return err
 	}
 	if nrows == 0 {
-		return userNotFoundErr{args: []interface{}{userID}}
+		return userNotFoundErr{args: []any{userID}}
 	}
 	return nil
 }
@@ -1136,7 +1235,7 @@ func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]interface{}{userID}}
+			return false, userNotFoundErr{[]any{userID}}
 		}
 		return false, err
 	}
@@ -1155,7 +1254,7 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]interface{}{userID}}
+			return nil, userNotFoundErr{[]any{userID}}
 		}
 		return nil, err
 	}

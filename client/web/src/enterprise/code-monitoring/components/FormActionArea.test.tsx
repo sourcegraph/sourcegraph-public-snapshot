@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -13,6 +11,16 @@ import { mockAuthenticatedUser } from '../testing/util'
 import { FormActionArea } from './FormActionArea'
 
 describe('FormActionArea', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const mockActions: CodeMonitorFields['actions'] = {
         nodes: [
             {

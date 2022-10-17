@@ -8,16 +8,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func Worker() *monitoring.Container {
+func Worker() *monitoring.Dashboard {
 	const containerName = "worker"
 
 	workerJobs := []struct {
 		Name  string
 		Owner monitoring.ObservableOwner
 	}{
-		{Name: "codeintel-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-commitgraph", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-auto-indexing", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-upload-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-commitgraph-updater", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Name: "codeintel-autoindexing-scheduler", Owner: monitoring.ObservableOwnerCodeIntel},
 	}
 
 	var activeJobObservables []monitoring.Observable
@@ -31,7 +31,7 @@ func Worker() *monitoring.Container {
 			Warning:       monitoring.Alert().Less(1).For(1 * time.Minute),
 			Critical:      monitoring.Alert().Less(1).For(5 * time.Minute),
 			Owner:         job.Owner,
-			PossibleSolutions: fmt.Sprintf(`
+			NextSteps: fmt.Sprintf(`
 				- Ensure your instance defines a worker container such that:
 					- `+"`"+`WORKER_JOB_ALLOWLIST`+"`"+` contains "%[1]s" (or "all"), and
 					- `+"`"+`WORKER_JOB_BLOCKLIST`+"`"+` does not contain "%[1]s"
@@ -80,7 +80,50 @@ func Worker() *monitoring.Container {
 		),
 	}
 
-	return &monitoring.Container{
+	recordEncrypterGroup := monitoring.Group{
+		Title:  "Database record encrypter",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				func(containerName string, owner monitoring.ObservableOwner) shared.Observable {
+					return shared.Observable{
+						Name:        "records_encrypted_at_rest_percentage",
+						Description: "percentage of database records encrypted at rest",
+						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`,
+						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
+						Owner:       owner,
+					}
+				}(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Percentage of encrypted database records
+				`).Observable(),
+
+				shared.Standard.Count("records encrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_encrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Standard.Count("records decrypted")(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "records_decrypted",
+					MetricDescriptionRoot: "database",
+					By:                    []string{"tableName"},
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of encrypted database records every 5m
+				`).Observable(),
+
+				shared.Observation.Errors(shared.ObservableConstructorOptions{
+					MetricNameRoot:        "record_encryption",
+					MetricDescriptionRoot: "encryption",
+				})(containerName, monitoring.ObservableOwnerRepoManagement).WithNoAlerts(`
+					Number of database record encryption/decryption errors every 5m
+				`).Observable(),
+			},
+		},
+	}
+
+	return &monitoring.Dashboard{
 		Name:        "worker",
 		Title:       "Worker",
 		Description: "Manages background processes.",
@@ -88,22 +131,33 @@ func Worker() *monitoring.Container {
 			// src_worker_jobs
 			activeJobsGroup,
 
+			// src_records_encrypted_at_rest_total
+			// src_records_unencrypted_at_rest_total
+			// src_records_encrypted_total
+			// src_records_decrypted_total
+			// src_record_encryption_errors_total
+			recordEncrypterGroup,
+
 			shared.CodeIntelligence.NewCommitGraphQueueGroup(containerName),
 			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
 			shared.CodeIntelligence.NewJanitorGroup(containerName),
 			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
-			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
+			shared.Batches.NewBatchSpecResolutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewBulkOperationDBWorkerStoreGroup(containerName),
+			shared.Batches.NewReconcilerDBWorkerStoreGroup(containerName),
+			// This is for the resetter only here, the queue is running in the frontend
+			// through executorqueue.
+			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
 
 			// src_codeintel_background_upload_resets_total
 			// src_codeintel_background_upload_reset_failures_total
@@ -172,15 +226,15 @@ func Worker() *monitoring.Container {
 				Title:  "Code Insights queue utilization",
 				Hidden: true,
 				Rows: []monitoring.Row{{monitoring.Observable{
-					Name:              "insights_queue_unutilized_size",
-					Description:       "insights queue size that is not utilized (not processing)",
-					Owner:             monitoring.ObservableOwnerCodeInsights,
-					Query:             "max(src_insights_search_queue_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
-					DataMustExist:     false,
-					Warning:           monitoring.Alert().Greater(0.0).For(time.Minute * 30),
-					PossibleSolutions: "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
-					Interpretation:    "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
-					Panel:             monitoring.Panel().LegendFormat("count"),
+					Name:           "insights_queue_unutilized_size",
+					Description:    "insights queue size that is not utilized (not processing)",
+					Owner:          monitoring.ObservableOwnerCodeInsights,
+					Query:          "max(src_query_runner_worker_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					DataMustExist:  false,
+					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
+					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
+					Interpretation: "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
+					Panel:          monitoring.Panel().LegendFormat("count"),
 				}}},
 			},
 

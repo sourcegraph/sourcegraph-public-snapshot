@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -70,6 +71,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -83,7 +85,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) error {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
@@ -115,6 +117,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
@@ -144,7 +147,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
-func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, _ *vcs.URL) (cmd *exec.Cmd, err error) {
 	// Remote info is encoded as in the current repository
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
@@ -223,11 +226,21 @@ func p4ping(ctx context.Context, host, username, password string) error {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
+			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
 		}
 		return err
 	}
 	return nil
+}
+
+func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
+	if !strings.Contains(errorMsg, "this operation") {
+		return errorMsg
+	}
+	if len(command.Args) == 0 {
+		return errorMsg
+	}
+	return strings.Replace(errorMsg, "this operation", fmt.Sprintf("`%s`", strings.Join(command.Args, " ")), 1)
 }
 
 // p4pingWithTrust attempts to ping the Perforce server and performs a trust operation when needed.

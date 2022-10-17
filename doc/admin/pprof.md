@@ -10,11 +10,11 @@ Follow the instructions below to generate profiling data. We will use the Source
 
 ### Sourcegraph with Docker Compose
 
-See [expose debug port in Docker Compose](install/docker-compose/operations.md#expose-debug-port).
+See [expose debug port in Docker Compose](deploy/docker-compose/index.md#operations).
 
 ### Sourcegraph with Kubernetes
 
-If you're using the [Kubernetes cluster deployment](install/kubernetes/index.md),  
+If you're using the [Kubernetes cluster deployment](deploy/kubernetes/index.md),  
 you need to port-forward 6060 from the frontend pod (if you have more than one, choose one):
 
 ```bash script
@@ -24,7 +24,7 @@ kubectl port-forward sourcegraph-frontend-xxxx 6060:6060
 
 ### Single-container Sourcegraph
 
-See [expose debug port in single-container Sourcegraph](install/docker/operations.md#expose-debug-port).
+See [expose debug port in single-container Sourcegraph](deploy/docker-single-container/index.md#expose-debug-port).
 
 ## Generating profiling data
 

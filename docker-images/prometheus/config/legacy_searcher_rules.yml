@@ -1,9 +1,0 @@
-groups:
-  - name: searcher
-    rules:
-    - record: searcher_requests:rate10m
-      expr: sum by (instance)(rate(searcher_service_request_total[10m]))
-    - record: searcher_errors:rate10m
-      expr: sum by (instance)(rate(searcher_service_request_total{code!="200",code!="canceled"}[10m]))
-    - record: searcher_errors:ratio10m
-      expr: sum(searcher_errors:rate10m) / sum(searcher_requests:rate10m)

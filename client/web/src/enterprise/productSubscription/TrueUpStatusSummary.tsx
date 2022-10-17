@@ -26,7 +26,7 @@ interface Props {
 /**
  * Displays a summary of the site's true-up pricing status.
  */
-export const TrueUpStatusSummary: React.FunctionComponent<Props> = ({
+export const TrueUpStatusSummary: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     actualUserCount,
     actualUserCountDate,
     license,

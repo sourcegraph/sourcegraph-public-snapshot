@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Badge, Link, H3 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -34,9 +34,12 @@ export interface BatchChangeNodeProps {
 // This is the original, pre-SSBC version of the state badge. It has been superseded by
 // `BatchChangeStatePill` and should be removed once SSBC is not longer behind a feature
 // flag.
-const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
+const StateBadge: React.FunctionComponent<React.PropsWithChildren<{ state: BatchChangeState }>> = ({ state }) => {
     switch (state) {
         case BatchChangeState.OPEN:
+        // DRAFT should only be possible if SSBC is enabled; if we do find a batch change
+        // in this state when it isn't, just treat it as OPEN
+        case BatchChangeState.DRAFT:
             return (
                 /*
                         a11y-ignore
@@ -56,20 +59,13 @@ const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ stat
                     Closed
                 </Badge>
             )
-        case BatchChangeState.DRAFT:
-        default:
-            return (
-                <Badge variant="secondary" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                    Draft
-                </Badge>
-            )
     }
 }
 
 /**
  * An item in the list of batch changes.
  */
-export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
+export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<BatchChangeNodeProps>> = ({
     node,
     isExecutionEnabled,
     now = () => new Date(),
@@ -131,7 +127,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
             )}
             <div className={styles.batchChangeNodeContent}>
                 <div className="m-0 d-md-flex d-block align-items-baseline">
-                    <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
+                    <H3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
                         {displayNamespace && (
                             <div className="d-md-inline-block d-block">
                                 <Link
@@ -146,7 +142,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                         <Link className="test-batches-link mr-2" to={nodeLink}>
                             {node.name}
                         </Link>
-                    </h3>
+                    </H3>
                     <small className="text-muted d-sm-block">
                         created <Timestamp date={node.createdAt} now={now} />
                     </small>
@@ -165,15 +161,39 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 <>
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.open} open</span>}
+                        aria-labelledby={`changesets-open-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                id={`changesets-open-label-${node.id}`}
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.open} open`}</span>
+                        }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
+                        aria-labelledby={`changesets-closed-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                aria-hidden={true}
+                                id={`changesets-closed-label-${node.id}`}
+                            >{`${node.changesetsStats.closed} closed`}</span>
+                        }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
+                        aria-labelledby={`changesets-merged-label-${node.id}`}
+                        role="group"
+                        label={
+                            <span
+                                className="text-muted"
+                                id={`changesets-merged-label-${node.id}`}
+                                aria-hidden={true}
+                            >{`${node.changesetsStats.merged} merged`}</span>
+                        }
                     />
                 </>
             )}

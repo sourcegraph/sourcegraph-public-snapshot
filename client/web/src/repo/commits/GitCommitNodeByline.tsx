@@ -2,6 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { Tooltip } from '@sourcegraph/wildcard'
+
 import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
@@ -21,7 +23,7 @@ interface Props {
 /**
  * Displays a Git commit's author and committer (with avatars if available) and the dates.
  */
-export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
+export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     author,
     committer,
     className = '',
@@ -47,18 +49,16 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         return (
             <div data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
-                    <UserAvatar
-                        inline={true}
-                        className={avatarClassName}
-                        user={author.person}
-                        data-tooltip={`${formatPersonName(author.person)} (author)`}
-                    />{' '}
-                    <UserAvatar
-                        inline={true}
-                        className={classNames('mr-2', avatarClassName)}
-                        user={committer.person}
-                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
-                    />
+                    <Tooltip content={`${formatPersonName(author.person)} (author)`}>
+                        <UserAvatar inline={true} className={avatarClassName} user={author.person} />
+                    </Tooltip>{' '}
+                    <Tooltip content={`${formatPersonName(committer.person)} (committer)`}>
+                        <UserAvatar
+                            inline={true}
+                            className={classNames('mr-2', avatarClassName)}
+                            user={committer.person}
+                        />
+                    </Tooltip>
                 </div>
                 <div className="overflow-hidden">
                     {!compact ? (
@@ -83,12 +83,13 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     return (
         <div data-testid="git-commit-node-byline" className={className}>
             <div>
-                <UserAvatar
-                    inline={true}
-                    className={classNames('mr-1 mr-2', avatarClassName)}
-                    user={author.person}
-                    data-tooltip={formatPersonName(author.person)}
-                />
+                <Tooltip content={formatPersonName(author.person)}>
+                    <UserAvatar
+                        inline={true}
+                        className={classNames('mr-1 mr-2', avatarClassName)}
+                        user={author.person}
+                    />
+                </Tooltip>
             </div>
             <div className="overflow-hidden">
                 {!compact && (

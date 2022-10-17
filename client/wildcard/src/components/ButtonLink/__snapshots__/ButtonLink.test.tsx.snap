@@ -17,10 +17,8 @@ exports[`<ButtonLink /> renders correctly \`disabled\` 1`] = `
 exports[`<ButtonLink /> renders correctly anchor attributes 1`] = `
 <DocumentFragment>
   <a
-    aria-label="SourceGraph.com"
     class="anchorLink btn btnSecondary btnLg"
     data-pressed="true"
-    data-tooltip="SourceGraph.com"
     href="https://sourcegraph.com"
     rel="noopener noreferrer"
     tabindex="0"

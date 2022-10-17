@@ -107,7 +107,7 @@ func TestNamespace(t *testing.T) {
 			`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []interface{}{"namespace"},
+						Path:          []any{"namespace"},
 						Message:       wantErr.Error(),
 						ResolverError: wantErr,
 					},

@@ -1,7 +1,18 @@
 package comby
 
+import "archive/tar"
+
 type Input interface {
 	input()
+}
+
+type Tar struct {
+	TarInputEventC chan TarInputEvent
+}
+
+type TarInputEvent struct {
+	Header  tar.Header
+	Content []byte
 }
 
 type ZipPath string
@@ -11,6 +22,7 @@ type FileContent []byte
 func (ZipPath) input()     {}
 func (DirPath) input()     {}
 func (FileContent) input() {}
+func (Tar) input()         {}
 
 type resultKind int
 
@@ -70,21 +82,35 @@ type Match struct {
 	Matched string `json:"matched"`
 }
 
+type ChunkMatch struct {
+	Content string   `json:"content"`
+	Start   Location `json:"start"`
+	Ranges  []Range  `json:"ranges"`
+}
+
 type Result interface {
 	result()
 }
 
 var (
+	_ Result = (*FileMatchWithChunks)(nil)
 	_ Result = (*FileMatch)(nil)
 	_ Result = (*FileDiff)(nil)
 	_ Result = (*FileReplacement)(nil)
 	_ Result = (*Output)(nil)
 )
 
-func (*FileMatch) result()       {}
-func (*FileDiff) result()        {}
-func (*FileReplacement) result() {}
-func (*Output) result()          {}
+func (*FileMatchWithChunks) result() {}
+func (*FileMatch) result()           {}
+func (*FileDiff) result()            {}
+func (*FileReplacement) result()     {}
+func (*Output) result()              {}
+
+// FileMatchWithChunks represents all the chunk matches in a single file.
+type FileMatchWithChunks struct {
+	URI          string       `json:"uri"`
+	ChunkMatches []ChunkMatch `json:"matches"`
+}
 
 // FileMatch represents all the matches in a single file
 type FileMatch struct {

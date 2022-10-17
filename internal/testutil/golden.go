@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
+func AssertGolden(t testing.TB, path string, update bool, want any) {
 	t.Helper()
 
 	data := marshal(t, want)
@@ -33,7 +33,7 @@ func AssertGolden(t testing.TB, path string, update bool, want interface{}) {
 	}
 }
 
-func marshal(t testing.TB, v interface{}) []byte {
+func marshal(t testing.TB, v any) []byte {
 	t.Helper()
 
 	switch v2 := v.(type) {

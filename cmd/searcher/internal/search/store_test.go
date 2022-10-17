@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,14 +15,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPrepareZip(t *testing.T) {
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 
 	wantRepo := api.RepoName("foo")
 	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
@@ -86,8 +91,7 @@ func TestPrepareZip(t *testing.T) {
 
 func TestPrepareZip_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
@@ -99,8 +103,7 @@ func TestPrepareZip_fetchTarFail(t *testing.T) {
 
 func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 	fetchErr := errors.New("test")
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		r, w := io.Pipe()
 		w.CloseWithError(fetchErr)
@@ -113,8 +116,7 @@ func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
 }
 
 func TestPrepareZip_errHeader(t *testing.T) {
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		buf := new(bytes.Buffer)
 		w := tar.NewWriter(buf)
@@ -135,17 +137,20 @@ func TestPrepareZip_errHeader(t *testing.T) {
 	}
 }
 
-func TestIngoreSizeMax(t *testing.T) {
-	patterns := []string{
-		"foo",
-		"foo.*",
-		"foo_*",
-		"*.foo",
-		"bar.baz",
-	}
+func TestSearchLargeFiles(t *testing.T) {
+	filter := newSearchableFilter(&schema.SiteConfiguration{
+		SearchLargeFiles: []string{
+			"foo",
+			"foo.*",
+			"foo_*",
+			"*.foo",
+			"bar.baz",
+			"**/*.bam",
+		},
+	})
 	tests := []struct {
-		name    string
-		ignored bool
+		name   string
+		search bool
 	}{
 		// Pass
 		{"foo", true},
@@ -153,14 +158,22 @@ func TestIngoreSizeMax(t *testing.T) {
 		{"foo_bar", true},
 		{"bar.baz", true},
 		{"bar.foo", true},
+		{"hello.bam", true},
+		{"sub/dir/hello.bam", true},
+		{"/sub/dir/hello.bam", true},
 		// Fail
 		{"baz.foo.bar", false},
 		{"bar_baz", false},
 		{"baz.baz", false},
+		{"sub/dir/bar.foo", false},
 	}
 
 	for _, test := range tests {
-		if got, want := ignoreSizeMax(test.name, patterns), test.ignored; got != want {
+		hdr := &tar.Header{
+			Name: test.name,
+			Size: maxFileSize + 1,
+		}
+		if got, want := filter.SkipContent(hdr), !test.search; got != want {
 			t.Errorf("case %s got %v want %v", test.name, got, want)
 		}
 	}
@@ -182,9 +195,11 @@ func TestSymlink(t *testing.T) {
 	}
 	zw := zip.NewWriter(f)
 
-	if err := copySearchable(tarReader, zw, []string{}, func(hdr *tar.Header) bool {
+	filter := newSearchableFilter(&schema.SiteConfiguration{})
+	filter.CommitIgnore = func(hdr *tar.Header) bool {
 		return false
-	}); err != nil {
+	}
+	if err := copySearchable(tarReader, zw, filter); err != nil {
 		t.Fatal(err)
 	}
 	zw.Close()
@@ -249,27 +264,31 @@ func tarArchive(dir string) (*tar.Reader, error) {
 		"archive",
 		"--worktree-attributes",
 		"--format=tar",
-		"master",
+		"HEAD",
 		"--",
 	}
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	b := bytes.Buffer{}
 	cmd.Stdout = &b
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
 	return tar.NewReader(&b), nil
 }
 
-func tmpStore(t *testing.T) (*Store, func()) {
-	d, err := os.MkdirTemp("", "store_test")
-	if err != nil {
-		t.Fatal(err)
-	}
+func tmpStore(t *testing.T) *Store {
+	d := t.TempDir()
 	return &Store{
 		Path: d,
-	}, func() { os.RemoveAll(d) }
+		Log:  logtest.Scoped(t),
+
+		ObservationContext: &observation.Context{
+			Registerer: metrics.TestRegisterer,
+			Logger:     logtest.Scoped(t),
+		},
+	}
 }
 
 func emptyTar(t *testing.T) io.ReadCloser {
@@ -280,4 +299,13 @@ func emptyTar(t *testing.T) io.ReadCloser {
 		t.Fatal(err)
 	}
 	return io.NopCloser(bytes.NewReader(buf.Bytes()))
+}
+
+func TestIsNetOpError(t *testing.T) {
+	if !isNetOpError(&net.OpError{}) {
+		t.Fatal("should be net.OpError")
+	}
+	if isNetOpError(errors.New("hi")) {
+		t.Fatal("should not be net.OpError")
+	}
 }

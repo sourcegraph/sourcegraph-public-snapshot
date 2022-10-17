@@ -2,12 +2,12 @@ package compression
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -27,9 +27,9 @@ type CommitStore interface {
 	InsertCommits(ctx context.Context, id api.RepoID, commits []*gitdomain.Commit, indexedThrough time.Time, debugInfo string) error
 }
 
-func NewCommitStore(db dbutil.DB) *DBCommitStore {
+func NewCommitStore(db edb.InsightsDB) *DBCommitStore {
 	return &DBCommitStore{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+		Store: basestore.NewWithHandle(db.Handle()),
 	}
 }
 
@@ -133,24 +133,22 @@ type CommitIndexMetadata struct {
 }
 
 const getCommitsInRangeStr = `
--- source: enterprise/internal/insights/compression/commits.go:Get
 SELECT repo_id, commit_bytea, committed_at FROM commit_index WHERE repo_id = %s AND committed_at >= %s AND committed_at < %s ORDER BY committed_at desc;
 `
 
 const insertCommitIndexStr = `
--- source: enterprise/internal/insights/compression/commits.go:Save
-INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field) VALUES (%s, %s, %s, %s);
+INSERT INTO commit_index(repo_id, commit_bytea, committed_at, debug_field)
+VALUES (%s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT commit_index_pkey DO NOTHING;
 `
 
 const getCommitIndexMetadataStr = `
--- source: enterprise/internal/insights/compression/commits.go:GetMetadata
 SELECT repo_id, enabled, last_indexed_at, (select min(committed_at) from commit_index where repo_id = %s) oldest_indexed_at
 FROM commit_index_metadata
 WHERE repo_id = %s;
 `
 
 const upsertCommitIndexMetadataStampStr = `
--- source: enterprise/internal/insights/compression/commits.go:UpsertMetadataStamp
 INSERT INTO commit_index_metadata(repo_id)
 VALUES (%v)
 ON CONFLICT (repo_id) DO UPDATE

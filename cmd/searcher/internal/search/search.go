@@ -2,37 +2,37 @@
 // a specific commit.
 //
 // Architecture Notes:
-//  * Archive is fetched from gitserver
-//  * Simple HTTP API exposed
-//  * Currently no concept of authorization
-//  * On disk cache of fetched archives to reduce load on gitserver
-//  * Run search on archive. Rely on OS file buffers
-//  * Simple to scale up since stateless
-//  * Use ingress with affinity to increase local cache hit ratio
+//   - Archive is fetched from gitserver
+//   - Simple HTTP API exposed
+//   - Currently no concept of authorization
+//   - On disk cache of fetched archives to reduce load on gitserver
+//   - Run search on archive. Rely on OS file buffers
+//   - Simple to scale up since stateless
+//   - Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
+	"net"
 	"net/http"
-	"strconv"
+	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	nettrace "golang.org/x/net/trace"
+	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,14 +46,25 @@ const (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
-	Log   log15.Logger
+	Log   log.Logger
+
+	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
+	// --no-renames commitA commitB" against repo.
+	//
+	// TODO Git client should be exposing a better API here.
+	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
+	// single call to git archive. This mainly needs to be less than ARG_MAX
+	// for the exec.Command on gitserver.
+	MaxTotalPathsLength int
 }
 
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	running.Inc()
-	defer running.Dec()
+	metricRunning.Inc()
+	defer metricRunning.Dec()
 
 	var p protocol.Request
 	dec := json.NewDecoder(r.Body)
@@ -75,6 +86,12 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.streamSearch(ctx, w, p)
 }
 
+// isNetOpError returns true if net.OpError is contained in err. This is
+// useful to ignore errors when the connection has gone away.
+func isNetOpError(err error) bool {
+	return errors.HasType(err, (*net.OpError)(nil))
+}
+
 func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
 	if p.Limit == 0 {
 		// No limit for streaming search since upstream limits
@@ -88,13 +105,16 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
+	var bufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
-		if err := matchesBuf.Append(match); err != nil {
-			log.Printf("failed appending match to buffer: %s", err)
+		bufMux.Lock()
+		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
+			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
+		bufMux.Unlock()
 	}
 
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
@@ -109,48 +129,46 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 	}
 
 	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil {
-		log.Printf("failed to flush matches: %s", err)
+	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
+		s.Log.Warn("failed to flush matches", log.Error(err))
 	}
-	if err := eventWriter.Event("done", doneEvent); err != nil {
-		log.Printf("failed to send done event: %s", err)
+	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
+		s.Log.Warn("failed to send done event", log.Error(err))
 	}
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
-	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	tr.LazyPrintf("%s", p.Pattern)
+	var tr *trace.Trace
+	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	defer tr.Finish()
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Search")
-	ext.Component.Set(span, "service")
-	span.SetTag("repo", p.Repo)
-	span.SetTag("url", p.URL)
-	span.SetTag("commit", p.Commit)
-	span.SetTag("pattern", p.Pattern)
-	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
-	span.SetTag("isStructuralPat", strconv.FormatBool(p.IsStructuralPat))
-	span.SetTag("languages", p.Languages)
-	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
-	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
-	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
-	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
-	span.SetTag("limit", p.Limit)
-	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
-	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
-	span.SetTag("indexerEndpoints", p.IndexerEndpoints)
-	span.SetTag("select", p.Select)
+	tr.LazyPrintf("%s", p.Pattern)
+	tr.SetAttributes(
+		attribute.String("repo", string(p.Repo)),
+		attribute.String("url", p.URL),
+		attribute.String("commit", string(p.Commit)),
+		attribute.String("pattern", p.Pattern),
+		attribute.Bool("isRegExp", p.IsRegExp),
+		attribute.StringSlice("languages", p.Languages),
+		attribute.Bool("isWordMatch", p.IsWordMatch),
+		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
+		attribute.Bool("pathPatternsAreRegExps", p.PathPatternsAreRegExps),
+		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
+		attribute.Int("limit", p.Limit),
+		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
+		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
+		attribute.StringSlice("indexerEndpoints", p.IndexerEndpoints),
+		attribute.String("select", p.Select),
+	)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise
 		if ctx.Err() == context.Canceled {
 			code = "canceled"
-			span.SetTag("err", err)
+			tr.SetError(err)
 		} else if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			tr.SetError(err)
 			if errcode.IsBadRequest(err) {
 				code = "400"
 			} else if errcode.IsTemporary(err) {
@@ -160,14 +178,25 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			}
 		}
 		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
-		tr.Finish()
-		requestTotal.WithLabelValues(code).Inc()
-		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
-		span.SetTag("limitHit", sender.LimitHit())
-		span.Finish()
-		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", sender.SentCount(), "code", code, "duration", time.Since(start), "indexerEndpoints", p.IndexerEndpoints, "err", err)
-		}
+		metricRequestTotal.WithLabelValues(code).Inc()
+		tr.AddEvent("matches", attribute.Int("matches.len", sender.SentCount()))
+		tr.SetAttributes(attribute.Bool("limitHit", sender.LimitHit()))
+		s.Log.Debug("search request",
+			log.String("repo", string(p.Repo)),
+			log.String("commit", string(p.Commit)),
+			log.String("pattern", p.Pattern),
+			log.Bool("isRegExp", p.IsRegExp),
+			log.Bool("isStructuralPat", p.IsStructuralPat),
+			log.Strings("languages", p.Languages),
+			log.Bool("isWordMatch", p.IsWordMatch),
+			log.Bool("isCaseSensitive", p.IsCaseSensitive),
+			log.Bool("patternMatchesContent", p.PatternMatchesContent),
+			log.Bool("patternMatchesPath", p.PatternMatchesPath),
+			log.Int("matches", sender.SentCount()),
+			log.String("code", code),
+			log.Duration("duration", time.Since(start)),
+			log.Strings("indexerEndpoints", p.IndexerEndpoints),
+			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
@@ -204,6 +233,38 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return path, zf, err
 	}
 
+	hybrid := !p.IsStructuralPat && p.FeatHybrid
+	if hybrid {
+		unsearched, ok, err := s.hybrid(ctx, p, sender)
+		if err != nil {
+			s.Log.Error("hybrid search failed",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)),
+				log.Error(err))
+			return errors.Wrap(err, "hybrid search failed")
+		}
+		if !ok {
+			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+				log.String("repo", string(p.Repo)),
+				log.String("commit", string(p.Commit)))
+		} else {
+			// now we only need to search unsearched
+			if len(unsearched) == 0 {
+				// indexed search did it all
+				return nil
+			}
+
+			getZf = func() (string, *zipFile, error) {
+				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
+				if err != nil {
+					return "", nil, err
+				}
+				zf, err := s.Store.zipCache.Get(path)
+				return path, zf, err
+			}
+		}
+	}
+
 	zipPath, zf, err := getZipFileWithRetry(getZf)
 	if err != nil {
 		return errors.Wrap(err, "failed to get archive")
@@ -212,12 +273,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	nFiles := uint64(len(zf.Files))
 	bytes := int64(len(zf.Data))
-	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
-	span.LogFields(
-		otlog.Uint64("archive.files", nFiles),
-		otlog.Int64("archive.size", bytes))
-	archiveFiles.Observe(float64(nFiles))
-	archiveSize.Observe(float64(bytes))
+	tr.AddEvent("archive",
+		attribute.Int64("archive.files", int64(nFiles)),
+		attribute.Int64("archive.size", bytes))
+	metricArchiveFiles.Observe(float64(nFiles))
+	metricArchiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
 		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
@@ -246,21 +306,21 @@ func validateParams(p *protocol.Request) error {
 const megabyte = float64(1000 * 1000)
 
 var (
-	running = promauto.NewGauge(prometheus.GaugeOpts{
+	metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "searcher_service_running",
 		Help: "Number of running search requests.",
 	})
-	archiveSize = promauto.NewHistogram(prometheus.HistogramOpts{
+	metricArchiveSize = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "searcher_service_archive_size_bytes",
 		Help:    "Observes the size when an archive is searched.",
 		Buckets: []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
 	})
-	archiveFiles = promauto.NewHistogram(prometheus.HistogramOpts{
+	metricArchiveFiles = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "searcher_service_archive_files",
 		Help:    "Observes the number of files when an archive is searched.",
 		Buckets: []float64{100, 1000, 10000, 50000, 100000},
 	})
-	requestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	metricRequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "searcher_service_request_total",
 		Help: "Number of returned search requests.",
 	}, []string{"code"})

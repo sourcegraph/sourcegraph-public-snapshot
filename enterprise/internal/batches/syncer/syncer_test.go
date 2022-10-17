@@ -2,22 +2,30 @@ package syncer
 
 import (
 	"context"
-	"net/http"
+	"os"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/log"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
 
 func newTestStore() *MockSyncStore {
 	s := NewMockSyncStore()
@@ -47,6 +55,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -87,6 +96,7 @@ func TestSyncerRun(t *testing.T) {
 		}, nil)
 
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			metrics:          makeMetrics(&observation.TestContext),
@@ -117,6 +127,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -137,6 +148,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &changesetSyncer{
+			logger:           logtest.Scoped(t),
 			syncStore:        newTestStore(),
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
@@ -150,6 +162,63 @@ func TestSyncerRun(t *testing.T) {
 		case <-time.After(100 * time.Millisecond):
 			t.Fatal("Sync not called")
 		}
+	})
+
+	t.Run("Sync due but reenqueued when namespace deleted", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+		defer cancel()
+		now := time.Now()
+		updateCalled := false
+		syncStore := newTestStore()
+
+		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+			{
+				ChangesetID:       1,
+				UpdatedAt:         now.Add(-2 * maxSyncDelay),
+				LatestEvent:       now.Add(-2 * maxSyncDelay),
+				ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+			},
+		}, nil)
+		syncStore.GetChangesetFunc.SetDefaultReturn(&btypes.Changeset{RepoID: 1, OwnedByBatchChangeID: 1}, nil)
+
+		rstore := database.NewMockRepoStore()
+		syncStore.ReposFunc.SetDefaultReturn(rstore)
+		rstore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/u/r"}, nil)
+
+		ess := database.NewMockExternalServiceStore()
+		ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			return []*types.ExternalService{{
+				ID:          1,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GitHub.com",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
+			}}, nil
+		})
+		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
+
+		// Return ErrDeletedNamespace to simulate that a namespace (user or org) has been deleted.
+		syncStore.GetBatchChangeFunc.SetDefaultReturn(nil, store.ErrDeletedNamespace)
+
+		syncStore.UpdateChangesetCodeHostStateFunc.SetDefaultHook(func(context.Context, *btypes.Changeset) error {
+			updateCalled = true
+			return nil
+		})
+
+		capturingLogger, export := logtest.Captured(t)
+		syncer := &changesetSyncer{
+			logger:           capturingLogger,
+			syncStore:        syncStore,
+			scheduleInterval: 10 * time.Minute,
+			metrics:          makeMetrics(&observation.TestContext),
+		}
+		syncer.Run(ctx)
+		assert.False(t, updateCalled)
+
+		// ensure the deleted namespace error is logged as a debug
+		captured := export()
+		assert.Greater(t, len(captured), 0)
+		assert.Equal(t, log.LevelDebug, captured[2].Level)
+		assert.Equal(t, "SyncChangeset skipping changeset: namespace deleted", captured[2].Message)
 	})
 }
 
@@ -225,6 +294,7 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	t.Cleanup(syncerCancel)
 
 	syncer := &changesetSyncer{
+		logger:      logtest.Scoped(t),
 		syncStore:   syncStore,
 		codeHostURL: codeHostURL,
 		syncFunc: func(ctx context.Context, id int64) error {
@@ -261,79 +331,55 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	}
 }
 
-func TestLoadChangesetSource(t *testing.T) {
+func TestSyncRegistry_EnqueueChangesetSyncsForRepos(t *testing.T) {
 	ctx := context.Background()
-	cf := httpcli.NewFactory(
-		func(cli httpcli.Doer) httpcli.Doer {
-			return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-				// Don't actually execute the request, just dump the authorization header
-				// in the error, so we can assert on it further down.
-				return nil, errors.New(req.Header.Get("Authorization"))
-			})
-		},
-		httpcli.NewTimeoutOpt(1*time.Second),
-	)
 
-	externalService := types.ExternalService{
-		ID:          1,
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub.com",
-		Config:      `{"url": "https://github.com", "token": "123", "authorization": {}}`,
-	}
-	repo := &types.Repo{
-		Name:    api.RepoName("test-repo"),
-		URI:     "test-repo",
-		Private: true,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "external-id-123",
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*types.SourceInfo{
-			externalService.URN(): {
-				ID:       externalService.URN(),
-				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
-			},
-		},
-	}
+	t.Run("store error", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		want := errors.New("expected")
+		bstore.ListChangesetsFunc.SetDefaultReturn(nil, 0, want)
 
-	// Store mocks.
-	hasCredential := false
-	syncStore := newTestStore()
-	syncStore.GetSiteCredentialFunc.SetDefaultHook(func(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
-		if hasCredential {
-			cred := &btypes.SiteCredential{}
-			cred.SetAuthenticator(ctx, &auth.OAuthBearerToken{Token: "456"})
-			return cred, nil
+		s := &SyncRegistry{
+			syncStore: bstore,
 		}
-		return nil, store.ErrNoResults
-	})
-	ess := database.NewMockExternalServiceStore()
-	ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{&externalService}, nil
-	})
-	syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
 
-	// If no site-credential exists, the token from the external service should be used.
-	src, err := loadChangesetSource(ctx, cf, syncStore, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := src.ValidateAuthenticator(ctx); err == nil {
-		t.Fatal("unexpected nil error")
-	} else if have, want := err.Error(), "Bearer 123"; have != want {
-		t.Fatalf("invalid token used, want=%q have=%q", want, have)
-	}
+		err := s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{})
+		assert.ErrorIs(t, err, want)
+	})
 
-	// If one exists, prefer that one over the external service config ones.
-	hasCredential = true
-	src, err = loadChangesetSource(ctx, cf, syncStore, repo)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := src.ValidateAuthenticator(ctx); err == nil {
-		t.Fatal("unexpected nil error")
-	} else if have, want := err.Error(), "Bearer 456"; have != want {
-		t.Fatalf("invalid token used, want=%q have=%q", want, have)
-	}
+	t.Run("no changesets", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return []*btypes.Changeset{}, 0, nil
+		})
+
+		s := &SyncRegistry{
+			syncStore: bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs := []*btypes.Changeset{
+			{ID: 1},
+			{ID: 2},
+		}
+
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return cs, 0, nil
+		})
+
+		s := &SyncRegistry{
+			logger:         logtest.Scoped(t),
+			priorityNotify: make(chan []int64, 1),
+			syncStore:      bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+		assert.ElementsMatch(t, []int64{1, 2}, <-s.priorityNotify)
+	})
 }

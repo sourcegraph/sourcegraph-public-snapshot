@@ -24,7 +24,12 @@ const avatarSizeClasses: Record<NonNullable<OrgAvatarProps['size']>, string> = {
 /**
  * OrgAvatar displays the avatar of an organization.
  */
-export const OrgAvatar: React.FunctionComponent<OrgAvatarProps> = ({ org, size = 'md', className = '', light }) => (
+export const OrgAvatar: React.FunctionComponent<React.PropsWithChildren<OrgAvatarProps>> = ({
+    org,
+    size = 'md',
+    className = '',
+    light,
+}) => (
     <div className={classNames(styles.orgAvatar, avatarSizeClasses[size], className, light && styles.orgAvatarLight)}>
         {org.slice(0, 2).toUpperCase()}
     </div>

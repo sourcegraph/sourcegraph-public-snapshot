@@ -8,9 +8,18 @@ import (
 )
 
 type operations struct {
-	deleteDependencyReposByID *observation.Operation
-	listDependencyRepos       *observation.Operation
-	upsertDependencyRepos     *observation.Operation
+	deleteDependencyReposByID    *observation.Operation
+	listDependencyRepos          *observation.Operation
+	lockfileDependencies         *observation.Operation
+	lockfileDependents           *observation.Operation
+	preciseDependencies          *observation.Operation
+	preciseDependents            *observation.Operation
+	selectRepoRevisionsToResolve *observation.Operation
+	updateResolvedRevisions      *observation.Operation
+	upsertDependencyRepos        *observation.Operation
+	upsertLockfileGraph          *observation.Operation
+	listLockfileIndexes          *observation.Operation
+	getLockfileIndex             *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -30,8 +39,17 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		deleteDependencyReposByID: op("DeleteDependencyReposByID"),
-		listDependencyRepos:       op("ListDependencyRepos"),
-		upsertDependencyRepos:     op("UpsertDependencyRepos"),
+		deleteDependencyReposByID:    op("DeleteDependencyReposByID"),
+		listDependencyRepos:          op("ListDependencyRepos"),
+		lockfileDependencies:         op("LockfileDependencies"),
+		lockfileDependents:           op("LockfileDependents"),
+		preciseDependencies:          op("PreciseDependencies"),
+		preciseDependents:            op("PreciseDependents"),
+		selectRepoRevisionsToResolve: op("SelectRepoRevisionsToResolve"),
+		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
+		upsertDependencyRepos:        op("UpsertDependencyRepos"),
+		upsertLockfileGraph:          op("UpsertLockfileGraph"),
+		listLockfileIndexes:          op("ListLockfileIndexes"),
+		getLockfileIndex:             op("GetLockfileIndex"),
 	}
 }

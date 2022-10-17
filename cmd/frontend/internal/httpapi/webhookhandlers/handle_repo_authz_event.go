@@ -21,8 +21,8 @@ import (
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	return func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+func handleGitHubRepoAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+	return func(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -54,7 +54,7 @@ func scheduleRepoUpdate(ctx context.Context, db database.DB, repo *gh.Repository
 
 	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
 	ctx = actor.WithInternalActor(ctx)
-	r, err := database.Repos(db).GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
+	r, err := db.Repos().GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err
 	}

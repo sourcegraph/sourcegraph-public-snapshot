@@ -5,13 +5,14 @@ import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 
+import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
+
 import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     ENVIRONMENT_CONFIG,
     getAPIProxySettings,
     shouldCompressResponse,
-    STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
     HTTPS_WEB_SERVER_URL,
     HTTP_WEB_SERVER_URL,
@@ -123,7 +124,7 @@ async function startEsbuildDevelopmentServer({
     const manifest = getManifest()
     const htmlPage = getHTMLPage(manifest)
 
-    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
+    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTP_PORT }, app => {
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
             response.send(htmlPage)

@@ -8,13 +8,15 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
+	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,6 +35,7 @@ const (
 	ChangesetStateClosed      ChangesetState = "CLOSED"
 	ChangesetStateMerged      ChangesetState = "MERGED"
 	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateReadOnly    ChangesetState = "READONLY"
 	ChangesetStateRetrying    ChangesetState = "RETRYING"
 	ChangesetStateFailed      ChangesetState = "FAILED"
 )
@@ -48,6 +51,7 @@ func (s ChangesetState) Valid() bool {
 		ChangesetStateClosed,
 		ChangesetStateMerged,
 		ChangesetStateDeleted,
+		ChangesetStateReadOnly,
 		ChangesetStateRetrying,
 		ChangesetStateFailed:
 		return true
@@ -152,11 +156,12 @@ type ChangesetExternalState string
 
 // ChangesetExternalState constants.
 const (
-	ChangesetExternalStateDraft   ChangesetExternalState = "DRAFT"
-	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
-	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
-	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
-	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
+	ChangesetExternalStateDraft    ChangesetExternalState = "DRAFT"
+	ChangesetExternalStateOpen     ChangesetExternalState = "OPEN"
+	ChangesetExternalStateClosed   ChangesetExternalState = "CLOSED"
+	ChangesetExternalStateMerged   ChangesetExternalState = "MERGED"
+	ChangesetExternalStateDeleted  ChangesetExternalState = "DELETED"
+	ChangesetExternalStateReadOnly ChangesetExternalState = "READONLY"
 )
 
 // Valid returns true if the given ChangesetExternalState is valid.
@@ -166,7 +171,8 @@ func (s ChangesetExternalState) Valid() bool {
 		ChangesetExternalStateDraft,
 		ChangesetExternalStateClosed,
 		ChangesetExternalStateMerged,
-		ChangesetExternalStateDeleted:
+		ChangesetExternalStateDeleted,
+		ChangesetExternalStateReadOnly:
 		return true
 	default:
 		return false
@@ -244,7 +250,7 @@ type Changeset struct {
 	RepoID              api.RepoID
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
-	Metadata            interface{}
+	Metadata            any
 	BatchChanges        []BatchChangeAssoc
 	ExternalID          string
 	ExternalServiceType string
@@ -258,7 +264,6 @@ type Changeset struct {
 	ExternalReviewState   ChangesetReviewState
 	ExternalCheckState    ChangesetCheckState
 	DiffStatAdded         *int32
-	DiffStatChanged       *int32
 	DiffStatDeleted       *int32
 	SyncState             ChangesetSyncState
 
@@ -273,6 +278,9 @@ type Changeset struct {
 	PublicationState   ChangesetPublicationState // "unpublished", "published"
 	UiPublicationState *ChangesetUiPublicationState
 
+	// State is a computed value. Changes to this value will never be persisted to the database.
+	State ChangesetState
+
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState
 	FailureMessage   *string
@@ -286,6 +294,9 @@ type Changeset struct {
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
+
+	// DetachedAt is the time when the changeset became "detached".
+	DetachedAt time.Time
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -302,7 +313,8 @@ func (c *Changeset) Clone() *Changeset {
 // Closeable returns whether the Changeset is already closed or merged.
 func (c *Changeset) Closeable() bool {
 	return c.ExternalState != ChangesetExternalStateClosed &&
-		c.ExternalState != ChangesetExternalStateMerged
+		c.ExternalState != ChangesetExternalStateMerged &&
+		c.ExternalState != ChangesetExternalStateReadOnly
 }
 
 // Complete returns whether the Changeset has been published and its
@@ -321,6 +333,9 @@ func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished()
 // IsImporting returns whether the Changeset is being imported but it's not finished yet.
 func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
 
+// IsImported returns whether the Changeset is imported
+func (c *Changeset) IsImported() bool { return c.OwnedByBatchChangeID == 0 }
+
 // SetCurrentSpec sets the CurrentSpecID field and copies the diff stat over from the spec.
 func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
 	c.CurrentSpecID = spec.ID
@@ -330,16 +345,15 @@ func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
 	c.SetDiffStat(&diffStat)
 }
 
-// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
+// DiffStat returns a *diff.Stat if DiffStatAdded and
 // DiffStatDeleted are set, or nil if one or more is not.
 func (c *Changeset) DiffStat() *diff.Stat {
-	if c.DiffStatAdded == nil || c.DiffStatChanged == nil || c.DiffStatDeleted == nil {
+	if c.DiffStatAdded == nil || c.DiffStatDeleted == nil {
 		return nil
 	}
 
 	return &diff.Stat{
 		Added:   *c.DiffStatAdded,
-		Changed: *c.DiffStatChanged,
 		Deleted: *c.DiffStatDeleted,
 	}
 }
@@ -347,27 +361,23 @@ func (c *Changeset) DiffStat() *diff.Stat {
 func (c *Changeset) SetDiffStat(stat *diff.Stat) {
 	if stat == nil {
 		c.DiffStatAdded = nil
-		c.DiffStatChanged = nil
 		c.DiffStatDeleted = nil
 	} else {
-		added := stat.Added
+		added := stat.Added + stat.Changed
 		c.DiffStatAdded = &added
 
-		changed := stat.Changed
-		c.DiffStatChanged = &changed
-
-		deleted := stat.Deleted
+		deleted := stat.Deleted + stat.Changed
 		c.DiffStatDeleted = &deleted
 	}
 }
 
-func (c *Changeset) SetMetadata(meta interface{}) error {
+func (c *Changeset) SetMetadata(meta any) error {
 	switch pr := meta.(type) {
 	case *github.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(pr.Number, 10)
 		c.ExternalServiceType = extsvc.TypeGitHub
-		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
@@ -379,7 +389,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
-		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
@@ -391,9 +401,25 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
-		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
 		c.ExternalForkNamespace = pr.SourceProjectNamespace
+	case *bbcs.AnnotatedPullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(pr.ID, 10)
+		c.ExternalServiceType = extsvc.TypeBitbucketCloud
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Source.Branch.Name)
+		c.ExternalUpdatedAt = pr.UpdatedOn
+
+		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
+			namespace, err := pr.Source.Repo.Namespace()
+			if err != nil {
+				return errors.Wrap(err, "determining fork namespace")
+			}
+			c.ExternalForkNamespace = namespace
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -419,6 +445,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *gitlab.MergeRequest:
 		return m.Title, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Title, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -435,6 +463,8 @@ func (c *Changeset) AuthorName() (string, error) {
 		}
 		return m.Author.User.Name, nil
 	case *gitlab.MergeRequest:
+		return m.Author.Username, nil
+	case *bbcs.AnnotatedPullRequest:
 		return m.Author.Username, nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -459,6 +489,10 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		return m.Author.User.EmailAddress, nil
 	case *gitlab.MergeRequest:
 		return m.Author.Email, nil
+	case *bbcs.AnnotatedPullRequest:
+		// Bitbucket Cloud does not provide the e-mail of the author under any
+		// circumstances.
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -475,6 +509,8 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return unixMilliToTime(int64(m.CreatedDate))
 	case *gitlab.MergeRequest:
 		return m.CreatedAt.Time
+	case *bbcs.AnnotatedPullRequest:
+		return m.CreatedOn
 	default:
 		return time.Time{}
 	}
@@ -489,6 +525,8 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *gitlab.MergeRequest:
 		return m.Description, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Rendered.Description.Raw, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -526,6 +564,14 @@ func (c *Changeset) URL() (s string, err error) {
 		return selfLink.Href, nil
 	case *gitlab.MergeRequest:
 		return m.WebURL, nil
+	case *bbcs.AnnotatedPullRequest:
+		if link, ok := m.Links["html"]; ok {
+			return link.Href, nil
+		}
+		// We could probably synthesise the URL based on the repo URL and the
+		// pull request ID, but since the link _should_ be there, we'll error
+		// instead.
+		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -658,6 +704,46 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    pipeline,
 			})
 		}
+
+	case *bbcs.AnnotatedPullRequest:
+		// There are two types of event that we create from an annotated pull
+		// request: review events, based on the participants within the pull
+		// request, and check events, based on the commit statuses.
+		//
+		// Unlike some other code host types, we don't need to handle general
+		// comments, as we can access the historical data required through more
+		// specialised APIs.
+
+		var kind ChangesetEventKind
+
+		for _, participant := range m.Participants {
+			if kind, err = ChangesetEventKindFor(&participant); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				// There's no unique ID within the participant structure itself,
+				// but the combination of the user UUID, the repo UUID, and the
+				// PR ID should be unique. We can't implement this as a Keyer on
+				// the participant because it requires knowledge of things
+				// outside the struct.
+				Key:      m.Destination.Repo.UUID + ":" + strconv.FormatInt(m.ID, 10) + ":" + participant.User.UUID,
+				Kind:     kind,
+				Metadata: participant,
+			})
+		}
+
+		for _, status := range m.Statuses {
+			if kind, err = ChangesetEventKindFor(status); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         status.Key(),
+				Kind:        kind,
+				Metadata:    status,
+			})
+		}
 	}
 	return events, nil
 }
@@ -673,6 +759,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return "", nil
 	case *gitlab.MergeRequest:
 		return m.DiffRefs.HeadSHA, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Source.Commit.Hash, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -688,6 +776,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return m.FromRef.ID, nil
 	case *gitlab.MergeRequest:
 		return "refs/heads/" + m.SourceBranch, nil
+	case *bbcs.AnnotatedPullRequest:
+		return "refs/heads/" + m.Source.Branch.Name, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -704,6 +794,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return "", nil
 	case *gitlab.MergeRequest:
 		return m.DiffRefs.BaseSHA, nil
+	case *bbcs.AnnotatedPullRequest:
+		return m.Destination.Commit.Hash, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -719,6 +811,8 @@ func (c *Changeset) BaseRef() (string, error) {
 		return m.ToRef.ID, nil
 	case *gitlab.MergeRequest:
 		return "refs/heads/" + m.TargetBranch, nil
+	case *bbcs.AnnotatedPullRequest:
+		return "refs/heads/" + m.Destination.Branch.Name, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -749,6 +843,9 @@ func (c *Changeset) Attach(batchChangeID int64) {
 		}
 	}
 	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
+	if !c.DetachedAt.IsZero() {
+		c.DetachedAt = time.Time{}
+	}
 }
 
 // Detach marks the given batch change as to-be-detached. Returns true, if the
@@ -917,6 +1014,11 @@ type RepoChangesetsStats struct {
 	CommonChangesetsStats
 }
 
+// GlobalChangesetsStats holds stats information on all the changsets across the instance.
+type GlobalChangesetsStats struct {
+	CommonChangesetsStats
+}
+
 // ChangesetsStats holds additional stats information on a list of changesets.
 type ChangesetsStats struct {
 	CommonChangesetsStats
@@ -930,7 +1032,7 @@ type ChangesetsStats struct {
 
 // ChangesetEventKindFor returns the ChangesetEventKind for the given
 // specific code host event.
-func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
+func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 	switch e := e.(type) {
 	case *github.AssignedEvent:
 		return ChangesetEventKindGitHubAssigned, nil
@@ -996,6 +1098,43 @@ func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
 		return ChangesetEventKindGitLabReopened, nil
 	case *gitlab.MergeRequestMergedEvent:
 		return ChangesetEventKindGitLabMerged, nil
+
+	case *bitbucketcloud.Participant:
+		switch e.State {
+		case bitbucketcloud.ParticipantStateApproved:
+			return ChangesetEventKindBitbucketCloudApproved, nil
+		case bitbucketcloud.ParticipantStateChangesRequested:
+			return ChangesetEventKindBitbucketCloudChangesRequested, nil
+		default:
+			return ChangesetEventKindBitbucketCloudReviewed, nil
+		}
+	case *bitbucketcloud.PullRequestStatus:
+		return ChangesetEventKindBitbucketCloudCommitStatus, nil
+
+	case *bitbucketcloud.PullRequestApprovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestApproved, nil
+	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated, nil
+	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved, nil
+	case *bitbucketcloud.PullRequestCommentCreatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentCreated, nil
+	case *bitbucketcloud.PullRequestCommentDeletedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentDeleted, nil
+	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestCommentUpdated, nil
+	case *bitbucketcloud.PullRequestFulfilledEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestFulfilled, nil
+	case *bitbucketcloud.PullRequestRejectedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestRejected, nil
+	case *bitbucketcloud.PullRequestUnapprovedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestUnapproved, nil
+	case *bitbucketcloud.PullRequestUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudPullRequestUpdated, nil
+	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
+		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
+	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
+		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
 	}
 
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
@@ -1003,8 +1142,42 @@ func ChangesetEventKindFor(e interface{}) (ChangesetEventKind, error) {
 
 // NewChangesetEventMetadata returns a new metadata object for the given
 // ChangesetEventKind.
-func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
+func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 	switch {
+	case strings.HasPrefix(string(k), "bitbucketcloud"):
+		switch k {
+		case ChangesetEventKindBitbucketCloudApproved,
+			ChangesetEventKindBitbucketCloudChangesRequested,
+			ChangesetEventKindBitbucketCloudReviewed:
+			return new(bitbucketcloud.Participant), nil
+		case ChangesetEventKindBitbucketCloudCommitStatus:
+			return new(bitbucketcloud.PullRequestStatus), nil
+
+		case ChangesetEventKindBitbucketCloudPullRequestApproved:
+			return new(bitbucketcloud.PullRequestApprovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated:
+			return new(bitbucketcloud.PullRequestChangesRequestCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved:
+			return new(bitbucketcloud.PullRequestChangesRequestRemovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentCreated:
+			return new(bitbucketcloud.PullRequestCommentCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentDeleted:
+			return new(bitbucketcloud.PullRequestCommentDeletedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestCommentUpdated:
+			return new(bitbucketcloud.PullRequestCommentUpdatedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestFulfilled:
+			return new(bitbucketcloud.PullRequestFulfilledEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestRejected:
+			return new(bitbucketcloud.PullRequestRejectedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestUnapproved:
+			return new(bitbucketcloud.PullRequestUnapprovedEvent), nil
+		case ChangesetEventKindBitbucketCloudPullRequestUpdated:
+			return new(bitbucketcloud.PullRequestUpdatedEvent), nil
+		case ChangesetEventKindBitbucketCloudRepoCommitStatusCreated:
+			return new(bitbucketcloud.RepoCommitStatusCreatedEvent), nil
+		case ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated:
+			return new(bitbucketcloud.RepoCommitStatusUpdatedEvent), nil
+		}
 	case strings.HasPrefix(string(k), "bitbucketserver"):
 		switch k {
 		case ChangesetEventKindBitbucketServerCommitStatus:

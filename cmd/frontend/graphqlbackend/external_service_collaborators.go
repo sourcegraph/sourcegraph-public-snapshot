@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -40,7 +41,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if r.externalService.IsSiteOwned() {
 		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
 	}
-	cfg, err := r.externalService.Configuration()
+	cfg, err := r.externalService.Configuration(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse external service config")
 	}
@@ -63,7 +64,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	if len(possibleRepos) == 0 {
 		// External service is describing "sync all repos" instead of a specific set. Query a few of
 		// those that we'll look for collaborators in.
-		repos, err := backend.NewRepos(r.db).List(ctx, database.ReposListOptions{
+		repos, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).List(ctx, database.ReposListOptions{
 			// SECURITY: This must be the authenticated user's external service ID.
 			ExternalServiceIDs: []int64{r.externalService.ID},
 			OrderBy: database.RepoListOrderBy{{
@@ -91,7 +92,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 	// parallel) and so that is the true limiting factor here.
 	//
 	// We search within random repositories because many follow a pattern, such as say adding a ton
-	// of `company/lsif-java`, `company/lsif-python`, `company/lsif-typescript` etc repos with likely
+	// of `company/scip-java`, `company/scip-python`, `company/scip-typescript` etc repos with likely
 	// the same collaborators, whereas random sampling may give us dissimilar repositories.
 	const maxReposToScan = 25
 	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)
@@ -102,7 +103,7 @@ func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([
 		return nil, err
 	}
 
-	authUserEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
+	authUserEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,
 	})
 	if err != nil {
@@ -208,7 +209,7 @@ func filterInvitableCollaborators(
 	// invite are people who recently committed to code, which means they're more active and more
 	// likely the person you want to invite (compared to e.g. if we hit a very old repo and the
 	// committer is say no longer working at that organization.)
-	sort.Slice(recentCommitters, func(i, j int) bool {
+	sort.SliceStable(recentCommitters, func(i, j int) bool {
 		a := recentCommitters[i].date
 		b := recentCommitters[j].date
 		return a.After(b)
@@ -276,7 +277,7 @@ func filterInvitableCollaborators(
 		current := invitablePerDomain[domain(person.email)]
 		invitablePerDomain[domain(person.email)] = current + 1
 	}
-	sort.Slice(invitable, func(i, j int) bool {
+	sort.SliceStable(invitable, func(i, j int) bool {
 		// First, sort popular personal email domains lower.
 		iDomain := domain(invitable[i].email)
 		jDomain := domain(invitable[j].email)

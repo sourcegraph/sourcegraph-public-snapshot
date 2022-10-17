@@ -27,7 +27,7 @@ func init() {
 	// the console window, but it turns out that's a security nightmare.) So
 	// we'll just poll every five seconds and update the capabilities from
 	// there.
-	newCapabilityWatcher = func() chan capabilities {
+	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
 		c := make(chan capabilities)
 
 		go func() {
@@ -35,7 +35,7 @@ func init() {
 			defer ticker.Stop()
 			for {
 				<-ticker.C
-				if caps, err := detectCapabilities(); err == nil {
+				if caps, err := detectCapabilities(opts); err == nil {
 					c <- caps
 				}
 			}

@@ -1,5 +1,4 @@
 import { SubmitSearchParameters } from '@sourcegraph/search'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
@@ -7,11 +6,14 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-const SUBMITTED_SEARCHES_COUNT_KEY = 'submitted-searches-count'
+import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results/components/aggregation/constants'
 
-export function getSubmittedSearchesCount(): number {
-    return parseInt(localStorage.getItem(SUBMITTED_SEARCHES_COUNT_KEY) || '0', 10)
-}
+/**
+ * By default {@link submitSearch} overrides all existing query parameters.
+ * This breaks all functionality that is built on top of URL query params and history
+ * state. This list of query keys will be preserved between searches.
+ */
+const PRESERVED_QUERY_PARAMETERS = ['trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -26,6 +28,7 @@ export function submitSearch({
     activation,
     source,
     searchParameters,
+    addRecentSearch,
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(
         query,
@@ -35,27 +38,32 @@ export function submitSearch({
         searchParameters
     )
 
-    // Check if `trace` is set in the query parameters, and retain it if present.
     const existingParameters = new URLSearchParams(history.location.search)
-    const traceParameter = existingParameters.get('trace')
-    if (traceParameter !== null) {
-        const parameters = new URLSearchParams(searchQueryParameter)
-        parameters.set('trace', traceParameter)
-        searchQueryParameter = parameters.toString()
+
+    for (const key of PRESERVED_QUERY_PARAMETERS) {
+        const queryParameter = existingParameters.get(key)
+
+        if (queryParameter !== null) {
+            const parameters = new URLSearchParams(searchQueryParameter)
+            parameters.set(key, queryParameter)
+            searchQueryParameter = parameters.toString()
+        }
     }
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
+
+    const queryWithContext = appendContextFilter(query, selectedSearchContextSpec)
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: appendContextFilter(query, selectedSearchContextSpec),
+            query: queryWithContext,
             source,
         },
         { source }
     )
-    localStorage.setItem(SUBMITTED_SEARCHES_COUNT_KEY, JSON.stringify(getSubmittedSearchesCount() + 1))
-    history.push(path, { ...history.location.state, query })
+    addRecentSearch?.(queryWithContext)
+    history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })
     }
@@ -151,10 +159,6 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 
     return query.replace(match[0], searchType ? `type:${searchType}` : '')
 }
-
-/** Returns true if the given value is of the GraphQL SearchResults type */
-export const isSearchResults = (value: any): value is GQL.ISearchResults =>
-    value && typeof value === 'object' && value.__typename === 'SearchResults'
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

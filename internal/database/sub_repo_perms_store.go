@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -10,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,6 +36,9 @@ type SubRepoPermsStore interface {
 	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+	// GetByUserAndService gets the sub repo permissions for a user, but filters down
+	// to only repos that come from a specific external service.
+	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
 	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
@@ -47,11 +48,6 @@ type SubRepoPermsStore interface {
 // data consistency over sub_repo_permissions table.
 type subRepoPermsStore struct {
 	*basestore.Store
-}
-
-// SubRepoPerms returns a new SubRepoPermsStore with the given parameters.
-func SubRepoPerms(db dbutil.DB) SubRepoPermsStore {
-	return &subRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {
@@ -75,18 +71,17 @@ func (s *subRepoPermsStore) Done(err error) error {
 // Upsert will upsert sub repo permissions data.
 func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
-VALUES (%s, %s, %s, %s, %s, now())
+INSERT INTO sub_repo_permissions (user_id, repo_id, paths, version, updated_at)
+VALUES (%s, %s, %s, %s, now())
 ON CONFLICT (user_id, repo_id, version)
 DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,
   repo_id = EXCLUDED.repo_id,
-  path_includes = EXCLUDED.path_includes,
-  path_excludes = EXCLUDED.path_excludes,
+  paths = EXCLUDED.paths,
   version = EXCLUDED.version,
   updated_at = now()
-`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion)
+`, userID, repoID, pq.Array(perms.Paths), SubRepoPermsVersion)
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
@@ -95,8 +90,8 @@ SET
 // nothing is written.
 func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
-SELECT %s, id, %s, %s, %s, now()
+INSERT INTO sub_repo_permissions (user_id, repo_id, paths, version, updated_at)
+SELECT %s, id, %s, %s, now()
 FROM repo
 WHERE external_service_id = %s
   AND external_service_type = %s
@@ -106,11 +101,10 @@ DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,
   repo_id = EXCLUDED.repo_id,
-  path_includes = EXCLUDED.path_includes,
-  path_excludes = EXCLUDED.path_excludes,
+  paths = EXCLUDED.paths,
   version = EXCLUDED.version,
   updated_at = now()
-`, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
+`, userID, pq.Array(perms.Paths), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
 
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions with spec")
 }
@@ -118,7 +112,7 @@ SET
 // Get will fetch sub repo rules for the given repo and user combination.
 func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT path_includes, path_excludes
+SELECT paths
 FROM sub_repo_permissions
 WHERE repo_id = %s
   AND user_id = %s
@@ -132,13 +126,11 @@ WHERE repo_id = %s
 
 	perms := new(authz.SubRepoPermissions)
 	for rows.Next() {
-		var includes []string
-		var excludes []string
-		if err := rows.Scan(pq.Array(&includes), pq.Array(&excludes)); err != nil {
+		var paths []string
+		if err := rows.Scan(pq.Array(&paths)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
-		perms.PathIncludes = append(perms.PathIncludes, includes...)
-		perms.PathExcludes = append(perms.PathExcludes, excludes...)
+		perms.Paths = append(perms.Paths, paths...)
 	}
 
 	if err := rows.Close(); err != nil {
@@ -151,7 +143,7 @@ WHERE repo_id = %s
 // GetByUser fetches all sub repo perms for a user keyed by repo.
 func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT r.name, path_includes, path_excludes
+SELECT r.name, paths
 FROM sub_repo_permissions
 JOIN repo r on r.id = repo_id
 WHERE user_id = %s
@@ -167,10 +159,46 @@ WHERE user_id = %s
 	for rows.Next() {
 		var perms authz.SubRepoPermissions
 		var repoName api.RepoName
-		if err := rows.Scan(&repoName, pq.Array(&perms.PathIncludes), pq.Array(&perms.PathExcludes)); err != nil {
+		if err := rows.Scan(&repoName, pq.Array(&perms.Paths)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
 		result[repoName] = perms
+	}
+
+	if err := rows.Close(); err != nil {
+		return nil, errors.Wrap(err, "closing rows")
+	}
+
+	return result, nil
+}
+
+func (s *subRepoPermsStore) GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
+	q := sqlf.Sprintf(`
+SELECT r.external_id, paths
+FROM sub_repo_permissions
+JOIN repo r on r.id = repo_id
+WHERE user_id = %s
+  AND version = %s
+  AND r.external_service_type = %s
+  AND r.external_service_id = %s
+`, userID, SubRepoPermsVersion, serviceType, serviceID)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting sub repo permissions by user")
+	}
+
+	result := make(map[api.ExternalRepoSpec]authz.SubRepoPermissions)
+	for rows.Next() {
+		var perms authz.SubRepoPermissions
+		spec := api.ExternalRepoSpec{
+			ServiceType: serviceType,
+			ServiceID:   serviceID,
+		}
+		if err := rows.Scan(&spec.ID, pq.Array(&perms.Paths)); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		result[spec] = perms
 	}
 
 	if err := rows.Close(); err != nil {

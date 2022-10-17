@@ -1,7 +1,8 @@
 import * as H from 'history'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
+
+import { SearchPatternType } from '../graphql-operations'
 
 import { getSearchTypeFromQuery, toggleSearchType, toggleSubquery, submitSearch } from './helpers'
 
@@ -12,28 +13,32 @@ describe('search/helpers', () => {
             submitSearch({
                 history,
                 query: 'querystring',
-                patternType: SearchPatternType.literal,
+                patternType: SearchPatternType.standard,
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })
-            expect(history.location.search).toEqual('?q=context:global+querystring&patternType=literal')
+            expect(history.location.search).toMatchInlineSnapshot(
+                '"?q=context:global+querystring&patternType=standard"'
+            )
         })
         test('should keep trace param when updating history', () => {
             const history = H.createMemoryHistory({ initialEntries: ['/?trace=1'] })
             submitSearch({
                 history,
                 query: 'querystring',
-                patternType: SearchPatternType.literal,
+                patternType: SearchPatternType.standard,
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })
-            expect(history.location.search).toEqual('?q=context%3Aglobal+querystring&patternType=literal&trace=1')
+            expect(history.location.search).toMatchInlineSnapshot(
+                '"?q=context%3Aglobal+querystring&patternType=standard&trace=1"'
+            )
         })
     })
 

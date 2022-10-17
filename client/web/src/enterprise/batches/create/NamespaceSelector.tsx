@@ -3,25 +3,29 @@ import React, { useCallback } from 'react'
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Select } from '@sourcegraph/wildcard'
 
-const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+type PartialNamespace =
+    | Pick<SettingsUserSubject, '__typename' | 'id' | 'username' | 'displayName'>
+    | Pick<SettingsOrgSubject, '__typename' | 'id' | 'name' | 'displayName'>
+
+const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
         case 'User':
-            return namespace.displayName ?? namespace.username
+            return namespace.displayName ? namespace.displayName : namespace.username
         case 'Org':
-            return namespace.displayName ?? namespace.name
+            return namespace.displayName ? namespace.displayName : namespace.name
     }
 }
 
 const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 
 interface NamespaceSelectorProps {
-    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
+    namespaces: PartialNamespace[]
     selectedNamespace: string
     disabled?: boolean
-    onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
+    onSelect: (namespace: PartialNamespace) => void
 }
 
-export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
+export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<NamespaceSelectorProps>> = ({
     namespaces,
     disabled,
     selectedNamespace,
@@ -29,19 +33,23 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
 }) => {
     const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
+            if (disabled) {
+                return
+            }
+
             const selectedNamespace = namespaces.find(
                 (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
                     namespace.id === event.target.value
             )
             onSelect(selectedNamespace || namespaces[0])
         },
-        [onSelect, namespaces]
+        [disabled, onSelect, namespaces]
     )
 
     return (
         <Select
             label={<strong className="text-nowrap mb-2">Namespace</strong>}
-            selectClassName="form-control"
+            isCustomStyle={true}
             id={NAMESPACE_SELECTOR_ID}
             value={selectedNamespace}
             onChange={onSelectNamespace}

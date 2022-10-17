@@ -97,20 +97,24 @@ const businessGroup: SiteAdminSideBarGroup = {
 }
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Code intelligence', icon: BrainIcon },
+    header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-intelligence/uploads',
+            to: '/site-admin/code-graph/uploads',
             label: 'Uploads',
         },
         {
-            to: '/site-admin/code-intelligence/indexes',
+            to: '/site-admin/code-graph/indexes',
             label: 'Auto-indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {
-            to: '/site-admin/code-intelligence/configuration',
+            to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
+        },
+        {
+            to: '/site-admin/code-graph/inference-configuration',
+            label: 'Inference',
         },
     ],
 }
@@ -122,8 +126,8 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     codeIntelGroup,
     usersGroup,
     maintenanceGroup,
-    extensionsGroup,
+    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,
-]
+].filter(Boolean) as SiteAdminSideBarGroups

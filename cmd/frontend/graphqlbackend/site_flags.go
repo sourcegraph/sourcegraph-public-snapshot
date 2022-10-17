@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -17,7 +17,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		// TODO(dax): This should return err once the site flags query is fixed for users
 		return false, nil
 	}
@@ -33,7 +33,7 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 		}
 	}
 
-	count, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 	}
 
 	// If a license exists, warnings never need to be shown.
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlan(info) {
 		return false, err
 	}
 	// If OSS, warnings never need to be shown.
@@ -62,10 +62,13 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := database.Users(r.db).Count(ctx, nil)
+	userCount, err := r.db.Users().Count(ctx, nil)
 	if err != nil {
 		return false, err
 	}
 
 	return *NoLicenseWarningUserCount <= int32(userCount), nil
 }
+
+func (r *siteResolver) ExternalServicesFromFile() bool          { return extsvcConfigFile != "" }
+func (r *siteResolver) AllowEditExternalServicesWithFile() bool { return extsvcConfigAllowEdits }

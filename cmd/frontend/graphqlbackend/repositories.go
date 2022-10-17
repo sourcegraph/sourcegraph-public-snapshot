@@ -5,33 +5,42 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query       *string
-	Names       *[]string
-	Cloned      bool
-	NotCloned   bool
-	Indexed     bool
-	NotIndexed  bool
+	Query *string
+	Names *[]string
+
+	Cloned     bool
+	NotCloned  bool
+	Indexed    bool
+	NotIndexed bool
+
+	CloneStatus *string
 	FailedFetch bool
-	OrderBy     string
-	Descending  bool
-	After       *string
+
+	OrderBy    string
+	Descending bool
+	After      *string
 }
 
-func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
+func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
 			Field:      ToDBRepoListColumn(args.OrderBy),
@@ -47,7 +56,7 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 	if args.After != nil {
 		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
-			return nil, err
+			return opt, err
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
@@ -63,18 +72,39 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 
 		opt.Cursors = append(opt.Cursors, &cursor)
 	}
+	args.Set(&opt.LimitOffset)
+
+	if args.CloneStatus != nil {
+		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
+	}
 
 	opt.FailedFetch = args.FailedFetch
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+
+	if !args.Cloned {
+		opt.NoCloned = true
+	} else if !args.NotCloned {
+		// notCloned is true by default.
+		// this condition is valid only if it has been
+		// explicitly set to false by the client.
+		opt.OnlyCloned = true
+	}
+
+	return opt, nil
+}
+
+func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
+	opt, err := args.toReposListOptions()
+
+	if err != nil {
+		return nil, err
+	}
 
 	return &repositoryConnectionResolver{
-		db:          r.db,
-		opt:         opt,
-		cloned:      args.Cloned,
-		notCloned:   args.NotCloned,
-		indexed:     args.Indexed,
-		notIndexed:  args.NotIndexed,
-		failedFetch: args.FailedFetch,
+		db:         r.db,
+		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		opt:        opt,
+		indexed:    args.Indexed,
+		notIndexed: args.NotIndexed,
 	}, nil
 }
 
@@ -88,27 +118,14 @@ type RepositoryConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
-	return &repositoryConnectionResolver{
-		db:         db,
-		opt:        opt,
-		cloned:     cloned,
-		notCloned:  notCloned,
-		indexed:    indexed,
-		notIndexed: notIndexed,
-	}
-}
-
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db          database.DB
-	opt         database.ReposListOptions
-	cloned      bool
-	notCloned   bool
-	indexed     bool
-	notIndexed  bool
-	failedFetch bool
+	logger     log.Logger
+	db         database.DB
+	opt        database.ReposListOptions
+	indexed    bool
+	notIndexed bool
 
 	// cache results because they are used by multiple fields
 	once  sync.Once
@@ -122,7 +139,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+			if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -130,7 +147,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		var indexed *zoekt.RepoList
-		searchIndexEnabled := search.Indexed() != nil
+		searchIndexEnabled := conf.SearchIndexEnabled()
 		isIndexed := func(id api.RepoID) bool {
 			if !searchIndexEnabled {
 				return true // do not need index
@@ -153,16 +170,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		if !r.cloned {
-			opt2.NoCloned = true
-		} else if !r.notCloned {
-			// notCloned is true by default.
-			// this condition is valid only if it has been
-			// explicitly set to false by the client.
-			opt2.OnlyCloned = true
-		}
-		opt2.FailedFetch = r.failedFetch
-
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -171,7 +178,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.db).List(ctx, opt2)
+			repos, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -220,7 +227,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo))
 	}
 	return resolvers, nil
 }
@@ -228,29 +235,21 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
 	if r.opt.UserID != 0 {
 		// 🚨 SECURITY: If filtering by user, restrict to that user
-		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+		if err := auth.CheckSameUser(ctx, r.opt.UserID); err != nil {
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	}
 
-	i32ptr := func(v int32) *int32 {
-		return &v
-	}
-
-	if !r.cloned || !r.notCloned {
-		// Don't support counting if filtering by clone status.
-		return nil, nil
-	}
 	if !r.indexed || !r.notIndexed {
 		// Don't support counting if filtering by index status.
 		return nil, nil
@@ -273,6 +272,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
+	i32ptr := func(v int32) *int32 { return &v }
 	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }

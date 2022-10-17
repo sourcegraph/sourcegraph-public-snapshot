@@ -154,6 +154,10 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  generated_from_capture_groups | boolean                     |           | not null | false
  generation_method             | text                        |           | not null | 
  just_in_time                  | boolean                     |           | not null | false
+ group_by                      | text                        |           |          | 
+ backfill_attempts             | integer                     |           | not null | 0
+ needs_migration               | boolean                     |           |          | 
+ backfill_completed_at         | timestamp without time zone |           |          | 
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -161,6 +165,7 @@ Indexes:
     "insight_series_next_recording_after_idx" btree (next_recording_after)
 Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```
@@ -187,20 +192,41 @@ Data series that comprise code insights.
 
 **series_id**: Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.
 
+# Table "public.insight_series_backfill"
+```
+      Column      |       Type       | Collation | Nullable |                       Default                       
+------------------+------------------+-----------+----------+-----------------------------------------------------
+ id               | integer          |           | not null | nextval('insight_series_backfill_id_seq'::regclass)
+ series_id        | integer          |           | not null | 
+ repo_iterator_id | integer          |           |          | 
+ estimated_cost   | double precision |           |          | 
+ state            | text             |           | not null | 'new'::text
+Indexes:
+    "insight_series_backfill_pk" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
+
 # Table "public.insight_view"
 ```
-              Column               |          Type          | Collation | Nullable |                 Default                  
------------------------------------+------------------------+-----------+----------+------------------------------------------
- id                                | integer                |           | not null | nextval('insight_view_id_seq'::regclass)
- title                             | text                   |           |          | 
- description                       | text                   |           |          | 
- unique_id                         | text                   |           | not null | 
- default_filter_include_repo_regex | text                   |           |          | 
- default_filter_exclude_repo_regex | text                   |           |          | 
- other_threshold                   | double precision       |           |          | 
- presentation_type                 | presentation_type_enum |           | not null | 'LINE'::presentation_type_enum
- is_frozen                         | boolean                |           | not null | false
- default_filter_search_contexts    | text[]                 |           |          | 
+              Column               |            Type            | Collation | Nullable |                 Default                  
+-----------------------------------+----------------------------+-----------+----------+------------------------------------------
+ id                                | integer                    |           | not null | nextval('insight_view_id_seq'::regclass)
+ title                             | text                       |           |          | 
+ description                       | text                       |           |          | 
+ unique_id                         | text                       |           | not null | 
+ default_filter_include_repo_regex | text                       |           |          | 
+ default_filter_exclude_repo_regex | text                       |           |          | 
+ other_threshold                   | double precision           |           |          | 
+ presentation_type                 | presentation_type_enum     |           | not null | 'LINE'::presentation_type_enum
+ is_frozen                         | boolean                    |           | not null | false
+ default_filter_search_contexts    | text[]                     |           |          | 
+ series_sort_mode                  | series_sort_mode_enum      |           |          | 
+ series_sort_direction             | series_sort_direction_enum |           |          | 
+ series_limit                      | integer                    |           |          | 
 Indexes:
     "insight_view_pkey" PRIMARY KEY, btree (id)
     "insight_view_unique_id_unique_idx" UNIQUE, btree (unique_id)
@@ -279,6 +305,32 @@ Join table to correlate data series with insight views
 
 **stroke**: Stroke color metadata for this data series. This may render in a chart depending on the view type.
 
+# Table "public.insights_background_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                       Default                        
+-------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                | integer                  |           | not null | nextval('insights_background_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ backfill_id       | integer                  |           |          | 
+Indexes:
+    "insights_background_jobs_pkey" PRIMARY KEY, btree (id)
+    "insights_jobs_state_idx" btree (state)
+Foreign-key constraints:
+    "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
+
 # Table "public.metadata"
 ```
   Column  |  Type  | Collation | Nullable |               Default                
@@ -313,8 +365,48 @@ Records arbitrary metadata about events. Stored in a separate table as it is oft
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
+
+# Table "public.repo_iterator"
+```
+      Column      |            Type             | Collation | Nullable |                  Default                  
+------------------+-----------------------------+-----------+----------+-------------------------------------------
+ id               | integer                     |           | not null | nextval('repo_iterator_id_seq'::regclass)
+ created_at       | timestamp without time zone |           |          | now()
+ started_at       | timestamp without time zone |           |          | 
+ completed_at     | timestamp without time zone |           |          | 
+ last_updated_at  | timestamp without time zone |           | not null | now()
+ runtime_duration | bigint                      |           | not null | 0
+ percent_complete | double precision            |           | not null | 0
+ total_count      | integer                     |           | not null | 0
+ success_count    | integer                     |           | not null | 0
+ repos            | integer[]                   |           |          | 
+ repo_cursor      | integer                     |           |          | 0
+Indexes:
+    "repo_iterator_pk" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_iterator_errors" CONSTRAINT "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
+
+```
+
+# Table "public.repo_iterator_errors"
+```
+      Column      |  Type   | Collation | Nullable |                     Default                      
+------------------+---------+-----------+----------+--------------------------------------------------
+ id               | integer |           | not null | nextval('repo_iterator_errors_id_seq'::regclass)
+ repo_iterator_id | integer |           | not null | 
+ repo_id          | integer |           | not null | 
+ error_message    | text[]  |           | not null | 
+ failure_count    | integer |           |          | 1
+Indexes:
+    "repo_iterator_errors_pk" PRIMARY KEY, btree (id)
+    "repo_iterator_errors_fk_idx" btree (repo_iterator_id)
+Foreign-key constraints:
+    "repo_iterator_fk" FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id)
 
 ```
 
@@ -410,10 +502,73 @@ Check constraints:
 
 Stores ephemeral snapshot data of insight recordings.
 
+# View "public.insights_jobs_backfill_in_progress"
+
+## View query:
+
+```sql
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'processing'::text);
+```
+
+# View "public.insights_jobs_backfill_new"
+
+## View query:
+
+```sql
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'new'::text);
+```
+
 # Type presentation_type_enum
 
 - LINE
 - PIE
+
+# Type series_sort_direction_enum
+
+- ASC
+- DESC
+
+# Type series_sort_mode_enum
+
+- RESULT_COUNT
+- LEXICOGRAPHICAL
+- DATE_ADDED
 
 # Type time_unit
 

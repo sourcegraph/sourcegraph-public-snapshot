@@ -1,0 +1,12 @@
+{
+  "TarHash": "7bd21151b4fef02528e651bd72bc63338a7b592a",
+  "Files": [
+   "/requests-0.2.0/HISTORY.rst",
+   "/requests-0.2.0/LICENSE",
+   "/requests-0.2.0/PKG-INFO",
+   "/requests-0.2.0/README.rst",
+   "/requests-0.2.0/requests/__init__.py",
+   "/requests-0.2.0/requests/core.py",
+   "/requests-0.2.0/setup.py"
+  ]
+ }

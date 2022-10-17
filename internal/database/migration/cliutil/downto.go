@@ -1,10 +1,8 @@
 package cliutil
 
 import (
-	"flag"
+	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -12,80 +10,100 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func DownTo(commandName string, factory RunnerFactory, out *output.Output, development bool) *cli.Command {
-	flags := []cli.Flag{
-		&cli.StringFlag{
-			Name:     "db",
-			Usage:    "The target `schema` to modify.",
-			Required: true,
-		},
-		&cli.StringFlag{
-			Name:     "target",
-			Usage:    `The migration to apply. Comma-separated values are accepted.`,
-			Required: true,
-		},
-		&cli.BoolFlag{
-			Name:  "unprivileged-only",
-			Usage: `Do not apply privileged migrations.`,
-			Value: false,
-		},
-		&cli.BoolFlag{
-			Name:  "ignore-single-dirty-log",
-			Usage: `Ignore a previously failed attempt if it will be immediately retried by this operation.`,
-			Value: development,
-		},
+func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
+	schemaNameFlag := &cli.StringFlag{
+		Name:     "db",
+		Usage:    "The target `schema` to modify.",
+		Required: true,
+	}
+	targetFlag := &cli.StringSliceFlag{
+		Name:     "target",
+		Usage:    "The migration to apply. Comma-separated values are accepted.",
+		Required: true,
+	}
+	unprivilegedOnlyFlag := &cli.BoolFlag{
+		Name:  "unprivileged-only",
+		Usage: "Refuse to apply privileged migrations.",
+		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
+		Value: false,
+	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.",
+		Value: "",
+	}
+	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-dirty-log",
+		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	ignoreSinglePendingLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-pending-log",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
+		Value: development,
 	}
 
-	action := func(cmd *cli.Context) error {
-		if cmd.NArg() != 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-			return flag.ErrHelp
-		}
-
-		var (
-			schemaNameFlag           = cmd.String("db")
-			unprivilegedOnlyFlag     = cmd.Bool("unprivileged-only")
-			ignoreSingleDirtyLogFlag = cmd.Bool("ignore-single-dirty-log")
-			targetsFlag              = cmd.String("target")
-		)
-
-		targets := strings.Split(targetsFlag, ",")
-
-		versions := make([]int, 0, len(targets))
-		for _, target := range targets {
-			version, err := strconv.Atoi(target)
-			if err != nil {
-				return err
-			}
-
-			versions = append(versions, version)
-		}
-
-		ctx := cmd.Context
-		r, err := factory(ctx, []string{schemaNameFlag})
+	makeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
 		if err != nil {
-			return err
+			return runner.Options{}, err
 		}
 
-		return r.Run(ctx, runner.Options{
+		return runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
-					SchemaName:     schemaNameFlag,
+					SchemaName:     schemaNameFlag.Get(cmd),
 					Type:           runner.MigrationOperationTypeTargetedDown,
 					TargetVersions: versions,
 				},
 			},
-			UnprivilegedOnly:     unprivilegedOnlyFlag,
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag,
-		})
+			PrivilegedMode:         privilegedMode,
+			MatchPrivilegedHash:    func(hash string) bool { return hash == privilegedHashFlag.Get(cmd) },
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
+		}, nil
 	}
+
+	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		versions, err := parseTargets(targetFlag.Get(cmd))
+		if err != nil {
+			return err
+		}
+		if len(versions) == 0 {
+			return flagHelp(out, "supply a target via -target")
+		}
+
+		r, err := setupRunner(ctx, factory, schemaNameFlag.Get(cmd))
+		if err != nil {
+			return err
+		}
+
+		options, err := makeOptions(cmd, out, versions)
+		if err != nil {
+			return err
+		}
+
+		return r.Run(ctx, options)
+	})
 
 	return &cli.Command{
 		Name:        "downto",
 		UsageText:   fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
-		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schmea to the target version`,
+		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version`,
 		Description: ConstructLongHelp(),
-		Flags:       flags,
 		Action:      action,
+		Flags: []cli.Flag{
+			schemaNameFlag,
+			targetFlag,
+			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
+			privilegedHashFlag,
+			ignoreSingleDirtyLogFlag,
+			ignoreSinglePendingLogFlag,
+		},
 	}
 }

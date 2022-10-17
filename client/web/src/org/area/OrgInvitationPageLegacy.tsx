@@ -6,11 +6,10 @@ import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLa
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -91,7 +90,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        error => console.error(error)
+                        error => logger.error(error)
                     )
             )
 
@@ -127,21 +126,21 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
                     {this.props.org.viewerPendingInvitation ? (
                         <ModalPage icon={<OrgAvatar org={this.props.org.name} className="mt-2 mb-3" size="lg" />}>
                             <Form className="text-center">
-                                <h3 className="my-0 font-weight-normal">
+                                <H3 className="my-0 font-weight-normal">
                                     You've been invited to the{' '}
                                     <Link to={orgURL(this.props.org.name)}>
                                         <strong>{this.props.org.name}</strong>
                                     </Link>{' '}
                                     organization.
-                                </h3>
-                                <p>
+                                </H3>
+                                <Text>
                                     <small className="text-muted">
                                         Invited by{' '}
                                         <Link to={userURL(this.props.org.viewerPendingInvitation.sender.username)}>
                                             {this.props.org.viewerPendingInvitation.sender.username}
                                         </Link>
                                     </small>
-                                </p>
+                                </Text>
                                 <div className="mt-3">
                                     <Button
                                         type="submit"
@@ -191,9 +190,7 @@ export const OrgInvitationPageLegacy = withAuthenticatedUser(
             this.responses.next(OrganizationInvitationResponseType.REJECT)
         }
 
-        private respondToOrganizationInvitation = (
-            args: GQL.IRespondToOrganizationInvitationOnMutationArguments
-        ): Observable<void> =>
+        private respondToOrganizationInvitation = (args: RespondToOrganizationInvitationVariables): Observable<void> =>
             requestGraphQL<RespondToOrganizationInvitationResult, RespondToOrganizationInvitationVariables>(
                 gql`
                     mutation RespondToOrganizationInvitation(

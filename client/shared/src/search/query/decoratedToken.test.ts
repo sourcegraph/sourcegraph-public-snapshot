@@ -136,7 +136,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('no decoration for literal', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.literal))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('(a\\sb)', false, SearchPatternType.standard))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1371,7 +1371,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with body as regexp', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(README.md)')))).toMatchInlineSnapshot(`
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.path(README.md)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1418,7 +1418,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight recognized predicate with multiple fields', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains(file:README.md content:^fix$)'))))
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:contains.file(path:README.md content:^fix$)'))))
             .toMatchInlineSnapshot(`
             [
               {
@@ -1431,6 +1431,90 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 14,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 19,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 24,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 30,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 31,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 33,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 34,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 42,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 43,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 46,
+                "scopes": "metaRegexpAssertion"
+              },
+              {
+                "startIndex": 47,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.file predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.file(path:foo content:bar)'))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
                 "scopes": "metaPredicateNameAccess"
               },
               {
@@ -1450,44 +1534,27 @@ describe('getMonacoTokens()', () => {
                 "scopes": "identifier"
               },
               {
-                "startIndex": 25,
-                "scopes": "metaRegexpCharacterSet"
-              },
-              {
-                "startIndex": 26,
-                "scopes": "identifier"
-              },
-              {
-                "startIndex": 28,
+                "startIndex": 22,
                 "scopes": "whitespace"
               },
               {
-                "startIndex": 29,
+                "startIndex": 23,
                 "scopes": "field"
               },
               {
-                "startIndex": 37,
-                "scopes": "metaRegexpAssertion"
-              },
-              {
-                "startIndex": 38,
+                "startIndex": 31,
                 "scopes": "identifier"
               },
               {
-                "startIndex": 41,
-                "scopes": "metaRegexpAssertion"
-              },
-              {
-                "startIndex": 42,
+                "startIndex": 34,
                 "scopes": "metaPredicateParenthesis"
               }
             ]
         `)
     })
 
-    test('highlight repo:dependencies predicate', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:dependencies(.*)')))).toMatchInlineSnapshot(
-            `
+    test('highlight repo:has.description predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1502,23 +1569,144 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaPredicateNameAccess"
               },
               {
-                "startIndex": 17,
-                "scopes": "metaPredicateParenthesis"
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
               },
               {
-                "startIndex": 18,
-                "scopes": "metaRegexpCharacterSet"
-              },
-              {
-                "startIndex": 19,
-                "scopes": "metaRegexpRangeQuantifier"
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
               },
               {
                 "startIndex": 20,
                 "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaPredicateParenthesis"
               }
             ]
-        `
-        )
+        `)
+    })
+
+    test('highlight repo:has predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has(key:value)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 18,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight repo:has.tag predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.tag(tag)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 12,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 13,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 16,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight regex delimited pattern for standard search', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('/f.*/ x', false, SearchPatternType.standard))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              }
+            ]
+        `)
     })
 })

@@ -1,7 +1,4 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
-import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -156,7 +153,7 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                     "steps": [
                                         {
                                             "root": "",
-                                            "image": "sourcegraph/lsif-node:autoindex",
+                                            "image": "sourcegraph/scip-typescript:autoindex",
                                             "commands": [
                                                 "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto",
                                                 "yarn --ignore-engines"
@@ -164,7 +161,7 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                         },
                                         {
                                             "root": "client/web",
-                                            "image": "sourcegraph/lsif-node:autoindex",
+                                            "image": "sourcegraph/scip-typescript:autoindex",
                                             "commands": [
                                                 "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto",
                                                 "npm install"
@@ -175,11 +172,10 @@ const repositoryConfigurationRequest: MockedResponse<IndexConfigurationResult> =
                                         "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
                                     ],
                                     "root": "client/web",
-                                    "indexer": "sourcegraph/lsif-node:autoindex",
+                                    "indexer": "sourcegraph/scip-typescript:autoindex",
                                     "indexer_args": [
-                                        "lsif-tsc",
-                                        "-p",
-                                        "."
+                                        "scip-typescript",
+                                        "index"
                                     ],
                                     "outfile": ""
                                 }
@@ -237,11 +233,22 @@ const inferredRepositoryConfigurationRequest: MockedResponse<InferredIndexConfig
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPage',
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
+    decorators: [story => <div className="p-3 container">{story()}</div>],
     parameters: {
         component: CodeIntelConfigurationPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
+        },
+    },
+    argTypes: {
+        indexingEnabled: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        authenticatedUser: {
+            table: {
+                disable: true,
+            },
         },
     },
 }
@@ -257,9 +264,7 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
             inferredRepositoryConfigurationRequest, // For Infer index configuration from HEAD
         ]}
     >
-        {props => (
-            <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
-        )}
+        {props => <CodeIntelConfigurationPage {...props} {...args} />}
     </WebStory>
 )
 
@@ -297,6 +302,7 @@ Policies.args = {
         },
         tosAccepted: true,
         searchable: true,
+        emails: [],
     },
 }
 

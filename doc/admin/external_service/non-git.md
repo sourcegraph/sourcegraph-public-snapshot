@@ -67,7 +67,7 @@ While this syncing functionality means that the original change history will be 
 
 ## Quickstart
 
-1. Start up a Sourcegraph instance (using our [Quickstart](../../index.md) or our [full installation documentation](../install/index.md)).
+1. Start up a Sourcegraph instance (using our [Quickstart](../../index.md) or our [full installation documentation](../deploy/index.md)).
 
 1. [Install `src-expose`](#installing-src-expose)
 
@@ -102,7 +102,7 @@ depending on whether you want to automatically sync and commit changes, or just 
 
 **IMPORTANT:** If you are using a Linux host machine, replace `host.docker.internal` in the above with the IP address of your actual host machine because `host.docker.internal` [does not work on Linux](https://github.com/docker/for-linux/issues/264). You should use the network-accessible IP shown by `ifconfig` (rather than 127.0.0.1 or localhost).
 
-Go to **Admin > Manage Repositories > Add repositories > Single Git repositories**. Input the above configuration. Your directories should now be syncing in Sourcegraph.
+Go to **Admin > Manage code hosts > Add repositories > Single Git repositories**. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 
 ### Next steps: advanced configuration
 

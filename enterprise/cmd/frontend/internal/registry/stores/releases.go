@@ -10,8 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,7 +31,7 @@ type Release struct {
 // ReleaseNotFoundError occurs when an extension release is not found in the
 // extension registry.
 type ReleaseNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -70,8 +70,8 @@ type releaseStore struct {
 var _ ReleaseStore = (*releaseStore)(nil)
 
 // Releases instantiates and returns a new ReleasesStore with prepared statements.
-func Releases(db dbutil.DB) ReleaseStore {
-	return &releaseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Releases(db database.DB) ReleaseStore {
+	return &releaseStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 // ReleasesWith instantiates and returns a new ReleasesStore using the other store handle.
@@ -90,7 +90,6 @@ func (s *releaseStore) Transact(ctx context.Context) (ReleaseStore, error) {
 
 func (s *releaseStore) Create(ctx context.Context, release *Release) (id int64, err error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:Create
 INSERT INTO registry_extension_releases
 	(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
 VALUES
@@ -119,7 +118,6 @@ RETURNING id
 
 func (s *releaseStore) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeArtifacts bool) (*Release, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetLatest
 SELECT
 	id,
 	registry_extension_id,
@@ -150,7 +148,7 @@ LIMIT 1`,
 	err := s.QueryRow(ctx, q).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
+			return nil, ReleaseNotFoundError{[]any{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
 		}
 		return nil, err
 	}
@@ -163,7 +161,6 @@ func (s *releaseStore) GetLatestBatch(ctx context.Context, registryExtensionIDs 
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetLatestBatch
 SELECT DISTINCT ON (rer.registry_extension_id)
 	rer.id,
 	rer.registry_extension_id,
@@ -212,7 +209,6 @@ ORDER BY
 
 func (s *releaseStore) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetArtifacts
 SELECT
 	bundle,
 	source_map
@@ -227,13 +223,13 @@ WHERE
 
 	if err := s.QueryRow(ctx, q).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
+			return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("registry extension release %d", id)}}
 		}
 		return nil, nil, err
 	}
 
 	if bundle == nil {
-		return nil, nil, ReleaseNotFoundError{[]interface{}{fmt.Sprintf("no bundle for registry extension release %d", id)}}
+		return nil, nil, ReleaseNotFoundError{[]any{fmt.Sprintf("no bundle for registry extension release %d", id)}}
 	}
 
 	return bundle, sourcemap, nil

@@ -200,7 +200,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isYesNoOnly := func() error {
-		v := ParseYesNoOnly(value)
+		v := parseYesNoOnly(value)
 		if v == Invalid {
 			return errors.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
 		}
@@ -384,7 +384,7 @@ func validateRefGlobs(nodes []Node) error {
 	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
 		indexValue = value
 	})
-	if ParseYesNoOnly(indexValue) == Only {
+	if parseYesNoOnly(indexValue) == Only {
 		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
 	}
 	return nil
@@ -392,12 +392,9 @@ func validateRefGlobs(nodes []Node) error {
 
 // validatePredicates validates predicate parameters with respect to their validation logic.
 func validatePredicate(field, value string, negated bool) error {
-	if negated {
-		return errors.New("predicates do not currently support negation")
-	}
 	name, params := ParseAsPredicate(value)                // guaranteed to succeed
 	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-	if err := predicate.ParseParams(params); err != nil {
+	if err := predicate.Unmarshal(params, negated); err != nil {
 		return errors.Errorf("invalid predicate value: %s", err)
 	}
 	return nil
@@ -509,7 +506,7 @@ const (
 	Invalid YesNoOnly = "invalid"
 )
 
-func ParseYesNoOnly(s string) YesNoOnly {
+func parseYesNoOnly(s string) YesNoOnly {
 	switch s {
 	case "y", "Y", "yes", "YES", "Yes":
 		return Yes

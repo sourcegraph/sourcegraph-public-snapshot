@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -17,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/inconshreveable/log15"
@@ -188,7 +192,7 @@ func waitForRedis(s *redistore.RediStore) {
 // session exists, a new session is created.
 //
 // The value is JSON-encoded before being stored.
-func SetData(w http.ResponseWriter, r *http.Request, key string, value interface{}) error {
+func SetData(w http.ResponseWriter, r *http.Request, key string, value any) error {
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -208,7 +212,7 @@ func SetData(w http.ResponseWriter, r *http.Request, key string, value interface
 // be a pointer).
 //
 // The value is JSON-decoded from the raw bytes stored by the call to SetData.
-func GetData(r *http.Request, key string, value interface{}) error {
+func GetData(r *http.Request, key string, value any) error {
 	session, err := sessionStore.Get(r, cookieName)
 	if err != nil {
 		return errors.WithMessage(err, "getting session")
@@ -270,7 +274,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
 func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db database.DB) error {
 	a := actor.FromContext(r.Context())
-	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
+	err := db.Users().InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
 		return err
 	}
@@ -284,30 +288,40 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
 func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
-	// Get the user from the request context
-	return database.Users(db).InvalidateSessionsByID(ctx, id)
+	return InvalidateSessionsByIDs(ctx, db, []int32{id})
+}
+
+// Bulk "InvalidateSessionsByID" action.
+func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
+	return db.Users().InvalidateSessionsByIDs(ctx, ids)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
 // future HTTP request via cookie.
-func CookieMiddleware(db database.DB, next http.Handler) http.Handler {
+func CookieMiddleware(logger log.Logger, db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(db, r, w)))
+		next.ServeHTTP(w, r.WithContext(authenticateByCookie(logger, db, r, w)))
 	})
 }
 
 // CookieMiddlewareWithCSRFSafety is a middleware that authenticates HTTP requests using the
 // provided cookie (if any), *only if* one of the following is true.
 //
-// - The request originates from a trusted origin (the same origin, browser extension origin, or one
-//   in the site configuration corsOrigin allow list.)
-// - The request has the special X-Requested-With header present, which is only possible to send in
-//   browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
+//   - The request originates from a trusted origin (the same origin, browser extension origin, or one
+//     in the site configuration corsOrigin allow list.)
+//   - The request has the special X-Requested-With header present, which is only possible to send in
+//     browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
 //
 // If one of the above are not true, the request is still allowed to proceed but will be
 // unauthenticated unless some other authentication is provided, such as an access token.
-func CookieMiddlewareWithCSRFSafety(db database.DB, next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
+func CookieMiddlewareWithCSRFSafety(
+	logger log.Logger,
+	db database.DB,
+	next http.Handler,
+	corsAllowHeader string,
+	isTrustedOrigin func(*http.Request) bool,
+) http.Handler {
 	corsAllowHeader = textproto.CanonicalMIMEHeaderKey(corsAllowHeader)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
@@ -320,61 +334,87 @@ func CookieMiddlewareWithCSRFSafety(db database.DB, next http.Handler, corsAllow
 			isTrusted = isTrustedOrigin(r)
 		}
 		if isTrusted {
-			r = r.WithContext(authenticateByCookie(db, r, w))
+			r = r.WithContext(authenticateByCookie(logger, db, r, w))
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter) context.Context {
+func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w http.ResponseWriter) context.Context {
+	span, ctx := trace.New(r.Context(), "session", "authenticateByCookie")
+	defer span.Finish()
+	logger = trace.Logger(ctx, logger)
+
 	// If the request is already authenticated from a cookie (and not a token), then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
-	if a := actor.FromContext(r.Context()); a.IsAuthenticated() && a.FromSessionCookie {
+	if a := actor.FromContext(ctx); a.IsAuthenticated() && a.FromSessionCookie {
+		span.SetAttributes(
+			attribute.Bool("authenticated", true),
+			attribute.Bool("fromSessionCookie", true),
+		)
 		if hasSessionCookie(r) {
 			// Delete the session cookie to avoid confusion. This occurs most often when
 			// switching the auth provider to http-header; in that case, we want to rely on
 			// the http-header auth provider for auth, not the user's old session.
+			span.AddEvent("has session cookie, deleting session")
 			_ = deleteSession(w, r)
 		}
-		return r.Context() // unchanged
+		return ctx // unchanged
 	}
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
+		if strings.Contains(err.Error(), "connect: connection refused") {
+			// If fetching session info failed because of a Redis error, return empty Context
+			// without deleting the session cookie and throw an internal server error.
+			// This prevents background requests made by off-screen tabs from signing
+			// the user out during a server update.
+			w.WriteHeader(http.StatusInternalServerError)
+			span.AddEvent("redis connection refused")
+			return ctx
+		}
+
 		if !strings.Contains(err.Error(), "illegal base64 data at input byte 36") {
 			// Skip log if the error message indicates the cookie value was a JWT (which almost
 			// certainly means that the cookie was a pre-2.8 SAML cookie, so this error will only
 			// occur once and the user will be automatically redirected to the SAML auth flow).
-			log15.Warn("Error reading session actor. The session cookie was invalid and will be cleared. This error can be safely ignored unless it persists.", "err", err)
+			logger.Warn("error reading session actor - the session cookie was invalid and will be cleared (this error can be safely ignored unless it persists)",
+				log.Error(err))
 		}
 		_ = deleteSession(w, r) // clear the bad value
-		return r.Context()
+		span.SetError(err)
+		return ctx
 	}
 	if info != nil {
+		logger := logger.With(log.Int32("uid", info.Actor.UID))
+		span.SetAttributes(attribute.String("uid", info.Actor.UIDString()))
+
 		// Check expiry
 		if info.LastActive.Add(info.ExpiryPeriod).Before(time.Now()) {
 			_ = deleteSession(w, r) // clear the bad value
-			return actor.WithActor(r.Context(), &actor.Actor{})
+			return actor.WithActor(ctx, &actor.Actor{})
 		}
 
 		// Check that user still exists.
-		usr, err := db.Users().GetByID(r.Context(), info.Actor.UID)
+		usr, err := db.Users().GetByID(ctx, info.Actor.UID)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				_ = deleteSession(w, r) // clear the bad value
 			} else {
 				// Don't delete session, since the error might be an ephemeral DB error, and we don't
 				// want that to cause all active users to be signed out.
-				log15.Error("Error looking up user for session.", "uid", info.Actor.UID, "error", err)
+				logger.Error("error looking up user for session", log.Error(err))
 			}
-			return r.Context() // not authenticated
+			span.SetError(err)
+			return ctx // not authenticated
 		}
 
 		// Check that the session is still valid
 		if info.LastActive.Before(usr.InvalidatedSessionsAt) {
+			span.SetAttributes(attribute.Bool("expired", true))
 			_ = deleteSession(w, r) // Delete the now invalid session
-			return r.Context()
+			return ctx
 		}
 
 		// If the session does not have the user's creation date, it's an old (valid)
@@ -383,30 +423,32 @@ func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter
 		if info.UserCreatedAt.IsZero() {
 			info.UserCreatedAt = usr.CreatedAt
 			if err := SetData(w, r, "actor", info); err != nil {
-				log15.Error("error setting user creation timestamp", "error", err)
-				return r.Context()
+				logger.Error("error setting user creation timestamp", log.Error(err))
+				return ctx
 			}
 		}
 
 		// Verify that the user's creation date in the database matches what is stored
 		// in the session. If not, invalidate the session immediately.
 		if !info.UserCreatedAt.Equal(usr.CreatedAt) {
+			span.SetError(errors.New("user creation date does not match database"))
 			_ = deleteSession(w, r)
-			return r.Context()
+			return ctx
 		}
 
 		// Renew session
 		if time.Since(info.LastActive) > 5*time.Minute {
 			info.LastActive = time.Now()
 			if err := SetData(w, r, "actor", info); err != nil {
-				log15.Error("error renewing session", "error", err)
-				return r.Context()
+				logger.Error("error renewing session", log.Error(err))
+				return ctx
 			}
 		}
 
+		span.SetAttributes(attribute.Bool("authenticated", true))
 		info.Actor.FromSessionCookie = true
-		return actor.WithActor(r.Context(), info.Actor)
+		return actor.WithActor(ctx, info.Actor)
 	}
 
-	return r.Context()
+	return ctx
 }

@@ -1,6 +1,8 @@
 package changed
 
 import (
+	"bytes"
+	"os"
 	"strings"
 )
 
@@ -16,10 +18,13 @@ const (
 	DatabaseSchema
 	Docs
 	Dockerfiles
+	ExecutorVMImage
 	ExecutorDockerRegistryMirror
 	CIScripts
 	Terraform
 	SVG
+	Shell
+	DockerImages
 
 	// All indicates all changes should be considered included in this diff, except None.
 	All
@@ -51,7 +56,7 @@ var topLevelGoDirs = []string{
 // ParseDiff identifies what has changed in files by generating a Diff that can be used
 // to check for specific changes, e.g.
 //
-// 	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//	if diff.Has(changed.Client | changed.GraphQL) { ... }
 //
 // To introduce a new type of Diff, add it a new Diff constant above and add a check in
 // this function to identify the Diff.
@@ -69,12 +74,22 @@ func ParseDiff(files []string) (diff Diff) {
 				diff |= Go
 			}
 		}
+		if p == "sg.config.yaml" {
+			// sg config affects generated output and potentially tests and checks that we
+			// run in the future, so we consider this to have affected Go.
+			diff |= Go
+		}
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			diff |= Client
 		}
 		if strings.HasSuffix(p, "dev/ci/yarn-test.sh") {
+			diff |= Client
+		}
+		// dev/release contains a nodejs script that doesn't have tests but needs to be
+		// linted with Client linters
+		if strings.HasPrefix(p, "dev/release/") {
 			diff |= Client
 		}
 
@@ -92,18 +107,34 @@ func ParseDiff(files []string) (diff Diff) {
 		}
 
 		// Affects docs
-		if strings.HasPrefix(p, "doc/") && p != "CHANGELOG.md" {
+		if strings.HasPrefix(p, "doc/") || strings.HasSuffix(p, ".md") {
+			diff |= Docs
+		}
+		if strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".yml") {
+			diff |= Docs
+		}
+		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") || strings.HasSuffix(p, ".json5") {
 			diff |= Docs
 		}
 
-		// Affects Dockerfiles
+		// Affects Dockerfiles (which assumes images are being changed as well)
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= Dockerfiles
+			diff |= (Dockerfiles | DockerImages)
+		}
+		// Affects anything in docker-images directories (which implies image build
+		// scripts and/or resources are affected)
+		if strings.HasPrefix(p, "docker-images/") {
+			diff |= DockerImages
 		}
 
 		// Affects executor docker registry mirror
 		if strings.HasPrefix(p, "enterprise/cmd/executor/docker-mirror/") {
 			diff |= ExecutorDockerRegistryMirror
+		}
+
+		// Affects executor VM image
+		if strings.HasPrefix(p, "docker-images/executor-vm/") {
+			diff |= ExecutorVMImage
 		}
 
 		// Affects CI scripts
@@ -119,6 +150,25 @@ func ParseDiff(files []string) (diff Diff) {
 		// Affects SVG files
 		if strings.HasSuffix(p, ".svg") {
 			diff |= SVG
+		}
+
+		// Affects scripts
+		if strings.HasSuffix(p, ".sh") {
+			diff |= Shell
+		}
+		// Read the file to check if it is secretly a shell script
+		f, err := os.Open(p)
+		if err == nil {
+			b := make([]byte, 19) // "#!/usr/bin/env bash" = 19 chars
+			_, _ = f.Read(b)
+			if bytes.Compare(b[0:2], []byte("#!")) == 0 && bytes.Contains(b, []byte("bash")) {
+				// If the file starts with a shebang and has "bash" somewhere after, it's most probably
+				// some shell script.
+				diff |= Shell
+			}
+			// Close the file immediately - we don't want to defer, this loop can go for
+			// quite a while.
+			f.Close()
 		}
 	}
 	return
@@ -143,12 +193,18 @@ func (d Diff) String() string {
 		return "Dockerfiles"
 	case ExecutorDockerRegistryMirror:
 		return "ExecutorDockerRegistryMirror"
+	case ExecutorVMImage:
+		return "ExecutorVMImage"
 	case CIScripts:
 		return "CIScripts"
 	case Terraform:
 		return "Terraform"
 	case SVG:
 		return "SVG"
+	case Shell:
+		return "Shell"
+	case DockerImages:
+		return "DockerImages"
 
 	case All:
 		return "All"

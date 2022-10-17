@@ -51,6 +51,7 @@ export class ExtensionCodeEditor implements sourcegraph.CodeEditor, ProxyMarked 
     private _decorationsByType = new Map<sourcegraph.TextDocumentDecorationType, clientType.TextDocumentDecoration[]>()
 
     private _mergedDecorations = new BehaviorSubject<clientType.TextDocumentDecoration[]>([])
+
     public get mergedDecorations(): Observable<clientType.TextDocumentDecoration[]> {
         return this._mergedDecorations
     }

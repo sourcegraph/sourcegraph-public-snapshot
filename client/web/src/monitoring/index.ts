@@ -1,0 +1,1 @@
+export { isWebpackChunkError } from './shouldErrorBeReported'

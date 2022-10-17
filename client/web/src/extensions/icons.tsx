@@ -4,7 +4,7 @@ interface IconProps {
     className?: string
 }
 
-export const ExtensionsNavIcon: React.FunctionComponent<IconProps> = ({ className }) => (
+export const ExtensionsNavIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({ className }) => (
     <svg
         className={className}
         width="16"
@@ -30,7 +30,7 @@ export const ExtensionsNavIcon: React.FunctionComponent<IconProps> = ({ classNam
 )
 
 /** Default registry icon for non-Sourcegraph extensions */
-export const DefaultExtensionIcon: React.FunctionComponent<IconProps> = ({ className }) => (
+export const DefaultExtensionIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({ className }) => (
     <svg width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path
             d="M41.407 23.21c-1.64.468-3.681 3.22-3.757 2.091-.033-.56-.175-1.857-.184-3.18-.025-3.773.193-9.429.193-9.429 0-.192-.017-.376-.059-.552a2.512 2.512 0 00-.72-1.355c-.025-.025-.05-.042-.075-.067a4.077 4.077 0 00-.292-.243c-.11-.075-.235-.142-.352-.209-.05-.025-.092-.05-.142-.075-.025-.009-.05-.017-.067-.025a4.16 4.16 0 00-1.623-.343l-1.548.033s-1.966.067-4.225.117H22.89c-.468-.025-.778-.058-.895-.117-1.255-.586 1.481-2.644 1.891-3.832C24.958 2.894 22.147 0 18.834 0c-3.322 0-6.133 2.895-5.046 6.04.419 1.189 3.288 3.28 1.891 3.833-.184.075-1.23.109-2.593.109h-1.289c-3.104-.009-6.92-.1-6.92-.1L3.33 9.847c-1.389 0-3.004.652-3.246 2.217-.05.209-.084.636-.084.636l.025 11.646c.017.193.034.335.059.385.552 1.397 3.597-2.25 4.785-2.669 3.138-1.096 5.037 3.623 5.037 6.953 0 3.338-2.886 6.15-6.024 5.062-1.188-.419-3.238-3.155-3.823-1.9a.773.773 0 00-.059.243v12.91A2.703 2.703 0 002.694 48h12.5c.167-.017.293-.033.343-.05 1.397-.56-.519-1.866-.895-3.196-.912-3.205.862-3.765 4.192-3.765s4.902.836 4.902 3.12c0 1.172-3.145 3.247-1.89 3.832.041.017.117.034.217.05H34.94a2.703 2.703 0 002.702-2.71s-.268-12.057-.05-13.571c.159-1.096 2.702 1.18 3.815 1.648 4.142 1.724 6.074-1.732 6.074-5.087 0-3.355-2.853-5.982-6.074-5.062z"
@@ -41,7 +41,9 @@ export const DefaultExtensionIcon: React.FunctionComponent<IconProps> = ({ class
 )
 
 /** Default registry icon for Sourcegraph extensions */
-export const DefaultSourcegraphExtensionIcon: React.FunctionComponent<IconProps> = ({ className }) => (
+export const DefaultSourcegraphExtensionIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({
+    className,
+}) => (
     <svg
         width="48"
         height="48"
@@ -78,7 +80,7 @@ export const DefaultSourcegraphExtensionIcon: React.FunctionComponent<IconProps>
     </svg>
 )
 
-export const BannerPuzzleIcon: React.FunctionComponent<IconProps> = ({ className }) => (
+export const BannerPuzzleIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({ className }) => (
     <svg
         className={className}
         width="69"
@@ -104,7 +106,9 @@ export const BannerPuzzleIcon: React.FunctionComponent<IconProps> = ({ className
     </svg>
 )
 
-export const SourcegraphExtensionIcon: React.FunctionComponent<IconProps> = ({ className }) => (
+export const SourcegraphExtensionIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({
+    className,
+}) => (
     <svg className={className} viewBox="0 -2 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
             fillRule="evenodd"

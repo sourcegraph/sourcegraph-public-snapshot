@@ -2,15 +2,13 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
+
+	"github.com/sourcegraph/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -20,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,7 +31,7 @@ const batchSpecWorkspaceExecutionJobStalledJobMaximumAge = time.Second * 25
 
 // batchSpecWorkspaceExecutionJobMaximumNumResets is the maximum number of
 // times a job can be reset. If a job's failed attempts counter reaches this
-// threshold, it will be moved into "errored" rather than "queued" on its next
+// threshold, it will be moved into "failed" rather than "queued" on its next
 // reset.
 const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
 
@@ -42,33 +39,25 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstBatchSpecWorkspaceExecutionJob(rows, err)
-	},
-	// This needs to be kept in sync with the placeInQueue fragment in the batch
-	// spec execution jobs store.
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
+	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
+	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
-}
 
-type BatchSpecWorkspaceExecutionWorkerStore interface {
-	dbworkerstore.Store
-
-	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
+	// This view ranks jobs from different users in a round-robin fashion
+	// so that no single user can clog the queue.
+	ViewName: "batch_spec_workspace_execution_jobs_with_rank batch_spec_workspace_execution_jobs",
 }
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle *basestore.TransactableHandle, observationContext *observation.Context) BatchSpecWorkspaceExecutionWorkerStore {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
-		accessTokenDeleterForTX: func(tx *Store) accessTokenHardDeleter {
-			return tx.DatabaseDB().AccessTokens().HardDeleteByID
-		},
+		logger:             log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
 	}
 }
 
@@ -81,79 +70,37 @@ var _ dbworkerstore.Store = &batchSpecWorkspaceExecutionWorkerStore{}
 type batchSpecWorkspaceExecutionWorkerStore struct {
 	dbworkerstore.Store
 
-	accessTokenDeleterForTX func(tx *Store) accessTokenHardDeleter
+	logger log.Logger
 
 	observationContext *observation.Context
-}
-
-func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
-
-	t := true
-	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-		Cancel:         &t,
-		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		WorkerHostname: executorName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]int, 0, len(cs))
-	for _, c := range cs {
-		ids = append(ids, c.RecordID())
-	}
-	return ids, nil
-}
-
-type accessTokenHardDeleter func(context.Context, int64) error
-
-// deleteAccessToken tries to delete the associated internal access
-// token. If the token cannot be found it does *not* return an error.
-func deleteAccessToken(ctx context.Context, deleteToken accessTokenHardDeleter, tokenID int64) error {
-	err := deleteToken(ctx, tokenID)
-	if err != nil && err != database.ErrAccessTokenNotFound {
-		return err
-	}
-	return nil
 }
 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer func() {
+		// If no matching record was found, revert the tx.
+		if !ok && err == nil {
+			tx.Done(errors.New("record not found"))
+			return
+		}
 		// If we failed to mark the job as final, we fall back to the
 		// non-wrapped functions so that the job does get marked as
-		// final/errored if, e.g., deleting the access token failed.
+		// final/errored if, e.g., parsing the logs failed.
 		err = tx.Done(err)
 		if err != nil {
-			log15.Error("marking job as final failed, falling back to base method", "err", err)
+			s.logger.Error("marking job as final failed, falling back to base method", log.Int("id", id), log.Error(err))
 			// Note: we don't use the transaction.
 			ok, err = fn(ctx, s.Store)
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
-	if err != nil {
-		return false, err
-	}
-
-	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
-	if err != nil {
-		return false, err
-	}
-
-	events, err := logEventsFromLogEntries(job.ExecutionLogs)
-	if err != nil {
-		return false, err
-	}
-
-	executionResults, stepResults, err := extractCacheEntries(events)
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, err
 	}
@@ -168,11 +115,13 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	for _, entry := range append(executionResults, stepResults...) {
-		entry.UserID = spec.UserID
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return false, err
-		}
+	events := logEventsFromLogEntries(job.ExecutionLogs)
+	stepResults, err := extractCacheEntries(events)
+	if err != nil {
+		return false, err
+	}
+	if err := storeCacheResults(ctx, tx, stepResults, spec.UserID); err != nil {
+		return false, err
 	}
 
 	return fn(ctx, s.Store.With(tx))
@@ -190,15 +139,32 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context,
 	})
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	batchesStore := New(s.Store.Handle().DB(), s.observationContext, nil)
+func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
+	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
 	}
+	defer func() {
+		// If no matching record was found, revert the tx.
+		// We don't want to persist side-effects.
+		if !ok && err == nil {
+			tx.Done(errors.New("record not found"))
+			return
+		}
+		// If we failed to mark the job as completed, we fall back to the
+		// non-wrapped store method so that the job is marked as
+		// failed if, e.g., parsing the logs failed.
+		err = tx.Done(err)
+		if err != nil {
+			s.logger.Error("Marking job complete failed, falling back to failure", log.Int("id", id), log.Error(err))
+			// Note: we don't use the transaction.
+			ok, err = s.Store.MarkFailed(ctx, id, err.Error(), options)
+		}
+	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec workspace execution job")
 	}
@@ -215,111 +181,83 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	// Impersonate as the user to ensure the repo is still accessible by them.
 	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
-
 	repo, err := tx.Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
-		return false, errors.Wrap(err, "loading repo")
+		return false, errors.Wrap(err, "failed to validate repo access")
 	}
 
-	events, err := logEventsFromLogEntries(job.ExecutionLogs)
+	events := logEventsFromLogEntries(job.ExecutionLogs)
+	stepResults, err := extractCacheEntries(events)
 	if err != nil {
+		return false, errors.Wrap(err, "failed to extract cache entries")
+	}
+
+	// This is a hard-error, every execution must emit at least one of them.
+	if len(stepResults) == 0 {
+		return false, errors.New("found no step results")
+	}
+
+	if err := storeCacheResults(ctx, tx, stepResults, batchSpec.UserID); err != nil {
 		return false, err
 	}
 
-	rollbackAndMarkFailed := func(err error, fmtStr string, args ...interface{}) (bool, error) {
-		// Rollback transaction but ignore rollback errors
-		tx.Done(err)
-		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)
-	}
-
-	executionResults, stepResults, err := extractCacheEntries(events)
-	if err != nil {
-		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to extract cache entries: %s", err))
-	}
-
-	for _, entry := range stepResults {
-		// Store the cache entry.
-		entry.UserID = batchSpec.UserID
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
+	// Find the result for the last step. This is the one we'll be building the execution
+	// result from.
+	var latestStepResult *batcheslib.CacheAfterStepResultMetadata = stepResults[0]
+	for _, r := range stepResults {
+		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
+			latestStepResult = r
 		}
+	}
+
+	rawSpecs, err := cache.ChangesetSpecsFromCache(
+		batchSpec.Spec,
+		batcheslib.Repository{
+			ID:          string(relay.MarshalID("Repository", repo.ID)),
+			Name:        string(repo.Name),
+			BaseRef:     workspace.Branch,
+			BaseRev:     workspace.Commit,
+			FileMatches: workspace.FileMatches,
+		},
+		latestStepResult.Value,
+		workspace.Path,
+	)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to build changeset specs from cache")
+	}
+
+	var specs []*btypes.ChangesetSpec
+	for _, rawSpec := range rawSpecs {
+		changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to build db changeset specs")
+		}
+		changesetSpec.BatchSpecID = batchSpec.ID
+		changesetSpec.BaseRepoID = repo.ID
+		changesetSpec.UserID = batchSpec.UserID
+
+		specs = append(specs, changesetSpec)
 	}
 
 	changesetSpecIDs := []int64{}
-	for _, entry := range executionResults {
-		// Store the cache entry.
-		entry.UserID = batchSpec.UserID
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
+	if len(specs) > 0 {
+		if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
+			return false, errors.Wrap(err, "failed to store changeset specs")
 		}
-
-		// And now build changeset specs from it
-		var executionResult execution.Result
-		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to parse cache entry: %s", err))
-		}
-
-		rawSpecs, err := cache.ChangesetSpecsFromCache(
-			batchSpec.Spec,
-			batcheslib.Repository{
-				ID:          string(relay.MarshalID("Repository", repo.ID)),
-				Name:        string(repo.Name),
-				BaseRef:     workspace.Branch,
-				BaseRev:     workspace.Commit,
-				FileMatches: workspace.FileMatches,
-			},
-			executionResult,
-		)
-		if err != nil {
-			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to build changeset specs from cache: %s", err))
-		}
-
-		var specs []*btypes.ChangesetSpec
-		for _, rawSpec := range rawSpecs {
-			changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
-			if err != nil {
-				return rollbackAndMarkFailed(err, fmt.Sprintf("failed to build db changeset specs: %s", err))
-			}
-			changesetSpec.BatchSpecID = batchSpec.ID
-			changesetSpec.RepoID = repo.ID
-			changesetSpec.UserID = batchSpec.UserID
-
-			specs = append(specs, changesetSpec)
-		}
-
-		if len(specs) > 0 {
-			if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
-				return rollbackAndMarkFailed(err, fmt.Sprintf("failed to store changeset specs: %s", err))
-			}
-			for _, spec := range specs {
-				changesetSpecIDs = append(changesetSpecIDs, spec.ID)
-			}
+		for _, spec := range specs {
+			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
 		}
 	}
 
-	err = deleteAccessToken(ctx, s.accessTokenDeleterForTX(tx), job.AccessTokenID)
-	if err != nil {
-		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to delete internal access token: %s", err))
+	if err = s.setChangesetSpecIDs(ctx, tx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
+		return false, errors.Wrap(err, "setChangesetSpecIDs")
 	}
 
-	if err = s.setChangesetSpecIDs(ctx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
-		return false, tx.Done(err)
-	}
-
-	ok, err := s.Store.With(tx).MarkComplete(ctx, id, options)
-	return ok, tx.Done(err)
+	return s.Store.With(tx).MarkComplete(ctx, id, options)
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
-	if len(changesetSpecIDs) > 0 {
-		// Set the batch_spec_id on the changeset_specs that were created.
-		q := sqlf.Sprintf(setBatchSpecIDOnChangesetSpecsQueryFmtstr, batchSpecWorkspaceID, pq.Array(changesetSpecIDs))
-		_, err := s.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			return err
-		}
-	}
-
+func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, tx *Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
+	// Marshal changeset spec IDs for database JSON column.
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
 	for _, id := range changesetSpecIDs {
 		m[id] = struct{}{}
@@ -330,31 +268,24 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 	}
 
 	// Set changeset_spec_ids on the batch_spec_workspace.
-	q := sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID)
-	_, err = s.Store.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID))
+	if err != nil {
+		return err
+	}
+
+	c, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if c != 1 {
+		return errors.New("incorrect number of batch_spec_workspaces updated")
+	}
+
+	return nil
 }
 
-const setBatchSpecIDOnChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
-UPDATE
-	changeset_specs
-SET
-	batch_spec_id = (
-		SELECT
-			batch_spec_workspaces.batch_spec_id
-		FROM
-			batch_spec_workspaces
-		WHERE
-			batch_spec_workspaces.id = %s
-		LIMIT 1
-	)
-WHERE
-	changeset_specs.id = ANY (%s)
-`
-
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
 UPDATE
 	batch_spec_workspaces
 SET
@@ -362,42 +293,45 @@ SET
 WHERE id = %s
 `
 
-func extractCacheEntries(events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *batcheslib.CacheResultMetadata:
-			// TODO: This is stupid, because we unmarshal and then marshal again.
-			value, err := json.Marshal(&m.Value)
-			if err != nil {
-				return nil, nil, err
-			}
+// storeCacheResults builds DB cache entries for all the results and store them using the given tx.
+func storeCacheResults(ctx context.Context, tx *Store, results []*batcheslib.CacheAfterStepResultMetadata, userID int32) error {
+	for _, result := range results {
+		value, err := json.Marshal(&result.Value)
+		if err != nil {
+			return errors.Wrap(err, "failed to marshal cache entry")
+		}
+		entry := &btypes.BatchSpecExecutionCacheEntry{
+			Key:    result.Key,
+			Value:  string(value),
+			UserID: userID,
+		}
 
-			executionResults = append(executionResults, &btypes.BatchSpecExecutionCacheEntry{
-				Key:   m.Key,
-				Value: string(value),
-			})
-		case *batcheslib.CacheAfterStepResultMetadata:
-			// TODO: This is stupid, because we unmarshal and then marshal again.
-			value, err := json.Marshal(&m.Value)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			stepResults = append(stepResults, &btypes.BatchSpecExecutionCacheEntry{
-				Key:   m.Key,
-				Value: string(value),
-			})
+		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
+			return errors.Wrap(err, "failed to save cache entry")
 		}
 	}
 
-	return executionResults, stepResults, nil
+	return nil
 }
 
-var ErrNoSrcCLILogEntry = errors.New("no src-cli log entry found in execution logs")
+func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batcheslib.CacheAfterStepResultMetadata, err error) {
+	for _, e := range events {
+		if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
+			m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
+			if !ok {
+				return nil, errors.Newf("invalid log data, expected *batcheslib.CacheAfterStepResultMetadata got %T", e.Metadata)
+			}
 
-func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) ([]*batcheslib.LogEvent, error) {
+			cacheEntries = append(cacheEntries, m)
+		}
+	}
+
+	return cacheEntries, nil
+}
+
+func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.LogEvent {
 	if len(logs) < 1 {
-		return nil, errors.Newf("job has no execution logs")
+		return nil
 	}
 
 	var (
@@ -413,8 +347,8 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) ([]*batcheslib
 		}
 	}
 	if !found {
-		return nil, ErrNoSrcCLILogEntry
+		return nil
 	}
 
-	return btypes.ParseJSONLogsFromOutput(entry.Out), nil
+	return btypes.ParseJSONLogsFromOutput(entry.Out)
 }

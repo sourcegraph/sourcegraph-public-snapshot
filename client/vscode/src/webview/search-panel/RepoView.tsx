@@ -1,18 +1,15 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiArrowLeft, mdiFileDocumentOutline, mdiFolderOutline, mdiSourceRepository } from '@mdi/js'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { catchError } from 'rxjs/operators'
 
 import { QueryState } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, PageHeader, useObservable } from '@sourcegraph/wildcard'
+import { Icon, PageHeader, useObservable, H4, Text, Button } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../platform/context'
 
@@ -26,7 +23,7 @@ interface RepoViewProps extends Pick<WebviewPageProps, 'extensionCoreAPI' | 'pla
     setQueryState: (query: QueryState) => void
 }
 
-export const RepoView: React.FunctionComponent<RepoViewProps> = ({
+export const RepoView: React.FunctionComponent<React.PropsWithChildren<RepoViewProps>> = ({
     extensionCoreAPI,
     platformContext,
     repositoryMatch,
@@ -81,42 +78,40 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
 
     return (
         <section className="mb-3 p-2">
-            <button
-                type="button"
+            <Button
+                variant="link"
+                outline={true}
+                size="sm"
                 onClick={onBackToSearchResults}
-                className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
+                className="test-back-to-search-view-btn shadow-none"
             >
-                <Icon className="mr-1" as={ArrowLeftIcon} />
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                 Back to search view
-            </button>
+            </Button>
             {directoryStack.length > 0 && (
-                <button
-                    type="button"
-                    onClick={onPreviousDirectory}
-                    className="btn btn-sm btn-link btn-outline-secondary text-decoration-none border-0"
-                >
-                    <Icon className="mr-1" as={ArrowLeftIcon} />
+                <Button variant="link" outline={true} size="sm" onClick={onPreviousDirectory} className="shadow-none">
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiArrowLeft} />
                     Back to previous directory
-                </button>
+                </Button>
             )}
             <PageHeader
-                path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repositoryMatch.repository) }]}
+                path={[{ icon: mdiSourceRepository, text: displayRepoName(repositoryMatch.repository) }]}
                 className="mb-1 mt-3 test-tree-page-title"
             />
-            {repositoryMatch.description && <p className="mt-0 text-muted">{repositoryMatch.description}</p>}
+            {repositoryMatch.description && <Text className="mt-0 text-muted">{repositoryMatch.description}</Text>}
             <div className={classNames(styles.section)}>
-                <h4>Files and directories</h4>
+                <H4>Files and directories</H4>
                 {treeEntries === undefined ? (
                     <VSCodeProgressRing />
                 ) : (
                     <div className={classNames('pr-2', styles.treeEntriesSectionColumns)}>
                         {treeEntries.entries.map(entry => (
-                            <button
-                                type="button"
+                            <Button
+                                variant="link"
+                                size="sm"
                                 key={entry.name}
                                 className={classNames(
-                                    'btn btn-sm btn-link',
-                                    'test-page-file-decorable',
+                                    'test-page-file-decorable shadow-none',
                                     styles.treeEntry,
                                     entry.isDirectory && 'font-weight-bold',
                                     `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`,
@@ -132,17 +127,16 @@ export const RepoView: React.FunctionComponent<RepoViewProps> = ({
                                     )}
                                 >
                                     <span>
-                                        {entry.isDirectory && (
-                                            <Icon className="mr-1 text-muted" as={FolderOutlineIcon} />
-                                        )}
-                                        {!entry.isDirectory && (
-                                            <Icon className="mr-1 text-muted" as={FileDocumentOutlineIcon} />
-                                        )}
+                                        <Icon
+                                            aria-label={entry.isDirectory ? 'Folder' : 'File'}
+                                            className="mr-1 text-muted"
+                                            svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                        />
                                         {entry.name}
                                         {entry.isDirectory && '/'}
                                     </span>
                                 </div>
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 )}

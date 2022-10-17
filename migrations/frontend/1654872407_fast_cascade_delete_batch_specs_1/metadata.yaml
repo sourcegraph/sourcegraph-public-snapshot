@@ -1,0 +1,3 @@
+name: fast_cascade_delete_batch_specs_1
+parents: [1654848945]
+createIndexConcurrently: true

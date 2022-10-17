@@ -3,7 +3,7 @@ import vscode from 'vscode'
 const outputChannel = vscode.window.createOutputChannel('Sourcegraph')
 
 export const log = {
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (what: string, error?: any): void => {
         outputChannel.appendLine(`ERROR ${errorMessage(what, error)}`)
     },

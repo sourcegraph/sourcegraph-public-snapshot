@@ -11,7 +11,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	"github.com/sourcegraph/log/logtest"
+
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	entries := make([]*btypes.BatchSpecExecutionCacheEntry, 0, 3)
 	for i := 0; i < cap(entries); i++ {
 		job := &btypes.BatchSpecExecutionCacheEntry{
@@ -145,11 +147,12 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	// Separate test function because we want a clean DB
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
-	c := &ct.TestClock{Time: timeutil.Now()}
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	c := &bt.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	maxSize := 10 * 1024 // 10kb
 

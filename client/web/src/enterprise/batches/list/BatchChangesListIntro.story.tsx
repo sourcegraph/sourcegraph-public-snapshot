@@ -1,21 +1,33 @@
-import React from 'react'
-
-import { radios } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { Meta, DecoratorFn, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 
-const { add } = storiesOf('web/batches/list/BatchChangesListIntro', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 enum LicensingState {
     Licensed = 'Licensed',
     Unlicensed = 'Unlicensed',
     Loading = 'Loading',
 }
+
+const config: Meta = {
+    title: 'web/batches/list/BatchChangesListIntro',
+    decorators: [decorator],
+    argTypes: {
+        licensed: {
+            control: { type: 'radio', options: LicensingState },
+        },
+        state: {
+            table: {
+                disable: true,
+            },
+        },
+    },
+}
+
+export default config
 
 function stateToInput(state: LicensingState): boolean | undefined {
     switch (state) {
@@ -28,10 +40,24 @@ function stateToInput(state: LicensingState): boolean | undefined {
     }
 }
 
-for (const state of Object.values(LicensingState)) {
-    add(state, () => (
-        <WebStory>
-            {() => <BatchChangesListIntro isLicensed={stateToInput(radios('licensed', LicensingState, state))} />}
-        </WebStory>
-    ))
+const Template: Story = ({ state, ...args }) => (
+    <WebStory>{() => <BatchChangesListIntro isLicensed={stateToInput(args.licensed)} />}</WebStory>
+)
+
+export const Licensed = Template.bind({})
+Licensed.args = { state: LicensingState.Licensed }
+Licensed.argTypes = {
+    licensed: { defaultValue: LicensingState.Licensed },
+}
+
+export const Unlicensed = Template.bind({})
+Unlicensed.args = { state: LicensingState.Unlicensed }
+Unlicensed.argTypes = {
+    licensed: { defaultValue: LicensingState.Unlicensed },
+}
+
+export const Loading = Template.bind({})
+Loading.args = { state: LicensingState.Loading }
+Loading.argTypes = {
+    licensed: { defaultValue: LicensingState.Loading },
 }

@@ -59,6 +59,28 @@ Common language agnostic starting points:
 - `sed`, [`yq`](https://github.com/mikefarah/yq), `awk` are common utilities for changing text
 - [comby](https://comby.dev/docs/overview) is a language-aware structural code search and replace tool. It can match expressions and function blocks, and is great for more complex changes.
 
+### Why can't I run steps with different container user IDs in the same batch change?
+
+This is an artifact of [how Batch Changes executes batch specs](../explanations/how_src_executes_a_batch_spec.md). Consider this partial spec:
+
+```yaml
+steps:
+  - run: /do-it.sh
+    container: my-alpine-running-as-root
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-1000
+
+  - run: /do-it.sh
+    container: my-alpine-running-as-uid-500
+```
+
+Files created by the first step will be owned by UID 0 and (by default) have 0644 permissions, which means that the subsequent steps will be unable to modify or delete those files, as they are running as different, unprivileged users.
+
+Even if the first step is replaced by one that runs as UID 1000, the same scenario will occur when the final step runs as UID 500: files created by the previous steps cannot be modified or deleted.
+
+In theory, it's possible to run the first _n_ steps in a batch spec as an unprivileged user, and then run the last _n_ steps as root, but we don't recommend this due to the likelihood that later changes may cause issues. We strongly recommend only using containers that run as the same user in a single batch spec.
+
 ### How can I use [GitHub expression syntax](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) (`${{ }}` literally) in my batch spec?
 
 To tell Sourcegraph not to evaluate `${{ }}` like a normal [template delimiter](batch_spec_templating.md), you can quote it and wrap it in a second set of `${{ }}` like so:
@@ -86,3 +108,15 @@ The changeset may also be in a state that we cannot currently publish from: for 
 
 ### Why do my changesets take a long time to sync?
 Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rate-limits)?
+
+### Why has my changeset been archived?
+
+When re-running a batch spec on an existing batch change, the scope of repositories affected may change if you modify your `on` statement or if Sourcegraph simply finds a different set of results than it did last time. If the new batch spec no longer matches a repository that Sourcegraph has already published a changeset for, that changeset will be closed on the codehost and marked as *archived* in the batch change when you apply the new batch spec. You will be able to see these actions from the preview screen before you apply the batch spec. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead.
+
+See our [how-to guide](../how-tos/updating_a_batch_change.md#removing-changesets) to learn more about archiving changesets, including how to unarchive a changeset and how to remove a changeset from the batch change entirely.
+
+### Why is my changeset read-only?
+
+Unmerged changesets on repositories that have been archived on the code host will move into a *Read-Only* state, which reflects that they cannot be modified any further on the code host. Re-applying the batch change will result in no operations being performed on those changesets, even if they would otherwise be updated. The only exception is that changesets that would be [archived](#why-has-my-changeset-been-archived) due to the `on` statement or search results changing will still be archived.
+
+If the repository is unarchived, Batch Changes will move the changeset back into its previous state the next time Sourcegraph syncs the repository.

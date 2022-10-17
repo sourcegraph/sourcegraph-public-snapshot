@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,11 +20,11 @@ import (
 // given repo, as well as the status of each given upload. When there is a change of
 // state for a repository, it is printed. The state changes that can occur are:
 //
-// - An upload fails to process (returns an error)
-// - An upload completes processing
-// - The last upload for a repository completes processing, but the
-//   containing repo has a stale commit graph
-// - A repository with no pending uploads has a fresh commit graph
+//   - An upload fails to process (returns an error)
+//   - An upload completes processing
+//   - The last upload for a repository completes processing, but the
+//     containing repo has a stale commit graph
+//   - A repository with no pending uploads has a fresh commit graph
 func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) error {
 	var oldState map[string]repoState
 	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))
@@ -33,6 +37,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 		if err != nil {
 			return err
 		}
+		request, response := internal.LastRequestResponsePair()
 
 		if verbose {
 			parts := make([]string, 0, len(repoNames))
@@ -71,10 +76,57 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7])
+						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, uploadState.upload.id, repoName, uploadState.upload.commit[:7])
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
-					return errors.Newf("unexpected state '%s' for %s@%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7])
+					var payload struct {
+						Data struct {
+							LsifUploads struct {
+								Nodes []struct {
+									ID        string
+									AuditLogs auditLogs
+								}
+							}
+						}
+					}
+
+					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, uploadsQueryFragment, nil, &payload); err != nil {
+						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
+					}
+
+					var dst bytes.Buffer
+					json.Indent(&dst, []byte(response), "", "\t")
+					fmt.Printf("GRAPHQL REQUEST:\n%s\n\n", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(request, "\\t", "\t"), "\\n", "\n"), "\n\n", "\n"))
+					fmt.Printf("GRAPHQL RESPONSE:\n%s\n\n", dst.String())
+					fmt.Printf("RAW STATE DUMP:\n%+v\n", state)
+					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
+					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
+
+					var logs auditLogs
+					for _, upload := range payload.Data.LsifUploads.Nodes {
+						if upload.ID == uploadState.upload.id {
+							logs = upload.AuditLogs
+							break
+						}
+					}
+
+					// Set in run-integration.sh
+					containerName := os.Getenv("CONTAINER")
+					fmt.Printf("Running pg_dump in container %s\n", containerName)
+					out, err := exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_uploads*'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
+					}
+					out, err = exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_configuration_policies'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
+					}
+
+					return errors.Newf("unexpected state '%s' for %s (%s@%s)\nAudit Logs:\n%s", uploadState.state, uploadState.upload.id, uploadState.upload.repoName, uploadState.upload.commit[:7], logs)
 				}
 			}
 
@@ -130,7 +182,6 @@ func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta)
 	for _, upload := range uploads {
 		uploadIDs = append(uploadIDs, upload.id)
 	}
-	sort.Strings(uploadIDs)
 
 	var payload struct{ Data map[string]jsonUploadResult }
 	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, makeRepoStateQuery(repoNames, uploadIDs), nil, &payload); err != nil {
@@ -155,14 +206,18 @@ func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta)
 			index, _ := strconv.Atoi(name[1:])
 			upload := uploads[index]
 
-			state[upload.repoName] = repoState{
-				stale: state[upload.repoName].stale,
-				uploadStates: append(state[upload.repoName].uploadStates, uploadState{
-					upload:  upload,
-					state:   data.State,
-					failure: data.Failure,
-				}),
+			uState := uploadState{
+				upload:  upload,
+				state:   data.State,
+				failure: data.Failure,
 			}
+
+			repoState := repoState{
+				stale:        state[upload.repoName].stale,
+				uploadStates: append(state[upload.repoName].uploadStates, uState),
+			}
+
+			state[upload.repoName] = repoState
 		}
 	}
 
@@ -179,7 +234,7 @@ func makeRepoStateQuery(repoNames, uploadIDs []string) string {
 		fragments = append(fragments, fmt.Sprintf(uploadQueryFragment, i, id))
 	}
 
-	return fmt.Sprintf("query CodeIntelQA_Upload {%s}", strings.Join(fragments, "\n"))
+	return fmt.Sprintf("query CodeIntelQA_Upload_RepositoryState {%s}", strings.Join(fragments, "\n"))
 }
 
 const repositoryQueryFragment = `
@@ -199,6 +254,26 @@ const uploadQueryFragment = `
 	}
 `
 
+const uploadsQueryFragment = `
+	query CodeIntelQA_UploadsList {
+		lsifUploads(includeDeleted: true) {
+			nodes {
+				id
+				auditLogs {
+					logTimestamp
+					reason
+					changedColumns {
+						column
+						old
+						new
+					}
+					operation
+				}
+			}
+		}
+	}
+`
+
 type jsonUploadResult struct {
 	State       string                `json:"state"`
 	Failure     string                `json:"failure"`
@@ -207,4 +282,52 @@ type jsonUploadResult struct {
 
 type jsonCommitGraphResult struct {
 	Stale bool `json:"stale"`
+}
+
+type auditLogs []auditLog
+
+type auditLog struct {
+	LogTimestamp   time.Time `json:"logTimestamp"`
+	Reason         *string   `json:"reason"`
+	Operation      string    `json:"operation"`
+	ChangedColumns []struct {
+		Old    *string `json:"old"`
+		New    *string `json:"new"`
+		Column string  `json:"column"`
+	} `json:"changedColumns"`
+}
+
+func (a auditLogs) String() string {
+	var s strings.Builder
+
+	for _, log := range a {
+		s.WriteString("Time: ")
+		s.WriteString(log.LogTimestamp.String())
+		s.Write([]byte("\n\t"))
+		s.WriteString("Operation: ")
+		s.WriteString(log.Operation)
+		if log.Reason != nil && *log.Reason != "" {
+			s.Write([]byte("\n\t"))
+			s.WriteString("Reason: ")
+			s.WriteString(*log.Reason)
+		}
+		s.Write([]byte("\n\t\t"))
+		for i, change := range log.ChangedColumns {
+			s.WriteString(fmt.Sprintf("Column: '%s', Old: '%s', New: '%s'", change.Column, ptrPrint(change.Old), ptrPrint(change.New)))
+			if i < len(log.ChangedColumns) {
+				s.Write([]byte("\n\t\t"))
+			}
+
+		}
+		s.WriteRune('\n')
+	}
+
+	return s.String()
+}
+
+func ptrPrint(s *string) string {
+	if s == nil {
+		return "NULL"
+	}
+	return *s
 }

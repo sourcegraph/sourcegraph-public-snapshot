@@ -1,15 +1,8 @@
-import React from 'react'
-
-import { boolean, select } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
-import { Action, DropdownButton, Props } from './DropdownButton'
-
-const { add } = storiesOf('web/batches/DropdownButton', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+import { Action, DropdownButton } from './DropdownButton'
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const onTrigger = async (onDone: () => void) => onDone()
@@ -40,37 +33,46 @@ const experimentalAction: Action = {
     experimental: true,
 }
 
-const commonKnobs: () => Pick<Props, 'disabled' | 'dropdownMenuPosition'> = () => ({
-    disabled: boolean('Disabled', false),
-    dropdownMenuPosition: select(
-        'Dropdown menu position',
-        {
-            None: undefined,
-            Left: 'left',
-            Right: 'right',
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/DropdownButton',
+    decorators: [decorator],
+    argTypes: {
+        disabled: {
+            control: { type: 'boolean' },
+            defaultValue: false,
         },
-        undefined
-    ),
-})
+    },
+}
 
-add('No actions', () => <WebStory>{() => <DropdownButton actions={[]} {...commonKnobs()} />}</WebStory>)
+export default config
 
-add('Single action', () => <WebStory>{() => <DropdownButton actions={[action]} {...commonKnobs()} />}</WebStory>)
+export const NoActions: Story = args => <WebStory>{() => <DropdownButton actions={[]} {...args} />}</WebStory>
+NoActions.argTypes = {
+    disabled: {
+        table: {
+            disable: true,
+        },
+    },
+}
 
-add('Multiple actions without default', () => (
+NoActions.storyName = 'No actions'
+
+export const SingleAction: Story = args => <WebStory>{() => <DropdownButton actions={[action]} {...args} />}</WebStory>
+
+SingleAction.storyName = 'Single action'
+
+export const MultipleActionsWithoutDefault: Story = args => (
+    <WebStory>{() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...args} />}</WebStory>
+)
+
+MultipleActionsWithoutDefault.storyName = 'Multiple actions without default'
+
+export const MultipleActionsWithDefault: Story = args => (
     <WebStory>
-        {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} {...commonKnobs()} />}
+        {() => <DropdownButton actions={[action, disabledAction, experimentalAction]} defaultAction={0} {...args} />}
     </WebStory>
-))
+)
 
-add('Multiple actions with default', () => (
-    <WebStory>
-        {() => (
-            <DropdownButton
-                actions={[action, disabledAction, experimentalAction]}
-                defaultAction={0}
-                {...commonKnobs()}
-            />
-        )}
-    </WebStory>
-))
+MultipleActionsWithDefault.storyName = 'Multiple actions with default'

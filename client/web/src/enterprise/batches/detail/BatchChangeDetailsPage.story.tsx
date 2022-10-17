@@ -1,8 +1,5 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -12,7 +9,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeByNamespaceResult, BatchChangeFields } from '../../../graphql-operations'
+import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
 
 import {
     queryExternalChangesetWithFileDiffs,
@@ -30,16 +27,39 @@ import {
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
 
-const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const config: Meta = {
+    title: 'web/batches/details/BatchChangeDetailsPage',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
         },
-    })
+        controls: {
+            exclude: ['url', 'supersededBatchSpec'],
+        },
+    },
+    argTypes: {
+        supersedingBatchSpec: {
+            control: { type: 'boolean' },
+        },
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        isClosed: {
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
+}
+
+export default config
 
 const now = new Date()
+
+const authenticatedUser = { url: 'https://sourcegraph.com/users/this-is-a-fake-user' }
 
 const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(['somev1', 'somev2'])
 
@@ -124,92 +144,162 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = {
-    Overview: { url: '/users/alice/batch-changes/awesome-batch-change' },
-    'Burndown chart': { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' },
-    'Spec file': { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' },
-    Archived: { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' },
-    'Bulk operations': { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' },
-    'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
+const Template: Story<{
+    url: string
+    supersedingBatchSpec?: boolean
+    currentBatchSpec?: BatchChangeFields['currentSpec']
+    viewerCanAdminister: boolean
+    isClosed?: boolean
+}> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
+    const batchChange: BatchChangeFields = useMemo(() => {
+        const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
+
+        return {
+            ...MOCK_BATCH_CHANGE,
+            currentSpec: {
+                ...currentSpec,
+                supersedingBatchSpec: supersedingBatchSpec
+                    ? {
+                          __typename: 'BatchSpec',
+                          createdAt: subDays(new Date(), 1).toISOString(),
+                          applyURL: '/users/alice/batch-changes/apply/newspecid',
+                      }
+                    : null,
+            },
+            viewerCanAdminister,
+            closedAt: isClosed ? subDays(now, 1).toISOString() : null,
+        }
+    }, [currentBatchSpec, supersedingBatchSpec, viewerCanAdminister, isClosed])
+
+    const data: BatchChangeByNamespaceResult = { batchChange }
+
+    const mocks = new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(BATCH_CHANGE_BY_NAMESPACE),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(BULK_OPERATIONS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: MOCK_BULK_OPERATIONS },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(CHANGESETS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+
+    return (
+        <WebStory initialEntries={[url]}>
+            {props => (
+                <MockedTestProvider link={mocks}>
+                    <BatchChangeDetailsPage
+                        {...props}
+                        authenticatedUser={authenticatedUser}
+                        namespaceID="namespace123"
+                        batchChangeName="awesome-batch-change"
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                        deleteBatchChange={deleteBatchChange}
+                        queryAllChangesetIDs={queryAllChangesetIDs}
+                        extensionsController={{} as any}
+                        platformContext={{} as any}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
 }
 
-for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
-    add(name, () => {
-        const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
-        const viewerCanAdminister = boolean('viewerCanAdminister', true)
-        const isClosed = boolean('isClosed', false)
-        const batchChange: BatchChangeFields = useMemo(
-            () => ({
-                ...MOCK_BATCH_CHANGE,
-                currentSpec: {
-                    ...MOCK_BATCH_CHANGE.currentSpec,
-                    supersedingBatchSpec: supersedingBatchSpec
-                        ? {
-                              __typename: 'BatchSpec',
-                              createdAt: subDays(new Date(), 1).toISOString(),
-                              applyURL: '/users/alice/batch-changes/apply/newspecid',
-                          }
-                        : null,
-                },
-                viewerCanAdminister,
-                closedAt: isClosed ? subDays(now, 1).toISOString() : null,
-            }),
-            [supersedingBatchSpec, viewerCanAdminister, isClosed]
-        )
-
-        const data: BatchChangeByNamespaceResult = { batchChange }
-
-        const mocks = new WildcardMockLink([
-            {
-                request: {
-                    query: getDocumentNode(BATCH_CHANGE_BY_NAMESPACE),
-                    variables: MATCH_ANY_PARAMETERS,
-                },
-                result: { data },
-                nMatches: Number.POSITIVE_INFINITY,
-            },
-            {
-                request: {
-                    query: getDocumentNode(BULK_OPERATIONS),
-                    variables: MATCH_ANY_PARAMETERS,
-                },
-                result: { data: MOCK_BULK_OPERATIONS },
-                nMatches: Number.POSITIVE_INFINITY,
-            },
-            {
-                request: {
-                    query: getDocumentNode(CHANGESETS),
-                    variables: MATCH_ANY_PARAMETERS,
-                },
-                result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
-                nMatches: Number.POSITIVE_INFINITY,
-            },
-        ])
-
-        return (
-            <WebStory initialEntries={[url]}>
-                {props => (
-                    <MockedTestProvider link={mocks}>
-                        <BatchChangeDetailsPage
-                            {...props}
-                            namespaceID="namespace123"
-                            batchChangeName="awesome-batch-change"
-                            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                            deleteBatchChange={deleteBatchChange}
-                            queryAllChangesetIDs={queryAllChangesetIDs}
-                            extensionsController={{} as any}
-                            platformContext={{} as any}
-                            settingsCascade={EMPTY_SETTINGS_CASCADE}
-                        />
-                    </MockedTestProvider>
-                )}
-            </WebStory>
-        )
-    })
+export const Overview = Template.bind({})
+Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change' }
+Overview.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
 }
 
-add('Empty changesets', () => {
+export const BurndownChart = Template.bind({})
+BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' }
+BurndownChart.storyName = 'Burndown chart'
+BurndownChart.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
+
+export const SpecFile = Template.bind({})
+SpecFile.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' }
+SpecFile.storyName = 'Spec file'
+SpecFile.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
+
+export const Archived = Template.bind({})
+Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' }
+Archived.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
+
+export const BulkOperations = Template.bind({})
+BulkOperations.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' }
+BulkOperations.storyName = 'Bulk operations'
+BulkOperations.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: false,
+    },
+}
+
+export const SupersededBatchSpec = Template.bind({})
+SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: true }
+SupersededBatchSpec.storyName = 'Superseded batch-spec'
+SupersededBatchSpec.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: true,
+    },
+}
+
+export const UnpublishableBatchSpec = Template.bind({})
+UnpublishableBatchSpec.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change',
+    currentBatchSpec: {
+        ...MOCK_BATCH_CHANGE.currentSpec,
+        viewerBatchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
+            totalCount: 1,
+            nodes: [
+                {
+                    externalServiceURL: 'https://github.com/',
+                    externalServiceKind: ExternalServiceKind.GITHUB,
+                },
+            ],
+        },
+    },
+}
+UnpublishableBatchSpec.storyName = 'Batch spec with unpublishable changesets'
+UnpublishableBatchSpec.argTypes = {
+    supersedingBatchSpec: {
+        defaultValue: true,
+    },
+}
+
+export const EmptyChangesets: Story = args => {
     const mocks = new WildcardMockLink([
         {
             request: {
@@ -235,6 +325,7 @@ add('Empty changesets', () => {
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
+                        authenticatedUser={authenticatedUser}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
@@ -243,9 +334,15 @@ add('Empty changesets', () => {
                         extensionsController={{} as any}
                         platformContext={{} as any}
                         settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        {...args}
                     />
                 </MockedTestProvider>
             )}
         </WebStory>
     )
-})
+}
+EmptyChangesets.parameters = {
+    controls: { hideNoControlsWarning: true, exclude: ['supersedingBatchSpec', 'viewerCanAdminister', 'isClosed'] },
+}
+
+EmptyChangesets.storyName = 'Empty changesets'

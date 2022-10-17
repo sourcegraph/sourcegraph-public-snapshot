@@ -4,7 +4,7 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'

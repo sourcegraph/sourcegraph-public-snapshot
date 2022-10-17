@@ -1,0 +1,41 @@
+[
+  {
+    "and": [
+      {
+        "value": "(((a b c)))",
+        "negated": false,
+        "labels": [
+          "HeuristicParensAsPatterns",
+          "Literal"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 0
+          },
+          "end": {
+            "line": 0,
+            "column": 11
+          }
+        }
+      },
+      {
+        "value": "d",
+        "negated": false,
+        "labels": [
+          "Literal"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 16
+          },
+          "end": {
+            "line": 0,
+            "column": 17
+          }
+        }
+      }
+    ]
+  }
+]

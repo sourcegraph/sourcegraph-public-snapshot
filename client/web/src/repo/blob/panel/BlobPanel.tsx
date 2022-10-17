@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useCallback, useMemo, useRef } from 'react'
 
 import * as H from 'history'
-import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
-import { map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
+import { distinct, map, mapTo, switchMap, tap } from 'rxjs/operators'
+import { DocumentSelector } from 'sourcegraph'
 
 import {
     BuiltinTabbedPanelDefinition,
@@ -13,6 +14,7 @@ import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegrap
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -41,6 +43,8 @@ interface Props
     repoID: Scalars['ID']
     repoName: string
     commitID: string
+
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
@@ -62,7 +66,7 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
 /**
  * A React hook that registers panel views for the blob.
  */
-export function useBlobPanelViews({
+function useBlobPanelViews({
     extensionsController,
     activation,
     repoName,
@@ -77,6 +81,7 @@ export function useBlobPanelViews({
     isLightTheme,
     platformContext,
     telemetryService,
+    fetchHighlightedFileLineRanges,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -88,21 +93,24 @@ export function useBlobPanelViews({
     // (for main thread -> ext host -> main thread roundtrip for editor position)
     const activeCodeEditorPositions = useMemo(() => new ReplaySubject<TextDocumentPositionParameters | null>(1), [])
     useObservable(
-        useMemo(
-            () =>
-                from(extensionsController.extHostAPI).pipe(
-                    switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
-                    tap(parameters => activeCodeEditorPositions.next(parameters)),
-                    mapTo(undefined)
-                ),
-            [activeCodeEditorPositions, extensionsController]
-        )
+        useMemo(() => {
+            if (extensionsController === null) {
+                return EMPTY
+            }
+            return from(extensionsController.extHostAPI).pipe(
+                switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getActiveCodeEditorPosition())),
+                tap(parameters => activeCodeEditorPositions.next(parameters)),
+                mapTo(undefined)
+            )
+        }, [activeCodeEditorPositions, extensionsController])
     )
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
-    const experimentalReferencePanelEnabled =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.coolCodeIntel === true
+    const isTabbedReferencesPanelEnabled =
+        !isErrorLike(settingsCascade.final) &&
+        settingsCascade.final !== null &&
+        settingsCascade.final['codeIntel.referencesPanel'] === 'tabbed'
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
@@ -111,9 +119,12 @@ export function useBlobPanelViews({
             title: string,
             priority: number,
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
-            extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
+            extraParameters?: {
+                selector: DocumentSelector | null
+            }
         ): Observable<BuiltinTabbedPanelView | null> =>
             activeCodeEditorPositions.pipe(
+                distinct(),
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
                         return null
@@ -122,7 +133,7 @@ export function useBlobPanelViews({
                     return {
                         title,
                         content: '',
-                        selector: null,
+                        selector: extraParameters?.selector ?? null,
                         priority,
 
                         maxLocationResults: id === 'references' || id === 'def' ? maxPanelResults : undefined,
@@ -132,7 +143,6 @@ export function useBlobPanelViews({
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                         locationProvider: provideLocations({
                             ...textDocumentPositionParameters,
-                            ...extraParameters,
                         } as P).pipe(
                             tap(({ result: locations }) => {
                                 if (activationReference.current && id === 'references' && locations.length > 0) {
@@ -199,7 +209,7 @@ export function useBlobPanelViews({
                 },
             ]
 
-            if (!experimentalReferencePanelEnabled) {
+            if (isTabbedReferencesPanelEnabled && extensionsController !== null) {
                 panelDefinitions.push(
                     ...[
                         {
@@ -258,6 +268,7 @@ export function useBlobPanelViews({
                                     key="references"
                                     externalHistory={history}
                                     externalLocation={location}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 />
                             ) : (
                                 <></>
@@ -269,7 +280,7 @@ export function useBlobPanelViews({
 
             return panelDefinitions
         }, [
-            experimentalReferencePanelEnabled,
+            isTabbedReferencesPanelEnabled,
             createLocationProvider,
             panelSubjectChanges,
             preferAbsoluteTimestamps,
@@ -278,6 +289,7 @@ export function useBlobPanelViews({
             telemetryService,
             platformContext,
             extensionsController,
+            fetchHighlightedFileLineRanges,
         ])
     )
 
@@ -296,4 +308,13 @@ function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOr
         return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
     return false
+}
+
+/**
+ * Registers built-in tabbed panel views and renders `null`.
+ */
+export const BlobPanel: React.FunctionComponent<Props> = props => {
+    useBlobPanelViews(props)
+
+    return null
 }

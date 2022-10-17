@@ -1,45 +1,68 @@
 import React, { useState } from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Link, Menu, MenuButton, MenuDivider, MenuItem, MenuLink, MenuList, Position } from '@sourcegraph/wildcard'
+import {
+    Link,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuLink,
+    MenuList,
+    Position,
+    Checkbox,
+    Tooltip,
+    Icon,
+} from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard, isVirtualDashboard } from '../../../../core'
-import { useUiFeatures } from '../../../../hooks/use-ui-features'
+import { useExperimentalFeatures } from '../../../../../../stores'
+import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
+import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
+import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 
-import { ConfirmDeleteModal } from './ConfirmDeleteModal'
 import { ConfirmRemoveModal } from './ConfirmRemoveModal'
 
 import styles from './InsightContextMenu.module.scss'
 
 export interface InsightCardMenuProps {
     insight: Insight
-    dashboard: InsightDashboard | null
+    currentDashboard: InsightDashboard | null
+    dashboards: InsightDashboard[]
     zeroYAxisMin: boolean
-    menuButtonClassName?: string
     onToggleZeroYAxisMin?: () => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
-export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onToggleZeroYAxisMin = noop } = props
+export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
+    const { insight, currentDashboard, dashboards, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+    const [showShareModal, setShowShareModal] = useState(false)
 
     const { insight: insightPermissions } = useUiFeatures()
     const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
 
     const insightID = insight.id
-    const editUrl = dashboard?.id
-        ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
+    const editUrl = currentDashboard?.id
+        ? `/insights/edit/${insightID}?dashboardId=${currentDashboard.id}`
         : `/insights/edit/${insightID}`
 
-    const withinVirtualDashboard = !!dashboard && isVirtualDashboard(dashboard)
+    const features = useExperimentalFeatures()
+    const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
+
+    const quickFixUrl =
+        insight.type === InsightType.SearchBased
+            ? `/batch-changes/create?kind=goChecker${insight.series[0]?.name}&title=${insight.title}`
+            : undefined
+
+    const withinVirtualDashboard = !!currentDashboard && isVirtualDashboard(currentDashboard)
 
     return (
         <>
@@ -48,13 +71,17 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                     <>
                         <MenuButton
                             data-testid="InsightContextMenuButton"
-                            className={classNames(menuButtonClassName, 'p-1', styles.button)}
+                            className={classNames('p-1 ml-1 d-inline-flex', styles.button)}
                             aria-label="Insight options"
                             outline={true}
                         >
-                            <DotsVerticalIcon
+                            <Icon
                                 className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
-                                size={16}
+                                svgPath={mdiDotsVertical}
+                                inline={false}
+                                aria-hidden={true}
+                                height={16}
+                                width={16}
                             />
                         </MenuButton>
                         <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>
@@ -67,43 +94,57 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 Edit
                             </MenuLink>
 
+                            <MenuLink
+                                data-testid="InsightContextMenuShareLink"
+                                className={styles.item}
+                                onSelect={() => setShowShareModal(true)}
+                            >
+                                Get shareable link
+                            </MenuLink>
+
                             {menuPermissions.showYAxis && (
                                 <MenuItem
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
-                                    className={classNames(
-                                        'd-flex align-items-center justify-content-between',
-                                        styles.item
-                                    )}
+                                    className={classNames('d-flex align-items-center justify-content-end', styles.item)}
                                     onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         aria-hidden="true"
                                         checked={zeroYAxisMin}
                                         onChange={noop}
                                         tabIndex={-1}
+                                        id="InsightContextMenuEditInput"
+                                        label={<span className="font-weight-normal">Start Y Axis at 0</span>}
                                     />
-                                    <span>Start Y Axis at 0</span>
                                 </MenuItem>
                             )}
 
-                            {dashboard && (
-                                <MenuItem
-                                    data-testid="insight-context-remove-from-dashboard-button"
-                                    onSelect={() => setShowRemoveConfirm(true)}
-                                    disabled={withinVirtualDashboard}
-                                    data-tooltip={
+                            {quickFixUrl && showQuickFix && (
+                                <MenuLink as={Link} className={styles.item} to={quickFixUrl}>
+                                    Golang quick fixes
+                                </MenuLink>
+                            )}
+
+                            {currentDashboard && (
+                                <Tooltip
+                                    content={
                                         withinVirtualDashboard
                                             ? "Removing insight isn't available for the All insights dashboard"
                                             : undefined
                                     }
-                                    data-placement="left"
-                                    className={styles.item}
+                                    placement="left"
                                 >
-                                    Remove from this dashboard
-                                </MenuItem>
+                                    <MenuItem
+                                        data-testid="insight-context-remove-from-dashboard-button"
+                                        onSelect={() => setShowRemoveConfirm(true)}
+                                        disabled={withinVirtualDashboard}
+                                        className={styles.item}
+                                    >
+                                        Remove from this dashboard
+                                    </MenuItem>
+                                </Tooltip>
                             )}
 
                             <MenuDivider />
@@ -126,9 +167,16 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
             />
             <ConfirmRemoveModal
                 insight={insight}
-                dashboard={dashboard}
+                dashboard={currentDashboard}
                 showModal={showRemoveConfirm}
                 onCancel={() => setShowRemoveConfirm(false)}
+            />
+            <ShareLinkModal
+                aria-label="Share insight"
+                insight={insight}
+                dashboards={dashboards}
+                isOpen={showShareModal}
+                onDismiss={() => setShowShareModal(false)}
             />
         </>
     )

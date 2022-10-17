@@ -10,11 +10,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +33,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -43,7 +45,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("not the code host of the account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -72,7 +74,11 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private"
+				visibility := r.URL.Query().Get("visibility")
+				if visibility != "private" && visibility != "internal" {
+					return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
+				}
+				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
 				if r.URL.String() != want {
 					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 				}
@@ -83,7 +89,10 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 					return nil, errors.Errorf("HTTP Authorization: want %q but got %q", want, got)
 				}
 
-				body := `[{"id": 1}, {"id": 2}, {"id": 3}]`
+				body := `[{"id": 1}, {"id": 2}]`
+				if visibility == "internal" {
+					body = `[{"id": 3}]`
+				}
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
 					StatusCode: http.StatusOK,
@@ -91,7 +100,21 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				}, nil
 			},
 		},
+		nil,
 	)
+
+	gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
+		return &oauthutil.OAuthContext{
+			ClientID:     "client",
+			ClientSecret: "client_sec",
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "url/oauth/authorize",
+				TokenURL: "url/oauth/token",
+			},
+			Scopes: []string{"read_user"},
+		}
+	}
+	defer func() { gitlab.MockGetOAuthContext = nil }()
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -101,7 +124,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				ServiceID:   "https://gitlab.com/",
 			},
 			AccountData: extsvc.AccountData{
-				AuthData: &authData,
+				AuthData: extsvc.NewUnencryptedData(authData),
 			},
 		},
 		authz.FetchPermsOptions{},
@@ -120,7 +143,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -132,7 +155,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("not the code host of the repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
-		}, nil)
+		}, nil, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
 			&extsvc.Repository{
 				URI: "github.com/user/repo",
@@ -188,6 +211,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			nil,
 		)
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(),
@@ -245,6 +269,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 					}, nil
 				},
 			},
+			nil,
 		)
 
 		accountIDs, err := p.FetchRepoPerms(context.Background(),

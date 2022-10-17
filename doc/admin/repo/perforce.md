@@ -1,6 +1,6 @@
 # Using Perforce depots with Sourcegraph
 
-Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter or [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
 
 Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
@@ -47,8 +47,29 @@ Use the `depots` field to configure which depots are mirrored/synchronized as Gi
 
 Notable things about depot syncing:
 
+- Depot syncing uses the `git p4` command to convert Perforce depots into git repositories.
 - It takes approximately one second to import one Perforce change into a Git commit, this translates to sync a Perforce depot with 1000 changes takes approximately 1000 seconds, which is about 17 minutes. It is possible to limit the maximum changes to import using `maxChanges` config option.
 - Rename of a Perforce depot will cause a re-import of the depot, including changing the depot on the Perforce server or the `repositoryPathPattern` config option.
+
+#### Using p4-fusion for faster syncing
+
+We optionally support using the [p4-fusion](https://github.com/salesforce/p4-fusion) tool and it will likely become our default in future:
+
+> A fast Perforce depot to Git repository converter using the Helix Core C/C++ API as an attempt to mitigate the performance bottlenecks in git-p4.py.
+
+To use it, configure the `fusionClient` setting in your code host [config](#configuration), for example:
+
+```json
+{
+    ...
+    "fusionClient": {
+      "enabled": true,
+      "lookAhead": 1000
+    }
+}
+```
+
+Details of all fields can be seen in [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a296019877c36c8e6b641e14ffa711372316788f/-/blob/schema/perforce.schema.json?L89)
 
 ### Repository permissions
 
@@ -63,9 +84,9 @@ To enable permissions syncing for Perforce depots using [Perforce permissions ta
 }
 ```
 
-> WARNING: Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). Some notable disparities include:
+> WARNING: By default Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). Some notable disparities include:
 >
-> - [file-level permissions are not supported](#file-level-permissions). Read on to learn more about the workaround.
+> - [file-level permissions are not fully supported](#file-level-permissions). Read on to learn more about the workaround.
 > - [the host field from protections are not supported](#known-issues-and-limitations).
 
 > NOTE: We are testing an experimental feature that will allow syncing permissions with full granularity, details [here](#experimental-support-for-path-level-permissions)
@@ -116,7 +137,7 @@ write user alice * //TestDepot/.../spec/...
 
 #### File-level permissions
 
-> NOTE: See [below](#experimental-support-for-path-level-permissions) for details on experimental support for file level permissions
+> NOTE: See [below](#experimental-support-for-file-level-permissions) for details on experimental support for file level permissions
 
 Sourcegraph does not support file-level permissions, as allowed in [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). That means if a user has access to a directory and also has exclusions to some subdirectories, _those exclusions will not be enforced in Sourcegraph_ because Sourcegraph does not support file-level permissions.
 
@@ -166,7 +187,7 @@ Permissions will be synced in the background based on your [Perforce permissions
 
 As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
 
-As a special case, if a user is not allowed to read any file included in a commit, the entire commit will be hidden.
+As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
 
 ## Add Perforce depots using `src serve-git`
 

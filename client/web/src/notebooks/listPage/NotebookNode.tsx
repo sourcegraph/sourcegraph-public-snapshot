@@ -1,12 +1,10 @@
 import React, { useMemo } from 'react'
 
+import { mdiStar, mdiStarOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import StarIcon from 'mdi-react/StarIcon'
-import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
-import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
@@ -23,9 +21,10 @@ export interface NotebookNodeProps {
 
 // Find the first Markdown block in the notebook, and use the first line in the block
 // as the notebook description.
-function getNotebookDescription(blocks: NotebookBlock[]): string {
-    const firstMarkdownBlock = blocks.find<IMarkdownBlock>(
-        (block): block is IMarkdownBlock => block.__typename === 'MarkdownBlock'
+function getNotebookDescription(blocks: NotebookFields['blocks']): string {
+    const firstMarkdownBlock = blocks.find(
+        (block): block is Extract<NotebookFields['blocks'][number], { __typename: 'MarkdownBlock' }> =>
+            block.__typename === 'MarkdownBlock'
     )
     if (!firstMarkdownBlock) {
         return ''
@@ -34,10 +33,12 @@ function getNotebookDescription(blocks: NotebookBlock[]): string {
     return renderedPlainTextMarkdown.split('\n')[0]
 }
 
-export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node }: NotebookNodeProps) => {
+export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<NotebookNodeProps>> = ({
+    node,
+}: NotebookNodeProps) => {
     const description = useMemo(() => getNotebookDescription(node.blocks), [node.blocks])
     return (
-        <div className={classNames('py-3', styles.notebookNode)}>
+        <li className={classNames('py-3', styles.notebookNode)}>
             <div className="d-flex align-items-center">
                 <Link to={PageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
                     <strong>{node.title}</strong>
@@ -59,13 +60,20 @@ export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node 
                 <span className="d-flex align-items-center mr-3">
                     {node.viewerHasStarred ? (
                         <Icon
+                            aria-label="You have starred this notebook"
                             className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
-                            as={StarIcon}
+                            svgPath={mdiStar}
                         />
                     ) : (
-                        <Icon className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                        <Icon
+                            aria-label="You have not starred this notebook"
+                            className={styles.notebookStarIcon}
+                            svgPath={mdiStarOutline}
+                        />
                     )}
-                    <span className="ml-1">{node.stars.totalCount}</span>
+                    <span className="ml-1" aria-label={`${node.stars.totalCount} stars`}>
+                        {node.stars.totalCount}
+                    </span>
                 </span>
                 <span className="mr-3">
                     Updated <Timestamp date={node.updatedAt} noAbout={true} />
@@ -74,6 +82,6 @@ export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node 
                     Created <Timestamp date={node.createdAt} noAbout={true} />
                 </span>
             </div>
-        </div>
+        </li>
     )
 }

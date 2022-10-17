@@ -1,30 +1,34 @@
-import React from 'react'
-
-import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
-import { of, Observable } from 'rxjs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { Observable, of } from 'rxjs'
 
 import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { filterPublishableIDs } from '../utils'
 
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
-const { add } = storiesOf('web/batches/preview', module)
-    .addDecorator(story => <div className="p-3 container">{story()}</div>)
-    .addParameters({
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/preview/PreviewList',
+    decorators: [decorator],
+    argTypes: {
+        publicationStateSet: {
+            name: 'publication state set by spec file',
+            control: { type: 'boolean' },
+            defaultValue: false,
         },
-    })
+    },
+}
+
+export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-add('PreviewList', () => {
-    const publicationStateSet = boolean('publication state set by spec file', false)
+export const DefaultStory: Story = args => {
+    const publicationStateSet = args.publicationStateSet
 
     const nodes: ChangesetApplyPreviewFields[] = [
         ...Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet)),
@@ -65,4 +69,12 @@ add('PreviewList', () => {
             )}
         </WebStory>
     )
-})
+}
+
+DefaultStory.parameters = {
+    chromatic: {
+        viewports: [320, 576, 978, 1440],
+    },
+}
+
+DefaultStory.storyName = 'default'

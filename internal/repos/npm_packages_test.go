@@ -2,22 +2,21 @@ package repos
 
 import (
 	"context"
-	"os"
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmpackages"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm/npmtest"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
@@ -39,7 +38,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	for _, testCase := range testCases {
 		deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 			Scheme: dependencies.NpmPackagesScheme,
-			Name:   testCase.pkgName,
+			Name:   reposource.PackageName(testCase.pkgName),
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
@@ -47,7 +46,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmDependency{pkg, dep.Version}).PackageManagerSyntax(),
+				(&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: dep.Version}).VersionedPackageSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -61,7 +60,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 		for i := 0; i < len(testCase.matches); i++ {
 			deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 				Scheme: dependencies.NpmPackagesScheme,
-				Name:   testCase.pkgName,
+				Name:   reposource.PackageName(testCase.pkgName),
 				After:  lastID,
 				Limit:  1,
 			})
@@ -69,7 +68,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmDependency{pkg, deps[0].Version}).PackageManagerSyntax())
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: deps[0].Version}).VersionedPackageSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -80,8 +79,9 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.Repo) *dependencies.Service {
 	t.Helper()
-	db := database.NewDB(dbtest.NewDB(t))
-	depsSvc := live.TestService(db, nil)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	depsSvc := dependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {
@@ -102,7 +102,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(depStr)
+		dep, err := reposource.ParseNpmVersionedPackage(depStr)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -118,67 +118,60 @@ var testDependencyRepos = func() []dependencies.Repo {
 	return dependencyRepos
 }()
 
-func TestListRepos(t *testing.T) {
+func TestNPMPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
-
-	dir, err := os.MkdirTemp("", "")
-	require.Nil(t, err)
-	defer os.RemoveAll(dir)
+	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
+		{
+			ID:      1,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.0", // test deduplication with version from config
+		},
+		{
+			ID:      2,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.1", // test deduplication with version from config
+		},
+		{
+			ID:      3,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "@sourcegraph/web-ext",
+			Version: "3.0.0-fork.1",
+		},
+		{
+			ID:      4,
+			Scheme:  dependencies.NpmPackagesScheme,
+			Name:    "fastq",
+			Version: "0.9.9", // test missing modules still create a repo.
+		},
+	})
 
 	svc := types.ExternalService{
-		Kind:   extsvc.KindNpmPackages,
-		Config: `{"registry": "https://placeholder.lol", "rateLimit": {"enabled": false}}`,
-	}
-	packageSource, err := NewNpmPackagesSource(&svc)
-	require.Nil(t, err)
-	packageSource.SetDependenciesService(depsSvc)
-	packageSource.client = npmtest.NewMockClient(t, testDependencies...)
-	results := make(chan SourceResult, 10)
-	go func() {
-		packageSource.ListRepos(ctx, results)
-		close(results)
-	}()
-
-	var have []*types.Repo
-	for r := range results {
-		if r.Err != nil {
-			t.Fatal(r.Err)
-		}
-		have = append(have, r.Repo)
+		Kind: extsvc.KindNpmPackages,
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
+			Registry:     "https://registry.npmjs.org",
+			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+		})),
 	}
 
-	sort.Sort(types.Repos(have))
+	cf, save := newClientFactory(t, t.Name())
+	t.Cleanup(func() { save(t) })
 
-	var want []*types.Repo
-	for _, dep := range testDependencies {
-		dep, err := reposource.ParseNpmDependency(dep)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want = append(want, &types.Repo{
-			Name:        dep.RepoName(),
-			Description: dep.PackageSyntax() + " description",
-			URI:         string(dep.RepoName()),
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          string(dep.RepoName()),
-				ServiceID:   extsvc.TypeNpmPackages,
-				ServiceType: extsvc.TypeNpmPackages,
-			},
-			Sources: map[string]*types.SourceInfo{
-				packageSource.svc.URN(): {
-					ID:       packageSource.svc.URN(),
-					CloneURL: dep.CloneURL(),
-				},
-			},
-			Metadata: &npmpackages.Metadata{
-				Package: dep.NpmPackage,
-			},
-		})
+	src, err := NewNpmPackagesSource(ctx, &svc, cf)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sort.Sort(types.Repos(want))
+	src.SetDependenciesService(depsSvc)
 
-	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
-	require.Equal(t, want, have)
+	repos, err := listAll(ctx, src)
+	sort.Slice(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
 }

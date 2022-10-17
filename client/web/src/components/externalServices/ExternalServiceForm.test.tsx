@@ -2,8 +2,6 @@ jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 
-import React from 'react'
-
 import * as H from 'history'
 import { noop } from 'rxjs'
 
@@ -21,6 +19,8 @@ describe('ExternalServiceForm', () => {
         onChange: noop,
         jsonSchema: { $id: 'json-schema-id' },
         editorActions: [],
+        externalServicesFromFile: false,
+        allowEditExternalServicesWithFile: false,
     }
 
     test('create GitHub', () => {

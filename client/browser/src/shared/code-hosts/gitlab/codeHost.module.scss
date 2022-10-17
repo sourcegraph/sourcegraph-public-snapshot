@@ -5,6 +5,20 @@
 .command-list-popover {
     // The navbar has z-index 1000
     z-index: 1001 !important;
+
+    --dropdown-bg: var(--gray-50, #ffffff);
+    --dropdown-shadow: 0 2px 4px rgba(0, 0, 0, 10%);
+    --dropdown-border-color: var(--border-color);
+    --popover-border-radius: 3px;
+}
+
+:global(.show) > .command-list-popover {
+    display: block;
+}
+
+.command-palette-button > span {
+    display: flex;
+    align-items: center;
 }
 
 .btn-icon {
@@ -34,6 +48,8 @@
         background: none;
         color: inherit;
     }
+
+    margin-bottom: 0;
 
     // highlight.js styles
 

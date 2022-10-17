@@ -10,14 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DatabaseWriter interface {
-	WriteDBFile(ctx context.Context, args types.SearchArgs, tempDBFile string) error
+	WriteDBFile(ctx context.Context, args search.SymbolsParameters, tempDBFile string) error
 }
 
 type databaseWriter struct {
@@ -41,8 +41,11 @@ func NewDatabaseWriter(
 	}
 }
 
-func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
-	w.sem.Acquire(ctx, 1)
+func (w *databaseWriter) WriteDBFile(ctx context.Context, args search.SymbolsParameters, dbFile string) error {
+	err := w.sem.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
 	defer w.sem.Release(1)
 
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {
@@ -56,7 +59,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 	return w.writeDBFile(ctx, args, dbFile)
 }
 
-func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchArgs) (dbFile string, commit string, ok bool, err error) {
+func (w *databaseWriter) getNewestCommit(ctx context.Context, args search.SymbolsParameters) (dbFile string, commit string, ok bool, err error) {
 	components := []string{}
 	components = append(components, w.path)
 	components = append(components, diskcache.EncodeKeyComponents(repoKey(args.Repo))...)
@@ -77,7 +80,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 	return newest, commit, ok, err
 }
 
-func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
+func (w *databaseWriter) writeDBFile(ctx context.Context, args search.SymbolsParameters, dbFile string) error {
 	observability.SetParseAmount(ctx, observability.FullParse)
 
 	return w.parseAndWriteInTransaction(ctx, args, nil, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
@@ -101,7 +104,7 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
+func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args search.SymbolsParameters, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	observability.SetParseAmount(ctx, observability.PartialParse)
 
 	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
@@ -134,7 +137,7 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	})
 }
 
-func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error) (err error) {
+func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args search.SymbolsParameters, paths []string, dbFile string, callback func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error) (err error) {
 	symbolOrErrors, err := w.parser.Parse(ctx, args, paths)
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")

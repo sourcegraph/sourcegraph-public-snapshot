@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
@@ -21,6 +19,16 @@ import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockCodeMonitorFields, mockUser } from './testing/util'
 
 describe('ManageCodeMonitorPage', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const history = H.createMemoryHistory()
     history.location.pathname = '/code-monitoring/test-monitor-id'
     const props = {

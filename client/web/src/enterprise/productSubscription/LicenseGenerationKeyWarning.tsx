@@ -11,7 +11,9 @@ import { Alert, Link } from '@sourcegraph/wildcard'
  * the right license generation private key), but it's not worth the complexity to make this alert
  * precise.
  */
-export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
+export const LicenseGenerationKeyWarning: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className = '',
+}) =>
     window.context?.debug ? (
         <Alert className={className} variant="warning">
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}

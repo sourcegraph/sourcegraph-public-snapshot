@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
@@ -27,12 +29,13 @@ import (
 // various endpoints, but does NOT cover the logic that is contained within `golang.org/x/oauth2`
 // and `github.com/dghubble/gologin` which ensures the correctness of the `/callback` handler.
 func TestMiddleware(t *testing.T) {
+	logger := logtest.Scoped(t)
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
 	const mockUserID = 123
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("got through"))
@@ -292,7 +295,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		ClientID:     clientID,
 		Type:         extsvc.TypeGitLab,
 	}}
-	mp.Provider, problems = parseProvider(db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
+	mp.Provider, problems = parseProvider(logtest.Scoped(t), db, "https://sourcegraph.mine.com/.auth/gitlab/callback", cfg.Gitlab, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

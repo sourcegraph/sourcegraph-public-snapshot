@@ -8,7 +8,7 @@ import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
@@ -19,7 +19,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
@@ -29,7 +29,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
 
-const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+)
 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
@@ -106,7 +108,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -123,7 +125,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.dataOrError === LOADING) {
-            return null // loading
+            return <LoadingSpinner inline={false} />
         }
         if (isErrorLike(this.state.dataOrError)) {
             return (
@@ -191,14 +193,14 @@ export class SettingsArea extends React.Component<Props, State> {
                 extensionIDsFromSettings(gqlToCascade(cascade))
             ).pipe(
                 catchError(error => {
-                    console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                    logger.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
                     return of([])
                 })
             ),
             from(this.props.platformContext.sideloadedExtensionURL).pipe(
                 switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
                 catchError(error => {
-                    console.error('Error sideloading extension', error)
+                    logger.error('Error sideloading extension', error)
                     return of(null)
                 })
             ),

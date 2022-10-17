@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
@@ -18,12 +20,13 @@ func init() {
 func extensionRegistryPublishers(ctx context.Context, db database.DB, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
 	var opt stores.PublishersListOptions
 	args.Set(&opt.LimitOffset)
-	return &registryPublisherConnection{opt: opt, db: db}, nil
+	return &registryPublisherConnection{logger: log.Scoped("extensionRegistryPublishers", ""), opt: opt, db: db}, nil
 }
 
 // registryPublisherConnection resolves a list of registry publishers.
 type registryPublisherConnection struct {
-	opt stores.PublishersListOptions
+	logger log.Logger
+	opt    stores.PublishersListOptions
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
@@ -54,7 +57,7 @@ func (r *registryPublisherConnection) Nodes(ctx context.Context) ([]graphqlbacke
 
 	var l []graphqlbackend.RegistryPublisher
 	for _, publisher := range publishers {
-		p, err := getRegistryPublisher(ctx, database.NewDB(r.db), *publisher)
+		p, err := getRegistryPublisher(ctx, r.db, *publisher)
 		if err != nil {
 			return nil, err
 		}

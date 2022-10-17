@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -10,15 +11,22 @@ import (
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
 func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.NewCodeIntelUsageStatistics, error) {
-	eventLogs := database.EventLogs(db)
+	eventLogs := db.EventLogs()
 
 	codeIntelEvents, err := eventLogs.AggregatedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
-	} else if len(codeIntelEvents) == 0 {
+	}
+	codeIntelInvestigationEvents, err := eventLogs.AggregatedCodeIntelInvestigationEvents(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(codeIntelEvents) == 0 && len(codeIntelInvestigationEvents) == 0 {
 		return nil, nil
 	}
-	stats := groupAggregatedCodeIntelStats(codeIntelEvents)
+
+	// NOTE: this requires at least one of these to be non-empty (to get an initial date)
+	stats := groupAggregatedCodeIntelStats(codeIntelEvents, codeIntelInvestigationEvents)
 
 	pairs := []struct {
 		fetch  func(ctx context.Context) (int, error)
@@ -75,6 +83,20 @@ func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.Ne
 		}
 	}
 
+	requestCountsByLanguage, err := eventLogs.RequestsByLanguage(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	languageRequests := make([]types.LanguageRequest, 0, len(countsByLanguage))
+	for languageID, value := range requestCountsByLanguage {
+		languageRequests = append(languageRequests, types.LanguageRequest{
+			LanguageID:  languageID,
+			NumRequests: int32(value),
+		})
+	}
+	stats.LanguageRequests = languageRequests
+
 	return stats, nil
 }
 
@@ -104,7 +126,16 @@ var sourceMap = map[string]types.CodeIntelSource{
 	"codeintel.searchReferences.xrepo":  types.SearchSource,
 }
 
-func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *types.NewCodeIntelUsageStatistics {
+var investigationTypeMap = map[string]types.CodeIntelInvestigationType{
+	"CodeIntelligenceIndexerSetupInvestigated": types.CodeIntelIndexerSetupInvestigationType,
+	"CodeIntelligenceUploadErrorInvestigated":  types.CodeIntelUploadErrorInvestigationType,
+	"CodeIntelligenceIndexErrorInvestigated":   types.CodeIntelIndexErrorInvestigationType,
+}
+
+func groupAggregatedCodeIntelStats(
+	rawEvents []types.CodeIntelAggregatedEvent,
+	rawInvestigationEvents []types.CodeIntelAggregatedInvestigationEvent,
+) *types.NewCodeIntelUsageStatistics {
 	var eventSummaries []types.CodeIntelEventSummary
 	for _, event := range rawEvents {
 		languageID := ""
@@ -122,8 +153,25 @@ func groupAggregatedCodeIntelStats(rawEvents []types.CodeIntelAggregatedEvent) *
 		})
 	}
 
+	var investigationEvents []types.CodeIntelInvestigationEvent
+	for _, event := range rawInvestigationEvents {
+		investigationEvents = append(investigationEvents, types.CodeIntelInvestigationEvent{
+			Type:  investigationTypeMap[event.Name],
+			WAUs:  event.UniquesWeek,
+			Total: event.TotalWeek,
+		})
+	}
+
+	var startOfWeek time.Time
+	if len(rawEvents) > 0 {
+		startOfWeek = rawEvents[0].Week
+	} else if len(rawInvestigationEvents) > 0 {
+		startOfWeek = rawInvestigationEvents[0].Week
+	}
+
 	return &types.NewCodeIntelUsageStatistics{
-		StartOfWeek:    rawEvents[0].Week,
-		EventSummaries: eventSummaries,
+		StartOfWeek:         startOfWeek,
+		EventSummaries:      eventSummaries,
+		InvestigationEvents: investigationEvents,
 	}
 }

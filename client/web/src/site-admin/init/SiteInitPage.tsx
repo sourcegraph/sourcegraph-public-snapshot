@@ -2,13 +2,13 @@ import React from 'react'
 
 import { Redirect } from 'react-router'
 
+import { logger } from '@sourcegraph/common'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { CardBody, Card } from '@sourcegraph/wildcard'
+import { CardBody, Card, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 import { PageRoutes } from '../../routes.constants'
@@ -25,7 +25,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     })
         .then() // no op
         .catch((error): void => {
-            console.error(error)
+            logger.error(error)
         })
     const response = await fetch('/-/site-init', {
         credentials: 'same-origin',
@@ -47,7 +47,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps, FeatureFlagProps {
+interface Props extends ThemeProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -55,19 +55,21 @@ interface Props extends ThemeProps, FeatureFlagProps {
      * `window.context.needsSiteInit` is used.
      */
     needsSiteInit?: typeof window.context.needsSiteInit
-    context: Pick<SourcegraphContext, 'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        'sourcegraphDotComMode' | 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'
+    >
 }
 
 /**
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
  * Only the person who first accesses the instance will see this.
  */
-export const SiteInitPage: React.FunctionComponent<Props> = ({
+export const SiteInitPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
-    featureFlags,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to={PageRoutes.Search} />
@@ -82,20 +84,19 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.
-                        <p>
+                        <Text>
                             You're signed in as <strong>{authenticatedUser.username}</strong>. A site admin must
                             initialize Sourcegraph before you can continue.
-                        </p>
+                        </Text>
                     ) : (
                         <>
-                            <h2 className="site-init-page__header">Welcome</h2>
-                            <p>Create an admin account to start using Sourcegraph.</p>
+                            <H2 className="site-init-page__header">Welcome</H2>
+                            <Text>Create an admin account to start using Sourcegraph.</Text>
                             <SignUpForm
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
                                 context={context}
-                                featureFlags={featureFlags}
                             />
                         </>
                     )}

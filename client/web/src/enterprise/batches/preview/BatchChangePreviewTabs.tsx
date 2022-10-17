@@ -1,21 +1,15 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import * as H from 'history'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import { mdiSourceBranch, mdiFileDocument } from '@mdi/js'
+import { useHistory, useLocation } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge, Container, Icon } from '@sourcegraph/wildcard'
+import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/wildcard'
 
+import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
 import { BatchSpecFields } from '../../../graphql-operations'
-import {
-    BatchChangeTab,
-    BatchChangeTabList,
-    BatchChangeTabPanel,
-    BatchChangeTabPanels,
-    BatchChangeTabs,
-} from '../BatchChangeTabs'
+import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
@@ -29,8 +23,6 @@ import styles from './BatchChangePreviewTabs.module.scss'
 
 export interface BatchChangePreviewProps extends ThemeProps, TelemetryProps {
     batchSpecID: string
-    history: H.History
-    location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
     /** Used for testing. */
@@ -45,69 +37,94 @@ interface BatchChangePreviewTabsProps extends BatchChangePreviewProps {
     spec: BatchSpecFields
 }
 
-export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewTabsProps> = ({
+const SPEC_TAB_NAME = 'spec'
+
+export const BatchChangePreviewTabs: React.FunctionComponent<React.PropsWithChildren<BatchChangePreviewTabsProps>> = ({
     authenticatedUser,
     batchSpecID,
     expandChangesetDescriptions,
-    history,
     isLightTheme,
-    location,
     queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
     spec,
-}) => (
-    <BatchChangeTabs history={history} location={location}>
-        <BatchChangeTabList>
-            <BatchChangeTab index={0} name="previewchangesets">
-                <span>
-                    <Icon className="text-muted mr-1" as={SourceBranchIcon} />
-                    <span className="text-content" data-tab-content="Preview changesets">
-                        Preview changesets
-                    </span>{' '}
-                    <Badge variant="secondary" pill={true} className="ml-1">
-                        {spec.applyPreview.totalCount}
-                    </Badge>
-                </span>
-            </BatchChangeTab>
-            <BatchChangeTab index={1} name="spec">
-                <span>
-                    <Icon className="text-muted mr-1" as={FileDocumentIcon} />{' '}
-                    <span className="text-content" data-tab-content="Spec">
-                        Spec
+}) => {
+    // We track the current tab in a URL parameter so that tabs are easy to navigate to
+    // and share.
+    const history = useHistory()
+    const location = useLocation()
+    const initialTab = new URLSearchParams(location.search).get('tab')
+
+    const onTabChange = useCallback(
+        (index: number) => {
+            const urlParameters = new URLSearchParams(location.search)
+            resetFilteredConnectionURLQuery(urlParameters)
+
+            // The first tab is the default, so it's not necessary to set it in the URL.
+            if (index === 0) {
+                urlParameters.delete('tab')
+            } else {
+                urlParameters.set('tab', SPEC_TAB_NAME)
+            }
+
+            history.replace({ ...location, search: urlParameters.toString() })
+        },
+        [history, location]
+    )
+
+    return (
+        <BatchChangeTabs defaultIndex={initialTab === SPEC_TAB_NAME ? 1 : 0} onChange={onTabChange}>
+            <BatchChangeTabList>
+                <Tab>
+                    <span>
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiSourceBranch} />
+                        <span className="text-content" data-tab-content="Preview changesets">
+                            Preview changesets
+                        </span>{' '}
+                        <Badge variant="secondary" pill={true} className="ml-1">
+                            {spec.applyPreview.totalCount}
+                        </Badge>
                     </span>
-                </span>
-            </BatchChangeTab>
-        </BatchChangeTabList>
-        <BatchChangeTabPanels>
-            <BatchChangeTabPanel index={0}>
-                <PreviewList
-                    batchSpecID={batchSpecID}
-                    history={history}
-                    location={location}
-                    authenticatedUser={authenticatedUser}
-                    isLightTheme={isLightTheme}
-                    queryChangesetApplyPreview={queryChangesetApplyPreview}
-                    queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                    expandChangesetDescriptions={expandChangesetDescriptions}
-                />
-            </BatchChangeTabPanel>
-            <BatchChangeTabPanel index={1}>
-                <div className="d-flex mb-2 justify-content-end">
-                    <BatchSpecDownloadButton
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
+                </Tab>
+                <Tab>
+                    <span>
+                        <Icon aria-hidden={true} className="text-muted mr-1" svgPath={mdiFileDocument} />{' '}
+                        <span className="text-content" data-tab-content="Spec">
+                            Spec
+                        </span>
+                    </span>
+                </Tab>
+            </BatchChangeTabList>
+            <TabPanels>
+                <TabPanel>
+                    <PreviewList
+                        batchSpecID={batchSpecID}
+                        history={history}
+                        location={location}
+                        authenticatedUser={authenticatedUser}
                         isLightTheme={isLightTheme}
+                        queryChangesetApplyPreview={queryChangesetApplyPreview}
+                        queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                        expandChangesetDescriptions={expandChangesetDescriptions}
                     />
-                </div>
-                <Container>
-                    <BatchSpec
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
-                        isLightTheme={isLightTheme}
-                        className={styles.batchSpec}
-                    />
-                </Container>
-            </BatchChangeTabPanel>
-        </BatchChangeTabPanels>
-    </BatchChangeTabs>
-)
+                </TabPanel>
+                <TabPanel>
+                    <div className="d-flex mb-2 justify-content-end">
+                        <BatchSpecDownloadButton
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                            isLightTheme={isLightTheme}
+                        />
+                    </div>
+                    <Container>
+                        <BatchSpec
+                            name={spec.description.name}
+                            originalInput={spec.originalInput}
+                            isLightTheme={isLightTheme}
+                            className={styles.batchSpec}
+                        />
+                    </Container>
+                </TabPanel>
+            </TabPanels>
+        </BatchChangeTabs>
+    )
+}

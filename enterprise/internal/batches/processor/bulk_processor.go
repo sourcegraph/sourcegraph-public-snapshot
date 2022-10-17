@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,13 +77,9 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 	}
 
 	// Construct changeset source.
-	b.css, err = b.sourcer.ForRepo(ctx, b.tx, b.repo)
+	b.css, err = b.sourcer.ForUser(ctx, b.tx, job.UserID, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")
-	}
-	b.css, err = sources.WithAuthenticatorForUser(ctx, b.tx, b.css, job.UserID, b.repo)
-	if err != nil {
-		return errors.Wrap(err, "authenticating ChangesetSource")
 	}
 
 	log15.Info("processing changeset job", "type", job.JobType)
@@ -112,9 +109,16 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 	if !ok {
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
 	}
+
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	return b.css.CreateComment(ctx, cs, typedPayload.Message)
 }
@@ -161,9 +165,15 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
 	}
 
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
 		return err
@@ -174,7 +184,7 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -190,9 +200,15 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 }
 
 func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
+	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
+	if err != nil {
+		return errors.Wrap(err, "loading remote repo")
+	}
+
 	cs := &sources.Changeset{
 		Changeset:  b.ch,
 		TargetRepo: b.repo,
+		RemoteRepo: remoteRepo,
 	}
 	if err := b.css.CloseChangeset(ctx, cs); err != nil {
 		return err
@@ -203,7 +219,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -238,7 +254,7 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		return errcode.MakeNonRetryable(errors.Newf("no changeset spec for changeset %d", b.ch.ID))
 	}
 
-	if !spec.Spec.Published.Nil() {
+	if !spec.Published.Nil() {
 		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
 	}
 

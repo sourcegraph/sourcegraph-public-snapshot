@@ -55,14 +55,69 @@ The [`builtin` auth provider](../config/site_config.md#builtin-password-authenti
 
 Password reset links expire after 4 hours.
 
-Site configuration example:
+
+###  How to control user sign-up
+
+You can use the filter `allowSignup`, available in the builtin configuration, to control who can create an account in your Sourcegraph instance.
+
+**allowSignup**
+
+  If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
+
+  When not set, it will default to `false` -- in this case, new user accounts should be created by the site admin.
+
+  If you choose to block sign-ups by using the `allowSignup` filter avaiable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+
+  During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
+
+  ```json
+  {
+    // ...,
+    "auth.providers": [{ "type": "builtin", "allowSignup": true }]
+  }
+```
+
+
+### Account lockout
+
+<span class="badge badge-note">Sourcegraph 3.39+</span>
+
+Account will be locked out for 30 minutes after 5 consecutive failed sign-in attempts within one hour for the builtin authentication provider. The threshold and duration of lockout and consecutive periods can be customized via `"auth.lockout"` in the site configuration:
 
 ```json
 {
-  // ...,
-  "auth.providers": [{ "type": "builtin", "allowSignup": true }]
+  // ...
+  "auth.lockout": {
+    // The number of seconds to be considered as a consecutive period
+    "consecutivePeriod": 3600,
+    // The threshold of failed sign-in attempts in a consecutive period
+    "failedAttemptThreshold": 5,
+    // The number of seconds for the lockout period
+    "lockoutPeriod": 1800
+  }
 }
 ```
+
+To enabled self-serve account unlock through emails, add the following lines to your site configuration:
+
+```json
+{
+  // Validity expressed in minutes of the unlock account token
+  "auth.unlockAccountLinkExpiry": 30,
+  // Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs
+  "auth.unlockAccountLinkSigningKey": "your-signing-key",
+}
+```
+
+The `ssh-keygen` command can be used to generate and encode the signing key, for example:
+
+```bash
+$ ssh-keygen -t ed25519 -a 128 -f auth.unlockAccountLinkSigningKey
+$ base64 auth.unlockAccountLinkSigningKey | tr -d '\n'
+LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJu...
+```
+
+Copy the result of the `base64` command as the value of the `"auth.unlockAccountLinkSigningKey"`.
 
 ## GitHub
 
@@ -91,8 +146,9 @@ Then add the following lines to your site configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
-      "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
+      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs` or `allowOrgsMap`, any GitHub user can sign up.
+      "allowOrgs": ["your-org-name"], // Restrict logins and sign-ups if enabled to members of these orgs.
+      "allowOrgsMap": { "orgName": ["your-team-name"]} // Restrict logins and sign-ups if enabled to members of teams that belong to a given org.
     }
   ]
 }
@@ -103,21 +159,79 @@ configuration.
 
 Leave the `url` field empty for GitHub.com.
 
-Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up without invitation
-(typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
-GitHub only if an account with the same verified email already exists. If none exists, a site admin
-must create one explicitly.
-
-> WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your Github url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit signups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
-
-The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
-
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
+
+
+### How to control user sign-up and sign-in with GitHub auth provider
+
+You can use the following filters to control how users will create accounts and sign in to your Sourcegraph instance via the GitHub auth provider.
+
+**allowSignup**
+
+Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up without invitation (typically done only for GitHub Enterprise).
+
+If set to `false` or not set, sign-up will be blocked. In this case, new users will only be able to sign in after an admin creates their account on Sourcegraph.
+The new user email, during their account creation, should match one of their GitHub verified emails.
+
+> WARNING: If `allowSignup` is set to `true`, anyone with internet access to both your Sourcegraph instance and your GitHub url are able to sign up and login to your instance. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance and search your indexed code. Make sure to also configure the `allowOrgs` field described below to limit sign-ups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
+
+
+```json
+  {
+    "type": "github",
+    ...
+    "allowSignup": false
+  }
+```
+
+**allowOrgs**
+
+Restricts sign-ins to members of the listed organizations. If empty or unset, no restriction will be applied.
+
+If combined with `"allowSignup": true`, only membrers of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
+
+When combined with `"allowSignup": false` or unset, an admin should first create the user account so that the user can sign in with GitHub if they belong to the allowed orgs.
+
+  ```json
+    {
+      "type": "github",
+      // ...
+      "allowSignup": true,
+      "allowOrgs": ["org1", "org2"]
+    },
+  ```
+
+**allowOrgsMap**
+
+  Restricts sign-ups and new logins to members of the listed teams or subteams mapped to the organizations they belong to. If empty or unset, no restrictions will be applied.
+
+  When combined with `"allowSignup": true`, only members of the allowed teams can create their accounts in Sourcegraph via GitHub authentication.
+
+  If set with `"allowSignup": false` or if `allowSignup` is unset, an admim should first create the new users accounts so that they can login with GitHub.
+
+  In case both `allowOrgs` and `allowOrgsMap` filters are configured, org membership (`allowOrgs`) will be checked first. Only if the user doesn't belong to any of the listed organizations then team membership (`allowOrgsMap`) will be checked.
+
+  Note that subteams inheritance is not supported — the name of child teams (subteams) should be informed so their members can be granted access to Sourcegraph.
+
+  ```json
+    {
+       "type": "github",
+      // ...
+      "allowOrgsMap": {
+        "org1": [
+          "team1", "subteam1"
+        ],
+        "org2": [
+          "subteam2"
+        ]
+      }
+    }
+  ```
+
 
 ## GitLab
 
-[Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
-the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
+[Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
@@ -134,7 +248,9 @@ Then add the following lines to your site configuration:
         "displayName": "GitLab",
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
-        "url": "https://gitlab.example.com"
+        "url": "https://gitlab.example.com",
+        "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
+        "allowGroups": ["group", "group/subgroup", "group/subgroup/subgroup"], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }
     ]
 ```
@@ -144,6 +260,53 @@ configuration.
 
 Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
 to Sourcegraph](../external_service/gitlab.md#repository-syncing).
+
+### How to control user sign-up and sign-in with GitLab auth provider
+
+You can use the following filters to control how users can create accounts and sign in to your Sourcegraph instance via the GitLab auth provider.
+
+**allowSignup**
+
+  Allows anyone with a GitLab account to create their accounts.
+
+  When `false`, sign-up with GitLab will be blocked. In this case, new users can only sign in after an admin creates their account on Sourcegraph. The user account email should match their primary emails on GitLab (which are always verified).
+
+  *If not set, unliked with GitHub, it defaults to `true`, allowing any GitLab user with access to your instance to sign up*.
+
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "allowSignup": false
+    }
+  ```
+
+**allowGroups**
+
+  Restricts new sign-ins to members of the listed groups or subgroups.
+
+  Instead of informing the groups or subgroups names, use their full path that can be copied from the URL.
+
+  Example: for a parent group, the full path can be simple as `group`. For nested groups it can look like `group/subgroup/subsubgroup`.
+
+  When empty or unset, no restrictions will be applied.
+
+  If combined with `"allowSignup": false`, an admim should first create the user account so that the user can sign in with GitLab.
+
+  If combined with `"allowSignup": true` or with `allowSignup` unset, only members of  the allowed groups or subgroups can create their accounts in Sourcegraph via GitLab authentitcation.
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "allowSignup": true,
+      "allowGroups": [
+        "group/subgroup/subsubgroup"
+      ]
+    }
+  ```
+
 
 ## OpenID Connect
 
@@ -187,6 +350,21 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
 Sourcegraph supports the OpenID Connect Discovery standard for configuring the auth provider (using the document at, e.g., `https://oidc.example.com/.well-known/openid-configuration`).
 
 See the [`openid` auth provider documentation](../config/site_config.md#openid-connect-including-google-workspace) for the full set of configuration options.
+
+### How to control user sign-up with OpenID auth provider
+
+**allowSignup**
+
+  If true or not set, it allows new users to creating their Sourcegraph accounts via OpenID.
+  When `false`, sing-up won't be available and a site admin should create new users accounts.
+
+  ```json
+    {
+      "type": "openidconnect",
+      // ...
+      "allowSignup": false
+    }
+  ```
 
 ### Google Workspace (Google accounts)
 
@@ -259,6 +437,25 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
   ]
 }
 ```
+
+## Linking a Sourcegraph account to an auth provider
+
+In most cases, the link between a Sourcegraph account and an authentication provider account happens via email.
+
+Consequently, you can only sign in via an auth provider if your email on Sourcegraph matches the one configured in the auth provider.
+
+Let's say the email field in your Sourcegraph account was kept blank when a site admin created the account for you, but the username matches your username on GitHub or GitLab. Will this work? If you try to sign in to SG with GitHub or GitLab, it won't work, and you will see an error informing you that a verified email is missing.
+
+Exceptions to this rule are [HTTP Proxies](#http-authentication-proxies), where there's an option to make the link via username only.
+For [Bitbucket](../config/authorization_and_authentication.md#bitbucket-server-bitbucket-data-center-authorization), we don't support OAuth. Still, the match between the chosen auth provider used with Bitbucket and a user's Bitbucket account happens via username.
+
+Using only a username to match a Sourcegraph account to an auth provider account is not recommended, as you can see [here](../repo/permissions.md#username), for example.
+Usernames in Sourcegraph are mutable, so a malicious user could change a username, elevating their privileges.
+
+## Linking accounts from multiple auth providers
+Sourcegraph will automatically link accounts from multiple external auth providers, resulting in a single user account on Sourcegraph. That way a user can login with multiple auth methods and end up being logged in with the same Sourcegraph account. In general, to link accounts, the following condition needs to be met:
+
+At the time of signing in with the new account, any of the email addresses configured on the user account on the auth provider must match any of the **verified** email addresses on the user account on the Sourcegraph side. If there is a match, the accounts are linked, [otherwise a new user account is created if auth provider is configured to support user sign ups](#how-to-control-user-sign-up).
 
 ## Username normalization
 

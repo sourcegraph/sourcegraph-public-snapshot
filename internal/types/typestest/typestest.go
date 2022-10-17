@@ -105,7 +105,7 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
-// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+// MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -113,7 +113,7 @@ func MakeExternalServices() types.ExternalServices {
 	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
-		Config:      `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -121,7 +121,7 @@ func MakeExternalServices() types.ExternalServices {
 	gitlabSvc := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
-		Config:      `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -129,7 +129,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -137,7 +137,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      `{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "appPassword": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -145,7 +145,7 @@ func MakeExternalServices() types.ExternalServices {
 	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
-		Config:      `{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -153,7 +153,7 @@ func MakeExternalServices() types.ExternalServices {
 	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
-		Config:      `{"url": "https://other.com", "repos": ["none"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://other.com", "repos": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -161,7 +161,7 @@ func MakeExternalServices() types.ExternalServices {
 	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
-		Config:      `{"prefix": "foo", "host": "bar"}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"prefix": "foo", "host": "bar"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -188,14 +188,14 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 		services = append(services, &types.ExternalService{
 			Kind:            extsvc.KindGitHub,
 			DisplayName:     "Github - User",
-			Config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
 		}, &types.ExternalService{
 			Kind:            extsvc.KindGitLab,
 			DisplayName:     "GitLab - User",
-			Config:          `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 			CreatedAt:       now,
 			UpdatedAt:       now,
 			NamespaceUserID: userID,
@@ -205,14 +205,14 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 		services = append(services, &types.ExternalService{
 			Kind:           extsvc.KindGitHub,
 			DisplayName:    "Github - Org",
-			Config:         `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
+			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			NamespaceOrgID: orgID,
 		}, &types.ExternalService{
 			Kind:           extsvc.KindGitLab,
 			DisplayName:    "GitLab - Org",
-			Config:         `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
+			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			NamespaceOrgID: orgID,
@@ -222,7 +222,7 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 	return services
 }
 
-// Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
+// GenerateExternalServices takes a list of base external services and generates n ones with different names.
 func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil
@@ -264,7 +264,8 @@ var Opt = struct {
 	RepoModifiedAt            func(time.Time) func(*types.Repo)
 	RepoDeletedAt             func(time.Time) func(*types.Repo)
 	RepoSources               func(...string) func(*types.Repo)
-	RepoMetadata              func(interface{}) func(*types.Repo)
+	RepoMetadata              func(any) func(*types.Repo)
+	RepoArchived              func(bool) func(*types.Repo)
 	RepoExternalID            func(string) func(*types.Repo)
 }{
 	ExternalServiceID: func(n int64) func(*types.ExternalService) {
@@ -322,9 +323,14 @@ var Opt = struct {
 			}
 		}
 	},
-	RepoMetadata: func(md interface{}) func(*types.Repo) {
+	RepoMetadata: func(md any) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.Metadata = md
+		}
+	},
+	RepoArchived: func(b bool) func(*types.Repo) {
+		return func(r *types.Repo) {
+			r.Archived = b
 		}
 	},
 	RepoExternalID: func(id string) func(*types.Repo) {

@@ -9,9 +9,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,13 +22,9 @@ type DBDashboardStore struct {
 }
 
 // NewDashboardStore returns a new DBDashboardStore backed by the given Postgres db.
-func NewDashboardStore(db dbutil.DB) *DBDashboardStore {
-	return &DBDashboardStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), Now: time.Now}
+func NewDashboardStore(db edb.InsightsDB) *DBDashboardStore {
+	return &DBDashboardStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
 }
-
-// Handle returns the underlying transactable database handle.
-// Needed to implement the ShareableStore interface.
-func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Store.Handle() }
 
 // With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
@@ -50,12 +46,13 @@ const (
 )
 
 type DashboardQueryArgs struct {
-	UserID  []int
-	OrgID   []int
-	ID      []int
-	Deleted bool
-	Limit   int
-	After   int
+	UserID           []int
+	OrgID            []int
+	ID               []int
+	WithViewUniqueID *string
+	Deleted          bool
+	Limit            int
+	After            int
 
 	// This field will disable user level authorization checks on the dashboards. This should only be used interally,
 	// and not to return dashboards to users.
@@ -78,6 +75,9 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 	if args.After > 0 {
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
+	}
+	if args.WithViewUniqueID != nil {
+		preds = append(preds, sqlf.Sprintf("%s = ANY(t.uuid_array)", *args.WithViewUniqueID))
 	}
 
 	if !args.WithoutAuthorization {
@@ -160,7 +160,6 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 }
 
 const getDashboardsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboards
 SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids,
 	ARRAY_REMOVE(ARRAY_AGG(dg.user_id), NULL) AS granted_users,
 	ARRAY_REMOVE(ARRAY_AGG(dg.org_id), NULL)  AS granted_orgs,
@@ -178,12 +177,10 @@ ORDER BY db.id
 `
 
 const deleteDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
 update dashboard set deleted_at = NOW() where id = %s;
 `
 
 const restoreDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
 update dashboard set deleted_at = NULL where id = %s;
 `
 
@@ -352,7 +349,7 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
-func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (int, error) {
+func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -384,12 +381,10 @@ func (s *DBDashboardStore) EnsureLimitedAccessModeDashboard(ctx context.Context)
 }
 
 const insertDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
 INSERT INTO dashboard (title, save, type) VALUES (%s, %s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
--- source: enterprise/internal/insights/store/dashboard_store.go:AddViewsToDashboard
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
@@ -401,17 +396,14 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
 ) ON CONFLICT DO NOTHING;
 `
 const updateDashboardSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
 UPDATE dashboard SET title = %s WHERE id = %s;
 `
 
 const removeDashboardGrants = `
--- source: enterprise/internal/insights/store/dashboard_store.go:removeDashboardGrants
 delete from dashboard_grants where dashboard_id = %s;
 `
 
 const removeDashboardInsightViewConnectionsByViewIds = `
--- source: enterprise/internal/insights/store/dashboard_store.go:RemoveViewsFromDashboard
 DELETE
 FROM dashboard_insight_view
 WHERE dashboard_id = %s
@@ -419,7 +411,6 @@ WHERE dashboard_id = %s
 `
 
 const getViewFromDashboardByViewId = `
--- source: enterprise/internal/insights/store/dashboard_store.go:GetViewFromDashboardByViewId
 SELECT COUNT(*)
 FROM dashboard_insight_view div
 	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
@@ -427,12 +418,10 @@ WHERE div.dashboard_id = %s AND iv.unique_id = %s
 `
 
 const getDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboardGrants
 SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
 const getDashboardGrantsByPermissionsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:HasDashboardPermission
 SELECT count(*)
 FROM dashboard
 WHERE id = ANY (%s)
@@ -440,7 +429,6 @@ AND id IN (%s);
 `
 
 const addDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:AddDashboardGrants
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
 VALUES %s;
 `
@@ -474,7 +462,6 @@ func (s *DBDashboardStore) DashboardExists(ctx context.Context, dashboard insigh
 }
 
 const dashboardExistsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:DashboardExists
 SELECT COUNT(*) from dashboard
 JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
 WHERE dashboard.title = %s AND %s;

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { ExtensionsAreaRoute } from './ExtensionsArea'

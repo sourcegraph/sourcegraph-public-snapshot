@@ -1,7 +1,5 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -16,9 +14,14 @@ import {
 import { GLOBAL_CODE_HOSTS } from './backend'
 import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
 
-const { add } = storiesOf('web/batches/settings/BatchChangesSiteConfigSettingsArea', module).addDecorator(story => (
-    <div className="p-3 container">{story()}</div>
-))
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+
+const config: Meta = {
+    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
+    decorators: [decorator],
+}
+
+export default config
 
 const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult>[] => [
     {
@@ -41,7 +44,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
     },
 ]
 
-add('Overview', () => (
+export const Overview: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -80,9 +83,9 @@ add('Overview', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
 
-add('Config added', () => (
+export const ConfigAdded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -141,4 +144,6 @@ add('Config added', () => (
             </MockedTestProvider>
         )}
     </WebStory>
-))
+)
+
+ConfigAdded.storyName = 'Config added'

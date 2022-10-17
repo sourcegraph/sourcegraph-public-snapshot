@@ -1,22 +1,25 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Input, Link } from '@sourcegraph/wildcard'
+import { Button, Input, Link, Label, Checkbox } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { TruncatedText } from '../../../../../../../components'
-import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
-import { useField } from '../../../../../../../components/form/hooks/useField'
-import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
-import { AccessibleInsightInfo } from '../../../../../../../core'
+import { AccessibleInsight } from '../../../../../../../../../graphql-operations'
+import {
+    TruncatedText,
+    useCheckboxes,
+    useField,
+    SubmissionErrors,
+    useForm,
+    FORM_ERROR,
+} from '../../../../../../../components'
 
 import styles from './AddInsightModalContent.module.scss'
 
 interface AddInsightModalContentProps {
-    insights: AccessibleInsightInfo[]
+    insights: AccessibleInsight[]
     initialValues: AddInsightFormValues
     dashboardID: string
     onSubmit: (values: AddInsightFormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -28,7 +31,9 @@ export interface AddInsightFormValues {
     insightIds: string[]
 }
 
-export const AddInsightModalContent: React.FunctionComponent<AddInsightModalContentProps> = props => {
+export const AddInsightModalContent: React.FunctionComponent<
+    React.PropsWithChildren<AddInsightModalContentProps>
+> = props => {
     const { initialValues, insights, dashboardID, onSubmit, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
@@ -46,7 +51,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
     } = useCheckboxes('insightIds', formAPI)
 
     const filteredInsights = insights.filter(insight =>
-        insight.title.match(new RegExp(escapeRegExp(searchInput.input.value), 'gi'))
+        insight.presentation.title.match(new RegExp(escapeRegExp(searchInput.input.value), 'gi'))
     )
 
     return (
@@ -64,21 +69,21 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 {...searchInput.input}
             />
 
-            <fieldset className={classNames('mt-2', styles.insightsContainer)}>
+            <fieldset className={styles.insightsContainer}>
                 {filteredInsights.map(insight => (
-                    <label key={insight.id} className={styles.insightItem}>
-                        <input
-                            type="checkbox"
+                    <Label key={insight.id} weight="medium" className={styles.insightItem}>
+                        <Checkbox
                             name="insightIds"
-                            checked={isChecked(insight.id)}
                             value={insight.id}
+                            checked={isChecked(insight.id)}
                             onChange={onChange}
                             onBlur={onBlur}
-                            className="mr-2"
+                            aria-labelledby={insight.id}
+                            className={styles.checkbox}
+                            wrapperClassName={styles.checkboxWrapper}
                         />
-
-                        <TruncatedText>{insight.title}</TruncatedText>
-                    </label>
+                        <TruncatedText id={insight.id}>{insight.presentation.title}</TruncatedText>
+                    </Label>
                 ))}
             </fieldset>
 

@@ -9,9 +9,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -61,14 +61,14 @@ func (r *siteResolver) SiteID() string { return siteid.Get() }
 func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	return &siteConfigurationResolver{db: r.db}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -81,7 +81,7 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.Settin
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	return canReloadSite && err == nil
 }
 
@@ -128,19 +128,23 @@ type siteConfigurationResolver struct {
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
-	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
+	conf, err := r.db.Conf().SiteGetLatest(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return conf.ID, nil
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(globals.ConfigurationServerFrontendOnly.Raw())
+	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
 }
 
@@ -158,7 +162,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 }) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false, err
 	}
 	if !canUpdateSiteConfiguration() {
@@ -174,14 +178,13 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
 	}
 
-	prev := globals.ConfigurationServerFrontendOnly.Raw()
+	prev := conf.Raw()
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
 		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 	prev.Site = unredacted
-	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
-	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev); err != nil {
+	if err := globals.ConfigurationServerFrontendOnly.Write(ctx, prev, args.LastID); err != nil {
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
@@ -191,4 +194,9 @@ var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS
 
 func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+}
+
+func (r *siteResolver) EnableLegacyExtensions(ctx context.Context) bool {
+	c := conf.Get()
+	return *c.ExperimentalFeatures.EnableLegacyExtensions
 }

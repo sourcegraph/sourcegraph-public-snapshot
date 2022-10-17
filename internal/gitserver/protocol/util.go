@@ -3,7 +3,6 @@ package protocol
 import (
 	"path"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -44,16 +43,4 @@ func NormalizeRepo(input api.RepoName) api.RepoName {
 	}
 
 	return api.RepoName(host + repoPath)
-}
-
-// hasUpperASCII returns true if s contains any upper-case letters in ASCII,
-// or if it contains any non-ascii characters.
-func hasUpperASCII(s string) bool {
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		if c >= utf8.RuneSelf || (c >= 'A' && c <= 'Z') {
-			return true
-		}
-	}
-	return false
 }

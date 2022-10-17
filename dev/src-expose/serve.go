@@ -76,7 +76,7 @@ func (s *Serve) handler() http.Handler {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err := indexHTML.Execute(w, map[string]interface{}{
+		err := indexHTML.Execute(w, map[string]any{
 			"Explain": explainAddr(s.Addr),
 			"Links": []string{
 				"/v1/list-repos",

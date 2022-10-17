@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -19,6 +18,9 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
+    Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -70,7 +72,7 @@ interface MemberItemProps {
     onMemberRemoved: (username: string, isSelf: boolean) => void
 }
 
-const MemberItem: React.FunctionComponent<MemberItemProps> = ({
+const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProps>> = ({
     member,
     orgId,
     viewerCanAdminister,
@@ -104,12 +106,9 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                     )}
                 >
                     <div className={styles.avatarContainer}>
-                        <UserAvatar
-                            size={36}
-                            className={styles.avatar}
-                            user={member}
-                            data-tooltip={member.displayName || member.username}
-                        />
+                        <Tooltip content={member.displayName || member.username}>
+                            <UserAvatar size={36} className={styles.avatar} user={member} />
+                        </Tooltip>
                     </div>
 
                     <div className="d-flex flex-column">
@@ -134,10 +133,14 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
                                 className={styles.memberMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    height={15}
+                                    width={15}
+                                    aria-hidden={true}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>
@@ -159,7 +162,10 @@ const MemberItem: React.FunctionComponent<MemberItemProps> = ({
     )
 }
 
-const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: string }> = ({ total, orgName }) => (
+const MembersResultHeader: React.FunctionComponent<React.PropsWithChildren<{ total: number; orgName: string }>> = ({
+    total,
+    orgName,
+}) => (
     <li data-test-membersheader="memberslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -179,7 +185,7 @@ const MembersResultHeader: React.FunctionComponent<{ total: number; orgName: str
 /**
  * The organization members list page.
  */
-export const OrgMembersListPage: React.FunctionComponent<Props> = ({
+export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,
@@ -324,7 +330,7 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                 {authenticatedUser && membersResult && showOnlyYou && isSelf(membersResult.members.nodes[0].id) && (
                     <Container className={styles.onlyYouContainer}>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>Looks like it’s just you!</h3>
+                            <H3>Looks like it’s just you!</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}
@@ -333,7 +339,6 @@ export const OrgMembersListPage: React.FunctionComponent<Props> = ({
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     size="lg"
                                     variant="link"
                                 />

@@ -3,7 +3,6 @@ import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
-import { IRetentionPolicyOverviewOnLSIFUploadArguments } from '@sourcegraph/shared/src/schema'
 
 import { Connection } from '../../../../components/FilteredConnection'
 import {
@@ -88,9 +87,14 @@ const UPLOAD_RETENTIONS_QUERY = gql`
 export const queryUploadRetentionMatches = (
     client: ApolloClient<object>,
     id: string,
-    { matchesOnly, after, first, query }: IRetentionPolicyOverviewOnLSIFUploadArguments
+    {
+        matchesOnly,
+        after,
+        first,
+        query,
+    }: Partial<LsifUploadRetentionMatchesVariables> & Pick<LsifUploadRetentionMatchesVariables, 'matchesOnly'>
 ): Observable<Connection<NormalizedUploadRetentionMatch>> => {
-    const vars: LsifUploadRetentionMatchesVariables = {
+    const variables: LsifUploadRetentionMatchesVariables = {
         id,
         matchesOnly,
         query: query ?? null,
@@ -101,7 +105,7 @@ export const queryUploadRetentionMatches = (
     return from(
         client.query<LsifUploadRetentionMatchesResult, LsifUploadRetentionMatchesVariables>({
             query: getDocumentNode(UPLOAD_RETENTIONS_QUERY),
-            variables: { ...vars },
+            variables: { ...variables },
         })
     ).pipe(
         map(({ data }) => {

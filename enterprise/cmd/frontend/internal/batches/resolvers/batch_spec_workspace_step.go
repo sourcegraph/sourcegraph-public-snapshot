@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
@@ -61,18 +63,18 @@ func (r *batchSpecWorkspaceStepResolver) OutputLines(ctx context.Context, args *
 	return &lines, nil
 }
 
-func (r *batchSpecWorkspaceStepResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceStepResolver) StartedAt() *gqlutil.DateTime {
 	if r.stepInfo.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.stepInfo.StartedAt}
+	return &gqlutil.DateTime{Time: r.stepInfo.StartedAt}
 }
 
-func (r *batchSpecWorkspaceStepResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceStepResolver) FinishedAt() *gqlutil.DateTime {
 	if r.stepInfo.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.stepInfo.FinishedAt}
+	return &gqlutil.DateTime{Time: r.stepInfo.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceStepResolver) ExitCode() *int32 {
@@ -144,10 +146,10 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.CachedResultFound() {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, r.cachedResult.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
 	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, *r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
 	return nil, nil
 }
@@ -168,7 +170,7 @@ func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() string {
 
 type batchSpecWorkspaceOutputVariableResolver struct {
 	key   string
-	value interface{}
+	value any
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceOutputVariableResolver = &batchSpecWorkspaceOutputVariableResolver{}

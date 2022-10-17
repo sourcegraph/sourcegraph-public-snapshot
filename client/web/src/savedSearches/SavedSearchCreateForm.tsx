@@ -6,6 +6,8 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { NamespaceProps } from '../namespaces'
@@ -14,8 +16,9 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 
-interface Props extends RouteComponentProps, NamespaceProps {
+interface Props extends RouteComponentProps, NamespaceProps, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean
 }
 
 const LOADING = 'loading' as const
@@ -52,14 +55,18 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 map(() => true as const),
                                 catchError((error): [ErrorLike] => [asError(error)])
                             )
-                        )
+                        ).pipe(map(createdOrError => [createdOrError, fields.description] as const))
                     )
                 )
-                .subscribe(createdOrError => {
+                .subscribe(([createdOrError, queryDescription]) => {
                     this.setState({ createdOrError })
                     if (createdOrError === true) {
                         eventLogger.log('SavedSearchCreated')
-                        this.props.history.push(`${this.props.namespace.url}/searches`)
+                        screenReaderAnnounce(`Saved ${queryDescription} search`)
+                        this.props.history.push({
+                            pathname: `${this.props.namespace.url}/searches`,
+                            state: { description: queryDescription },
+                        })
                     }
                 })
         )

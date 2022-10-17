@@ -3,6 +3,8 @@ import pTimeout from 'p-timeout'
 import { Browser, WebWorker } from 'puppeteer'
 import * as uuid from 'uuid'
 
+import { logger } from '@sourcegraph/common'
+
 import { Driver } from './driver'
 
 declare global {
@@ -43,22 +45,23 @@ export async function recordCoverage(browser: Browser): Promise<void> {
             if (!executionContext) {
                 return
             }
-            const coverage: typeof __coverage__ = await pTimeout(
+            const coverage: typeof __coverage__ | void = await pTimeout(
                 (executionContext as WebWorker).evaluate(() => globalThis.__coverage__),
                 2000,
-                new Error(`Timeout getting coverage from ${target.url()}`)
-            )
-            if (!coverage) {
-                if (!warnedNoCoverage) {
-                    console.error(
-                        `No coverage found in target ${target.url()}\n` +
-                            'Run the dev Sourcegraph instance with COVERAGE_INSTRUMENT=true to track coverage.'
-                    )
-                    warnedNoCoverage = true
+                () => {
+                    if (!warnedNoCoverage) {
+                        logger.error(
+                            `No coverage found in target ${target.url()}\n` +
+                                'Run the dev Sourcegraph instance with COVERAGE_INSTRUMENT=true to track coverage.'
+                        )
+                        warnedNoCoverage = true
+                    }
                 }
-                return
+            )
+
+            if (coverage) {
+                await writeFile(`.nyc_output/${uuid.v4()}.json`, JSON.stringify(coverage), { flag: 'wx' })
             }
-            await writeFile(`.nyc_output/${uuid.v4()}.json`, JSON.stringify(coverage), { flag: 'wx' })
         })
     )
 }

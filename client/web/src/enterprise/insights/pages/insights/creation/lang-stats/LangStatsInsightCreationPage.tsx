@@ -1,22 +1,27 @@
-import React, { useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Link, PageHeader } from '@sourcegraph/wildcard'
+import { useLocalStorage, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
+import {
+    CodeInsightCreationMode,
+    CodeInsightsCreationActions,
+    CodeInsightsPage,
+    FORM_ERROR,
+} from '../../../../components'
+import { MinimalLangStatsInsightData } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
-} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
+} from './components/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
@@ -38,7 +43,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: MinimalLangStatsInsightData) => void
+    onSuccessfulCreation: () => void
 
     /**
      * Whenever the user click on cancel button
@@ -46,9 +51,16 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsightCreationPageProps> = props => {
+export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
+
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
@@ -74,7 +86,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                     { insightType: CodeInsightTrackType.LangStatsInsight }
                 )
 
-                onSuccessfulCreation(insight)
+                onSuccessfulCreation()
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }
@@ -91,10 +103,6 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
         onCancel()
     }, [setInitialFormValues, telemetryService, onCancel])
-
-    const handleChange = (event: FormChangeEvent<LangStatsCreationFormFields>): void => {
-        setInitialFormValues(event.values)
-    }
 
     return (
         <CodeInsightsPage className={classNames(styles.creationPage, 'col-10')}>
@@ -114,12 +122,24 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
             />
 
             <LangStatsInsightCreationContent
-                className="pb-5"
                 initialValues={initialFormValues}
+                touched={false}
+                className="pb-5"
                 onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                onChange={handleChange}
-            />
+                onChange={event => setInitialFormValues(event.values)}
+            >
+                {form => (
+                    <CodeInsightsCreationActions
+                        mode={CodeInsightCreationMode.Creation}
+                        licensed={licensed}
+                        available={creationPermission?.available}
+                        submitting={form.submitting}
+                        errors={form.submitErrors?.[FORM_ERROR]}
+                        clear={form.isFormClearActive}
+                        onCancel={handleCancel}
+                    />
+                )}
+            </LangStatsInsightCreationContent>
         </CodeInsightsPage>
     )
 }

@@ -7,13 +7,13 @@ import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert } from '@sourcegraph/wildcard'
+import { asError, logger } from '@sourcegraph/common'
+import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
+import { CreateUserResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
@@ -27,7 +27,7 @@ interface State {
     /**
      * The result of creating the user.
      */
-    createUserResult?: GQL.ICreateUserResult
+    createUserResult?: CreateUserResult['createUser']
 
     // Form
     username: string
@@ -63,7 +63,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                     mergeMap(({ username, email }) =>
                         createUser(username, email).pipe(
                             catchError(error => {
-                                console.error(error)
+                                logger.error(error)
                                 this.setState({
                                     createUserResult: undefined,
                                     loading: false,
@@ -81,7 +81,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             errorDescription: undefined,
                             createUserResult,
                         }),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -94,29 +94,29 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
         return (
             <div className="site-admin-create-user-page">
                 <PageTitle title="Create user - Admin" />
-                <h2>Create user account</h2>
-                <p>
+                <H2>Create user account</H2>
+                <Text>
                     Create a new user account
                     {window.context.resetPasswordEnabled
                         ? ' and generate a password reset link. If sending emails is not configured, you must manually send the link to the new user.'
                         : '. New users must authenticate using a configured authentication provider.'}
-                </p>
-                <p className="mb-4">
+                </Text>
+                <Text className="mb-4">
                     For information about configuring SSO authentication, see{' '}
                     <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
-                </p>
+                </Text>
                 {this.state.createUserResult ? (
                     <Alert variant="success">
-                        <p>
+                        <Text>
                             Account created for <strong>{this.state.username}</strong>.
-                        </p>
+                        </Text>
                         {this.state.createUserResult.resetPasswordURL !== null ? (
                             <>
-                                <p>You must manually send this password reset link to the new user:</p>
+                                <Text>You must manually send this password reset link to the new user:</Text>
                                 <CopyableText text={this.state.createUserResult.resetPasswordURL} size={40} />
                             </>
                         ) : (
-                            <p>The user must authenticate using a configured authentication provider.</p>
+                            <Text>The user must authenticate using a configured authentication provider.</Text>
                         )}
                         <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
@@ -125,7 +125,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <label htmlFor="site-admin-create-user-page__form-username">Username</label>
+                            <Label htmlFor="site-admin-create-user-page__form-username">Username</Label>
                             <UsernameInput
                                 id="site-admin-create-user-page__form-username"
                                 onChange={this.onUsernameFieldChange}
@@ -140,7 +140,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                             </small>
                         </div>
                         <div className={classNames('form-group', styles.formGroup)}>
-                            <label htmlFor="site-admin-create-user-page__form-email">Email</label>
+                            <Label htmlFor="site-admin-create-user-page__form-email">Email</Label>
                             <EmailInput
                                 id="site-admin-create-user-page__form-email"
                                 onChange={this.onEmailFieldChange}

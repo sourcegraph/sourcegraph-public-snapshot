@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
-import { MonacoBatchSpecEditor } from './create/editor/MonacoBatchSpecEditor'
+import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
 /** Reports whether `string` is a valid JSON document. */
 const isJSON = (string: string): boolean => {
@@ -57,49 +58,60 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
 
 interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
     className?: string
+    asButton: boolean
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
-    function BatchSpecDownloadLink({ children, className, name, originalInput }) {
-        return (
-            <Link
-                download={getFileName(name)}
-                to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-                className={className}
-                data-tooltip={`Download ${getFileName(name)}`}
-            >
-                {children}
-            </Link>
-        )
-    }
-)
+export const BatchSpecDownloadLink: React.FunctionComponent<
+    React.PropsWithChildren<BatchSpecDownloadLinkProps>
+> = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
+    const component = asButton ? (
+        <Button
+            variant="primary"
+            as={AnchorLink}
+            download={getFileName(name)}
+            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+        >
+            {children}
+        </Button>
+    ) : (
+        <Link
+            download={getFileName(name)}
+            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+        >
+            {children}
+        </Link>
+    )
 
+    return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
+})
+
+// TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
     BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <Button
-            className="text-right text-nowrap"
-            {...props}
-            variant="secondary"
-            outline={true}
-            as={BatchSpecDownloadLink}
-        >
-            <Icon as={FileDownloadIcon} /> Download YAML
-        </Button>
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+        </BatchSpecDownloadLink>
     )
 })
 
 type BatchSpecMetaProps = Pick<BatchChangeFields, 'createdAt' | 'lastApplier' | 'lastAppliedAt'>
 
-export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
+export const BatchSpecMeta: React.FunctionComponent<React.PropsWithChildren<BatchSpecMetaProps>> = ({
     createdAt,
     lastApplier,
     lastAppliedAt,
 }) => (
-    <p className="mb-2">
+    <Text className="mb-2">
         {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
         {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
         <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
-    </p>
+    </Text>
 )

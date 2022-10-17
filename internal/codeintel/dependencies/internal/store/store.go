@@ -2,60 +2,55 @@ package store
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Store struct {
-	*basestore.Store
+// Store provides the interface for package dependencies storage.
+type Store interface {
+	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
+	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
+	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
+}
+
+// store manages the database tables for package dependencies.
+type store struct {
+	db         *basestore.Store
 	operations *operations
 }
 
-func newStore(db dbutil.DB, op *operations) *Store {
-	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		operations: op,
+// New returns a new store.
+func New(db database.DB, op *observation.Context) *store {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
+		operations: newOperations(op),
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{
-		Store:      s.Store.With(other),
-		operations: s.operations,
-	}
-}
-
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Store{
-		Store:      txBase,
-		operations: s.operations,
-	}, nil
-}
-
+// ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
-	Scheme      string
-	Name        string
-	After       int
-	Limit       int
-	NewestFirst bool
+	Scheme          string
+	Name            reposource.PackageName
+	After           any
+	Limit           int
+	NewestFirst     bool
+	ExcludeVersions bool
 }
 
-func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
-	ctx, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// ListDependencyRepos returns dependency repositories to be synced by gitserver.
+func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error) {
+	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("scheme", opts.Scheme),
 	}})
 	defer func() {
@@ -64,25 +59,34 @@ func (s *Store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
-	sortDirection := "ASC"
-	if opts.NewestFirst {
-		sortDirection = "DESC"
+	sortExpr := "id ASC"
+	switch {
+	case opts.NewestFirst && !opts.ExcludeVersions:
+		sortExpr = "id DESC"
+	case opts.ExcludeVersions:
+		sortExpr = "name ASC"
 	}
 
-	return scanDependencyRepos(s.Query(ctx, sqlf.Sprintf(
+	selectCols := sqlf.Sprintf("id, scheme, name, version")
+	if opts.ExcludeVersions {
+		// id is likely not stable here, so no one should actually use it. Should we set it to 0?
+		selectCols = sqlf.Sprintf("DISTINCT ON(name) id, scheme, name, '' AS version")
+	}
+
+	return scanDependencyRepos(s.db.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
+		selectCols,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(sortDirection),
+		sqlf.Sprintf(sortExpr),
 		makeLimit(opts.Limit),
 	)))
 }
 
 const listDependencyReposQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
-SELECT id, scheme, name, version
+SELECT %s
 FROM lsif_dependency_repos
 WHERE %s
-ORDER BY id %s
+ORDER BY %s
 %s
 `
 
@@ -93,11 +97,25 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After != 0 {
-		if opts.NewestFirst {
+
+	switch after := opts.After.(type) {
+	case nil:
+		break
+	case int:
+		switch {
+		case opts.ExcludeVersions:
+			panic("cannot set ExcludeVersions and pass ID-based offset")
+		case opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-		} else {
+		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
+	case string, reposource.PackageName:
+		switch {
+		case opts.NewestFirst:
+			panic("cannot set NewestFirst and pass name-based offset")
+		case opts.ExcludeVersions && after != "":
+			conds = append(conds, sqlf.Sprintf("name > %s", opts.After))
 		}
 	}
 
@@ -112,10 +130,10 @@ func makeLimit(limit int) *sqlf.Query {
 	return sqlf.Sprintf("LIMIT %s", limit)
 }
 
-// UpsertDependencyRepos creates the given dependency repos if they doesn't yet exist. The values that
-// did not exist previously are returned.
-func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
-	ctx, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+// UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values
+// that did not exist previously are returned.
+func (s *store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error) {
+	ctx, _, endObservation := s.operations.upsertDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numDeps", len(deps)),
 	}})
 	defer func() {
@@ -135,13 +153,8 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 	}
 
 	returningScanner := func(rows dbutil.Scanner) error {
-		var dependencyRepo shared.Repo
-		if err = rows.Scan(
-			&dependencyRepo.ID,
-			&dependencyRepo.Scheme,
-			&dependencyRepo.Name,
-			&dependencyRepo.Version,
-		); err != nil {
+		dependencyRepo, err := scanDependencyRepo(rows)
+		if err != nil {
 			return err
 		}
 
@@ -151,7 +164,7 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 
 	err = batch.WithInserterWithReturn(
 		ctx,
-		s.Handle().DB(),
+		s.db.Handle(),
 		"lsif_dependency_repos",
 		batch.MaxNumPostgresParameters,
 		[]string{"scheme", "name", "version"},
@@ -164,8 +177,8 @@ func (s *Store) UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (
 }
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
-func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
-	ctx, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservation := s.operations.deleteDependencyReposByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -174,11 +187,23 @@ func (s *Store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err 
 		return nil
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
 }
 
 const deleteDependencyReposByIDQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
 DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `
+
+// Transact returns a store in a transaction.
+func (s *store) Transact(ctx context.Context) (*store, error) {
+	txBase, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &store{
+		db:         txBase,
+		operations: s.operations,
+	}, nil
+}

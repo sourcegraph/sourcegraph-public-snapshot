@@ -25,6 +25,10 @@ function getModeFromExactFilename(fileName: string): string | undefined {
         case 'dockerfile':
             return 'dockerfile'
 
+        case 'build':
+        case 'workspace':
+            return 'starlark'
+
         default:
             return undefined
     }
@@ -214,6 +218,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'jsx':
         case 'es':
         case 'es6':
+        case 'mjs':
         case 'jss':
         case 'jsm':
             return 'javascript'
@@ -356,7 +361,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'rsx':
             return 'r'
         case 'repro':
-            return 'repro'
+            return 'reprolang'
 
         // Ruby
         case 'rb':
@@ -396,6 +401,11 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'sc':
         case 'scala':
             return 'scala'
+
+        // Starlark
+        case 'bzl':
+        case 'bazel':
+            return 'starlark'
 
         // Strato
         case 'strato':

@@ -1,0 +1,46 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SGDEMO/repos?limit=1000
+    method: GET
+  response:
+    body: '{"size":6,"limit":1000,"isLastPage":true,"values":[{"slug":"go","id":10060,"name":"go","hierarchyId":"d501682e55fecfa03127","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sgdemo/go.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/go.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/go/browse"}]}},{"slug":"jenkins","id":10056,"name":"jenkins","hierarchyId":"fb39a4ab2229a1dca749","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sgdemo/jenkins.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/jenkins.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/jenkins/browse"}]}},{"slug":"mux","id":10061,"name":"mux","hierarchyId":"0d4300690a86a5f092e8","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/mux.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sgdemo/mux.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/mux/browse"}]}},{"slug":"sentry","id":10058,"name":"sentry","hierarchyId":"1e9ccf2f27d0aefa3271","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/sentry.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sgdemo/sentry.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/sentry/browse"}]}},{"slug":"sinatra","id":10059,"name":"sinatra","hierarchyId":"f73beb33325ff3524a15","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/sinatra.git","name":"ssh"},{"href":"https://bitbucket.sgdev.org/scm/sgdemo/sinatra.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/sinatra/browse"}]}},{"slug":"sourcegraph","id":10072,"name":"sourcegraph","hierarchyId":"76ff9f89ef912cb3eed5","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SGDEMO","id":26,"name":"Sourcegraph
+      Demo","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sgdemo/sourcegraph.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sgdemo/sourcegraph.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SGDEMO/repos/sourcegraph/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Tue, 14 Jun 2022 11:57:41 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@157E7ZCx717x3496381x0'
+      X-Asessionid:
+      - 1u6d312
+      X-Auserid:
+      - "253"
+      X-Ausername:
+      - engineers
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

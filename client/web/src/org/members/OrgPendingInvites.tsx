@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiEmail, mdiCog, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
-import EmailIcon from 'mdi-react/EmailIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
@@ -19,6 +17,9 @@ import {
     MenuItem,
     Position,
     PageSelector,
+    H3,
+    Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -77,7 +78,7 @@ interface IPendingInvitations {
     pendingInvitations: OrganizationInvitation[]
 }
 
-const PendingInvitesHeader: React.FunctionComponent = () => (
+const PendingInvitesHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <li data-test-pendinginvitesheader="pendingInviiteslist-header">
         <div className="d-flex align-items-center justify-content-between">
             <div
@@ -102,7 +103,7 @@ interface InvitationItemProps {
     onInviteResentRevoked: (recipient: string, revoked?: boolean) => void
 }
 
-const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
+const InvitationItem: React.FunctionComponent<React.PropsWithChildren<InvitationItemProps>> = ({
     orgId,
     invite,
     viewerCanAdminister,
@@ -174,14 +175,13 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                 >
                     <div className={styles.avatarContainer}>
                         {invite.recipient && (
-                            <UserAvatar
-                                size={24}
-                                className={styles.avatar}
-                                user={invite.recipient}
-                                data-tooltip={invite.recipient.displayName || invite.recipient.username}
-                            />
+                            <Tooltip content={invite.recipient.displayName || invite.recipient.username}>
+                                <UserAvatar size={24} className={styles.avatar} user={invite.recipient} />
+                            </Tooltip>
                         )}
-                        {!invite.recipient && invite.recipientEmail && <EmailIcon className={styles.emailIcon} />}
+                        {!invite.recipient && invite.recipientEmail && (
+                            <Icon className={styles.emailIcon} svgPath={mdiEmail} inline={false} aria-hidden={true} />
+                        )}
                     </div>
                     <div className="d-flex flex-column">
                         {invite.recipient && (
@@ -225,10 +225,14 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
                                 className={styles.inviteMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    aria-hidden={true}
+                                    height={15}
+                                    width={15}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>
@@ -254,7 +258,7 @@ const InvitationItem: React.FunctionComponent<InvitationItemProps> = ({
 /**
  * The organization members list page.
  */
-export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
+export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     org,
     authenticatedUser,
     onOrgGetStartedRefresh,
@@ -376,7 +380,7 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
                 {authenticatedUser && data && data.pendingInvitations.length === 0 && (
                     <Container>
                         <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                            <h3>No invites pending</h3>
+                            <H3>No invites pending</H3>
                             <div>
                                 <InviteMemberModalHandler
                                     orgName={org.name}
@@ -385,7 +389,6 @@ export const OrgPendingInvitesPage: React.FunctionComponent<Props> = ({
                                     onInviteSent={onInviteSent}
                                     eventLoggerEventName="InviteMemberCTAClicked"
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     variant="link"
                                 />
                                 {` to join you on ${org.name} on Sourcegraph`}

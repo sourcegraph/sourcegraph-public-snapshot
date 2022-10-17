@@ -76,8 +76,8 @@ func Test_matchesToRanges(t *testing.T) {
 			input:   "›a", // three-byte unicode character
 			matches: [][]int{{3, 4}},
 			expectedRanges: result.Ranges{{
-				Start: result.Location{Offset: 1, Line: 0, Column: 1},
-				End:   result.Location{Offset: 2, Line: 0, Column: 2},
+				Start: result.Location{Offset: 3, Line: 0, Column: 1},
+				End:   result.Location{Offset: 4, Line: 0, Column: 2},
 			}},
 		},
 	}

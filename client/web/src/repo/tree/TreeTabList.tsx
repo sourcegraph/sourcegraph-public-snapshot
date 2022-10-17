@@ -1,13 +1,8 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDocument, mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
-import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import TagIcon from 'mdi-react/TagIcon'
+import { useCallbackRef } from 'use-callback-ref'
 
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link } from '@sourcegraph/wildcard'
@@ -18,7 +13,11 @@ interface TreeTabList {
     setSelectedTab: (tab: string) => void
 }
 
-export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, selectedTab, setSelectedTab }) => {
+export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTabList>> = ({
+    tree,
+    selectedTab,
+    setSelectedTab,
+}) => {
     type Tabs = { tab: string; title: string; isActive: boolean; logName: string; icon: JSX.Element; url: string }[]
 
     const tabs: Tabs = useMemo(
@@ -28,7 +27,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Home',
                 isActive: selectedTab === 'home',
                 logName: 'RepoHomeTab',
-                icon: <Icon as={FileDocumentIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiFileDocument} />,
                 url: `${tree.url}/`,
             },
             {
@@ -36,7 +35,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Commits',
                 isActive: selectedTab === 'commits',
                 logName: 'RepoCommitsTab',
-                icon: <Icon as={SourceCommitIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiSourceCommit} />,
                 url: `${tree.url}/-/commits/tab`,
             },
             {
@@ -44,7 +43,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Branches',
                 isActive: selectedTab === 'branch',
                 logName: 'RepoBranchesTab',
-                icon: <Icon as={SourceBranchIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiSourceBranch} />,
                 url: `${tree.url}/-/branch/tab`,
             },
             {
@@ -52,7 +51,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Tags',
                 isActive: selectedTab === 'tags',
                 logName: 'RepoTagsTab',
-                icon: <Icon as={TagIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiTag} />,
                 url: `${tree.url}/-/tag/tab`,
             },
             {
@@ -60,7 +59,7 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Compare',
                 isActive: selectedTab === 'compare',
                 logName: 'RepoCompareTab',
-                icon: <Icon as={HistoryIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiHistory} />,
                 url: `${tree.url}/-/compare/tab`,
             },
             {
@@ -68,31 +67,25 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                 title: 'Contributors',
                 isActive: selectedTab === 'contributors',
                 logName: 'RepoContributorsTab',
-                icon: <Icon as={AccountIcon} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiAccount} />,
                 url: `${tree.url}/-/contributors/tab`,
-            },
-            {
-                tab: 'docs',
-                title: 'API docs',
-                isActive: selectedTab === 'docs',
-                logName: 'RepoAPIDocsTab',
-                icon: <Icon as={BookOpenBlankVariantIcon} />,
-                url: `${tree.url}/-/docs/tab`,
             },
         ],
         [selectedTab, tree.url]
     )
 
+    const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
+
     return (
-        <div className="d-flex mb-4">
-            <div className="nav nav-tabs w-100">
+        <nav className="d-flex mb-4">
+            <ul className="nav nav-tabs w-100">
                 {tabs.map(({ tab, title, isActive, icon, url }) => (
-                    <div className="nav-item" key={`repo-${tab}-tab`}>
+                    <li className="nav-item" key={`repo-${tab}-tab`}>
                         <Link
                             to={url}
-                            role="button"
                             className={classNames('nav-link text-content bg-transparent', isActive && 'active')}
                             onClick={() => setSelectedTab(tab)}
+                            ref={selectedTab === tab ? callbackReference : null}
                         >
                             <div>
                                 {icon}
@@ -101,9 +94,9 @@ export const TreeTabList: React.FunctionComponent<TreeTabList> = ({ tree, select
                                 </span>
                             </div>
                         </Link>
-                    </div>
+                    </li>
                 ))}
-            </div>
-        </div>
+            </ul>
+        </nav>
     )
 }

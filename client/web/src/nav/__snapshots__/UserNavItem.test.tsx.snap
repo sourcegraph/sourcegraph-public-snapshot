@@ -5,6 +5,7 @@ exports[`UserNavItem simple 1`] = `
   <button
     aria-controls=""
     aria-haspopup="true"
+    aria-label="Open user profile menu"
     class="d-flex align-items-center text-decoration-none menuButton"
     data-reach-menu-button=""
     data-testid="user-nav-item-toggle"
@@ -28,9 +29,11 @@ exports[`UserNavItem simple 1`] = `
           </span>
         </div>
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

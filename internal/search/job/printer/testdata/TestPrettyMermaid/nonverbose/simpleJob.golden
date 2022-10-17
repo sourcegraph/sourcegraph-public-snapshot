@@ -1,0 +1,7 @@
+flowchart TB
+0["AND"]
+  0---1
+  1["LEAF"]
+    0---2
+  2["LEAF"]
+    

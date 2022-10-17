@@ -9,13 +9,14 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	errors "github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,13 +30,13 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
 			User: MarshalUserID(1),
 		})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -51,7 +52,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{db: db}).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -203,7 +204,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 			},
 			ExpectedResult: `
@@ -214,7 +215,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "must be site admin",
-					Path:    []interface{}{string("deleteOrganization")},
+					Path:    []any{string("deleteOrganization")},
 				},
 			},
 		})
@@ -234,7 +235,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 			},
 			ExpectedResult: `
@@ -258,7 +259,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"hard":         true,
 			},
@@ -270,7 +271,7 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is only supported on Sourcegraph.com",
-					Path:    []interface{}{string("deleteOrganization")},
+					Path:    []any{string("deleteOrganization")},
 				},
 			},
 		})
@@ -311,7 +312,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"hard":         true,
 			},
@@ -323,7 +324,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "current user is not an org member",
-					Path:    []interface{}{string("deleteOrganization")},
+					Path:    []any{string("deleteOrganization")},
 				},
 			},
 		})
@@ -357,7 +358,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"hard":         true,
 			},
@@ -369,7 +370,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "hard deleting organization is not supported",
-					Path:    []interface{}{string("deleteOrganization")},
+					Path:    []any{string("deleteOrganization")},
 				},
 			},
 		})
@@ -386,7 +387,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"hard":         false,
 			},
@@ -398,7 +399,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Message: "soft deleting organization in not supported on Sourcegraph.com",
-					Path:    []interface{}{string("deleteOrganization")},
+					Path:    []any{string("deleteOrganization")},
 				},
 			},
 		})
@@ -431,7 +432,7 @@ func TestDeleteOrganization_OnCloud(t *testing.T) {
 					}
 				}
 				`,
-			Variables: map[string]interface{}{
+			Variables: map[string]any{
 				"organization": orgIDString,
 				"hard":         true,
 			},

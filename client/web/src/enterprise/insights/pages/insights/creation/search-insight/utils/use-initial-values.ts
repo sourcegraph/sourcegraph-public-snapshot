@@ -25,8 +25,12 @@ export function useSearchInsightInitialValues(): UseInitialValuesResult {
 
     const urlParsedInsightValues = useMemo(() => decodeSearchInsightUrl(search), [search])
 
-    // Creation UI saves all form values in local storage to be able restore these
+    // Creation UI saves all form values in local storage to be able to restore these
     // values if page was fully refreshed or user came back from other page.
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [localStorageFormValues, setLocalStorageFormValues] = useLocalStorage<CreateInsightFormFields | undefined>(
         'insights.search-insight-creation-ui',
         undefined

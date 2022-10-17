@@ -11,28 +11,29 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
 import {
-    GetAccessibleInsightsListResult,
+    GetDashboardAccessibleInsightsResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
 } from '../../../../../graphql-operations'
+import { useCodeInsightsState } from '../../../../../stores'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../core'
 import {
-    GET_ACCESSIBLE_INSIGHTS_LIST,
     GET_DASHBOARD_INSIGHTS_GQL,
     GET_INSIGHTS_GQL,
     GET_INSIGHTS_DASHBOARDS_GQL,
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
 
+import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
 import { DashboardsContentPage } from './DashboardsContentPage'
 
 type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('./components/dashboards-content/hooks/use-copy-url-handler', () => ({
+jest.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -42,9 +43,10 @@ const mockTelemetryService = {
     logPageView: sinon.spy(),
 }
 
-const Wrapper: React.FunctionComponent = ({ children }) => {
+const Wrapper: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => {
     const apolloClient = useApolloClient()
     const api = new CodeInsightsGqlBackend(apolloClient)
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: 2 })
 
     return <CodeInsightsBackendContext.Provider value={api}>{children}</CodeInsightsBackendContext.Provider>
 }
@@ -53,7 +55,6 @@ const mockDashboard: InsightsDashboardsResult['insightsDashboards']['nodes'][0] 
     __typename: 'InsightsDashboard',
     id: 'foo',
     title: 'Global Dashboard',
-    views: null,
     grants: {
         __typename: 'InsightsPermissionGrants',
         users: [],
@@ -66,7 +67,6 @@ const mockDashboard2: InsightsDashboardsResult['insightsDashboards']['nodes'][0]
     __typename: 'InsightsDashboard',
     id: 'bar',
     title: 'Global Dashboard 2',
-    views: null,
     grants: {
         __typename: 'InsightsPermissionGrants',
         users: [],
@@ -105,11 +105,15 @@ const mocks: MockedResponse[] = [
     {
         request: {
             query: GET_ACCESSIBLE_INSIGHTS_LIST,
+            variables: { id: 'foo' },
         },
         result: {
-            data: { insightViews: { nodes: [] } },
+            data: {
+                dashboardInsightsIds: { nodes: [{ views: { nodes: [] } }] },
+                accessibleInsights: { nodes: [] },
+            },
         },
-    } as MockedResponse<GetAccessibleInsightsListResult>,
+    } as MockedResponse<GetDashboardAccessibleInsightsResult>,
     {
         request: {
             query: GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
@@ -163,17 +167,18 @@ const renderDashboardsContent = (
     ),
 })
 
-const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
+const triggerDashboardMenuItem = async (
+    screen: RenderWithBrandedContextResult & { user: UserEvent },
+    buttonText: string
+) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /Dashboard options/ }))
+    const dashboardMenu = await waitFor(() => screen.getByRole('img', { name: 'dashboard options' }))
     user.click(dashboardMenu)
 
-    const dashboardMenuItem = screen.getByRole('menuitem', { name })
+    const dashboardMenuItem = screen.getByRole('menuitem', { name: buttonText })
 
-    // We're simulating keyboard navigation here to circumvent a bug in ReachUI
-    // does not respond to programmatic click events on menu items
     dashboardMenuItem.focus()
-    user.keyboard(' ')
+    user.click(dashboardMenuItem)
 }
 
 beforeEach(() => {
@@ -218,7 +223,7 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /Configure dashboard/)
+        await triggerDashboardMenuItem(screen, 'Configure dashboard')
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
@@ -238,7 +243,7 @@ describe('DashboardsContent', () => {
     it('opens delete dashboard modal', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Delete/)
+        await triggerDashboardMenuItem(screen, 'Delete')
 
         const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
         expect(addInsightHeader).toBeInTheDocument()
@@ -248,7 +253,7 @@ describe('DashboardsContent', () => {
     it('copies dashboard url', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Copy link/)
+        await triggerDashboardMenuItem(screen, 'Copy link')
 
         sinon.assert.calledOnce(mockCopyURL)
     })

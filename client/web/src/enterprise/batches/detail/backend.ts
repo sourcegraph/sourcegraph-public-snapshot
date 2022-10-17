@@ -48,6 +48,7 @@ import {
     AvailableBulkOperationsResult,
     BulkOperationType,
 } from '../../../graphql-operations'
+import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
@@ -103,8 +104,18 @@ const batchChangeFragment = gql`
         url
         name
         namespace {
+            __typename
+            id
             namespaceName
             url
+            ... on User {
+                displayName
+                username
+            }
+            ... on Org {
+                displayName
+                name
+            }
         }
         description
 
@@ -146,6 +157,7 @@ const batchChangeFragment = gql`
         currentSpec {
             id
             originalInput
+            source
             supersedingBatchSpec {
                 createdAt
                 applyURL
@@ -159,6 +171,9 @@ const batchChangeFragment = gql`
                     hasNextPage
                 }
                 totalCount
+            }
+            viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
+                ...ViewerBatchChangesCodeHostsFields
             }
         }
 
@@ -186,6 +201,8 @@ const batchChangeFragment = gql`
     ${changesetsStatsFragment}
 
     ${diffStatFields}
+
+    ${VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT}
 
     fragment ActiveBulkOperationFields on BulkOperation {
         __typename

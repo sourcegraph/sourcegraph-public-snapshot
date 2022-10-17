@@ -15,10 +15,10 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
-var reportSheetHeaders = []interface{}{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
+var reportSheetHeaders = []any{"Platform", "Type", "ID", "Location", "Owner", "Created", "Meta"}
 
-func toSheetValues(resources Resources) [][]interface{} {
-	values := make([][]interface{}, len(resources)+1)
+func toSheetValues(resources Resources) [][]any {
+	values := make([][]any, len(resources)+1)
 	values[0] = reportSheetHeaders
 	for i, resource := range resources {
 		var meta string
@@ -26,7 +26,7 @@ func toSheetValues(resources Resources) [][]interface{} {
 		if err == nil {
 			meta = string(metaBytes)
 		}
-		values[i+1] = []interface{}{
+		values[i+1] = []any{
 			resource.Platform,
 			resource.Type,
 			resource.Identifier,

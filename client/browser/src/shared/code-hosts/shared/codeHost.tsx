@@ -2,7 +2,9 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { render as reactDOMRender, Renderer } from 'react-dom'
+import { isEqual } from 'lodash'
+import { Renderer } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
     combineLatest,
@@ -55,6 +57,8 @@ import {
     property,
     registerHighlightContributions,
     isExternalLink,
+    LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
@@ -74,7 +78,6 @@ import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -93,6 +96,7 @@ import {
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
@@ -116,7 +120,7 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -136,10 +140,7 @@ import styles from './codeHost.module.scss'
 
 registerHighlightContributions()
 
-export interface OverlayPosition {
-    top: number
-    left: number
-}
+export type OverlayPosition = { left: number } & ({ top: number } | { bottom: number })
 
 export type ObserveMutations = (
     target: Node,
@@ -167,7 +168,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
-/** Information for adding code intelligence to code views on arbitrary code hosts. */
+/** Information for adding code navigation to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
@@ -239,13 +240,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     observeMutations?: ObserveMutations
 
-    /**
-     * Adjust the position of the hover overlay. Useful for fixed headers or other
-     * elements that throw off the position of the tooltip within the relative
-     * element.
-     */
-    adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
-
     // Extensions related input
 
     /**
@@ -275,6 +269,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         context: URLToFileContext
     ) => string
 
+    observeLineSelection?: Observable<LineOrPositionOrRange>
+
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 
     /**
@@ -291,6 +287,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Called before injecting the code intelligence to the code host.
+     */
+    prepareCodeHost?: (requestGraphQL: BrowserPlatformContext['requestGraphQL']) => Promise<boolean>
 }
 
 /**
@@ -331,23 +332,22 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        | 'forceUpdateTooltip'
-        | 'urlToFile'
-        | 'sideloadedExtensionURL'
-        | 'requestGraphQL'
-        | 'settings'
-        | 'refreshSettings'
-        | 'sourcegraphURL'
+        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    container.append(mount)
+export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
+    let mount = container.querySelector<HTMLDivElement>(`.hover-overlay-mount.hover-overlay-mount__${codeHostName}`)
+
+    if (!mount) {
+        mount = document.createElement('div')
+        mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+        container.append(mount)
+    }
+
     return mount
 }
 
@@ -359,7 +359,7 @@ export const createGlobalDebugMount = (): HTMLElement => {
 }
 
 /**
- * Prepares the page for code intelligence. It creates the hoverifier, injects
+ * Prepares the page for code navigation. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
  */
 function initCodeIntelligence({
@@ -385,8 +385,6 @@ function initCodeIntelligence({
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
 
-    const relativeElement = document.body
-
     const containerComponentUpdates = new Subject<void>()
 
     subscription.add(
@@ -407,7 +405,7 @@ function initCodeIntelligence({
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
-            map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
+            map(([, hoverOverlayElement]) => ({ hoverOverlayElement })),
             filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
@@ -431,7 +429,7 @@ function initCodeIntelligence({
                         ...hoverAlerts,
                         repoSyncErrors.pipe(
                             distinctUntilChanged(),
-                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            map(showAlert => (showAlert ? createRepoNotFoundHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
                         ),
                     ]),
@@ -517,8 +515,8 @@ function initCodeIntelligence({
                                 return EMPTY
                             }
 
-                            const def = urlForClientCommandOpen(action.action, window.location.hash)
-                            if (!def) {
+                            const defer = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!defer) {
                                 return EMPTY
                             }
 
@@ -534,7 +532,7 @@ function initCodeIntelligence({
 
                                     const actionType = action === definitionAction ? 'definition' : 'reference'
                                     telemetryService.log(`${actionType}CodeHost.click`)
-                                    window.location.href = def
+                                    window.location.href = defer
                                 }),
                                 finalize(() => (token.style.cursor = oldCursor))
                             )
@@ -580,16 +578,14 @@ function initCodeIntelligence({
             event.preventDefault()
         }
         public render(): JSX.Element | null {
-            const hoverOverlayProps = this.getHoverOverlayProps()
-
-            if (!hoverOverlayProps) {
+            if (!this.state.hoverOverlayProps) {
                 return null
             }
 
             return (
                 <TrackAnchorClick onClick={this.handleHoverLinkClick}>
                     <HoverOverlay
-                        {...hoverOverlayProps}
+                        {...this.state.hoverOverlayProps}
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
@@ -604,24 +600,13 @@ function initCodeIntelligence({
                 </TrackAnchorClick>
             )
         }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
-            if (!this.state.hoverOverlayProps) {
-                return undefined
-            }
-            let { overlayPosition, ...rest } = this.state.hoverOverlayProps
-            // TODO: is adjustOverlayPosition needed or could it be solved with a better relativeElement?
-            if (overlayPosition && codeHost.adjustOverlayPosition) {
-                overlayPosition = codeHost.adjustOverlayPosition(overlayPosition)
-            }
-            return { ...rest, overlayPosition }
-        }
     }
 
     const { getHoverOverlayMountLocation } = codeHost
     if (!getHoverOverlayMountLocation) {
         // This renders to document.body, which we can assume is never removed,
         // so we don't need to subscribe to mutations.
-        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        const overlayMount = getExistingOrCreateOverlayMount(codeHost.type, document.body)
         render(<HoverOverlayContainer />, overlayMount)
     } else {
         let previousMount: HTMLElement | null = null
@@ -632,7 +617,7 @@ function initCodeIntelligence({
                 if (previousMount) {
                     previousMount.remove()
                 }
-                const mount = createOverlayMount(codeHost.type, mountLocation)
+                const mount = getExistingOrCreateOverlayMount(codeHost.type, mountLocation)
                 previousMount = mount
                 render(<HoverOverlayContainer />, mount)
             })
@@ -729,7 +714,7 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
 }
 
 const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<UserSettingsURLResult>({
         request: gql`
             query UserSettingsURL {
                 currentUser {
@@ -910,7 +895,7 @@ export async function handleCodeHost({
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
-        // Stop initializing code intelligence
+        // Stop initializing code navigation
         return subscriptions
     }
 
@@ -941,7 +926,7 @@ export async function handleCodeHost({
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount && !minimalUI) {
+    if (codeHost.getCommandPaletteMount && !minimalUI && extensionsController !== null) {
         subscriptions.add(
             addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
                 renderCommandPalette({
@@ -960,7 +945,7 @@ export async function handleCodeHost({
     // Render extension debug menu
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    if (showGlobalDebug) {
+    if (showGlobalDebug && extensionsController !== null) {
         const mount = createGlobalDebugMount()
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
@@ -1240,6 +1225,29 @@ export async function handleCodeHost({
                         addRootReference(rootURI, fileInfo.revision),
                     ])
 
+                    if (codeHost.observeLineSelection) {
+                        codeViewEvent.subscriptions.add(
+                            codeHost.observeLineSelection
+                                .pipe(
+                                    map(lprToSelectionsZeroIndexed),
+                                    distinctUntilChanged(isEqual),
+                                    tap(selections => {
+                                        extensionHostAPI
+                                            .setEditorSelections(viewerId, selections)
+                                            .catch(error =>
+                                                console.error(
+                                                    'Error updating editor selections on extension host',
+                                                    error
+                                                )
+                                            )
+                                    })
+                                )
+
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
+                                .subscribe()
+                        )
+                    }
+
                     // Subscribe for removal
                     codeViewEvent.subscriptions.add(() => {
                         Promise.all([deleteRootReference(rootURI), extensionHostAPI.removeViewer(viewerId)]).catch(
@@ -1391,7 +1399,7 @@ export async function handleCodeHost({
                     }
                 }
 
-                // Add hover code intelligence
+                // Add hover code navigation
                 const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
                     part,
                 }) => {
@@ -1568,7 +1576,11 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    subscriptions.add(extensionsController)
+    if (extensionsController !== null) {
+        subscriptions.add(extensionsController)
+    }
+
+    const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1599,19 +1611,25 @@ export function injectCodeIntelligenceToCodeHost(
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
 
-    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
-        reactDOMRender(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>, container)
+    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void => {
+        if (!container) {
+            return
+        }
+
+        const root = createRoot(container)
+        root.render(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>)
+    }
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
-        extensionDisabled.subscribe(async disableExtension => {
+        combineLatest([codeHostReady, extensionDisabled]).subscribe(async ([isCodeHostReady, disableExtension]) => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else {
+            } else if (isCodeHostReady && extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

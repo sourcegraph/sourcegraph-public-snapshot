@@ -10,19 +10,47 @@ The following jobs are defined by the `worker` service.
 
 This job runs [out of band migrations](migration.md#mout-of-band-migrations), which perform large data migrations in the background over time instead of synchronously during Sourcegraph instance updates.
 
-#### `codeintel-commitgraph`
+#### `codeintel-upload-backfiller`
 
-This job periodically updates the set of precise code intelligence indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and precise code intelligence uploads and updated asynchronously by this job.
+This job periodically checks for records with NULL attributes that need to be backfilled. Often these are values that require data from Git that wasn't (yet) resolvable at the time of a user upload.
 
-**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details
+#### `codeintel-upload-janitor`
 
-#### `codeintel-janitor`
+This job periodically removes expired and unreachable code navigation data and reconciles data between the frontend and codeintel-db database instances.
 
-This job periodically removes expired and unreachable code intelligence data and reconciles data between the frontend and codeintel-db database instances.
+#### `codeintel-upload-expirer`
 
-#### `codeintel-auto-indexing`
+This job periodically matches code navigation data against data retention policies.
 
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
+#### `codeintel-commitgraph-updater`
+
+This job periodically updates the set of code graph data indexes that are visible from each relevant commit for a repository. The commit graph for a repository is marked as stale (to be recalculated) after repository updates and code graph data uploads and updated asynchronously by this job.
+
+**Scaling notes**: Throughput of this job can be effectively increased by increasing the number of workers running this job type. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
+
+#### `codeintel-autoindexing-scheduler`
+
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
+
+#### `codeintel-autoindexing-dependency-scheduler`
+
+This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
+
+#### `codeintel-autoindexing-janitor`
+
+This job periodically removes stale autoindexing records.
+
+#### `codeintel-metrics-reporter`
+
+This job periodically emits metrics to be scraped by Prometheus about code intelligence background jobs.
+
+#### `codeintel-policies-repository-matcher`
+
+This job periodically updates an index of policy repository patterns to matching repository names.
+
+#### `codeintel-crates-syncer`
+
+This job periodically updates the crates.io packages on the instance by syncing the crates.io index.
 
 #### `insights-job`
 
@@ -75,9 +103,21 @@ This job executes the bulk operations in the background.
 
 This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
 
+#### `gitserver-metrics`
+
+This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
+#### `repo-statistics-compactor`
+
+This job periodically cleans up the `repo_statistics` table by rolling up all rows into a single row.
+
+#### `record-encrypter`
+
+This job bulk encrypts existing data in the database when an encryption key is introduced, and decrypts it when instructed to do. See [encryption](./config/encryption.md) for additional details.
+
 ## Deploying workers
 
-By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
+By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.
 
 There are several strategies for improving throughput and stability of the `worker` service:
 

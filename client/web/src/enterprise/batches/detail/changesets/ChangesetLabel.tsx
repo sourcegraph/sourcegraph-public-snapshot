@@ -26,7 +26,7 @@ export function colorBrightness(color: string): number {
     return (red * 299 + green * 587 + blue * 114) / 1000
 }
 
-export const ChangesetLabel: React.FunctionComponent<Props> = ({ label }) => {
+export const ChangesetLabel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ label }) => {
     // We use this value to determine the label text color (dark or bright, depending on the colorBrightness of the label)
     const labelBrightness = colorBrightness(label.color)
 

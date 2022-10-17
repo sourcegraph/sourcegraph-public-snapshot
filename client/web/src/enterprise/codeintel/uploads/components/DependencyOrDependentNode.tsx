@@ -1,9 +1,9 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -19,15 +19,17 @@ export interface DependencyOrDependentNodeProps {
     now?: () => Date
 }
 
-export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentNodeProps> = ({ node }) => (
+export const DependencyOrDependentNode: FunctionComponent<React.PropsWithChildren<DependencyOrDependentNodeProps>> = ({
+    node,
+}) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
-                <h3 className="m-0 d-block d-md-inline">
+                <H3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
-                </h3>
+                </H3>
             </div>
 
             <div>
@@ -43,7 +45,7 @@ export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentN
         </span>
         <span>
             <Link to={`./${node.id}`}>
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
             </Link>
         </span>
     </>

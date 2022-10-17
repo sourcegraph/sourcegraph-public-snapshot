@@ -1,6 +1,11 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .modal {
     height: 80vh;
-    width: 80vw;
+    // `!important` is required to ensure that this rule is applied in the production bundle.
+    // It can be removed after addressing the following issue:
+    // https://github.com/sourcegraph/sourcegraph/issues/42217
+    width: 80vw !important;
 }
 
 .content {
@@ -23,7 +28,7 @@
 }
 
 .results {
-    overflow: hidden auto;
+    overflow: auto;
     flex: 1;
     text-align: left;
     list-style-type: none;
@@ -38,6 +43,16 @@
 .summary {
     display: flex;
     margin-bottom: 0.5rem;
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+.search-query {
+    display: flex;
+    margin-left: auto;
 }
 
 .result-count {
@@ -50,4 +65,18 @@
 
 .show-more {
     align-self: center;
+}
+
+.tab:hover {
+    cursor: pointer;
+}
+.tab {
+    flex: 2 1 auto;
+    padding-top: 0.5rem;
+}
+.tab-centered-text {
+    text-align: center;
+}
+.active-tab {
+    background-color: var(--color-bg-2);
 }

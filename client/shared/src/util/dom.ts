@@ -30,3 +30,19 @@ function elementIsContentEditable(element: HTMLElement): boolean {
             return element.parentElement ? elementIsContentEditable(element.parentElement) : false
     }
 }
+
+/**
+ * Creates an SVG node. To be used together with path specs from @mdi/js
+ */
+export function createSVGIcon(pathSpec: string): Node {
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(svgNS, 'svg')
+    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
+    svg.setAttribute('aria-hidden', 'true')
+
+    const path = document.createElementNS(svgNS, 'path')
+    path.setAttribute('d', pathSpec)
+
+    svg.append(path)
+    return svg
+}

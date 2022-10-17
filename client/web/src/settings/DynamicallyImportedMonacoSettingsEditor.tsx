@@ -4,21 +4,20 @@ import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import { Subscription } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
-import { EditorAction } from '../site-admin/configHelpers'
 
+import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
-
-import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
  */
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
+const disposableToFunc = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props<T extends object>
     extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
@@ -43,15 +42,17 @@ interface Props<T extends object>
      */
     blockNavigationIfDirty?: boolean
 
-    onSave?: (value: string) => void
+    onSave?: (value: string) => Promise<string | void>
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
     onEditor?: (editor: _monaco.editor.ICodeEditor) => void
 
     customSaveToolbar?: {
         propsGenerator: SaveToolbarPropsGenerator<T & { children?: React.ReactNode }>
-        saveToolbar: React.FunctionComponent<SaveToolbarProps & T>
+        saveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveToolbarProps & T>>
     }
+
+    explanation?: JSX.Element
 
     history: H.History
 }
@@ -131,23 +132,8 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
         return (
             <div className={this.props.className || ''}>
-                {this.props.canEdit && saveToolbar}
                 {this.props.actions && (
-                    <div className={adminConfigurationStyles.actionGroups}>
-                        <div className={adminConfigurationStyles.actions}>
-                            {this.props.actions.map(({ id, label }) => (
-                                <Button
-                                    key={id}
-                                    className={adminConfigurationStyles.action}
-                                    onClick={() => this.runAction(id, this.configEditor)}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {label}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
+                    <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
                 )}
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
@@ -158,14 +144,19 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
+                {this.props.explanation && this.props.explanation}
+                {this.props.canEdit && saveToolbar}
             </div>
         )
     }
 
-    private onSave = (): void => {
+    private onSave = async (): Promise<void> => {
         const value = this.effectiveValue
         if (this.props.onSave) {
-            this.props.onSave(value)
+            const newConfig = await this.props.onSave(value)
+            if (newConfig) {
+                this.setState({ value: newConfig })
+            }
         }
     }
 
@@ -192,9 +183,9 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
 
     private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
-        if (this.monaco && MonacoSettingsEditor) {
+        if (this.monaco) {
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateEditor(editor => {
                         this.configEditor = editor
                         this.props.onEditor?.(editor)
@@ -202,7 +193,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 )
             )
             this.subscriptions.add(
-                disposableToFn(
+                disposableToFunc(
                     this.monaco.editor.onDidCreateModel(async model => {
                         // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
                         // so this import call will not incur another load.
@@ -230,12 +221,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
         }
     }
 
-    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
-        if (editor) {
-            const action = editor.getAction(id)
+    private runAction(id: string): void {
+        if (this.configEditor) {
+            const action = this.configEditor.getAction(id)
             action.run().then(
                 () => undefined,
-                error => console.error(error)
+                error => logger.error(error)
             )
         } else {
             alert('Wait for editor to load before running action.')

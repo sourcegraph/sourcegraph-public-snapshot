@@ -27,7 +27,12 @@ const getGridStyle = (columnCount: number, spacing: number): CSSProperties => ({
 })
 
 /** A simple Grid component. Can be configured to display a number of columns with different gutter spacing. */
-export const Grid: React.FunctionComponent<GridProps> = ({ children, columnCount = 3, spacing = 1, className }) => (
+export const Grid: React.FunctionComponent<React.PropsWithChildren<GridProps>> = ({
+    children,
+    columnCount = 3,
+    spacing = 1,
+    className,
+}) => (
     <div
         // We use `style` here to dynamically generate the grid styles.
         // eslint-disable-next-line react/forbid-dom-props

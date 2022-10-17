@@ -29,7 +29,7 @@ const iconKindToNotificationType: Record<Required<HoverAlert>['iconKind'], Param
     error: NotificationType.Error,
 }
 
-export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps> = props => {
+export const HoverOverlayAlerts: React.FunctionComponent<React.PropsWithChildren<HoverOverlayAlertsProps>> = props => {
     const { hoverAlerts, onAlertDismissed, getAlertClassName, getAlertVariant } = props
 
     const createAlertDismissedHandler = (alertType: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -42,16 +42,29 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
 
     return (
         <div className={classNames(styles.hoverOverlayAlerts, props.className)}>
-            {hoverAlerts.map(({ summary, iconKind, type }, index) => (
-                <Alert
-                    key={index}
-                    variant={getAlertVariant?.(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)}
-                    className={classNames(
-                        hoverOverlayStyle.alert,
-                        getAlertClassName?.(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
-                    )}
-                >
-                    {summary.kind === 'plaintext' ? (
+            {hoverAlerts.map(({ summary, iconKind, type, buttons }, index) => {
+                //  Show dismiss button when an alert has a dismissal type. If
+                //  no type is provided, the alert is not dismissible.
+                const dismissalButton = type ? (
+                    <div className={classNames(hoverOverlayStyle.alertDismiss)}>
+                        {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
+                        <Link to="" onClick={createAlertDismissedHandler(type)} role="button">
+                            <small>Dismiss</small>
+                        </Link>
+                    </div>
+                ) : null
+
+                return (
+                    <Alert
+                        key={index}
+                        variant={getAlertVariant?.(
+                            iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info
+                        )}
+                        className={classNames(
+                            hoverOverlayStyle.alert,
+                            getAlertClassName?.(iconKind ? iconKindToNotificationType[iconKind] : NotificationType.Info)
+                        )}
+                    >
                         <span
                             data-testid="hover-overlay-content"
                             className={classNames(
@@ -59,32 +72,23 @@ export const HoverOverlayAlerts: React.FunctionComponent<HoverOverlayAlertsProps
                                 hoverOverlayStyle.hoverOverlayContent
                             )}
                         >
-                            {summary.value}
-                        </span>
-                    ) : (
-                        <span
-                            data-testid="hover-overlay-content"
-                            className={classNames(
-                                contentStyles.hoverOverlayContent,
-                                hoverOverlayStyle.hoverOverlayContent
+                            {summary.kind === 'plaintext' ? (
+                                summary.value
+                            ) : (
+                                <span dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }} />
                             )}
-                            dangerouslySetInnerHTML={{ __html: renderMarkdown(summary.value) }}
-                        />
-                    )}
+                            {buttons ? (
+                                <div className={hoverOverlayStyle.buttons}>
+                                    {buttons}
+                                    {dismissalButton}
+                                </div>
+                            ) : null}
+                        </span>
 
-                    {/* Show dismiss button when an alert has a dismissal type. */}
-                    {/* If no type is provided, the alert is not dismissible. */}
-                    {type && (
-                        <div className={classNames(hoverOverlayStyle.alertDismiss)}>
-                            {/* Ideally this should a <button> but we can't guarantee we have the .btn-link class here. */}
-                            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-                            <Link to="" onClick={createAlertDismissedHandler(type)} role="button">
-                                <small>Dismiss</small>
-                            </Link>
-                        </div>
-                    )}
-                </Alert>
-            ))}
+                        {dismissalButton && !buttons ? dismissalButton : null}
+                    </Alert>
+                )
+            })}
         </div>
     )
 }

@@ -6,6 +6,7 @@ exports[`FeedbackBadge Renders status 'beta' correctly 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="beta"
   >
     beta
@@ -27,6 +28,7 @@ exports[`FeedbackBadge Renders status 'experimental' correctly 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="experimental"
   >
     experimental
@@ -48,6 +50,7 @@ exports[`FeedbackBadge Renders status 'new' correctly 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="new"
   >
     new
@@ -69,6 +72,7 @@ exports[`FeedbackBadge Renders status 'prototype' correctly 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="prototype"
   >
     prototype
@@ -90,6 +94,7 @@ exports[`FeedbackBadge Renders status 'wip' correctly 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="wip"
   >
     wip
@@ -111,6 +116,7 @@ exports[`FeedbackBadge renders a FeedbackBadge 1`] = `
 >
   <span
     class="productStatusBadge productStatusBadge"
+    data-state="closed"
     status="new"
   >
     new

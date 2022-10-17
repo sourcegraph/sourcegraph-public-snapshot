@@ -58,11 +58,21 @@ func TestPipeOutput(t *testing.T) {
 	waitForWrite(t, out)
 	wantBytesWritten(t, out, 8)
 
+	// Finally, we'll write a line that isn't terminated by a newline, then EOF
+	write(t, d.stdout, "e")
+	// stdout should *not* be written yet
+	wantBytesWritten(t, out, 8)
+
 	d.stdout.Close()
 	d.stderr.Close()
 	if err := eg.Wait(); err != nil {
 		t.Fatalf("errgroup has err: %s", err)
 	}
+
+	// stdout should now be written with the one extra byte we wrote without a
+	// newline
+	waitForWrite(t, out)
+	wantBytesWritten(t, out, 9)
 }
 
 func TestPipeOutputUnbuffered(t *testing.T) {

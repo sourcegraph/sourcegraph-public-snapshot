@@ -1,19 +1,18 @@
 import * as React from 'react'
 
+import { mdiDelete, mdiAlert } from '@mdi/js'
 import { upperFirst } from 'lodash'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Button, ButtonGroup, Icon } from '@sourcegraph/wildcard'
 
+import { RegistryExtensionFields } from '../../../graphql-operations'
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {
-    extension: Pick<GQL.IRegistryExtension, 'id'>
+    extension: Pick<RegistryExtensionFields, 'id'>
 
     compact?: boolean
 
@@ -63,7 +62,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -81,11 +80,16 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                     title={this.props.compact ? 'Delete extension' : ''}
                     variant="danger"
                 >
-                    <Icon as={DeleteIcon} /> {!this.props.compact && 'Delete extension'}
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> {!this.props.compact && 'Delete extension'}
                 </Button>
                 {isErrorLike(this.state.deletionOrError) && (
-                    <Button disabled={true} title={upperFirst(this.state.deletionOrError.message)} variant="danger">
-                        <Icon as={WarningIcon} />
+                    <Button
+                        aria-label={upperFirst(this.state.deletionOrError.message)}
+                        disabled={true}
+                        title={upperFirst(this.state.deletionOrError.message)}
+                        variant="danger"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiAlert} />
                     </Button>
                 )}
             </ButtonGroup>

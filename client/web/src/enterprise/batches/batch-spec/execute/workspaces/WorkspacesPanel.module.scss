@@ -1,0 +1,11 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.min-80-width {
+    // stylelint-disable declaration-property-unit-allowed-list
+    width: max(50vw, 300px);
+
+    @media (--sm-breakpoint-down) {
+        max-width: 300px;
+        min-width: min(300px, 80vw);
+    }
+}

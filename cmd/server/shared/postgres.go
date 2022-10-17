@@ -9,12 +9,15 @@ import (
 )
 
 var databases = map[string]string{
-	"":              "sourcegraph",
-	"CODEINTEL_":    "sourcegraph-codeintel",
-	"CODEINSIGHTS_": "sourcegraph-codeinsights",
+	"":           "sourcegraph",
+	"CODEINTEL_": "sourcegraph-codeintel",
 }
 
 func maybePostgresProcFile() (string, error) {
+	if AllowSingleDockerCodeInsights {
+		databases["CODEINSIGHTS_"] = "sourcegraph-codeinsights"
+	}
+
 	missingExternalConfig := false
 	for prefix := range databases {
 		if !isPostgresConfigured(prefix) {
@@ -189,7 +192,7 @@ func isPostgresConfigured(prefix string) bool {
 	return os.Getenv(prefix+"PGHOST") != "" || os.Getenv(prefix+"PGDATASOURCE") != ""
 }
 
-func pgPrintf(format string, args ...interface{}) {
+func pgPrintf(format string, args ...any) {
 	_, _ = fmt.Fprintf(os.Stderr, "✱ "+format+"\n", args...)
 }
 

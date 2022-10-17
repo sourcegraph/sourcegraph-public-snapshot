@@ -1,13 +1,11 @@
 import React from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
-import GithubIcon from 'mdi-react/GithubIcon'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import { AuthProvider, SourcegraphContext } from '../jscontext'
-
-import { maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 
 import styles from './CloudSignUpPage.module.scss'
 
@@ -19,7 +17,7 @@ interface ExternalsAuthProps {
     withCenteredText?: boolean
 }
 
-const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
     <svg
         className={className}
         width="24"
@@ -50,7 +48,7 @@ const GitlabColorIcon: React.FunctionComponent<{ className?: string }> = ({ clas
     </svg>
 )
 
-const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
+const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<ExternalsAuthProps>> = ({
     context,
     githubLabel,
     gitlabLabel,
@@ -63,17 +61,17 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
     // for other auth providers such SAML, OpenID, Okta, Azure AD, etc.
 
     const githubProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
+        provider.authenticationURL.startsWith('/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F')
     )
     const gitlabProvider = context.authProviders.find(provider =>
-        provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
+        provider.authenticationURL.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
     return (
         <>
             {githubProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
+                    to={githubProvider.authenticationURL}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
@@ -82,13 +80,13 @@ const ExternalsAuth: React.FunctionComponent<ExternalsAuthProps> = ({
                     )}
                     onClick={() => onClick('github')}
                 >
-                    <GithubIcon className="mr-3" /> {githubLabel}
+                    <Icon className="mr-3" svgPath={mdiGithub} inline={false} aria-hidden={true} /> {githubLabel}
                 </Link>
             )}
 
             {gitlabProvider && (
                 <Link
-                    to={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
+                    to={gitlabProvider.authenticationURL}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',

@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -26,27 +26,34 @@ func NewSyncingJob() job.Job {
 
 type syncingJob struct{}
 
+func (j *syncingJob) Description() string {
+	return ""
+}
+
 func (j *syncingJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if envvar.SourcegraphDotComMode() {
 		// If we're on sourcegraph.com we don't want to run this
 		return nil, nil
 	}
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	cf := httpcli.ExternalClientFactory
-	sourcer := repos.NewSourcer(database.NewDB(db), cf)
+	sourcerLogger := logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerCF := httpcli.NewExternalClientFactory(
+		httpcli.NewLoggingMiddleware(sourcerLogger),
+	)
+	sourcer := repos.NewSourcer(sourcerLogger, db, sourcerCF)
 
-	store := database.NewDB(db).ExternalServices()
+	store := db.ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
-		versions, err := loadVersions(ctx, store, sourcer)
+		versions, err := loadVersions(ctx, logger, store, sourcer)
 		if err != nil {
 			return err
 		}
@@ -59,7 +66,7 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 	}, nil
 }
 
-func loadVersions(ctx context.Context, store database.ExternalServiceStore, sourcer repos.Sourcer) ([]*Version, error) {
+func loadVersions(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, sourcer repos.Sourcer) ([]*Version, error) {
 	var versions []*Version
 
 	es, err := store.List(ctx, database.ExternalServicesListOptions{})
@@ -71,7 +78,7 @@ func loadVersions(ctx context.Context, store database.ExternalServiceStore, sour
 	// we don't send >1 requests to the same instance.
 	unique := make(map[string]*types.ExternalService)
 	for _, svc := range es {
-		ident, err := extsvc.UniqueCodeHostIdentifier(svc.Kind, svc.Config)
+		ident, err := extsvc.UniqueEncryptableCodeHostIdentifier(ctx, svc.Kind, svc.Config)
 		if err != nil {
 			return versions, err
 		}
@@ -83,26 +90,30 @@ func loadVersions(ctx context.Context, store database.ExternalServiceStore, sour
 	}
 
 	for _, svc := range unique {
-		src, err := sourcer(svc)
+		src, err := sourcer(ctx, svc)
 		if err != nil {
 			return versions, err
 		}
 
 		versionSrc, ok := src.(repos.VersionSource)
 		if !ok {
-			log15.Debug("external service source does not implement VersionSource interface", "kind", svc.Kind)
+			logger.Debug("external service source does not implement VersionSource interface",
+				log.String("kind", svc.Kind))
 			continue
 		}
 
 		v, err := versionSrc.Version(ctx)
 		if err != nil {
-			log15.Warn("failed to fetch version of code host", "version", v, "error", err)
+			logger.Warn("failed to fetch version of code host",
+				log.String("version", v),
+				log.Error(err))
 			continue
 		}
 
 		versions = append(versions, &Version{
 			ExternalServiceKind: svc.Kind,
 			Version:             v,
+			Key:                 svc.URN(),
 		})
 	}
 

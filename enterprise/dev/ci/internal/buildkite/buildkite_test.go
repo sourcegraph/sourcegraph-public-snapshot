@@ -10,18 +10,34 @@ import (
 )
 
 func TestStepSoftFail(t *testing.T) {
-	pipeline := buildkite.Pipeline{}
-	stepOpt := buildkite.SoftFail(1, 2, 3, 4)
-	pipeline.AddStep("foo", stepOpt)
-	step, ok := pipeline.Steps[0].(*buildkite.Step)
-	if !ok {
-		t.Fatal("Pipeline step is not a buildkite.Step")
-	}
-	want := "1 2 3 4"
-	got := step.Env["SOFT_FAIL_EXIT_CODES"]
-	if got != want {
-		t.Fatalf("want %q, got %q", want, got)
-	}
+	t.Run("Explicit exit codes", func(t *testing.T) {
+		pipeline := buildkite.Pipeline{}
+		stepOpt := buildkite.SoftFail(1, 2, 3, 4)
+		pipeline.AddStep("foo", stepOpt)
+		step, ok := pipeline.Steps[0].(*buildkite.Step)
+		if !ok {
+			t.Fatal("Pipeline step is not a buildkite.Step")
+		}
+		want := "1 2 3 4"
+		got := step.Env["SOFT_FAIL_EXIT_CODES"]
+		if got != want {
+			t.Fatalf("want %q, got %q", want, got)
+		}
+	})
+	t.Run("Any exit code", func(t *testing.T) {
+		pipeline := buildkite.Pipeline{}
+		stepOpt := buildkite.SoftFail()
+		pipeline.AddStep("foo", stepOpt)
+		step, ok := pipeline.Steps[0].(*buildkite.Step)
+		if !ok {
+			t.Fatal("Pipeline step is not a buildkite.Step")
+		}
+		want := "*"
+		got := step.Env["SOFT_FAIL_EXIT_CODES"]
+		if got != want {
+			t.Fatalf("want %q, got %q", want, got)
+		}
+	})
 }
 
 func TestOutputSanitization(t *testing.T) {
@@ -36,7 +52,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some `backticks`",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `{
@@ -57,7 +73,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some $dollar",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `{
@@ -96,7 +112,7 @@ func TestOutputSanitization(t *testing.T) {
 					Message:  "incredibly complex markdown with some `backticks`",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `branch: tree
@@ -114,7 +130,7 @@ meta_data:
 					Message:  "incredibly complex markdown with some $dollar",
 					Commit:   "123456",
 					Branch:   "tree",
-					MetaData: map[string]interface{}{"foo": "bar"},
+					MetaData: map[string]any{"foo": "bar"},
 					Env:      map[string]string{"FOO": "rire"},
 				},
 				want: `branch: tree

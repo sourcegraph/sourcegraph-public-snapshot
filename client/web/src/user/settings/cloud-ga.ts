@@ -18,11 +18,6 @@ export interface Owner {
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
     externalServiceUserModeFromTags(props.user.tags || [])
 
-export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
-
-export const userExternalServicesEnabledFromTags = (tags: string[]): boolean =>
-    modeEnabled(externalServiceUserModeFromTags(tags))
-
 export const showPasswordsPage = (props: UserProps): boolean => {
     // user is signed-in with builtin Auth and External Service is not public
     const mode = externalServiceUserMode(props)
@@ -63,5 +58,3 @@ const requiredScope = (scope: string, tags: string[], scopes?: Scopes): boolean 
     }
     return allowedPrivate && !scopes.includes(scope)
 }
-
-const modeEnabled = (mode: string): boolean => mode === 'all' || mode === 'public'

@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -29,7 +29,7 @@ func LeavesForCommit(databases []db.Database, commit string) error {
 	}
 
 	for name, leaves := range leavesByDatabase {
-		block := stdout.Out.Block(output.Linef("", output.StyleBold, "Leaf migrations for %q defined at commit %q", name, commit))
+		block := std.Out.Block(output.Styledf(output.StyleBold, "Leaf migrations for %q defined at commit %q", name, commit))
 		for _, leaf := range leaves {
 			block.Writef("%d: (%s)", leaf.ID, leaf.Name)
 		}

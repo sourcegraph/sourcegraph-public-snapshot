@@ -30,7 +30,7 @@ import {
     ResolvedRevisionSpec,
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { Alert } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -44,7 +44,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 import styles from './RepositoryCompareArea.module.scss'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -61,7 +61,7 @@ interface RepositoryCompareAreaProps
         ThemeProps,
         SettingsCascadeProps,
         BreadcrumbSetters {
-    repo: RepositoryFields
+    repo?: RepositoryFields
     history: H.History
 }
 
@@ -167,6 +167,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     }
 
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
+
         if (this.state.error) {
             return (
                 <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
@@ -176,6 +178,14 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
         let spec: { base: string | null; head: string | null } | null | undefined
         if (this.props.match.params.spec) {
             spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
+        }
+
+        // Parse out the optional filePath search param, which is used to show only a single file in the compare view
+        const searchParams = new URLSearchParams(this.props.location.search)
+        const path = searchParams.get('filePath')
+
+        if (!this.props.repo) {
+            return <LoadingSpinner />
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {
@@ -203,6 +213,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                                 <RepositoryCompareOverviewPage
                                     {...routeComponentProps}
                                     {...commonProps}
+                                    path={path}
                                     hoverifier={this.hoverifier}
                                     isLightTheme={this.props.isLightTheme}
                                     extensionsController={this.props.extensionsController}
@@ -212,10 +223,11 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                         <Route key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 )}
-                {this.state.hoverOverlayProps && (
+                {this.state.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        extensionsController={extensionsController}
                         nav={url => this.props.history.push(url)}
                         hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}

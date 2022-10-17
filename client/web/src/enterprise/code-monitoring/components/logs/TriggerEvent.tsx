@@ -1,15 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiAlertCircle, mdiChevronDown, mdiChevronRight, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { pluralize } from '@sourcegraph/common'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Icon } from '@sourcegraph/wildcard'
 
+import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     EventStatus,
@@ -22,11 +20,13 @@ import { CollapsibleDetailsWithStatus } from './CollapsibleDetailsWithStatus'
 
 import styles from './TriggerEvent.module.scss'
 
-export const TriggerEvent: React.FunctionComponent<{
-    triggerEvent: MonitorTriggerEventWithActions
-    startOpen?: boolean
-    now?: () => Date
-}> = ({ triggerEvent, startOpen = false, now }) => {
+export const TriggerEvent: React.FunctionComponent<
+    React.PropsWithChildren<{
+        triggerEvent: MonitorTriggerEventWithActions
+        startOpen?: boolean
+        now?: () => Date
+    }>
+> = ({ triggerEvent, startOpen = false, now }) => {
     const [expanded, setExpanded] = useState(startOpen)
 
     const toggleExpanded = useCallback(() => setExpanded(expanded => !expanded), [])
@@ -57,30 +57,44 @@ export const TriggerEvent: React.FunctionComponent<{
     }
 
     return (
-        <>
-            <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon className="mr-2" as={expanded ? ChevronDownIcon : ChevronRightIcon} />
-
-                {hasError ? <Icon className={classNames(styles.errorIcon, 'mr-2')} as={AlertCircleIcon} /> : <span />}
-
-                <span>
-                    Run <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
-                    {triggerEvent.query && (
-                        <Link
-                            to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-weight-normal ml-2"
-                        >
-                            {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <Icon as={OpenInNewIcon} />
-                        </Link>
+        <li>
+            <div className="d-flex align-items-center">
+                <Button onClick={toggleExpanded} className={classNames('d-block', styles.expandButton)}>
+                    {expanded ? (
+                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse run." />
+                    ) : (
+                        <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand run." />
                     )}
-                </span>
-            </Button>
 
+                    {hasError ? (
+                        <Icon
+                            aria-hidden={true}
+                            className={classNames(styles.errorIcon, 'mr-2')}
+                            svgPath={mdiAlertCircle}
+                        />
+                    ) : (
+                        <span />
+                    )}
+
+                    <span>
+                        {triggerEvent.status === EventStatus.PENDING ? 'Scheduled' : 'Ran'}{' '}
+                        <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
+                    </span>
+                </Button>
+                {triggerEvent.query && (
+                    <Link
+                        to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-weight-normal ml-2"
+                    >
+                        {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
+                        <Icon aria-label=". Open in a new tab" svgPath={mdiOpenInNew} />
+                    </Link>
+                )}
+            </div>
             {expanded && (
-                <>
+                <ConnectionList>
                     <CollapsibleDetailsWithStatus
                         status={triggerEvent.status}
                         message={getTriggerEventMessage()}
@@ -110,9 +124,9 @@ export const TriggerEvent: React.FunctionComponent<{
                             )}
                         </>
                     ))}
-                </>
+                </ConnectionList>
             )}
-        </>
+        </li>
     )
 }
 

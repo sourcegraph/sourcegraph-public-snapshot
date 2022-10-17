@@ -10,11 +10,15 @@ import {
     getUserSearchContextNamespaces,
     QueryState,
 } from '@sourcegraph/search'
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import {
+    IEditor,
+    SearchBox,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -25,13 +29,11 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
@@ -43,7 +45,7 @@ export interface SearchResultsViewProps extends WebviewPageProps {
     context: SearchResultsState['context']
 }
 
-export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> = ({
+export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<SearchResultsViewProps>> = ({
     extensionCoreAPI,
     authenticatedUser,
     platformContext,
@@ -58,27 +60,10 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         'repository' | 'branches' | 'description'
     > | null>(null)
 
-    // Check VS Code local storage to see if user has clicked dismiss button before
-    const [dismissSearchCta, setDismissSearchCta] = useState(false)
-    // Return empty string if not in vs code local storage or 'search' if it exists
-    const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_SEARCH_CTA_KEY), [extensionCoreAPI])
-    const onDismissCtaAlert = useCallback(async () => {
-        setDismissSearchCta(true)
-        await extensionCoreAPI.setLocalStorageItem(DISMISS_SEARCH_CTA_KEY, 'true')
-    }, [extensionCoreAPI])
-
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
     }, [instanceURL])
-
-    useEffect(() => {
-        showCtaAlert
-            .then(result => {
-                setDismissSearchCta(result.length > 0)
-            })
-            .catch(() => setDismissSearchCta(false))
-    }, [showCtaAlert])
 
     // Editor focus.
     const editorReference = useRef<IEditor>()
@@ -162,6 +147,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
@@ -247,7 +233,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            console.log({ patternType })
             onSubmit({ patternType })
         },
         [onSubmit]
@@ -259,7 +244,7 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
     )
 
     const fetchStreamSuggestions = useCallback(
-        (query): Observable<SearchMatch[]> =>
+        (query: string): Observable<SearchMatch[]> =>
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
         [extensionCoreAPI, instanceURL]
     )
@@ -315,18 +300,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
         [context]
     )
 
-    const onSignUpClick = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCECreateAccountBannerClick',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
-        },
-        [platformContext.telemetryService]
-    )
-
     const matchHandlers = useMatchHandlers({
         platformContext,
         extensionCoreAPI,
@@ -353,8 +326,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    hasUserAddedExternalServices={false}
-                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
                     queryState={userQueryState}
                     onChange={onChange}
@@ -385,22 +356,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && !dismissSearchCta && (
-                        <CtaAlert
-                            title="Sign up to add your public and private repositories and unlock search flow"
-                            description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                            cta={{
-                                label: 'Get started',
-                                href:
-                                    'https://sourcegraph.com/sign-up?editor=vscode&utm_medium=VSCODE&utm_source=sidebar&utm_campaign=vsce-sign-up&utm_content=sign-up',
-                                onClick: onSignUpClick,
-                            }}
-                            icon={<SearchBetaIcon />}
-                            className={classNames('percy-display-none', styles.ctaContainer)}
-                            onClose={onDismissCtaAlert}
-                        />
-                    )}
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
                         showSavedSearchForm={showSavedSearchForm}
@@ -448,7 +403,6 @@ export const SearchResultsView: React.FunctionComponent<SearchResultsViewProps> 
                             showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
-                            authenticatedUser={authenticatedUser}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"

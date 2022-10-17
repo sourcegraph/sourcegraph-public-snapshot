@@ -1,17 +1,16 @@
 import * as React from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike, isDefined, property } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
+import { FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -21,21 +20,23 @@ import { LoadingSpinner, Alert, Icon } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
-export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
+export const FileLocationsError: React.FunctionComponent<React.PropsWithChildren<{ error: ErrorLike }>> = ({
+    error,
+}) => (
     <Alert className="m-2" variant="danger">
         Error getting locations: {upperFirst(error.message)}
     </Alert>
 )
 
-export const FileLocationsNotFound: React.FunctionComponent = () => (
+export const FileLocationsNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className={classNames('m-2', styles.notFound)}>
-        <Icon as={MapSearchIcon} /> No locations found
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found
     </div>
 )
 
-export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
+export const FileLocationsNoGroupSelected: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <div className="m-2">
-        <Icon as={MapSearchIcon} /> No locations found in the current repository
+        <Icon aria-hidden={true} svgPath={mdiMapSearch} /> No locations found in the current repository
     </div>
 )
 
@@ -104,7 +105,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -158,7 +159,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         item: OrderedURI,
                         index: number,
                         additionalProps: { locationsByURI: Map<string, Location[]> }
-                    ) => this.renderFileMatch(item, additionalProps)}
+                    ) => this.renderFileMatch(item, additionalProps, index)}
                     itemProps={{ locationsByURI }}
                     itemKey={this.itemKey}
                 />
@@ -180,9 +181,11 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
     private renderFileMatch = (
         { uri }: OrderedURI,
-        { locationsByURI }: { locationsByURI: Map<string, Location[]> }
+        { locationsByURI }: { locationsByURI: Map<string, Location[]> },
+        index: number
     ): JSX.Element => (
-        <FileMatch
+        <FileSearchResult
+            index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
             expanded={true}
@@ -204,11 +207,26 @@ function referencesToContentMatch(uri: string, references: Badged<Location>[]): 
         path: parsedUri.filePath || '',
         commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
-        lineMatches: references.filter(property('range', isDefined)).map(reference => ({
-            line: '',
-            lineNumber: reference.range.start.line,
-            offsetAndLengths: [
-                [reference.range.start.character, reference.range.end.character - reference.range.start.character],
+        chunkMatches: references.filter(property('range', isDefined)).map(reference => ({
+            content: '',
+            contentStart: {
+                line: reference.range.start.line,
+                offset: 0,
+                column: 0,
+            },
+            ranges: [
+                {
+                    start: {
+                        line: reference.range.start.line,
+                        offset: 0,
+                        column: reference.range.start.character,
+                    },
+                    end: {
+                        line: reference.range.end.line,
+                        offset: 0,
+                        column: reference.range.end.character,
+                    },
+                },
             ],
             aggregableBadges: reference.aggregableBadges,
         })),

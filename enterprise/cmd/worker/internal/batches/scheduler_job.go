@@ -3,6 +3,8 @@ package batches
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,11 +18,15 @@ func NewSchedulerJob() job.Job {
 	return &schedulerJob{}
 }
 
+func (j *schedulerJob) Description() string {
+	return ""
+}
+
 func (j *schedulerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *schedulerJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *schedulerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()

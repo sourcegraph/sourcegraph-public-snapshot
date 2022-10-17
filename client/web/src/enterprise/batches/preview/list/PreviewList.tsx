@@ -1,11 +1,11 @@
 import React, { useCallback, useContext, useState } from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import * as H from 'history'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
@@ -47,7 +47,7 @@ interface Props extends ThemeProps {
 /**
  * A list of a batch spec's preview nodes.
  */
-export const PreviewList: React.FunctionComponent<Props> = ({
+export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchSpecID,
     history,
     location,
@@ -62,7 +62,17 @@ export const PreviewList: React.FunctionComponent<Props> = ({
     const { selected, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } = useContext(
         MultiSelectContext
     )
-    const { filters, publicationStates, addRecalculationUpdate } = useContext(BatchChangePreviewContext)
+    // The user can modify the desired publication states for changesets in this preview
+    // list from the UI. However, these modifications are transient and are not persisted
+    // to the backend (until the user applies the batch change and the publication states
+    // are realized, of course). Rather, they are provided as arguments to the
+    // `applyPreview` connection, and later the `applyBatchChange` mutation, in order to
+    // override the original publication states computed by the reconciler on the backend.
+    // `BatchChangePreviewContext` is responsible for managing these publication states,
+    // as well as filter arguments to the connection query, clientside.
+    const { filters, filtersChanged, setFiltersChanged, publicationStates, resolveRecalculationUpdates } = useContext(
+        BatchChangePreviewContext
+    )
 
     const [queryArguments, setQueryArguments] = useState<BatchSpecApplyPreviewVariables>()
 
@@ -83,11 +93,20 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                     setQueryArguments(passedArguments)
                     // Available changeset specs are all changesets specs that a user can
                     // modify the publication state of from the UI.
-                    setVisible(filterPublishableIDs(data.nodes))
+                    setVisible(filtersChanged, filterPublishableIDs(data.nodes))
+                    if (filtersChanged) {
+                        setFiltersChanged(false)
+                    }
+                    // If we re-queried on account of any publication states changing, make
+                    // sure to mark the timestamp record for this recalculation event as
+                    // complete so that it produces a banner.
+                    resolveRecalculationUpdates()
                 })
             )
         },
         [
+            filtersChanged,
+            setFiltersChanged,
             batchSpecID,
             filters.search,
             filters.currentState,
@@ -95,18 +114,9 @@ export const PreviewList: React.FunctionComponent<Props> = ({
             queryChangesetApplyPreview,
             setVisible,
             publicationStates,
+            resolveRecalculationUpdates,
         ]
     )
-
-    // Every subsequent query after the first will have its success time recorded
-    const [isInitialQuery, setIsInitialQuery] = useState(true)
-    const onUpdate = useCallback(() => {
-        if (isInitialQuery) {
-            setIsInitialQuery(false)
-        } else {
-            addRecalculationUpdate(new Date())
-        }
-    }, [addRecalculationUpdate, isInitialQuery])
 
     const showSelectRow = selected === 'all' || selected.size > 0
 
@@ -161,16 +171,15 @@ export const PreviewList: React.FunctionComponent<Props> = ({
                         <EmptyPreviewListElement />
                     )
                 }
-                onUpdate={onUpdate}
             />
         </Container>
     )
 }
 
-const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
+const EmptyPreviewSearchElement: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted row w-100">
         <div className="col-12 text-center">
-            <MagnifyIcon className="icon" />
+            <Icon className="icon" svgPath={mdiMagnify} inline={false} aria-hidden={true} />
             <div className="pt-2">No changesets matched the search.</div>
         </div>
     </div>
@@ -181,16 +190,22 @@ const EmptyPreviewSearchElement: React.FunctionComponent<{}> = () => (
  * actions are recalculated when the user modifies the publication states for preview
  * changesets.
  */
-const PublicationStatesUpdateAlerts: React.FunctionComponent<{}> = () => {
+const PublicationStatesUpdateAlerts: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+    // `BatchChangePreviewContext` keeps a record of each time the user modifies the
+    // desired publication states for changesets in the preview list from the UI.
     const { recalculationUpdates } = useContext(BatchChangePreviewContext)
 
     return (
         <div className="mt-2">
-            {recalculationUpdates.map(timestamp => (
-                <DismissibleAlert variant="success" key={timestamp}>
-                    Publication state actions were recalculated.
-                </DismissibleAlert>
-            ))}
+            {recalculationUpdates.map(([timestamp, status]) =>
+                // Wait to show publication state update alerts until the connection query
+                // request resolves.
+                status === 'complete' ? (
+                    <DismissibleAlert variant="success" key={timestamp}>
+                        Publication state actions were recalculated.
+                    </DismissibleAlert>
+                ) : null
+            )}
         </div>
     )
 }

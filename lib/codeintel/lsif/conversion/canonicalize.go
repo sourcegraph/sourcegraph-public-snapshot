@@ -185,9 +185,6 @@ func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
-	if item.DocumentationResultID == 0 {
-		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
-	}
 
 	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
 	return item
@@ -208,9 +205,6 @@ func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextIt
 	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
-	}
-	if item.DocumentationResultID == 0 {
-		item = item.SetDocumentationResultID(nextItem.DocumentationResultID)
 	}
 
 	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))

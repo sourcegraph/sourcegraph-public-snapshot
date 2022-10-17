@@ -8,10 +8,9 @@ import (
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -102,7 +101,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, backend.ErrNotAuthenticated)
+		assert.ErrorIs(t, err, auth.ErrNotAuthenticated)
 	})
 
 	t.Run("regular user", func(t *testing.T) {
@@ -113,7 +112,7 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, webhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, backend.ErrMustBeSiteAdmin)
+		assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 	})
 
 	t.Run("admin user", func(t *testing.T) {
@@ -137,14 +136,10 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		logs = append(logs, &types.WebhookLog{})
 	}
 
-	// We also need a fake TransactableHandle to be able to construct
-	// webhookLogResolvers.
-	db := &basestore.TransactableHandle{}
-
 	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
 		store := database.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(db)
+		store.HandleFunc.SetDefaultReturn(nil)
 
 		return store
 	}

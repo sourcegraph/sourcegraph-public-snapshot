@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -17,11 +15,6 @@ type OrgStatsStore interface {
 
 type orgStatsStore struct {
 	*basestore.Store
-}
-
-// OrgStats instantiates and returns a new OrgStatsStore with prepared statements.
-func OrgStats(db dbutil.DB) OrgStatsStore {
-	return &orgStatsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // OrgStatsWith instantiates and returns a new OrgStatsStore using the other store handle.
@@ -38,7 +31,7 @@ func (o *orgStatsStore) Upsert(ctx context.Context, orgID int32, codeHostRepoCou
 		OrgID:             orgID,
 		CodeHostRepoCount: codeHostRepoCount,
 	}
-	err := o.Handle().DB().QueryRowContext(
+	err := o.Handle().QueryRowContext(
 		ctx,
 		"INSERT INTO org_stats(org_id, code_host_repo_count) VALUES($1, $2) ON CONFLICT (org_id) DO UPDATE SET code_host_repo_count = $2 RETURNING code_host_repo_count;",
 		newStatistic.OrgID, newStatistic.CodeHostRepoCount).Scan(&newStatistic.CodeHostRepoCount)

@@ -1,0 +1,17 @@
+.root {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filters {
+    hr {
+        margin-left: -1rem;
+        margin-right: -1rem;
+    }
+}
+
+.chart {
+    min-height: 30rem;
+}

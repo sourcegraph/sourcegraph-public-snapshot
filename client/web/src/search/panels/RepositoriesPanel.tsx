@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -19,6 +20,10 @@ import { HomePanelsFetchMore, RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD } from './H
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
+import { useComputeResults } from './useComputeResults'
+import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
+
+import styles from './RecentSearchesPanel.module.scss'
 
 interface Props extends TelemetryProps {
     className?: string
@@ -46,53 +51,29 @@ export const recentlySearchedRepositoriesFragment = gql`
     }
 `
 
-export const RepositoriesPanel: React.FunctionComponent<Props> = ({
+export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     telemetryService,
     recentlySearchedRepositories,
     fetchMore,
+    authenticatedUser,
 }) => {
-    const [searchEventLogs, setSearchEventLogs] = useState<
+    const [recentlySearchedRepos, setRecentlySearchedRepos] = useState<
         null | RecentlySearchedRepositoriesFragment['recentlySearchedRepositoriesLogs']
     >(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null)
-    useEffect(() => setSearchEventLogs(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
+    useEffect(() => setRecentlySearchedRepos(recentlySearchedRepositories?.recentlySearchedRepositoriesLogs ?? null), [
         recentlySearchedRepositories?.recentlySearchedRepositoriesLogs,
     ])
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD)
-
-    const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
-        telemetryService,
-    ])
-
-    const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
-
-    const emptyDisplay = (
-        <EmptyPanelContainer className="text-muted">
-            <small className="mb-2">
-                <p className="mb-1">Recently searched repositories will be displayed here.</p>
-                <p className="mb-1">
-                    Search in repositories with the <strong>repo:</strong> filter:
-                </p>
-                <p className="mb-1">
-                    <SyntaxHighlightedSearchQuery query="repo:sourcegraph/sourcegraph" />
-                </p>
-                <p className="mb-1">Add the code host to scope to a single repository:</p>
-                <p className="mb-1">
-                    <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
-                </p>
-            </small>
-        </EmptyPanelContainer>
-    )
-
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [repoFilterValues, setRepoFilterValues] = useState<string[] | null>(null)
-
+    const getItemRef = useFocusOnLoadedMore(repoFilterValues?.length ?? 0)
     useEffect(() => {
-        if (searchEventLogs) {
-            const recentlySearchedRepos = processRepositories(searchEventLogs)
-            setRepoFilterValues(recentlySearchedRepos)
+        if (recentlySearchedRepos) {
+            setRepoFilterValues(processRepositories(recentlySearchedRepos))
         }
-    }, [searchEventLogs])
+    }, [recentlySearchedRepos])
 
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
@@ -105,15 +86,40 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
+    const logRepoClicked = useCallback(() => telemetryService.log('RepositoriesPanelRepoFilterClicked'), [
+        telemetryService,
+    ])
+
+    const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
+
+    const emptyDisplay = (
+        <EmptyPanelContainer className="text-muted">
+            <small className="mb-2">
+                <Text className="mb-1">Recently searched repositories will be displayed here.</Text>
+                <Text className="mb-1">
+                    Search in repositories with the <strong>repo:</strong> filter:
+                </Text>
+                <Text className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:sourcegraph/sourcegraph" />
+                </Text>
+                <Text className="mb-1">Add the code host to scope to a single repository:</Text>
+                <Text className="mb-1">
+                    <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
+                </Text>
+            </small>
+        </EmptyPanelContainer>
+    )
+
     async function loadMoreItems(): Promise<void> {
         telemetryService.log('RepositoriesPanelShowMoreClicked')
         const newItemsToLoad = itemsToLoad + RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD
         setItemsToLoad(newItemsToLoad)
 
+        setIsLoadingMore(true)
         const { data } = await fetchMore({
             firstRecentlySearchedRepositories: newItemsToLoad,
         })
-
+        setIsLoadingMore(false)
         if (data === undefined) {
             return
         }
@@ -121,34 +127,85 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
         if (node === null || node.__typename !== 'User') {
             return
         }
-        setSearchEventLogs(node.recentlySearchedRepositoriesLogs)
+        setRecentlySearchedRepos(node.recentlySearchedRepositoriesLogs)
     }
 
+    const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo')
+
+    const renderComputeResults = computeResults.size > 0
+
     const contentDisplay = (
-        <div className="mt-2">
-            <div className="d-flex mb-1">
-                <small>Search</small>
-            </div>
-            {repoFilterValues?.map((repoFilterValue, index) => (
-                <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
-                    <small>
-                        <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
-                            <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                        </Link>
-                    </small>
-                </dd>
-            ))}
-            {searchEventLogs?.pageInfo.hasNextPage && (
-                <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
+        <>
+            <table className={classNames('mt-2', styles.resultsTable)}>
+                <thead>
+                    <tr className={styles.resultsTableRow}>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {renderComputeResults
+                        ? [...computeResults].map((repoFilterValue, index) => (
+                              <tr
+                                  key={index}
+                                  className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                              >
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={`/search?q=repo:${repoFilterValue}`}
+                                              ref={getItemRef(index)}
+                                              onClick={logRepoClicked}
+                                          >
+                                              <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))
+                        : repoFilterValues?.map((repoFilterValue, index) => (
+                              <tr
+                                  key="index"
+                                  className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                              >
+                                  <td>
+                                      <small>
+                                          <Link
+                                              to={`/search?q=repo:${repoFilterValue}`}
+                                              ref={getItemRef(index)}
+                                              onClick={logRepoClicked}
+                                          >
+                                              <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
+                                          </Link>
+                                      </small>
+                                  </td>
+                              </tr>
+                          ))}
+                </tbody>
+            </table>
+
+            {!renderComputeResults && (
+                <>
+                    {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more repositories</VisuallyHidden>}
+                    {recentlySearchedRepos?.pageInfo.hasNextPage && (
+                        <ShowMoreButton className="test-repositories-panel-show-more" onClick={loadMoreItems} />
+                    )}
+                </>
             )}
-        </div>
+        </>
     )
+
+    // Wait for both the search event logs and the git history to be loaded
+    const isLoading = computeLoading || !repoFilterValues
+    // If neither search event logs or git history have items, then display the empty display
+    const isEmpty = repoFilterValues?.length === 0 && computeResults.size === 0
 
     return (
         <PanelContainer
             className={classNames(className, 'repositories-panel')}
             title="Repositories"
-            state={repoFilterValues ? (repoFilterValues.length > 0 ? 'populated' : 'empty') : 'loading'}
+            state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
             emptyContent={emptyDisplay}
@@ -170,10 +227,8 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
             const scannedQuery = scanSearchQuery(queryFromURL || '')
             if (scannedQuery.type === 'success') {
                 for (const token of scannedQuery.term) {
-                    if (isRepoFilter(token)) {
-                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                            recentlySearchedRepos.push(token.value.value)
-                        }
+                    if (isRepoFilter(token) && token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                        recentlySearchedRepos.push(token.value.value)
                     }
                 }
             }

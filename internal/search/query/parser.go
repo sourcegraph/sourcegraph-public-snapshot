@@ -51,17 +51,17 @@ type Parameter struct {
 	Annotation Annotation `json:"-"`
 }
 
-type operatorKind int
+type OperatorKind int
 
 const (
-	Or operatorKind = iota
+	Or OperatorKind = iota
 	And
 	Concat
 )
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind       operatorKind
+	Kind       OperatorKind
 	Operands   []Node
 	Annotation Annotation
 }
@@ -683,43 +683,65 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 	return string(result), count
 }
 
-// TryParseDelimiter tries to parse a delimited string, returning the
-// interpreted (i.e., unquoted) value if it succeeds, the delimiter that
-// suceeded parsing, and whether it succeeded.
-func (p *parser) TryParseDelimiter() (string, rune, bool) {
-	delimited := func(delimiter rune) (string, bool) {
-		start := p.pos
-		value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
-		if err != nil {
+func (p *parser) parseQuoted(delimiter rune) (string, bool) {
+	start := p.pos
+	value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
+	if err != nil {
+		return "", false
+	}
+	p.pos += advance
+	if !p.done() {
+		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) && !p.match(RPAREN) {
+			p.pos = start // backtrack
+			// delimited value should be followed by terminal (whitespace or closing paren).
 			return "", false
 		}
-		p.pos += advance
-		if !p.done() {
-			if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) {
-				p.pos = start // backtrack
-				// delimited value should be followed by whitespace
-				return "", false
-			}
+	}
+	return value, true
+}
+
+// parseStringQuotes parses "..." or '...' syntax and returns a Patter node.
+// Returns whether parsing succeeds.
+func (p *parser) parseStringQuotes() (Pattern, bool) {
+	start := p.pos
+
+	if p.match(DQUOTE) {
+		if v, ok := p.parseQuoted('"'); ok {
+			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
 		}
-		return value, true
 	}
 
 	if p.match(SQUOTE) {
-		if v, ok := delimited('\''); ok {
-			return v, '\'', true
+		if v, ok := p.parseQuoted('\''); ok {
+			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
 		}
 	}
-	if p.match(DQUOTE) {
-		if v, ok := delimited('"'); ok {
-			return v, '"', true
-		}
+
+	return Pattern{}, false
+}
+
+// parseRegexpQuotes parses "/.../" syntax and returns a Pattern node. Returns
+// whether parsing succeeds.
+func (p *parser) parseRegexpQuotes() (Pattern, bool) {
+	if !p.match(SLASH) {
+		return Pattern{}, false
 	}
-	if p.match(SLASH) {
-		if v, ok := delimited('/'); ok {
-			return v, '/', true
-		}
+
+	start := p.pos
+	v, ok := p.parseQuoted('/')
+	if !ok {
+		return Pattern{}, false
 	}
-	return "", 0, false
+
+	labels := Regexp
+	if v == "" {
+		// This is an empty `//` delimited pattern: treat this
+		// heuristically as a literal // pattern instead, since an empty
+		// regex pattern offers lower utility.
+		v = "//"
+		labels = Literal
+	}
+	return newPattern(v, labels, newRange(start, p.pos)), true
 }
 
 // ParseFieldValue parses a value after a field like "repo:". It returns the
@@ -763,31 +785,6 @@ func (p *parser) ParseFieldValue(field string) (string, labels, error) {
 	return value, None, nil
 }
 
-// Try parse a delimited pattern, quoted as "...", '...', or /.../.
-func (p *parser) TryParseDelimitedPattern() (Pattern, bool) {
-	start := p.pos
-	if value, delimiter, ok := p.TryParseDelimiter(); ok {
-		var labels labels
-		if delimiter == '/' {
-			if value != "" {
-				// This is a non-empty regex-delimited pattern
-				labels = Regexp
-			} else {
-				// This is an empty `//` delimited pattern:
-				// treat this heuristically as a literal //
-				// pattern instead, since the an empty regex
-				// pattern offers lower utitility.
-				value = "//"
-				labels = Literal
-			}
-		} else {
-			labels = Literal | Quoted
-		}
-		return newPattern(value, labels, newRange(start, p.pos)), true
-	}
-	return Pattern{}, false
-}
-
 func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
 	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 		pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
@@ -812,9 +809,14 @@ func newPattern(value string, labels labels, range_ Range) Pattern {
 // Note that ParsePattern may be called multiple times (a query can have
 // multiple Patterns concatenated together).
 func (p *parser) ParsePattern(label labels) Pattern {
+	if label.IsSet(Standard | Regexp) {
+		if pattern, ok := p.parseRegexpQuotes(); ok {
+			return pattern
+		}
+	}
+
 	if label.IsSet(Regexp) {
-		// First try parse delimited values for regexp.
-		if pattern, ok := p.TryParseDelimitedPattern(); ok {
+		if pattern, ok := p.parseStringQuotes(); ok {
 			return pattern
 		}
 	}
@@ -834,7 +836,7 @@ func (p *parser) ParsePattern(label labels) Pattern {
 		value, advance = ScanAnyPattern(p.buf[p.pos:])
 	}
 	if isSet(p.heuristics, allowDanglingParens) {
-		label.set(HeuristicDanglingParens)
+		label.Set(HeuristicDanglingParens)
 	}
 	p.pos += advance
 	return newPattern(value, label, newRange(start, p.pos))
@@ -891,10 +893,10 @@ func partitionParameters(nodes []Node) []Node {
 		}
 	}
 	if len(patterns) > 1 {
-		orderedPatterns := newOperator(patterns, Concat)
-		return newOperator(append(unorderedParams, orderedPatterns...), And)
+		orderedPatterns := NewOperator(patterns, Concat)
+		return NewOperator(append(unorderedParams, orderedPatterns...), And)
 	}
-	return newOperator(append(unorderedParams, patterns...), And)
+	return NewOperator(append(unorderedParams, patterns...), And)
 }
 
 // parseLeaves scans for consecutive leaf nodes and applies
@@ -915,7 +917,7 @@ loop:
 			if isSet(p.heuristics, parensAsPatterns) {
 				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
 					if label.IsSet(Literal) {
-						label.set(HeuristicParensAsPatterns)
+						label.Set(HeuristicParensAsPatterns)
 					}
 					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
 					p.pos += advance
@@ -997,7 +999,7 @@ loop:
 // reduce takes lists of left and right nodes and reduces them if possible. For example,
 // (and a (b and c))       => (and a b c)
 // (((a and b) or c) or d) => (or (and a b) c d)
-func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
+func reduce(left, right []Node, kind OperatorKind) ([]Node, bool) {
 	if param, ok := left[0].(Parameter); ok && param.Value == "" {
 		// Remove empty string parameter.
 		return right, true
@@ -1040,17 +1042,17 @@ func reduce(left, right []Node, kind operatorKind) ([]Node, bool) {
 	}
 	if len(right) > 1 {
 		// Reduce right list.
-		reduced, changed := reduce(append(left, right[0]), right[1:], kind)
+		reduced, changed := reduce([]Node{right[0]}, right[1:], kind)
 		if changed {
-			return reduced, true
+			return append(left, reduced...), true
 		}
 	}
 	return append(left, right...), false
 }
 
-// newOperator constructs a new node of kind operatorKind with operands nodes,
+// NewOperator constructs a new node of kind operatorKind with operands nodes,
 // reducing nodes as needed.
-func newOperator(nodes []Node, kind operatorKind) []Node {
+func NewOperator(nodes []Node, kind OperatorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {
@@ -1059,7 +1061,7 @@ func newOperator(nodes []Node, kind operatorKind) []Node {
 
 	reduced, changed := reduce([]Node{nodes[0]}, nodes[1:], kind)
 	if changed {
-		return newOperator(reduced, kind)
+		return NewOperator(reduced, kind)
 	}
 	return []Node{Operator{Kind: kind, Operands: reduced}}
 }
@@ -1068,10 +1070,15 @@ func newOperator(nodes []Node, kind operatorKind) []Node {
 func (p *parser) parseAnd() ([]Node, error) {
 	var left []Node
 	var err error
-	if p.leafParser == SearchTypeRegex {
+	switch p.leafParser {
+	case SearchTypeRegex:
 		left, err = p.parseLeaves(Regexp)
-	} else {
+	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
+	case SearchTypeStandard, SearchTypeLucky:
+		left, err = p.parseLeaves(Literal | Standard)
+	default:
+		left, err = p.parseLeaves(Literal | Standard)
 	}
 	if err != nil {
 		return nil, err
@@ -1086,7 +1093,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), And), nil
+	return NewOperator(append(left, right...), And), nil
 }
 
 // parseOr parses or-expressions. Or operators have lower precedence than And
@@ -1106,7 +1113,7 @@ func (p *parser) parseOr() ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newOperator(append(left, right...), Or), nil
+	return NewOperator(append(left, right...), Or), nil
 }
 
 func (p *parser) tryFallbackParser(in string) ([]Node, error) {
@@ -1120,9 +1127,9 @@ func (p *parser) tryFallbackParser(in string) ([]Node, error) {
 		return nil, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return newOperator(hoistedNodes, And), nil
+		return NewOperator(hoistedNodes, And), nil
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 // Parse parses a raw input string into a parse tree comprising Nodes.
@@ -1164,17 +1171,21 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return newOperator(nodes, And), nil
+	return NewOperator(nodes, And), nil
 }
 
 func ParseSearchType(in string, searchType SearchType) (Q, error) {
 	return Run(Init(in, searchType))
+}
+
+func ParseStandard(in string) (Q, error) {
+	return Run(Init(in, SearchTypeStandard))
 }
 
 func ParseLiteral(in string) (Q, error) {

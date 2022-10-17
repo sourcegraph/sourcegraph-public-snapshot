@@ -1,9 +1,7 @@
-import * as React from 'react'
-
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { render } from 'react-dom'
+import { Renderer } from 'react-dom'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { DiffPart } from '@sourcegraph/codeintellify'
@@ -20,9 +18,10 @@ import {
     CommandListPopoverButtonProps,
 } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import {
-    createController as createExtensionsController,
     ExtensionsControllerProps,
+    RequiredExtensionsControllerProps,
 } from '@sourcegraph/shared/src/extensions/controller'
+import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createSyncLoadedController'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -50,16 +49,16 @@ export function initializeExtensions(
 }
 
 interface InjectProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
-        ExtensionsControllerProps {
+    extends PlatformContextProps<'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
+        RequiredExtensionsControllerProps {
     history: H.History
-    render: typeof render
+    render: Renderer
 }
 
 interface RenderCommandPaletteProps
     extends TelemetryProps,
         InjectProps,
-        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> {
+        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'> {
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 }
 
@@ -74,7 +73,6 @@ export const renderCommandPalette = ({
             <CommandListPopoverButton
                 {...props}
                 popoverClassName={classNames('command-list-popover', props.popoverClassName)}
-                popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
                 location={history.location}

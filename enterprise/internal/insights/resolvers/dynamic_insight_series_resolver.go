@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -26,7 +27,7 @@ func (d *dynamicInsightSeriesResolver) Label() string {
 	return d.generated.Label
 }
 
-func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
+func (d *dynamicInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	var resolvers []graphqlbackend.InsightsDataPointResolver
 	for _, point := range d.generated.Points {
 		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
@@ -64,7 +65,7 @@ func (e emptyInsightStatusResolver) FailedJobs() int32 {
 	return 0
 }
 
-func (e emptyInsightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
+func (e emptyInsightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	current := time.Now().AddDate(-1, 0, 0)
-	return graphqlbackend.DateTimeOrNil(&current)
+	return gqlutil.DateTimeOrNil(&current)
 }

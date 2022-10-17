@@ -1,0 +1,4 @@
+{
+  "Input": "repo:foo (not b) (not c) a",
+  "Result": "repo:foo ((NOT b) AND (NOT c) AND a)"
+}

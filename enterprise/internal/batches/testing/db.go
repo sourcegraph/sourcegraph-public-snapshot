@@ -2,12 +2,13 @@ package testing
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func TruncateTables(t *testing.T, db *sql.DB, tables ...string) {
+func TruncateTables(t *testing.T, db database.DB, tables ...string) {
 	t.Helper()
 
 	_, err := db.ExecContext(context.Background(), "TRUNCATE "+strings.Join(tables, ", ")+" RESTART IDENTITY CASCADE")

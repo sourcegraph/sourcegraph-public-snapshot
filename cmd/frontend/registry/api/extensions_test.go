@@ -5,9 +5,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSplitExtensionID(t *testing.T) {
@@ -99,8 +103,12 @@ type mockRegistryExtension struct {
 }
 
 func TestGetExtensionByExtensionID(t *testing.T) {
+	enableLegacyExtensions()
+	defer conf.Mock(nil)
+
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	t.Run("root", func(t *testing.T) {
 		mockLocalRegistryExtensionIDPrefix = &strnilptr
@@ -215,4 +223,13 @@ var strnilptr *string
 func strptrptr(s string) **string {
 	tmp := &s
 	return &tmp
+}
+
+func enableLegacyExtensions() {
+	enableLegacyExtensionsVar := true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			EnableLegacyExtensions: &enableLegacyExtensionsVar,
+		},
+	}})
 }

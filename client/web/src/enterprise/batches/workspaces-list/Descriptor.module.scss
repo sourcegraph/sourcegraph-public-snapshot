@@ -1,7 +1,27 @@
-.status {
-    width: 1.5rem;
-    flex-shrink: 0;
-    padding-right: 0.5rem;
+.container {
+    display: flex;
+    flex: 1;
+    padding: 1rem 0.5rem;
+    align-items: center;
+
+    .status {
+        width: 1.5rem;
+        flex-shrink: 0;
+        padding-right: 0.5rem;
+    }
+
+    .workspace-details {
+        color: var(--text-muted);
+        padding-top: 0.25rem;
+        align-items: center;
+        display: flex;
+
+        .badge {
+            margin-right: 0.625rem;
+            font-size: 0.6875rem;
+            color: var(--badge-text) !important;
+        }
+    }
 }
 
 .name {

@@ -2,7 +2,7 @@ import React, { HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './TreeRow.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeRowProps = HTMLAttributes<HTMLTableRowElement> & {
     isActive?: boolean
@@ -10,7 +10,7 @@ type TreeRowProps = HTMLAttributes<HTMLTableRowElement> & {
     isExpanded?: boolean
 }
 
-export const TreeRow: React.FunctionComponent<TreeRowProps> = ({
+export const TreeRow: React.FunctionComponent<React.PropsWithChildren<TreeRowProps>> = ({
     isActive,
     isSelected,
     isExpanded,

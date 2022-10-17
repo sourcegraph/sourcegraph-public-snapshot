@@ -1,13 +1,13 @@
-import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Alert, Button, ButtonProps, Link, Modal, Icon } from '@sourcegraph/wildcard'
+import { Alert, Button, ButtonProps, Link, Modal, Icon, H3 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../components/CopyableText'
 import { InviteUserToOrganizationResult, InviteUserToOrganizationVariables } from '../../graphql-operations'
@@ -31,7 +31,7 @@ export interface InviteMemberModalProps {
     showBetaBanner?: boolean
 }
 
-export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> = props => {
+export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<InviteMemberModalProps>> = props => {
     const { orgName, orgId, onInviteSent, onDismiss, showBetaBanner } = props
     const [userNameOrEmail, setUsernameOrEmail] = useState('')
     const [isEmail, setIsEmail] = useState<boolean>(false)
@@ -89,10 +89,10 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
     return (
         <Modal className={styles.modal} onDismiss={dismissWithLogging} position="center" aria-label={title}>
             <div className="d-flex flex-row align-items-end">
-                <h3>{title}</h3>
-                <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
+                <H3>{title}</H3>
+                <Button className={styles.closeButton} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
-                    <CloseIcon />
+                    <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                 </Button>
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}
@@ -103,7 +103,7 @@ export const InviteMemberModal: React.FunctionComponent<InviteMemberModalProps> 
                 <div className="d-flex flex-row position-relative mt-2">
                     <small>
                         <span className="text-muted">
-                            During open beta for Sourcegraph Cloud for small teams, all members invited to your
+                            During open beta for Sourcegraph.com for small teams, all members invited to your
                             organization will be admins for your organization.{' '}
                         </span>
                         <Link to="#">Learn more.</Link>
@@ -127,7 +127,7 @@ interface InvitedNotificationProps {
     className?: string
 }
 
-export const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = ({
+export const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<InvitedNotificationProps>> = ({
     className,
     username,
     orgName,
@@ -140,8 +140,8 @@ export const InvitedNotification: React.FunctionComponent<InvitedNotificationPro
             <div>They will receive an email shortly. You can also send them this personal invite link:</div>
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} />
+        <Button variant="icon" title="Dismiss" onClick={onDismiss}>
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )
@@ -151,16 +151,15 @@ export interface InviteMemberModalButtonProps extends ButtonProps {
     orgId: string
     onInviteSent: (result: IModalInviteResult) => void
     triggerLabel?: string
-    as?: keyof JSX.IntrinsicElements | Component | FunctionComponent
     initiallyOpened?: boolean
     eventLoggerEventName?: string
 }
-export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModalButtonProps> = (
-    props: InviteMemberModalButtonProps
-) => {
+export const InviteMemberModalHandler: React.FunctionComponent<
+    React.PropsWithChildren<InviteMemberModalButtonProps>
+> = (props: InviteMemberModalButtonProps) => {
     const query = useQueryStringParameters()
     const showBetaBanner = !!query.get('openBetaBanner')
-    const { orgName, orgId, onInviteSent, triggerLabel, as, initiallyOpened, eventLoggerEventName, ...rest } = props
+    const { orgName, orgId, onInviteSent, triggerLabel, initiallyOpened, eventLoggerEventName, ...rest } = props
     const [modalOpened, setModalOpened] = React.useState<boolean>(!!initiallyOpened)
 
     const onInviteClick = useCallback(() => {
@@ -170,13 +169,13 @@ export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModal
         }
     }, [setModalOpened, orgId, eventLoggerEventName])
 
-    const onCloseIviteModal = useCallback(() => {
+    const onCloseInviteModal = useCallback(() => {
         setModalOpened(false)
     }, [setModalOpened])
 
     return (
         <>
-            <Button {...rest} onClick={onInviteClick} as={as as any} size="sm">
+            <Button {...rest} onClick={onInviteClick} size="sm">
                 {triggerLabel || 'Invite member'}
             </Button>
 
@@ -185,7 +184,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<InviteMemberModal
                     orgId={orgId}
                     orgName={orgName}
                     onInviteSent={onInviteSent}
-                    onDismiss={onCloseIviteModal}
+                    onDismiss={onCloseInviteModal}
                     showBetaBanner={showBetaBanner}
                 />
             )}

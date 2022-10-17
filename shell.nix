@@ -26,11 +26,12 @@ let
     });
   });
   # Pin a specific version of nixpkgs to ensure we get the same packages.
+  # To update find a recent commit to nixpkgs. To get the sha256 pass the URL to nix-prefetch-url --unpack
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/a5d12145047970d663764ce95bf1e459e734a014.tar.gz";
-      sha256 = "1rbnmbc3mvk5in86wx6hla54d7kkmgn6pz0zwigcchhmi2dv76h3";
+        "https://github.com/NixOS/nixpkgs/archive/5e66f427c661955f08d55f654e82bab1b1a7abc1.tar.gz";
+      sha256 = "1rhyn1hrgpsl1ydihan3xb2azz4bghghg451a49sr5vh3v6yz5sy";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -59,11 +60,12 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_18
+    go_1_19
 
     # Lots of our tooling and go tests rely on git et al.
     git
     parallel
+    nssTools
 
     # CI lint tools you need locally
     shfmt
@@ -80,6 +82,7 @@ pkgs.mkShell {
     rustc
     rustfmt
     libiconv
+    clippy
   ];
 
   # Startup postgres
@@ -87,9 +90,13 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  hardeningDisable = [ "fortify" ];
+
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+  DEV_WEB_BUILDER = "esbuild";
 }

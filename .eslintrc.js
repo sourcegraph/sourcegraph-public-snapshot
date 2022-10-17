@@ -35,8 +35,10 @@ const config = {
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
+    'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    '@typescript-eslint/consistent-type-exports': 'warn',
     'no-restricted-imports': [
       'error',
       {
@@ -55,21 +57,14 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
-            name: 'reactstrap',
-            importNames: ['Form'],
-            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
-          },
-          {
-            name: '@sourcegraph/wildcard',
-            importNames: ['Tooltip'],
-            message:
-              'Please ensure there is only a single `<Tooltip />` component present in the React tree. To display a specific tooltip, you can add the `data-tooltip` attribute to the relevant element.',
-          },
-          {
             name: 'zustand',
             importNames: ['default'],
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
+          },
+          {
+            name: 'chromatic/isChromatic',
+            message: 'Please use `isChromatic` from the `@sourcegraph/storybook` package.',
           },
         ],
         patterns: [
@@ -89,6 +84,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
           },
+          {
+            group: ['**/out/*'],
+            message:
+              "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
+          },
         ],
       },
     ],
@@ -102,6 +102,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
           },
           {
+            element: 'input',
+            message: 'Use the <Input/> component from @sourcegraph/wildcard instead.',
+          },
+          {
             element: 'select',
             message: 'Use the <Select /> component from @sourcegraph/wildcard instead.',
           },
@@ -112,6 +116,43 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           {
             element: 'a',
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h1',
+            message: 'Use the <H1 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h2',
+            message: 'Use the <H2 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h3',
+            message: 'Use the <H3 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h4',
+            message: 'Use the <H4 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h5',
+            message: 'Use the <H5 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'h6',
+            message: 'Use the <H6 /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'p',
+            message:
+              'Use the <Text /> component from @sourcegraph/wildcard instead. Check out the RFC for more context: https://bit.ly/3PFw0HM',
+          },
+          {
+            element: 'code',
+            message: 'Use the <Code /> component from @sourcegraph/wildcard instead.',
+          },
+          {
+            element: 'label',
+            message: 'Use the <Label /> component from @sourcegraph/wildcard instead.',
           },
         ],
       },
@@ -139,6 +180,37 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         message:
           'Consider using useTemporarySetting instead of useLocalStorage so settings are synced when users log in elsewhere. More info at https://docs.sourcegraph.com/dev/background-information/web/temporary_settings',
       },
+      {
+        selector: 'JSXAttribute JSXIdentifier[name="data-tooltip"]',
+        message:
+          'The use of data-tooltip has been deprecated. Please wrap your trigger element with the <Tooltip> component from Wildcard instead. If there are problems using the new <Tooltip>, please contact the Frontend Platform Team.',
+      },
+      {
+        selector:
+          'JSXElement[openingElement.name.name="Tooltip"] > JSXElement[openingElement.name.name="Icon"]:has(JSXIdentifier[name="aria-hidden"])',
+        message:
+          'When using an icon as a Tooltip trigger, it must have an aria-label attribute and should not be hidden.',
+      },
+      {
+        selector: 'JSXElement[openingElement.name.name="InputTooltip"]',
+        message:
+          'Prefer using the <Tooltip> component with an <Input> directly, when possible. Please only use <InputTooltip> when the legacy styling it provides is needed. We will be working to fix style issues with <Input> (especially for checkboxes) in the future.',
+      },
+      {
+        selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
+        message:
+          "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
+      },
+    ],
+    // https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html#eslint
+    'react/jsx-uses-react': 'off',
+    'react/react-in-jsx-scope': 'off',
+    'import/extensions': [
+      'error',
+      'never',
+      {
+        schema: 'always',
+      },
     ],
   },
   overrides: [
@@ -153,6 +225,12 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       rules: {
         'react/forbid-dom-props': 'off',
         'import/no-default-export': 'off',
+      },
+    },
+    {
+      files: ['**/gulpfile.js', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx'],
+      rules: {
+        'no-console': 'off',
       },
     },
   ],

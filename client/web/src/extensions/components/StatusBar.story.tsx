@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import { BehaviorSubject, of } from 'rxjs'
 
@@ -10,6 +10,7 @@ import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src
 import { extensionsController } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AppRouterContainer } from '../../components/AppRouterContainer'
+import { WebStory } from '../../components/WebStory'
 
 import { StatusBar } from './StatusBar'
 
@@ -17,16 +18,27 @@ import webStyles from '../../SourcegraphWebApp.scss'
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
 
-const { add } = storiesOf('web/extensions/StatusBar', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <AppRouterContainer>
-            <div className="container mt-3">{story()}</div>
-        </AppRouterContainer>
+        <WebStory>
+            {() => (
+                <AppRouterContainer>
+                    <div className="container mt-3">{story()}</div>
+                </AppRouterContainer>
+            )}
+        </WebStory>
     </>
-))
+)
 
-add('two items', () => {
+const config: Meta = {
+    title: 'web/extensions/StatusBar',
+    decorators: [decorator],
+}
+
+export default config
+
+export const TwoItems: Story = () => {
     const getStatusBarItems = useCallback(
         () =>
             new BehaviorSubject<StatusBarItemWithKey[]>([
@@ -49,6 +61,8 @@ add('two items', () => {
             location={LOCATION}
         />
     )
-})
+}
+
+TwoItems.storyName = 'two items'
 
 // TODO(tj): Carousel

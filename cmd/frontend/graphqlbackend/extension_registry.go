@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,7 +100,7 @@ type ExtensionRegistryMutationResult interface {
 
 // NodeToRegistryExtension is called to convert GraphQL node values to values of type
 // RegistryExtension. It is assigned at init time.
-var NodeToRegistryExtension func(interface{}) (RegistryExtension, bool)
+var NodeToRegistryExtension func(any) (RegistryExtension, bool)
 
 // RegistryExtensionByID is called to look up values of GraphQL type RegistryExtension. It is
 // assigned at init time.
@@ -114,9 +115,9 @@ type RegistryExtension interface {
 	Publisher(ctx context.Context) (RegistryPublisher, error)
 	Name() string
 	Manifest(ctx context.Context) (ExtensionManifest, error)
-	CreatedAt() *DateTime
-	UpdatedAt() *DateTime
-	PublishedAt(context.Context) (*DateTime, error)
+	CreatedAt() *gqlutil.DateTime
+	UpdatedAt() *gqlutil.DateTime
+	PublishedAt(context.Context) (*gqlutil.DateTime, error)
 	URL() string
 	RemoteURL() *string
 	RegistryName() (string, error)

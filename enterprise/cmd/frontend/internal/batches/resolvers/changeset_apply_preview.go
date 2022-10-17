@@ -11,13 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -37,6 +39,7 @@ func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphq
 	if r.repoAccessible() {
 		return &visibleChangesetApplyPreviewResolver{
 			store:                r.store,
+			gitserverClient:      r.gitserverClient,
 			mapping:              r.mapping,
 			preloadedNextSync:    r.preloadedNextSync,
 			preloadedBatchChange: r.preloadedBatchChange,
@@ -51,6 +54,7 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 	if !r.repoAccessible() {
 		return &hiddenChangesetApplyPreviewResolver{
 			store:             r.store,
+			gitserverClient:   r.gitserverClient,
 			mapping:           r.mapping,
 			preloadedNextSync: r.preloadedNextSync,
 		}, true
@@ -59,7 +63,8 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 }
 
 type hiddenChangesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -80,13 +85,15 @@ func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphq
 func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
 	return &hiddenApplyPreviewTargetsResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		mapping:           r.mapping,
 		preloadedNextSync: r.preloadedNextSync,
 	}
 }
 
 type hiddenApplyPreviewTargetsResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -127,11 +134,12 @@ func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (grap
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.mapping.Changeset, nil, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, nil, r.preloadedNextSync), nil
 }
 
 type visibleChangesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -177,6 +185,7 @@ func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graph
 func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
 	return &visibleApplyPreviewTargetsResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		mapping:           r.mapping,
 		preloadedNextSync: r.preloadedNextSync,
 	}
@@ -209,7 +218,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		}
 
 		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		rewirer := rewirer.New(btypes.RewirerMappings{{
+		changesetRewirer := rewirer.New(btypes.RewirerMappings{{
 			ChangesetSpecID: r.mapping.ChangesetSpecID,
 			ChangesetID:     r.mapping.ChangesetID,
 			RepoID:          r.mapping.RepoID,
@@ -218,26 +227,26 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
 		}}, batchChange.ID)
-		changesets, err := rewirer.Rewire()
+		wantedChangesets, err := changesetRewirer.Rewire()
 		if err != nil {
 			r.planErr = err
 			return
 		}
 
-		if len(changesets) != 1 {
+		if len(wantedChangesets) != 1 {
 			r.planErr = errors.New("rewirer did not return changeset")
 			return
 		}
-		changeset := changesets[0]
+		wantedChangeset := wantedChangesets[0]
 
 		// Set the changeset UI publication state if necessary.
 		if r.publicationStates != nil && mappingChangesetSpec != nil {
 			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
-				if !mappingChangesetSpec.Spec.Published.Nil() {
+				if !mappingChangesetSpec.Published.Nil() {
 					r.planErr = errors.Newf("changeset spec %q has the published field set in its spec", mappingChangesetSpec.RandID)
 					return
 				}
-				changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+				wantedChangeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
 			}
 		}
 
@@ -250,26 +259,26 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 
 		// This means that we currently won't show "attach to tracking changeset" and "detach changeset" in this preview API. Close and import non-existing work, though.
 		var previousSpec, currentSpec *btypes.ChangesetSpec
-		if changeset.PreviousSpecID != 0 {
-			previousSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
+		if wantedChangeset.PreviousSpecID != 0 {
+			previousSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.PreviousSpecID)
 			if err != nil {
 				r.planErr = err
 				return
 			}
 		}
-		if changeset.CurrentSpecID != 0 {
+		if wantedChangeset.CurrentSpecID != 0 {
 			if r.mapping.ChangesetSpec != nil {
 				// If the current spec was not unset by the rewirer, it will be this resolvers spec.
 				currentSpec = r.mapping.ChangesetSpec
 			} else {
-				currentSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.CurrentSpecID)
+				currentSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.CurrentSpecID)
 				if err != nil {
 					r.planErr = err
 					return
 				}
 			}
 		}
-		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, changeset)
+		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, r.mapping.Changeset, wantedChangeset)
 	})
 	return r.plan, r.planErr
 }
@@ -293,7 +302,8 @@ func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Co
 }
 
 type visibleApplyPreviewTargetsResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -334,7 +344,7 @@ func (r *visibleApplyPreviewTargetsResolver) Changeset(ctx context.Context) (gra
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
 }
 
 type changesetSpecDeltaResolver struct {

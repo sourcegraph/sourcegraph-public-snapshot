@@ -98,7 +98,7 @@ This utility method will let you print a URL that will visually render the DOM o
     })
 ```
 
-This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element.
 
 ## Browser-based tests
 
@@ -129,14 +129,17 @@ For end-to-end tests that failed in CI, a video of the session is available in t
 
 Our test driver accepts various environment variables that can be used to control Puppeteer's behavior:
 
-| Environment variable  | Purpose                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `BROWSER`             | Whether to run `firefox` or `chrome` (default)                   |
-| `LOG_BROWSER_CONSOLE` | Log the browser console output to the terminal (default `true`). |
-| `SLOWMO`              | Slow down each interaction by a delay (ms).                      |
-| `HEADLESS`            | Run the tests without a visible browser window.                  |
-| `DEVTOOLS`            | Whether to run all tests with the browser devtools open          |
-| `KEEP_BROWSER`        | If `true`, browser window will remain open after tests ran       |
+| Environment variable               | Purpose                                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `BROWSER`                          | Whether to run `firefox` or `chrome` (default).                               |
+| `LOG_BROWSER_CONSOLE`              | Log the browser console output to the terminal (default `true`).              |
+| `SLOWMO`                           | Slow down each interaction by a delay (ms).                                   |
+| `HEADLESS`                         | Run the tests without a visible browser window.                               |
+| `DEVTOOLS`                         | Whether to run all tests with the browser devtools open.                      |
+| `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran.                   |
+| `DISABLE_APP_ASSETS_MOCKING`       | Disable `index.html` and client assets mocking.                               |
+| `WINDOW_WIDTH`                     | Browser window width.                                                         |
+| `WINDOW_HEIGHT`                    | Browser window height.                                                        |
 
 #### Filtering tests
 
@@ -196,18 +199,22 @@ The integration test suite for the webapp can be found in [`web/src/integration`
 
 Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
 
-#### Running client integration tests
+#### Running integration tests
 
 To run integration tests for the web app:
 
-1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-    - Alternatively, `yarn build-web` will only build a bundle once.
-1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
-1. Run `yarn test-integration` in the repository root to run the tests.
+1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+    - Alternatively, `sg run web-integration-build` will only build a bundle once.
+1. Run `sg test web-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
-See the above sections for how to debug the tests, which applies to both integration and end-to-end tests.
+To run a specific web app integration test in the debug mode:
+
+1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
+2. Run `sg test web-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
+
+See the above sections for more details on how to debug the tests, which applies to both integration and end-to-end tests.
 
 #### Writing integration tests
 
@@ -243,7 +250,7 @@ There is a default mock JSContext that you can extend with object spread syntax 
 ### End-to-end tests
 
 End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
-They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/end-to-end).
+They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
 
@@ -251,19 +258,72 @@ Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/
 
 #### Running end-to-end tests
 
-To run all end-to-end tests locally, a local instance needs to be running.
-To run the tests against it, **create a user `test` with password `testtesttest` and promote it site admin**.
-Then run in the repository root:
+##### Starting a local instance
+
+To run all end-to-end tests locally, a local instance needs to be running:
 
 ```
-env TEST_USER_PASSWORD=testtesttest GITHUB_TOKEN=<token> yarn test-e2e
+sg start enterprise-e2e
 ```
 
-There's a GitHub test token in `../dev-private/enterprise/dev/external-services-config.json`.
+You can also run tests against an existing server image (note that this test must
+be run with SOURCEGRAPH_BASE_URL=http://localhost:7080 for the following to work):
+
+```
+TAG=insiders sg run server
+```
+
+##### Starting end-to-end tests
+
+In the repository root:
+
+```
+GH_TOKEN=XXX sg test web-e2e
+```
+
+You can find the `GH_TOKEN` value in the shared 1Password vault under `BUILDKITE_GITHUBDOTCOM_TOKEN`.
+If you have access to CI secrets via the `gcloud` CLI, the `GH_TOKEN` value will be set for you.
+
+If you run the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GH_TOKEN=XXX sg test web-e2e
+```
 
 This will open Chromium, add a code host, clone repositories, and execute the e2e tests.
 
-For regression tests, you can also run tests selectively with a command like `yarn run test:regression:search` in the `web/` directory, which runs the tests for search functionality.
+##### Starting regression tests
+
+1. Log in as a `test` user. If the user does not exist then see below for more information on how to create a user.
+2. Create a site-admin access token with the `site-admin:sudo` scope. The access tokens page can be found under user settings.
+3. Create your personal `GITHUB_TOKEN`. It should have access to all the repos in the Sourcegraph GitHub required to run these tests without scopes.
+4. Run in the repository root:
+
+```
+GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
+```
+
+And if you're running the test suite against an existing server image:
+
+```
+SOURCEGRAPH_BASE_URL=http://localhost:7080 GITHUB_TOKEN=XXX SOURCEGRAPH_SUDO_TOKEN=YYY sg test web-regression
+```
+
+Also, you can also run tests selectively with a command like `yarn run test:regression:search` in the `client/web` directory, which runs the tests for search functionality.
+
+##### Fixing authentication issues
+
+If you run into authentication issues, **create a user and promote it to site admin**:
+
+```
+sg db reset-pg --db=all && sg db add-user --username 'test' --password 'supersecurepassword'
+```
+
+The above command resets the database and creates a user like. If the command completes succesfully you'll see the following output:
+
+```
+  👉 User test (test@sourcegraph.com) has been created and its password is supersecurepassword .
+```
 
 #### Writing end-to-end tests
 
@@ -358,10 +418,9 @@ Once you approve all of the changes, the Percy check will turn green ✅
 
 It is possible to run our Percy visual regression tests locally.
 
-1. Go to https://percy.io/Sourcegraph/Sourcegraph/settings#token
-2. Copy the token named as `PERCY_TOKEN`
-3. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
-4. Once the tests finish, Percy should output a URL to the created build.
+1. Get `PERCY_TOKEN` from 1Password [here](https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/wo7p6waf5jtqayl2vkynonxspy).
+1. Run your integration tests with the following prefix before your command: `PERCY_ON=true PERCY_TOKEN=<copied-token> ./node_modules/.bin/percy exec --`
+1. Once the tests finish, Percy should output a URL to the created build.
 
 #### Adding a new visual snapshot test
 
@@ -414,14 +473,14 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 
 We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
 
-
 #### Running the tests locally
+
 1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
 2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
 
 #### Running the tests in CI
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
 ### Bundlesize
 
@@ -435,3 +494,55 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
+#### Analyzing the Bundlesize check failure
+
+To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
+
+1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
+2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main yarn workspace @sourcegraph/web run analyze-bundle`.
+3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch yarn workspace @sourcegraph/web run analyze-bundle`.
+4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
+5. The generated HTML report should be automatically opened in the new browser tab.
+6. Click "Diff" at the top right corner and select the `reference.json` stats.
+7. Go to "chunks" and inspect the chunk diff failing in the CI check. Clicking on the chunk should reveal the list of modules added or removed from the chunk.
+8. 🎉
+
+### Assessing flaky client steps
+
+The breakdown of known client flakes by type with resolution tips:
+
+#### Visual regression flakes
+
+_Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
+_Solution:_ Snapshot these pages in Chromatic or hide flaky elements from Percy using the `.percy-hide` class name.
+
+_Problem:_ UI depends on the date and time, which are not appropriately mocked.
+_Solution:_ Mock the date and time properly in your integration test or Storybook story.
+
+_Problem:_ Mocks are not configured correctly, resulting in flaky error messages in UI.
+_Solution:_ Double-check mocks required for rendering the snapshotted UI.
+
+_Problem:_ The screenshot is taken without waiting for the UI to settle down. E.g., a snapshot taken after clicking an input element doesn’t wait for the focus state on it.
+_Solution:_ Wait for the UI to settle using tools provided by Puppeteer.
+
+#### Integration test flakes caused by test logic
+
+_Problem:_ `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.` This error can be flaky because some GraphQL mocks are not required for an integration test to pass because the request with a missing mock can be processed by our test driver _after_ the test already passed. In that case, it won't cause the test to fail.
+_Solution:_  All GraphQL requests happening on tested pages should have GraphQL mocks to avoid such flakes.
+
+_Problem examples:_
+
+1. `Navigation timeout of 30000 ms exceeded.`
+2. `TimeoutError: waiting for selector '.theme.theme-dark' failed: timeout 30000ms exceeded`
+
+_Solution:_ These should be disabled immediately and fixed later by owning teams.
+
+#### Percy outages
+
+_Problem:_ Percy API outages result into
+
+1. HTTP requests to upload screenshots fail with internal server errors.
+2. HTTP requests to upload screenshots fail with errors about duplicated snapshot names. `[percy] Error: The name of each snapshot must be unique, and this name already exists in the build`
+
+_Solution:_ Wait for the Percy infrastructure to come back to life and restart the build. 🥲

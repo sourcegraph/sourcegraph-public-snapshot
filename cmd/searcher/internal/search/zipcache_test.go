@@ -12,8 +12,7 @@ import (
 // TestZipCacheDelete ensures that zip cache deletion is correctly hooked up to cache eviction.
 func TestZipCacheDelete(t *testing.T) {
 	// Set up a store.
-	s, cleanup := tmpStore(t)
-	defer cleanup()
+	s := tmpStore(t)
 
 	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 		return emptyTar(t), nil

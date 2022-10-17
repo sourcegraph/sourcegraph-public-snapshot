@@ -18,10 +18,8 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -76,9 +74,7 @@ interface UserAreaProps
         ActivationProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        FeatureFlagProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -106,9 +102,7 @@ export interface UserAreaRouteContext
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        FeatureFlagProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     /** The user area main URL. */
     url: string
 
@@ -133,7 +127,7 @@ export interface UserAreaRouteContext
 /**
  * A user's public profile area.
  */
-export const UserArea: React.FunctionComponent<UserAreaProps> = ({
+export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaProps>> = ({
     useBreadcrumb,
     userAreaRoutes,
     match: {
@@ -231,6 +225,6 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     )
 }
 
-const NotFoundPage: React.FunctionComponent<{}> = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user page was not found." />
 )

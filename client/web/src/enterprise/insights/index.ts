@@ -1,5 +1,3 @@
-export * from '../../insights/analytics'
-
 // Public Insights components
 export { CodeInsightsRouter } from './CodeInsightsRouter'
 

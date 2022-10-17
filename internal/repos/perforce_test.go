@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -60,12 +59,9 @@ func TestPerforceSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "PERFORCE-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindPerforce,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
 			perforceSrc, err := newPerforceSource(svc, tc.conf)
@@ -92,22 +88,26 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 		"//Engineering/Cloud",
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindPerforce}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindPerforce,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
-		schmea *schema.PerforceConnection
+		schema *schema.PerforceConnection
 	}{
 		{
 			name: "simple",
-			schmea: &schema.PerforceConnection{
+			schema: &schema.PerforceConnection{
 				P4Port:   "ssl:111.222.333.444:1666",
 				P4User:   "admin",
 				P4Passwd: "pa$$word",
 			},
 		}, {
 			name: "path-pattern",
-			schmea: &schema.PerforceConnection{
+			schema: &schema.PerforceConnection{
 				P4Port:                "ssl:111.222.333.444:1666",
 				P4User:                "admin",
 				P4Passwd:              "pa$$word",
@@ -118,7 +118,7 @@ func TestPerforceSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "PerforceSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newPerforceSource(&svc, test.schmea)
+			s, err := newPerforceSource(&svc, test.schema)
 			if err != nil {
 				t.Fatal(err)
 			}

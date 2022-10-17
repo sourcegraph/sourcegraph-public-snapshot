@@ -1,8 +1,10 @@
 import classNames from 'classnames'
-import { of } from 'rxjs'
+import { fromEvent, of } from 'rxjs'
+import { map, startWith } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { LineOrPositionOrRange } from '@sourcegraph/common'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -231,6 +233,26 @@ const notificationClassNames = {
     [NotificationType.Error]: 'aui-message aui-message-error',
 }
 
+export const parseHash = (hash: string): LineOrPositionOrRange => {
+    if (hash.startsWith('#')) {
+        hash = hash.slice(1)
+    }
+
+    if (!/^\d+(-\d+)?$/.test(hash)) {
+        return {}
+    }
+
+    const lpr = {} as LineOrPositionOrRange
+    const [startString, endString] = hash.split('-')
+
+    lpr.line = parseInt(startString, 10)
+    if (endString) {
+        lpr.endLine = parseInt(endString, 10)
+    }
+
+    return lpr
+}
+
 export const bitbucketServerCodeHost: CodeHost = {
     type: 'bitbucket-server',
     name: 'Bitbucket Server',
@@ -250,7 +272,6 @@ export const bitbucketServerCodeHost: CodeHost = {
             styles.commandPalettePopover,
             'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
         ),
-        popoverInnerClassName: 'aui-dropdown2-section',
         formClassName: 'aui',
         inputClassName: 'text',
         resultsContainerClassName: 'results',
@@ -280,4 +301,8 @@ export const bitbucketServerCodeHost: CodeHost = {
         iconClassName,
     },
     codeViewsRequireTokenization: false,
+    observeLineSelection: fromEvent(window, 'hashchange').pipe(
+        startWith(undefined), // capture intital value
+        map(() => parseHash(window.location.hash))
+    ),
 }

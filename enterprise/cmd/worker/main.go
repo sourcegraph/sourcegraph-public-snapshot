@@ -2,55 +2,76 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
-	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
-	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func main() {
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
-	if debug {
-		log.Println("enterprise edition")
-	}
+	liblog := log.Init(log.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	})
+	defer liblog.Sync()
 
-	go setAuthzProviders()
+	logger := log.Scoped("worker", "worker enterprise edition")
+
+	go setAuthzProviders(logger)
 
 	additionalJobs := map[string]job.Job{
-		"codeintel-commitgraph":      codeintel.NewCommitGraphJob(),
-		"codeintel-janitor":          codeintel.NewJanitorJob(),
-		"codeintel-auto-indexing":    codeintel.NewIndexingJob(),
-		"codehost-version-syncing":   versions.NewSyncingJob(),
-		"insights-job":               workerinsights.NewInsightsJob(),
-		"insights-query-runner-job":  workerinsights.NewInsightsQueryRunnerJob(),
-		"batches-janitor":            batches.NewJanitorJob(),
-		"batches-scheduler":          batches.NewSchedulerJob(),
-		"batches-reconciler":         batches.NewReconcilerJob(),
-		"batches-bulk-processor":     batches.NewBulkOperationProcessorJob(),
-		"batches-workspace-resolver": batches.NewWorkspaceResolverJob(),
-		"executors-janitor":          executors.NewJanitorJob(),
-		"codemonitors-job":           codemonitors.NewCodeMonitorJob(),
+		"codehost-version-syncing":      versions.NewSyncingJob(),
+		"insights-job":                  workerinsights.NewInsightsJob(),
+		"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
+		"batches-janitor":               batches.NewJanitorJob(),
+		"batches-scheduler":             batches.NewSchedulerJob(),
+		"batches-reconciler":            batches.NewReconcilerJob(),
+		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
+		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
+		"executors-janitor":             executors.NewJanitorJob(),
+		"executors-metricsserver":       executors.NewMetricsServerJob(),
+		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
+		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
+		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"webhook-build-job":             repos.NewWebhookBuildJob(),
+
+		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
+		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
+		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
+		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
+		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
+		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+
+		// Note: experimental (not documented)
+		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),
 	}
 
-	shared.Start(additionalJobs, registerEnterpriseMigrations)
+	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
+		logger.Fatal(err.Error())
+	}
 }
 
 func init() {
@@ -62,32 +83,19 @@ func init() {
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func setAuthzProviders() {
-	db, err := workerdb.Init()
+func setAuthzProviders(logger log.Logger) {
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return
 	}
 
+	// authz also relies on UserMappings being setup.
+	globals.WatchPermissionsUserMapping()
+
 	ctx := context.Background()
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db), database.NewDB(db))
+		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
-}
-
-func registerEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	if err := batchesmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	if err := codeintelmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	return nil
 }

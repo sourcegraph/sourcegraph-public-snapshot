@@ -11,13 +11,12 @@ import {
     ActivationProps,
     ActivationStep,
 } from '@sourcegraph/shared/src/components/activation/Activation'
-import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { PageRoutes } from '../routes.constants'
-import { logUserEvent, logEvent } from '../user/settings/backend'
+import { logEvent } from '../user/settings/backend'
 
 /**
  * Fetches activation status from server.
@@ -183,7 +182,6 @@ const getActivationSteps = (authenticatedUser: AuthenticatedUser): ActivationSte
  */
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
-        logUserEvent(UserEvent.CODEINTELREFS)
         logEvent('CodeIntelRefs')
     }
 }
@@ -201,8 +199,8 @@ interface WithActivationState {
  * `activation` field of its props.
  */
 export const withActivation = <P extends ActivationProps>(
-    Component: React.ComponentType<P>
-): React.ComponentType<WithActivationProps & Subtract<P, ActivationProps>> =>
+    Component: React.ComponentType<React.PropsWithChildren<P>>
+): React.ComponentType<React.PropsWithChildren<WithActivationProps & Subtract<P, ActivationProps>>> =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,
         WithActivationState
@@ -276,7 +274,7 @@ export const withActivation = <P extends ActivationProps>(
         private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
             this.updates.next(update)
 
-        public render(): React.ReactFragment | null {
+        public render(): React.ReactNode {
             const steps = this.steps()
             const activationProps: ActivationProps = {
                 activation: steps && {

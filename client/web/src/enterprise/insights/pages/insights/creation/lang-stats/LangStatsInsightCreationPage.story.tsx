@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
@@ -7,13 +5,14 @@ import { noop } from 'lodash'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { useCodeInsightsState } from '../../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../../CodeInsightsBackendStoryMock'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/constants'
 import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/LangStatsInsightCreationPage',
+    title: 'web/insights/creation-ui/lang-stats/LangStatsInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {
@@ -53,13 +52,17 @@ const codeInsightsBackend = {
     },
 }
 
-export const LangStatsInsightCreationPage: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <LangStatsInsightCreationPageComponent
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            onInsightCreateRequest={fakeAPIRequest}
-            onSuccessfulCreation={noop}
-            onCancel={noop}
-        />
-    </CodeInsightsBackendStoryMock>
-)
+export const LangStatsInsightCreationPage: Story = () => {
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <LangStatsInsightCreationPageComponent
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onInsightCreateRequest={fakeAPIRequest}
+                onSuccessfulCreation={noop}
+                onCancel={noop}
+            />
+        </CodeInsightsBackendStoryMock>
+    )
+}

@@ -8,7 +8,11 @@ interface FlashMessageProps {
     className?: string
 }
 
-export const FlashMessage: React.FunctionComponent<FlashMessageProps> = ({ state, message, className }) => (
+export const FlashMessage: React.FunctionComponent<React.PropsWithChildren<FlashMessageProps>> = ({
+    state,
+    message,
+    className,
+}) => (
     <Alert variant={state === 'SUCCESS' ? 'success' : 'warning'} className={className}>
         {message}
     </Alert>

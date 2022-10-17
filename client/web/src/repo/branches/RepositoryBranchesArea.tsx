@@ -11,7 +11,7 @@ import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
 
-const NotFoundPage: React.FunctionComponent = () => (
+const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -36,7 +36,11 @@ export interface RepositoryBranchesAreaPageProps {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesArea: React.FunctionComponent<Props> = ({ useBreadcrumb, repo, match }) => {
+export const RepositoryBranchesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    useBreadcrumb,
+    repo,
+    match,
+}) => {
     const transferProps: { repo: RepositoryFields } = {
         repo,
     }

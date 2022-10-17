@@ -20,11 +20,11 @@ import (
 func ReadDefinitions(fs fs.FS, schemaBasePath string) (*Definitions, error) {
 	migrationDefinitions, err := readDefinitions(fs, schemaBasePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "readDefinitions")
 	}
 
 	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reorderDefinitions")
 	}
 
 	return newDefinitions(migrationDefinitions), nil
@@ -52,31 +52,30 @@ func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
 		return nil, err
 	}
 
-	versions := make([]int, 0, len(migrations))
+	definitions := make([]Definition, 0, len(migrations))
 	for _, file := range migrations {
-		if version, err := strconv.Atoi(file.Name()); err == nil {
-			versions = append(versions, version)
-		}
-	}
-	sort.Ints(versions)
-
-	definitions := make([]Definition, 0, len(versions))
-	for _, version := range versions {
-		definition, err := readDefinition(fs, schemaBasePath, version)
+		version, err := ParseRawVersion(file.Name())
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed migration definition at '%s'", filepath.Join(schemaBasePath, strconv.Itoa(version)))
+			continue // not a versioned migration file, ignore
 		}
 
+		definition, err := readDefinition(fs, schemaBasePath, version, file.Name())
+		if err != nil {
+			return nil, errors.Wrapf(err, "malformed migration definition at '%s'",
+				filepath.Join(schemaBasePath, file.Name()))
+		}
 		definitions = append(definitions, definition)
 	}
+
+	sort.Slice(definitions, func(i, j int) bool { return definitions[i].ID < definitions[j].ID })
 
 	return definitions, nil
 }
 
-func readDefinition(fs fs.FS, schemaBasePath string, version int) (Definition, error) {
-	upFilename := fmt.Sprintf("%d/up.sql", version)
-	downFilename := fmt.Sprintf("%d/down.sql", version)
-	metadataFilename := fmt.Sprintf("%d/metadata.yaml", version)
+func readDefinition(fs fs.FS, schemaBasePath string, version int, filename string) (Definition, error) {
+	upFilename := fmt.Sprintf("%s/up.sql", filename)
+	downFilename := fmt.Sprintf("%s/down.sql", filename)
+	metadataFilename := fmt.Sprintf("%s/metadata.yaml", filename)
 
 	upQuery, err := readQueryFromFile(fs, upFilename)
 	if err != nil {
@@ -197,10 +196,37 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	// Stringify -> SQL-ify the contents of the file. We first replace any
-	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
-	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
+	return queryFromString(string(contents)), nil
+}
+
+// queryFromString creates a sqlf Query object from the conetents of a file or serialized
+// string literal. The resulting query is canonicalized. SQL placeholder values are also
+// escaped, so when sqlf.Query renders it the placeholders will be valid and not replaced
+// by a "missing" parameterized value.
+func queryFromString(query string) *sqlf.Query {
+	return sqlf.Sprintf(strings.ReplaceAll(CanonicalizeQuery(query), "%", "%%"))
+}
+
+// CanonicalizeQuery removes old cruft from historic definitions to make them conform to
+// the new standards. This includes YAML metadata frontmatter as well as explicit tranaction
+// blocks around golang-migrate-era migration definitions.
+func CanonicalizeQuery(query string) string {
+	// Strip out embedded yaml frontmatter (existed temporarily)
+	parts := strings.SplitN(query, "-- +++\n", 3)
+	if len(parts) == 3 {
+		query = parts[2]
+	}
+
+	// Strip outermost transactions
+	return strings.TrimSpace(
+		strings.TrimSuffix(
+			strings.TrimPrefix(
+				strings.TrimSpace(query),
+				"BEGIN;",
+			),
+			"COMMIT;",
+		),
+	)
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
@@ -311,7 +337,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			// We're currently processing the descendants of this node, so we have a paths in
 			// both directions between these two nodes.
 
-			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// Peel off the head of the parent list until we reach the target node. This leaves
 			// us with a slice starting with the target node, followed by the path back to itself.
 			// We'll use this instance of a cycle in the error description.
 			for len(parents) > 0 && parents[0] != id {
@@ -396,7 +422,7 @@ func root(migrationDefinitions []Definition) (int, error) {
 
 		return 0, instructionalError{
 			class:       "multiple roots",
-			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d", len(roots)),
+			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d (%v)", len(roots), roots),
 			instructions: strings.Join([]string{
 				`There are multiple migrations defined in this schema that do not declare a parent.`,
 				`This indicates a new migration that did not correctly attach itself to an existing migration.`,
@@ -426,4 +452,14 @@ func intsToStrings(ints []int) []string {
 	}
 
 	return strs
+}
+
+// ParseRawVersion returns the migration version for a given 'raw version', i.e. the
+// filename of a mgiration.
+//
+// For example, for migration '1648115472_do_the_thing', we discard everything after
+// the first '_' as a name, and return the verison 1648115472.
+func ParseRawVersion(rawVersion string) (int, error) {
+	nameParts := strings.SplitN(rawVersion, "_", 2)
+	return strconv.Atoi(nameParts[0])
 }

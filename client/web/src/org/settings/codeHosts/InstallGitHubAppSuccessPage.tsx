@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react'
 
+import { mdiPlus, mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
-import GithubIcon from 'mdi-react/GithubIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import { Media } from 'reactstrap'
 
-import { SourcegraphIcon, Card, CardBody, Link } from '@sourcegraph/wildcard'
+import { SourcegraphIcon, Card, CardBody, Link, H2, Text, Icon } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { useQueryStringParameters } from '../../members/utils'
 
-import { GitHubAppInstallation } from './ConnectGitHubAppPage'
-
 import styles from './AppLogo.module.scss'
 
-export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
+interface GitHubAppInstallation {
+    id: number
+    account: {
+        login: string
+        avatar_url: string
+    }
+}
+
+export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()
 
     const installationID = useQueryStringParameters().get('installation_id')
@@ -45,25 +49,34 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<{}> = () => {
                 <CardBody>
                     <div className="d-flex justify-content-center align-items-center">
                         <SourcegraphIcon className={classNames(styles.appLogo)} />
-                        <PlusIcon />
+                        <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} />
                         {data ? (
-                            <Media src={data?.account.avatar_url} className={classNames(styles.appLogo)} />
+                            <img
+                                alt="Organization logo"
+                                src={data?.account.avatar_url}
+                                className={classNames('media', styles.appLogo)}
+                            />
                         ) : (
-                            <GithubIcon className={classNames(styles.appLogo)} />
+                            <Icon
+                                className={classNames(styles.appLogo)}
+                                svgPath={mdiGithub}
+                                inline={false}
+                                aria-hidden={true}
+                            />
                         )}
                     </div>
-                    <h2 className="text-center">Sourcegraph Cloud for GitHub installed on {data?.account.login}</h2>
+                    <H2 className="text-center">Sourcegraph.com for GitHub installed on {data?.account.login}</H2>
                     <br />
-                    <p className="mr-3 ml-3 text-center">
+                    <Text alignment="center" className="mr-3 ml-3">
                         <b>One more thing:</b> to finish setup, let the requestor know that the Sourcegraph Cloud for
                         GitHub App has been installed, and they can complete the connection with GitHub for your
                         organization.
-                    </p>
+                    </Text>
                 </CardBody>
             </Card>
-            <p className="text-center mt-3 text-muted">
+            <Text alignment="center" className="mt-3 text-muted">
                 New to Sourcegraph? <Link to="/sign-up">Sign up now</Link> to start searching across your team's code!
-            </p>
+            </Text>
         </Page>
     )
 }

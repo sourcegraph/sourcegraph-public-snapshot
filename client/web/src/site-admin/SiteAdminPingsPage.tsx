@@ -1,14 +1,23 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
-import { isEmpty, noop } from 'lodash'
-import * as Monaco from 'monaco-editor'
+import { json } from '@codemirror/lang-json'
+import { foldGutter } from '@codemirror/language'
+import { search, searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
+import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
 
 import { checkOk } from '@sourcegraph/http-client'
-import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
+import {
+    editorHeight,
+    useCodeMirror,
+    defaultEditorTheme,
+    jsonHighlighting,
+} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, H2, H3, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -18,7 +27,7 @@ interface Props extends RouteComponentProps, ThemeProps {}
 /**
  * A page displaying information about telemetry pings for the site.
  */
-export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ isLightTheme }) => {
     const latestPing = useObservable(
         useMemo(
             () => fromFetch<{}>('/site-admin/pings/latest', { selector: response => checkOk(response).json() }),
@@ -31,60 +40,59 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
 
     const nonCriticalTelemetryDisabled = window.context.site.disableNonCriticalTelemetry === true
     const updatesDisabled = window.context.site['update.channel'] !== 'release'
+    const [jsonEditorContainer, setJSONEditorContainer] = useState<HTMLDivElement | null>(null)
 
-    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
-        readOnly: true,
-        minimap: {
-            enabled: false,
-        },
-        lineNumbers: 'off',
-        fontSize: 14,
-        glyphMargin: false,
-        overviewRulerBorder: false,
-        rulers: [],
-        overviewRulerLanes: 0,
-        wordBasedSuggestions: false,
-        quickSuggestions: false,
-        fixedOverflowWidgets: true,
-        renderLineHighlight: 'none',
-        contextmenu: false,
-        links: false,
-        // Display the cursor as a 1px line.
-        cursorStyle: 'line',
-        cursorWidth: 1,
-    }
+    useCodeMirror(
+        jsonEditorContainer,
+        useMemo(() => JSON.stringify(latestPing, undefined, 4), [latestPing]),
+        useMemo(
+            () => [
+                EditorView.darkTheme.of(isLightTheme === false),
+                EditorState.readOnly.of(true),
+                json(),
+                foldGutter(),
+                editorHeight({ height: '300px' }),
+                // This seems to be necessary to have properly rounded corners on
+                // the right side.
+                EditorView.theme({
+                    '.cm-scroller': {
+                        borderTopRightRadius: 'var(--border-radius)',
+                        borderBottomRightRadius: 'var(--border-radius)',
+                    },
+                }),
+                defaultEditorTheme,
+                jsonHighlighting,
+                search({ top: true }),
+                keymap.of(searchKeymap),
+            ],
+            [isLightTheme]
+        )
+    )
+
     return (
         <div className="site-admin-pings-page">
             <PageTitle title="Pings - Admin" />
-            <h2>Pings</h2>
-            <p>
+            <H2>Pings</H2>
+            <Text>
                 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                 sends only the high-level data below. It never sends code, repository names, usernames, or any other
                 specific data.
-            </p>
-            <h3>Most recent ping</h3>
+            </Text>
+            <H3>Most recent ping</H3>
             {latestPing === undefined ? (
-                <p>
+                <Text>
                     <LoadingSpinner />
-                </p>
+                </Text>
             ) : isEmpty(latestPing) ? (
-                <p>No recent ping data to display.</p>
+                <Text>No recent ping data to display.</Text>
             ) : (
-                <MonacoEditor
-                    {...props}
-                    language="json"
-                    options={options}
-                    height={300}
-                    editorWillMount={noop}
-                    value={JSON.stringify(latestPing, undefined, 4)}
-                    className="mb-3"
-                />
+                <div ref={setJSONEditorContainer} className="mb-1 border rounded" />
             )}
-            <h3>Critical telemetry</h3>
-            <p>
+            <H3>Critical telemetry</H3>
+            <Text>
                 Critical telemetry includes only the high-level data below required for billing, support, updates, and
                 security notices. This cannot be disabled.
-            </p>
+            </Text>
             <ul>
                 <li>Randomly generated site identifier</li>
                 <li>
@@ -102,11 +110,11 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>Total count of existing user accounts</li>
                 <li>Code Insights: total count of insights</li>
             </ul>
-            <h3>Other telemetry</h3>
-            <p>
+            <H3>Other telemetry</H3>
+            <Text>
                 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
                 personal or specific information is ever included.
-            </p>
+            </Text>
             <ul>
                 <li>Whether the instance is deployed on localhost (true/false)</li>
                 <li>
@@ -123,7 +131,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
                 <li>Whether a code search has ever been executed (true/false)</li>
-                <li>Whether code intelligence has ever been used (true/false)</li>
+                <li>Whether code navigation has ever been used (true/false)</li>
                 <li>Aggregate counts of current daily, weekly, and monthly users</li>
                 <li>
                     Aggregate counts of current daily, weekly, and monthly users, by:
@@ -137,21 +145,20 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
                     <ul>
-                        <li>Code intelligence events (e.g., hover tooltips)</li>
+                        <li>Code navigation events (e.g., hover tooltips)</li>
                         <li>Searches using each search mode (interactive search, plain-text search)</li>
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
                 <li>
-                    Code intelligence usage data
+                    Code navigation usage data
                     <ul>
                         <li>Total number of repositories with and without an uploaded LSIF index</li>
                         <li>
-                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
-                            language
+                            Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
                         </li>
                         <li>
-                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            Number of users performing code navigation queries (e.g., hover tooltips) per week grouped
                             by language
                         </li>
                     </ul>
@@ -171,21 +178,38 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         <li>Total count of created batch changes</li>
                         <li>Total count of closed batch changes</li>
                         <li>Total count of changesets created by batch changes</li>
-                        <li>Aggregate counts of lines changed, added, deleted in changeset</li>
+                        <li>Aggregate counts of lines added, deleted in changeset</li>
                         <li>Total count of changesets created by batch changes that have been merged</li>
-                        <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
+                        <li>Aggregate counts of lines added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a batch change</li>
                         <li>Total count of changesets manually added to a batch change that have been merged</li>
                         <li>
                             Aggregate counts of unique monthly users, by:
                             <ul>
-                                <li>Whether they are contributed to batch changes</li>
+                                <li>Whether they have contributed to batch changes</li>
                                 <li>Whether they only viewed batch changes</li>
+                                <li>Whether they have performed a bulk operation</li>
                             </ul>
                         </li>
                         <li>
                             Weekly batch change (open, closed) and changesets counts (imported, published, unpublished,
                             open, draft, merged, closed) for batch change cohorts created in the last 12 months
+                        </li>
+                        <li>Weekly bulk operations count (grouped by operation)</li>
+                        <li>Total count of executors connected</li>
+                        <li>Cumulative executor runtime monthly</li>
+                        <li>Total count of publish bulk operation</li>
+                        <li>Total count of bulk operations (grouped by operation type)</li>
+                        <li>
+                            Changeset distribution for batch change (grouped by batch change source: local or executor)
+                        </li>
+                        <li>Total count of users that ran a job on an executor monthly</li>
+                        <li>
+                            Total count of published changesets and batch changes created via:
+                            <ul>
+                                <li>executor</li>
+                                <li>local (using src-cli)</li>
+                            </ul>
                         </li>
                     </ul>
                 </li>
@@ -294,37 +318,35 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                         <li>Total number of views of the manage code monitor page</li>
                         <li>Total number of clicks on the code monitor email search link</li>
+                        <li>Total number of clicks on example monitors</li>
+                        <li>Total number of views of the getting started page</li>
+                        <li>Total number of submissions of the code monitor creation form</li>
+                        <li>Total number of submissions of the manage code monitor form</li>
+                        <li>Total number of deletions from the manage code monitor form</li>
+                        <li>Total number of views of the logs page</li>
+                        <li>Current number of Slack, webhook, and email actions enabled</li>
+                        <li>Current number of unique users with Slack, webhook, and email actions enabled</li>
+                        <li>Total number of Slack, webhook, and email actions triggered</li>
+                        <li>Total number of Slack, webhook, and email action triggers that errored</li>
+                        <li>Total number of unique users that have had Slack, webhook, and email actions triggered</li>
+                        <li>Total number of search executions</li>
+                        <li>Total number of search executions that errored</li>
+                        <li>50th and 90th percentile runtimes for search executions</li>
                     </ul>
                 </li>
                 <li>
-                    CTA usage data
+                    Notebooks usage data
                     <ul>
-                        <li>
-                            Browser extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
-                                    / search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install browser extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            IDE extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
-                                    search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
+                        <li>Total number of views of the notebook page</li>
+                        <li>Total number of views of the notebooks list page</li>
+                        <li>Total number of views of the embedded notebook page</li>
+                        <li>Total number of created notebooks</li>
+                        <li>Total number of added notebook stars</li>
+                        <li>Total number of added notebook markdown blocks</li>
+                        <li>Total number of added notebook query blocks</li>
+                        <li>Total number of added notebook file blocks</li>
+                        <li>Total number of added notebook symbol blocks</li>
+                        <li>Total number of added notebook compute blocks</li>
                     </ul>
                 </li>
                 <li>
@@ -355,11 +377,30 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                     </ul>
                     <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
                 </li>
+                <li>
+                    Migrated extensions data
+                    <ul>
+                        Aggregate data of:
+                        <li>
+                            <ul>Count interactions with the Git blame feature</ul>
+                            <ul>Count of unique users who interacted with the Git blame feature</ul>
+                            <ul>Count interactions with the open in editor feature</ul>
+                            <ul>Count of unique users who interacted with the open in editor feature</ul>
+                            <ul>Count interactions with the search exports feature</ul>
+                            <ul>Count of unique users who interacted with the search exports feature</ul>
+                            <ul>Count interactions with the go imports search query transformation feature</ul>
+                            <ul>
+                                Count of unique users who interacted with the go imports search query transformation
+                                feature
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
             </ul>
             {updatesDisabled ? (
-                <p>All telemetry is disabled.</p>
+                <Text>All telemetry is disabled.</Text>
             ) : (
-                nonCriticalTelemetryDisabled && <p>Non-critical telemetry is disabled.</p>
+                nonCriticalTelemetryDisabled && <Text>Non-critical telemetry is disabled.</Text>
             )}
         </div>
     )

@@ -45,8 +45,31 @@ func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
 
 	return &Schema{
 		Name:                name,
-		MigrationsTableName: strings.TrimPrefix(fmt.Sprintf("%s_schema_migrations", name), "frontend_"),
+		MigrationsTableName: MigrationsTableName(name),
 		FS:                  fs,
 		Definitions:         definitions,
 	}, nil
+}
+
+// MigrationsTableName returns the original name used by golang-migrate. This name has since been used to
+// identify each schema uniquely in the same fashion. Maybe someday we'll be able to migrate to just using
+// the raw schema name transparently.i
+func MigrationsTableName(name string) string {
+	return strings.TrimPrefix(fmt.Sprintf("%s_schema_migrations", name), "frontend_")
+}
+
+// FilterSchemasByName returns a copy of the given schemas slice containing only schema matching the given
+// set of names.
+func FilterSchemasByName(schemas []*Schema, targetNames []string) []*Schema {
+	filtered := make([]*Schema, 0, len(schemas))
+	for _, schema := range schemas {
+		for _, targetName := range targetNames {
+			if targetName == schema.Name {
+				filtered = append(filtered, schema)
+				break
+			}
+		}
+	}
+
+	return filtered
 }

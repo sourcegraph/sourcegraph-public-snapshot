@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -59,12 +61,12 @@ func TestSyncRateLimiters(t *testing.T) {
 		{
 			ID:     1,
 			Kind:   extsvc.KindGitHub,
-			Config: `{}`, // Use default
+			Config: extsvc.NewEmptyConfig(), // Use default
 		},
 		{
 			ID:     2,
 			Kind:   extsvc.KindGitLab,
-			Config: `{ "rateLimit": {"enabled": true, "requestsPerHour": 10} }`,
+			Config: extsvc.NewUnencryptedConfig(`{ "rateLimit": {"enabled": true, "requestsPerHour": 10} }`),
 		},
 	}
 
@@ -145,7 +147,7 @@ func TestSyncRateLimiters(t *testing.T) {
 					return svcs[listCalled-1 : listCalled], nil
 				},
 			},
-			limit: 1,
+			pageSize: 1,
 		}
 
 		err := r.SyncRateLimiters(ctx)
@@ -163,6 +165,7 @@ func (m MockExternalServicesLister) List(ctx context.Context, args database.Exte
 }
 
 func TestGrantedScopes(t *testing.T) {
+	logger := logtest.Scoped(t)
 	rcache.SetupForTest(t)
 	cache := rcache.New("TestGrantedScopes")
 	ctx := context.Background()
@@ -173,10 +176,10 @@ func TestGrantedScopes(t *testing.T) {
 	}
 
 	t.Run("Test external service with user namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceUserID: 123}
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceUserID: 123}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, cache, database.NewMockDB(), svc)
+			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)
 			if err != nil {
 				t.Fatal(i, err)
 			}
@@ -187,10 +190,10 @@ func TestGrantedScopes(t *testing.T) {
 	})
 
 	t.Run("Test external service with org namespace", func(t *testing.T) {
-		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: `{"token": "abc"}`, NamespaceOrgID: 42}
+		svc := &types.ExternalService{Kind: extsvc.KindGitHub, Config: extsvc.NewUnencryptedConfig(`{"token": "abc"}`), NamespaceOrgID: 42}
 		// Run twice to use cache
 		for i := 0; i < 2; i++ {
-			have, err := GrantedScopes(ctx, cache, database.NewMockDB(), svc)
+			have, err := GrantedScopes(ctx, logger, cache, database.NewMockDB(), svc)
 			if err != nil {
 				t.Fatal(i, err)
 			}

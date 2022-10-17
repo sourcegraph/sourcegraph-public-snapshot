@@ -1,8 +1,8 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiInformationOutline, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
@@ -11,7 +11,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, useObservable, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -31,6 +31,7 @@ import { DependencyOrDependentNode } from '../components/DependencyOrDependentNo
 import { EmptyDependencies } from '../components/EmptyDependencies'
 import { EmptyDependents } from '../components/EmptyDependents'
 import { EmptyUploadRetentionMatchStatus } from '../components/EmptyUploadRetentionStatusNode'
+import { UploadAuditLogTimeline } from '../components/UploadAuditLogTimeline'
 import { RetentionMatchNode } from '../components/UploadRetentionStatusNode'
 import { queryLisfUploadFields as defaultQueryLisfUploadFields } from '../hooks/queryLisfUploadFields'
 import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
@@ -65,7 +66,7 @@ enum RetentionPolicyMatcherState {
     ShowAll,
 }
 
-export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = ({
+export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<CodeIntelUploadPageProps>> = ({
     match: {
         params: { id },
     },
@@ -180,7 +181,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="Precise code intelligence uploads" />
+            <PageTitle title="Code graph data uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (
@@ -211,13 +212,13 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             placeInQueue={uploadOrError.placeInQueue}
                             failure={uploadOrError.failure}
                             typeName="upload"
-                            pluralTypeName="uploads"
                             variant={variantByState.get(uploadOrError.state)}
                         />
                         {uploadOrError.isLatestForRepo && (
                             <div>
-                                <Icon as={InformationOutlineIcon} /> This upload can answer queries for the tip of the
-                                default branch and are targets of cross-repository find reference operations.
+                                <Icon aria-hidden={true} svgPath={mdiInformationOutline} /> This upload can answer
+                                queries for the tip of the default branch and are targets of cross-repository find
+                                reference operations.
                             </div>
                         )}
                     </Container>
@@ -234,7 +235,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
 
                     <Container className="mt-2">
                         <CodeIntelAssociatedIndex node={uploadOrError} now={now} />
-                        <h3>Timeline</h3>
+                        <H3>Timeline</H3>
                         <CodeIntelUploadTimeline now={now} upload={uploadOrError} className="mb-3" />
                     </Container>
 
@@ -245,9 +246,9 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                 <Collapsible
                                     title={
                                         dependencyGraphState === DependencyGraphState.ShowDependencies ? (
-                                            <h3 className="mb-0">Dependencies</h3>
+                                            <H3 className="mb-0">Dependencies</H3>
                                         ) : (
-                                            <h3 className="mb-0">Dependents</h3>
+                                            <H3 className="mb-0">Dependents</H3>
                                         )
                                     }
                                     titleAtStart={true}
@@ -267,6 +268,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
+                                                inputClassName="w-auto"
                                                 noun="dependency"
                                                 pluralNoun="dependencies"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -293,6 +295,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                             <FilteredConnection
                                                 listComponent="div"
                                                 listClassName={classNames(styles.grid, 'mb-3')}
+                                                inputClassName="w-auto"
                                                 noun="dependent"
                                                 pluralNoun="dependents"
                                                 nodeComponent={DependencyOrDependentNode}
@@ -309,7 +312,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             </Container>
 
                             <Container className="mt-2">
-                                <Collapsible title={<h3 className="mb-0">Retention overview</h3>} titleAtStart={true}>
+                                <Collapsible title={<H3 className="mb-0">Retention overview</H3>} titleAtStart={true}>
                                     {retentionPolicyMatcherState === RetentionPolicyMatcherState.ShowAll ? (
                                         <Button
                                             type="button"
@@ -338,6 +341,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                     <FilteredConnection
                                         listComponent="div"
                                         listClassName={classNames(styles.grid, 'mb-3')}
+                                        inputClassName="w-auto"
                                         noun="match"
                                         pluralNoun="matches"
                                         nodeComponent={RetentionMatchNode}
@@ -352,6 +356,20 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                             </Container>
                         </>
                     )}
+
+                    <Container className="mt-2">
+                        <Collapsible title={<H3 className="mb-0">Audit Logs</H3>} titleAtStart={true}>
+                            {uploadOrError.auditLogs?.length ?? 0 > 0 ? (
+                                <UploadAuditLogTimeline logs={uploadOrError.auditLogs || []} />
+                            ) : (
+                                <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+                                    <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+                                    <br />
+                                    This upload has no audit logs.
+                                </Text>
+                            )}
+                        </Collapsible>
+                    </Container>
                 </>
             )}
         </div>

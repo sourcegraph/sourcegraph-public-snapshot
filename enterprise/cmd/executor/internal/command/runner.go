@@ -2,8 +2,10 @@ package command
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Runner is the interface between an executor and the host on which commands
@@ -53,9 +55,22 @@ type FirecrackerOptions struct {
 	// Image is the base image used for all Firecracker virtual machines.
 	Image string
 
+	// KernelImage is the base image containing the kernel binary for all Firecracker
+	// virtual machines.
+	KernelImage string
+
+	// SandboxImage is the docker image used by ignite for isolation of the Firecracker
+	// process.
+	SandboxImage string
+
 	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
 	// virtual machine and executed on startup.
 	VMStartupScriptPath string
+
+	// DockerRegistryMirrorURLs is an optional parameter to configure docker
+	// registry mirrors for the VMs docker daemon on startup. When set, /etc/docker/daemon.json
+	// will be mounted into the VM.
+	DockerRegistryMirrorURLs []string
 }
 
 type ResourceOptions struct {
@@ -66,27 +81,41 @@ type ResourceOptions struct {
 	Memory string
 
 	// DiskSpace is the maximum amount of disk a container or VM can use.
+	// Only available in firecracker.
 	DiskSpace string
+
+	// MaxIngressBandwidth configures the maximum permissible ingress bytes per second
+	// per job. Only available in Firecracker.
+	MaxIngressBandwidth int
+	// MaxEgressBandwidth configures the maximum permissible egress bytes per second
+	// per job. Only available in Firecracker.
+	MaxEgressBandwidth int
+
+	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
+	// volume mounts of Docker containers. This option is used when running privileged
+	// executors in k8s or docker-compose without requiring the host and node paths to
+	// be identical.
+	DockerHostMountPath string
 }
 
 // NewRunner creates a new runner with the given options.
-func NewRunner(dir string, logger *Logger, options Options, operations *Operations) Runner {
+func NewRunner(dir string, logger Logger, options Options, operations *Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
 		return &dockerRunner{dir: dir, logger: logger, options: options}
 	}
 
 	return &firecrackerRunner{
-		name:       options.ExecutorName,
-		dir:        dir,
-		logger:     logger,
-		options:    options,
-		operations: operations,
+		name:            options.ExecutorName,
+		workspaceDevice: dir,
+		logger:          logger,
+		options:         options,
+		operations:      operations,
 	}
 }
 
 type dockerRunner struct {
 	dir     string
-	logger  *Logger
+	logger  Logger
 	options Options
 }
 
@@ -105,21 +134,29 @@ func (r *dockerRunner) Run(ctx context.Context, command CommandSpec) error {
 }
 
 type firecrackerRunner struct {
-	name       string
-	dir        string
-	logger     *Logger
-	options    Options
+	name            string
+	workspaceDevice string
+	logger          Logger
+	options         Options
+	// tmpDir is used to store temporary files used for firecracker execution.
+	tmpDir     string
 	operations *Operations
 }
 
 var _ Runner = &firecrackerRunner{}
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, r.options, r.operations)
+	dir, err := os.MkdirTemp("", "executor-firecracker-runner")
+	if err != nil {
+		return errors.Wrap(err, "failed to create tmp dir for firecracker runner")
+	}
+	r.tmpDir = dir
+
+	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.workspaceDevice, r.tmpDir, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.operations)
+	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.tmpDir, r.operations)
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
@@ -130,6 +167,6 @@ type runnerWrapper struct{}
 
 var defaultRunner = &runnerWrapper{}
 
-func (runnerWrapper) RunCommand(ctx context.Context, command command, logger *Logger) error {
+func (runnerWrapper) RunCommand(ctx context.Context, command command, logger Logger) error {
 	return runCommand(ctx, command, logger)
 }

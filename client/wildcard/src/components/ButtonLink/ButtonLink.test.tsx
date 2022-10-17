@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
@@ -41,7 +39,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
             >
                 Button link
@@ -60,7 +57,6 @@ describe('<ButtonLink />', () => {
                 size="lg"
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip="SourceGraph.com"
                 data-pressed="true"
                 onClick={onSelect}
                 data-testid="button-link"

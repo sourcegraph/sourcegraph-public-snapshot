@@ -61,7 +61,7 @@ type Commandset struct {
 }
 
 // UnmarshalYAML implements the Unmarshaler interface.
-func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *Commandset) UnmarshalYAML(unmarshal func(any) error) error {
 	// To be backwards compatible we first try to unmarshal as a simple list.
 	var list []string
 	if err := unmarshal(&list); err == nil {

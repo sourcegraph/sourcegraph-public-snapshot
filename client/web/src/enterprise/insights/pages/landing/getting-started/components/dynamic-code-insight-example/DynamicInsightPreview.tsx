@@ -4,7 +4,10 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
+import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import {
+    SeriesBasedChartTypes,
+    SeriesChart,
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
@@ -15,21 +18,15 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
-} from '../../../../../components/creation-ui-kit'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components/views'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../core'
+    SERIES_MOCK_CHART,
+} from '../../../../../components'
+import { DATA_SERIES_COLORS } from '../../../../../constants'
+import { CodeInsightsBackendContext, SearchBasedInsightSeries, SeriesChartContent } from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
-import {
-    DATA_SERIES_COLORS,
-    DEFAULT_MOCK_CHART_CONTENT,
-    EditableDataSeries,
-} from '../../../../insights/creation/search-insight'
 
-const createExampleDataSeries = (query: string): EditableDataSeries[] => [
+const createExampleDataSeries = (query: string): SearchBasedInsightSeries[] => [
     {
         query,
-        valid: true,
-        edit: false,
         id: '1',
         name: 'TODOs',
         stroke: DATA_SERIES_COLORS.ORANGE,
@@ -43,10 +40,13 @@ interface DynamicInsightPreviewProps extends TelemetryProps {
     className?: string
 }
 
-export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPreviewProps> = props => {
+export const DynamicInsightPreview: React.FunctionComponent<
+    React.PropsWithChildren<DynamicInsightPreviewProps>
+> = props => {
     const { disabled, repositories, query, className, telemetryService } = props
 
     const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     // Compare live insight settings with deep check to avoid unnecessary
     // search insight content fetching
@@ -87,6 +87,7 @@ export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPrevie
                                 type={SeriesBasedChartTypes.Line}
                                 width={parent.width}
                                 height={parent.height}
+                                seriesToggleState={seriesToggleState}
                                 {...state.data}
                             />
                         ) : (
@@ -99,9 +100,10 @@ export const DynamicInsightPreview: React.FunctionComponent<DynamicInsightPrevie
                                     onMouseEnter={trackMouseEnter}
                                     onMouseLeave={trackMouseLeave}
                                     onDatumClick={trackDatumClicks}
+                                    seriesToggleState={seriesToggleState}
                                     // We cast to unknown here because ForwardReferenceComponent
                                     // doesn't support inferring as component with generic.
-                                    {...(DEFAULT_MOCK_CHART_CONTENT as SeriesChartContent<unknown>)}
+                                    {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
                                 />
                                 <LivePreviewBanner>
                                     The chart preview will be shown here once you have filled out the repositories and

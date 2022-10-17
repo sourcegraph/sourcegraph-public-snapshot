@@ -3,8 +3,6 @@ package conf
 import (
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -155,6 +153,15 @@ func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
 
+func ExecutorsFrontendURL() string {
+	current := Get()
+	if current.ExecutorsFrontendURL != "" {
+		return current.ExecutorsFrontendURL
+	}
+
+	return current.ExternalURL
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
@@ -176,11 +183,6 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	}
 
 	return *val
-}
-
-func CodeInsightsGQLApiEnabled() bool {
-	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
@@ -236,24 +238,8 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
-func APIDocsSearchIndexingEnabled() bool {
-	val := ExperimentalFeatures().ApidocsSearchIndexing
-	if val == "" {
-		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
-	}
-	return val == "enabled"
-}
-
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
-func DependeciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
 	if val == "" {
 		return true
 	}
@@ -284,6 +270,53 @@ func AuthMinPasswordLength() int {
 		return 12
 	}
 	return val
+}
+
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+	ml := Get().AuthMinPasswordLength
+
+	if p := Get().AuthPasswordPolicy; p != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+		}
+	}
+
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.

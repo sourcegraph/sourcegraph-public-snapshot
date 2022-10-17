@@ -9,7 +9,7 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
  * @param errorMessage a custom message to show when error is catched
  */
 export const withErrorBoundary = <P extends object>(
-    Component: React.ComponentType<P>,
+    Component: React.ComponentType<React.PropsWithChildren<P>>,
     errorMessage: React.ReactNode = 'Something went wrong :(.'
 ) => (props: P): React.ReactElement => (
     <ErrorBoundary

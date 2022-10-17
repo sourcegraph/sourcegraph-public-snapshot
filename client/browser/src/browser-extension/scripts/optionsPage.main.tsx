@@ -4,17 +4,17 @@ import '../../shared/polyfills'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { trimEnd, uniq } from 'lodash'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { from, noop, Observable, of } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError, isDefined } from '@sourcegraph/common'
 import { gql, GraphQLResult } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { setLinkComponent, AnchorLink, useObservable } from '@sourcegraph/wildcard'
 
+import { CurrentUserResult } from '../../graphql-operations'
 import { fetchSite } from '../../shared/backend/server'
 import { WildcardThemeProvider } from '../../shared/components/WildcardThemeProvider'
 import { initSentry } from '../../shared/sentry'
@@ -141,10 +141,12 @@ function useTelemetryService(sourcegraphUrl: string | undefined): TelemetryServi
     return telemetryService
 }
 
-const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 'settingsURL' | 'siteAdmin'>> => {
+const fetchCurrentUser = (
+    sourcegraphURL: string
+): Observable<Pick<NonNullable<CurrentUserResult['currentUser']>, 'settingsURL' | 'siteAdmin'>> => {
     const requestGraphQL = createRequestGraphQL(sourcegraphURL)
 
-    return requestGraphQL<GQL.IQuery>({
+    return requestGraphQL<CurrentUserResult>({
         request: gql`
             query CurrentUser {
                 currentUser {
@@ -167,7 +169,7 @@ const fetchCurrentUser = (sourcegraphURL: string): Observable<Pick<GQL.IUser, 's
 const uniqURLs = (urls: (string | undefined)[]): string[] =>
     uniq(urls.filter(value => !!value).map(value => trimEnd(value, '/')))
 
-const Options: React.FunctionComponent = () => {
+const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const sourcegraphUrl = useObservable(observingSourcegraphUrl)
     const [previousSourcegraphUrl, setPreviousSourcegraphUrl] = useState(sourcegraphUrl)
     const telemetryService = useTelemetryService(sourcegraphUrl)
@@ -194,13 +196,13 @@ const Options: React.FunctionComponent = () => {
         ])
     )
 
-    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
+    const showSourcegraphComAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (
         currentTabStatus &&
         !currentTabStatus?.status.hasPermissions &&
-        !showSourcegraphCloudAlert &&
+        !showSourcegraphComAlert &&
         !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.status.protocol)
     ) {
         const knownCodeHost = knownCodeHosts.find(({ host }) => host === currentTabStatus.status.host)
@@ -265,7 +267,7 @@ const Options: React.FunctionComponent = () => {
                     onChangeOptionFlag={handleChangeOptionFlag}
                     hasRepoSyncError={currentTabStatus?.status.hasRepoSyncError}
                     currentUser={currentUser}
-                    showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                    showSourcegraphComAlert={showSourcegraphComAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
                 />
@@ -275,7 +277,9 @@ const Options: React.FunctionComponent = () => {
 }
 
 const inject = (): void => {
-    render(<Options />, document.body)
+    const root = createRoot(document.body)
+
+    root.render(<Options />)
 }
 
 document.addEventListener('DOMContentLoaded', inject)

@@ -1,21 +1,18 @@
 import React, { useMemo, useEffect, useState } from 'react'
 
+import { mdiCog, mdiFolder, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import CodeJsonIcon from 'mdi-react/CodeJsonIcon'
-import FolderIcon from 'mdi-react/FolderIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -33,7 +30,7 @@ import {
     Icon,
     ButtonGroup,
     Button,
-    Badge,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
@@ -42,15 +39,14 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { ActionItemsBarProps } from '../../extensions/components/ActionItemsBar'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { basename } from '../../util/path'
 import { RepositoryCompareArea } from '../compare/RepositoryCompareArea'
 import { RepoRevisionWrapper } from '../components/RepoRevision'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { RepositoryFileTreePageProps } from '../RepositoryFileTreePage'
-import { RepositoryGitDataContainer } from '../RepositoryGitDataContainer'
-import { RepoCommits, RepoDocs } from '../routes'
+import { RepoCommits } from '../routes'
 import { RepositoryStatsContributorsPage } from '../stats/RepositoryStatsContributorsPage'
 
 import { RepositoryBranchesTab } from './BranchesTab'
@@ -64,7 +60,6 @@ import styles from './TreePage.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
-        FeatureFlagProps,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -74,7 +69,8 @@ interface Props
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters {
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
+    repoName: string
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
@@ -97,8 +93,9 @@ export const treePageRepositoryFragment = gql`
     }
 `
 
-export const TreePage: React.FunctionComponent<Props> = ({
+export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     repo,
+    repoName,
     commitID,
     revision,
     filePath,
@@ -108,7 +105,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     useActionItemsBar,
     match,
-    featureFlags,
     isSourcegraphDotCom,
     ...props
 }) => {
@@ -131,30 +127,29 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
-                        repoName={repo.name}
+                        repoName={repoName}
                         revision={revision}
                         filePath={filePath}
                         isDir={true}
-                        repoUrl={repo.url}
                         telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
+        }, [filePath, repoName, revision, props.telemetryService])
     )
 
     const treeOrError = useObservable(
         useMemo(
             () =>
                 fetchTreeEntries({
-                    repoName: repo.name,
+                    repoName,
                     commitID,
                     revision,
                     filePath,
                     first: 2500,
                     requestGraphQL: props.platformContext.requestGraphQL,
                 }).pipe(catchError((error): [ErrorLike] => [asError(error)])),
-            [repo.name, commitID, revision, filePath, props.platformContext]
+            [repoName, commitID, revision, filePath, props.platformContext]
         )
     )
 
@@ -164,14 +159,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
         settingsCascade.final['insights.displayLocation.directory'] === true
 
     // Add DirectoryViewer
-    const uri = toURIWithPath({ repoName: repo.name, commitID, filePath })
+    const uri = toURIWithPath({ repoName, commitID, filePath })
 
+    const { extensionsController } = props
     useEffect(() => {
-        if (!showCodeInsights) {
+        if (!showCodeInsights || extensionsController === null) {
             return
         }
 
-        const viewerIdPromise = props.extensionsController.extHostAPI
+        const viewerIdPromise = extensionsController.extHostAPI
             .then(extensionHostAPI =>
                 extensionHostAPI.addViewerIfNotExists({
                     type: 'DirectoryViewer',
@@ -180,24 +176,24 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 })
             )
             .catch(error => {
-                console.error('Error adding viewer to extension host:', error)
+                logger.error('Error adding viewer to extension host:', error)
                 return null
             })
 
         return () => {
-            Promise.all([props.extensionsController.extHostAPI, viewerIdPromise])
+            Promise.all([extensionsController.extHostAPI, viewerIdPromise])
                 .then(([extensionHostAPI, viewerId]) => {
                     if (viewerId) {
                         return extensionHostAPI.removeViewer(viewerId)
                     }
                     return
                 })
-                .catch(error => console.error('Error removing viewer from extension host:', error))
+                .catch(error => logger.error('Error removing viewer from extension host:', error))
         }
-    }, [uri, showCodeInsights, props.extensionsController])
+    }, [uri, showCodeInsights, extensionsController])
 
     const getPageTitle = (): string => {
-        const repoString = displayRepoName(repo.name)
+        const repoString = displayRepoName(repoName)
         if (filePath) {
             return `${basename(filePath)} - ${repoString}`
         }
@@ -205,9 +201,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }
 
     // To start using the feature flag bellow, you can go to /site-admin/feature-flags and
-    // create a new featurFlag named 'new-repo-page' and set its value to true.
+    // create a new featureFlag named 'new-repo-page' and set its value to true.
     // https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag
-    const newRepoPage = featureFlags.get('new-repo-page')
+    const [isNewRepoPageEnabled] = useFeatureFlag('new-repo-page')
 
     const homeTabProps = {
         repo,
@@ -225,7 +221,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     const { path } = useRouteMatch()
 
     useMemo(() => {
-        if (newRepoPage && treeOrError && !isErrorLike(treeOrError)) {
+        if (isNewRepoPageEnabled && treeOrError && !isErrorLike(treeOrError)) {
             setShowPageTitle(false)
 
             switch (path) {
@@ -254,35 +250,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     break
             }
         }
-    }, [newRepoPage, path, treeOrError])
+    }, [isNewRepoPageEnabled, path, treeOrError])
 
     const RootHeaderSection = ({ tree }: { tree: TreeFields }): React.ReactElement => (
         <>
             <div className="d-flex justify-content-between align-items-center">
                 <div>
-                    <PageHeader
-                        path={[{ icon: SourceRepositoryIcon, text: displayRepoName(repo.name) }]}
-                        className="mb-3 test-tree-page-title"
-                    />
-                    {repo.description && <p>{repo.description}</p>}
+                    <PageHeader className="mb-3 test-tree-page-title">
+                        <PageHeader.Heading as="h2" styleAs="h1">
+                            <PageHeader.Breadcrumb icon={mdiSourceRepository}>
+                                {displayRepoName(repo!.name)}
+                            </PageHeader.Breadcrumb>
+                        </PageHeader.Heading>
+                    </PageHeader>
+                    {repo?.description && <Text>{repo.description}</Text>}
                 </div>
-                {newRepoPage && (
+                {isNewRepoPageEnabled && (
                     <ButtonGroup>
-                        <Button
-                            to={`/search?q=${encodeURIPathComponent(
-                                `context:global count:all repo:dependencies(${repo.name.replaceAll('.', '\\.')}$) `
-                            )}`}
-                            variant="secondary"
-                            outline={true}
-                            as={Link}
-                            className="ml-1"
-                        >
-                            <Icon as={CodeJsonIcon} /> Search dependencies{' '}
-                            <Badge variant="info" className={classNames('text-uppercase')}>
-                                NEW
-                            </Badge>
-                        </Button>
-
                         {!isSourcegraphDotCom && batchChangesEnabled && (
                             <Button
                                 to="/batch-changes/create"
@@ -291,31 +275,33 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 as={Link}
                                 className="ml-1"
                             >
-                                <Icon as={BatchChangesIcon} /> Create batch change
+                                <Icon as={BatchChangesIcon} aria-hidden={true} /> Create batch change
                             </Button>
                         )}
 
-                        {repo.viewerCanAdminister && (
+                        {repo?.viewerCanAdminister && (
                             <Button
-                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                to={`/${encodeURIPathComponent(repoName)}/-/settings`}
                                 variant="secondary"
                                 outline={true}
                                 as={Link}
                                 className="ml-1"
+                                aria-label="Repository settings"
                             >
-                                <Icon as={SettingsIcon} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />
                             </Button>
                         )}
                     </ButtonGroup>
                 )}
             </div>
-            {newRepoPage ? (
+            {isNewRepoPageEnabled ? (
                 <TreeTabList tree={tree} selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             ) : (
                 <TreeNavigation
                     batchChangesEnabled={batchChangesEnabled}
                     codeIntelligenceEnabled={codeIntelligenceEnabled}
-                    repo={repo}
+                    repoName={repoName}
+                    viewerCanAdminister={repo?.viewerCanAdminister}
                     revision={revision}
                     tree={tree}
                 />
@@ -327,7 +313,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         <div className={styles.treePage}>
             <Container className={styles.container}>
                 {!showPageTitle && <PageTitle title={getPageTitle()} />}
-                {treeOrError === undefined ? (
+                {treeOrError === undefined || repo === undefined ? (
                     <div>
                         <LoadingSpinner /> Loading files and directories
                     </div>
@@ -335,7 +321,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
                     // We don't have error names on GraphQL errors.
                     /not a directory/i.test(treeOrError.message) ? (
-                        <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
+                        <Redirect to={toPrettyBlobURL({ repoName, revision, commitID, filePath })} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
                     )
@@ -345,14 +331,15 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             {treeOrError.isRoot ? (
                                 <RootHeaderSection tree={treeOrError} />
                             ) : (
-                                <PageHeader
-                                    path={[{ icon: FolderIcon, text: filePath }]}
-                                    className="mb-3 mr-2 test-tree-page-title"
-                                />
+                                <PageHeader className="mb-3 mr-2 test-tree-page-title">
+                                    <PageHeader.Heading as="h2" styleAs="h1">
+                                        <PageHeader.Breadcrumb icon={mdiFolder}>{filePath}</PageHeader.Breadcrumb>
+                                    </PageHeader.Heading>
+                                </PageHeader>
                             )}
                         </header>
 
-                        {newRepoPage ? (
+                        {isNewRepoPageEnabled ? (
                             <div>
                                 <section className={classNames('test-tree-entries mb-3', styles.section)}>
                                     <Switch>
@@ -363,21 +350,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             )}
                                         />
                                         <Route
-                                            path={`${treeOrError.url}/-/docs/tab`}
-                                            render={routeComponentProps => (
-                                                <RepoDocs
-                                                    repo={repo}
-                                                    useBreadcrumb={useBreadcrumb}
-                                                    {...routeComponentProps}
-                                                    {...props}
-                                                />
-                                            )}
-                                        />
-                                        <Route
                                             path={`${treeOrError.url}/-/commits/tab`}
                                             render={routeComponentProps => (
                                                 <RepoCommits
                                                     repo={repo}
+                                                    revision={revision || ''}
                                                     useBreadcrumb={useBreadcrumb}
                                                     {...props}
                                                     {...routeComponentProps}
@@ -416,15 +393,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             path={`${treeOrError.url}/-/compare/tab`}
                                             render={() => (
                                                 <RepoRevisionWrapper>
-                                                    <RepositoryGitDataContainer {...props} repoName={repo.name}>
-                                                        <RepositoryCompareArea
-                                                            repo={repo}
-                                                            match={match}
-                                                            settingsCascade={settingsCascade}
-                                                            useBreadcrumb={useBreadcrumb}
-                                                            {...props}
-                                                        />
-                                                    </RepositoryGitDataContainer>
+                                                    <RepositoryCompareArea
+                                                        repo={repo}
+                                                        match={match}
+                                                        settingsCascade={settingsCascade}
+                                                        useBreadcrumb={useBreadcrumb}
+                                                        {...props}
+                                                    />
                                                 </RepoRevisionWrapper>
                                             )}
                                         />

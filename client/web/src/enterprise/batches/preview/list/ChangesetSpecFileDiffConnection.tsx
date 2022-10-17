@@ -12,14 +12,16 @@ import { Scalars } from '../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
 
 export const ChangesetSpecFileDiffConnection: React.FunctionComponent<
-    {
-        spec: Scalars['ID']
-        history: H.History
-        location: H.Location
+    React.PropsWithChildren<
+        {
+            spec: Scalars['ID']
+            history: H.History
+            location: H.Location
 
-        /** Used for testing. **/
-        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } & ThemeProps
+            /** Used for testing. **/
+            queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+        } & ThemeProps
+    >
 > = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
     /** Fetches the file diffs for the changeset */
     const queryFileDiffs = useCallback(

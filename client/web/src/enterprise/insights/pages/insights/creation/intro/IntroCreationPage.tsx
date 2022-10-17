@@ -8,11 +8,12 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
+import { useExperimentalFeatures } from '../../../../../../stores'
+import { CodeInsightsPage } from '../../../../components'
 
 import {
     CaptureGroupInsightCard,
-    ExtensionInsightsCard,
+    ComputeInsightCard,
     LangStatsInsightCard,
     SearchInsightCard,
 } from './cards/InsightCards'
@@ -22,11 +23,12 @@ import styles from './IntroCreationPage.module.scss'
 interface IntroCreationPageProps extends TelemetryProps {}
 
 /** Displays intro page for insights creation UI. */
-export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
+export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
     const { telemetryService } = props
 
     const history = useHistory()
     const { search } = useLocation()
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -38,14 +40,14 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
         history.push(`/insights/create/capture-group${search}`)
     }
 
+    const handleCreateComputeInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateComputeInsightClick')
+        history.push(`/insights/create/group-results${search}`)
+    }
+
     const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
         history.push(`/insights/create/lang-stats${search}`)
-    }
-
-    const handleExploreExtensionsClick = (): void => {
-        telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
-        history.push('/extensions?query=category:Insights&experimental=true')
     }
 
     useEffect(() => {
@@ -69,16 +71,26 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
+                <SearchInsightCard
+                    data-testid="create-search-insights"
+                    handleCreate={handleCreateSearchBasedInsightClick}
+                />
 
                 <CaptureGroupInsightCard
                     data-testid="create-capture-group-insight"
-                    onClick={handleCaptureGroupInsightClick}
+                    handleCreate={handleCaptureGroupInsightClick}
                 />
+
+                {codeInsightsCompute && (
+                    <ComputeInsightCard
+                        data-testid="create-compute-insights"
+                        handleCreate={handleCreateComputeInsightClick}
+                    />
+                )}
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
-                    onClick={handleCreateCodeStatsInsightClick}
+                    handleCreate={handleCreateCodeStatsInsightClick}
                 />
 
                 <div className={styles.info}>
@@ -87,8 +99,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                         use cases.
                     </Link>
                 </div>
-
-                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
         </CodeInsightsPage>
     )

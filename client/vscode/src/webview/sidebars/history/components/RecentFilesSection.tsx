@@ -1,11 +1,10 @@
 import React, { useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
 import { EventLogResult, fetchRecentFileViews } from '@sourcegraph/search'
-import { Icon, Link, useObservable } from '@sourcegraph/wildcard'
+import { Icon, Link, H5, useObservable, Button } from '@sourcegraph/wildcard'
 
 import { HistorySidebarProps } from '../HistorySidebarView'
 
@@ -18,7 +17,7 @@ interface RecentFile {
     url: string
 }
 
-export const RecentFilesSection: React.FunctionComponent<HistorySidebarProps> = ({
+export const RecentFilesSection: React.FunctionComponent<React.PropsWithChildren<HistorySidebarProps>> = ({
     platformContext,
     authenticatedUser,
     extensionCoreAPI,
@@ -55,18 +54,16 @@ export const RecentFilesSection: React.FunctionComponent<HistorySidebarProps> = 
 
     return (
         <div className={styles.sidebarSection}>
-            <button
-                type="button"
-                className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+            <Button
+                variant="secondary"
+                outline={true}
+                className={styles.sidebarSectionCollapseButton}
                 onClick={() => setCollapsed(!collapsed)}
+                aria-label={`${collapsed ? 'Expand' : 'Collapse'} recent files`}
             >
-                <h5 className="flex-grow-1">Recent Files</h5>
-                {collapsed ? (
-                    <Icon className="mr-1" as={ChevronLeftIcon} />
-                ) : (
-                    <Icon className="mr-1" as={ChevronDownIcon} />
-                )}
-            </button>
+                <H5 className="flex-grow-1">Recent Files</H5>
+                <Icon aria-hidden={true} className="mr-1" svgPath={collapsed ? mdiChevronLeft : mdiChevronDown} />
+            </Button>
 
             {!collapsed && (
                 <div className={classNames('p-1', styles.sidebarSectionFileList)}>

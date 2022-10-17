@@ -30,7 +30,7 @@ Migration files created
  Metadata file: ~/migrations/codeintel/1644260831/metadata.yaml
 ```
 
-This will create an _up_ and _down_ pair of migration files (whose path is printed by the following command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `./dev/generate.sh`).
+This will create an _up_ and _down_ pair of migration files (whose path is printed by the following command). Add SQL statements to these files that will perform the desired migration. After adding SQL statements to those files, update the schema doc via `go generate ./internal/database/` (or regenerate everything via `sg generate`).
 
 To pass CI, you'll additionally need to:
 

@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, useObservable, Link } from '@sourcegraph/wildcard'
+import { Button, useObservable, Link, H4, Text } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
@@ -19,7 +19,7 @@ export interface Props {
     isSiteAdmin?: boolean
 }
 
-export const WebhookAlert: React.FunctionComponent<Props> = ({
+export const WebhookAlert: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     batchChange: {
         id,
         currentSpec: {
@@ -53,8 +53,8 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
     return (
         <DismissibleAlert variant="warning" partialStorageKey={id}>
             <div>
-                <h4>Changeset information may not be up to date</h4>
-                <p className={styles.blurb}>
+                <H4>Changeset information may not be up to date</H4>
+                <Text className={styles.blurb}>
                     Sourcegraph will poll for updates because{' '}
                     <Button className={classNames(styles.openLink, 'p-0')} onClick={toggleOpen} variant="link">
                         {totalCount}{' '}
@@ -71,7 +71,7 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
                             Ask your site admin <Link to={SITE_ADMIN_CONFIG_DOC_URL}>to configure webhooks</Link>.
                         </>
                     )}
-                </p>
+                </Text>
                 {open && (
                     <ul>
                         {nodes.map(codeHost => (

@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiSync, mdiInformationOutline } from '@mdi/js'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, Tooltip, Button } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
+
+import styles from './ChangesetLastSynced.module.scss'
 
 interface Props {
     changeset:
@@ -20,7 +20,11 @@ interface Props {
     _now?: Date
 }
 
-export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, viewerCanAdminister, _now }) => {
+export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    changeset,
+    viewerCanAdminister,
+    _now,
+}) => {
     // initially, the changeset was never last updated
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
@@ -70,40 +74,53 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
     return (
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
-                <span data-tooltip="Expand to see details.">
-                    <Icon className="text-danger" as={AlertCircleIcon} /> Syncing from code host failed.
-                </span>
+                <Tooltip content="Expand to see details.">
+                    <span>
+                        <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> Syncing from code
+                        host failed.
+                    </span>
+                </Tooltip>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <Icon data-tooltip={lastUpdatedAt.message} className="ml-2 small" as={AlertCircleIcon} />
+                <Tooltip content={lastUpdatedAt.message}>
+                    <Icon aria-label={lastUpdatedAt.message} className="ml-2 small" svgPath={mdiAlertCircle} />
+                </Tooltip>
             )}
-            <span data-tooltip={tooltipText}>
-                <UpdateLoaderIcon
-                    changesetUpdatedAt={changeset.updatedAt}
-                    lastUpdatedAt={lastUpdatedAt}
-                    onEnqueueChangeset={enqueueChangeset}
-                    viewerCanAdminister={viewerCanAdminister}
-                />
-            </span>
+            <Tooltip content={tooltipText}>
+                <span className={styles.updateLoaderWrapper}>
+                    <UpdateLoaderIcon
+                        changesetUpdatedAt={changeset.updatedAt}
+                        lastUpdatedAt={lastUpdatedAt}
+                        onEnqueueChangeset={enqueueChangeset}
+                        viewerCanAdminister={viewerCanAdminister}
+                    />
+                </span>
+            </Tooltip>
         </small>
     )
 }
 
-const UpdateLoaderIcon: React.FunctionComponent<{
-    lastUpdatedAt: string | Error | null
-    changesetUpdatedAt: string
-    viewerCanAdminister: boolean
-    onEnqueueChangeset: React.MouseEventHandler
-}> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
+const UpdateLoaderIcon: React.FunctionComponent<
+    React.PropsWithChildren<{
+        lastUpdatedAt: string | Error | null
+        changesetUpdatedAt: string
+        viewerCanAdminister: boolean
+        onEnqueueChangeset: React.MouseEventHandler
+    }>
+> = ({ lastUpdatedAt, changesetUpdatedAt, onEnqueueChangeset, viewerCanAdminister }) => {
     if (typeof lastUpdatedAt === 'string' && changesetUpdatedAt === lastUpdatedAt) {
         return <LoadingSpinner inline={true} />
     }
 
     if (viewerCanAdminister) {
-        return <Icon className="cursor-pointer" onClick={onEnqueueChangeset} role="button" as={SyncIcon} />
+        return (
+            <Button aria-label="Refresh" variant="icon" className="d-inline" onClick={onEnqueueChangeset}>
+                <Icon className="text-muted" svgPath={mdiSync} aria-hidden={true} />
+            </Button>
+        )
     }
 
-    return <Icon as={InfoCircleOutlineIcon} />
+    return <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
 }

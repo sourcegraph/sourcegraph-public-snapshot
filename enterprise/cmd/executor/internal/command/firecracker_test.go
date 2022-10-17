@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -68,9 +69,39 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				"-v", "/work:/data",
 				"-w", "/data/subdir",
 				"-e", "TEST=true",
-				"-e", `CONTAINS_WHITESPACE="yes it does"`,
+				"-e", `'CONTAINS_WHITESPACE="yes it does"'`,
 				"--entrypoint /bin/sh",
 				"alpine:latest",
+				"/data/.sourcegraph-executor/myscript.sh",
+			}, " "),
+		},
+	}
+	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+}
+
+func TestFormatFirecrackerCommandDockerScript_NoInjection(t *testing.T) {
+	actual := formatFirecrackerCommand(
+		CommandSpec{
+			Image:      "--privileged alpine:latest",
+			ScriptPath: "myscript.sh",
+			Operation:  makeTestOperation(),
+		},
+		"deadbeef",
+		Options{},
+	)
+
+	expected := command{
+		Command: []string{
+			"ignite", "exec", "deadbeef", "--",
+			strings.Join([]string{
+				"docker", "run", "--rm",
+				"-v", "/work:/data",
+				"-w", "/data",
+				"--entrypoint /bin/sh",
+				// This has to be quoted, otherwise it allows to pass arbitrary params.
+				"'--privileged alpine:latest'",
 				"/data/.sourcegraph-executor/myscript.sh",
 			}, " "),
 		},
@@ -84,7 +115,10 @@ func TestSetupFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	options := Options{
 		FirecrackerOptions: FirecrackerOptions{
-			Image:               "ignite-ubuntu",
+			Enabled:             true,
+			Image:               "sourcegraph/executor-vm:3.43.1",
+			KernelImage:         "ignite-kernel:5.10.135",
+			SandboxImage:        "sourcegraph/ignite:v0.10.5",
 			VMStartupScriptPath: "/vm-startup.sh",
 		},
 		ResourceOptions: ResourceOptions{
@@ -95,8 +129,13 @@ func TestSetupFirecracker(t *testing.T) {
 	}
 	operations := NewOperations(&observation.TestContext)
 
-	if err := setupFirecracker(context.Background(), runner, nil, "deadbeef", "/proj", options, operations); err != nil {
-		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
+	tmpDir, err := os.MkdirTemp("", "test-setup-firecracker")
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger := NewMockLogger()
+	if err := setupFirecracker(context.Background(), runner, logger, "deadbeef", "/dev/loopX", tmpDir, options, operations); err != nil {
+		t.Fatalf("unexpected error setting up virtual machine: %s", err)
 	}
 
 	var actual []string
@@ -109,10 +148,13 @@ func TestSetupFirecracker(t *testing.T) {
 			"ignite run",
 			"--runtime docker --network-plugin cni",
 			"--cpus 4 --memory 20G --size 1T",
-			"--copy-files /proj:/work",
 			"--copy-files /vm-startup.sh:/vm-startup.sh",
+			"--volumes /dev/loopX:/work",
 			"--ssh --name deadbeef",
-			"ignite-ubuntu",
+			"--kernel-image", "ignite-kernel:5.10.135",
+			"--kernel-args", "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
+			"--sandbox-image", "sourcegraph/ignite:v0.10.5",
+			"sourcegraph/executor-vm:3.43.1",
 		}, " "),
 		"ignite exec deadbeef -- /vm-startup.sh",
 	}
@@ -125,7 +167,7 @@ func TestTeardownFirecracker(t *testing.T) {
 	runner := NewMockCommandRunner()
 	operations := NewOperations(&observation.TestContext)
 
-	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", operations); err != nil {
+	if err := teardownFirecracker(context.Background(), runner, nil, "deadbeef", "/tmp/firecracker123", operations); err != nil {
 		t.Fatalf("unexpected error tearing down virtual machine: %s", err)
 	}
 
@@ -143,8 +185,8 @@ func TestTeardownFirecracker(t *testing.T) {
 }
 
 func TestSanitizeImage(t *testing.T) {
-	image := "sourcegraph/ignite-ubuntu"
-	tag := ":insiders"
+	image := "sourcegraph/executor-vm"
+	tag := ":3.43.1"
 	digest := "@sha256:e54a802a8bec44492deee944acc560e4e0a98f6ffa9a5038f0abac1af677e134"
 
 	testCases := map[string]string{

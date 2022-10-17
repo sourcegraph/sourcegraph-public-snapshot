@@ -1,0 +1,28 @@
+{
+  "Hash": "0c0aa38acd6554cc9f7800b1abbcb30c12620cd0",
+  "Files": [
+   "/requests/__init__.py",
+   "/requests/__version__.py",
+   "/requests/_internal_utils.py",
+   "/requests/adapters.py",
+   "/requests/api.py",
+   "/requests/auth.py",
+   "/requests/certs.py",
+   "/requests/compat.py",
+   "/requests/cookies.py",
+   "/requests/exceptions.py",
+   "/requests/help.py",
+   "/requests/hooks.py",
+   "/requests/models.py",
+   "/requests/packages.py",
+   "/requests/sessions.py",
+   "/requests/status_codes.py",
+   "/requests/structures.py",
+   "/requests/utils.py",
+   "/requests-2.27.1.dist-info/LICENSE",
+   "/requests-2.27.1.dist-info/METADATA",
+   "/requests-2.27.1.dist-info/RECORD",
+   "/requests-2.27.1.dist-info/WHEEL",
+   "/requests-2.27.1.dist-info/top_level.txt"
+  ]
+ }

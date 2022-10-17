@@ -3,6 +3,8 @@ import React, { useState, useCallback } from 'react'
 import { gql, useMutation } from '@apollo/client'
 import { noop } from 'lodash'
 
+import { Input, Link } from '@sourcegraph/wildcard'
+
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
 import { ActionProps } from '../FormActionArea'
 
@@ -16,7 +18,7 @@ export const SEND_TEST_EMAIL = gql`
     }
 `
 
-export const EmailAction: React.FunctionComponent<ActionProps> = ({
+export const EmailAction: React.FunctionComponent<React.PropsWithChildren<ActionProps>> = ({
     action,
     setAction,
     disabled,
@@ -91,13 +93,28 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
         : undefined
     const testState = loading ? 'loading' : called && !error ? 'called' : error || undefined
 
+    const emailConfigured = window.context.emailEnabled
+    const emailNotConfiguredMessage = !emailConfigured ? (
+        !action ? (
+            <>
+                SMTP is not configured. Please ask your admin to{' '}
+                <Link to="/help/admin/config/email">configure email sending</Link> to enable this feature.
+            </>
+        ) : (
+            <>
+                SMTP is not configured, email notifications won't be sent. Please ask your admin to{' '}
+                <Link to="/help/admin/config/email">configure email sending</Link>.
+            </>
+        )
+    ) : undefined
+    const disabledBasedOnEmailConfig = (!emailConfigured && !action) || disabled
+
     return (
         <ActionEditor
             title="Send email notifications"
-            label="Send email notifications"
             subtitle="Deliver email notifications to specified recipients."
             idName="email"
-            disabled={disabled}
+            disabled={disabledBasedOnEmailConfig}
             completed={!!action}
             completedSubtitle={authenticatedUser.email}
             actionEnabled={enabled}
@@ -108,6 +125,7 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             onCancel={onCancel}
             canDelete={!!action}
             onDelete={onDelete}
+            warningMessage={emailNotConfiguredMessage}
             testState={testState}
             testButtonDisabledReason={testButtonDisabledReason}
             testButtonText={testButtonText}
@@ -116,11 +134,10 @@ export const EmailAction: React.FunctionComponent<ActionProps> = ({
             _testStartOpen={_testStartOpen}
         >
             <div className="form-group mt-4 test-action-form-email" data-testid="action-form-email">
-                <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
-                <input
+                <Input
                     id="code-monitoring-form-actions-recipients"
-                    type="text"
-                    className="form-control mb-2"
+                    className="mb-2"
+                    label="Recipients"
                     value={`${authenticatedUser.email || ''} (you)`}
                     disabled={true}
                     autoFocus={true}

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // RepoID is the unique identifier for a repository.
@@ -24,6 +26,15 @@ type RepoHashedName string
 
 func (r RepoName) Equal(o RepoName) bool {
 	return strings.EqualFold(string(r), string(o))
+}
+
+var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
+
+// UndeletedRepoName will "undelete" a repo name. When we soft-delete a repo we
+// change its name in the database, this function extracts the original repo
+// name.
+func UndeletedRepoName(name RepoName) RepoName {
+	return RepoName(deletedRegex.ReplaceAllString(string(name), ""))
 }
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
@@ -144,23 +155,6 @@ type Settings struct {
 	AuthorUserID *int32          // the ID of the user who authored this settings value
 	Contents     string          // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time       // the date when this settings value was created
-}
-
-// ExternalService represents an complete external service record.
-type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool
-	CloudDefault    bool
 }
 
 func cmp(a, b string) int {

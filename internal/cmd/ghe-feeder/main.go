@@ -20,6 +20,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
 
 var (
@@ -62,6 +64,7 @@ func main() {
 	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
 	numCloningAttempts := flag.Int("numCloningAttempts", 5, "number of cloning attempts before giving up")
 	numSimultaneousClones := flag.Int("numSimultaneousClones", 10, "number of simultaneous github.com clones")
+	forceOrg := flag.String("force-org", "", "always use this org when adding repositories")
 
 	help := flag.Bool("help", false, "Show help")
 
@@ -168,7 +171,7 @@ func main() {
 		_ = http.ListenAndServe(":2112", nil)
 	}()
 
-	rateLimiter := rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100)
+	rateLimiter := ratelimit.NewInstrumentedLimiter("GHEFeeder", rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100))
 	pushSem := make(chan struct{}, *numSimultaneousPushes)
 	cloneSem := make(chan struct{}, *numSimultaneousClones)
 
@@ -182,6 +185,7 @@ func main() {
 			log15.Error("failed to create worker scratch dir", "scratchDir", *scratchDir, "error", err)
 			os.Exit(1)
 		}
+
 		wkr := &worker{
 			name:               name,
 			client:             gheClient,
@@ -201,6 +205,11 @@ func main() {
 			cloneRepoTimeout:   *cloneRepoTimeout,
 			numCloningAttempts: *numCloningAttempts,
 		}
+		if *forceOrg != "" {
+			wkr.currentOrg = *forceOrg
+			wkr.currentMaxRepos = math.MaxInt
+		}
+
 		wkrs = append(wkrs, wkr)
 		go wkr.run(ctx)
 	}

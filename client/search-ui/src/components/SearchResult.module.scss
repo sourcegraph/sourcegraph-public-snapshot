@@ -5,9 +5,7 @@
     overflow-x: auto;
     overflow-y: hidden;
     background-color: var(--code-bg);
-    border: 1px solid var(--border-color-2);
     border-radius: var(--border-radius);
-    border-top: 1px solid var(--border-color);
     padding: 0.25rem 0;
     position: relative;
 
@@ -18,10 +16,6 @@
     &:hover {
         background-color: var(--color-bg-1);
         text-decoration: none;
-    }
-
-    &:not(:first-child) {
-        border-top: 1px solid var(--border-color);
     }
 
     pre,
@@ -82,10 +76,32 @@
     align-items: center;
     flex-grow: 1;
     min-width: 0;
+    flex-wrap: wrap;
+}
+
+.title-inner {
+    overflow-wrap: anywhere;
 }
 
 .commit-oid {
     background: var(--code-bg);
     display: inline-block;
     padding: 0.25rem;
+}
+
+.muted-repo-file-link {
+    color: var(--text-muted);
+
+    a {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--text-muted);
+        }
+    }
+}
+
+.symbols {
+    border: none !important;
+    padding: 0 !important;
 }

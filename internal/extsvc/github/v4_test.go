@@ -11,7 +11,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -282,6 +285,38 @@ func TestCreatePullRequest(t *testing.T) {
 	}
 }
 
+func TestCreatePullRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newV4Client(t, "CreatePullRequest_Archived")
+	defer save()
+
+	// Repository used: sourcegraph-testing/archived
+	//
+	// This test can be updated at any time with `-update`, provided
+	// `sourcegraph-testing/archived` is still archived.
+	//
+	// You can update just this test with `-update CreatePullRequest_Archived`.
+	input := &CreatePullRequestInput{
+		RepositoryID: "R_kgDOHpFg8A",
+		BaseRefName:  "main",
+		HeadRefName:  "branch-without-pr",
+		Title:        "This is a PR that will never open",
+		Body:         "This PR should not be open, as the repository is supposed to be archived!",
+	}
+
+	pr, err := cli.CreatePullRequest(ctx, input)
+	assert.Nil(t, pr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+
+	testutil.AssertGolden(t,
+		"testdata/golden/CreatePullRequest_Archived",
+		update("CreatePullRequest_Archived"),
+		pr,
+	)
+}
+
 func TestClosePullRequest(t *testing.T) {
 	cli, save := newV4Client(t, "ClosePullRequest")
 	defer save()
@@ -500,6 +535,35 @@ func TestMergePullRequest(t *testing.T) {
 	})
 }
 
+func TestUpdatePullRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newV4Client(t, "UpdatePullRequest_Archived")
+	defer save()
+
+	// Repository used: sourcegraph-testing/archived
+	//
+	// This test can be updated at any time with `-update`, provided
+	// `sourcegraph-testing/archived` is still archived.
+	//
+	// You can update just this test with `-update UpdatePullRequest_Archived`.
+	input := &UpdatePullRequestInput{
+		PullRequestID: "PR_kwDOHpFg8M47NV9e",
+		Body:          "This PR should never have its body changed.",
+	}
+
+	pr, err := cli.UpdatePullRequest(ctx, input)
+	assert.Nil(t, pr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+
+	testutil.AssertGolden(t,
+		"testdata/golden/UpdatePullRequest_Archived",
+		update("UpdatePullRequest_Archived"),
+		pr,
+	)
+}
+
 func TestEstimateGraphQLCost(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
@@ -659,7 +723,7 @@ func TestRecentCommitters(t *testing.T) {
 
 	testutil.AssertGolden(t,
 		"testdata/golden/RecentCommitters",
-		update("SearchRepos-Enterprise"),
+		update("RecentCommitters"),
 		recentCommitters,
 	)
 }
@@ -738,7 +802,7 @@ func TestV4Client_WithAuthenticator(t *testing.T) {
 	}
 
 	if new.auth != newToken {
-		t.Fatalf("token: want %q but got %q", newToken, new.auth)
+		t.Fatalf("token: want %p but got %p", newToken, new.auth)
 	}
 }
 
@@ -988,4 +1052,21 @@ repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repositor
 	if !strings.Contains(query, wantIncluded) {
 		t.Fatalf("query does not contain repository query. query=%q, want=%q", query, wantIncluded)
 	}
+}
+
+func TestClient_Releases(t *testing.T) {
+	cli, save := newV4Client(t, "Releases")
+	t.Cleanup(save)
+
+	releases, err := cli.Releases(context.Background(), &ReleasesParams{
+		Name:  "src-cli",
+		Owner: "sourcegraph",
+	})
+	assert.NoError(t, err)
+
+	testutil.AssertGolden(t,
+		"testdata/golden/Releases",
+		update("Releases"),
+		releases,
+	)
 }

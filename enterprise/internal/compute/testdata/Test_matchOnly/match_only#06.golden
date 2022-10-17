@@ -1,0 +1,42 @@
+{
+  "Input": "g(h\n1)23\n!@",
+  "Result": {
+    "matches": [
+      {
+        "value": "gh\n123\n!@",
+        "range": {
+          "start": {
+            "offset": 6,
+            "line": -1,
+            "column": -1
+          },
+          "end": {
+            "offset": 15,
+            "line": -1,
+            "column": -1
+          }
+        },
+        "environment": {
+          "1": {
+            "value": "h\n1",
+            "range": {
+              "start": {
+                "offset": 7,
+                "line": -1,
+                "column": -1
+              },
+              "end": {
+                "offset": 10,
+                "line": -1,
+                "column": -1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "path": "bedge",
+    "repositoryID": 5,
+    "repository": "codehost.com/myorg/myrepo"
+  }
+}

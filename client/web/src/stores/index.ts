@@ -9,18 +9,31 @@
  * everything that should be in here is already in here.
  */
 
+import { Observable } from 'rxjs'
+import { UseBoundStore } from 'zustand'
+
 export {
     useNavbarQueryState,
-    setQueryStateFromURL,
     setQueryStateFromSettings,
     setSearchPatternType,
     setSearchCaseSensitivity,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
-export { useThemeState } from './themeState'
 export {
     useExperimentalFeatures,
     getExperimentalFeatures,
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
-export { useSearchStackState, useSearchStack } from './searchStack'
+export { useNotepadState, useNotepad } from './notepad'
+export { useCodeInsightsState as useCodeInsightsState } from './codeInsights'
+
+/**
+ * observeStore converts a zustand store to an observable. The observable emits
+ * the same values as the store's subscribe method, i.e. the current and the
+ * previous state.
+ */
+export function observeStore<T extends object>(store: UseBoundStore<T>): Observable<[T, T]> {
+    return new Observable(subscription =>
+        store.subscribe((current, previous) => subscription.next([current, previous]))
+    )
+}

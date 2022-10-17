@@ -4,13 +4,25 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, useObservable, Link, CardHeader, CardBody, Alert } from '@sourcegraph/wildcard'
+import {
+    Button,
+    LoadingSpinner,
+    useObservable,
+    Link,
+    CardHeader,
+    CardBody,
+    Alert,
+    H4,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
 
-export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmentToolsProps> = props => {
+export const ActiveExtensionsPanel: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsDevelopmentToolsProps>
+> = props => {
     const extensionsOrError = useObservable(
         useMemo(
             () =>
@@ -63,13 +75,13 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                 </CardBody>
             )}
             <CardBody className="border-top">
-                <h4>Sideload extension</h4>
+                <H4>Sideload extension</H4>
                 {sideloadedExtensionURL ? (
                     <div>
-                        <p>
+                        <Text>
                             <span>Load from: </span>
                             <Link to={sideloadedExtensionURL}>{sideloadedExtensionURL}</Link>
-                        </p>
+                        </Text>
                         <div>
                             <Button className="mr-1" onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Change
@@ -81,9 +93,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                     </div>
                 ) : (
                     <div>
-                        <p>
+                        <Text>
                             <span>No sideloaded extension</span>
-                        </p>
+                        </Text>
                         <div>
                             <Button onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Load extension

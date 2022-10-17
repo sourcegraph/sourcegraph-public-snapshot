@@ -1,10 +1,9 @@
-// import { applyEdits, parse } from '@sqs/jsonc-parser'
-// import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
@@ -69,7 +68,7 @@ describe('Core functionality regression test suite', () => {
             await driver.close()
         }
         if (screenshots.screenshots.length > 0) {
-            console.log(screenshots.verificationInstructions())
+            logger.log(screenshots.verificationInstructions())
         }
     })
 
@@ -121,7 +120,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
         })
-        await driver.findElementWithText('Save changes', { action: 'click' })
+        await driver.findElementWithText('Save', { action: 'click' })
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )
@@ -164,7 +163,7 @@ describe('Core functionality regression test suite', () => {
         await driver.findElementWithText('Generate new token', { action: 'click', wait: { timeout: 5000 } })
         await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
-            selector: '.test-create-access-token-description',
+            selector: '[data-testid=test-create-access-token-description]',
             newText: 'test-regression',
         })
         await driver.findElementWithText('Generate token', { action: 'click', wait: { timeout: 1000 } })

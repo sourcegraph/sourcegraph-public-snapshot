@@ -1,19 +1,19 @@
 import * as React from 'react'
 
+import { mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, PageHeader, Container, Icon } from '@sourcegraph/wildcard'
+import { Button, Code, Container, Icon, Label, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -68,7 +68,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
                 ).subscribe(
                     stateUpdate => this.setState(stateUpdate as State),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
             )
 
@@ -92,7 +92,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        error => console.error(error)
+                        error => logger.error(error)
                     )
             )
 
@@ -128,20 +128,28 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                 <div className="container col-8">
                     <PageTitle title="Create new extension" />
                     <PageHeader
-                        path={[{ icon: PuzzleOutlineIcon, to: '/extensions' }, { text: 'Create extension' }]}
+                        path={[
+                            { icon: mdiPuzzleOutline, to: '/extensions', ariaLabel: 'Extensions' },
+                            { text: 'Create extension' },
+                        ]}
                         description={
                             <>
-                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
+                                <Link target="_blank" rel="noopener" to="/help/extensions">
                                     Learn more
                                 </Link>{' '}
-                                about authoring Sourcegraph extensions{' '}
-                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
-                                    <Icon as={HelpCircleOutline} />
+                                about Sourcegraph extensions{' '}
+                                <Link
+                                    aria-label="Learn more about extensions"
+                                    target="_blank"
+                                    rel="noopener"
+                                    to="/help/extensions"
+                                >
+                                    <Icon aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }
                     />
-                    <Form onSubmit={this.onSubmit} className="my-4 pb-5">
+                    <Form onSubmit={this.onSubmit} className="my-4 pb-5 test-registry-new-extension">
                         <Container className="mb-4">
                             <RegistryPublisherFormGroup
                                 value={this.state.publisher}
@@ -156,18 +164,19 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             />
                             {extensionID && (
                                 <div className="form-group d-flex flex-wrap align-items-baseline mb-0">
-                                    <label
+                                    <Label
                                         htmlFor="extension-registry-create-extension-page__extensionID"
                                         className="mr-1 mb-0 mt-1"
                                     >
                                         Extension ID:
-                                    </label>
-                                    <code
+                                    </Label>
+                                    <Code
                                         id="extension-registry-create-extension-page__extensionID"
                                         className={classNames('mt-1', styles.extensionId)}
+                                        weight="bold"
                                     >
-                                        <strong>{extensionID}</strong>
-                                    </code>
+                                        {extensionID}
+                                    </Code>
                                 </div>
                             )}
                             {isErrorLike(this.state.creationOrError) && (

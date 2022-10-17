@@ -113,7 +113,7 @@ func TestK8sEndpoints(t *testing.T) {
 	cases := []struct {
 		name string
 		spec string
-		obj  interface{}
+		obj  any
 		want []string
 	}{{
 		name: "endpoint empty",

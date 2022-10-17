@@ -1,7 +1,5 @@
-import React from 'react'
-
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
@@ -20,31 +18,36 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
-const { add } = storiesOf('web/CommunitySearchContextPage', module)
-    .addParameters({
+const decorator: DecoratorFn = Story => {
+    useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+    return <Story />
+}
+
+const config: Meta = {
+    title: 'web/CommunitySearchContextPage',
+    parameters: {
         design: {
             type: 'figma',
             url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
         },
         chromatic: { viewports: [769, 1200] },
-    })
-    .addDecorator(Story => {
-        useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
-        return <Story />
-    })
+    },
+    decorators: [decorator],
+}
+
+export default config
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
@@ -72,6 +75,7 @@ const authUser: AuthenticatedUser = {
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
+    emails: [],
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [
@@ -114,12 +118,11 @@ const commonProps = () =>
         settingsCascade: NOOP_SETTINGS_CASCADE,
         onThemePreferenceChange: action('onThemePreferenceChange'),
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
-        keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,
@@ -132,16 +135,13 @@ const commonProps = () =>
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        showOnboardingTour: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
-        hasUserAddedRepositories: false,
-        hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,
     })
 
-add('Temporal', () => (
+export const Temporal: Story = () => (
     <WebStory>
         {webProps => (
             <CommunitySearchContextPage
@@ -151,9 +151,9 @@ add('Temporal', () => (
             />
         )}
     </WebStory>
-))
+)
 
-add('CNCF', () => (
+export const CNCFStory: Story = () => (
     <WebStory>
         {webProps => (
             <CommunitySearchContextPage
@@ -164,4 +164,6 @@ add('CNCF', () => (
             />
         )}
     </WebStory>
-))
+)
+
+CNCFStory.storyName = 'CNCF'

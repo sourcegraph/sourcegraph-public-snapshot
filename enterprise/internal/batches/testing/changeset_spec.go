@@ -6,11 +6,9 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 type TestSpecOpts struct {
@@ -29,7 +27,7 @@ type TestSpecOpts struct {
 
 	// If this is set along with headRef, the changesetSpec will have Published
 	// set.
-	Published interface{}
+	Published any
 
 	Title             string
 	Body              string
@@ -40,9 +38,11 @@ type TestSpecOpts struct {
 
 	BaseRev string
 	BaseRef string
+
+	Typ btypes.ChangesetSpecType
 }
 
-var TestChangsetSpecDiffStat = &diff.Stat{Added: 10, Changed: 5, Deleted: 2}
+var TestChangsetSpecDiffStat = &diff.Stat{Added: 15, Deleted: 7}
 
 func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 	t.Helper()
@@ -52,36 +52,29 @@ func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
 		t.Fatalf("invalid value for published passed, got %v (%T)", opts.Published, opts.Published)
 	}
 
+	if opts.Typ == "" {
+		t.Fatal("empty typ on changeset spec in test helper")
+	}
+
 	spec := &btypes.ChangesetSpec{
-		ID:          opts.ID,
-		UserID:      opts.User,
-		RepoID:      opts.Repo,
-		BatchSpecID: opts.BatchSpec,
-		Spec: &batcheslib.ChangesetSpec{
-			BaseRepository: string(graphqlbackend.MarshalRepositoryID(opts.Repo)),
-
-			BaseRev: opts.BaseRev,
-			BaseRef: opts.BaseRef,
-
-			ExternalID: opts.ExternalID,
-			HeadRef:    opts.HeadRef,
-			Published:  published,
-
-			Title: opts.Title,
-			Body:  opts.Body,
-
-			Commits: []batcheslib.GitCommitDescription{
-				{
-					Message:     opts.CommitMessage,
-					Diff:        opts.CommitDiff,
-					AuthorEmail: opts.CommitAuthorEmail,
-					AuthorName:  opts.CommitAuthorName,
-				},
-			},
-		},
-		DiffStatAdded:   TestChangsetSpecDiffStat.Added,
-		DiffStatChanged: TestChangsetSpecDiffStat.Changed,
-		DiffStatDeleted: TestChangsetSpecDiffStat.Deleted,
+		ID:                opts.ID,
+		UserID:            opts.User,
+		BaseRepoID:        opts.Repo,
+		BatchSpecID:       opts.BatchSpec,
+		BaseRev:           opts.BaseRev,
+		BaseRef:           opts.BaseRef,
+		ExternalID:        opts.ExternalID,
+		HeadRef:           opts.HeadRef,
+		Published:         published,
+		Title:             opts.Title,
+		Body:              opts.Body,
+		CommitMessage:     opts.CommitMessage,
+		Diff:              []byte(opts.CommitDiff),
+		CommitAuthorEmail: opts.CommitAuthorEmail,
+		CommitAuthorName:  opts.CommitAuthorName,
+		DiffStatAdded:     TestChangsetSpecDiffStat.Added,
+		DiffStatDeleted:   TestChangsetSpecDiffStat.Deleted,
+		Type:              opts.Typ,
 	}
 
 	return spec

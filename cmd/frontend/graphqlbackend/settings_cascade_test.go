@@ -128,19 +128,19 @@ func TestMergeSettings(t *testing.T) {
 	}, {
 		name: "deep merge map",
 		left: &schema.Settings{
-			SearchRepositoryGroups: map[string][]interface{}{
+			SearchRepositoryGroups: map[string][]any{
 				"test1": {"test", 1},
 				"test2": {"test", 2},
 			},
 		},
 		right: &schema.Settings{
-			SearchRepositoryGroups: map[string][]interface{}{
+			SearchRepositoryGroups: map[string][]any{
 				"test2": {"overridden", 3},
 				"test3": {"merged", 4},
 			},
 		},
 		expected: &schema.Settings{
-			SearchRepositoryGroups: map[string][]interface{}{
+			SearchRepositoryGroups: map[string][]any{
 				"test1": {"test", 1},
 				"test2": {"overridden", 3},
 				"test3": {"merged", 4},

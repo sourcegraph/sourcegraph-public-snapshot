@@ -10,24 +10,26 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "ba5e"
 	wantHeadRevision := "1ead"
@@ -38,22 +40,20 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	t.Cleanup(git.ResetMocks)
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
-	}
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		return "", errors.Errorf("merge base doesn't exist!")
-	}
+	})
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	// There shouldn't be any error even when there is no merge base.
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
 	require.Equal(t, wantBaseRevision, comp.baseRevspec)
 	require.Equal(t, wantHeadRevision, comp.headRevspec)
@@ -61,8 +61,9 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 }
 
 func TestRepositoryComparison(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
@@ -74,34 +75,34 @@ func TestRepositoryComparison(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
+		if len(args) < 1 && args[0] != "diff" {
+			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+		}
+		if args[len(args)-1] == "JOKES.md" {
+			return io.NopCloser(strings.NewReader(testDiffJokesOnly)), nil
+		}
+		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
+	})
+
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
-	}
-	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+	})
 
-	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
-		if len(args) < 1 && args[0] != "diff" {
-			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
-		}
-		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
-
-	git.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
-	}
-	t.Cleanup(func() { git.Mocks.MergeBase = nil })
+	})
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	repoResolver := NewRepositoryResolver(db, repo)
+	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	comp, err := NewRepositoryComparison(ctx, db, repoResolver, input)
+	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +134,8 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -141,10 +143,14 @@ func TestRepositoryComparison(t *testing.T) {
 			}
 
 			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		defer func() { git.Mocks.Commits = nil }()
-		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
@@ -173,6 +179,36 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 	})
 
+	t.Run("Commits with Path", func(t *testing.T) {
+		commits := []*gitdomain.Commit{
+			{ID: api.CommitID(wantBaseRevision)},
+		}
+
+		mockGSClient := gitserver.NewMockClient()
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions, _ authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+			if opts.Path == "" {
+				t.Fatalf("expected a path as part of commits args")
+			}
+			return commits, nil
+		})
+
+		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testPath := "testpath"
+		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
+
+		nodes, err := commitConnection.Nodes(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(nodes) != len(commits) {
+			t.Fatalf("wrong length of nodes: %d", len(nodes))
+		}
+	})
 	t.Run("FileDiffs", func(t *testing.T) {
 		t.Run("RawDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})
@@ -200,9 +236,35 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			want := "2 added, 7 changed, 1 deleted"
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
+			want := "9 added, 8 deleted"
+			if have := fmt.Sprintf("%d added, %d deleted", diffStat.Added(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
+			}
+		})
+
+		t.Run("LimitedPaths", func(t *testing.T) {
+			paths := []string{"JOKES.md"}
+			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{Paths: &paths})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			nodes, err := diffConnection.Nodes(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(nodes) != 1 {
+				t.Fatalf("expected 1 file node, got %d", len(nodes))
+			}
+
+			oldPath := nodes[0].OldPath()
+			if oldPath == nil {
+				t.Fatalf("expected non-nil oldPath")
+			}
+
+			if *oldPath != "JOKES.md" {
+				t.Fatalf("expected JOKES.md, got %s", *oldPath)
 			}
 		})
 
@@ -232,12 +294,12 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatalf("wrong NewPath: %s", diff)
 			}
 
-			wantStat := "1 added, 2 changed, 1 deleted"
+			wantStat := "3 added, 3 deleted"
 			haveStat := n.Stat()
 			if haveStat == nil {
 				t.Fatalf("no diff stat")
 			}
-			if have := fmt.Sprintf("%d added, %d changed, %d deleted", haveStat.Added(), haveStat.Changed(), haveStat.Deleted()); have != wantStat {
+			if have := fmt.Sprintf("%d added, %d deleted", haveStat.Added(), haveStat.Deleted()); have != wantStat {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
 			}
 
@@ -651,6 +713,102 @@ index 4d14577..9fe9a4f 100644
 	})
 }
 
+func TestDiffHunk4(t *testing.T) {
+	// This test exists to protect against an edge case bug illustrated in
+	// https://github.com/sourcegraph/sourcegraph/pull/39377
+
+	ctx := context.Background()
+	// Ran 'git diff --cached --no-prefix --binary' on a local repo to generate this diff (with the starting lines
+	// changes to 1)
+	filediff := `diff --git toggle.go toggle.go
+index d206c4c..bb06461 100644
+--- toggle.go
++++ toggle.go
+@@ -1,10 +1,3 @@ func AddFeatures(features map[string]bool) {
+ func AddFeature(key string, isEnabled bool) {
+        features[strings.ToLower(key)] = isEnabled
+ }
+-
+-// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is
+-// case insensitive.
+-// If a feature is not present, it defaults to false.
+-func IsEnabled(key string) bool {
+-       return features[strings.ToLower(key)]
+-}`
+
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			// We don't care about the actual html formatting, just the number + order of
+			// the lines we get back after "applying" the diff to the highlighting.
+			highlightedBase: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+				"",
+				"// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is",
+				"// case insensitive.",
+				"// If a feature is not present, it defaults to false.",
+				"func IsEnabled(key string) bool {",
+				"return features[strings.ToLower(key)]",
+				"}",
+			},
+			highlightedHead: []template.HTML{
+				"func AddFeature(key string, isEnabled bool) {",
+				"features[strings.ToLower(key)] = isEnabled",
+				"}",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		wantLines := []struct {
+			kind, html string
+		}{
+			{kind: "UNCHANGED", html: "features[strings.ToLower(key)] = isEnabled"},
+			{kind: "UNCHANGED", html: "}"},
+			{kind: "UNCHANGED", html: ""},
+			{kind: "DELETED", html: "// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is"},
+			{kind: "DELETED", html: "// case insensitive."},
+			{kind: "DELETED", html: "// If a feature is not present, it defaults to false."},
+			{kind: "DELETED", html: "func IsEnabled(key string) bool {"},
+			{kind: "DELETED", html: "return features[strings.ToLower(key)]"},
+			{kind: "DELETED", html: "}"},
+		}
+
+		lines := body.Lines()
+		if have, want := len(lines), len(wantLines); have != want {
+			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		}
+		for i, n := range lines {
+			wantedLine := wantLines[i]
+			if n.Kind() != wantedLine.kind {
+				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+			}
+			if n.HTML() != wantedLine.html {
+				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			}
+		}
+	})
+}
+
 const testDiffFiles = 3
 const testDiff = `diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
@@ -730,6 +888,27 @@ const testDiffFirstHunk = ` Line 1
 +Foobar Line 8
  Line 9
  Line 10
+`
+
+const testDiffJokesOnly = `
+diff --git JOKES.md JOKES.md
+index ea80abf..1b86505 100644
+--- JOKES.md
++++ JOKES.md
+@@ -4,10 +4,10 @@ Joke #1
+ Joke #2
+ Joke #3
+ Joke #4
+-Joke #5
++This is not funny: Joke #5
+ Joke #6
+-Joke #7
++This one is good: Joke #7
+ Joke #8
+-Joke #9
++Waffle: Joke #9
+ Joke #10
+ Joke #11
 `
 
 func TestFileDiffHighlighter(t *testing.T) {
@@ -845,7 +1024,7 @@ func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return []*externallink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -853,7 +1032,11 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
+func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
+	return nil, false
+}
+
+func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
 	return nil, false
 }
 

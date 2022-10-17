@@ -29,7 +29,7 @@ export interface SearchHomeViewProps extends WebviewPageProps {
     context: SearchHomeState['context']
 }
 
-export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
+export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<SearchHomeViewProps>> = ({
     extensionCoreAPI,
     authenticatedUser,
     platformContext,
@@ -40,7 +40,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
 }) => {
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
-    const [patternType, setPatternType] = useState(SearchPatternType.literal)
+    const [patternType, setPatternType] = useState(SearchPatternType.standard)
 
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
@@ -145,7 +145,7 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
     )
 
     const fetchStreamSuggestions = useCallback(
-        (query): Observable<SearchMatch[]> =>
+        (query: string): Observable<SearchMatch[]> =>
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
         [extensionCoreAPI, instanceURL]
     )
@@ -169,8 +169,6 @@ export const SearchHomeView: React.FunctionComponent<SearchHomeViewProps> = ({
                         patternType={patternType}
                         setPatternType={setPatternType}
                         isSourcegraphDotCom={isSourcegraphDotCom}
-                        hasUserAddedExternalServices={false}
-                        hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                         structuralSearchDisabled={false}
                         queryState={userQueryState}
                         onChange={setUserQueryState}

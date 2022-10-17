@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -53,7 +54,7 @@ func (blocks NotebookBlocks) Value() (driver.Value, error) {
 	return json.Marshal(blocks)
 }
 
-func (blocks *NotebookBlocks) Scan(value interface{}) error {
+func (blocks *NotebookBlocks) Scan(value any) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return errors.New("type assertion to []byte failed")
@@ -61,8 +62,8 @@ func (blocks *NotebookBlocks) Scan(value interface{}) error {
 	return json.Unmarshal(b, &blocks)
 }
 
-func Notebooks(db dbutil.DB) NotebooksStore {
-	store := basestore.NewWithDB(db, sql.TxOptions{})
+func Notebooks(db database.DB) NotebooksStore {
+	store := basestore.NewWithHandle(db.Handle())
 	return &notebooksStore{store}
 }
 
@@ -348,10 +349,10 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 			n.Title,
 			n.Blocks,
 			n.Public,
-			nullInt32Column(n.CreatorUserID),
-			nullInt32Column(n.UpdaterUserID),
-			nullInt32Column(n.NamespaceUserID),
-			nullInt32Column(n.NamespaceOrgID),
+			dbutil.NullInt32Column(n.CreatorUserID),
+			dbutil.NullInt32Column(n.UpdaterUserID),
+			dbutil.NullInt32Column(n.NamespaceUserID),
+			dbutil.NullInt32Column(n.NamespaceOrgID),
 			sqlf.Join(notebookColumns, ","),
 		),
 	)
@@ -392,9 +393,9 @@ func (s *notebooksStore) UpdateNotebook(ctx context.Context, n *Notebook) (*Note
 			n.Title,
 			n.Blocks,
 			n.Public,
-			nullInt32Column(n.UpdaterUserID),
-			nullInt32Column(n.NamespaceUserID),
-			nullInt32Column(n.NamespaceOrgID),
+			dbutil.NullInt32Column(n.UpdaterUserID),
+			dbutil.NullInt32Column(n.NamespaceUserID),
+			dbutil.NullInt32Column(n.NamespaceOrgID),
 			n.ID,
 			sqlf.Join(notebookColumns, ","),
 		),
@@ -477,11 +478,4 @@ func (s *notebooksStore) CountNotebookStars(ctx context.Context, notebookID int6
 		return -1, err
 	}
 	return count, nil
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
 }

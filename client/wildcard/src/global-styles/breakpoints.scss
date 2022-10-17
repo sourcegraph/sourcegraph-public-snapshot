@@ -6,6 +6,13 @@ $viewport-md: 768px;
 $viewport-lg: 992px;
 $viewport-xl: 1200px;
 
+:root {
+    --viewport-sm: #{$viewport-sm};
+    --viewport-md: #{$viewport-md};
+    --viewport-lg: #{$viewport-lg};
+    --viewport-xl: #{$viewport-xl};
+}
+
 /* stylelint-disable unknownAtRules */
 @custom-media --xs-breakpoint-up (min-width: none);
 @custom-media --sm-breakpoint-up (min-width: #{$viewport-sm});

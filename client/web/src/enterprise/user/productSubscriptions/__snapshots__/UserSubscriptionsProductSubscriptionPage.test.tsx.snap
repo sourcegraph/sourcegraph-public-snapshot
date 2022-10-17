@@ -13,9 +13,11 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
         href="/u/subscriptions"
       >
         <svg
+          aria-hidden="true"
           class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -26,46 +28,11 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
          All subscriptions
       </a>
     </div>
-    <h2>
+    <h2
+      class="h2"
+    >
       Subscription 
     </h2>
-    <div
-      class="card mt-3"
-    >
-      <div
-        class="cardHeader"
-      >
-        Billing
-      </div>
-      <div
-        class="cardBody"
-      >
-        <span
-          class="text-muted "
-        >
-          No billing information is associated with this subscription. 
-          <a
-            class="anchorLink"
-            href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
-          >
-            Contact sales
-          </a>
-           for help.
-        </span>
-      </div>
-    </div>
-    <div
-      class="card mt-3"
-    >
-      <div
-        class="cardHeader"
-      >
-        History
-      </div>
-      <productsubscriptionhistory
-        productsubscription="[object Object]"
-      />
-    </div>
   </div>
 </DocumentFragment>
 `;

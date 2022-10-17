@@ -135,6 +135,8 @@ Example variables:
 
 Use the query below to read a Code Insight by `id`. `filters` are optional, and if provided will filter the aggregated time series to specific repositories.
 
+You can find an insight's `id` if you visit the edit page for the insight. The edit page URL will be of the form `https://sourcegraph.yourcompany.com/insights/edit/aW5zaWdodF92aWV3OiIyM2hiYzNNclB2bDBtajlLTTZTUlBpWVlhZWQi?dashboardId=all` where the `id` is `aW5zaWdodF92aWV3OiIyM2hiYzNNclB2bDBtajlLTTZTUlBpWVlhZWQi`. Alternatively, you can list all insights using this graphQL API. 
+
 Notes on the return object:
 
 - `dataSeries.status` is useful to guage the progress of the series point generation. More information can be found in the [API Console Documentation](./index.md#api-console)

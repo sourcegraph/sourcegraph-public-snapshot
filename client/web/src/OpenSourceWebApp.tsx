@@ -1,8 +1,5 @@
 import React from 'react'
 
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-
-import { RepositoryMenuContent } from './codeintel/RepositoryMenu'
 import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -26,12 +23,14 @@ import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 
 // Entry point for the app without enterprise functionality.
 // For more info see: https://docs.sourcegraph.com/admin/subscriptions#paid-subscriptions-for-sourcegraph-enterprise
-export const OpenSourceWebApp: React.FunctionComponent = () => (
+export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
         extensionAreaRoutes={extensionAreaRoutes}
         extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
-        extensionsAreaRoutes={extensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={extensionsAreaHeaderActionButtons}
+        extensionsAreaRoutes={window.context.enableLegacyExtensions ? extensionsAreaRoutes : undefined}
+        extensionsAreaHeaderActionButtons={
+            window.context.enableLegacyExtensions ? extensionsAreaHeaderActionButtons : undefined
+        }
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
         siteAdminOverviewComponents={siteAdminOverviewComponents}
@@ -47,9 +46,7 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         repoSettingsAreaRoutes={repoSettingsAreaRoutes}
         repoSettingsSidebarGroups={repoSettingsSideBarGroups}
         routes={routes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={false}
-        repositoryMenuContent={RepositoryMenuContent}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
     />

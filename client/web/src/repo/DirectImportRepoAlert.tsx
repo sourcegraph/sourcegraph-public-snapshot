@@ -2,7 +2,9 @@ import * as React from 'react'
 
 import { Link, Alert } from '@sourcegraph/wildcard'
 
-export const DirectImportRepoAlert: React.FunctionComponent<{ className?: string }> = ({ className = '' }) => (
+export const DirectImportRepoAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className = '',
+}) => (
     <>
         {['dev', 'docker-container'].includes(window.context.deployType) && (
             <Alert className={className} variant="info">

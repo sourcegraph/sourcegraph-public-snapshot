@@ -9,6 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -29,6 +31,7 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.allow_unsupported"),
 	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.no_cache"),
+	sqlf.Sprintf("batch_specs.batch_change_id"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -46,15 +49,16 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("allow_unsupported"),
 	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("no_cache"),
+	sqlf.Sprintf("batch_change_id"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
-	ctx, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q, err := s.createBatchSpecQuery(c)
@@ -65,7 +69,6 @@ func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 }
 
 var createBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:CreateBatchSpec
 INSERT INTO batch_specs (%s)
 VALUES ` + batchSpecInsertColsFmt + `
 RETURNING %s`
@@ -96,13 +99,14 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
-		nullInt32Column(c.UserID),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.UserID),
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		dbutil.NullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -111,7 +115,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // UpdateBatchSpec updates the given BatchSpec.
 func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
-	ctx, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -127,7 +131,6 @@ func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 }
 
 var updateBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:UpdateBatchSpec
 UPDATE batch_specs
 SET (%s) = ` + batchSpecInsertColsFmt + `
 WHERE id = %s
@@ -147,13 +150,14 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
-		nullInt32Column(c.UserID),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.UserID),
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
+		dbutil.NullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -163,7 +167,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // DeleteBatchSpec deletes the BatchSpec with the given ID.
 func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
-	ctx, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -172,7 +176,6 @@ func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
 }
 
 var deleteBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:DeleteBatchSpec
 DELETE FROM batch_specs WHERE id = %s
 `
 
@@ -182,11 +185,12 @@ type CountBatchSpecsOpts struct {
 	BatchChangeID int64
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
 func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (count int, err error) {
-	ctx, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.countBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := countBatchSpecsQuery(opts)
@@ -195,7 +199,6 @@ func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (
 }
 
 var countBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
 SELECT COUNT(batch_specs.id)
 FROM batch_specs
 -- Joins go here:
@@ -222,6 +225,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -243,7 +250,7 @@ type GetBatchSpecOpts struct {
 
 // GetBatchSpec gets a BatchSpec matching the given options.
 func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(opts.ID)),
 		log.String("randID", opts.RandID),
 	}})
@@ -267,7 +274,6 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 }
 
 var getBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpec
 SELECT %s FROM batch_specs
 WHERE %s
 LIMIT 1
@@ -311,7 +317,7 @@ type GetNewestBatchSpecOpts struct {
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // options.
 func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := getNewestBatchSpecQuery(&opts)
@@ -332,7 +338,6 @@ func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecO
 }
 
 const getNewestBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetNewestBatchSpec
 SELECT %s FROM batch_specs
 WHERE %s
 ORDER BY id DESC
@@ -375,11 +380,12 @@ type ListBatchSpecsOpts struct {
 	NewestFirst   bool
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
+	IncludeLocallyExecutedSpecs         bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
 func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs []*btypes.BatchSpec, next int64, err error) {
-	ctx, endObservation := s.operations.listBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.listBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := listBatchSpecsQuery(&opts)
@@ -403,7 +409,6 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 }
 
 var listBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
 SELECT %s FROM batch_specs
 -- Joins go here:
 %s
@@ -431,6 +436,10 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
+	if !opts.IncludeLocallyExecutedSpecs {
+		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
 	if opts.NewestFirst {
 		order = sqlf.Sprintf("batch_specs.id DESC")
 		if opts.Cursor != 0 {
@@ -453,13 +462,62 @@ ON
 	)
 }
 
+// ListBatchSpecRepoIDs lists the repo IDs associated with changeset specs
+// within the batch spec.
+//
+// 🚨 SECURITY: Repos that the current user (based on the context) does not have
+// access to will be filtered out.
+func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.RepoID, err error) {
+	ctx, _, endObservation := s.operations.listBatchSpecRepoIDs.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int64("ID", id)},
+	})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, errors.Wrap(err, "ListBatchSpecRepoIDs generating authz query conds")
+	}
+
+	q := sqlf.Sprintf(
+		listBatchSpecRepoIDsQueryFmtstr,
+		id,
+		authzConds,
+	)
+
+	ids = make([]api.RepoID, 0)
+	if err := s.query(ctx, q, func(s dbutil.Scanner) (err error) {
+		var id api.RepoID
+		if err := s.Scan(&id); err != nil {
+			return err
+		}
+
+		ids = append(ids, id)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return ids, nil
+}
+
+const listBatchSpecRepoIDsQueryFmtstr = `
+SELECT DISTINCT repo.id
+FROM repo
+LEFT JOIN changeset_specs ON repo.id = changeset_specs.repo_id
+LEFT JOIN batch_specs ON changeset_specs.batch_spec_id = batch_specs.id
+WHERE
+	repo.deleted_at IS NULL
+	AND batch_specs.id = %s
+	AND %s -- authz query conds
+`
+
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
 // TODO: A more sophisticated cleanup process for SSBC-created batch specs.
 // - We could: Add execution_started_at to the batch_specs table and delete
 // all that are older than TIME_PERIOD and never started executing.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
-	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	expirationTime := s.now().Add(-btypes.BatchSpecTTL)
@@ -481,6 +539,7 @@ func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[i
 			&s.ResolutionDone,
 			&s.Workspaces,
 			&s.SkippedWorkspaces,
+			&s.CachedWorkspaces,
 			&dbutil.NullTime{Time: &s.StartedAt},
 			&dbutil.NullTime{Time: &s.FinishedAt},
 			&s.Executions,
@@ -511,20 +570,20 @@ func getBatchSpecStatsQuery(ids []int64) *sqlf.Query {
 }
 
 const getBatchSpecStatsFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpecStats
 SELECT
 	batch_specs.id AS batch_spec_id,
 	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
 	COUNT(ws.id) AS workspaces,
 	COUNT(ws.id) FILTER (WHERE ws.skipped) AS skipped_workspaces,
+	COUNT(ws.id) FILTER (WHERE ws.cached_result_found) AS cached_workspaces,
 	MIN(jobs.started_at) AS started_at,
 	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = FALSE) AS failed,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed') AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'canceled') AS canceled,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
 FROM batch_specs
 LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
@@ -536,7 +595,6 @@ GROUP BY batch_specs.id, res_job.state
 `
 
 var deleteExpiredBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
 DELETE FROM
   batch_specs
 WHERE
@@ -549,6 +607,38 @@ AND NOT created_from_raw
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 )
+`
+
+// GetBatchSpecDiffStat calculates the total diff stat for the batch spec based
+// on the changeset spec columns. It respects the actor in the context for repo
+// permissions.
+func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, deleted int64, err error) {
+	ctx, _, endObservation := s.operations.getBatchSpecDiffStat.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "GetBatchSpecDiffStat generating authz query conds")
+	}
+
+	q := sqlf.Sprintf(getTotalDiffStatQueryFmtstr, id, authzConds)
+	row := s.QueryRow(ctx, q)
+	err = row.Scan(&added, &deleted)
+	return added, deleted, err
+}
+
+const getTotalDiffStatQueryFmtstr = `
+SELECT
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
+FROM
+	changeset_specs
+INNER JOIN
+	repo ON repo.id = changeset_specs.repo_id
+WHERE
+	repo.deleted_at IS NULL
+	AND batch_spec_id = %s
+	AND (%s)
 `
 
 func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
@@ -566,6 +656,7 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.AllowUnsupported,
 		&c.AllowIgnored,
 		&c.NoCache,
+		&dbutil.NullInt64{N: &c.BatchChangeID},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

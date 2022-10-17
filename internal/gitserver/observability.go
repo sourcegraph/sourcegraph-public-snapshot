@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -57,8 +58,8 @@ var (
 func getOperations() *operations {
 	operationsInstOnce.Do(func() {
 		observationContext := &observation.Context{
-			Logger:     log15.Root(),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Logger:     log.Scoped("gitserver.client", "gitserver client"),
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 		operationsInst = newOperations(observationContext)

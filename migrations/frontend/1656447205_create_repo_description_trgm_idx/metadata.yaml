@@ -1,0 +1,3 @@
+name: create_repo_description_trgm_idx
+parents: [1655843069, 1655454264]
+createIndexConcurrently: true

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -12,10 +14,12 @@ func TestGitserverLocalCloneEnqueue(t *testing.T) {
 		t.Skip()
 	}
 
-	db := NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	jobid, err := GitserverLocalClone(db).Enqueue(ctx, 1, "gitserver1", "gitserver2", true)
+	jobid, err := db.GitserverLocalClone().Enqueue(ctx, 1, "gitserver1", "gitserver2", true)
 	if err != nil {
 		t.Fatal("failed to enqueue job", err)
 	}

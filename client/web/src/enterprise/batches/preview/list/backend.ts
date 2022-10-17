@@ -210,7 +210,6 @@ const batchSpecApplyPreviewConnectionFieldsFragment = gql`
                     }
                     diffStat {
                         added
-                        changed
                         deleted
                     }
                 }

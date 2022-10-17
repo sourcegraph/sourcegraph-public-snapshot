@@ -1,0 +1,4 @@
+{
+  "Input": "repo:foo file:bar",
+  "Result": "repo:foo file:bar"
+}

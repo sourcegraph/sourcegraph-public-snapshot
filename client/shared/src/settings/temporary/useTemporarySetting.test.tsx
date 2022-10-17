@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import { render } from '@testing-library/react'
-import { renderHook, act as actHook } from '@testing-library/react-hooks'
+import { render, renderHook, act as actHook } from '@testing-library/react'
 
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
 import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from './TemporarySettingsStorage'
@@ -184,5 +183,34 @@ describe('useTemporarySetting', () => {
         )
 
         expect(updateCount).toBe(1)
+    })
+
+    it('should always provides latest previousValue', () => {
+        const settingsBackend = new InMemoryMockSettingsBackend({
+            'search.collapsedSidebarSections': { filters: true, reference: true },
+        })
+        const settingsStorage = new TemporarySettingsStorage(mockClient, false)
+        settingsStorage.setSettingsBackend(settingsBackend)
+
+        const { result } = renderHook(() => useTemporarySetting('search.collapsedSidebarSections'), {
+            wrapper: ({ children }) => (
+                <TemporarySettingsContext.Provider value={settingsStorage}>
+                    {children}
+                </TemporarySettingsContext.Provider>
+            ),
+        })
+
+        expect(result.current[0]).toEqual({ filters: true, reference: true })
+        actHook(() => {
+            result.current[1](previousValue => ({
+                ...previousValue,
+                filters: false,
+            }))
+            result.current[1](previousValue => ({
+                ...previousValue,
+                reference: false,
+            }))
+        })
+        expect(result.current[0]).toEqual({ filters: false, reference: false })
     })
 })

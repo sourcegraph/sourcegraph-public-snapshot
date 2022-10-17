@@ -22,6 +22,11 @@ type temporarySettingsStore struct {
 	*basestore.Store
 }
 
+// TemporarySettingsWith instantiates and returns a new TemporarySettingsStore using the other store handle.
+func TemporarySettingsWith(other basestore.ShareableStore) TemporarySettingsStore {
+	return &temporarySettingsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (f *temporarySettingsStore) GetTemporarySettings(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
 	const getTemporarySettingsQuery = `
 		SELECT contents

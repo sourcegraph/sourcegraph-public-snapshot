@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { fromEvent } from 'rxjs'
+import { fromEvent, Observable } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
@@ -22,20 +22,33 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeProps {
+export interface WebHoverOverlayProps
+    extends Omit<
+            HoverOverlayProps,
+            'className' | 'closeButtonClassName' | 'actionItemClassName' | 'getAlertVariant' | 'actionItemStyleProps'
+        >,
+        HoverThresholdProps,
+        SettingsCascadeProps {
     hoveredTokenElement?: HTMLElement
+    /**
+     * If the hovered token doesn't have a corresponding DOM element, this prop
+     * can be used to trigger the "click to go to definition" functionality.
+     */
+    hoveredTokenClick?: Observable<unknown>
     nav?: (url: string) => void
 }
 
-export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
+export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
+    const { onAlertDismissed: outerOnAlertDismissed } = props
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
             if (!dismissedAlerts.includes(alertType)) {
                 setDismissedAlerts([...dismissedAlerts, alertType])
+                outerOnAlertDismissed?.(alertType)
             }
         },
-        [dismissedAlerts, setDismissedAlerts]
+        [dismissedAlerts, setDismissedAlerts, outerOnAlertDismissed]
     )
 
     let propsToUse = props
@@ -66,31 +79,24 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         }
 
         const token = props.hoveredTokenElement
-
-        const definitionAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
-
-        const referenceAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
-
-        const action = definitionAction || referenceAction
-        if (!action) {
-            return undefined
-        }
-        const url = urlForClientCommandOpen(action.action, props.location.hash)
-
-        if (!token || !url || !props.nav) {
+        const click = props.hoveredTokenClick ?? (token ? fromEvent(token, 'click') : null)
+        const nav = props.nav
+        if (!click || !nav) {
             return
         }
 
-        const nav = props.nav
+        const urlAndType = getGoToURL(props.actionsOrError, props.location)
+        if (!urlAndType) {
+            return
+        }
+        const { url, actionType } = urlAndType
 
-        const oldCursor = token.style.cursor
-        token.style.cursor = 'pointer'
+        const oldCursor = token?.style.cursor
+        if (token) {
+            token.style.cursor = 'pointer'
+        }
 
-        const subscription = fromEvent(token, 'click')
+        const subscription = click
             .pipe(
                 tap(() => {
                     const selection = window.getSelection()
@@ -98,11 +104,14 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
                         return
                     }
 
-                    const actionType = action === definitionAction ? 'definition' : 'reference'
                     props.telemetryService.log(`${actionType}HoverOverlay.click`)
                     nav(url)
                 }),
-                finalize(() => (token.style.cursor = oldCursor))
+                finalize(() => {
+                    if (token && oldCursor) {
+                        token.style.cursor = oldCursor
+                    }
+                })
             )
             .subscribe()
 
@@ -110,7 +119,8 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
     }, [
         props.actionsOrError,
         props.hoveredTokenElement,
-        props.location.hash,
+        props.hoveredTokenClick,
+        props.location,
         props.nav,
         props.telemetryService,
         clickToGoToDefinition,
@@ -121,6 +131,7 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
         <HoverOverlay
             {...propsToUse}
             className={styles.webHoverOverlay}
+            closeButtonClassName={styles.webHoverOverlayCloseButton}
             actionItemClassName="border-0"
             onAlertDismissed={onAlertDismissed}
             getAlertVariant={getAlertVariant}
@@ -134,7 +145,37 @@ export const WebHoverOverlay: React.FunctionComponent<Props> = props => {
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
 
-const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
+/**
+ * Returns the URL and type to perform the "go to ..." navigation.
+ */
+export const getGoToURL = (
+    actionsOrError: WebHoverOverlayProps['actionsOrError'],
+    location: WebHoverOverlayProps['location']
+): {
+    url: string
+    actionType: 'definition' | 'reference'
+} | null => {
+    const definitionAction =
+        Array.isArray(actionsOrError) &&
+        actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+    const referenceAction =
+        Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+    const action = definitionAction || referenceAction
+    if (!action) {
+        return null
+    }
+
+    const url = urlForClientCommandOpen(action.action, location.hash)
+    if (!url) {
+        return null
+    }
+
+    return { url, actionType: action === definitionAction ? 'definition' : 'reference' }
+}
+
+export const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
         const value = settingsCascade.final['codeIntelligence.clickToGoToDefinition'] as boolean
         return value ?? true

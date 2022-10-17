@@ -5,12 +5,12 @@ import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
+import { STATIC_ASSETS_PATH, STATIC_INDEX_PATH } from '@sourcegraph/build-config'
+
 import {
     PROXY_ROUTES,
     getAPIProxySettings,
     ENVIRONMENT_CONFIG,
-    STATIC_ASSETS_PATH,
-    STATIC_INDEX_PATH,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
 } from '../utils'

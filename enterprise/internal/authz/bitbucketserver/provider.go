@@ -10,6 +10,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -114,7 +115,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
 		AccountData: extsvc.AccountData{
-			Data: (*json.RawMessage)(&accountData),
+			Data: extsvc.NewUnencryptedData(accountData),
 		},
 	}, nil
 }
@@ -139,7 +140,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	var user bitbucketserver.User
-	if err := json.Unmarshal(*account.Data, &user); err != nil {
+	if err := encryption.DecryptJSON(ctx, account.Data, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 
@@ -153,12 +154,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	return &authz.ExternalUserPermissions{
 		Exacts: extIDs,
 	}, err
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

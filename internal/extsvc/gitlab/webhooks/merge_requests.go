@@ -206,7 +206,7 @@ type mergeRequestEventObjectAttributes struct {
 	Action string `json:"action"`
 }
 
-func (mre *mergeRequestEvent) downcast() (interface{}, error) {
+func (mre *mergeRequestEvent) downcast() (any, error) {
 	e := MergeRequestEventCommon{
 		EventCommon:  mre.EventCommon,
 		MergeRequest: mre.ObjectAttributes.MergeRequest,
@@ -240,9 +240,9 @@ func (mre *mergeRequestEvent) downcast() (interface{}, error) {
 
 	case "update":
 		if prev, curr := e.Changes.Title.Previous, e.Changes.Title.Current; prev != "" && curr != "" {
-			if gitlab.IsWIP(prev) && !gitlab.IsWIP(curr) {
+			if gitlab.IsWIPOrDraft(prev) && !gitlab.IsWIPOrDraft(curr) {
 				return &MergeRequestUndraftEvent{e}, nil
-			} else if !gitlab.IsWIP(prev) && gitlab.IsWIP(curr) {
+			} else if !gitlab.IsWIPOrDraft(prev) && gitlab.IsWIPOrDraft(curr) {
 				return &MergeRequestDraftEvent{e}, nil
 			}
 		}

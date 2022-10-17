@@ -19,7 +19,8 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 	k8syaml "sigs.k8s.io/yaml"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,20 +29,26 @@ var seenImageRepos = map[string]imageRepository{}
 type DeploymentType string
 
 const (
-	DeploymentTypeK8S  DeploymentType = "k8s"
-	DeploymentTypeHelm DeploymentType = "helm"
+	DeploymentTypeK8S     DeploymentType = "k8s"
+	DeploymentTypeHelm    DeploymentType = "helm"
+	DeploymentTypeCompose DeploymentType = "compose"
 )
 
-func Parse(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string) error {
-	if deploy == DeploymentTypeK8S {
-		return ParseK8S(path, creds, pinTag)
-	} else if deploy == DeploymentTypeHelm {
-		return ParseHelm(path, creds, pinTag)
+// Update updates manifests for the given deploy type to pin images to the latest version
+// of pinTag.
+func Update(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string) error {
+	switch deploy {
+	case DeploymentTypeK8S:
+		return UpdateK8s(path, creds, pinTag)
+	case DeploymentTypeHelm:
+		return UpdateHelm(path, creds, pinTag)
+	case DeploymentTypeCompose:
+		return UpdateCompose(path, creds, pinTag)
 	}
 	return errors.Newf("deployment kind %s is not supported", deploy)
 }
 
-func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
+func UpdateK8s(path string, creds credentials.Credentials, pinTag string) error {
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
 		PreserveSeqIndent:     true,
@@ -65,25 +72,25 @@ func ParseK8S(path string, creds credentials.Credentials, pinTag string) error {
 	return err
 }
 
-func isImgMap(m map[string]interface{}) bool {
+func isImgMap(m map[string]any) bool {
 	if m["defaultTag"] != nil && m["name"] != nil {
 		return true
 	}
 	return false
 }
 
-func extraImages(m interface{}, acc *[]string) {
+func extraImages(m any, acc *[]string) {
 	for m != nil {
 		switch m := m.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			for k, v := range m {
-				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]interface{})) {
-					imgMap := v.(map[string]interface{})
+				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]any)) {
+					imgMap := v.(map[string]any)
 					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
 				}
 				extraImages(v, acc)
 			}
-		case []interface{}:
+		case []any:
 			for _, v := range m {
 				extraImages(v, acc)
 			}
@@ -92,7 +99,7 @@ func extraImages(m interface{}, acc *[]string) {
 	}
 }
 
-func ParseHelm(path string, creds credentials.Credentials, pinTag string) error {
+func UpdateHelm(path string, creds credentials.Credentials, pinTag string) error {
 	valuesFilePath := filepath.Join(path, "values.yaml")
 	valuesFile, err := os.ReadFile(valuesFilePath)
 	if err != nil {
@@ -105,7 +112,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
 	}
 
-	var values map[string]interface{}
+	var values map[string]any
 	err = json.Unmarshal(rawValues, &values)
 	if err != nil {
 		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
@@ -117,7 +124,7 @@ func ParseHelm(path string, creds credentials.Credentials, pinTag string) error 
 	valuesFileString := string(valuesFile)
 	for _, img := range images {
 		var updatedImg string
-		updatedImg, err = updateImage(img, creds, pinTag)
+		updatedImg, err = getUpdatedImage(img, creds, pinTag)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't update image %s", img)
 		}
@@ -155,9 +162,16 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
+		switch k := r.GetKind(); k {
+		case "Deployment", "StatefulSet", "DaemonSet", "Job":
+			// We only look for those kinds, which are containing images.
+		default:
+			std.Out.Verbosef("Skipping manifest of kind: %v", k)
+			continue
+		}
 		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
-				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
+				std.Out.Verbosef("Encountered expected err: %v", err)
 				continue
 			}
 			return nil, err
@@ -190,18 +204,19 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return errors.Newf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
+			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
-		s, err := image.Value.String()
+		originalImage, err := image.Value.String()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "%s: invalid image", node.GetName())
 		}
-		updatedImage, err := updateImage(s, credential, pinTag)
+		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag)
 		if err != nil {
-			return err
+			std.Out.WriteWarningf("could not get updated image for %s: %s", originalImage, err)
+			return nil
 		}
 
-		stdout.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
+		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", originalImage, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
 
 		return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(updatedImage)))
 	}
@@ -264,8 +279,35 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 	return imgRef, nil
 }
 
-func updateImage(rawImage string, credential credentials.Credentials, pinTag string) (string, error) {
-	imgRef, err := parseImgString(rawImage)
+// getUpdatedSourcegraphImage retrieves the pinned version of originalImage if it is a
+// DeploySourcegraphDockerImage, and errors if the image is unknown.
+//
+// Callers should not treat the returned error as fatal.
+func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string) (newImage string, err error) {
+	str := strings.Split(originalImage, "/")
+	imageName := str[len(str)-1]
+
+	var found bool
+	for _, ourImages := range images.DeploySourcegraphDockerImages {
+		if strings.HasPrefix(imageName, ourImages) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return imageName, errors.New("not a sourcegraph image")
+	}
+
+	newImage, err = getUpdatedImage(originalImage, creds, pinTag)
+	if err != nil {
+		return imageName, err
+	}
+	return newImage, nil
+}
+
+// getUpdatedImage retrieves the updated docker image corresponding to pinTag.
+func getUpdatedImage(originalImage string, credential credentials.Credentials, pinTag string) (string, error) {
+	imgRef, err := parseImgString(originalImage)
 	if err != nil {
 		return "", err
 	}
@@ -276,7 +318,7 @@ func updateImage(rawImage string, credential credentials.Credentials, pinTag str
 			// no update needed
 			return imgRef.String(), ErrNoUpdateNeeded
 		}
-		if prevRepo.checkLegacy(rawImage) {
+		if prevRepo.checkLegacy(originalImage) {
 			prevRepo.imageRef.Registry = legacyDockerhub
 			return prevRepo.imageRef.String(), nil
 		}
@@ -293,7 +335,7 @@ func updateImage(rawImage string, credential credentials.Credentials, pinTag str
 
 	seenImageRepos[imgRef.Name] = *repo
 
-	if repo.checkLegacy(rawImage) {
+	if repo.checkLegacy(originalImage) {
 		repo.imageRef.Registry = legacyDockerhub
 		return repo.imageRef.String(), nil
 	}
@@ -356,16 +398,17 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 }
 
 func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
-	repo = &imageRepository{name: ref.Name, imageRef: ref}
+	// TODO(@bobheadxi) Figure out what is going on here and simplify - we set the
+	// imageRef, call a function that does something to imageRepository, and then reset
+	// imageRef later using values from ref?
+	repo = &imageRepository{
+		name:     ref.Name,
+		imageRef: ref,
+	}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
 		return nil, nil
 	}
-	tags, err := repo.fetchAllTags()
-	if err != nil {
-		return nil, err
-	}
-
 	repo.imageRef = &ImageReference{
 		Registry: ref.Registry,
 		Name:     ref.Name,
@@ -373,10 +416,18 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 		Tag:      ref.Tag,
 	}
 
+	// Determine the target tag
 	var targetTag string
-	isDevTag := pinTag == ""
-	if isDevTag {
-		targetTag = findLatestTag(tags)
+	useMainTag := pinTag == ""
+	if useMainTag {
+		tags, err := repo.fetchAllTags()
+		if err != nil {
+			return nil, err
+		}
+		targetTag, err = findLatestMainTag(tags)
+		if err != nil {
+			std.Out.Verbose("findLatestMainTag: " + err.Error())
+		}
 	} else {
 		targetTag = pinTag
 	}
@@ -387,7 +438,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	// for release build, we use semver tags and they are immutable, so no update is needed if the current tag is the same as target tag
 	// for dev builds, if the current tag is the same as the latest tag, also no update is needed
 	// for mutable tags (neither release nor dev tag, e.g. `insiders`), we always need to fetch the latest digest.
-	if (isReleaseTag || isDevTag) && isAlreadyLatest {
+	if (isReleaseTag || useMainTag) && isAlreadyLatest {
 		return repo, ErrNoUpdateNeeded
 	}
 	repo.imageRef.Tag = targetTag
@@ -401,48 +452,52 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	return repo, nil
 }
 
-type SgImageTag struct {
-	buildNum  int
-	date      string
-	shortSHA1 string
+// ParsedMainBranchImageTag is a structured representation of a parsed tag created by
+// images.ParsedMainBranchImageTag.
+type ParsedMainBranchImageTag struct {
+	Build       int
+	Date        string
+	ShortCommit string
 }
 
-// ParseTag creates SgImageTag structs for strings that follow MainBranchTagPublishFormat
-func ParseTag(t string) (*SgImageTag, error) {
-	s := SgImageTag{}
+// ParseMainBranchImageTag creates MainTag structs for tags created by
+// images.MainBranchImageTag.
+func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
+	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)
 	var err error
 	n := strings.Split(t, "_")
 	if len(n) != 3 {
 		return nil, errors.Newf("unable to convert tag: %s", t)
 	}
-	s.buildNum, err = strconv.Atoi(n[0])
+	s.Build, err = strconv.Atoi(n[0])
 	if err != nil {
 		return nil, errors.Newf("unable to convert tag: %v", err)
 	}
 
-	s.date = n[1]
-	s.shortSHA1 = n[2]
+	s.Date = n[1]
+	s.ShortCommit = n[2]
 	return &s, nil
 }
 
-// Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) string {
+// Assume we use 'sourcegraph' tag format of ':[build_number]_[date]_[short SHA1]'
+func findLatestMainTag(tags []string) (string, error) {
 	maxBuildID := 0
 	targetTag := ""
 
+	var errs error
 	for _, tag := range tags {
-		stag, err := ParseTag(tag)
+		stag, err := ParseMainBranchImageTag(tag)
 		if err != nil {
-			stdout.Out.Verbosef("%v\n", err)
+			errs = errors.Append(errs, err)
 			continue
 		}
-		if stag.buildNum > maxBuildID {
-			maxBuildID = stag.buildNum
+		if stag.Build > maxBuildID {
+			maxBuildID = stag.Build
 			targetTag = tag
 		}
 	}
-	return targetTag
+	return targetTag, errs
 }
 
 // CheckLegacy prevents changing the registry if they are equivalent, internally legacyDockerhub is resolved to dockerhub
@@ -458,8 +513,7 @@ func (i *imageRepository) checkLegacy(rawImage string) bool {
 
 // Effectively the same as:
 //
-// 	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
-//
+//	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
 func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", i.name, tag), nil)
 	if err != nil {
@@ -492,8 +546,7 @@ const dockerImageTagsURL = "https://index.docker.io/v2/%s/tags/list"
 
 // Effectively the same as:
 //
-// 	$ export token=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:sourcegraph/server:pull" | jq -r .token)
-//
+//	$ export token=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:sourcegraph/server:pull" | jq -r .token)
 func (i *imageRepository) fetchAllTags() ([]string, error) {
 	if !i.isDockerRegistry {
 		return nil, ErrUnsupportedRegistry

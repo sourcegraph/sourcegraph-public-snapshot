@@ -5,18 +5,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestTransformRecord(t *testing.T) {
-	index := store.Index{
+	index := types.Index{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		DockerSteps: []store.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
@@ -42,6 +42,8 @@ func TestTransformRecord(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
@@ -85,11 +87,11 @@ func TestTransformRecord(t *testing.T) {
 }
 
 func TestTransformRecordWithoutIndexer(t *testing.T) {
-	index := store.Index{
+	index := types.Index{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		DockerSteps: []store.DockerStep{
+		DockerSteps: []types.DockerStep{
 			{
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
@@ -120,6 +122,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{

@@ -1,0 +1,27 @@
+flowchart TB
+0["FILTER"]
+  0---1
+  1["LIMIT <br> limit: 100"]
+    1---2
+    2["TIMEOUT <br> duration: 50ms"]
+      2---3
+      3["PARALLEL"]
+        3---4
+        4["AND"]
+          4---5
+          5["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            4---6
+          6["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            3---7
+        7["OR"]
+          7---8
+          8["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            7---9
+          9["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            3---10
+        10["AND"]
+          10---11
+          11["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            10---12
+          12["LEAF <br> life_meaning: 42 <br> leaf_meaning: 420"]
+            

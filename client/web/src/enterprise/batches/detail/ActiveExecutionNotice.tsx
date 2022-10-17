@@ -11,7 +11,7 @@ interface ActiveExecutionNoticeProps {
     className?: string
 }
 
-export const ActiveExecutionNotice: React.FunctionComponent<ActiveExecutionNoticeProps> = ({
+export const ActiveExecutionNotice: React.FunctionComponent<React.PropsWithChildren<ActiveExecutionNoticeProps>> = ({
     batchSpecs,
     batchChangeURL,
     className,

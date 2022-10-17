@@ -2,22 +2,15 @@ import '../platform/polyfills'
 
 import React, { useMemo } from 'react'
 
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
-import { render } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import {
-    AnchorLink,
-    setLinkComponent,
-    useObservable,
-    WildcardThemeContext,
-    // This is the root Tooltip usage
-    // eslint-disable-next-line no-restricted-imports
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
@@ -50,7 +43,7 @@ const platformContext = createPlatformContext(extensionCoreAPI)
 
 setLinkComponent(AnchorLink)
 
-const Main: React.FC = () => {
+const Main: React.FC<React.PropsWithChildren<unknown>> = () => {
     const state = useObservable(useMemo(() => wrapRemoteObservable(extensionCoreAPI.observeState()), []))
 
     const authenticatedUser = useObservable(
@@ -117,15 +110,17 @@ const Main: React.FC = () => {
     )
 }
 
-render(
+const root = createRoot(document.querySelector('#root')!)
+
+root.render(
     <ShortcutProvider>
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
             {/* Required for shared components that depend on `location`. */}
             <MemoryRouter>
-                <Main />
+                <CompatRouter>
+                    <Main />
+                </CompatRouter>
             </MemoryRouter>
-            <Tooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
-    </ShortcutProvider>,
-    document.querySelector('#root')
+    </ShortcutProvider>
 )

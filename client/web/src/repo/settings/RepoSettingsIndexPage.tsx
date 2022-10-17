@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -12,13 +12,14 @@ import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import styles from './RepoSettingsIndexPage.module.scss'
 
@@ -47,6 +48,10 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
                                     displayName
                                     url
                                 }
+                                skippedIndexed {
+                                    count
+                                    query
+                                }
                                 indexed
                                 current
                                 indexedCommit {
@@ -73,34 +78,46 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
     )
 }
 
-const TextSearchIndexedReference: React.FunctionComponent<{
-    repo: SettingsAreaRepositoryFields
-    indexedRef: GQL.IRepositoryTextSearchIndexedRef
-}> = ({ repo, indexedRef }) => {
+const TextSearchIndexedReference: React.FunctionComponent<
+    React.PropsWithChildren<{
+        repo: SettingsAreaRepositoryFields
+        indexedRef: GQL.IRepositoryTextSearchIndexedRef
+    }>
+> = ({ repo, indexedRef }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
 
     return (
         <li className={styles.ref}>
             <Icon
                 className={classNames(styles.refIcon, isCurrent && styles.refIconCurrent)}
-                as={isCurrent ? CheckCircleIcon : LoadingSpinner}
+                svgPath={isCurrent ? mdiCheckCircle : undefined}
+                as={!isCurrent ? LoadingSpinner : undefined}
+                aria-hidden={true}
             />
             <LinkOrSpan to={indexedRef.ref.url}>
-                <strong>
-                    <code>{indexedRef.ref.displayName}</code>
-                </strong>
+                <Code weight="bold">{indexedRef.ref.displayName}</Code>
             </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
-                    <code>
+                    <Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </code>{' '}
+                    </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    {indexedRef.skippedIndexed && indexedRef.skippedIndexed.count > 0 ? (
+                        <span>
+                            .&nbsp;
+                            <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
+                                {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
+                                skipped during indexing
+                            </Link>
+                            .
+                        </span>
+                    ) : null}
                 </span>
             ) : (
                 <span>&nbsp;&mdash; initial indexing in progress</span>
@@ -117,19 +134,6 @@ interface State {
     textSearchIndex?: GQL.IRepositoryTextSearchIndex | null
     loading: boolean
     error?: Error
-}
-
-function prettyBytesBigint(bytes: bigint): string {
-    let unit = 0
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    const threshold = BigInt(1000)
-
-    while (bytes >= threshold) {
-        bytes /= threshold
-        unit += 1
-    }
-
-    return bytes.toString() + ' ' + units[unit]
 }
 
 /**
@@ -198,7 +202,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 )}
                                 {this.state.textSearchIndex.status && (
                                     <>
-                                        <h3>Statistics</h3>
+                                        <H3>Statistics</H3>
                                         <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
@@ -212,25 +216,21 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                     <td>
                                                         {prettyBytesBigint(
                                                             BigInt(this.state.textSearchIndex.status.contentByteSize)
-                                                        )}{' '}
-                                                        ({this.state.textSearchIndex.status.contentFilesCount}{' '}
-                                                        {pluralize(
-                                                            'file',
-                                                            this.state.textSearchIndex.status.contentFilesCount
                                                         )}
-                                                        )
                                                     </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Shards</th>
+                                                    <td>{this.state.textSearchIndex.status.indexShardsCount}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Files</th>
+                                                    <td>{this.state.textSearchIndex.status.contentFilesCount}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Index size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)} (
-                                                        {this.state.textSearchIndex.status.indexShardsCount}{' '}
-                                                        {pluralize(
-                                                            'shard',
-                                                            this.state.textSearchIndex.status.indexShardsCount
-                                                        )}
-                                                        )
+                                                        {prettyBytes(this.state.textSearchIndex.status.indexByteSize)}
                                                     </td>
                                                 </tr>
                                                 <tr>

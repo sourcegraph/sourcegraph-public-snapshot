@@ -61,7 +61,7 @@ export const BATCH_COUNT = 10
 /**
  * A popover that displays a searchable list of repositories.
  */
-export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({
+export const RepositoriesPopover: React.FunctionComponent<React.PropsWithChildren<RepositoriesPopoverProps>> = ({
     currentRepo,
     telemetryService,
 }) => {

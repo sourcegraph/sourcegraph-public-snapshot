@@ -10,10 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -23,12 +22,12 @@ import (
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
 
-	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
+	stats, err := usagestats.GetByUserID(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +68,13 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
+// No longer used, only here for backwards compatibility with IDE and browser extensions.
+// Functionality removed in https://github.com/sourcegraph/sourcegraph/pull/38826.
 func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+	return nil, nil
 }
 
 type Event struct {
@@ -164,22 +164,22 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		events = append(events, usagestats.Event{
-			EventName:      args.Event,
-			URL:            args.URL,
-			UserID:         actor.FromContext(ctx).UID,
-			UserCookieID:   args.UserCookieID,
-			FirstSourceURL: args.FirstSourceURL,
-			LastSourceURL:  args.LastSourceURL,
-			Source:         args.Source,
-			Argument:       argumentPayload,
-			FeatureFlags:   featureflag.FromContext(ctx),
-			CohortID:       args.CohortID,
-			Referrer:       args.Referrer,
-			PublicArgument: publicArgumentPayload,
-			UserProperties: userPropertiesPayload,
-			DeviceID:       args.DeviceID,
-			EventID:        args.EventID,
-			InsertID:       args.InsertID,
+			EventName:        args.Event,
+			URL:              args.URL,
+			UserID:           actor.FromContext(ctx).UID,
+			UserCookieID:     args.UserCookieID,
+			FirstSourceURL:   args.FirstSourceURL,
+			LastSourceURL:    args.LastSourceURL,
+			Source:           args.Source,
+			Argument:         argumentPayload,
+			EvaluatedFlagSet: featureflag.GetEvaluatedFlagSet(ctx),
+			CohortID:         args.CohortID,
+			Referrer:         args.Referrer,
+			PublicArgument:   publicArgumentPayload,
+			UserProperties:   userPropertiesPayload,
+			DeviceID:         args.DeviceID,
+			EventID:          args.EventID,
+			InsertID:         args.InsertID,
 		})
 	}
 

@@ -1,13 +1,14 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 
 import * as H from 'history'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Heading, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -16,7 +17,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { externalLinkFieldsFragment } from '../backend'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
@@ -110,48 +110,65 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props
-    extends RepoHeaderContributionsLifecycleProps,
-        Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters {
-    repo: RepositoryFields
+export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
+    repo: RepositoryFields | undefined
 
     history: H.History
     location: H.Location
 }
 
+const BREADCRUMB = { key: 'commits', element: <>Commits</> }
+
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBreadcrumb, ...props }) => {
+export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
+    useBreadcrumb,
+    ...props
+}) => {
     useEffect(() => {
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
 
-    useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
+    useBreadcrumb(BREADCRUMB)
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
-            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),
-        [props.repo.id, props.commitID]
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> => {
+            if (!props.repo?.id) {
+                return of()
+            }
+
+            return fetchGitCommits({ ...args, repo: props.repo?.id, revspec: props.revision })
+        },
+        [props.repo?.id, props.revision]
     )
 
+    if (!props.repo) {
+        return <LoadingSpinner />
+    }
+
     return (
-        <div className={styles.repositoryCommitsPage}>
+        <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
-            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                className={styles.content}
-                listClassName="list-group list-group-flush"
-                noun="commit"
-                pluralNoun="commits"
-                queryConnection={queryCommits}
-                nodeComponent={GitCommitNode}
-                nodeComponentProps={{ className: 'list-group-item' }}
-                defaultFirst={20}
-                autoFocus={true}
-                history={props.history}
-                hideSearch={true}
-                location={props.location}
-            />
+            <div className={styles.content}>
+                <Heading as="h2" styleAs="h1">
+                    View commits from this repository
+                </Heading>
+                <FilteredConnection<
+                    GitCommitFields,
+                    Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>
+                >
+                    listClassName="list-group list-group-flush"
+                    noun="commit"
+                    pluralNoun="commits"
+                    queryConnection={queryCommits}
+                    nodeComponent={GitCommitNode}
+                    nodeComponentProps={{ className: 'list-group-item', wrapperElement: 'li' }}
+                    defaultFirst={20}
+                    autoFocus={true}
+                    history={props.history}
+                    hideSearch={true}
+                    location={props.location}
+                />
+            </div>
         </div>
     )
 }

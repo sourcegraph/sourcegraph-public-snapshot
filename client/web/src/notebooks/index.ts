@@ -1,12 +1,14 @@
 import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 
+import { FetchFileParameters, HighlightRange } from '@sourcegraph/search-ui'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { FetchFileParameters, HighlightRange } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { IHighlightLineRange, SymbolKind } from '@sourcegraph/shared/src/schema'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
+import { HighlightLineRange, SymbolKind } from '../graphql-operations'
+
+// When adding a new block type, make sure to track its usage in internal/usagestats/notebooks.go.
 export type BlockType = 'md' | 'query' | 'file' | 'compute' | 'symbol'
 
 interface BaseBlock<I, O> {
@@ -38,7 +40,7 @@ export interface FileBlockInput {
     repositoryName: string
     revision: string
     filePath: string
-    lineRange: IHighlightLineRange | null
+    lineRange: HighlightLineRange | null
     initialQueryInput?: string
 }
 
@@ -65,7 +67,7 @@ export interface SymbolBlockOutput {
     symbolFoundAtLatestRevision: boolean
     effectiveRevision: string
     symbolRange: UIRangeSpec['range']
-    highlightLineRange: IHighlightLineRange
+    highlightLineRange: HighlightLineRange
     highlightedLines: string[]
     highlightSymbolRange: HighlightRange
 }
@@ -114,6 +116,7 @@ export interface BlockProps<T extends Block = Block> {
 }
 
 export interface BlockDependencies {
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>> | null
+    enableGoImportsSearchQueryTransform: undefined | boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }

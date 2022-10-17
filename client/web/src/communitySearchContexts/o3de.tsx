@@ -13,12 +13,12 @@ export const o3de: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Search for O3DE gems',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'file:gem.json',
         },
         {
             title: 'Browse diffs for recent code changes',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'type:diff after:"1 week ago"',
         },
     ],
@@ -28,5 +28,5 @@ export const o3de: CommunitySearchContextMetadata = {
 }
 
 export const O3deCommunitySearchContextPage: React.FunctionComponent<
-    Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>
+    React.PropsWithChildren<Omit<CommunitySearchContextPageProps, 'communitySearchContextMetadata'>>
 > = props => <CommunitySearchContextPage {...props} communitySearchContextMetadata={o3de} />

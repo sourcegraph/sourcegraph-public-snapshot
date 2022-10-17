@@ -15,6 +15,7 @@ const (
 	BatchSpecWorkspaceExecutionJobStateQueued     BatchSpecWorkspaceExecutionJobState = "queued"
 	BatchSpecWorkspaceExecutionJobStateProcessing BatchSpecWorkspaceExecutionJobState = "processing"
 	BatchSpecWorkspaceExecutionJobStateFailed     BatchSpecWorkspaceExecutionJobState = "failed"
+	BatchSpecWorkspaceExecutionJobStateCanceled   BatchSpecWorkspaceExecutionJobState = "canceled"
 	BatchSpecWorkspaceExecutionJobStateCompleted  BatchSpecWorkspaceExecutionJobState = "completed"
 
 	// There is no Errored state because automatic-retry of
@@ -28,6 +29,7 @@ func (s BatchSpecWorkspaceExecutionJobState) Valid() bool {
 	case BatchSpecWorkspaceExecutionJobStateQueued,
 		BatchSpecWorkspaceExecutionJobStateProcessing,
 		BatchSpecWorkspaceExecutionJobStateFailed,
+		BatchSpecWorkspaceExecutionJobStateCanceled,
 		BatchSpecWorkspaceExecutionJobStateCompleted:
 		return true
 	default:
@@ -48,7 +50,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 	ID int64
 
 	BatchSpecWorkspaceID int64
-	AccessTokenID        int64
+	UserID               int32
 
 	State           BatchSpecWorkspaceExecutionJobState
 	FailureMessage  *string
@@ -62,7 +64,8 @@ type BatchSpecWorkspaceExecutionJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
-	PlaceInQueue int64
+	PlaceInUserQueue   int64
+	PlaceInGlobalQueue int64
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

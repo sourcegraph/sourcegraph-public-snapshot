@@ -1,9 +1,9 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { H1 } from '..'
 
 import { Modal } from '.'
 
@@ -22,14 +22,13 @@ export default config
 
 export const Default: Story = () => (
     <Modal aria-label="Welcome message">
-        <h1>Hello world!</h1>
+        <H1>Hello world!</H1>
     </Modal>
 )
 
 Default.parameters = {
     component: Modal,
     chromatic: {
-        enableDarkMode: true,
         disableSnapshot: false,
     },
     design: [
@@ -48,12 +47,12 @@ Default.parameters = {
 
 export const PositionCentered: Story = () => (
     <Modal position="center" aria-label="Welcome message">
-        <h1>Hello world!</h1>
+        <H1>Hello world!</H1>
     </Modal>
 )
 
 export const PositionFull: Story = () => (
     <Modal position="full" aria-label="Welcome message">
-        <h1>Hello world!</h1>
+        <H1>Hello world!</H1>
     </Modal>
 )

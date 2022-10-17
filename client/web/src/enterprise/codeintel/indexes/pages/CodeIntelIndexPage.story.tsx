@@ -1,12 +1,8 @@
-import React from 'react'
-
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { LSIFUploadState } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../../graphql-operations'
+import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields, LSIFUploadState } from '../../../../graphql-operations'
 
 import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 
@@ -177,7 +173,7 @@ const completedSteps: LsifIndexStepsFields = {
                 '--ssh',
                 '--name',
                 'executors-9a1b6d36-45a5-4986-a1d0-5cf17424788d',
-                'sourcegraph/ignite-ubuntu:insiders',
+                'sourcegraph/executor-vm',
             ],
             startTime: '2020-06-15T17:57:10Z',
             exitCode: 0,
@@ -311,7 +307,7 @@ const completedSteps: LsifIndexStepsFields = {
             stdout:    \\u001b[?25h\\u001b[?25lfile: dump.lsif
             stdout:    \\u001b[?25h\\u001b[?25lindexer: lsif-go
             stdout:    \\u001b[?25h
-            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/code-intelligence/uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
+            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/code-graph/uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
             stdout: \\u001b[?25h
         `),
         durationMilliseconds: 1265,
@@ -367,6 +363,7 @@ const failedSteps: LsifIndexStepsFields = {
 const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps'> = {
     __typename: 'LSIFIndex',
     inputCommit: '',
+    tags: [],
     inputRoot: 'staging/src/k8s.io/apiextensions-apiserver/',
     inputIndexer: 'sourcegraph/lsif-go:latest',
     indexer: { name: 'lsif-go', url: '' },
@@ -448,6 +445,7 @@ Completed.args = {
             ...indexPrototype,
             id: '1',
             state: LSIFIndexState.COMPLETED,
+            tags: ['v4.2.0', 'v1.0.5', 'latest-banana-phone'],
             queuedAt: '2020-06-15T17:50:01+00:00',
             startedAt: '2020-06-15T17:56:01+00:00',
             finishedAt: '2020-06-15T18:00:10+00:00',

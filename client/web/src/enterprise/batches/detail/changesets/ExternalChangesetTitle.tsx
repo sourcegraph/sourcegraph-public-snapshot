@@ -1,8 +1,9 @@
 import React from 'react'
 
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
+import { mdiOpenInNew } from '@mdi/js'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -11,7 +12,7 @@ interface Props extends Pick<ExternalChangesetFields, 'externalID' | 'externalUR
     className?: string
 }
 
-export const ExternalChangesetTitle: React.FunctionComponent<Props> = ({
+export const ExternalChangesetTitle: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     externalID,
     externalURL,
@@ -23,7 +24,7 @@ export const ExternalChangesetTitle: React.FunctionComponent<Props> = ({
         {externalURL?.url && (
             <>
                 {' '}
-                <ExternalLinkIcon size="1rem" />
+                <Icon svgPath={mdiOpenInNew} inline={false} aria-hidden={true} height="1rem" width="1rem" />
             </>
         )}
     </LinkOrSpan>

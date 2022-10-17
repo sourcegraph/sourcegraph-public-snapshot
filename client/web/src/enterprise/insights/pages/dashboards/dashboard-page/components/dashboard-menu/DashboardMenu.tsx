@@ -1,13 +1,22 @@
 import React from 'react'
 
-import { VisuallyHidden } from '@reach/visually-hidden'
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
-import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Position } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Icon,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuItem,
+    MenuList,
+    Position,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
-import { InsightDashboard } from '../../../../../core/types'
-import { useUiFeatures } from '../../../../../hooks/use-ui-features'
+import { InsightDashboard } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 
 import styles from './DashboardMenu.module.scss'
 
@@ -26,7 +35,7 @@ export interface DashboardMenuProps {
     className?: string
 }
 
-export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
+export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<DashboardMenuProps>> = props => {
     const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
 
     const { dashboard: dashboardPermission } = useUiFeatures()
@@ -34,40 +43,46 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
 
     return (
         <Menu>
-            <MenuButton
-                ref={innerRef}
-                data-tooltip={tooltipText}
-                data-placement="right"
-                variant="icon"
-                outline={true}
-                className={classNames(className, styles.triggerButton)}
-            >
-                <VisuallyHidden>Dashboard options</VisuallyHidden>
-                <DotsVerticalIcon size={16} />
-            </MenuButton>
+            <Tooltip content={tooltipText} placement="right">
+                <MenuButton
+                    ref={innerRef}
+                    variant="icon"
+                    outline={true}
+                    className={classNames(className, styles.triggerButton)}
+                >
+                    <Icon
+                        svgPath={mdiDotsVertical}
+                        inline={false}
+                        height={16}
+                        width={16}
+                        aria-label="dashboard options"
+                    />
+                </MenuButton>
+            </Tooltip>
 
             <MenuList className={styles.menuList} position={Position.bottomEnd}>
                 {menuPermissions.configure.display && (
-                    <MenuItem
-                        as={Button}
-                        disabled={menuPermissions.configure.disabled}
-                        data-tooltip={menuPermissions.configure.tooltip}
-                        data-placement="right"
-                        className={styles.menuItem}
-                        onSelect={() => onSelect(DashboardMenuAction.Configure)}
-                        outline={true}
-                    >
-                        Configure dashboard
-                    </MenuItem>
+                    <Tooltip content={menuPermissions.configure.tooltip} placement="right">
+                        <MenuItem
+                            as={Button}
+                            outline={true}
+                            disabled={menuPermissions.configure.disabled}
+                            className={styles.menuItem}
+                            onSelect={() => onSelect(DashboardMenuAction.Configure)}
+                        >
+                            Configure dashboard
+                        </MenuItem>
+                    </Tooltip>
                 )}
 
                 {menuPermissions.copy.display && (
                     <MenuItem
                         as={Button}
+                        outline={true}
                         disabled={menuPermissions.copy.disabled}
                         className={styles.menuItem}
+                        data-testid="copy-link"
                         onSelect={() => onSelect(DashboardMenuAction.CopyLink)}
-                        outline={true}
                     >
                         Copy link
                     </MenuItem>
@@ -77,17 +92,17 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                     menuPermissions.delete.display && <MenuDivider />}
 
                 {menuPermissions.delete.display && (
-                    <MenuItem
-                        as={Button}
-                        disabled={menuPermissions.delete.disabled}
-                        data-tooltip={menuPermissions.delete.tooltip}
-                        data-placement="right"
-                        className={classNames(styles.menuItem, styles.menuItemDanger)}
-                        onSelect={() => onSelect(DashboardMenuAction.Delete)}
-                        outline={true}
-                    >
-                        Delete
-                    </MenuItem>
+                    <Tooltip content={menuPermissions.delete.tooltip} placement="right">
+                        <MenuItem
+                            as={Button}
+                            outline={true}
+                            disabled={menuPermissions.delete.disabled}
+                            className={classNames(styles.menuItem, styles.menuItemDanger)}
+                            onSelect={() => onSelect(DashboardMenuAction.Delete)}
+                        >
+                            Delete
+                        </MenuItem>
+                    </Tooltip>
                 )}
             </MenuList>
         </Menu>

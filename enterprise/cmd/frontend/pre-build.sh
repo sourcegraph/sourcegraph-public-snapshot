@@ -11,7 +11,7 @@ echo "--- yarn root"
 # mutex is necessary since frontend and the management-console can
 # run concurrent "yarn" installs
 # TODO: This is no longer needed since the management console was removed.
-yarn --mutex network --frozen-lockfile --network-timeout 60000
+./dev/ci/yarn-install-with-retry.sh
 
 MAYBE_TIME_PREFIX=""
 if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
@@ -25,7 +25,7 @@ build_browser() {
 
 build_web() {
   echo "--- yarn web"
-  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn -s run build-web --color"
+  NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn run build-web --color"
 }
 
 export -f build_browser
@@ -35,4 +35,4 @@ echo "--- (enterprise) build browser and web concurrently"
 parallel_run ::: build_browser build_web
 
 echo "--- (enterprise) generate"
-./enterprise/dev/generate.sh
+go run ./dev/sg generate

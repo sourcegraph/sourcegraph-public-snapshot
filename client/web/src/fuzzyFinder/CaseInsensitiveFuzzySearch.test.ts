@@ -1,7 +1,10 @@
 import { CaseInsensitiveFuzzySearch } from './CaseInsensitiveFuzzySearch'
 
 function fuzzyMatches(query: string, values: string[]): string[] {
-    const fuzzy = new CaseInsensitiveFuzzySearch(values.map(value => ({ text: value })))
+    const fuzzy = new CaseInsensitiveFuzzySearch(
+        values.map(value => ({ text: value })),
+        undefined
+    )
     const results = fuzzy.search({ query, maxResults: 100 })
     return results.links.map(link => link.text)
 }
@@ -26,4 +29,5 @@ describe('case-insensitive fuzzy search', () => {
         ['executor/batch.go', 'batches/executor.go', 'ignore.me'],
         ['batches/executor.go']
     )
+    checkFuzzyMatches('exact-match', 'src/hello.ts', ['src/hello.ts', 'ignore.me'], ['src/hello.ts'])
 })

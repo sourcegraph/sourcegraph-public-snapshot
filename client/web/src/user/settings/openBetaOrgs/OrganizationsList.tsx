@@ -5,14 +5,13 @@ import classNames from 'classnames'
 import { Maybe } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ButtonLink, Container, Link, PageHeader } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, Link, PageHeader, H3 } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './organizationList.module.scss'
-export interface OrganizationsListProps extends ThemeProps, FeatureFlagProps {
+export interface OrganizationsListProps extends ThemeProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'id' | 'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -31,7 +30,7 @@ interface OrgItemProps {
     org: IOrgItem
 }
 
-const OrgItem: React.FunctionComponent<OrgItemProps> = ({ org }) => (
+const OrgItem: React.FunctionComponent<React.PropsWithChildren<OrgItemProps>> = ({ org }) => (
     <li data-test-username={org.id}>
         <div className={classNames('d-flex align-items-center justify-content-start flex-1', styles.orgDetails)}>
             <div className={styles.avatarContainer}>
@@ -79,7 +78,9 @@ const refreshOrganizationList = (): void => {
         .catch(() => eventLogger.logViewEvent('ErrorOrgListLoading'))
 }
 
-export const OrganizationsListPage: React.FunctionComponent<OrganizationsListProps> = ({ authenticatedUser }) => {
+export const OrganizationsListPage: React.FunctionComponent<React.PropsWithChildren<OrganizationsListProps>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => {
         refreshOrganizationList()
     }, [])
@@ -116,7 +117,7 @@ export const OrganizationsListPage: React.FunctionComponent<OrganizationsListPro
             {!hasOrgs && (
                 <Container className={styles.noOrgContainer}>
                     <div className="d-flex flex-0 flex-column justify-content-center align-items-center">
-                        <h3 className="mb-1">Start searching with your team on Sourcegraph</h3>
+                        <H3 className="mb-1">Start searching with your team on Sourcegraph</H3>
                         <div>Level up your team with powerful code search across your organization’s code.</div>
                         <ButtonLink
                             variant="primary"

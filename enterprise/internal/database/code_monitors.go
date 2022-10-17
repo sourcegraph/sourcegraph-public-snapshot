@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -11,8 +10,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -47,7 +49,6 @@ type CodeMonitorStore interface {
 	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
-	DeleteObsoleteTriggerJobs(ctx context.Context) error
 	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
@@ -82,6 +83,11 @@ type CodeMonitorStore interface {
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 
+	// HasAnyLastSearched returns whether there have ever been any repo-aware code monitor
+	// searches executed for this code monitor. This should only be needed during the transition
+	// version so that we don't detect every repo as a new repo and search their entire history
+	// when a code monitor transitions from non-repo-aware to repo-aware.
+	HasAnyLastSearched(ctx context.Context, monitorID int64) (bool, error)
 	UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, lastSearched []string) error
 	GetLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID) ([]string, error)
 }
@@ -96,14 +102,14 @@ type codeMonitorStore struct {
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
 // CodeMonitors returns a new Store backed by the given database.
-func CodeMonitors(db dbutil.DB) *codeMonitorStore {
+func CodeMonitors(db database.DB) *codeMonitorStore {
 	return CodeMonitorsWithClock(db, timeutil.Now)
 }
 
 // CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func CodeMonitorsWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
+func CodeMonitorsWithClock(db database.DB, clock func() time.Time) *codeMonitorStore {
+	return &codeMonitorStore{Store: basestore.NewWithHandle(db.Handle()), now: clock}
 }
 
 // Clock returns the clock of the underlying store.
@@ -223,7 +229,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 	return m, nil
 }
 
-func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {
+func NewTestStore(t *testing.T, db database.DB) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
@@ -244,9 +250,10 @@ const (
 	testDescription = "test description"
 )
 
-func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
+func newTestStore(t *testing.T) (context.Context, database.DB, *codeMonitorStore) {
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }

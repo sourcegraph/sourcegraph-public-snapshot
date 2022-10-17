@@ -22,13 +22,6 @@ export const siteAdminProductSubscriptionFragment = gql`
                 isPrimary
             }
         }
-        invoiceItem {
-            plan {
-                nameWithBrand
-            }
-            userCount
-            expiresAt
-        }
         activeLicense {
             id
             info {
@@ -46,7 +39,7 @@ export const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
-export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent = () => (
+export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <thead>
         <tr>
             <th>ID</th>
@@ -65,9 +58,9 @@ export interface SiteAdminProductSubscriptionNodeProps {
 /**
  * Displays a product subscription in a connection in the site admin area.
  */
-export const SiteAdminProductSubscriptionNode: React.FunctionComponent<SiteAdminProductSubscriptionNodeProps> = ({
-    node,
-}) => (
+export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
+    React.PropsWithChildren<SiteAdminProductSubscriptionNodeProps>
+> = ({ node }) => (
     <tr>
         <td className="text-nowrap">
             <LinkOrSpan to={node.urlForSiteAdmin} className="mr-3">

@@ -20,6 +20,7 @@ type EventContentMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string           `json:"path"`
+	PathMatches     []Range          `json:"pathMatches,omitempty"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
 	RepoStars       int              `json:"repoStars,omitempty"`
@@ -27,7 +28,8 @@ type EventContentMatch struct {
 	Branches        []string         `json:"branches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
 	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches"`
+	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
+	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}
@@ -41,6 +43,7 @@ type EventPathMatch struct {
 	Type MatchType `json:"type"`
 
 	Path            string     `json:"path"`
+	PathMatches     []Range    `json:"pathMatches,omitempty"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	RepoStars       int        `json:"repoStars,omitempty"`
@@ -74,6 +77,12 @@ type DecoratedContent struct {
 	HTML      string `json:"html,omitempty"`
 }
 
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart"`
+	Ranges       []Range  `json:"ranges"`
+}
+
 // EventLineMatch is a subset of zoekt.LineMatch for our Event API.
 type EventLineMatch struct {
 	Line             string     `json:"line"`
@@ -86,15 +95,18 @@ type EventRepoMatch struct {
 	// Type is always RepoMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	RepositoryID    int32      `json:"repositoryID"`
-	Repository      string     `json:"repository"`
-	Branches        []string   `json:"branches,omitempty"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Description     string     `json:"description,omitempty"`
-	Fork            bool       `json:"fork,omitempty"`
-	Archived        bool       `json:"archived,omitempty"`
-	Private         bool       `json:"private,omitempty"`
+	RepositoryID       int32              `json:"repositoryID"`
+	Repository         string             `json:"repository"`
+	RepositoryMatches  []Range            `json:"repositoryMatches,omitempty"`
+	Branches           []string           `json:"branches,omitempty"`
+	RepoStars          int                `json:"repoStars,omitempty"`
+	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`
+	Description        string             `json:"description,omitempty"`
+	DescriptionMatches []Range            `json:"descriptionMatches,omitempty"`
+	Fork               bool               `json:"fork,omitempty"`
+	Archived           bool               `json:"archived,omitempty"`
+	Private            bool               `json:"private,omitempty"`
+	KeyValuePairs      map[string]*string `json:"keyValuePairs,omitempty"`
 }
 
 func (e *EventRepoMatch) eventMatch() {}
@@ -122,6 +134,7 @@ type Symbol struct {
 	Name          string `json:"name"`
 	ContainerName string `json:"containerName"`
 	Kind          string `json:"kind"`
+	Line          int32  `json:"line"`
 }
 
 // EventCommitMatch is the generic results interface from GQL. There is a lot
@@ -163,15 +176,22 @@ type EventFilter struct {
 // EventAlert is GQL.SearchAlert. It replaces when sent to match existing
 // behaviour.
 type EventAlert struct {
-	Title           string          `json:"title"`
-	Description     string          `json:"description,omitempty"`
-	ProposedQueries []ProposedQuery `json:"proposedQueries"`
+	Title           string             `json:"title"`
+	Description     string             `json:"description,omitempty"`
+	Kind            string             `json:"kind,omitempty"`
+	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
-// ProposedQuery is a suggested query to run when we emit an alert.
-type ProposedQuery struct {
-	Description string `json:"description,omitempty"`
-	Query       string `json:"query"`
+// QueryDescription describes queries emitted in alerts.
+type QueryDescription struct {
+	Description string       `json:"description,omitempty"`
+	Query       string       `json:"query"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+}
+
+type Annotation struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // EventError emulates a JavaScript error with a message property

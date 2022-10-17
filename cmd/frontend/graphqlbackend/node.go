@@ -6,7 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
+	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -218,18 +219,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
-	n, ok := r.Node.(LSIFUploadResolver)
+func (r *NodeResolver) ToLSIFUpload() (sharedresolvers.LSIFUploadResolver, bool) {
+	n, ok := r.Node.(sharedresolvers.LSIFUploadResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFIndex() (LSIFIndexResolver, bool) {
-	n, ok := r.Node.(LSIFIndexResolver)
+func (r *NodeResolver) ToLSIFIndex() (sharedresolvers.LSIFIndexResolver, bool) {
+	n, ok := r.Node.(sharedresolvers.LSIFIndexResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (CodeIntelligenceConfigurationPolicyResolver, bool) {
-	n, ok := r.Node.(CodeIntelligenceConfigurationPolicyResolver)
+func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (policiesgraphql.CodeIntelligenceConfigurationPolicyResolver, bool) {
+	n, ok := r.Node.(policiesgraphql.CodeIntelligenceConfigurationPolicyResolver)
 	return n, ok
 }
 
@@ -274,7 +275,22 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
-	n, ok := r.Node.(*executor.ExecutorResolver)
+func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
+	n, ok := r.Node.(*webhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
+	n, ok := r.Node.(*ExecutorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
+	n, ok := r.Node.(*externalServiceSyncJobResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
+	n, ok := r.Node.(BatchWorkspaceFileResolver)
 	return n, ok
 }

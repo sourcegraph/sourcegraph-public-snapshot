@@ -1,18 +1,17 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -27,13 +26,30 @@ var runCommand = &cli.Command{
 	Name:      "run",
 	Usage:     "Run the given commands",
 	ArgsUsage: "[command]",
-	Category:  CategoryDev,
+	UsageText: `
+# Run specific commands
+sg run gitserver
+sg run frontend
+
+# List available commands (defined under 'commands:' in 'sg.config.yaml')
+sg run -help
+
+# Run multiple commands
+sg run gitserver frontend repo-updater
+
+# View configuration for a command
+sg run -describe jaeger
+`,
+	Category: CategoryDev,
 	Flags: []cli.Flag{
-		addToMacOSFirewallFlag,
+		&cli.BoolFlag{
+			Name:  "describe",
+			Usage: "Print details about selected run target",
+		},
 	},
-	Action: execAdapter(runExec),
-	BashComplete: completeOptions(func() (options []string) {
-		config, _ := sgconf.Get(configFile, configOverwriteFile)
+	Action: runExec,
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
+		config, _ := getConfig()
 		if config == nil {
 			return
 		}
@@ -44,15 +60,15 @@ var runCommand = &cli.Command{
 	}),
 }
 
-func runExec(ctx context.Context, args []string) error {
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+func runExec(ctx *cli.Context) error {
+	config, err := getConfig()
 	if err != nil {
-		writeWarningLinef(err.Error())
-		os.Exit(1)
+		return err
 	}
 
+	args := ctx.Args().Slice()
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No command specified"))
+		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
 		return flag.ErrHelp
 	}
 
@@ -60,36 +76,52 @@ func runExec(ctx context.Context, args []string) error {
 	for _, arg := range args {
 		cmd, ok := config.Commands[arg]
 		if !ok {
-			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: command %q not found :(", arg))
+			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
 			return flag.ErrHelp
 		}
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, config.Env, addToMacOSFirewall, verbose, cmds...)
+	if ctx.Bool("describe") {
+		for _, cmd := range cmds {
+			out, err := yaml.Marshal(cmd)
+			if err != nil {
+				return err
+			}
+			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+		}
+
+		return nil
+	}
+
+	return run.Commands(ctx.Context, config.Env, verbose, cmds...)
 }
 
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
 
-	fmt.Fprintf(&out, "  Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
+	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
-		output.NewOutput(&out, output.OutputOpts{}).WriteLine(newWarningLinef(err.Error()))
+		// Do not treat error message as a format string
+		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
 		return out.String()
 	}
 
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s:\n", output.StyleBold, configFile, output.StyleReset)
+	fmt.Fprintf(&out, "Available commands in `%s`:\n", configFile)
 
 	var names []string
-	for name := range config.Commands {
+	for name, command := range config.Commands {
+		if command.Description != "" {
+			name = fmt.Sprintf("%s: %s", name, command.Description)
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)
-	fmt.Fprint(&out, strings.Join(names, "\n"))
+	fmt.Fprint(&out, "\n* "+strings.Join(names, "\n* "))
 
 	return out.String()
 }

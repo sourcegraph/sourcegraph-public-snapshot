@@ -7,10 +7,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,23 +26,24 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	repoStore := database.ReposWith(cstore)
-	esStore := database.ExternalServicesWith(cstore)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -55,22 +58,22 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 	for _, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
+		s, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, "d34db33f"))
 		if err != nil {
 			t.Fatal(err)
 		}
 		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
-		s.RepoID = r.ID
+		s.BaseRepoID = r.ID
 
-		if err := cstore.CreateChangesetSpec(ctx, s); err != nil {
+		if err := bstore.CreateChangesetSpec(ctx, s); err != nil {
 			t.Fatal(err)
 		}
 
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +92,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		input := map[string]interface{}{"batchSpec": apiID, "first": tc.first}
+		input := map[string]any{"batchSpec": apiID, "first": tc.first}
 		var response struct{ Node apitest.BatchSpec }
 		apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecConnection)
 
@@ -105,7 +108,7 @@ func TestChangesetSpecConnectionResolver(t *testing.T) {
 
 	var endCursor *string
 	for i := range changesetSpecs {
-		input := map[string]interface{}{"batchSpec": apiID, "first": 1}
+		input := map[string]any{"batchSpec": apiID, "first": 1}
 		if endCursor != nil {
 			input["after"] = *endCursor
 		}

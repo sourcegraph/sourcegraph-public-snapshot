@@ -74,7 +74,7 @@ export const languageIcons: Record<string, MdiReactIconComponentType | undefined
     webassembly: undefined,
 }
 
-export const LanguageIcon: React.FunctionComponent<Props> = ({ language, size }) => {
+export const LanguageIcon: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ language, size }) => {
     const LanguageIconComponent = languageIcons[language] || WebIcon
     return <LanguageIconComponent size={size} />
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,7 +23,7 @@ type Loader interface {
 // DBLoader will load insights from a database. This is also where the application can access insights currently stored
 // in user / org settings.
 type DBLoader struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (d *DBLoader) LoadAll(ctx context.Context) ([]SearchInsight, error) {
@@ -35,7 +34,7 @@ func (d *DBLoader) LoadDashboards(ctx context.Context) ([]SettingDashboard, erro
 	return DiscoverDashboardsInSettings(ctx, d.db)
 }
 
-func NewLoader(db dbutil.DB) Loader {
+func NewLoader(db database.DB) Loader {
 	return &DBLoader{db: db}
 }
 
@@ -43,8 +42,8 @@ func NewLoader(db dbutil.DB) Loader {
 // generating aggregates for code insights which are currently stored in the settings.
 // 🚨 SECURITY: This method bypasses any user permissions to fetch a list of all settings on the Sourcegraph installation.
 // It is used for generating aggregated analytics that require an accurate view across all settings, such as for code insights🚨
-func GetSettings(ctx context.Context, db dbutil.DB, filter SettingFilter, prefix string) ([]*api.Settings, error) {
-	settingStore := database.Settings(db)
+func GetSettings(ctx context.Context, db database.DB, filter SettingFilter, prefix string) ([]*api.Settings, error) {
+	settingStore := db.Settings()
 	settings, err := settingStore.ListAll(ctx, prefix)
 	if err != nil {
 		return []*api.Settings{}, err
@@ -84,7 +83,7 @@ func FilterSettingJson(settingJson string, prefix string) (map[string]json.RawMe
 
 // GetSearchInsights returns insights stored in user / org / global settings that match the extensions schema. This schema is planned for deprecation
 // and currently only exists to service pings.
-func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]SearchInsight, error) {
+func GetSearchInsights(ctx context.Context, db database.DB, filter SettingFilter) ([]SearchInsight, error) {
 	prefix := "searchInsights."
 	settings, err := GetSettings(ctx, db, filter, prefix)
 	if err != nil {
@@ -113,7 +112,7 @@ func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) 
 	return results, nil
 }
 
-func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) ([]LangStatsInsight, error) {
+func GetLangStatsInsights(ctx context.Context, db database.DB, filter SettingFilter) ([]LangStatsInsight, error) {
 	prefix := "codeStatsInsights."
 
 	settings, err := GetSettings(ctx, db, filter, prefix)
@@ -153,7 +152,7 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 // dictionary of unique keys to extension setting body. This is intended to be deprecated as soon as code insights migrates
 // fully to a persistent database. Any deserialization errors that occur during parsing will be logged as errors, but will not
 // cause any errors to surface.
-func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, error) {
+func GetIntegratedInsights(ctx context.Context, db database.DB) ([]SearchInsight, error) {
 	prefix := "insights.allrepos"
 
 	settings, err := GetSettings(ctx, db, All, prefix)
@@ -301,7 +300,7 @@ type SettingDashboard struct {
 	OrgID      *int32
 }
 
-func DiscoverDashboardsInSettings(ctx context.Context, db dbutil.DB) ([]SettingDashboard, error) {
+func DiscoverDashboardsInSettings(ctx context.Context, db database.DB) ([]SettingDashboard, error) {
 	prefix := "insights.dashboards"
 	settings, err := GetSettings(ctx, db, All, prefix)
 	if err != nil {

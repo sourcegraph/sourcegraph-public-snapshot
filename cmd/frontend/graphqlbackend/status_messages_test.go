@@ -4,8 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -21,10 +23,6 @@ func TestStatusMessages(t *testing.T) {
 				}
 
 				... on SyncError {
-					message
-				}
-
-				... on IndexingError {
 					message
 				}
 
@@ -45,8 +43,8 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db).StatusMessages(context.Background())
-		if want := backend.ErrNotAuthenticated; err != want {
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).StatusMessages(context.Background())
+		if want := auth.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
 		if result != nil {
@@ -59,7 +57,7 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
 		}
 		defer func() { repos.MockStatusMessages = nil }()
@@ -82,12 +80,16 @@ func TestStatusMessages(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		externalServices := database.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
+		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{
+			ID:          1,
+			DisplayName: "GitHub.com testing",
+			Config:      extsvc.NewEmptyConfig(),
+		}, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
+		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{
 				{
 					Cloning: &repos.CloningProgress{
@@ -103,11 +105,6 @@ func TestStatusMessages(t *testing.T) {
 				{
 					SyncError: &repos.SyncError{
 						Message: "Could not save to database",
-					},
-				},
-				{
-					IndexingError: &repos.IndexingError{
-						Message: "Could not complete indexing.",
 					},
 				},
 			}
@@ -137,10 +134,6 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "SyncError",
 								"message": "Could not save to database"
-							},
-							{
-								"__typename": "IndexingError",
-								"message": "Could not complete indexing."
 							}
 						]
 					}

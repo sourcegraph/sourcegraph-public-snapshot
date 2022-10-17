@@ -2,9 +2,11 @@
 
 > NOTE: If you are on a version **strictly lower than** Sourcegraph 3.37.0, see the [legacy dirty database documentation](./dirty_database_pre_3_37.md). The following documentation applies only to Sourcegraph instances version 3.37.0 and above.
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
+This document will take you through how to resolve a 'dirty database' error.
 
-The error will look something like this:
+During instance startup, the `migrator` process will run any schema migrations necessary to bring the database up to the shape the code expects. If an error is encountered during this startup sequence or a multi-version upgrade, or if execution of either actions were interrupted, the schema will be marked as dirty and will require some form of user intervention.
+
+Such an error will look something like this:
 
 ```log
 INFO[02-08|00:40:55] Checked current version
@@ -18,16 +20,22 @@ INFO[02-08|00:40:55] Checked current version
 The target schema is marked as dirty and no other migration operation is seen running on this schema. The last migration operation over this schema has failed (or, at least, the migrator instance issuing that migration has died). Please contact support@sourcegraph.com for further assistance.
 ```
 
-Resolving this error requires manually attempting to run the migrations that are marked as pending or failed.
-
 ## Prerequisites
 
 * This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred.
 * **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) If you skipped a minor version during an upgrade, you will need to revert back to the last minor version your instance was on before following the steps in this document.**
 
-The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links.
+The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](../deploy/kubernetes/operations.md#access-the-database), [docker-compose](../deploy/docker-compose/index.md#access-the-database), and [Sourcegraph single-container](../deploy/docker-single-container/index.md#access-the-database) instances at these links.
 
 ## Steps to resolve
+
+### 0. Attempt re-application
+
+Some classes of errors can be successfully retried via a manual invocation of the failed `migrator` command. If the previous operation was interrupted due to a network issue, a timeout, or a crashed/restarted database host, or if the error that occurred was due to a transient error such as a SQL deadlock, then re-application of the migration is likely to succeed.
+
+When [re-running the migrator](./manual_database_migrations.md), add the optional flag `--ignore-single-dirty-log` to attempt re-application of a previously failed migration, and add the optional flag `--ignore-single-pending-log` to to attempt re-application of a migration which was never completed by a previous invocation of the `migrator`. Both flags apply to the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`. These flags only allow re-application of the **next** migration in the sequence (and multiple sequential failures will require multiple invocations).
+
+**DO NOT** set either of these flags permanently on a `migrator` attached as an init container (in Kubernetes) or as a dependent container (in Docker Compose), as it may allow mutation of the database schema with non-mutual access. Concurrent modification may result in greater error frequency (at best) and data corruption (at worst). These flags should only be used on a manual invocation of a `migrator` command.
 
 ### 1. Identify incomplete migration
 
@@ -99,7 +107,7 @@ If you're running into errors such as being unable to create a unique index due 
 
 ### 3. Add a migration log entry
 
-**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
+**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker--docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
 
 - For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
 - For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`

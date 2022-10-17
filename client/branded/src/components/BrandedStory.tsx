@@ -1,17 +1,18 @@
 import React from 'react'
 
 import { MemoryRouter, MemoryRouterProps } from 'react-router'
+import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useTheme } from '@sourcegraph/storybook'
-// Add root Tooltip for Storybook
-// eslint-disable-next-line no-restricted-imports
-import { Tooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
+import { WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import brandedStyles from '../global-styles/index.scss'
 
-export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
-    children: React.FunctionComponent<ThemeProps>
+export interface BrandedProps
+    extends Omit<MemoryRouterProps, 'children'>,
+        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
+    children: React.FunctionComponent<React.PropsWithChildren<ThemeProps>>
     styles?: string
 }
 
@@ -33,8 +34,9 @@ export const BrandedStory: React.FunctionComponent<BrandedProps> = ({
         <MockedStoryProvider mocks={mocks} useStrictMocking={useStrictMocking}>
             <WildcardThemeContext.Provider value={{ isBranded: true }}>
                 <MemoryRouter {...memoryRouterProps}>
-                    <Tooltip />
-                    <Children isLightTheme={isLightTheme} />
+                    <CompatRouter>
+                        <Children isLightTheme={isLightTheme} />
+                    </CompatRouter>
                 </MemoryRouter>
             </WildcardThemeContext.Provider>
         </MockedStoryProvider>

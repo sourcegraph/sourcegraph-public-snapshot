@@ -1,18 +1,16 @@
 import * as React from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
@@ -35,7 +33,6 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps
     extends UserSettingsAreaRouteContext,
         BatchChangesProps,
-        FeatureFlagProps,
         RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
@@ -43,10 +40,10 @@ export interface UserSettingsSidebarProps
 }
 
 /** Sidebar for user account pages. */
-export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
-    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
-    const openBetaEnabled = !!props.featureFlags.get('open-beta-enabled')
+export const UserSettingsSidebar: React.FunctionComponent<
+    React.PropsWithChildren<UserSettingsSidebarProps>
+> = props => {
+    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
 
     if (!props.authenticatedUser) {
         return null
@@ -61,11 +58,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        openBetaEnabled,
-    }
-
-    function reEnableSearchTour(): void {
-        setHasCancelledTour(false)
+        openBetaEnabled: isOpenBetaEnabled,
     }
 
     return (
@@ -81,7 +74,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         )
                 )}
             </SidebarGroup>
-            {!openBetaEnabled && (props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+            {!isOpenBetaEnabled && (props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (
@@ -102,7 +95,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon as={AddIcon} /> New organization
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
                                 </Button>
                             </div>
                         ))}
@@ -112,11 +105,6 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {showOnboardingTour && (
-                    <Button className="text-left sidebar__link--inactive d-flex w-100" onClick={reEnableSearchTour}>
-                        Show search tour
-                    </Button>
-                )}
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

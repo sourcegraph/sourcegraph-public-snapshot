@@ -11,7 +11,7 @@ import (
 // GetAggregatedSearchStats queries the database for search usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
 func GetAggregatedSearchStats(ctx context.Context, db database.DB) (*types.SearchUsageStatistics, error) {
-	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx, time.Now().UTC())
+	events, err := db.EventLogs().AggregatedSearchEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}

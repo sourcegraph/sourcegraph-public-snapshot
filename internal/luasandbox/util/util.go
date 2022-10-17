@@ -153,7 +153,7 @@ func DecodeSlice(value lua.LValue) (values []lua.LValue, _ error) {
 // UnwrapLuaUserData invokes the given callback with the value within the given
 // user data value. This function returns an error if the given type is not a
 // pointer to user data.
-func UnwrapLuaUserData(value lua.LValue, f func(interface{}) error) error {
+func UnwrapLuaUserData(value lua.LValue, f func(any) error) error {
 	userData, err := assertUserData(value)
 	if err != nil {
 		return err
@@ -181,8 +181,25 @@ func UnwrapSliceOrSingleton(value lua.LValue, f func(lua.LValue) error) error {
 }
 
 // NewTypeError creates an error with the given expected and actual value type.
-func NewTypeError(expectedType string, actualValue interface{}) error {
+func NewTypeError(expectedType string, actualValue any) error {
 	return errors.Newf("wrong type: expecting %s, have %T", expectedType, actualValue)
+}
+
+// CheckTypeProperty casts the given value as a Lua table, then checks the value
+// of the __type property. If the property value is not the expectedd value, a
+// non-nil error is returned.
+func CheckTypeProperty(value lua.LValue, expected string) error {
+	table, ok := value.(*lua.LTable)
+	if !ok {
+		return NewTypeError(expected, value)
+	}
+	rawType := table.RawGetString("__type")
+
+	if strType, ok := rawType.(lua.LString); !ok || strType.String() != expected {
+		return NewTypeError(expected, rawType)
+	}
+
+	return nil
 }
 
 // assertLuaString returns the given value as a string or an error if the value is
@@ -193,16 +210,6 @@ func assertLuaString(value lua.LValue) (string, error) {
 	}
 
 	return lua.LVAsString(value), nil
-}
-
-// assertLuaNumber returns the given value as a number or an error if the value is
-// of a different type.
-func assertLuaNumber(value lua.LValue) (float64, error) {
-	if value.Type() != lua.LTNumber {
-		return 0, NewTypeError("number", value)
-	}
-
-	return float64(lua.LVAsNumber(value)), nil
 }
 
 // assertLuaFunction returns the given value as a function or an error if the value is

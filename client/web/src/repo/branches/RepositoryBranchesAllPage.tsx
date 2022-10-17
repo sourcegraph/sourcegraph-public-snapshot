@@ -24,12 +24,15 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
             <div>
                 <PageTitle title="All branches" />
                 <FilteredConnection<GitRefFields>
-                    className=""
+                    inputClassName="w-100"
                     listClassName="list-group list-group-flush"
                     noun="branch"
                     pluralNoun="branches"
                     queryConnection={this.queryBranches}
                     nodeComponent={GitReferenceNode}
+                    ariaLabelFunction={(branchDisplayName: string) =>
+                        `View this repository using ${branchDisplayName} as the selected revision`
+                    }
                     defaultFirst={20}
                     autoFocus={true}
                     history={this.props.history}

@@ -8,14 +8,14 @@
 | `-allow-unsupported` | Allow unsupported code hosts. | `false` |
 | `-apply` | Ignored. | `false` |
 | `-cache` | Directory for caching results and repository archives. | `~/.cache/sourcegraph/batch` |
-| `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. | `true` |
+| `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
 | `-f` | The batch spec file to read, or - to read from standard input. |  |
 | `-force-override-ignore` | Do not ignore repositories that have a .batchignore file. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
-| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `8` |
+| `-j` | The maximum number of parallel jobs. Default (or 0) is the number of CPU cores available to Docker. | `0` |
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the batch change within. Default is the currently authenticated user. |  |
@@ -40,7 +40,7 @@ Usage of 'src batch apply':
   -cache string
     	Directory for caching results and repository archives. (default "~/.cache/sourcegraph/batch")
   -clean-archives
-    	If true, deletes downloaded repository archives after executing batch spec steps. (default true)
+    	If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. (default true)
   -clear-cache
     	If true, clears the execution cache and executes all steps anew.
   -dump-requests
@@ -54,7 +54,7 @@ Usage of 'src batch apply':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -j int
-    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 8)
+    	The maximum number of parallel jobs. Default (or 0) is the number of CPU cores available to Docker.
   -keep-logs
     	Retain logs after executing steps.
   -n string

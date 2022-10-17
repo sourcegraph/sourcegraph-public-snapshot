@@ -1,11 +1,9 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,12 +14,9 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	gogithub "github.com/google/go-github/v31/github"
-	"github.com/inconshreveable/log15"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -38,15 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestExampleRepositoryQuerySplit(t *testing.T) {
-	q := "org:sourcegraph"
-	want := `["org:sourcegraph created:>=2019","org:sourcegraph created:2018","org:sourcegraph created:2016..2017","org:sourcegraph created:<2016"]`
-	have := exampleRepositoryQuerySplit(q)
-	if want != have {
-		t.Errorf("unexpected example query for %s:\nwant: %s\nhave: %s", q, want, have)
-	}
-}
 
 func TestGithubSource_GetRepo(t *testing.T) {
 	testCases := []struct {
@@ -119,17 +105,15 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
-				}),
+				})),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -147,7 +131,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 }
 
 func setUpRcache(t *testing.T) {
-	// The GithubSource uses the github.Client under the hood, which
+	// The GitHubSource uses the github.Client under the hood, which
 	// uses rcache, a caching layer that uses Redis.
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
@@ -161,16 +145,17 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 
 	service := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org",
 			Token: gheToken,
-		}),
+		})),
 	}
 
 	factory, save := newClientFactory(t, fixtureName)
 	defer save(t)
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), service, factory)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,10 +166,22 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 		close(results)
 	}()
 
+	count := 0
+	countArchived := 0
 	for result := range results {
 		if result.err != nil {
-			t.Error("unexpected error, expected repository instead")
+			t.Errorf("unexpected error: %s, expected repository instead", result.err.Error())
 		}
+		if result.repo.IsArchived {
+			countArchived++
+		}
+		count++
+	}
+	if count != 100 {
+		t.Errorf("unexpected repo count, wanted: 100, but got: %d", count)
+	}
+	if countArchived != 1 {
+		t.Errorf("unexpected archived repo count, wanted: 1, but got: %d", countArchived)
 	}
 }
 
@@ -270,21 +267,19 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://ghe.sgdev.org",
 					Token: gheToken,
-				}),
+				})),
 			}
 
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -315,7 +310,11 @@ func TestGithubSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindGitHub}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindGitHub,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
@@ -343,10 +342,8 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -535,15 +532,13 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			ctx := context.Background()
+			githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -572,13 +567,14 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 func TestGithubSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
-		}),
+		})),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -589,8 +585,8 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GithubSource); !ok {
-			t.Error("cannot coerce Source into GithubSource")
+		if gs, ok := src.(*GitHubSource); !ok {
+			t.Error("cannot coerce Source into GitHubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
 		}
@@ -620,13 +616,14 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
-		}),
+		})),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	ctx := context.Background()
+	githubSrc, err := NewGithubSource(ctx, logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -643,15 +640,17 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 				Url: "https://github.com",
-			}),
+			})),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+		ctx := context.Background()
+		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -680,13 +679,14 @@ func TestGithubSource_GetVersion(t *testing.T) {
 
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 				Url:   "https://ghe.sgdev.org",
 				Token: gheToken,
-			}),
+			})),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+		ctx := context.Background()
+		githubSrc, err := NewGithubSource(ctx, logger, database.NewMockExternalServiceStore(), svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -737,6 +737,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
 
 			q := repositoryQuery{
+				Logger:   logtest.Scoped(t),
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
@@ -774,101 +775,4 @@ type mockDoer struct {
 
 func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
-}
-
-func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
-	ctx := context.Background()
-	now := time.Now()
-
-	baseURL, err := url.Parse(schema.DefaultGitHubURL)
-	require.NoError(t, err)
-
-	wantToken := "app-token"
-	wantTokenExpiresAt := time.Now().Add(10 * time.Minute).UTC()
-
-	externalServices := database.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(_ context.Context, _ []schema.AuthProviders, _ int64, update *database.ExternalServiceUpdate) error {
-		require.NotNil(t, update.Config)
-		want := fmt.Sprintf(`{
-  "token": %q, "repos": []}`, wantToken)
-		assert.Equal(t, want, *update.Config)
-
-		require.NotNil(t, update.TokenExpiresAt)
-		assert.Equal(t, wantTokenExpiresAt, *update.TokenExpiresAt)
-		return nil
-	})
-
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			if r.URL.Path != "/app/installations/1234/access_tokens" {
-				return nil, errors.Errorf("unexpected URL path %q", r.URL.Path)
-			}
-
-			token := gogithub.InstallationToken{
-				Token:     &wantToken,
-				ExpiresAt: &wantTokenExpiresAt,
-			}
-
-			respJSON, err := json.Marshal(token)
-			if err != nil {
-				return nil, errors.Wrap(err, "marshal JSON")
-			}
-
-			return &http.Response{
-				Status:     http.StatusText(http.StatusCreated),
-				StatusCode: http.StatusCreated,
-				Body:       io.NopCloser(bytes.NewReader(respJSON)),
-			}, nil
-		},
-	}
-	client := github.NewV3Client("Test", baseURL, &auth.OAuthBearerToken{Token: "oauth-token"}, doer)
-
-	tests := []struct {
-		name           string
-		config         string
-		tokenExpiresAt *time.Time
-		wantUpdate     bool
-	}{
-		{
-			name:           "unexpired token",
-			config:         fmt.Sprintf(`{"token": %q}`, wantToken),
-			tokenExpiresAt: &wantTokenExpiresAt,
-		},
-		{
-			name:           "empty token",
-			config:         `{"token": "", "repos": []}`,
-			tokenExpiresAt: &wantTokenExpiresAt,
-			wantUpdate:     true,
-		},
-		{
-			name:           "token without expiration time",
-			config:         `{"token": "bad-token", "repos": []}`,
-			tokenExpiresAt: nil,
-			wantUpdate:     true,
-		},
-		{
-			name:           "expired token",
-			config:         `{"token": "expired-token", "repos": []}`,
-			tokenExpiresAt: &now,
-			wantUpdate:     true,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			svc := &types.ExternalService{
-				ID:             1,
-				Kind:           extsvc.KindGitHub,
-				Config:         test.config,
-				TokenExpiresAt: test.tokenExpiresAt,
-			}
-
-			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServices, svc, client, 1234)
-			require.NoError(t, err)
-			assert.Equal(t, wantToken, gotToken)
-
-			if test.wantUpdate {
-				mockrequire.Called(t, externalServices.UpdateFunc)
-			}
-		})
-	}
 }

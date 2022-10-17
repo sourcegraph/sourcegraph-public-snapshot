@@ -3,5 +3,6 @@ jest.mock('@sourcegraph/web/src/tracking/eventLogger', () => ({
     eventLogger: {
         log: () => undefined,
         logViewEvent: () => undefined,
+        logPageView: () => undefined,
     },
 }))

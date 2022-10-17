@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -39,7 +38,9 @@ export interface ExternalChangesetCloseNodeProps extends ThemeProps {
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
 }
 
-export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChangesetCloseNodeProps> = ({
+export const ExternalChangesetCloseNode: React.FunctionComponent<
+    React.PropsWithChildren<ExternalChangesetCloseNodeProps>
+> = ({
     node,
     willClose,
     viewerCanAdminister,
@@ -66,11 +67,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {willClose ? (
                 <ChangesetCloseActionClose className={styles.externalChangesetCloseNodeAction} />
@@ -112,11 +109,7 @@ export const ExternalChangesetCloseNode: React.FunctionComponent<ExternalChanges
                 outline={true}
                 variant="secondary"
             >
-                {isExpanded ? (
-                    <Icon aria-label="Close section" as={ChevronDownIcon} />
-                ) : (
-                    <Icon aria-label="Expand section" as={ChevronRightIcon} />
-                )}{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

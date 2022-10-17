@@ -6,7 +6,7 @@ import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useEventObservable, Modal, Button, Alert } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
 
 import { deleteNotebook as _deleteNotebook } from '../backend'
 
@@ -19,7 +19,7 @@ interface DeleteNotebookModalProps extends TelemetryProps {
 
 const LOADING = 'loading' as const
 
-export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookModalProps> = ({
+export const DeleteNotebookModal: React.FunctionComponent<React.PropsWithChildren<DeleteNotebookModalProps>> = ({
     notebookId,
     deleteNotebook,
     isOpen,
@@ -55,13 +55,13 @@ export const DeleteNotebookModal: React.FunctionComponent<DeleteNotebookModalPro
 
     return (
         <Modal isOpen={isOpen} position="center" onDismiss={toggleDeleteModal} aria-labelledby={deleteLabelId}>
-            <h3 className="text-danger" id={deleteLabelId}>
+            <H3 className="text-danger" id={deleteLabelId}>
                 Delete the notebook?
-            </h3>
+            </H3>
 
-            <p>
+            <Text>
                 <strong>This action cannot be undone.</strong>
-            </p>
+            </Text>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
                     <Button className="mr-2" onClick={toggleDeleteModal} variant="secondary" outline={true}>

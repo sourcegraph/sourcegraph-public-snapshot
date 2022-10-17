@@ -10,15 +10,17 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,8 +40,10 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 //
 // Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
-	db           database.DB
-	repoResolver *RepositoryResolver
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	repoResolver    *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
@@ -63,9 +67,10 @@ type GitCommitResolver struct {
 // NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
+func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
+		gitserverClient: gsClient,
 		repoResolver:    repo,
 		includeUserInfo: true,
 		gitRepo:         repo.RepoName(),
@@ -80,8 +85,8 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 			return
 		}
 
-		opts := git.ResolveRevisionOptions{}
-		r.commit, r.commitErr = git.GetCommit(ctx, r.db, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
+		opts := gitserver.ResolveRevisionOptions{}
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts, authz.DefaultSubRepoPermsChecker)
 	})
 	return r.commit, r.commitErr
 }
@@ -254,7 +259,7 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	defer span.Finish()
 	span.SetTag("path", path)
 
-	stat, err := git.Stat(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -265,11 +270,11 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 		return nil, err
 	}
 
-	return NewGitTreeEntryResolver(r.db, r, stat), nil
+	return NewGitTreeEntryResolver(r.db, r.gitserverClient, r, stat), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return git.LsFiles(ctx, r.db, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
+	return r.gitserverClient.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -278,7 +283,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +301,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.db).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -316,20 +321,37 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	After *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: string(r.oid),
-		first:         args.ConnectionArgs.First,
-		query:         args.Query,
-		path:          args.Path,
-		after:         args.After,
-		repo:          r.repoResolver,
+		db:              r.db,
+		gitserverClient: r.gitserverClient,
+		revisionRange:   string(r.oid),
+		first:           args.ConnectionArgs.First,
+		query:           args.Query,
+		path:            args.Path,
+		after:           args.After,
+		repo:            r.repoResolver,
 	}, nil
+}
+
+func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
+	Base *string
+}) (*RepositoryComparisonResolver, error) {
+	oidString := string(r.oid)
+	base := oidString + "~"
+	if args.Base != nil {
+		base = *args.Base
+	}
+	client := gitserver.NewClient(r.db)
+	return NewRepositoryComparison(ctx, r.db, client, r.repoResolver, &RepositoryComparisonInput{
+		Base:         &base,
+		Head:         &oidString,
+		FetchMissing: false,
+	})
 }
 
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	counts, err := git.GetBehindAhead(ctx, r.db, r.gitRepo, args.Revspec, string(r.oid))
+	counts, err := r.gitserverClient.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

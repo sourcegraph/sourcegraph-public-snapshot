@@ -2,31 +2,39 @@ package insights
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
-
 	"github.com/inconshreveable/log15"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
+
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
 
 func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
-	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(`
+	_, err = db.ExecContext(ctx, `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`, insightSettingSimple)
@@ -64,19 +72,20 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
-	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(`
+	_, err = db.ExecContext(ctx, `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`, insightSettingNotSoSimple)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(`
+	_, err = db.ExecContext(ctx, `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (2, 2, $1, CURRENT_TIMESTAMP, NULL, NULL)`, insightSettingThree)
@@ -135,12 +144,13 @@ func TestGetIntegrationInsights(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
-	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	_, err := db.ExecContext(ctx, `INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.Exec(`
+	_, err = db.ExecContext(ctx, `
 
 			INSERT INTO settings (id, org_id, contents, created_at, user_id, author_user_id)
 			VALUES  (1, 1, $1, CURRENT_TIMESTAMP, NULL, NULL)`, integratedInsightSimple)

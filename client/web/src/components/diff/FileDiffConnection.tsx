@@ -7,7 +7,7 @@ import { Omit } from 'utility-types'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ErrorLike, isDefined, isErrorLike, property } from '@sourcegraph/common'
+import { ErrorLike, isDefined, isErrorLike, logger, property } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { TextDocumentData, ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -59,7 +59,7 @@ export type PartInfo<ExtraData extends object = {}> = {
 /**
  * Displays a list of file diffs.
  */
-export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps> = props => {
+export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren<FileDiffConnectionProps>> = props => {
     const { observeViewerId, setViewerIds, getCurrentViewerIdByUri } = useMemo(() => {
         const viewerIdByUris = new BehaviorSubject<Map<string, ViewerId | undefined>>(new Map())
 
@@ -103,7 +103,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
                     )
                 )
                 .catch(error => {
-                    console.error('Error removing viewers from extension host', error)
+                    logger.error('Error removing viewers from extension host', error)
                 })
         },
         [getCurrentViewerIdByUri, extensionInfo?.extensionsController]
@@ -111,7 +111,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
 
     const diffsUpdates = useMemo(() => new ReplaySubject<Connection<FileDiffFields> | ErrorLike | undefined>(1), [])
     const nextDiffsUpdate: FileDiffConnectionProps['onUpdate'] = useCallback(
-        fileDiffsOrError => diffsUpdates.next(fileDiffsOrError),
+        (fileDiffsOrError: Connection<FileDiffFields> | ErrorLike | undefined) => diffsUpdates.next(fileDiffsOrError),
         [diffsUpdates]
     )
 
@@ -234,7 +234,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
 
                                             return new Map([...currentViewerIdByUri])
                                         } catch (error) {
-                                            console.error('Error syncing documents/viewers with extension host', error)
+                                            logger.error('Error syncing documents/viewers with extension host', error)
                                             return new Map([...currentViewerIdByUri])
                                         }
                                     })
@@ -251,6 +251,7 @@ export const FileDiffConnection: React.FunctionComponent<FileDiffConnectionProps
     return (
         <FilteredFileDiffConnection
             {...props}
+            withCenteredSummary={true}
             nodeComponentProps={
                 props.nodeComponentProps
                     ? {

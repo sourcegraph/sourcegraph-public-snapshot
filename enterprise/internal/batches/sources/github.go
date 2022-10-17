@@ -4,17 +4,17 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,9 +26,13 @@ type GithubSource struct {
 
 var _ ForkableChangesetSource = GithubSource{}
 
-func NewGithubSource(svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGithubSource(svc.URN(), &c, cf, nil)
@@ -69,8 +73,8 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -117,7 +121,7 @@ func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (b
 }
 
 func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, error) {
-	headRef := git.AbbreviateRef(c.HeadRef)
+	headRef := gitdomain.AbbreviateRef(c.HeadRef)
 	if c.RemoteRepo != c.TargetRepo {
 		owner, err := c.RemoteRepo.Metadata.(*github.Repository).Owner()
 		if err != nil {
@@ -132,7 +136,7 @@ func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, 
 		Title:        c.Title,
 		Body:         c.Body,
 		HeadRefName:  headRef,
-		BaseRefName:  git.AbbreviateRef(c.BaseRef),
+		BaseRefName:  gitdomain.AbbreviateRef(c.BaseRef),
 	}, nil
 }
 
@@ -141,6 +145,11 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 	pr, err := s.client.CreatePullRequest(ctx, prInput)
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
+			// There is a creation limit (undocumented) in GitHub. When reached, GitHub provides an unclear error
+			// message to users. See https://github.com/cli/cli/issues/4801.
+			if strings.Contains(err.Error(), "was submitted too quickly") {
+				return exists, errors.Wrap(err, "reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits")
+			}
 			return exists, err
 		}
 		repo := c.TargetRepo.Metadata.(*github.Repository)
@@ -231,7 +240,7 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
-		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {
@@ -322,4 +331,8 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 	remoteRepo.Metadata = fork
 
 	return &remoteRepo, nil
+}
+
+func (GithubSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "This repository was archived so it is read-only.")
 }

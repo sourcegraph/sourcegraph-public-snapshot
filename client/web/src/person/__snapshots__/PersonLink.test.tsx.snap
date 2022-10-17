@@ -4,7 +4,7 @@ exports[`PersonLink no user account 1`] = `
 <DocumentFragment>
   <span
     class="a"
-    data-tooltip="alice@example.com"
+    data-state="closed"
   >
     alice
   </span>
@@ -15,7 +15,7 @@ exports[`PersonLink with user account 1`] = `
 <DocumentFragment>
   <a
     class="a b"
-    data-tooltip="Alice Smith <alice@example.com>"
+    data-state="closed"
     href="u"
   >
     alice

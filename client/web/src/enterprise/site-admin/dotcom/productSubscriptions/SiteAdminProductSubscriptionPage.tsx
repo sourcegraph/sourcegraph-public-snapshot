@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 
+import { mdiArrowLeft, mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
-import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
@@ -21,6 +20,7 @@ import {
     CardBody,
     Card,
     Icon,
+    H2,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
@@ -33,7 +33,6 @@ import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/Acco
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductSubscriptionHistory } from '../../../user/productSubscriptions/ProductSubscriptionHistory'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
@@ -41,7 +40,6 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
-import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -62,7 +60,7 @@ const LOADING = 'loading' as const
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = ({
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     history,
     location,
     match: {
@@ -124,10 +122,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    /** Updates to the subscription. */
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onUpdate = useCallback(() => updates.next(), [updates])
-
     /** Updates to the subscription's licenses. */
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
     const onLicenseUpdate = useCallback(() => {
@@ -144,7 +138,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
             <PageTitle title="Product subscription" />
             <div className="mb-2">
                 <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon as={ArrowLeftIcon} /> All subscriptions
+                    <Icon aria-hidden={true} svgPath={mdiArrowLeft} /> All subscriptions
                 </Button>
             </div>
             {productSubscription === LOADING ? (
@@ -153,7 +147,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <h2>Product subscription {productSubscription.name}</h2>
+                    <H2>Product subscription {productSubscription.name}</H2>
                     <div className="mb-3">
                         <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive
@@ -190,15 +184,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th className="text-nowrap">Billing</th>
-                                    <td className="w-100">
-                                        <SiteAdminProductSubscriptionBillingLink
-                                            productSubscription={productSubscription}
-                                            onDidUpdate={onUpdate}
-                                        />
-                                    </td>
-                                </tr>
-                                <tr>
                                     <th className="text-nowrap">Created at</th>
                                     <td className="w-100">
                                         <Timestamp date={productSubscription.createdAt} />
@@ -217,7 +202,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                 </Button>
                             ) : (
                                 <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon as={AddIcon} /> Generate new license manually
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
                                 </Button>
                             )}
                         </CardHeader>
@@ -244,10 +229,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                             location={location}
                         />
                     </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </Card>
                 </>
             )}
         </div>
@@ -263,30 +244,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         id
                         name
                         account {
-                            id
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                            }
-                        }
-                        invoiceItem {
-                            plan {
-                                billingPlanID
-                                name
-                                nameWithBrand
-                                pricePerUserPerYear
-                            }
-                            userCount
-                            expiresAt
-                        }
-                        events {
-                            id
-                            date
-                            title
-                            description
-                            url
+                            ...DotComProductSubscriptionEmailFields
                         }
                         productLicenses {
                             nodes {
@@ -307,8 +265,17 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         createdAt
                         isArchived
                         url
-                        urlForSiteAdminBilling
                     }
+                }
+            }
+
+            fragment DotComProductSubscriptionEmailFields on User {
+                id
+                username
+                displayName
+                emails {
+                    email
+                    verified
                 }
             }
         `,

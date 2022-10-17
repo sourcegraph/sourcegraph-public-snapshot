@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { render } from '@testing-library/react'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
@@ -13,7 +11,7 @@ import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
+    const NOOP_PLATFORM_CONTEXT = { settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = subtypeOf<HoverOverlayProps>()({
         location: history.location,

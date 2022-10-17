@@ -141,7 +141,12 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 
-			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
+			if !allowSignin(p, info.groups) {
+				log15.Warn("Error authorizing SAML-authenticated user.", "AccountID", info.spec.AccountID, "Expected groups", p.config.AllowGroups, "Got", info.groups)
+				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
+				return
+			}
+			allowSignup := (p.config.AllowSignup == nil || *p.config.AllowSignup)
 			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
 				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
@@ -244,11 +249,11 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 // login flows.
 //
 // SAML overloads the term "RelayState".
-// * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
-//   the RelayState.
-// * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
-//   is the desired post-login redirect URL in plain text.
+//   - In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
+//     back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//     the RelayState.
+//   - In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
+//     is the desired post-login redirect URL in plain text.
 type relayState struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`
@@ -274,4 +279,17 @@ func (s *relayState) decode(encoded string) {
 	}
 
 	s.ProviderID, s.ReturnToURL = "", ""
+}
+
+func allowSignin(p *provider, groups map[string]bool) bool {
+	if p.config.AllowGroups == nil {
+		return true
+	}
+
+	for _, group := range p.config.AllowGroups {
+		if groups[group] {
+			return true
+		}
+	}
+	return false
 }

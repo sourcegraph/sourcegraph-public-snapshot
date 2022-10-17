@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { cleanup, fireEvent } from '@testing-library/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -16,7 +14,7 @@ describe('SavedSearchesPanel', () => {
     let container: HTMLElement
 
     const defaultProps = {
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         authenticatedUser: authUser,
         savedSearchesFragment: { savedSearches: savedSearchesPayload() },
         telemetryService: NOOP_TELEMETRY_SERVICE,

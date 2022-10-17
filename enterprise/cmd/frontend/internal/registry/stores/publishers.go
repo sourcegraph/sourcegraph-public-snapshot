@@ -25,7 +25,7 @@ func (p Publisher) IsZero() bool { return p == Publisher{} }
 
 // PublisherNotFoundError occurs when a registry extension publisher is not found.
 type PublisherNotFoundError struct {
-	args []interface{}
+	args []any
 }
 
 // NotFound implements errcode.NotFounder.
@@ -64,7 +64,6 @@ func (s *extensionStore) publishersSQLCTE() *sqlf.Query {
 func (s *extensionStore) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Publisher, error) {
 	conds = append(conds, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:listPublishers
 %s
 SELECT
 	user_id,
@@ -106,7 +105,6 @@ ORDER BY
 
 func (s *extensionStore) CountPublishers(ctx context.Context, opt PublishersListOptions) (int, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:CountPublishers
 %s
 SELECT COUNT(*) FROM publishers WHERE (%s)`, s.publishersSQLCTE(), sqlf.Join(opt.sqlConditions(), ") AND ("))
 
@@ -122,7 +120,6 @@ func (s *extensionStore) GetPublisher(ctx context.Context, name string) (*Publis
 	var userID, orgID sql.NullInt64
 	var p Publisher
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:GetPublisher
 WITH publishers AS (
 	(
 		SELECT
@@ -164,7 +161,7 @@ LIMIT 1
 	err := s.QueryRow(ctx, q).Scan(&userID, &orgID, &p.NonCanonicalName)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &PublisherNotFoundError{[]interface{}{"name", name}}
+			return nil, &PublisherNotFoundError{[]any{"name", name}}
 		}
 		return nil, err
 	}

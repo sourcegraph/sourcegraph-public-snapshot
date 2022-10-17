@@ -6,11 +6,9 @@ import { asError } from '@sourcegraph/common'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { CreationInsightInput } from '../../../../core/backend/code-insights-backend-types'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../core/constants'
-import { useQueryParameters } from '../../../../hooks/use-query-parameters'
+import { FORM_ERROR, SubmissionErrors } from '../../../../components'
+import { CodeInsightsBackendContext, CreationInsightInput, ALL_INSIGHTS_DASHBOARD } from '../../../../core'
+import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 
 export interface useHandleSubmitOutput {
@@ -26,8 +24,13 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
     const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
-    const { dashboardId } = useQueryParameters(['dashboardId'])
+    const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
+    const redirectUrl = insight
+        ? `/insights/insight/${insight}`
+        : dashboard
+        ? `/insights/dashboards/${dashboard.id}`
+        : `/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`
 
     const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
         if (!id) {
@@ -44,14 +47,7 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
 
             eventLogger.log('InsightEdit', { insightType }, { insightType })
 
-            if (!dashboard) {
-                // Navigate user to the dashboard page with new created dashboard
-                history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
-
-                return
-            }
-
-            history.push(`/insights/dashboards/${dashboard.id}`)
+            history.push(redirectUrl)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -60,12 +56,7 @@ export function useEditPageHandlers(props: { id: string | undefined }): useHandl
     }
 
     const handleCancel = (): void => {
-        if (!dashboard) {
-            history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
-            return
-        }
-
-        history.push(`/insights/dashboards/${dashboard.id}`)
+        history.push(redirectUrl)
     }
 
     return { handleSubmit, handleCancel }

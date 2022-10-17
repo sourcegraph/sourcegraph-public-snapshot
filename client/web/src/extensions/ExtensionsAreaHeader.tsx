@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import { mdiPuzzleOutline } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Link, Icon, Tooltip, Alert, H4, H2 } from '@sourcegraph/wildcard'
 
 import { ActionButtonDescriptor } from '../util/contributions'
 
@@ -23,27 +23,29 @@ export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor
 /**
  * Header for the extensions area.
  */
-export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderProps> = props => (
+export const ExtensionsAreaHeader: React.FunctionComponent<
+    React.PropsWithChildren<ExtensionsAreaHeaderProps>
+> = props => (
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
-                path={[{ icon: PuzzleOutlineIcon, text: 'Extensions' }]}
+                path={[{ icon: mdiPuzzleOutline, text: 'Extensions' }]}
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: ButtonIcon, label, tooltip }) =>
                         condition(props) && (
-                            <Button
-                                className="ml-2"
-                                to={to(props)}
-                                data-tooltip={tooltip}
-                                key={label}
-                                variant="secondary"
-                                as={Link}
-                            >
-                                {ButtonIcon && <Icon as={ButtonIcon} />} {label}
-                            </Button>
+                            <Tooltip content={tooltip}>
+                                <Button className="ml-2" to={to(props)} key={label} variant="secondary" as={Link}>
+                                    {ButtonIcon && <Icon as={ButtonIcon} aria-hidden={true} />} {label}
+                                </Button>
+                            </Tooltip>
                         )
                 )}
             />
         )}
+        <Alert variant="warning" className={props.isPrimaryHeader ? 'mt-4' : ''}>
+            <H4 as={H2}>Sourcegraph extensions are being deprecated</H4>
+            We're in the process of removing Sourcegraph extensions with our September release.{' '}
+            <Link to="/help/extensions/deprecation">Learn more.</Link>
+        </Alert>
     </div>
 )

@@ -4,4 +4,5 @@ const (
 	EmojiSuccess   = "✅"
 	EmojiFailure   = "❌"
 	EmojiLightbulb = "💡"
+	EmojiProblem   = "⛔"
 )

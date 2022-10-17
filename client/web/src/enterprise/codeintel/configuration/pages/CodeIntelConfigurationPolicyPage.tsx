@@ -1,15 +1,15 @@
-import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
+import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
+import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
@@ -30,7 +30,9 @@ export interface CodeIntelConfigurationPolicyPageProps
     history: H.History
 }
 
-export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfigurationPolicyPageProps> = ({
+export const CodeIntelConfigurationPolicyPage: FunctionComponent<
+    React.PropsWithChildren<CodeIntelConfigurationPolicyPageProps>
+> = ({
     match: {
         params: { id },
     },
@@ -40,6 +42,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     telemetryService,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()
@@ -107,7 +110,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
     return (
         <>
-            <PageTitle title="Precise code intelligence configuration policy" />
+            <PageTitle title="Code graph data configuration policy" />
             <PageHeader
                 headingElement="h2"
                 path={[
@@ -124,9 +127,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             {policy.protected ? (
                 <Alert variant="info">
@@ -136,26 +137,29 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             ) : (
                 policy.id !== '' && (
                     <Container className="mb-3">
-                        <Button
-                            type="button"
-                            variant="danger"
-                            disabled={isSaving || isDeleting}
-                            onClick={() => handleDelete(policy.id, policy.name)}
-                            data-tooltip={`Deleting this policy may immediate affect data retention${
+                        <Tooltip
+                            content={`Deleting this policy may immediate affect data retention${
                                 indexingEnabled ? ' and auto-indexing' : ''
                             }.`}
                         >
-                            {!isDeleting && (
-                                <>
-                                    <Icon as={DeleteIcon} /> Delete policy
-                                </>
-                            )}
-                            {isDeleting && (
-                                <>
-                                    <LoadingSpinner /> Deleting...
-                                </>
-                            )}
-                        </Button>
+                            <Button
+                                type="button"
+                                variant="danger"
+                                disabled={isSaving || isDeleting}
+                                onClick={() => handleDelete(policy.id, policy.name)}
+                            >
+                                {!isDeleting && (
+                                    <>
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete policy
+                                    </>
+                                )}
+                                {isDeleting && (
+                                    <>
+                                        <LoadingSpinner /> Deleting...
+                                    </>
+                                )}
+                            </Button>
+                        </Tooltip>
                     </Container>
                 )
             )}

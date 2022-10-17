@@ -19,6 +19,7 @@ type operations struct {
 	requeue                 *observation.Operation
 	resetStalled            *observation.Operation
 	updateExecutionLogEntry *observation.Operation
+	canceledJobs            *observation.Operation
 }
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
@@ -49,5 +50,6 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		requeue:                 op("Requeue"),
 		resetStalled:            op("ResetStalled"),
 		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
+		canceledJobs:            op("CanceledJobs"),
 	}
 }

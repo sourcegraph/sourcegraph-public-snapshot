@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -199,7 +197,7 @@ describe('WebhookAction', () => {
             url: 'https://example.com',
         }
 
-        const mockedVars: SendTestWebhookVariables = {
+        const mockedVariables: SendTestWebhookVariables = {
             namespace: props.authenticatedUser.id,
             description: props.monitorName,
             webhook: {
@@ -235,7 +233,7 @@ describe('WebhookAction', () => {
             const mockedResponse: MockedResponse<SendTestWebhookResult> = {
                 request: {
                     query: SEND_TEST_WEBHOOK,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 result: { data: { triggerTestWebhookAction: { alwaysNil: null } } },
             }
@@ -265,7 +263,7 @@ describe('WebhookAction', () => {
             const mockedResponse: MockedResponse<SendTestWebhookResult> = {
                 request: {
                     query: SEND_TEST_WEBHOOK,
-                    variables: mockedVars,
+                    variables: mockedVariables,
                 },
                 error: new Error('An error occurred'),
             }

@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { cleanup, fireEvent, act } from '@testing-library/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -11,7 +9,7 @@ import { MOCK_REQUESTS } from './RepositoriesPopover.mocks'
 
 const repo = {
     id: 'some-repo-id',
-    name: 'github.com/sourcegraph/sourcegraph',
+    name: '/github.com/sourcegraph/sourcegraph',
 }
 
 describe('RevisionsPopover', () => {

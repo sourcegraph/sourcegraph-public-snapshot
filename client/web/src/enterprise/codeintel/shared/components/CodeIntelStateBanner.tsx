@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from 'react'
+import { FunctionComponent } from 'react'
 
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
@@ -8,14 +8,14 @@ import { CodeIntelStateDescription } from './CodeIntelStateDescription'
 
 export interface CodeIntelStateBannerProps {
     typeName: string
-    pluralTypeName: string
+    pluralTypeName?: string
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     failure?: string | null
     variant?: AlertProps['variant']
 }
 
-export const CodeIntelStateBanner: FunctionComponent<CodeIntelStateBannerProps> = ({
+export const CodeIntelStateBanner: FunctionComponent<React.PropsWithChildren<CodeIntelStateBannerProps>> = ({
     typeName,
     pluralTypeName,
     state,

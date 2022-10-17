@@ -119,7 +119,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .attr('y', data => yScaleBand(data[1]))
             .attr('width', barWidth)
             .attr('height', data => yScaleBand(data[0]) - yScaleBand(data[1]))
-            .attr('data-tooltip', data => `${data[1] - data[0]} users`)
+            .attr('title', data => `${data[1] - data[0]} users`)
 
         if (this.props.showLabels) {
             // Generate value labels on top of each column.
