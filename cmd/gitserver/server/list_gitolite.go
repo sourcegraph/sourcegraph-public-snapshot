@@ -10,9 +10,9 @@ import (
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	// Ensure the request came from us
-	if h := r.Header.Get("X-Requested-With"); h != "Sourcegraph" {
-		http.Error(w, "incorrect headers", http.StatusBadRequest)
+
+	if err := s.checkXRequestedWith(r.Header); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

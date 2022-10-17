@@ -554,6 +554,14 @@ func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServ
 	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
 }
 
+func (s *Server) checkXRequestedWith(h http.Header) error {
+	if value := h.Get("X-Requested-With"); value != "Sourcegraph" {
+		return errors.New("incorrect headers")
+	}
+
+	return nil
+}
+
 func currentGitserverAddresses() gitserver.GitServerAddresses {
 	cfg := conf.Get()
 	gitServerAddrs := gitserver.GitServerAddresses{
