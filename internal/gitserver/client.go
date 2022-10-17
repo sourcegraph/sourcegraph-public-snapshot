@@ -1253,6 +1253,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
