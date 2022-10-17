@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -41,11 +42,12 @@ func Init(
 	bstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
+	gitserverClient := gitserver.NewClient(db)
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
+	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
+	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
 
 	operations := httpapi.NewOperations(observationContext)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

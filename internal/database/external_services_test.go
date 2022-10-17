@@ -2259,7 +2259,10 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (id, external_service_id) VALUES (1, $1)", es.ID)
+	_, err = db.Handle().ExecContext(ctx,
+		`INSERT INTO external_service_sync_jobs
+               (id, external_service_id, repos_synced, repo_sync_errors, repos_added, repos_modified, repos_unmodified, repos_deleted)
+               VALUES (1, $1, 1, 2, 3, 4, 5, 6)`, es.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2273,6 +2276,12 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 		ID:                1,
 		State:             "queued",
 		ExternalServiceID: es.ID,
+		ReposSynced:       1,
+		RepoSyncErrors:    2,
+		ReposAdded:        3,
+		ReposModified:     4,
+		ReposUnmodified:   5,
+		ReposDeleted:      6,
 	}
 	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
@@ -2285,6 +2294,82 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 	}
 	if !errcode.IsNotFound(err) {
 		t.Fatal("wrong err code for not found")
+	}
+}
+
+func TestExternalServiceStore_UpdateSyncJobCounters(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx,
+		`INSERT INTO external_service_sync_jobs
+               (id, external_service_id)
+               VALUES (1, $1)`, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Update counters
+	err = db.ExternalServices().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
+		ID:              1,
+		ReposSynced:     1,
+		RepoSyncErrors:  2,
+		ReposAdded:      3,
+		ReposModified:   4,
+		ReposUnmodified: 5,
+		ReposDeleted:    6,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+		ReposSynced:       1,
+		RepoSyncErrors:    2,
+		ReposAdded:        3,
+		ReposModified:     4,
+		ReposUnmodified:   5,
+		ReposDeleted:      6,
+	}
+
+	have, err := db.ExternalServices().GetSyncJobByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Test updating non-existent job
+	err = db.ExternalServices().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{ID: 2})
+	if err == nil {
+		t.Fatal("no error for not found")
+	}
+	if !errcode.IsNotFound(err) {
+		t.Fatalf("wrong err code for not found, have %v", err)
 	}
 }
 

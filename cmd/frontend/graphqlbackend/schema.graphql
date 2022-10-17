@@ -2372,6 +2372,7 @@ enum ExternalServiceKind {
     PHABRICATOR
     PYTHONPACKAGES
     RUSTPACKAGES
+    RUBYPACKAGES
 }
 
 """

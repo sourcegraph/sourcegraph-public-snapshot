@@ -10,14 +10,17 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -25,21 +28,18 @@ import (
 )
 
 type Service struct {
-	store             store.Store
-	repoStore         RepoStore
-	workerutilStore   dbworkerstore.Store
-	lsifstore         lsifstore.LsifStore
-	gitserverClient   GitserverClient
-	policySvc         PolicyService
-	expirationMetrics *expirationMetrics
-	resetterMetrics   *resetterMetrics
-	janitorMetrics    *janitorMetrics
-	workerMetrics     workerutil.WorkerObservability
-	policyMatcher     PolicyMatcher
-	locker            Locker
-	logger            logger.Logger
-	operations        *operations
-	clock             glock.Clock
+	store           store.Store
+	repoStore       RepoStore
+	workerutilStore dbworkerstore.Store
+	lsifstore       lsifstore.LsifStore
+	gitserverClient GitserverClient
+	policySvc       PolicyService
+	policyMatcher   PolicyMatcher
+	locker          Locker
+	backgroundJob   background.BackgroundJob
+	logger          logger.Logger
+	operations      *operations
+	clock           glock.Clock
 }
 
 func newService(
@@ -50,6 +50,7 @@ func newService(
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
+	backgroundJob background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
@@ -58,22 +59,27 @@ func newService(
 	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
-		store:             store,
-		repoStore:         repoStore,
-		workerutilStore:   workerutilStore,
-		lsifstore:         lsifstore,
-		gitserverClient:   gsc,
-		policySvc:         policySvc,
-		expirationMetrics: newExpirationMetrics(observationContext),
-		resetterMetrics:   newResetterMetrics(observationContext),
-		janitorMetrics:    newJanitorMetrics(observationContext),
-		workerMetrics:     workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true })),
-		policyMatcher:     policyMatcher,
-		locker:            locker,
-		logger:            observationContext.Logger,
-		operations:        newOperations(observationContext),
-		clock:             glock.NewRealClock(),
+		store:           store,
+		repoStore:       repoStore,
+		workerutilStore: workerutilStore,
+		lsifstore:       lsifstore,
+		gitserverClient: gsc,
+		policySvc:       policySvc,
+		backgroundJob:   backgroundJob,
+		policyMatcher:   policyMatcher,
+		locker:          locker,
+		logger:          observationContext.Logger,
+		operations:      newOperations(observationContext),
+		clock:           glock.NewRealClock(),
 	}
+}
+
+func GetBackgroundJob(s *Service) background.BackgroundJob {
+	return s.backgroundJob
+}
+
+func (s *Service) GetWorkerutilStore() dbworkerstore.Store {
+	return s.workerutilStore
 }
 
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
@@ -173,6 +179,64 @@ func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOp
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploads(ctx, opts)
+}
+
+func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("processDelayInMs", int(processDelay.Milliseconds())),
+			log.Int("limit", limit),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
+}
+
+func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
+	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetRepositoriesMaxStaleAge(ctx)
+}
+
+// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
+// repository and build a map from commits to the policies that apply to them.
+func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg background.ExpirerConfig, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
+	var (
+		offset   int
+		policies []types.ConfigurationPolicy
+	)
+
+	for {
+		// Retrieve the complete set of configuration policies that affect data retention for this repository
+		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+			RepositoryID:     repositoryID,
+			ForDataRetention: true,
+			Limit:            cfg.PolicyBatchSize,
+			Offset:           offset,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
+		}
+
+		offset += len(policyBatch)
+		policies = append(policies, policyBatch...)
+
+		if len(policyBatch) == 0 || offset >= totalCount {
+			break
+		}
+	}
+
+	// Get the set of commits within this repository that match a data retention policy
+	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+}
+
+func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) error {
+	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, nil, observation.Args{LogFields: []log.Field{log.Int("batchSize", batchSize)}})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -319,4 +383,248 @@ func (s *Service) GetListTags(ctx context.Context, repo api.RepoName, commitObjs
 	defer endObservation(1, observation.Args{})
 
 	return s.gitserverClient.ListTags(ctx, repo, commitObjs...)
+}
+
+func (s *Service) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
+	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteOldAuditLogs(ctx, maxAge, now)
+}
+
+func (s *Service) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error {
+	ctx, _, endObservation := s.operations.hardDeleteUploadsByIDs.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.HardDeleteUploadsByIDs(ctx, ids...)
+}
+
+func (s *Service) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error) {
+	ctx, _, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("bundleIDs", len(bundleIDs))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.DeleteLsifDataByUploadIds(ctx, bundleIDs...)
+}
+
+func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
+	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("minimumTimeSinceLastCheck", minimumTimeSinceLastCheck.String()), log.Int("limit", limit), log.String("now", now.String())},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+}
+
+func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error) {
+	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("maximumCommitLag", maximumCommitLag.String()), log.String("now", now.String())},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, now)
+}
+
+func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
+	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("now", now.String())},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
+}
+
+func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("uploadedBefore", uploadedBefore.String())},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
+}
+
+func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (int, error) {
+	ctx, _, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SoftDeleteExpiredUploads(ctx)
+}
+
+// BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
+// this value set. This method is used to backfill old upload records prior to this value being reliably set
+// during processing.
+func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
+	tx, err := s.store.Transact(ctx)
+	defer func() {
+		err = tx.Done(err)
+	}()
+
+	batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
+	if err != nil {
+		return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
+	}
+
+	for _, sourcedCommits := range batch {
+		for _, commit := range sourcedCommits.Commits {
+			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
+			if err != nil {
+				return err
+			}
+
+			// Update commit date of all uploads attached to this this repository and commit
+			if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
+				return errors.Wrap(err, "store.UpdateCommittedAt")
+			}
+		}
+
+		// Mark repository as dirty so the commit graph is recalculated with fresh data
+		if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
+			return errors.Wrap(err, "store.SetRepositoryAsDirty")
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
+	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{log.String("now", now.Format(time.RFC3339))},
+	})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.DeleteUploadsWithoutRepository(ctx, now)
+}
+
+func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
+	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
+	if err != nil {
+		return "", errors.Wrap(err, "gitserver.CommitDate")
+	}
+
+	var commitDateString string
+	if revisionExists {
+		commitDateString = commitDate.Format(time.RFC3339)
+	} else {
+		// Set a value here that we'll filter out on the query side so that we don't
+		// reprocess the same failing batch infinitely. We could alternatively soft
+		// delete the record, but it would be better to keep record deletion behavior
+		// together in the same place (so we have unified metrics on that event).
+		commitDateString = "-infinity"
+	}
+
+	return commitDateString, nil
+}
+
+// Handle periodically re-calculates the commit and upload visibility graph for repositories
+// that are marked as dirty by the worker process. This is done out-of-band from the rest of
+// the upload processing as it is likely that we are processing multiple uploads concurrently
+// for the same repository and should not repeat the work since the last calculation performed
+// will always be the one we want.
+
+func (s *Service) UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+	repositoryIDs, err := s.GetDirtyRepositories(ctx)
+	if err != nil {
+		return errors.Wrap(err, "uploadSvc.DirtyRepositories")
+	}
+
+	var updateErr error
+	for repositoryID, dirtyFlag := range repositoryIDs {
+		if err := s.lockAndUpdateUploadsVisibleToCommits(ctx, repositoryID, dirtyFlag, maxAgeForNonStaleBranches, maxAgeForNonStaleTags); err != nil {
+			if updateErr == nil {
+				updateErr = err
+			} else {
+				updateErr = errors.Append(updateErr, err)
+			}
+		}
+	}
+
+	return updateErr
+}
+
+// lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
+// update procedure for this repository. If the lock is already held, this method will simply do nothing.
+func (s *Service) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repositoryID, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", repositoryID),
+			log.Int("dirtyToken", dirtyToken),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), false)
+	if err != nil || !ok {
+		return errors.Wrap(err, "locker.Lock")
+	}
+	defer func() {
+		err = unlock(err)
+	}()
+
+	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
+	// upload objects for the given repository from Postgres, and correlates them into a visibility
+	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	//
+	// The user should supply a dirty token that is associated with the given repository so that
+	// the repository can be unmarked as long as the repository is not marked as dirty again before
+	// the update completes.
+
+	// Construct a view of the git graph that we will later decorate with upload information.
+	commitGraph, err := s.getCommitGraph(ctx, repositoryID)
+	if err != nil {
+		return err
+	}
+	trace.Log(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
+
+	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return errors.Wrap(err, "gitserver.RefDescriptions")
+	}
+	trace.Log(log.Int("numRefDescriptions", len(refDescriptions)))
+
+	// Decorate the commit graph with the set of processed uploads are visible from each commit,
+	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
+	// so that we end up clearing the stale data and bulk inserting nothing.
+	if err := s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
+		return errors.Wrap(err, "uploadSvc.UpdateUploadsVisibleToCommits")
+	}
+
+	return nil
+}
+
+// getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
+// extending back as as the date of the oldest commit for which we have a processed upload for this
+// repository.
+//
+// This optimization is necessary as decorating the commit graph is an operation that scales with
+// the size of both the git graph and the number of uploads (multiplicatively). For repositories with
+// a very large number of commits or distinct roots (most monorepos) this is a necessary optimization.
+//
+// The number of commits pulled back here should not grow over time unless the repo is growing at an
+// accelerating rate, as we routinely expire old information for active repositories in a janitor
+// process.
+func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
+	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		// No uploads exist for this repository
+		return gitdomain.ParseCommitGraph(nil), nil
+	}
+
+	// The --since flag for git log is exclusive, but we want to include the commit where the
+	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
+	// back any more data than we wanted.
+	commitDate = commitDate.Add(-time.Second)
+
+	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserverOptions.CommitGraphOptions{
+		AllRefs: true,
+		Since:   &commitDate,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "gitserver.CommitGraph")
+	}
+
+	return commitGraph, nil
 }

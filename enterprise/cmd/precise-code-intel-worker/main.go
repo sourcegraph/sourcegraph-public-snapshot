@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,7 +117,7 @@ func main() {
 	}
 
 	// Initialize worker
-	worker := services.UploadsService.NewWorker(
+	worker := uploads.GetBackgroundJob(services.UploadsService).NewWorker(
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,

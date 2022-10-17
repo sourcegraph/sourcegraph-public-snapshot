@@ -93,7 +93,7 @@ describe('FileSearchResult', () => {
             subjects: [
                 {
                     lastID: 1,
-                    settings: { 'search.contextLines': '3' },
+                    settings: { 'search.contextLines': 3 },
                     extensions: null,
                     subject: {
                         __typename: 'User' as const,

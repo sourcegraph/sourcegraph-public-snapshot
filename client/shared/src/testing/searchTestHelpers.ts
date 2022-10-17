@@ -9,6 +9,7 @@ import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
 import { PlatformContext } from '../platform/context'
 import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
+import { SettingsCascade } from '../settings/settings'
 
 export const CHUNK_MATCH_RESULT: ContentMatch = {
     type: 'content',
@@ -615,10 +616,10 @@ export const HIGHLIGHTED_FILE_LINES_LONG_REQUEST = sinon.fake((parameters: Fetch
     of(parameters.ranges.map(range => HIGHLIGHTED_FILE_LINES_LONG[0].slice(range.startLine, range.endLine)))
 )
 
-export const NOOP_SETTINGS_CASCADE = {
+export const NOOP_SETTINGS_CASCADE = ({
     subjects: null,
     final: null,
-}
+} as any) as SettingsCascade
 
 export const extensionsController: Controller = {
     executeCommand: () => Promise.resolve(),

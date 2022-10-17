@@ -1,4 +1,4 @@
-package uploads
+package background
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type expirationMetrics struct {
+type ExpirationMetrics struct {
 	// Data retention metrics
-	numRepositoriesScanned prometheus.Counter
-	numUploadsExpired      prometheus.Counter
-	numUploadsScanned      prometheus.Counter
-	numCommitsScanned      prometheus.Counter
+	NumRepositoriesScanned prometheus.Counter
+	NumUploadsExpired      prometheus.Counter
+	NumUploadsScanned      prometheus.Counter
+	NumCommitsScanned      prometheus.Counter
 }
 
-func newExpirationMetrics(observationContext *observation.Context) *expirationMetrics {
+func NewExpirationMetrics(observationContext *observation.Context) *ExpirationMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
@@ -47,20 +47,20 @@ func newExpirationMetrics(observationContext *observation.Context) *expirationMe
 		"The number of codeintel upload records marked as expired.",
 	)
 
-	return &expirationMetrics{
-		numRepositoriesScanned: numRepositoriesScanned,
-		numUploadsScanned:      numUploadsScanned,
-		numCommitsScanned:      numCommitsScanned,
-		numUploadsExpired:      numUploadsExpired,
+	return &ExpirationMetrics{
+		NumRepositoriesScanned: numRepositoriesScanned,
+		NumUploadsScanned:      numUploadsScanned,
+		NumCommitsScanned:      numCommitsScanned,
+		NumUploadsExpired:      numUploadsExpired,
 	}
 }
 
-func (s *Service) MetricReporters(observationContext *observation.Context) {
+func (b backgroundJob) SetMetricReporters(observationContext *observation.Context) {
 	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
 	}, func() float64 {
-		dirtyRepositories, err := s.store.GetDirtyRepositories(context.Background())
+		dirtyRepositories, err := b.uploadSvc.GetDirtyRepositories(context.Background())
 		if err != nil {
 			observationContext.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
 		}
@@ -72,7 +72,7 @@ func (s *Service) MetricReporters(observationContext *observation.Context) {
 		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
 		Help: "The maximum amount of time a repository has had a stale commit graph.",
 	}, func() float64 {
-		age, err := s.store.GetRepositoriesMaxStaleAge(context.Background())
+		age, err := b.uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
 			observationContext.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
 			return 0

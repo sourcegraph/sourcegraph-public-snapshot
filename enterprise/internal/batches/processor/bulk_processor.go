@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -183,7 +184,7 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -218,7 +219,7 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), cs.Changeset, events)
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
 
 	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"golang.org/x/sync/singleflight"
-
 	"github.com/sourcegraph/log"
+	"golang.org/x/sync/singleflight"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -126,7 +126,25 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
+	// Limit calls to progressRecorder as it will most likely hit the database
+	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
+
+	progressRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
+		if final || progressLimiter.Allow() {
+			return s.store.ExternalServiceStore().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
+				ID:              int64(sj.ID),
+				ReposSynced:     progress.Synced,
+				RepoSyncErrors:  progress.Errors,
+				ReposAdded:      progress.Added,
+				ReposDeleted:    progress.Deleted,
+				ReposModified:   progress.Modified,
+				ReposUnmodified: progress.Unmodified,
+			})
+		}
+		return nil
+	}
+
+	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -221,7 +239,7 @@ func (d *Diff) Sort() {
 }
 
 // Repos returns all repos in the Diff.
-func (d Diff) Repos() types.Repos {
+func (d *Diff) Repos() types.Repos {
 	all := make(types.Repos, 0, len(d.Added)+
 		len(d.Deleted)+
 		len(d.Modified)+
@@ -239,7 +257,7 @@ func (d Diff) Repos() types.Repos {
 	return all
 }
 
-func (d Diff) Len() int {
+func (d *Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
 }
 
@@ -500,6 +518,25 @@ func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 // the lazy-added repos.
 var ErrCloudDefaultSync = errors.New("cloud default external services can't be synced")
 
+// SyncProgress represents running counts for an external service sync.
+type SyncProgress struct {
+	Synced int32 `json:"synced,omitempty"`
+	Errors int32 `json:"errors,omitempty"`
+
+	// Diff stats
+	Added      int32 `json:"added,omitempty"`
+	Removed    int32 `json:"removed,omitempty"`
+	Modified   int32 `json:"modified,omitempty"`
+	Unmodified int32 `json:"unmodified,omitempty"`
+
+	Deleted int32 `json:"deleted,omitempty"`
+}
+
+// progressRecorderFunc is a function that implements persisting sync progress.
+// The final param represents whether this is the final call. This allows the
+// function to decide whether to drop some intermediate calls.
+type progressRecorderFunc func(ctx context.Context, progress SyncProgress, final bool) error
+
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
@@ -507,6 +544,7 @@ func (s *Syncer) SyncExternalService(
 	ctx context.Context,
 	externalServiceID int64,
 	minSyncInterval time.Duration,
+	progressRecorder progressRecorderFunc,
 ) (err error) {
 	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
@@ -626,10 +664,24 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
-	// Insert or update repos as they are sourced. Keep track of what was seen
-	// so we can remove anything else at the end.
+
+	var syncProgress SyncProgress
+	// Record the final progress state
+	defer func() {
+		if err := progressRecorder(ctx, syncProgress, true); err != nil {
+			logger.Error("recording final sync progress", log.Error(err))
+		}
+	}()
+
+	// Insert or update repos as they are sourced. Keep track of what was seen so we
+	// can remove anything else at the end.
 	for res := range results {
+		if err := progressRecorder(ctx, syncProgress, false); err != nil {
+			logger.Warn("recording sync progress", log.Error(err))
+		}
+
 		if err := res.Err; err != nil {
+			syncProgress.Errors++
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
 
 			errs = errors.Append(errs, errors.Wrapf(err, "fetching from code host %s", svc.DisplayName))
@@ -650,6 +702,7 @@ func (s *Syncer) SyncExternalService(
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
+			syncProgress.Errors++
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
@@ -662,9 +715,16 @@ func (s *Syncer) SyncExternalService(
 
 			continue
 		}
+
+		syncProgress.Added += int32(diff.Added.Len())
+		syncProgress.Removed += int32(diff.Deleted.Len())
+		syncProgress.Modified += int32(diff.Modified.Repos().Len())
+		syncProgress.Unmodified += int32(diff.Unmodified.Len())
+
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
 		}
+		syncProgress.Synced = int32(len(seen))
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 
@@ -732,7 +792,7 @@ func (s *Syncer) SyncExternalService(
 		if deletedErr != nil {
 			logger.Warn("failed to delete some repos",
 				log.Int("seen", len(seen)),
-				log.Int("deteled", deleted),
+				log.Int("deleted", deleted),
 				log.Error(deletedErr),
 			)
 
@@ -740,6 +800,7 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		if deleted > 0 {
+			syncProgress.Deleted += int32(deleted)
 			logger.Warn("deleted not seen repos",
 				log.Int("seen", len(seen)),
 				log.Int("deleted", deleted),

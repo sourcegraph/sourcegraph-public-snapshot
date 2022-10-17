@@ -9,13 +9,13 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,7 +24,6 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
@@ -482,66 +481,6 @@ type RecordSeriesPointArgs struct {
 	PersistMode PersistMode
 }
 
-// RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
-// series, not a DB table primary key ID).
-func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
-	// Start transaction.
-	var txStore *basestore.Store
-	txStore, err = s.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = txStore.Done(err) }()
-
-	if (v.RepoName != nil && v.RepoID == nil) || (v.RepoID != nil && v.RepoName == nil) {
-		return errors.New("RepoName and RepoID must be mutually specified")
-	}
-
-	// Upsert the repository name into a separate table, so we get a small ID we can reference
-	// many times from the series_points table without storing the repo name multiple times.
-	var repoNameID *int
-	if v.RepoName != nil {
-		repoNameIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName)))
-		if err != nil {
-			return errors.Wrap(err, "upserting repo name ID")
-		}
-		if !ok {
-			return errors.Wrap(err, "repo name ID not found (this should never happen)")
-		}
-		repoNameID = &repoNameIDValue
-	}
-
-	tableName, err := getTableForPersistMode(v.PersistMode)
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(
-		recordSeriesPointFmtstr,
-		sqlf.Sprintf(tableName),
-		v.SeriesID,         // series_id
-		v.Point.Time.UTC(), // time
-		v.Point.Value,      // value
-		v.RepoID,           // repo_id
-		repoNameID,         // repo_name_id
-		repoNameID,         // original_repo_name_id
-		v.Point.Capture,
-	)
-	// Insert the actual data point.
-	return txStore.Exec(ctx, q)
-}
-
-func getTableForPersistMode(mode PersistMode) (string, error) {
-	switch mode {
-	case RecordMode:
-		return recordingTable, nil
-	case SnapshotMode:
-		return snapshotsTable, nil
-	default:
-		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
-	}
-}
-
 // RecordSeriesPoints stores multiple data points atomically.
 func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
 	tx, err := s.Transact(ctx)
@@ -550,12 +489,58 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	}
 	defer func() { err = tx.Done(err) }()
 
+	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_name_id", "capture"}
+
+	// In our current use cases we should only ever use one of these for one function call, but this could change.
+	inserters := map[PersistMode]*batch.Inserter{
+		RecordMode:   batch.NewInserter(ctx, tx.Handle(), recordingTable, batch.MaxNumPostgresParameters, tableColumns...),
+		SnapshotMode: batch.NewInserter(ctx, tx.Handle(), snapshotsTable, batch.MaxNumPostgresParameters, tableColumns...),
+	}
+
 	for _, pt := range pts {
-		// this is a pretty naive implementation, this can be refactored to reduce db calls
-		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
-			return err
+		inserter, ok := inserters[pt.PersistMode]
+		if !ok {
+			return errors.Newf("unsupported insights series point persist mode: %v", pt.PersistMode)
+		}
+
+		if (pt.RepoName != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoName == nil) {
+			return errors.New("RepoName and RepoID must be mutually specified")
+		}
+
+		// Upsert the repository name into a separate table, so we get a small ID we can reference
+		// many times from the series_points table without storing the repo name multiple times.
+		var repoNameID *int
+		if pt.RepoName != nil {
+			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
+			if err != nil {
+				return errors.Wrap(err, "upserting repo name ID")
+			}
+			if !ok {
+				return errors.Wrap(err, "repo name ID not found (this should never happen)")
+			}
+			repoNameID = &repoNameIDValue
+		}
+
+		if err := inserter.Insert(
+			ctx,
+			pt.SeriesID,         // series_id
+			pt.Point.Time.UTC(), // time
+			pt.Point.Value,      // value
+			pt.RepoID,           // repo_id
+			repoNameID,          // repo_name_id
+			repoNameID,          // original_repo_name_id
+			pt.Point.Capture,    // capture
+		); err != nil {
+			return errors.Wrap(err, "Insert")
 		}
 	}
+
+	for _, inserter := range inserters {
+		if err := inserter.Flush(ctx); err != nil {
+			return errors.Wrap(err, "Flush")
+		}
+	}
+
 	return nil
 }
 
@@ -569,18 +554,6 @@ WITH e AS(
 SELECT * FROM e
 UNION
 	SELECT id FROM repo_names WHERE name = %s;
-`
-
-const recordSeriesPointFmtstr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO %s (
-	series_id,
-	time,
-	value,
-	repo_id,
-	repo_name_id,
-	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
