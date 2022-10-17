@@ -73,7 +73,7 @@ type workspaceFile struct {
 	modifiedAt time.Time
 }
 
-// scriptPreamble contains a script that checks at runtime if bash is available.
+// ScriptPreamble contains a script that checks at runtime if bash is available.
 // If it is, we want to be using bash, to support a more natural scripting.
 // If not, then we just run with sh.
 // This works roughly like the following:
@@ -82,7 +82,7 @@ type workspaceFile struct {
 // - If so, we invoke this exact script again, but with the bash on the path, and pass an argument so that this check doesn't happen again.
 // - If not, it might be that PATH is not set correctly, but bash is still available at /bin/bash. If that's the case we do the same as above.
 // Otherwise we just continue and best effort run the script in sh.
-var scriptPreamble = `
+var ScriptPreamble = `
 # Only on the first run, check if we can upgrade to bash.
 if [ -z "$1" ]; then
   bash_path=$(which bash)
@@ -107,7 +107,7 @@ set -x
 `
 
 func buildScript(dockerStep executor.DockerStep) workspaceFile {
-	return workspaceFile{content: []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")}
+	return workspaceFile{content: []byte(strings.Join(append([]string{ScriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")}
 }
 
 func scriptNameFromJobStep(job executor.Job, i int) string {
