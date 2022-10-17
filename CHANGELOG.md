@@ -39,7 +39,6 @@ All notable changes to Sourcegraph are documented in this file.
 - When updating the site configuration, the provided Last ID is now used to prevent race conditions when simultaneous config updates occur. [#42691](https://github.com/sourcegraph/sourcegraph/pull/42691)
 - When multiple auth providers of the same external service type is set up, there are now separate entries in the user's Account Security settings. [#42865](https://github.com/sourcegraph/sourcegraph/pull/42865)
 - Fixed a bug with GitHub code hosts that did not label archived repos correctly when using the "public" repositoryQuery keyword.
-- Fixed a bug where a non-admin user could view another user’s batch spec executions individually via URL. [#42454](https://github.com/sourcegraph/sourcegraph/pull/42454)
 
 ### Removed
 
