@@ -247,7 +247,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	tests := []Test{
 		{
 			Name:         "Command",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
 			ExpectedTrailers: http.Header{
@@ -258,19 +258,19 @@ func TestServer_handleP4Exec(t *testing.T) {
 		},
 		{
 			Name:         "Error",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "subcommand \"bad_command\" is not allowed",
 		},
 		{
 			Name:         "EmptyBody",
-			Request:      httptest.NewRequest("POST", "/p4-exec", nil),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/p4-exec", nil),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: `EOF`,
 		},
 		{
 			Name:         "EmptyInput",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader("{}")),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/p4-exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: `args must be greater than or equal to 1`,
 		},
@@ -787,7 +787,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	}
 
 	// This will perform an initial clone
-	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req := newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size := dirSize(s.dir(repoName).Path("."))
@@ -831,7 +831,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req = httptest.NewRequest("GET", "/delete", bytes.NewReader(body))
+	req = newHTTPRequestWithHeaderXRequestedWith("GET", "/delete", bytes.NewReader(body))
 	s.handleRepoDelete(rr, req)
 
 	size = dirSize(s.dir(repoName).Path("."))
@@ -908,7 +908,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req := newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size := dirSize(s.dir(repoName).Path("."))
@@ -938,7 +938,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size = dirSize(s.dir(repoName).Path("."))
@@ -968,7 +968,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	want = &types.GitserverRepo{
@@ -992,7 +992,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	want = &types.GitserverRepo{
@@ -1079,7 +1079,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	}
 
 	// This will perform an initial clone
-	resp := runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	resp := runAndCheck(t, newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body)))
 	if resp.Error != "" {
 		t.Fatalf("unexpected error: %s", resp.Error)
 	}
@@ -1106,7 +1106,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	// let's run the same request again.
 	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
 	// Because this test doesn't mock that code path, the method will return an error.
-	runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	runAndCheck(t, newHTTPRequestWithHeaderXRequestedWith("GET", "/repo-update", bytes.NewReader(body)))
 	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
 
 	// the repo should still be cloned though
@@ -1461,13 +1461,13 @@ func TestHandleBatchLog(t *testing.T) {
 	tests := []BatchLogTest{
 		{
 			Name:         "bad request",
-			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(``)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/batch-log", strings.NewReader(``)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "EOF", // the particular error when parsing empty payload
 		},
 		{
 			Name:         "empty",
-			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/batch-log", strings.NewReader(`{}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
 				Results: []protocol.BatchLogResult{},
@@ -1475,7 +1475,7 @@ func TestHandleBatchLog(t *testing.T) {
 		},
 		{
 			Name: "all resolved",
-			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+			Request: newHTTPRequestWithHeaderXRequestedWith("POST", "/batch-log", strings.NewReader(`{
 				"repoCommits": [
 					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
 					{"repo": "github.com/foo/baz", "commitId": "deadbeef2"},
@@ -1506,7 +1506,7 @@ func TestHandleBatchLog(t *testing.T) {
 		},
 		{
 			Name: "partially resolved",
-			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+			Request: newHTTPRequestWithHeaderXRequestedWith("POST", "/batch-log", strings.NewReader(`{
 				"repoCommits": [
 					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
 					{"repo": "github.com/foo/baz", "commitId": "dumbmilk1"},
