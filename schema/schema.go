@@ -652,6 +652,8 @@ type ExperimentalFeatures struct {
 	Ranking *Ranking `json:"ranking,omitempty"`
 	// RateLimitAnonymous description: Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
+	// RubyPackages description: Allow adding Ruby package host connections
+	RubyPackages string `json:"rubyPackages,omitempty"`
 	// RustPackages description: Allow adding Rust package code host connections
 	RustPackages string `json:"rustPackages,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
@@ -1585,6 +1587,24 @@ type Responders struct {
 	Name     string `json:"name,omitempty"`
 	Type     string `json:"type,omitempty"`
 	Username string `json:"username,omitempty"`
+}
+
+// RubyPackagesConnection description: Configuration for a connection to Ruby packages
+type RubyPackagesConnection struct {
+	// Dependencies description: An array of strings specifying Ruby packages to mirror in Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the configured Ruby repository APIs.
+	RateLimit *RubyRateLimit `json:"rateLimit,omitempty"`
+	// Repository description: The URL at which the maven repository can be found.
+	Repository string `json:"repository,omitempty"`
+}
+
+// RubyRateLimit description: Rate limit applied when making background API requests to the configured Ruby repository APIs.
+type RubyRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // RustPackagesConnection description: Configuration for a connection to Rust packages

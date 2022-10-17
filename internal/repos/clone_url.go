@@ -98,6 +98,8 @@ func cloneURL(parsed any, logger log.Logger, kind string, repo *types.Repo) (str
 		return string(repo.Name), nil
 	case *schema.RustPackagesConnection:
 		return string(repo.Name), nil
+	case *schema.RubyPackagesConnection:
+		return string(repo.Name), nil
 	case *schema.JVMPackagesConnection:
 		if r, ok := repo.Metadata.(*reposource.MavenMetadata); ok {
 			return r.Module.CloneURL(), nil

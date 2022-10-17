@@ -46,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -519,6 +520,14 @@ func getVCSSyncer(
 		}
 		cli := crates.NewClient(urn, httpcli.ExternalDoer)
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRubyPackages:
+		var c schema.RubyPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := rubygems.NewClient(urn, httpcli.ExternalDoer)
+		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
