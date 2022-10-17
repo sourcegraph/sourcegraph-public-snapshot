@@ -119,6 +119,19 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
+    const tokenLinks = useMemo(() => {
+        if (!blobInfo.stencil) {
+            return []
+        }
+
+        return blobInfo.stencil.map(range => ({
+            range,
+            url: `?${toPositionOrRangeQueryParameter({
+                position: { line: range.start.line + 1, character: range.start.character + 1 },
+            })}#tab=references`,
+        }))
+    }, [blobInfo.stencil])
+
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
@@ -167,7 +180,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation ? tokensAsLinks.of({ blobInfo, history }) : [],
+            tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
