@@ -1609,6 +1609,27 @@ func TestRunCommandGraceful(t *testing.T) {
 	})
 }
 
+func TestCheckXRequestedWith(t *testing.T) {
+	s := Server{}
+
+	// No headers.
+	if err := s.checkXRequestedWith(http.Header{}); err == nil {
+		t.Fatal("expected error but got nil")
+	}
+
+	if err := s.checkXRequestedWith(http.Header{
+		"X-Requested-With": []string{"foo"},
+	}); err == nil {
+		t.Fatal("expected error but got nil")
+	}
+
+	if err := s.checkXRequestedWith(http.Header{
+		"X-Requested-With": []string{"Sourcegraph"},
+	}); err != nil {
+		t.Fatalf("expected nil, but got error: %v", err)
+	}
+}
+
 func mustEncodeJSONResponse(value any) string {
 	encoded, _ := json.Marshal(value)
 	return strings.TrimSpace(string(encoded))
