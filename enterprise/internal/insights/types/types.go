@@ -8,6 +8,7 @@ import (
 type InsightViewSeries struct {
 	ViewID                        int
 	DashboardViewID               int
+	InsightSeriesID               int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string

@@ -406,6 +406,22 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	}
 	end = time.Now()
 	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+
+	recordingsData, err := r.timeSeriesStore.GetInsightSeriesRecordingTimes(ctx, definition.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []store.SeriesPoint
+	if len(recordingsData.RecordingTimes) > 0 {
+		//recordingsData.RecordingTimes = append(recordingsData.RecordingTimes, definition.LastSnapshotAt)
+		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
+	}
+	fmt.Println("augmentedPoints", augmentedPoints)
+	fmt.Println("points", points)
+	fmt.Println("recordingsData")
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
 	return points, err
 }
 
