@@ -300,6 +300,81 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
+		t.Run("BatchChangeByNamespace", func(t *testing.T) {
+			tests := []struct {
+				name                    string
+				currentUser             int32
+				batchChange             int64
+				wantViewerCanAdminister bool
+			}{
+				{
+					name:                    "site-admin viewing own batch change",
+					currentUser:             adminID,
+					batchChange:             adminBatchChange,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing other's batch change",
+					currentUser:             userID,
+					batchChange:             adminBatchChange,
+					wantViewerCanAdminister: false,
+				},
+				{
+					name:                    "site-admin viewing other's batch change",
+					currentUser:             adminID,
+					batchChange:             userBatchChange,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing own batch change",
+					currentUser:             userID,
+					batchChange:             userBatchChange,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "site-admin viewing batch change in org they do not belong to",
+					currentUser:             adminID,
+					batchChange:             orgBatchChange,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing batch change in org they belong to",
+					currentUser:             userID,
+					batchChange:             orgBatchChange,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing org batch change in org they do not belong to",
+					currentUser:             nonOrgUserID,
+					batchChange:             orgBatchChange,
+					wantViewerCanAdminister: false,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					name := 
+					namespaceID := 
+
+					var res struct{ Node apitest.BatchChange }
+
+					input := map[string]any{"batchChange": tc.batchChange.name, "namespaceID": namespaceID}
+				
+					queryBatchChange := `query($namespaceID: ID!, $batchChange: String!) {batchChange(namespace: $namespaceID, name: $batchChange) { ... on BatchChange { namespace { id } }, viewerCanAdminister} }`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchChange)
+
+					// if have, want := res.Node.ID, graphqlID; have != want {
+					// 	t.Fatalf("queried batch change has wrong id %q, want %q", have, want)
+					// }
+					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+						t.Fatalf("queried batch change's ViewerCanAdminister is wrong %t, want %t", have, want)
+					}
+				})
+			}
+		})
+
 		t.Run("BatchSpecByID", func(t *testing.T) {
 			tests := []struct {
 				name                    string
