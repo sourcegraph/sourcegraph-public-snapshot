@@ -42,9 +42,9 @@ export interface ExtensionCoreAPI {
     observeState: () => ProxySubscribable<VSCEState>
     emit: VSCEStateMachine['emit']
     /** Opens a remote file given a serialized SourcegraphUri */
-    openSourcegraphFile: (uri: string) => void
-    openLink: (uri: string) => void
-    copyLink: (uri: string) => void
+    openSourcegraphFile: (uri: string) => Promise<void>
+    openLink: (uri: string) => Promise<void>
+    copyLink: (uri: string) => Promise<void>
     reloadWindow: () => void
     focusSearchPanel: () => void
     /** Cancels previous search when called. */

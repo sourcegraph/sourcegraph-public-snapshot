@@ -42,9 +42,10 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
             .catch(() => {})
     }
 
+    // This will only be called once when extention is first activated
     public async init(): Promise<void> {
         // Process the token that lives in user configuration
-        // Move them to secrets and mark them as REDACTED
+        // Move them to secrets and then remove them by setting it as null
         const oldToken = readConfiguration().get<string>('accessToken')
         if (oldToken && oldToken !== undefined) {
             await this.secretStorage.store(SourcegraphAuthProvider.secretKey, oldToken)

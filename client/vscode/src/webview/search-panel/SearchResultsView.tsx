@@ -276,7 +276,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context.submittedSearchQueryState.queryState, platformContext, onSubmit]
     )
 
-    const onShareResultsClick = useCallback((): void => {
+    const onShareResultsClick = useCallback(async (): Promise<void> => {
         const queryState = context.submittedSearchQueryState
 
         const path = `/search?${buildSearchURLQuery(
@@ -285,9 +285,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             queryState.searchCaseSensitivity,
             context.selectedSearchContextSpec
         )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
-        extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
-            console.error('Error copying search link to clipboard:', error)
-        })
+        await extensionCoreAPI.copyLink(new URL(path, instanceURL).href)
         platformContext.telemetryService.log('VSCEShareLinkClick')
     }, [context, instanceURL, extensionCoreAPI, platformContext])
 

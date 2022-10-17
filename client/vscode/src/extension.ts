@@ -1,7 +1,7 @@
 import 'cross-fetch/polyfill'
 
 import { of, ReplaySubject } from 'rxjs'
-import vscode, { env } from 'vscode'
+import vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
@@ -26,12 +26,13 @@ import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
-import { focusSearchPanel, registerWebviews } from './webview/commands'
+import { focusSearchPanel, openSourcegraphLinks, registerWebviews, copySourcegraphLinks } from './webview/commands'
 import { scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    // Register SourcegraphAuthProvider
     const secretStorage = context.secrets
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
@@ -60,19 +61,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.auth', async (token: string, uri?: string) => {
-            // Get our PAT session.
-            await secretStorage.store(scretTokenKey, token)
-            const session = await vscode.authentication.getSession(uri || endpointSetting(), [], {
-                forceNewSession: true,
-            })
-            if (session) {
-                await vscode.window.showInformationMessage('Logged in sucessfully')
-            }
-        })
-    )
-
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
@@ -110,9 +98,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         getAuthenticatedUser: () => proxySubscribable(authenticatedUser),
         getInstanceURL: () => proxySubscribable(of(initialInstanceURL)),
         openSourcegraphFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
-        openLink: (uri: string) => vscode.env.openExternal(vscode.Uri.parse(uri)),
-        copyLink: (uri: string) =>
-            env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
+        openLink: uri => openSourcegraphLinks(uri),
+        copyLink: uri => copySourcegraphLinks(uri),
         getAccessToken: accessTokenSetting(context.secrets),
         removeAccessToken: () => logout(),
         setEndpointUri: (accessToken, uri) => login(accessToken, uri),
