@@ -38,11 +38,11 @@ import {
     SearchEntry,
     NotepadEntry,
     removeFromNotepad,
-    removeAllNotepadEntries,
     NotepadEntryInput,
     addNotepadEntry,
     setEntryAnnotation,
     NotepadEntryID,
+    removeAllNotepadEntries,
 } from '../stores/notepad'
 
 import styles from './Notepad.module.scss'
@@ -336,6 +336,22 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         }
     }, [confirmRemoveAll])
 
+    // Focus the remove all button when the remove all confirmation box is hidden.
+    // If the remove all button is now diabled (because there are no entries left),
+    // focus the top-level notepad button.
+    const removeAllButton = useRef<HTMLButtonElement>(null)
+    const rootButton = useRef<HTMLButtonElement>(null)
+    const onRemoveAllClosed = useCallback((removeAll: boolean) => {
+        setConfirmRemoveAll(false)
+
+        if (removeAll) {
+            removeAllNotepadEntries()
+            rootButton.current?.focus()
+        } else {
+            removeAllButton.current?.focus()
+        }
+    }, [])
+
     return (
         <aside
             className={classNames(styles.root, className, { [styles.open]: open })}
@@ -349,6 +365,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                 aria-controls={NOTEPAD_ID}
                 aria-expanded="true"
                 id={`${NOTEPAD_ID}-button`}
+                ref={rootButton}
             >
                 <span>
                     <NotepadIcon />
@@ -415,23 +432,17 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                         })}
                     </ol>
                     {confirmRemoveAll && (
-                        <div className="p-2">
+                        <div className="p-2" role="alert">
                             <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
                                 <Button
                                     variant="secondary"
-                                    onClick={() => setConfirmRemoveAll(false)}
+                                    onClick={() => onRemoveAllClosed(false)}
                                     ref={cancelRemoveAll}
                                 >
                                     Cancel
                                 </Button>
-                                <Button
-                                    variant="danger"
-                                    onClick={() => {
-                                        removeAllNotepadEntries()
-                                        setConfirmRemoveAll(false)
-                                    }}
-                                >
+                                <Button variant="danger" onClick={() => onRemoveAllClosed(true)}>
                                     Yes, delete
                                 </Button>
                             </div>
@@ -465,6 +476,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                             className="text-muted"
                             disabled={entries.length === 0}
                             onClick={() => setConfirmRemoveAll(true)}
+                            ref={removeAllButton}
                         >
                             <Icon aria-hidden={true} svgPath={mdiDelete} />
                         </Button>
