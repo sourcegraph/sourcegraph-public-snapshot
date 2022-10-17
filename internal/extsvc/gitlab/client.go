@@ -272,10 +272,8 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 	if ok {
 		// Pre-emptively check for refresh
 		if oauthAuther.NeedsRefresh() {
-			err = oauthAuther.Refresh(ctx, c.httpClient)
-			if err != nil {
-				return nil, 0, errors.Wrap(err, "pre-emptive refresh")
-			}
+			// NOTE: This is a best-effort attempt, so we do not care about the returned error.
+			_ = oauthAuther.Refresh(ctx, c.httpClient)
 		}
 		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
 		if err != nil {
