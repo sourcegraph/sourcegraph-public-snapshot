@@ -45,6 +45,12 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
+            backgroundColor: '#FCFCFC',
+        },
+        '&:focus-within': {
+            backgroundColor: 'var(--code-bg)',
+        },
+        '&:focus-within .cm-gutters': {
             backgroundColor: 'var(--code-bg)',
         },
         '.cm-scroller': {
@@ -52,21 +58,37 @@ const staticExtensions: Extension = [
             fontSize: 'var(--code-font-size)',
             lineHeight: '1rem',
         },
+        '.cm-scroller::-webkit-scrollbar-track': {
+            // todo
+        },
         '.cm-gutters': {
-            backgroundColor: 'var(--code-bg)',
+            backgroundColor: '#FCFCFC',
             borderRight: 'initial',
         },
         '.cm-line': {
             paddingLeft: '1rem',
+        },
+        '.cm-gutterElement.selected-line::before': {
+            borderLeft: '2px solid var(--brand-secondary)', // doesn't work, causes layout shift
+        },
+        '.cm-line:focus': {
+            backgroundColor: 'var(--gray-02)',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
         '.selected-line:focus': {
             boxShadow: 'none',
-        },
-        '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.cm-line.sourcegraph-line-focus [class*=hl-typed-] .focus-visible': {
+            outlineColor: 'var(--brand-secondary)',
+            outlineOffset: '3px',
+            outlineWidth: '2px',
+            outlineStyle: 'solid',
+            borderRadius: '2px',
+            boxShadow: 'none',
+            background: 'none',
         },
     }),
     // Note that these only work out-of-the-box because the editor is

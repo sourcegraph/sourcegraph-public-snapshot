@@ -17,6 +17,11 @@
 
     &:focus-within {
         outline: 0;
-        box-shadow: var(--focus-box-shadow);
+        border: 1px solid var(--gray-04);
+        box-shadow: 0 0 0 0.125rem var(--gray-02);
     }
+}
+
+.selected-line .sourcegraph-document-focus:focus {
+    outline: 0;
 }
