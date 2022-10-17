@@ -24,7 +24,7 @@ export const PopoverTrigger = forwardRef(function PopoverTrigger(props, referenc
     }
 
     return (
-        <Component ref={mergedReference} onClick={handleClick} {...otherProps}>
+        <Component ref={mergedReference} aria-expanded={isOpen} onClick={handleClick} {...otherProps}>
             {typeof children === 'function' ? children(isOpen) : children}
         </Component>
     )
