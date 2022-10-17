@@ -53,13 +53,22 @@ const staticExtensions: Extension = [
         '&:focus-within .cm-gutters': {
             backgroundColor: 'var(--code-bg)',
         },
-        '.cm-scroller': {
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
-            lineHeight: '1rem',
+        '&:focus-within .cm-scroller::-webkit-scrollbar-thumb': {
+            borderColor: 'var(--code-bg)',
+        },
+        '.cm-scroller::-webkit-scrollbar': {
+          width: '16px',
         },
         '.cm-scroller::-webkit-scrollbar-track': {
-            // todo
+            background: 'transparent',
+        },
+        '.cm-scroller::-webkit-scrollbar-thumb': {
+            backgroundColor: 'var(--gray-03)',
+            borderRadius: '16px',
+            border: '4px solid #FCFCFC',
+        },
+        '.cm-scroller::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: 'var(--gray-04)',
         },
         '.cm-gutters': {
             backgroundColor: '#FCFCFC',
@@ -69,7 +78,7 @@ const staticExtensions: Extension = [
             paddingLeft: '1rem',
         },
         '.cm-gutterElement.selected-line::before': {
-            borderLeft: '2px solid var(--brand-secondary)', // doesn't work, causes layout shift
+            borderLeft: '2px solid var(--brand-secondary)', // todo doesn't work in isolation, causes layout shift
         },
         '.cm-line:focus': {
             backgroundColor: 'var(--gray-02)',
