@@ -433,6 +433,8 @@ path is absolute or relative, the path must be within the same directory as the 
 spec directory is considered the "working directory"). If the batch spec is provided using standard input, the current 
 directory is used as the working directory.
 
+Individual files are restricted to a max size of 10MB. Do not include any sensitive information in files being uploaded.
+
 ### Examples
 
 ```yaml
