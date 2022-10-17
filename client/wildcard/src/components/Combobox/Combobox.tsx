@@ -125,6 +125,8 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             position={Position.bottomStart}
             // We don't need to handle any focus management around popover, Combobox reach internal logic will handle it
             focusLocked={false}
+            // Returning target to focus Popover logic breaks combobox box flow with outside clicks
+            returnTargetFocus={false}
             // Turn off reach UI portal position logic PopoverContent does this job
             portal={false}
             // Make sure that the width of the suggestion isn't less than combobox input width

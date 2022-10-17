@@ -18,6 +18,7 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     focusLocked?: boolean
     autoFocus?: boolean
     targetElement?: HTMLElement | null
+    returnTargetFocus?: boolean
 }
 
 export const PopoverContent = forwardRef(function PopoverContent(props, reference) {
@@ -27,6 +28,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         targetElement: propertyTargetElement = null,
         focusLocked = true,
         autoFocus = true,
+        returnTargetFocus = true,
         as: Component = 'div',
         role = 'dialog',
         'aria-modal': ariaModal = true,
@@ -80,6 +82,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         >
             <FloatingPanelContent
                 autoFocus={true}
+                returnTargetFocus={returnTargetFocus}
                 focusLocked={focusLocked}
                 popoverElement={tooltipElement}
                 targetElement={targetElement}
@@ -93,12 +96,13 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
 interface FloatingPanelContentProps {
     focusLocked: boolean
     autoFocus: boolean
+    returnTargetFocus: boolean
     popoverElement: HTMLElement | null
     targetElement: HTMLElement | null
 }
 
 const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = props => {
-    const { children, focusLocked, autoFocus, popoverElement, targetElement } = props
+    const { children, focusLocked, autoFocus, returnTargetFocus, popoverElement, targetElement } = props
 
     const [focusLock, setFocusLock] = useState(false)
 
@@ -123,9 +127,11 @@ const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = p
     // in the following hook.
     useEffect(
         () => () => {
-            targetElement?.focus()
+            if (returnTargetFocus) {
+                targetElement?.focus()
+            }
         },
-        [targetElement]
+        [targetElement, returnTargetFocus]
     )
 
     if (!focusLocked) {
@@ -133,7 +139,7 @@ const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = p
     }
 
     return (
-        <FocusLock disabled={!focusLock} returnFocus={true}>
+        <FocusLock disabled={!focusLock} returnFocus={returnTargetFocus}>
             {children}
         </FocusLock>
     )
