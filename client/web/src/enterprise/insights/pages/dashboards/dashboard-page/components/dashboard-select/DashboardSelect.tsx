@@ -261,6 +261,7 @@ const DashboardOption: FC<DashboardOptionProps> = props => {
         <ComboboxOption
             value={name}
             selected={selected}
+            data-value={name}
             className={classNames(styles.comboboxOption, { [styles.comboboxOptionSelected]: selected })}
         >
             <TruncatedText title={name}>
