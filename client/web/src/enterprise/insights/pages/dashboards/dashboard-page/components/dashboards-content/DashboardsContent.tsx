@@ -11,7 +11,7 @@ import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
 import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
-import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
+import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
@@ -96,7 +96,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
-                    value={currentDashboard?.id}
+                    dashboard={currentDashboard}
                     dashboards={dashboards}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
                     onSelect={handleDashboardSelect}
