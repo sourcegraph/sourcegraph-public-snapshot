@@ -52,11 +52,11 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
-func NewResolver(logger log.Logger, db database.DB, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
 		logger:    logger,
 		db:        db,
-		gitserver: gitserver.NewClient(db),
+		gitserver: gitserverClient,
 		zoekt:     zoekt,
 		searcher:  searcher,
 	}

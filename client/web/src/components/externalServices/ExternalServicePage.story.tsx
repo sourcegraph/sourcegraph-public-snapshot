@@ -114,6 +114,8 @@ export const ViewConfig: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -133,6 +135,8 @@ export const ConfigWithInvalidUrl: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -154,6 +158,8 @@ export const ConfigWithWarning: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -161,3 +167,26 @@ export const ConfigWithWarning: Story = () => (
 )
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
+
+export const EditingDisabled: Story = () => (
+    <WebStory>
+        {webProps => (
+            <MockedTestProvider
+                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
+            >
+                <ExternalServicePage
+                    {...webProps}
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    afterUpdateRoute="/site-admin/after"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    externalServiceID="service123"
+                    autoFocusForm={false}
+                    externalServicesFromFile={true}
+                    allowEditExternalServicesWithFile={false}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+EditingDisabled.storyName = 'External service config EXTSVC_CONFIG_FIlE set'

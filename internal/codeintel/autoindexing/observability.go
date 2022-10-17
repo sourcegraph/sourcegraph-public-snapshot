@@ -9,16 +9,23 @@ import (
 
 type operations struct {
 	// Indexes
-	getIndexes                    *observation.Operation
-	getIndexByID                  *observation.Operation
-	getIndexesByIDs               *observation.Operation
-	getRecentIndexesSummary       *observation.Operation
-	getLastIndexScanForRepository *observation.Operation
-	deleteIndexByID               *observation.Operation
-	deleteIndexes                 *observation.Operation
-	queueRepoRev                  *observation.Operation
-	queueIndex                    *observation.Operation
-	queueIndexForPackage          *observation.Operation
+	getIndexes                     *observation.Operation
+	getIndexByID                   *observation.Operation
+	getIndexesByIDs                *observation.Operation
+	getRecentIndexesSummary        *observation.Operation
+	getLastIndexScanForRepository  *observation.Operation
+	deleteIndexByID                *observation.Operation
+	deleteIndexes                  *observation.Operation
+	deleteIndexesWithoutRepository *observation.Operation
+	expireFailedRecords            *observation.Operation
+	queueRepoRev                   *observation.Operation
+	queueIndex                     *observation.Operation
+	queueIndexForPackage           *observation.Operation
+
+	// Commits
+	getStaleSourcedCommits *observation.Operation
+	updateSourcedCommits   *observation.Operation
+	deleteSourcedCommits   *observation.Operation
 
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
@@ -53,16 +60,23 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		// Indexes
-		getIndexes:                    op("GetIndexes"),
-		getIndexByID:                  op("GetIndexByID"),
-		getIndexesByIDs:               op("GetIndexesByIDs"),
-		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
-		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
-		deleteIndexByID:               op("DeleteIndexByID"),
-		deleteIndexes:                 op("DeleteIndexes"),
-		queueRepoRev:                  op("QueueRepoRev"),
-		queueIndex:                    op("QueueIndex"),
-		queueIndexForPackage:          op("QueueIndexForPackage"),
+		getIndexes:                     op("GetIndexes"),
+		getIndexByID:                   op("GetIndexByID"),
+		getIndexesByIDs:                op("GetIndexesByIDs"),
+		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
+		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
+		deleteIndexByID:                op("DeleteIndexByID"),
+		deleteIndexes:                  op("DeleteIndexes"),
+		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		expireFailedRecords:            op("ExpireFailedRecords"),
+		queueRepoRev:                   op("QueueRepoRev"),
+		queueIndex:                     op("QueueIndex"),
+		queueIndexForPackage:           op("QueueIndexForPackage"),
+
+		// Commits
+		getStaleSourcedCommits: op("GetStaleSourcedCommits"),
+		updateSourcedCommits:   op("UpdateSourcedCommits"),
+		deleteSourcedCommits:   op("DeleteSourcedCommits"),
 
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),

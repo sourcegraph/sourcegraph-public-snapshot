@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -768,8 +769,8 @@ func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, 
 	return graphqlbackend.UserByIDInt32(ctx, m.db, m.Monitor.CreatedBy)
 }
 
-func (m *monitor) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: m.Monitor.CreatedAt}
+func (m *monitor) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: m.Monitor.CreatedAt}
 }
 
 func (m *monitor) Description() string {
@@ -978,11 +979,11 @@ func (m *monitorTriggerEvent) Message() *string {
 	return m.FailureMessage
 }
 
-func (m *monitorTriggerEvent) Timestamp() (graphqlbackend.DateTime, error) {
+func (m *monitorTriggerEvent) Timestamp() (gqlutil.DateTime, error) {
 	if m.FinishedAt == nil {
-		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}, nil
+		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}, nil
 	}
-	return graphqlbackend.DateTime{Time: *m.FinishedAt}, nil
+	return gqlutil.DateTime{Time: *m.FinishedAt}, nil
 }
 
 func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
@@ -1335,11 +1336,11 @@ func (m *monitorActionEvent) Message() *string {
 	return m.FailureMessage
 }
 
-func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
+func (m *monitorActionEvent) Timestamp() gqlutil.DateTime {
 	if m.FinishedAt == nil {
-		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}
+		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}
 	}
-	return graphqlbackend.DateTime{Time: *m.FinishedAt}
+	return gqlutil.DateTime{Time: *m.FinishedAt}
 }
 
 func validateSlackURL(urlString string) error {

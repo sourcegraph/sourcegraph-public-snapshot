@@ -1,5 +1,4 @@
 import { SubmitSearchParameters } from '@sourcegraph/search'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchType } from '@sourcegraph/shared/src/search/stream'
@@ -160,10 +159,6 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 
     return query.replace(match[0], searchType ? `type:${searchType}` : '')
 }
-
-/** Returns true if the given value is of the GraphQL SearchResults type */
-export const isSearchResults = (value: any): value is GQL.ISearchResults =>
-    value && typeof value === 'object' && value.__typename === 'SearchResults'
 
 /**
  * Some filters should use an alias just for search so they receive the expected suggestions.

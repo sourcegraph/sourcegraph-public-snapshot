@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -67,7 +66,7 @@ func Init(
 	}
 	appID = gitHubAppConfig.AppID
 
-	auther, err := extsvcauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+	auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}

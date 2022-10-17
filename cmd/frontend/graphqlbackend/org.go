@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,7 +138,7 @@ func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
 
 func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
-func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.CreatedAt} }
+func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list other org members.

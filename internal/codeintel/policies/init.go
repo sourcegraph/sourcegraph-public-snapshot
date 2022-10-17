@@ -1,6 +1,7 @@
 package policies
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
@@ -31,13 +32,11 @@ type serviceDependencies struct {
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
 	store := store.New(deps.db, scopedContext("store"))
+	backgroundJob := background.New(scopedContext("background"))
 
-	return newService(
-		store,
-		deps.uploadSvc,
-		deps.gitserver,
-		scopedContext("service"),
-	), nil
+	svc := newService(store, deps.uploadSvc, deps.gitserver, backgroundJob, scopedContext("service"))
+
+	return svc, nil
 })
 
 func scopedContext(component string) *observation.Context {

@@ -54,7 +54,7 @@ public class SettingsChangeListener implements Disposable {
 
                 // Notify user about a successful connection
                 if (context.newUrl != null) {
-                    ApiAuthenticator.testConnection(context.newUrl, context.newAccessToken, (status) -> {
+                    ApiAuthenticator.testConnection(context.newUrl, context.newAccessToken, context.newCustomRequestHeaders, (status) -> {
                         if (ConfigUtil.didAuthenticationFailLastTime() && status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
                             notifyAboutSuccessfulConnection();
                         }
