@@ -372,14 +372,25 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                     <H3 className="p-2">
                         Notes <small>({reversedEntries.length})</small>
                     </H3>
-                    <ul role="listbox" aria-multiselectable={true} onKeyDown={handleKey} tabIndex={0}>
+
+                    {/* This should be a role="listbox" and the entries should be role="option", but that doesn't work with the
+                        design because of the nested buttons. Leave this as a normal list with some interaction (arrow keys, etc)
+                        so that screen readers can navigate the nested controls.
+                    */}
+                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+                    <ol
+                        onKeyDown={handleKey}
+                        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+                        tabIndex={0}
+                        aria-label="Notepad entries. Use arrow keys to move selection. Use shift key to select multiple items."
+                    >
                         {reversedEntries.map((entry, index) => {
                             const selected = selectedEntries.includes(index)
                             return (
+                                // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
                                 <li
                                     key={entry.id}
                                     data-notepad-entry-index={index}
-                                    role="option"
                                     onClick={event => toggleSelectedEntry(index, event)}
                                     onKeyDown={event => {
                                         if (document.activeElement === event.currentTarget && event.key === ' ') {
@@ -387,22 +398,22 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                                             toggleSelectedEntry(index, event)
                                         }
                                     }}
-                                    aria-selected={selected}
-                                    aria-label={getLabel(entry)}
                                     onMouseDown={preventTextSelection}
+                                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                                     tabIndex={0}
+                                    aria-label={getLabel(entry, selected)}
                                 >
                                     <NotepadEntryComponent
                                         entry={entry}
                                         focus={hasNewEntry && index === 0}
                                         selected={selected}
-                                        onDelete={selected ? deleteSelectedEntries : deleteEntry}
+                                        onDelete={deleteEntry}
                                         index={index}
                                     />
                                 </li>
                             )
                         })}
-                    </ul>
+                    </ol>
                     {confirmRemoveAll && (
                         <div className="p-2">
                             <Text>Are you sure you want to delete all entries?</Text>
@@ -578,8 +589,6 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selected])
 
-    const deletionLabel = selected ? 'Remove all selected notes' : 'Remove note'
-
     const toggleAnnotationInput = useCallback(
         (show: boolean) => {
             setShowAnnotationInput(show)
@@ -594,6 +603,7 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
     return (
         <div className={classNames(styles.entry, { [styles.selected]: selected })}>
             <div className="d-flex">
+                <span className="sr-only">{selected ? 'Selected, ' : ''}</span>
                 <span className="flex-shrink-0 text-muted mr-1">{icon}</span>
                 <span className="flex-1">
                     <Link
@@ -617,8 +627,8 @@ const NotepadEntryComponent: React.FunctionComponent<React.PropsWithChildren<Not
                         <Icon aria-hidden={true} svgPath={mdiTextBox} />
                     </Button>
                     <Button
-                        aria-label={deletionLabel}
-                        title={deletionLabel}
+                        aria-label="Remove entry"
+                        title="Remove entry"
                         variant="icon"
                         className="ml-1 text-muted"
                         onClick={event => {
@@ -682,7 +692,12 @@ function getUIComponentsForEntry(
             }
         case 'file':
             return {
-                icon: <Icon aria-label="File" svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline} />,
+                icon: (
+                    <Icon
+                        aria-label={entry.lineRange ? 'Line range' : 'File'}
+                        svgPath={entry.lineRange ? mdiCodeBrackets : mdiFileDocumentOutline}
+                    />
+                ),
                 title: (
                     <span title={entry.path}>
                         {fileName(entry.path)}
@@ -704,15 +719,16 @@ function getUIComponentsForEntry(
     }
 }
 
-function getLabel(entry: NotepadEntry): string {
+function getLabel(entry: NotepadEntry, selected: boolean): string {
+    const selectedText = selected ? 'Selected, ' : ''
     switch (entry.type) {
         case 'search':
-            return `search: ${toSearchQuery(entry)}`
+            return `${selectedText}search: ${toSearchQuery(entry)}`
         case 'file':
             if (entry.lineRange) {
-                return `line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
+                return `${selectedText}line range: ${fileName(entry.path)}${formatLineRange(entry.lineRange)}`
             }
-            return `file: ${fileName(entry.path)}`
+            return `${selectedText}file: ${fileName(entry.path)}`
     }
 }
 
