@@ -550,14 +550,14 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 		return nil
 	}
 
-	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "series_id", "recording_time")
+	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time")
 
 	for _, series := range seriesRecordingTimes {
-		seriesID := series.SeriesID
+		id := series.InsightSeriesID
 		for _, recordTime := range series.RecordingTimes {
 			if err := inserter.Insert(
 				ctx,
-				seriesID,         // series_id
+				id,               // insight_series_id
 				recordTime.UTC(), // recording_time
 			); err != nil {
 				return errors.Wrap(err, "Insert")
@@ -571,11 +571,11 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	return nil
 }
 
-func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
-	series.SeriesID = seriesID
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+	series.InsightSeriesID = id
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("series_id = %s", seriesID),
+		sqlf.Sprintf("insight_series_id = %s", id),
 	}
 	if from != nil {
 		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
@@ -584,7 +584,6 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, seriesID int
 		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
-	fmt.Println(timesQuery.Query(sqlf.PostgresBindVar))
 
 	recordingTimes := []time.Time{}
 	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {

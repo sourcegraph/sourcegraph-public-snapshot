@@ -200,8 +200,8 @@ type SeriesSortOptions struct {
 }
 
 type InsightSeriesRecordingTimes struct {
-	SeriesID       int // references insight_series(id)
-	RecordingTimes []time.Time
+	InsightSeriesID int // references insight_series(id)
+	RecordingTimes  []time.Time
 }
 
 type SearchAggregationMode string
