@@ -30,11 +30,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                     </li>
                     <li>
                         Batch changes run on the server now support{' '}
-                        <Link
-                            to="/help/batch_changes/references/batch_spec_yaml_reference#steps-mount"
-                            rel="noopener"
-                            target="_blank"
-                        >
+                        <Link to="/help/batch_changes/how-tos/server_side_file_mounts" rel="noopener" target="_blank">
                             mounting files
                         </Link>
                         .
