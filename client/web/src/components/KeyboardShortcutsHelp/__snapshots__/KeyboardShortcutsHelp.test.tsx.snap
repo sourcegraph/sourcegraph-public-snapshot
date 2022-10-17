@@ -125,7 +125,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                 <li
                   class="list-group-item d-flex align-items-center justify-content-between"
                 >
-                  Fuzzy search files
+                  Fuzzy finder
                   <span>
                     <span>
                       <kbd>

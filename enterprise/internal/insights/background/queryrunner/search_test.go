@@ -2,7 +2,6 @@ package queryrunner
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -25,14 +23,12 @@ import (
 func TestGenerateComputeRecordingsStream(t *testing.T) {
 	t.Run("compute stream job with no dependencies", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -63,14 +59,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job with sub-repo permissions", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -117,14 +111,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job with sub-repo permissions resulted in error", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -167,14 +159,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job with no dependencies multirepo", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -215,14 +205,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job with dependencies", func(t *testing.T) {
 		date := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: []time.Time{date.AddDate(0, 1, 0), date.AddDate(0, 2, 0)},
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -261,14 +249,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job returns errors", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -286,14 +272,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -318,14 +302,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job returns terminal error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -351,14 +333,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 
 	t.Run("compute stream job returns alert event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
@@ -385,14 +365,12 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 func TestGenerateSearchRecordingsStream(t *testing.T) {
 	t.Run("search stream job with no dependencies", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -422,14 +400,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job with sub-repo permissions", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -474,14 +450,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job with sub-repo permissions resulted in error", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -522,14 +496,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job with no dependencies multirepo", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -563,14 +535,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job with dependencies", func(t *testing.T) {
 		date := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: []time.Time{date.AddDate(0, 1, 0), date.AddDate(0, 2, 0)},
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -600,14 +570,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job returns errors", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -625,14 +593,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -657,14 +623,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -690,14 +654,12 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 
 	t.Run("search stream job returns alert event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
+		job := SearchJob{
 			SeriesID:        "testseries1",
 			SearchQuery:     "searchit",
 			RecordTime:      &date,
 			PersistMode:     "record",
 			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
 		}
 
 		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
@@ -742,17 +704,15 @@ func TestFilterRecordsingsByRepo(t *testing.T) {
 
 	recordings := []store.RecordSeriesPointArgs{r1p1, r1p2, r2p1, r2p2, r3p1, r3p2, r4p1, r4p2, nonRepoPoint}
 
-	testJob := Job{
+	testJob := SearchJob{
 		SeriesID:        "testseries1",
 		SearchQuery:     "searchit",
 		RecordTime:      &date,
 		PersistMode:     "record",
 		DependentFrames: nil,
-		ID:              1,
-		State:           "queued",
 	}
 	testCases := []struct {
-		job        Job
+		job        SearchJob
 		series     types.InsightSeries
 		repoList   []*dbtypes.Repo
 		recordings []store.RecordSeriesPointArgs
@@ -848,48 +808,4 @@ func stringify(recordings []store.RecordSeriesPointArgs) []string {
 	// sort for test determinism
 	sort.Strings(stringified)
 	return stringified
-}
-
-type computeValue struct {
-	value   string
-	count   int
-	path    string
-	revhash string
-}
-
-type computeSearch struct {
-	repoName string
-	repoId   int
-	values   []computeValue
-}
-
-func mockComputeSearch(results []computeSearch) func(context.Context, string) ([]query.ComputeResult, error) {
-	var mock []query.ComputeResult
-	for _, result := range results {
-		for _, value := range result.values {
-			for i := 0; i < value.count; i++ {
-				mock = append(mock, query.ComputeMatchContext{
-					Commit: value.revhash,
-					Repository: struct {
-						Name string
-						Id   string
-					}{
-						Name: result.repoName,
-						Id:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("repo:%d", result.repoId))),
-					},
-					Path: value.path,
-					Matches: []query.ComputeMatch{{
-						Value: "",
-						Environment: []query.ComputeEnvironmentEntry{{
-							Variable: "1",
-							Value:    value.value,
-						}},
-					}},
-				})
-			}
-		}
-	}
-	return func(ctx context.Context, s string) ([]query.ComputeResult, error) {
-		return mock, nil
-	}
 }

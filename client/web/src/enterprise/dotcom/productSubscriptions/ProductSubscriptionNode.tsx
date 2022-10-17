@@ -1,8 +1,9 @@
 import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
+
+import { ProductSubscriptionFields } from '../../../graphql-operations'
 
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 
@@ -44,7 +45,7 @@ export const ProductSubscriptionNodeHeader: React.FunctionComponent<React.PropsW
 )
 
 export interface ProductSubscriptionNodeProps {
-    node: GQL.IProductSubscription
+    node: ProductSubscriptionFields
 }
 
 export const ProductSubscriptionNode: React.FunctionComponent<

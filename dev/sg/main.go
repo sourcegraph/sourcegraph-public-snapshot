@@ -198,7 +198,7 @@ var sg = &cli.App{
 			os.Setenv(log.EnvLogFormat, "console")
 		}
 		liblog := log.Init(log.Resource{Name: "sg", Version: BuildCommit})
-		interrupt.Register(func() { _ = liblog.Sync() })
+		interrupt.Register(liblog.Sync)
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
@@ -225,7 +225,13 @@ var sg = &cli.App{
 		}
 
 		// Check for updates, unless we are running update manually.
-		if cmd.Args().First() != "update" {
+		skipBackgroundTasks := map[string]struct{}{
+			"update":   {},
+			"version":  {},
+			"live":     {},
+			"teammate": {},
+		}
+		if _, skipped := skipBackgroundTasks[cmd.Args().First()]; !skipped {
 			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
 				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
@@ -268,6 +274,8 @@ var sg = &cli.App{
 		// Dev environment
 		secretCommand,
 		setupCommand,
+		srcCommand,
+		srcInstanceCommand,
 
 		// Company
 		teammateCommand,

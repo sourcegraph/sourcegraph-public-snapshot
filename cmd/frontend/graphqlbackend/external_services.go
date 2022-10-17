@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,9 +16,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -31,6 +29,15 @@ import (
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
+
+var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
+
+func externalServicesWritable() error {
+	if extsvcConfigFile != "" && !extsvcConfigAllowEdits {
+		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
+	return nil
+}
 
 const syncExternalServiceTimeout = 15 * time.Second
 
@@ -51,49 +58,17 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	var namespaceUserID, namespaceOrgID int32
 	var err error
 	defer reportExternalServiceDuration(start, Add, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	if args.Input.Namespace != nil {
-		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
+		return nil, errors.New("creating namespaced external services are no longer supported")
+	}
 
-		if namespaceUserID > 0 {
-			var allowUserExternalServices conf.ExternalServiceMode
-			allowUserExternalServices, err = r.db.Users().CurrentUserAllowedExternalServices(ctx)
-			if err != nil {
-				return nil, err
-			}
-			if allowUserExternalServices == conf.ExternalServiceModeDisabled {
-				return nil, errors.New("allow users to add external services is not enabled")
-			}
-			if namespaceUserID != actor.FromContext(ctx).UID {
-				return nil, errors.New("the namespace is not the same as the authenticated user")
-			}
-		}
-		if namespaceOrgID > 0 {
-			if err = backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
-				return nil, err
-			}
-			if err = backend.CheckOrgAccess(ctx, r.db, namespaceOrgID); err != nil {
-				err = errors.New("the authenticated user does not belong to the organization requested")
-				return nil, err
-			}
-		}
-		if envvar.SourcegraphDotComMode() {
-			if err := backend.ExternalServiceKindSupported(args.Input.Kind); err != nil {
-				return nil, err
-			}
-			if err := backend.CheckExternalServicesQuota(ctx, r.db, args.Input.Kind, namespaceOrgID, namespaceUserID); err != nil {
-				return nil, err
-			}
-		}
-
-	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		err = backend.ErrMustBeSiteAdmin
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = auth.ErrMustBeSiteAdmin
 		return nil, err
 	}
 
@@ -101,12 +76,6 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
-	}
-	if namespaceUserID > 0 {
-		externalService.NamespaceUserID = namespaceUserID
-	}
-	if namespaceOrgID > 0 {
-		externalService.NamespaceOrgID = namespaceOrgID
 	}
 
 	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
@@ -136,8 +105,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	var err error
 	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Update, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
@@ -207,8 +177,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	var err error
 	var namespaceUserID, namespaceOrgID int32
 	defer reportExternalServiceDuration(start, Delete, &err, &namespaceUserID, &namespaceOrgID)
-	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
-		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
+
+	if err := externalServicesWritable(); err != nil {
+		return nil, err
 	}
 
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
@@ -279,12 +250,6 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
-	}
-
-	if namespaceOrgID > 0 {
-		if err := backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
-			return nil, err
-		}
 	}
 
 	var afterID int64

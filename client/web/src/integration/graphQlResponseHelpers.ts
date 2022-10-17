@@ -1,4 +1,5 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
+import { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
 import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
@@ -31,17 +32,19 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
 
 export const createBlobContentResult = (
     content: string,
-    html: string = `<div style="color:red">${content}<div>`
+    html: string = `<div style="color:red">${content}<div>`,
+    lsif?: JsonDocument
 ): BlobResult => ({
     repository: {
         commit: {
+            blob: null,
             file: {
                 content,
                 richHTML: '',
                 highlight: {
                     aborted: false,
                     html,
-                    lsif: '',
+                    lsif: lsif ? JSON.stringify(lsif) : '',
                 },
             },
         },
@@ -82,7 +85,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
                 serviceKind: ExternalServiceKind.GITHUB,
             },
         ],
-        externalRepository: { serviceType: 'github' },
+        externalRepository: { serviceType: 'github', serviceID: 'https://github.com/' },
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: { displayName: 'master', abbrevName: 'master' },
@@ -108,7 +111,7 @@ export const createResolveCloningRepoRevisionResult = (
                 serviceKind: ExternalServiceKind.GITHUB,
             },
         ],
-        externalRepository: { serviceType: 'github' },
+        externalRepository: { serviceType: 'github', serviceID: 'https://github.com/' },
         description: 'bla',
         viewerCanAdminister: false,
         defaultBranch: null,

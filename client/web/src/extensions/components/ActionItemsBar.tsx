@@ -5,7 +5,7 @@ import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import { BehaviorSubject, of } from 'rxjs'
+import { BehaviorSubject, from, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
@@ -17,6 +17,7 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Link, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
@@ -214,6 +215,11 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
+    const settingsOrError = useObservable(useMemo(() => from(props.platformContext.settings), [props.platformContext.settings]))
+    const settings =
+        settingsOrError !== undefined && isSettingsValid(settingsOrError) ? settingsOrError.final : undefined
+    const perforceCodeHostUrlToSwarmUrlMap = settings?.['perforce.codeHostToSwarmMap'] as ({[codeHost: string]: string} | undefined) || {}
+
     if (!isOpen) {
         return <div className={styles.barCollapsed} />
     }
@@ -237,16 +243,18 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
 
                 {source !== 'compare' && source !== 'commit' && (
                     <GoToCodeHostAction
-                        source="actionItemsBar"
-                        repo={props.repo} // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                        repo={props.repo}
+                        repoName={repoName}
+                        // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
                         revision={rawRevision || props.repo?.defaultBranch?.displayName || 'HEAD'}
                         filePath={filePath}
                         commitRange={commitRange}
-                        position={position}
                         range={range}
-                        repoName={repoName}
-                        actionType="nav"
+                        position={position}
+                        perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
                         fetchFileExternalLinks={fetchFileExternalLinks}
+                        actionType="nav"
+                        source="actionItemsBar"
                     />
                 )}
 
@@ -381,7 +389,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
-                        {/**
+                        {/*
                          * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
                          * break its onClick handler, and it will no longer prevent the default page reload (with no href).
                          */}

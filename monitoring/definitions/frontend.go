@@ -323,9 +323,10 @@ func Frontend() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
+			shared.CodeIntelligence.NewDependencyStoreGroup(containerName),
+			shared.CodeIntelligence.NewDependencyBackgroundJobGroup(containerName),
 			shared.CodeIntelligence.NewLockfilesGroup(containerName),
 
 			shared.GitServer.NewClientGroup(containerName),

@@ -13,8 +13,6 @@ import (
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 
-	"github.com/sourcegraph/run"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,6 +27,8 @@ var (
 	// once fetched.
 	externalSecretTTL = 24 * time.Hour
 )
+
+type FallbackFunc func(context.Context) (string, error)
 
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
 type Store struct {
@@ -120,7 +120,7 @@ func (s *Store) Get(key string, target any) error {
 	return errors.Newf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string, error) {
+func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallbacks ...FallbackFunc) (string, error) {
 	var value externalSecretValue
 
 	// Check if we already have this secret
@@ -135,41 +135,45 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret) (string,
 	}
 
 	// Get secret from provider
-	var err error
-	switch secret.Provider {
+	client, err := s.getSecretmanagerClient(ctx)
+	if err != nil {
+		return "", err
+	}
+	var result *secretmanagerpb.AccessSecretVersionResponse
+	result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+		Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
+	})
+	if err == nil {
+		value.Value = string(result.Payload.Data)
+	}
 
-	case ExternalProviderGCloud:
-		client, err := s.getSecretmanagerClient(ctx)
-		if err != nil {
-			return "", err
+	// Failed to get the secret normally, so lets try getting it with the fallback if it exists
+	if err != nil && len(fallbacks) > 0 {
+
+		for _, fallback := range fallbacks {
+			val, fallbackErr := fallback(ctx)
+
+			if fallbackErr != nil {
+				err = errors.Wrap(err, fallbackErr.Error())
+			} else {
+				value.Value = val
+				// Since we were able to get a secret using the fallback, we set the error to nil
+				// this also ensures that the fallback value is also saved to the store
+				err = nil
+				break
+			}
 		}
-		var result *secretmanagerpb.AccessSecretVersionResponse
-		result, err = client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
-			Name: fmt.Sprintf("projects/%s/secrets/%s/versions/latest", secret.Project, secret.Name),
-		})
-		if err == nil {
-			value.Value = string(result.Payload.Data)
-		}
-
-	case ExternalProvider1Pass:
-		value.Value, err = run.Cmd(ctx, "op read",
-			run.Arg(fmt.Sprintf("op://%s/%s/%s", secret.Project, secret.Name, secret.Field)),
-			`--account="team-sourcegraph.1password.com"`).
-			Run().String()
-
-	default:
-		return "", errors.Newf("Unknown secrets provider %q", secret.Provider)
 	}
 
 	if err != nil {
-		errMessaage := fmt.Sprintf("%s: failed to access secret %q from %q",
-			secret.Provider, secret.Name, secret.Project)
+		errMessage := fmt.Sprintf("gcloud: failed to access secret %q from %q",
+			secret.Name, secret.Project)
 		// Some secret providers use their respective CLI, if not found the user might not
 		// have run 'sg setup' to set up the relevant tool.
 		if strings.Contains(err.Error(), "command not found") {
-			errMessaage += "- you may need to run 'sg setup' again"
+			errMessage += "- you may need to run 'sg setup' again"
 		}
-		return "", errors.Wrap(err, errMessaage)
+		return "", errors.Wrap(err, errMessage)
 	}
 
 	// Return and persist the fetched secret

@@ -150,17 +150,15 @@ func TestGitCommitFileNames(t *testing.T) {
 		return exampleCommitSHA1, nil
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
-	gitserver.Mocks.LsFiles = func(repo api.RepoName, commit api.CommitID) ([]string, error) {
-		return []string{"a", "b"}, nil
-	}
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.LsFilesFunc.SetDefaultReturn([]string{"a", "b"}, nil)
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		gitserver.ResetMocks()
 	}()
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: mustParseGraphQLSchemaWithClient(t, db, gitserverClient),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

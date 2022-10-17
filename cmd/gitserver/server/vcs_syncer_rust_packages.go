@@ -45,7 +45,6 @@ func NewRustPackagesSyncer(
 	}
 }
 
-// pythonPackagesSyncer implements packagesSource
 type rustDependencySource struct {
 	client *crates.Client
 }

@@ -7,11 +7,10 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // Store provides the interface for autoindexing storage.
@@ -27,12 +26,13 @@ type Store interface {
 
 	// Indexes
 	InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error)
-	GetIndexes(ctx context.Context, opts types.GetIndexesOptions) (_ []types.Index, _ int, err error)
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error)
 	GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error)
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
+	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
@@ -42,19 +42,17 @@ type Store interface {
 	// Index configurations
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
+	GetInferenceScript(ctx context.Context) (script string, err error)
+	SetInferenceScript(ctx context.Context, script string) (err error)
 
 	// Language support
 	GetLanguagesRequestedBy(ctx context.Context, userID int) (_ []string, err error)
 	SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error)
 
-	// GetUnsafeDB returns the underlying database handle. This is used by the
-	// resolvers that have the old convention of using the database handle directly.
 	GetUnsafeDB() database.DB
 
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
-	WorkerutilDependencySyncStore(observationContext *observation.Context) dbworkerstore.Store
-	WorkerutilDependencyIndexStore(observationContext *observation.Context) dbworkerstore.Store
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)
+	ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) error
 }
 
 // store manages the autoindexing store.

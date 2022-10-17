@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -179,7 +179,7 @@ func TestGetUploads(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			uploads, totalCount, err := store.GetUploads(ctx, types.GetUploadsOptions{
+			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
 				RepositoryID:     testCase.repositoryID,
 				State:            testCase.state,
 				Term:             testCase.term,
@@ -238,7 +238,7 @@ func TestGetUploads(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		uploads, totalCount, err := store.GetUploads(ctx,
-			types.GetUploadsOptions{
+			shared.GetUploadsOptions{
 				Limit: 1,
 			},
 		)
@@ -617,7 +617,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 2, count)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), types.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -657,7 +657,7 @@ func TestDeleteUploads(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
 	)
 
-	err := store.DeleteUploads(context.Background(), types.DeleteUploadsOptions{
+	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
 		State:        "uploading",
 		Term:         "",
 		VisibleAtTip: false,
@@ -666,7 +666,7 @@ func TestDeleteUploads(t *testing.T) {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), types.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -2075,13 +2075,6 @@ func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCou
 // insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
-}
-
-// insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
-// given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
-// distinct from the default branch or a tag.
-func insertVisibleAtTipNonDefaultBranch(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
 }
 
 func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {

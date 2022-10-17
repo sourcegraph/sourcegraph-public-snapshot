@@ -49,6 +49,9 @@ interface Props extends TelemetryProps {
     history: H.History
     afterUpdateRoute: string
 
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
+
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
     /** For testing only. */
@@ -72,6 +75,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     isLightTheme,
     telemetryService,
     afterUpdateRoute,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     autoFocusForm,
 }) => {
@@ -215,6 +220,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                             isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
+                            externalServicesFromFile={externalServicesFromFile}
+                            allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                         />
                     )}
                     <LoaderButton
@@ -318,7 +325,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 <div className="flex-shrink-0 flex-grow-1 mr-2">
                     {node.startedAt && (
                         <>
-                            {node.finishedAt === null && <>Running since </>}
+                            {node.finishedAt === null && <>Running for </>}
                             {node.finishedAt !== null && <>Ran for </>}
                             <Duration
                                 start={node.startedAt}

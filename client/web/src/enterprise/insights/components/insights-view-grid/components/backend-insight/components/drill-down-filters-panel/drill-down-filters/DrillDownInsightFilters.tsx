@@ -6,19 +6,19 @@ import classNames from 'classnames'
 import { isEqual, noop } from 'lodash'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
-import { useField } from '../../../../../../form/hooks/useField'
+import { useField } from '../../../../../../form'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
 import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
 import { DrillDownInput, LabelWithReset } from '../drill-down-input/DrillDownInput'
 import { FilterCollapseSection, FilterPreviewPill } from '../filter-collapse-section/FilterCollapseSection'
 import { DrillDownSearchContextFilter } from '../search-context/DrillDownSearchContextFilter'
 
-import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, getSortPreview, validRegexp } from './utils'
-import { createSearchContextValidator, getFilterInputStatus } from './validators'
+import { getSerializedRepositoriesFilter, getSerializedSearchContextFilter, getSortPreview } from './utils'
+import { createSearchContextValidator, getFilterInputStatus, REPO_FILTER_VALIDATORS } from './validators'
 
 import styles from './DrillDownInsightFilters.module.scss'
 
@@ -103,13 +103,13 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const includeRegex = useField({
         name: 'includeRepoRegexp',
         formApi: formAPI,
-        validators: { sync: validRegexp },
+        validators: { sync: REPO_FILTER_VALIDATORS },
     })
 
     const excludeRegex = useField({
         name: 'excludeRepoRegexp',
         formApi: formAPI,
-        validators: { sync: validRegexp },
+        validators: { sync: REPO_FILTER_VALIDATORS },
     })
 
     const seriesDisplayOptionsField = useField({

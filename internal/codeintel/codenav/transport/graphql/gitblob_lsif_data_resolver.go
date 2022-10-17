@@ -7,7 +7,8 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -34,7 +35,6 @@ type gitBlobLSIFDataResolverQueryResolver struct {
 	uploadSvc               UploadsService
 	policiesSvc             PolicyService
 	gitBlobLSIFDataResolver GitBlobResolver
-	gitserver               GitserverClient
 	locationResolver        *sharedresolvers.CachedLocationResolver
 	errTracer               *observation.ErrCollector
 }
@@ -42,14 +42,14 @@ type gitBlobLSIFDataResolverQueryResolver struct {
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, gitBlobResolver GitBlobResolver, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
+func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitBlobResolver GitBlobResolver, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
+	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolverQueryResolver{
 		gitBlobLSIFDataResolver: gitBlobResolver,
 		autoindexingSvc:         autoindexSvc,
 		uploadSvc:               uploadSvc,
 		policiesSvc:             policiesSvc,
-		gitserver:               gitserver,
-		locationResolver:        sharedresolvers.NewCachedLocationResolver(autoindexSvc.GetUnsafeDB()),
+		locationResolver:        sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:               errTracer,
 	}
 }

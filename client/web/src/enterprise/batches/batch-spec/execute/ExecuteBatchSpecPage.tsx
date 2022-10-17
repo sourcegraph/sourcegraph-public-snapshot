@@ -9,7 +9,6 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -23,6 +22,7 @@ import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
+    BatchSpecSource,
     GetBatchChangeToEditResult,
     GetBatchChangeToEditVariables,
     Scalars,
@@ -86,6 +86,10 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
                 <Icon aria-label="Loading" className="m-2" as={LoadingSpinner} />
             </div>
         )
+    }
+
+    if (data?.node === null) {
+        return <HeroPage icon={MapSearchIcon} title="404: Not Found" />
     }
 
     if (!data?.node || data.node.__typename !== 'BatchSpec' || !batchChangeData?.batchChange) {

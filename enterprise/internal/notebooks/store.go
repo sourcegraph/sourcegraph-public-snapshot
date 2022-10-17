@@ -349,10 +349,10 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 			n.Title,
 			n.Blocks,
 			n.Public,
-			nullInt32Column(n.CreatorUserID),
-			nullInt32Column(n.UpdaterUserID),
-			nullInt32Column(n.NamespaceUserID),
-			nullInt32Column(n.NamespaceOrgID),
+			dbutil.NullInt32Column(n.CreatorUserID),
+			dbutil.NullInt32Column(n.UpdaterUserID),
+			dbutil.NullInt32Column(n.NamespaceUserID),
+			dbutil.NullInt32Column(n.NamespaceOrgID),
 			sqlf.Join(notebookColumns, ","),
 		),
 	)
@@ -393,9 +393,9 @@ func (s *notebooksStore) UpdateNotebook(ctx context.Context, n *Notebook) (*Note
 			n.Title,
 			n.Blocks,
 			n.Public,
-			nullInt32Column(n.UpdaterUserID),
-			nullInt32Column(n.NamespaceUserID),
-			nullInt32Column(n.NamespaceOrgID),
+			dbutil.NullInt32Column(n.UpdaterUserID),
+			dbutil.NullInt32Column(n.NamespaceUserID),
+			dbutil.NullInt32Column(n.NamespaceOrgID),
 			n.ID,
 			sqlf.Join(notebookColumns, ","),
 		),
@@ -478,11 +478,4 @@ func (s *notebooksStore) CountNotebookStars(ctx context.Context, notebookID int6
 		return -1, err
 	}
 	return count, nil
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
 }

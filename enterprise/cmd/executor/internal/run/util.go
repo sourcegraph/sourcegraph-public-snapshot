@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -22,8 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func newTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) apiclient.TelemetryOptions {
-	t := apiclient.TelemetryOptions{
+func newQueueTelemetryOptions(ctx context.Context, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
+	t := queue.TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
 		ExecutorVersion: version.Version(),
@@ -92,7 +93,7 @@ func getIgniteVersion(ctx context.Context) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func apiWorkerOptions(c *config.Config, telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
+func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:           c.VMPrefix,
 		KeepWorkspaces:     c.KeepWorkspaces,
@@ -101,7 +102,8 @@ func apiWorkerOptions(c *config.Config, telemetryOptions apiclient.TelemetryOpti
 		FirecrackerOptions: firecrackerOptions(c),
 		ResourceOptions:    resourceOptions(c),
 		GitServicePath:     "/.executors/git",
-		ClientOptions:      clientOptions(c, telemetryOptions),
+		QueueOptions:       queueOptions(c, queueTelemetryOptions),
+		FilesOptions:       filesOptions(c),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -130,12 +132,12 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 
 func firecrackerOptions(c *config.Config) command.FirecrackerOptions {
 	return command.FirecrackerOptions{
-		Enabled:                 c.UseFirecracker,
-		Image:                   c.FirecrackerImage,
-		KernelImage:             c.FirecrackerKernelImage,
-		SandboxImage:            c.FirecrackerSandboxImage,
-		VMStartupScriptPath:     c.VMStartupScriptPath,
-		DockerRegistryMirrorURL: c.DockerRegistryMirrorURL,
+		Enabled:                  c.UseFirecracker,
+		Image:                    c.FirecrackerImage,
+		KernelImage:              c.FirecrackerKernelImage,
+		SandboxImage:             c.FirecrackerSandboxImage,
+		VMStartupScriptPath:      c.VMStartupScriptPath,
+		DockerRegistryMirrorURLs: strings.Split(c.DockerRegistryMirrorURL, ","),
 	}
 }
 
@@ -150,35 +152,42 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 	}
 }
 
-func clientOptions(c *config.Config, telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
-	return apiclient.Options{
+func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
+	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
-		PathPrefix:        "/.executors/queue",
-		EndpointOptions:   endpointOptions(c),
-		BaseClientOptions: baseClientOptions(c),
+		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 	}
 }
 
-func baseClientOptions(c *config.Config) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{}
-}
-
-func endpointOptions(c *config.Config) apiclient.EndpointOptions {
-	return apiclient.EndpointOptions{
-		URL:   c.FrontendURL,
-		Token: c.FrontendAuthorizationToken,
+func filesOptions(c *config.Config) apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{
+		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
-func makeWorkerMetrics(queueName string) workerutil.WorkerMetrics {
+func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
+	return apiclient.BaseClientOptions{
+		EndpointOptions: endpointOptions(c, pathPrefix),
+	}
+}
+
+func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOptions {
+	return apiclient.EndpointOptions{
+		URL:        c.FrontendURL,
+		PathPrefix: pathPrefix,
+		Token:      c.FrontendAuthorizationToken,
+	}
+}
+
+func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("executor_processor", "executor worker processor"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	return workerutil.NewMetrics(observationContext, "executor_processor",
+	return workerutil.NewMetrics(observationContext, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
 		// derived from historic data, ideally we will use spare high-res histograms once they're a reality
 		// 										 30s 1m	 2.5m 5m   7.5m 10m  15m  20m	30m	  45m	1hr
 		workerutil.WithDurationBuckets([]float64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),

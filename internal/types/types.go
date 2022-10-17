@@ -10,7 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -587,17 +590,25 @@ type ExternalServiceRepo struct {
 
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
-	ID                int64
+	ID                int64 // TODO: Why is this an int64, it's a 32 bit int in the database
 	State             string
 	FailureMessage    string
 	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
-	NumResets         int
+	NumResets         int // TODO: This is a 32 bit int in the database
 	ExternalServiceID int64
 	NumFailures       int
 	Cancel            bool
+
+	// Counters that show progress of a running job
+	ReposSynced     int32
+	RepoSyncErrors  int32
+	ReposAdded      int32
+	ReposDeleted    int32
+	ReposModified   int32
+	ReposUnmodified int32
 }
 
 // URN returns a unique resource identifier of this external service,
@@ -1447,6 +1458,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
 type GroupResultPing struct {
@@ -1529,6 +1541,14 @@ type InsightsPerDashboardPing struct {
 	Min    int
 	StdDev float32
 	Median float32
+}
+
+type InsightsBackfillTimePing struct {
+	AllRepos   bool
+	P99Seconds int
+	P90Seconds int
+	P50Seconds int
+	Count      int
 }
 
 type CodeMonitoringUsageStatistics struct {
@@ -1639,4 +1659,34 @@ type SearchContext struct {
 type SearchContextRepositoryRevisions struct {
 	Repo      MinimalRepo
 	Revisions []string
+}
+
+type EncryptableSecret = encryption.Encryptable
+
+func NewEmptySecret() *EncryptableSecret {
+	return NewUnencryptedSecret("")
+}
+
+func NewUnencryptedSecret(value string) *EncryptableSecret {
+	return encryption.NewUnencrypted(value)
+}
+
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+	return encryption.NewEncrypted(cipher, keyID, key)
+}
+
+// Webhook defines the information we need to handle incoming webhooks from a
+// code host
+type Webhook struct {
+	// The primary key, used for sorting and pagination
+	ID int32
+	// UUID is the ID we display externally and will appear in the webhook URL
+	UUID            uuid.UUID
+	CodeHostKind    string
+	CodeHostURN     string
+	Secret          *EncryptableSecret
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CreatedByUserID int32
+	UpdatedByUserID int32
 }

@@ -83,7 +83,6 @@ func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 }
 
 const listDependencyReposQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
 SELECT %s
 FROM lsif_dependency_repos
 WHERE %s
@@ -192,7 +191,6 @@ func (s *store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err 
 }
 
 const deleteDependencyReposByIDQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
 DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `

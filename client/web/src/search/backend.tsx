@@ -3,7 +3,6 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
@@ -16,6 +15,7 @@ import {
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
     Scalars,
+    SavedSearchFields,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -59,7 +59,7 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
+export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
     return queryGraphQL(gql`
         query savedSearches {
             savedSearches {
@@ -77,7 +77,7 @@ export function fetchSavedSearches(): Observable<GQL.ISavedSearch[]> {
     )
 }
 
-export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch> {
+export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
     return queryGraphQL(
         gql`
             query SavedSearch($id: ID!) {
@@ -99,7 +99,7 @@ export function fetchSavedSearch(id: Scalars['ID']): Observable<GQL.ISavedSearch
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.ISavedSearch)
+        map(data => data.node as SavedSearchFields)
     )
 }
 

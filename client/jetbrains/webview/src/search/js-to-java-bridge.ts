@@ -109,10 +109,11 @@ export async function getConfigAlwaysFulfill(): Promise<PluginConfig> {
         console.error(`Failed to get config: ${(error as Error).message}`)
         return {
             instanceURL: 'https://sourcegraph.com/',
-            isGlobbingEnabled: false,
             accessToken: null,
-            anonymousUserId: 'no-user-id',
+            customRequestHeadersAsString: null,
+            isGlobbingEnabled: false,
             pluginVersion: '0.0.0',
+            anonymousUserId: 'no-user-id',
         }
     }
 }
@@ -289,11 +290,15 @@ async function createPreviewContentForContentMatch(
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
     const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
-    const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
+
+    const lineNumberAtLineMatchIndex = match.lineMatches ? match.lineMatches[lineMatchIndex].lineNumber : 0
+    const offsetAndLengthsAtLineMatchIndex = match.lineMatches ? match.lineMatches[lineMatchIndex].offsetAndLengths : []
+
+    const characterCountUntilLine = getCharacterCountUntilLine(content, lineNumberAtLineMatchIndex)
     const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
         content,
-        match.lineMatches[lineMatchIndex].lineNumber,
-        match.lineMatches[lineMatchIndex].offsetAndLengths,
+        lineNumberAtLineMatchIndex,
+        offsetAndLengthsAtLineMatchIndex,
         characterCountUntilLine
     )
 
@@ -305,7 +310,7 @@ async function createPreviewContentForContentMatch(
         commit: match.commit,
         path: match.path,
         content: encodeContent(content),
-        lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
+        lineNumber: lineNumberAtLineMatchIndex,
         absoluteOffsetAndLengths,
     }
 }

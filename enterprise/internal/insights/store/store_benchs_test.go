@@ -7,12 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"k8s.io/apimachinery/pkg/util/rand"
 
+	"github.com/sourcegraph/log/logtest"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -33,13 +34,12 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 
 	seriesID := rand.String(8)
 	currentTime := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
-	var records []RecordSeriesPointArgs
 	for i := 0; i < times; i++ {
 		for j := 0; j < repos; j++ {
 			repoName := fmt.Sprintf("repo-%d", j)
 			id := api.RepoID(j)
 			for _, val := range cv {
-				records = append(records, RecordSeriesPointArgs{
+				err := store.RecordSeriesPoint(ctx, RecordSeriesPointArgs{
 					SeriesID: seriesID,
 					Point: SeriesPoint{
 						SeriesID: seriesID,
@@ -51,13 +51,13 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 					RepoID:      &id,
 					PersistMode: RecordMode,
 				})
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
 
 		currentTime = currentTime.AddDate(0, 1, 0)
-	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
-		panic(err)
 	}
 
 	return seriesID

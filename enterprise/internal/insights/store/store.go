@@ -4,17 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,6 +24,7 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
+	RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) error
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 }
@@ -257,12 +259,10 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 }
 
 const deleteForSeries = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points where series_id = %s;
 `
 
 const deleteForSeriesSnapshots = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points_snapshots where series_id = %s;
 `
 
@@ -271,7 +271,6 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
--- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
@@ -303,12 +302,23 @@ func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	repoFilterJoinClause := " "
+	joinClause := " "
 	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+		joinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+	if len(opts.Excluded) > 0 {
+		excludedStrings := []string{}
+		for _, id := range opts.Excluded {
+			excludedStrings = append(excludedStrings, strconv.Itoa(int(id)))
+		}
+
+		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) as excluded_repo ) perm
+			ON sp.repo_id = perm.excluded_repo `
+
+		joinClause = joinClause + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
 	}
 
-	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
+	queryWithJoin := fmt.Sprintf(baseQuery, joinClause, `%s`) // this is a little janky
 	return sqlf.Sprintf(
 		queryWithJoin+limitClause,
 		sqlf.Join(preds, "\n AND "),
@@ -336,8 +346,7 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.Excluded) > 0 {
-		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
-		preds = append(preds, sqlf.Sprintf(s))
+		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		for _, regex := range opts.IncludeRepoRegex {
@@ -443,8 +452,7 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 }
 
 const deleteSnapshotsSql = `
--- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
-delete from %s where series_id = %s;
+DELETE FROM %s WHERE series_id = %s;
 `
 
 type PersistMode string
@@ -474,6 +482,66 @@ type RecordSeriesPointArgs struct {
 	PersistMode PersistMode
 }
 
+// RecordSeriesPoint records a data point for the specfied series ID (which is a unique ID for the
+// series, not a DB table primary key ID).
+func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) (err error) {
+	// Start transaction.
+	var txStore *basestore.Store
+	txStore, err = s.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = txStore.Done(err) }()
+
+	if (v.RepoName != nil && v.RepoID == nil) || (v.RepoID != nil && v.RepoName == nil) {
+		return errors.New("RepoName and RepoID must be mutually specified")
+	}
+
+	// Upsert the repository name into a separate table, so we get a small ID we can reference
+	// many times from the series_points table without storing the repo name multiple times.
+	var repoNameID *int
+	if v.RepoName != nil {
+		repoNameIDValue, ok, err := basestore.ScanFirstInt(txStore.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *v.RepoName, *v.RepoName)))
+		if err != nil {
+			return errors.Wrap(err, "upserting repo name ID")
+		}
+		if !ok {
+			return errors.Wrap(err, "repo name ID not found (this should never happen)")
+		}
+		repoNameID = &repoNameIDValue
+	}
+
+	tableName, err := getTableForPersistMode(v.PersistMode)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(
+		recordSeriesPointFmtstr,
+		sqlf.Sprintf(tableName),
+		v.SeriesID,         // series_id
+		v.Point.Time.UTC(), // time
+		v.Point.Value,      // value
+		v.RepoID,           // repo_id
+		repoNameID,         // repo_name_id
+		repoNameID,         // original_repo_name_id
+		v.Point.Capture,
+	)
+	// Insert the actual data point.
+	return txStore.Exec(ctx, q)
+}
+
+func getTableForPersistMode(mode PersistMode) (string, error) {
+	switch mode {
+	case RecordMode:
+		return recordingTable, nil
+	case SnapshotMode:
+		return snapshotsTable, nil
+	default:
+		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
+	}
+}
+
 // RecordSeriesPoints stores multiple data points atomically.
 func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
 	tx, err := s.Transact(ctx)
@@ -482,63 +550,16 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 	}
 	defer func() { err = tx.Done(err) }()
 
-	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_name_id", "capture"}
-
-	// In our current use cases we should only ever use one of these for one function call, but this could change.
-	inserters := map[PersistMode]*batch.Inserter{
-		RecordMode:   batch.NewInserter(ctx, tx.Handle(), recordingTable, batch.MaxNumPostgresParameters, tableColumns...),
-		SnapshotMode: batch.NewInserter(ctx, tx.Handle(), snapshotsTable, batch.MaxNumPostgresParameters, tableColumns...),
-	}
-
 	for _, pt := range pts {
-		inserter, ok := inserters[pt.PersistMode]
-		if !ok {
-			return errors.Newf("unsupported insights series point persist mode: %v", pt.PersistMode)
-		}
-
-		if (pt.RepoName != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoName == nil) {
-			return errors.New("RepoName and RepoID must be mutually specified")
-		}
-
-		// Upsert the repository name into a separate table, so we get a small ID we can reference
-		// many times from the series_points table without storing the repo name multiple times.
-		var repoNameID *int
-		if pt.RepoName != nil {
-			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
-			if err != nil {
-				return errors.Wrap(err, "upserting repo name ID")
-			}
-			if !ok {
-				return errors.Wrap(err, "repo name ID not found (this should never happen)")
-			}
-			repoNameID = &repoNameIDValue
-		}
-
-		if err := inserter.Insert(
-			ctx,
-			pt.SeriesID,         // series_id
-			pt.Point.Time.UTC(), // time
-			pt.Point.Value,      // value
-			pt.RepoID,           // repo_id
-			repoNameID,          // repo_name_id
-			repoNameID,          // original_repo_name_id
-			pt.Point.Capture,    // capture
-		); err != nil {
-			return errors.Wrap(err, "Insert")
+		// this is a pretty naive implementation, this can be refactored to reduce db calls
+		if err := s.RecordSeriesPoint(ctx, pt); err != nil {
+			return err
 		}
 	}
-
-	for _, inserter := range inserters {
-		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "Flush")
-		}
-	}
-
 	return nil
 }
 
 const upsertRepoNameFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
 	INSERT INTO repo_names(name)
 	VALUES (%s)

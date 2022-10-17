@@ -42,7 +42,6 @@ func (m *insightsMigrator) Progress(ctx context.Context, _ bool) (float64, error
 }
 
 const insightsMigratorProgressQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		CAST(c1.count AS FLOAT) / CAST(c2.count AS FLOAT)
@@ -78,7 +77,6 @@ func (m *insightsMigrator) Up(ctx context.Context) (err error) {
 }
 
 const insightsMigratorUpQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:Up
 WITH
 global_jobs AS (
 	SELECT id FROM insights_settings_migration_jobs
@@ -170,7 +168,6 @@ func (m *insightsMigrator) performMigrationJob(ctx context.Context, tx *basestor
 }
 
 const insightsMigratorPerformMigrationJobUpdateJobQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:performMigrationJob
 UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
@@ -260,12 +257,10 @@ func (m *insightsMigrator) invokeWithProgress(
 }
 
 const insightsMigratorInvokeWithProgressUpdateTotalQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migrator.go:invokeWithProgress
 UPDATE insights_settings_migration_jobs SET total_%s = %s WHERE %s
 `
 
 const insightsMigratorInvokeWithProgressUpdateMigratedQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migrator.go:invokeWithProgress
 UPDATE insights_settings_migration_jobs SET migrated_%s = %s WHERE %s
 `
 
@@ -316,7 +311,6 @@ func (m *insightsMigrator) makeUniqueIDSuffix(ctx context.Context, tx *basestore
 }
 
 const insightsMigratorPerformMigrationJobSelecMakeUniquIDSuffixQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/migration.go:makeUniqueIDSuffix
 SELECT orgs.id
 FROM org_members
 LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id

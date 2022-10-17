@@ -26,11 +26,12 @@ let
     });
   });
   # Pin a specific version of nixpkgs to ensure we get the same packages.
+  # To update find a recent commit to nixpkgs. To get the sha256 pass the URL to nix-prefetch-url --unpack
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/6f38b43c8c84c800f93465b2241156419fd4fd52.tar.gz";
-      sha256 = "0xw3y3jx1bcnwsc0imacbp5m8f51b66s9h8kk8qnfbckwv67dhgd";
+        "https://github.com/NixOS/nixpkgs/archive/5e66f427c661955f08d55f654e82bab1b1a7abc1.tar.gz";
+      sha256 = "1rhyn1hrgpsl1ydihan3xb2azz4bghghg451a49sr5vh3v6yz5sy";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"

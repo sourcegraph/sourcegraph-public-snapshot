@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	gh "github.com/google/go-github/v43/github"
@@ -123,7 +122,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
 			Url:      "https://github.com",
-			Token:    os.Getenv("GITHUB_TOKEN"),
+			Token:    "fake",
 			Repos:    []string{"sourcegraph/sourcegraph"},
 			Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 		})),
@@ -131,7 +130,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	err := esStore.Upsert(ctx, extSvc)
 	if err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 
 	hook := GitHubWebhook{

@@ -60,9 +60,18 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 
 //nolint:unparam // unparam complains that `perms` always has same value across call-sites, but that's OK, as we only support read permissions right now.
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
-	const queryFmtString = `(
-    %s                            -- TRUE or FALSE to indicate whether to bypass the check
-OR (
+	if bypassAuthz {
+		// if bypassAuthz is true, we don't care about any of the checks
+		return sqlf.Sprintf(`
+(
+    -- Bypass authz
+    TRUE
+)
+`)
+	}
+
+	const unrestrictedReposSQL = `
+(
 	-- Unrestricted repos are visible to all users
 	EXISTS (
 		SELECT
@@ -71,56 +80,44 @@ OR (
 		AND unrestricted
 	)
 )
-OR  (
-	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
-	AND (
-		NOT repo.private          -- Happy path of non-private repositories
-		OR  EXISTS (              -- Each external service defines if repositories are unrestricted
-			SELECT
-			FROM external_services AS es
-			JOIN external_service_repos AS esr ON (
-					esr.external_service_id = es.id
-				AND esr.repo_id = repo.id
-				AND es.unrestricted = TRUE
-				AND es.deleted_at IS NULL
-			)
-		)
-	)
-)
-OR  (                             -- Restricted repositories require checking permissions
-	(
-		SELECT object_ids_ints @> INTSET(repo.id)
-		FROM user_permissions
-		WHERE
-			user_id = %s
-		AND permission = %s
-		AND object_type = 'repos'
-	) AND EXISTS (
-		SELECT
-		FROM external_service_repos
-		WHERE repo_id = repo.id
-		AND (
-				(user_id IS NULL AND org_id IS NULL)  -- The repository was added at the instance level
-			OR  user_id = %s                          -- The authenticated user added this repository
-			OR  EXISTS (                              -- The authenticated user is a member of an organization that added this repository
-				SELECT
-				FROM org_members
-				WHERE
-					external_service_repos.org_id = org_members.org_id
-				AND org_members.user_id = %s
-			)
-		)
-	)
-)
+`
+	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
+
+	const restrictedRepositoriesSQL = `
+(                             -- Restricted repositories require checking permissions
+    SELECT object_ids_ints @> INTSET(repo.id)
+    FROM user_permissions
+    WHERE
+        user_id = %s
+    AND permission = %s
+    AND object_type = 'repos'
 )
 `
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
 
-	return sqlf.Sprintf(queryFmtString,
-		bypassAuthz,
-		usePermissionsUserMapping,
-		authenticatedUserID,
-		perms.String(),
-		authenticatedUserID,
-		authenticatedUserID,
+	conditions := []*sqlf.Query{unrestrictedReposQuery, restrictedRepositoriesQuery}
+
+	// Disregard unrestricted state when permissions user mapping is enabled
+	if !usePermissionsUserMapping {
+		const externalServiceUnrestrictedSQL = `
+(
+    NOT repo.private          -- Happy path of non-private repositories
+    OR  EXISTS (              -- Each external service defines if repositories are unrestricted
+        SELECT
+        FROM external_services AS es
+        JOIN external_service_repos AS esr ON (
+                esr.external_service_id = es.id
+            AND esr.repo_id = repo.id
+            AND es.unrestricted = TRUE
+            AND es.deleted_at IS NULL
+        )
 	)
+)
+`
+		externalServiceUnrestrictedQuery := sqlf.Sprintf(externalServiceUnrestrictedSQL)
+		conditions = append(conditions, externalServiceUnrestrictedQuery)
+	}
+
+	// Have to manually wrap the result in parenthesis so that they're evaluated together
+	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "OR"))
 }

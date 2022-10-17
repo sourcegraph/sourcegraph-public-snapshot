@@ -26,12 +26,13 @@ describe('Code insights empty dashboard', () => {
     after(() => driver?.close())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it('renders empty dashboard', async () => {
+    it('renders empty dashboard (licencsed)', async () => {
         overrideInsightsGraphQLApi({
             testContext,
             overrides: {
                 InsightsDashboards: () => INSIGHTS_DASHBOARDS,
                 GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
+                IsCodeInsightsLicensed: () => ({ enterpriseLicenseHasFeature: true }),
             },
         })
 
@@ -53,5 +54,43 @@ describe('Code insights empty dashboard', () => {
 
         assert(/empty dashboard/i.test(dashboardSelectButtonText))
         assert(/add insights/i.test(addInsightsButtonCardText))
+
+        const gaModal = await driver.page.$('[role="dialog"][aria-label="Code Insights Ga information"]')
+
+        assert(!gaModal)
+    })
+
+    it('renders empty dashboard (unlicencsed)', async () => {
+        overrideInsightsGraphQLApi({
+            testContext,
+            overrides: {
+                InsightsDashboards: () => INSIGHTS_DASHBOARDS,
+                GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_EMPTY,
+                IsCodeInsightsLicensed: () => ({ enterpriseLicenseHasFeature: false }),
+            },
+        })
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/insights/dashboards/${EMPTY_DASHBOARD.id}`)
+
+        const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
+        const addInsightsButtonCard = await driver.page.waitForSelector('[data-testid="add-insights-button-card"')
+
+        assert(dashboardSelectButton)
+
+        const dashboardSelectButtonText: string = (await driver.page.evaluate(
+            button => button.textContent,
+            dashboardSelectButton
+        )) as string
+        const addInsightsButtonCardText: string = (await driver.page.evaluate(
+            button => button.textContent,
+            addInsightsButtonCard
+        )) as string
+
+        assert(/empty dashboard/i.test(dashboardSelectButtonText))
+        assert(/add insights/i.test(addInsightsButtonCardText))
+
+        const gaModal = await driver.page.$('[role="dialog"][aria-label="Code Insights Ga information"]')
+
+        assert(gaModal)
     })
 })
