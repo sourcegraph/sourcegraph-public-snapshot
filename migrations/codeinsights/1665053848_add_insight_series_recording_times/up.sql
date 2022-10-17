@@ -1,6 +1,6 @@
-CREATE TABLE IF NOT EXISTS insight_series_recording_times(
+CREATE TABLE IF NOT EXISTS insight_series_recording_times (
 	series_id int,
 	recording_time timestamptz,
-	unique(series_id, recording_time),
-	constraint series_id_fkey foreign key(series_id) references insight_series(id) on delete cascade
+	UNIQUE (series_id, recording_time),
+	CONSTRAINT series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series (id) ON DELETE CASCADE
 );

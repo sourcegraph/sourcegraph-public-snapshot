@@ -642,7 +642,6 @@ UNION
 `
 
 const getInsightSeriesRecordingTimesStr = `
--- source: enterprise/internal/insights/store/store.go:GetInsightSeriesRecordingTimes
 SELECT recording_time FROM insight_series_recording_times
 WHERE %s
 ORDER BY recording_time ASC;

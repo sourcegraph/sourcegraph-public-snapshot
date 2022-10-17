@@ -602,7 +602,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err := createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
+			_, err = createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
