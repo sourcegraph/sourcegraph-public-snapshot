@@ -11,7 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func CreateWebhook(ctx context.Context, db database.DB, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
+type webhookService struct {
+	db      database.DB
+	keyRing keyring.Ring
+}
+
+func NewWebhookService(db database.DB, keyRing keyring.Ring) webhookService {
+	return webhookService{
+		db:      db,
+		keyRing: keyRing,
+	}
+}
+
+func (ws webhookService) CreateWebhook(ctx context.Context, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
 	err := validateCodeHostKindAndSecret(codeHostKind, secretStr)
 	if err != nil {
 		return nil, err
@@ -20,7 +32,7 @@ func CreateWebhook(ctx context.Context, db database.DB, codeHostKind, codeHostUR
 	if secret != nil {
 		secret = types.NewUnencryptedSecret(*secretStr)
 	}
-	return db.Webhooks(keyring.Default().WebhookKey).Create(ctx, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
+	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
 }
 
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {

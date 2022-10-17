@@ -123,7 +123,8 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	webhook, err := backend.CreateWebhook(ctx, r.db, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
