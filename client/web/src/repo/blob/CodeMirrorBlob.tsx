@@ -27,6 +27,7 @@ import { hovercardRanges } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
 
 const staticExtensions: Extension = [
@@ -58,6 +59,9 @@ const staticExtensions: Extension = [
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.selected-line:focus': {
+            boxShadow: 'none',
+        },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
@@ -88,6 +92,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         location,
         history,
         blameHunks,
+        tokenKeyboardNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -103,7 +108,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
-    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -114,6 +118,19 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+
+    const tokenLinks = useMemo(() => {
+        if (!blobInfo.stencil) {
+            return []
+        }
+
+        return blobInfo.stencil.map(range => ({
+            range,
+            url: `?${toPositionOrRangeQueryParameter({
+                position: { line: range.start.line + 1, character: range.start.character + 1 },
+            })}#tab=references`,
+        }))
+    }, [blobInfo.stencil])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -163,6 +180,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
+            tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
             syntaxHighlight.of(blobInfo),
             pinnedRangeField.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -183,7 +201,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, tokenLinks]
     )
 
     const editorRef = useRef<EditorView>()

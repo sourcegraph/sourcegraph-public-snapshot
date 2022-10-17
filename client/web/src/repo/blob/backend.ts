@@ -6,7 +6,13 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables, HighlightResponseFormat } from '../../graphql-operations'
+import {
+    BlobFileFields,
+    BlobResult,
+    BlobStencilFields,
+    BlobVariables,
+    HighlightResponseFormat,
+} from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
 /**
@@ -14,18 +20,20 @@ import { useExperimentalFeatures } from '../../stores'
  */
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
+    stencil = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
+    stencil,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format, stencil } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}`
+    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}&stencil=${stencil}`
 }
 
 interface FetchBlobOptions {
@@ -34,10 +42,18 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
+    stencil?: boolean
 }
 
-export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
-    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
+interface FetchBlobResponse {
+    blob: BlobFileFields | null
+    stencil?: BlobStencilFields[]
+}
+
+export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<FetchBlobResponse> => {
+    const { repoName, revision, filePath, disableTimeout, format, stencil } = applyDefaultValuesToFetchBlobOptions(
+        options
+    )
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
@@ -54,9 +70,17 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
+                $stencil: Boolean!
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
+                        blob(path: $filePath) @include(if: $stencil) {
+                            lsif {
+                                stencil {
+                                    ...BlobStencilFields
+                                }
+                            }
+                        }
                         file(path: $filePath) {
                             ...BlobFileFields
                         }
@@ -73,15 +97,30 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                     lsif
                 }
             }
+
+            fragment BlobStencilFields on Range {
+                start {
+                    line
+                    character
+                }
+                end {
+                    line
+                    character
+                }
+            }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html, stencil }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
             if (!data.repository?.commit) {
                 throw new Error('Commit not found')
             }
-            return data.repository.commit.file
+
+            return {
+                blob: data.repository.commit.file,
+                stencil: data.repository.commit.blob?.lsif?.stencil,
+            }
         })
     )
 }, fetchBlobCacheKey)

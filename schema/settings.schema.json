@@ -611,6 +611,11 @@
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
     },
+    "codeIntel.blobKeyboardNavigation": {
+      "description": "Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available",
+      "type": "string",
+      "enum": ["none", "token"]
+    },
     "codeIntel.traceExtension": {
       "description": "Whether to enable trace logging on the extension.",
       "type": "boolean"
