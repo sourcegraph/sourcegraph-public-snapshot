@@ -2534,7 +2534,7 @@ func TestHardDeleteSeries(t *testing.T) {
 	}
 
 	getTimesCountforSeries := func(ctx context.Context, timeseriesStore *Store, seriesId int) int {
-		q := sqlf.Sprintf("select count(*) from insight_series_recording_times where series_id = %s;", seriesId)
+		q := sqlf.Sprintf("select count(*) from insight_series_recording_times where insight_series_id = %s;", seriesId)
 		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
 		if err != nil {
 			t.Fatal(err)
