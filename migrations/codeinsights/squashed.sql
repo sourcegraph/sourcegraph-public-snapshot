@@ -225,7 +225,7 @@ CREATE SEQUENCE insight_series_id_seq
 ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
 CREATE TABLE insight_series_recording_times (
-    series_id integer,
+    insight_series_id integer,
     recording_time timestamp with time zone
 );
 
@@ -557,7 +557,7 @@ ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY insight_series_recording_times
-    ADD CONSTRAINT insight_series_recording_times_series_id_recording_time_key UNIQUE (series_id, recording_time);
+    ADD CONSTRAINT insight_series_recording_time_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_pk PRIMARY KEY (id);
@@ -681,7 +681,7 @@ ALTER TABLE ONLY repo_iterator_errors
     ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);
 
 ALTER TABLE ONLY insight_series_recording_times
-    ADD CONSTRAINT series_id_fkey FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+    ADD CONSTRAINT series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_metadata_id_fkey FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE;
