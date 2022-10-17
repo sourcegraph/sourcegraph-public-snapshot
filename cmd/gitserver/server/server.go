@@ -1499,15 +1499,16 @@ func (s *Server) ensureOperations() *operations {
 }
 
 func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
-	if err := checkXRequestedWith(r.Header); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	// 🚨 SECURITY: Only allow POST requests.
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if strings.ToUpper(r.Method) != http.MethodPost {
 		http.Error(w, "", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := checkXRequestedWith(r.Header); err != nil {
+		s.Logger.Warn("checkXRequestedWith failed!")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

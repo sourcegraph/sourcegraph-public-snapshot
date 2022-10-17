@@ -49,6 +49,12 @@ type Test struct {
 	ExpectedTrailers http.Header
 }
 
+func newHTTPRequestWithHeaderXRequestedWith(method, target string, body io.Reader) *http.Request {
+	r := httptest.NewRequest(method, target, body)
+	r.Header.Add("X-Requested-With", "Sourcegraph")
+	return r
+}
+
 func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
@@ -59,7 +65,7 @@ func TestExecRequest(t *testing.T) {
 		},
 		{
 			Name:         "Command",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
 			ExpectedTrailers: http.Header{
@@ -70,7 +76,7 @@ func TestExecRequest(t *testing.T) {
 		},
 		{
 			Name:         "CommandWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
 			ExpectedTrailers: http.Header{
@@ -103,31 +109,31 @@ func TestExecRequest(t *testing.T) {
 		},
 		{
 			Name:         "NonexistingRepo",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
 			Name:         "NonexistingRepoWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
 			Name:         "UnclonedRepoWithoutURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
 		},
 		{
 			Name:         "UnclonedRepoWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
 		{
 			Name:         "Error",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {"testerror"},
@@ -137,13 +143,13 @@ func TestExecRequest(t *testing.T) {
 		},
 		{
 			Name:         "EmptyInput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
 		{
 			Name:         "BadCommand",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			Request:      newHTTPRequestWithHeaderXRequestedWith("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
