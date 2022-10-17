@@ -395,7 +395,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc = scopedLog.Warn
 	}
 	// Used for cases where large pings objects might otherwise fail silently.
-	logFuncError := scopedLog.Error
+	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
 		ClientSiteID:                  siteid.Get(),
@@ -517,7 +517,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
-			logFuncError("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+			logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
