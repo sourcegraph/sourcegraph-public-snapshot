@@ -282,8 +282,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 		}
 		code = resp.StatusCode
 		header = resp.Header
-		// We swallow the error here, because we don't want to fail. Parsing the body
-		// is just optional to provide some more context.
+
 		body, err = io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 		if err != nil {
@@ -306,8 +305,6 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 		code = resp.StatusCode
 		header = resp.Header
 
-		// We swallow the error here, because we don't want to fail. Parsing the body
-		// is just optional to provide some more context.
 		body, err = io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, code, errors.Wrap(err, "read response body")
