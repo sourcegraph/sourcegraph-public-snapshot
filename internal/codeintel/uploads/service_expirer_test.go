@@ -13,6 +13,7 @@ import (
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -25,23 +26,23 @@ func TestUploadExpirer(t *testing.T) {
 	uploadSvc := setupMockUploadService(now)
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
+	expirationMetrics := background.NewExpirationMetrics(&observation.TestContext)
 
 	uploadExpirer := &Service{
-		store:             uploadSvc,
-		policySvc:         policySvc,
-		policyMatcher:     policyMatcher,
-		expirationMetrics: newExpirationMetrics(&observation.TestContext),
-		logger:            logtest.Scoped(t),
-		operations:        newOperations(&observation.TestContext),
-		clock:             clock,
+		store:         uploadSvc,
+		policySvc:     policySvc,
+		policyMatcher: policyMatcher,
+		logger:        logtest.Scoped(t),
+		operations:    newOperations(&observation.TestContext),
+		clock:         clock,
 	}
 
-	if err := uploadExpirer.handleExpiredUploadsBatch(context.Background(), expirerConfig{
-		repositoryProcessDelay: 24 * time.Hour,
-		repositoryBatchSize:    100,
-		uploadProcessDelay:     24 * time.Hour,
-		uploadBatchSize:        100,
-		commitBatchSize:        100,
+	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, background.ExpirerConfig{
+		RepositoryProcessDelay: 24 * time.Hour,
+		RepositoryBatchSize:    100,
+		UploadProcessDelay:     24 * time.Hour,
+		UploadBatchSize:        100,
+		CommitBatchSize:        100,
 	}); err != nil {
 		t.Fatalf("unexpected error from handle: %s", err)
 	}

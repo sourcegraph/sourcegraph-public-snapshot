@@ -3,9 +3,6 @@ package uploads
 import (
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -14,6 +11,9 @@ type operations struct {
 	// Commits
 	getCommitsVisibleToUpload *observation.Operation
 	getCommitGraphMetadata    *observation.Operation
+	getStaleSourcedCommits    *observation.Operation
+	updateSourcedCommits      *observation.Operation
+	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
 	getRepoName                             *observation.Operation
@@ -21,6 +21,8 @@ type operations struct {
 	getDirtyRepositories                    *observation.Operation
 	getRecentUploadsSummary                 *observation.Operation
 	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
@@ -31,23 +33,26 @@ type operations struct {
 	updateUploadsVisibleToCommits     *observation.Operation
 	deleteUploadByID                  *observation.Operation
 	inferClosestUploads               *observation.Operation
+	deleteUploadsWithoutRepository    *observation.Operation
+	deleteUploadsStuckUploading       *observation.Operation
+	softDeleteExpiredUploads          *observation.Operation
+	hardDeleteUploadsByIDs            *observation.Operation
+	deleteLsifDataByUploadIds         *observation.Operation
 
 	// Dumps
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
 
 	// References
-	referencesForUpload *observation.Operation
+	referencesForUpload         *observation.Operation
+	backfillReferenceCountBatch *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
+	deleteOldAuditLogs    *observation.Operation
 
 	// Tags
 	getListTags *observation.Operation
-
-	// Worker metrics
-	uploadProcessor *observation.Operation
-	uploadSizeGuage prometheus.Gauge
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -66,25 +71,13 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	honeyObservationContext := *observationContext
-	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyObservationContext.Operation(observation.Op{
-		Name: "codeintel.uploadHandler",
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			return observation.EmitForTraces | observation.EmitForHoney
-		},
-	})
-
-	uploadSizeGuage := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_processor_upload_size",
-		Help: "The combined size of uploads being processed at this instant by this worker.",
-	})
-	observationContext.Registerer.MustRegister(uploadSizeGuage)
-
 	return &operations{
 		// Commits
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
 		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
+		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
+		updateSourcedCommits:      op("UpdateSourcedCommits"),
+		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
 		getRepoName:                             op("GetRepoName"),
@@ -92,6 +85,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDirtyRepositories:                    op("GetDirtyRepositories"),
 		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
 		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
@@ -102,22 +97,25 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		deleteUploadByID:                  op("DeleteUploadByID"),
 		inferClosestUploads:               op("InferClosestUploads"),
+		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
+		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
+		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
+		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
+		deleteLsifDataByUploadIds:         op("DeleteLsifDataByUploadIds"),
 
 		// Dumps
 		getDumpsWithDefinitionsForMonikers: op("GetDumpsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
 
 		// References
-		referencesForUpload: op("ReferencesForUpload"),
+		referencesForUpload:         op("ReferencesForUpload"),
+		backfillReferenceCountBatch: op("BackfillReferenceCountBatch"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
+		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
 
 		// Tags
 		getListTags: op("GetListTags"),
-
-		// Worker metrics
-		uploadProcessor: uploadProcessor,
-		uploadSizeGuage: uploadSizeGuage,
 	}
 }

@@ -14,6 +14,7 @@ func CodeIntelUploads() *monitoring.Dashboard {
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewUploadsServiceGroup(""),
 			shared.CodeIntelligence.NewUploadsStoreGroup(""),
+			shared.CodeIntelligence.NewUploadsBackgroundGroup(""),
 			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsHTTPTransportGroup(""),
 			shared.CodeIntelligence.NewUploadsCleanupTaskGroup(""),
