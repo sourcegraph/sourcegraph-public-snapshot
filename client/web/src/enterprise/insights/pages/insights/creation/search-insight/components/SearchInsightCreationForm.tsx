@@ -57,7 +57,6 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         series,
         stepValue,
         step,
-        className,
         isFormClearActive,
         dashboardReferenceCount,
         children,
