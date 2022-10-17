@@ -13,6 +13,8 @@ type config struct {
 	MinimumTimeSinceLastCheck      time.Duration
 	CommitResolverBatchSize        int
 	CommitResolverMaximumCommitLag time.Duration
+	FailedIndexBatchSize           int
+	FailedIndexMaxAge              time.Duration
 }
 
 var ConfigInst = &config{}
@@ -26,4 +28,6 @@ func (c *config) Load() {
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
 	c.CommitResolverMaximumCommitLag = c.GetInterval(commitResolverMaximumCommitLagName, "0s", "The maximum acceptable delay between accepting an upload and its commit becoming resolvable. Be cautious about setting this to a large value, as uploads for unresolvable commits will be retried periodically during this interval.")
+	c.FailedIndexBatchSize = c.GetInt("CODEINTEL_AUTOINDEXING_FAILED_INDEX_BATCH_SIZE", "1000", "The number of old, failed index records to delete at once.")
+	c.FailedIndexMaxAge = c.GetInterval("CODEINTEL_AUTOINDEXING_FAILED_INDEX_MAX_AGE", "2190h", "The maximum age a non-relevant failed index record will remain queryable.")
 }

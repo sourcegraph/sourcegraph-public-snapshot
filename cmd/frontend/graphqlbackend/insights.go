@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // This file just contains stub GraphQL resolvers and data types for Code Insights which merely
@@ -76,7 +77,7 @@ type InsightsArgs struct {
 }
 
 type InsightsDataPointResolver interface {
-	DateTime() DateTime
+	DateTime() gqlutil.DateTime
 	Value() float64
 }
 
@@ -85,12 +86,12 @@ type InsightStatusResolver interface {
 	PendingJobs() int32
 	CompletedJobs() int32
 	FailedJobs() int32
-	BackfillQueuedAt() *DateTime
+	BackfillQueuedAt() *gqlutil.DateTime
 }
 
 type InsightsPointsArgs struct {
-	From             *DateTime
-	To               *DateTime
+	From             *gqlutil.DateTime
+	To               *gqlutil.DateTime
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
 }
@@ -118,7 +119,7 @@ type InsightConnectionResolver interface {
 
 type InsightDirtyQueryResolver interface {
 	Reason(ctx context.Context) string
-	Time(ctx context.Context) DateTime
+	Time(ctx context.Context) gqlutil.DateTime
 	Count(ctx context.Context) int32
 }
 

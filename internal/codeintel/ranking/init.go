@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 
 // GetService creates or returns an already-initialized ranking service.
@@ -35,6 +36,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		store.New(deps.db, scopedContext("store")),
 		deps.uploadsService,
 		deps.gitserverClient,
+		symbols.DefaultClient,
 		siteConfigQuerier{},
 		scopedContext("service"),
 	), nil

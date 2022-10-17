@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
@@ -117,8 +118,8 @@ func TestBatchSpecResolver(t *testing.T) {
 		Creator:             &apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
 
-		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			TotalCount: 1,
@@ -325,8 +326,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		AllCodeHosts:          codeHosts,
 		OnlyWithoutCredential: codeHosts,
 
-		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{},
@@ -371,7 +372,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	jobs[1].StartedAt = minAgo(99)
 	setJobProcessing(t, ctx, bstore, jobs[1])
 	want.State = "PROCESSING"
-	want.StartedAt = graphqlbackend.DateTime{Time: jobs[1].StartedAt}
+	want.StartedAt = gqlutil.DateTime{Time: jobs[1].StartedAt}
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 processing
@@ -393,7 +394,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCompleted(t, ctx, bstore, jobs[1])
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
-	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
 	// Nothing to retry
 	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
@@ -413,7 +414,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
 	want.State = "PROCESSING"
-	want.FinishedAt = graphqlbackend.DateTime{}
+	want.FinishedAt = gqlutil.DateTime{}
 	want.ApplyURL = nil
 	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
@@ -436,7 +437,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCanceled(t, ctx, bstore, jobs[2])
 
 	want.State = "CANCELED"
-	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
 	want.ViewerCanRetry = true
 	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)

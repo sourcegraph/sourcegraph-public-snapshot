@@ -29,8 +29,8 @@ func (r *lsifUploadsWithRepositoryNamespaceResolver) Root() string {
 
 func (r *lsifUploadsWithRepositoryNamespaceResolver) Indexer() types.CodeIntelIndexerResolver {
 	for _, indexer := range types.AllIndexers {
-		if indexer.Name() == r.uploadsSummary.Indexer {
-			return indexer
+		if indexer.Name == r.uploadsSummary.Indexer {
+			return types.NewCodeIntelIndexerResolverFrom(indexer)
 		}
 	}
 

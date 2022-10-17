@@ -165,6 +165,7 @@ Indexes:
     "insight_series_next_recording_after_idx" btree (next_recording_after)
 Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```
@@ -190,6 +191,24 @@ Data series that comprise code insights.
 **query**: Query string that generates this series
 
 **series_id**: Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries.
+
+# Table "public.insight_series_backfill"
+```
+      Column      |       Type       | Collation | Nullable |                       Default                       
+------------------+------------------+-----------+----------+-----------------------------------------------------
+ id               | integer          |           | not null | nextval('insight_series_backfill_id_seq'::regclass)
+ series_id        | integer          |           | not null | 
+ repo_iterator_id | integer          |           |          | 
+ estimated_cost   | double precision |           |          | 
+ state            | text             |           | not null | 'new'::text
+Indexes:
+    "insight_series_backfill_pk" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
 
 # Table "public.insight_view"
 ```
@@ -303,9 +322,12 @@ Join table to correlate data series with insight views
  execution_logs    | json[]                   |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
+ backfill_id       | integer                  |           |          | 
 Indexes:
     "insights_background_jobs_pkey" PRIMARY KEY, btree (id)
     "insights_jobs_state_idx" btree (state)
+Foreign-key constraints:
+    "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
 
 ```
 
@@ -479,6 +501,58 @@ Check constraints:
 ```
 
 Stores ephemeral snapshot data of insight recordings.
+
+# View "public.insights_jobs_backfill_in_progress"
+
+## View query:
+
+```sql
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'processing'::text);
+```
+
+# View "public.insights_jobs_backfill_new"
+
+## View query:
+
+```sql
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'new'::text);
+```
 
 # Type presentation_type_enum
 

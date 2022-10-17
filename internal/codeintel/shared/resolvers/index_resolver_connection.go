@@ -5,6 +5,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -25,13 +26,14 @@ type IndexConnectionResolver struct {
 }
 
 func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) LSIFIndexConnectionResolver {
+	db := autoindexingSvc.GetUnsafeDB()
 	return &IndexConnectionResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
 		policySvc:        policySvc,
 		indexesResolver:  indexesResolver,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:        errTracer,
 	}
 }
@@ -64,5 +66,5 @@ func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ *PageInfo, er
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
-	return EncodeIntCursor(toInt32(r.indexesResolver.NextOffset)), nil
+	return EncodeIntCursor(r.indexesResolver.NextOffset), nil
 }

@@ -4,11 +4,10 @@ import { noop } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { GetSearchAggregationResult, SearchAggregationMode } from '../../../../graphql-operations'
+import { GetSearchAggregationResult, SearchAggregationMode, SearchPatternType } from '../../../../graphql-operations'
 
 import { AGGREGATION_SEARCH_QUERY } from './hooks'
 import { SearchAggregationResult } from './SearchAggregationResult'

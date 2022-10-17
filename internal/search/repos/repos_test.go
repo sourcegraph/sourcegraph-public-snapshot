@@ -140,7 +140,7 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: tt.repoFilters}
-			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
+			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if !errors.Is(err, tt.wantErr) {
@@ -297,7 +297,7 @@ func TestResolverPaginate(t *testing.T) {
 		}
 	}
 
-	all, err := NewResolver(logtest.Scoped(t), db, nil, nil).Resolve(ctx, search.RepoOptions{})
+	all, err := NewResolver(logtest.Scoped(t), db, nil, nil, nil).Resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,7 +351,7 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(logtest.Scoped(t), db, nil, nil)
+			r := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 
 			var pages []Resolved
 			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
@@ -427,7 +427,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -464,9 +464,10 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		{Repo: repoB, Revisions: []string{"branch-2"}},
 	}
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
-	}
+	})
 
 	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
@@ -497,7 +498,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -648,7 +649,7 @@ func TestRepoHasFileContent(t *testing.T) {
 				Minimal: tc.matchingRepos,
 			}, nil)
 
-			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), mockZoekt)
+			res := NewResolver(logtest.Scoped(t), db, gitserver.NewMockClient(), endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    []string{".*"},
 				HasFileContent: tc.filters,
@@ -751,7 +752,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), nil)
+			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
 			res.gitserver = mockGitserver
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters: []string{tc.nameFilter},

@@ -124,7 +124,6 @@ func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		gitserver.ResetMocks()
 	}()
 
 	RunTests(t, tests)

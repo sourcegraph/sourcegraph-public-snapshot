@@ -36,6 +36,14 @@ func New(db database.DB, observationContext *observation.Context) *Client {
 	}
 }
 
+func NewWithGitserverClient(db database.DB, gitserverClient gitserver.Client, observationContext *observation.Context) *Client {
+	return &Client{
+		gitserverClient: gitserverClient,
+		dbStore:         newWithDB(db),
+		operations:      newOperations(observationContext),
+	}
+}
+
 func (c *Client) ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	return c.gitserverClient.ArchiveReader(ctx, checker, repo, options)
 }
@@ -151,6 +159,10 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 		return "", false, err
 	}
 
+	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
+}
+
+func (c *Client) HeadFromName(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
 	return c.gitserverClient.Head(ctx, repo, authz.DefaultSubRepoPermsChecker)
 }
 

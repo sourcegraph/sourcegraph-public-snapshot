@@ -196,6 +196,24 @@ COMMENT ON COLUMN insight_series.generation_method IS 'Specifies the execution m
 
 COMMENT ON COLUMN insight_series.just_in_time IS 'Specifies if the series should be resolved just in time at query time, or recorded in background processing.';
 
+CREATE TABLE insight_series_backfill (
+    id integer NOT NULL,
+    series_id integer NOT NULL,
+    repo_iterator_id integer,
+    estimated_cost double precision,
+    state text DEFAULT 'new'::text NOT NULL
+);
+
+CREATE SEQUENCE insight_series_backfill_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insight_series_backfill_id_seq OWNED BY insight_series_backfill.id;
+
 CREATE SEQUENCE insight_series_id_seq
     AS integer
     START WITH 1
@@ -302,7 +320,8 @@ CREATE TABLE insights_background_jobs (
     last_heartbeat_at timestamp with time zone,
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    backfill_id integer
 );
 
 CREATE SEQUENCE insights_background_jobs_id_seq
@@ -314,6 +333,48 @@ CREATE SEQUENCE insights_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
+
+CREATE VIEW insights_jobs_backfill_in_progress AS
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'processing'::text);
+
+CREATE VIEW insights_jobs_backfill_new AS
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'new'::text);
 
 CREATE TABLE metadata (
     id bigint NOT NULL,
@@ -450,6 +511,8 @@ ALTER TABLE ONLY insight_dirty_queries ALTER COLUMN id SET DEFAULT nextval('insi
 
 ALTER TABLE ONLY insight_series ALTER COLUMN id SET DEFAULT nextval('insight_series_id_seq'::regclass);
 
+ALTER TABLE ONLY insight_series_backfill ALTER COLUMN id SET DEFAULT nextval('insight_series_backfill_id_seq'::regclass);
+
 ALTER TABLE ONLY insight_view ALTER COLUMN id SET DEFAULT nextval('insight_view_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insight_view_grants_id_seq'::regclass);
@@ -481,6 +544,9 @@ ALTER TABLE ONLY dashboard
 
 ALTER TABLE ONLY insight_dirty_queries
     ADD CONSTRAINT insight_dirty_queries_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY insight_series_backfill
+    ADD CONSTRAINT insight_series_backfill_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
@@ -588,6 +654,9 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY insight_dirty_queries
     ADD CONSTRAINT insight_dirty_queries_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY insight_series_backfill
+    ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
@@ -596,6 +665,9 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_insight_view_id_fkey FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY insights_background_jobs
+    ADD CONSTRAINT insights_background_jobs_backfill_id_fkey FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY repo_iterator_errors
     ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);

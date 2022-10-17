@@ -4,14 +4,24 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Alert, H3, Input, Label } from '@sourcegraph/wildcard'
+import {
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    Button,
+    Link,
+    Alert,
+    H3,
+    Input,
+    Label,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     UserAreaUserFields,
-    ExternalServiceKind,
     ExternalAccountFields,
     MinExternalAccountsVariables,
     UpdatePasswordVariables,
@@ -28,11 +38,12 @@ import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 
 // pick only the fields we need
 type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serviceType' | 'accountData'>
-type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
+export type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
-export type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
+export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
+export type AccountByServiceID = Partial<Record<string, UserExternalAccount>>
 
 interface UserExternalAccountsResult {
     user: {
@@ -48,12 +59,6 @@ interface Props {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-const accountsByType = (accounts: MinExternalAccount[]): ExternalAccountsByType =>
-    accounts.reduce((accumulator: ExternalAccountsByType, account) => {
-        accumulator[account.serviceType as ServiceType] = account
-        return accumulator
-    }, {})
-
 export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     const [oldPassword, setOldPassword] = useState<string>('')
     const [newPassword, setNewPassword] = useState<string>('')
@@ -65,13 +70,17 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     const [saved, setSaved] = useState<boolean>(false)
     const [error, setError] = useState<ErrorLike>()
 
+    const handleError = (error: ErrorLike): [] => {
+        setError(error)
+        setSaved(false)
+        return []
+    }
+
     const { data, loading } = useQuery<UserExternalAccountsResult, MinExternalAccountsVariables>(
         USER_EXTERNAL_ACCOUNTS,
         {
             variables: { username: props.user.username },
-            onError: (error): void => {
-                handleError(error)
-            },
+            onError: handleError,
         }
     )
 
@@ -80,19 +89,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         newPasswordConfirmationField = element
     }
 
-    // auth providers by service type
-    const authProvidersByType = props.context.authProviders.reduce((accumulator: AuthProvidersByType, provider) => {
-        accumulator[provider.serviceType] = provider
+    // auth providers by service ID
+    const accountByServiceID = accounts.fetched?.reduce((accumulator: AccountByServiceID, account) => {
+        accumulator[account.serviceID] = account
         return accumulator
     }, {})
-
-    const shouldShowOldPasswordInput = (): boolean =>
-        /**
-         * Show old password form only when all items are true
-         * 1. user has a password set
-         * 2. user doesn't have external accounts
-         */
-        props.user.builtinAuth && accounts.fetched?.length === 0
 
     useEffect(() => {
         eventLogger.logPageView('UserSettingsPassword')
@@ -129,12 +130,6 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
         }
     }
 
-    const handleError = (error: ErrorLike): [] => {
-        setError(error)
-        setSaved(false)
-        return []
-    }
-
     const [updatePassword] = useMutation<UpdatePasswordResult, UpdatePasswordVariables>(UPDATE_PASSWORD, {
         variables: {
             oldPassword,
@@ -152,10 +147,10 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        if (shouldShowOldPasswordInput()) {
-            updatePassword().catch(error => handleError(error))
+        if (props.user.builtinAuth) {
+            updatePassword().catch(handleError)
         } else {
-            createPassword().catch(error => handleError(error))
+            createPassword().catch(handleError)
         }
         setSaved(true)
     }
@@ -203,23 +198,27 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
             )}
 
             {/* fetched external accounts */}
-            {accounts.fetched && (
+            {accountByServiceID && (
                 <Container>
                     <ExternalAccountsSignIn
-                        supported={[ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB]}
-                        accounts={accountsByType(accounts.fetched)}
-                        authProviders={authProvidersByType}
+                        accounts={accountByServiceID}
+                        authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}
                     />
                 </Container>
             )}
 
-            {/* fetched external accounts but user doesn't have any */}
-            {accounts.fetched?.length === 0 && (
+            {/* Only display password creation/update if builtin auth is enabled */}
+            {props.context.authProviders.some(provider => provider.isBuiltin) && (
                 <>
                     <hr className="my-4" />
-                    <H3 className="mb-3">Password</H3>
+                    <H3 className="mb-3">{props.user.builtinAuth ? 'Update ' : 'Create '}Password</H3>
+                    {props.user.builtinAuth ? (
+                        <Text>Change your account password.</Text>
+                    ) : (
+                        <Text>Create a password to enable sign-in using a username/password combination.</Text>
+                    )}
                     <Container>
                         <Form onSubmit={handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
@@ -230,7 +229,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                                 readOnly={true}
                                 hidden={true}
                             />
-                            {shouldShowOldPasswordInput() && (
+                            {props.user.builtinAuth && (
                                 <div className="form-group">
                                     <Label htmlFor="oldPassword">Old password</Label>
                                     <PasswordInput
@@ -289,7 +288,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
                                         <LoadingSpinner />{' '}
                                     </>
                                 )}
-                                {shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
+                                {props.user.builtinAuth ? 'Update password' : 'Create password'}
                             </Button>
                         </Form>
                     </Container>

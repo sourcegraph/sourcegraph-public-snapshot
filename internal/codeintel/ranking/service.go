@@ -20,6 +20,7 @@ type Service struct {
 	store           store.Store
 	uploadSvc       *uploads.Service
 	gitserverClient GitserverClient
+	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
 	operations      *operations
 	logger          log.Logger
@@ -29,6 +30,7 @@ func newService(
 	store store.Store,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
+	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
 	observationContext *observation.Context,
 ) *Service {
@@ -36,14 +38,15 @@ func newService(
 		store:           store,
 		uploadSvc:       uploadSvc,
 		gitserverClient: gitserverClient,
+		symbolsClient:   symbolsClient,
 		getConf:         getConf,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,
 	}
 }
 
-// GetRepoRank returns a score vector for the given repository. Repositories are assumed to
-// be ordered by each pairwise component of the resulting vector, lower scores coming earlier.
+// GetRepoRank returns a rank vector for the given repository. Repositories are assumed to
+// be ordered by each pairwise component of the resulting vector, higher ranks coming earlier.
 // We currently rank first by user-defined scores, then by GitHub star count.
 func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
 	_, _, endObservation := s.operations.getRepoRank.With(ctx, &err, observation.Args{})
@@ -56,7 +59,7 @@ func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []f
 		return nil, err
 	}
 
-	return []float64{1 - squashRange(userRank), 1 - starRank}, nil
+	return []float64{squashRange(userRank), starRank}, nil
 }
 
 // copy pasta
@@ -84,13 +87,21 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 
 var allPathsPattern = lazyregexp.New(".*")
 
-// GetDocumentRank returns a map from paths within the given repo to their score vectors. Paths are
-// assumed to be ordered by each pairwise component of the resulting vector, lower scores coming
+// GetDocumentRank returns a map from paths within the given repo to their rank vector. Paths are
+// assumed to be ordered by each pairwise component of the resulting vector, higher ranks coming
 // earlier. We currently rank documents by path name length and lexicographic order, while performing
 // a few heuristics to sink generated, test, and vendor files lower in the ranking.
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
+
+	documentRanks, ok, err := s.store.GetDocumentRanks(ctx, repoName)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return documentRanks, nil
+	}
 
 	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern.Re())
 	if err != nil {
@@ -101,7 +112,7 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	n := float64(len(paths))
 	ranks := make(map[string][]float64, len(paths))
 	for i, path := range paths {
-		ranks[path] = rank(path, float64(i)/n)
+		ranks[path] = rank(path, 1.0-float64(i)/n)
 	}
 
 	return ranks, nil
@@ -112,22 +123,22 @@ var testPattern = lazyregexp.New("test")
 // copy pasta + modified
 // https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
 func rank(name string, nameRank float64) []float64 {
-	generated := 0.0
+	generated := 1.0
 	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 1.0
+		generated = 0.0
 	}
 
-	vendor := 0.0
+	vendor := 1.0
 	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 1.0
+		vendor = 0.0
 	}
 
-	test := 0.0
+	test := 1.0
 	if testPattern.MatchString(name) {
-		test = 1.0
+		test = 0.0
 	}
 
-	// Smaller is earlier (=better).
+	// Bigger is earlier (=better).
 	return []float64{
 		// Prefer docs that are not generated
 		generated,
@@ -139,16 +150,16 @@ func rank(name string, nameRank float64) []float64 {
 		test,
 
 		// With short names
-		squashRange(float64(len(name))),
+		1.0 - squashRange(float64(len(name))),
 
 		// // With many symbols
-		// 1.0 - squashRange(len(d.Symbols)),
+		// squashRange(len(d.Symbols)),
 
 		// // With short content
-		// squashRange(len(d.Content)),
+		// 1.0 - squashRange(len(d.Content)),
 
 		// // That is present is as many branches as possible
-		// 1.0 - squashRange(len(d.Branches)),
+		// squashRange(len(d.Branches)),
 
 		// Preserve original ordering.
 		nameRank,
