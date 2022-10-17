@@ -7,7 +7,7 @@ Batch changes can also be used on [multiple projects within a monorepo](./creati
 There are two paths to creating a batch change:
 
 - On your local machine, with the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli)
-- Remotely, with [server-side execution](../explanations/server_side)
+- Remotely, with [server-side execution](../explanations/server_side.md)
 
 Many concepts are shared between the two paths. However, this guide will walk you through creating a batch change the first way, on your local machine.
 
