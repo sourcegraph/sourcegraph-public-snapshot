@@ -115,7 +115,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     return (
         <CreationUiLayout {...attributes}>
             <CreationUIForm
-                aria-label="Compute Insight creation form"
+                aria-label="Group results Insight creation form"
                 noValidate={true}
                 onSubmit={handleSubmit}
                 onReset={handleFormReset}
