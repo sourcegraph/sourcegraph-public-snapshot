@@ -1,6 +1,6 @@
 # Sourcegraph Machine Images
 
-We aim to improve the overall deployment experience for our users through the customized machine images.
+We aim to improve the overall deployment experience for our users through customized machine images.
 
 All Sourcegraph image instances are deployed into a single k3s server cluster, running on a single node with an embedded SQLite Database. It allows us to package all the Sourcegraph services with necessary components into one single launcher image so that you can spin up a Sourcegraph instance with just a few clicks in less than 10 minutes.
 
@@ -48,7 +48,7 @@ Our AWS AMIs are all based on the HVM method, which provides us with the ability
 1. Download Sourcegraph Helm Charts
 1. Deploy Sourcegraph using the local Helm Charts
 1. Save the version number to both root and data volumes
-1. Add cronjob to run the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot
+1. Add a cronjob to run the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot
 1. K3s is stopped and disabled
 1. The instance will then be stopped to create an AMI using the attached volumes
 
