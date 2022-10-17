@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -64,10 +62,15 @@ func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
 	if bypassAuthz {
 		// if bypassAuthz is true, we don't care about any of the checks
-		return sqlf.Sprintf("TRUE")
+		return sqlf.Sprintf(`
+(
+    -- Bypass authz
+    TRUE
+)
+`)
 	}
 
-	const unrestrictedReposQuery = `
+	const unrestrictedReposSQL = `
 (
 	-- Unrestricted repos are visible to all users
 	EXISTS (
@@ -78,8 +81,25 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
+	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
 
-	const externalServiceUnrestrictedQuery = `
+	const restrictedRepositoriesSQL = `
+(                             -- Restricted repositories require checking permissions
+    SELECT object_ids_ints @> INTSET(repo.id)
+    FROM user_permissions
+    WHERE
+        user_id = %s
+    AND permission = %s
+    AND object_type = 'repos'
+)
+`
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
+
+	conditions := []*sqlf.Query{unrestrictedReposQuery, restrictedRepositoriesQuery}
+
+	// Disregard unrestricted state when permissions user mapping is enabled
+	if !usePermissionsUserMapping {
+		const externalServiceUnrestrictedSQL = `
 (
     NOT repo.private          -- Happy path of non-private repositories
     OR  EXISTS (              -- Each external service defines if repositories are unrestricted
@@ -94,26 +114,9 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	)
 )
 `
-	const restrictedRepositoriesQuery = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
-)
-`
-	conditions := []string{unrestrictedReposQuery, restrictedRepositoriesQuery}
-
-	// Disregard unrestricted state when permissions user mapping is enabled
-	if !usePermissionsUserMapping {
+		externalServiceUnrestrictedQuery := sqlf.Sprintf(externalServiceUnrestrictedSQL)
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
 
-	queryFmtString := fmt.Sprintf("(%s)", strings.Join(conditions, " OR "))
-	return sqlf.Sprintf(queryFmtString,
-		authenticatedUserID,
-		perms.String(),
-	)
+	return sqlf.Join(conditions, "OR")
 }
