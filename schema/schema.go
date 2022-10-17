@@ -1801,6 +1801,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
+	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.

@@ -17,7 +17,7 @@ const repoDefaults: RepositoryFields = {
     defaultBranch: null,
     viewerCanAdminister: false,
     externalURLs: [],
-    externalRepository: { serviceType: 'github' },
+    externalRepository: { serviceType: 'github', serviceID: 'https://github.com/' },
     id: 'repoid',
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
