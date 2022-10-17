@@ -74,6 +74,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title",
 				Description:         "test description",
@@ -95,6 +96,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title",
 				Description:         "test description",
@@ -117,6 +119,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "unique-2",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title 2",
 				Description:         "test description 2",
@@ -155,6 +158,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title",
 				Description:         "test description",
@@ -176,6 +180,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title",
 				Description:         "test description",
@@ -213,6 +218,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title",
 				Description:         "test description",
@@ -234,6 +240,7 @@ func TestGet(t *testing.T) {
 			{
 				ViewID:              1,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title",
 				Description:         "test description",
@@ -340,6 +347,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              5,
 				UniqueID:            "b",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 3",
 				Description:         "",
@@ -360,6 +368,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              5,
 				UniqueID:            "b",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "user can view 3",
 				Description:         "",
@@ -381,6 +390,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 1",
 				Description:         "",
@@ -401,6 +411,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "user can view 1",
 				Description:         "",
@@ -422,6 +433,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              3,
 				UniqueID:            "e",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 2",
 				Description:         "",
@@ -455,6 +467,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              5,
 				UniqueID:            "b",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 3",
 				Description:         "",
@@ -475,6 +488,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              5,
 				UniqueID:            "b",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "user can view 3",
 				Description:         "",
@@ -509,6 +523,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 1",
 				Description:         "",
@@ -529,6 +544,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "user can view 1",
 				Description:         "",
@@ -563,6 +579,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 1",
 				Description:         "",
@@ -583,6 +600,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              2,
 				UniqueID:            "d",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "user can view 1",
 				Description:         "",
@@ -604,6 +622,7 @@ func TestGetAll(t *testing.T) {
 			{
 				ViewID:              3,
 				UniqueID:            "e",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "user can view 2",
 				Description:         "",
@@ -689,6 +708,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              2,
 				DashboardViewID:     1,
 				UniqueID:            "unique-2",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title 2",
 				Description:         "test description 2",
@@ -711,6 +731,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              1,
 				DashboardViewID:     2,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title",
 				Description:         "test description",
@@ -732,6 +753,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              4,
 				DashboardViewID:     3,
 				UniqueID:            "unique-4",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title 4",
 				Description:         "test description 4",
@@ -754,6 +776,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              3,
 				DashboardViewID:     4,
 				UniqueID:            "unique-3",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title 3",
 				Description:         "test description 3",
@@ -788,6 +811,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              2,
 				DashboardViewID:     1,
 				UniqueID:            "unique-2",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title 2",
 				Description:         "test description 2",
@@ -810,6 +834,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              1,
 				DashboardViewID:     2,
 				UniqueID:            "unique-1",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title",
 				Description:         "test description",
@@ -844,6 +869,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              4,
 				DashboardViewID:     3,
 				UniqueID:            "unique-4",
+				InsightSeriesID:     2,
 				SeriesID:            "series-id-2",
 				Title:               "test title 4",
 				Description:         "test description 4",
@@ -866,6 +892,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				ViewID:              3,
 				DashboardViewID:     4,
 				UniqueID:            "unique-3",
+				InsightSeriesID:     1,
 				SeriesID:            "series-id-1",
 				Title:               "test title 3",
 				Description:         "test description 3",
@@ -1397,6 +1424,7 @@ func TestAttachSeriesView(t *testing.T) {
 		want := []types.InsightViewSeries{{
 			ViewID:              1,
 			UniqueID:            view.UniqueID,
+			InsightSeriesID:     series.ID,
 			SeriesID:            series.SeriesID,
 			Title:               view.Title,
 			Description:         view.Description,
@@ -1476,6 +1504,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 		want := []types.InsightViewSeries{{
 			ViewID:              1,
 			UniqueID:            view.UniqueID,
+			InsightSeriesID:     series.ID,
 			SeriesID:            series.SeriesID,
 			Title:               view.Title,
 			Description:         view.Description,
