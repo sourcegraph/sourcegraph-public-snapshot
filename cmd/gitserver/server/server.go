@@ -554,6 +554,11 @@ func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServ
 	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
 }
 
+// 🚨 SECURITY: checkXRequestedWith will ensure that the X-Requested-With header contains
+// the correct value.
+// 
+// See "What does X-Requested-With do, anyway?" in
+// https://github.com/sourcegraph/sourcegraph/pull/27931.
 func checkXRequestedWith(h http.Header) error {
 	if value := h.Get("X-Requested-With"); value != "Sourcegraph" {
 		return errors.New("header X-Requested-With is not set or is invalid")
