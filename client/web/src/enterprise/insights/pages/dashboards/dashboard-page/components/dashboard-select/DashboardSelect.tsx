@@ -100,6 +100,7 @@ const DashboardSelectButton = forwardRef<HTMLButtonElement, DashboardSelectButto
             ref={ref}
             variant="secondary"
             outline={true}
+            aria-label={`Choose a dashboard, ${title}`}
             className={classNames(className, styles.triggerButton)}
         >
             <span className={styles.triggerButtonText}>
