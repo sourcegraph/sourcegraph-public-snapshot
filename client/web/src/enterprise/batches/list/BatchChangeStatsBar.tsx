@@ -41,7 +41,7 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
     }
 
     return (
-        <div className={classNames(styles.statsBar, 'text-muted')}>
+        <div className={classNames(styles.statsBar, 'text-muted d-block d-sm-flex')}>
             <div className={styles.leftSide}>
                 <div className="pr-4">
                     <H3 className="font-weight-bold mb-1">{data.batchChanges.totalCount}</H3>
@@ -66,13 +66,13 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
             <div className={styles.rightSide}>
                 <div className="pr-4 text-center">
                     <ChangesetStatusOpen
-                        className="d block d-sm-flex"
+                        className="d-flex"
                         label={<span>{data.globalChangesetsStats.open} open</span>}
                     />
                 </div>
                 <div className="text-center">
                     <ChangesetStatusClosed
-                        className="d block d-sm-flex"
+                        className="d-flex"
                         label={<span>{data.globalChangesetsStats.closed} closed</span>}
                     />
                 </div>
