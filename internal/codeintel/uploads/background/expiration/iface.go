@@ -16,9 +16,4 @@ type UploadServiceBackgroundJobs interface {
 		commitBatchSize int,
 		policyBatchSize int,
 	) goroutine.BackgroundRoutine
-
-	NewReferenceCountUpdater(
-		interval time.Duration,
-		batchSize int,
-	) goroutine.BackgroundRoutine
 }

@@ -232,13 +232,6 @@ func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg back
 	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
-func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) error {
-	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, nil, observation.Args{LogFields: []log.Field{log.Int("batchSize", batchSize)}})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
-}
-
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
 // ancestor we have data for. Setting this value too low (relative to a repository's commit rate)
 // will cause requests for an unknown commit return too few results; setting this value too high

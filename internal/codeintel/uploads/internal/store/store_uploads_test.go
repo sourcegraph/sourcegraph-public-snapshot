@@ -693,107 +693,25 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertUploads(t, db,
-		types.Upload{ID: 51, State: "completed"},
+		types.Upload{ID: 51, State: "deleting"},
 		types.Upload{ID: 52, State: "completed"},
-		types.Upload{ID: 53, State: "completed"},
+		types.Upload{ID: 53, State: "queued"},
 		types.Upload{ID: 54, State: "completed"},
 	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
-	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-	})
-
-	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{51, 52, 53, 54}, shared.DependencyReferenceCountUpdateTypeNone); err != nil {
-		t.Fatalf("unexpected error updating reference counts: %s", err)
-	}
-	assertReferenceCounts(t, db, map[int]int{
-		51: 0,
-		52: 2, // referenced by 51, 54
-		53: 2, // referenced by 51, 52
-		54: 0,
-	})
 
 	if err := store.HardDeleteUploadsByIDs(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
-	assertReferenceCounts(t, db, map[int]int{
-		// 51 was deleted
-		52: 1, // referenced by 54
-		53: 1, // referenced by 54
-		54: 0,
-	})
-}
 
-func TestBackfillReferenceCountBatch(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
-
-	n := 150
-	expectedReferenceCounts := make([]int, 0, n)
-	for i := 0; i < n; i++ {
-		expectedReferenceCounts = append(expectedReferenceCounts, n-i-1)
+	expectedStates := map[int]string{
+		52: "completed",
+		53: "queued",
+		54: "completed",
 	}
-
-	insertQuery := sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")
-	if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error inserting repo: %s", err)
-	}
-
-	for i := 0; i < n; i++ {
-		insertQuery := sqlf.Sprintf(
-			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
-			42+i/(n/2), // 50% id=42, 50% id=43
-			fmt.Sprintf("%040d", i),
-		)
-		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-			t.Fatalf("unexpected error inserting upload: %s", err)
-		}
-
-		insertQuery = sqlf.Sprintf(
-			"INSERT INTO lsif_packages (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
-			fmt.Sprintf("pkg-%03d", i),
-			i+1,
-		)
-		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-			t.Fatalf("unexpected error inserting upload: %s", err)
-		}
-
-		for j := i - 1; j >= 0; j-- {
-			insertQuery := sqlf.Sprintf(
-				"INSERT INTO lsif_references (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
-				fmt.Sprintf("pkg-%03d", j),
-				i+1,
-			)
-			if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-				t.Fatalf("unexpected error inserting upload: %s", err)
-			}
-		}
-	}
-
-	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
-	}
-	referenceCountQuery := sqlf.Sprintf("SELECT urc.reference_count FROM lsif_uploads_reference_counts urc ORDER BY urc.upload_id")
-	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
-		t.Fatalf("unexpected error querying uploads: %s", err)
-	} else if diff := cmp.Diff(expectedReferenceCounts[:n/2], referenceCounts); diff != "" {
-		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
-	}
-
-	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
-	}
-	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
-		t.Fatalf("unexpected error querying uploads: %s", err)
-	} else if diff := cmp.Diff(expectedReferenceCounts, referenceCounts); diff != "" {
-		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 }
 
@@ -2054,19 +1972,6 @@ func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
 	}
 
 	return ids
-}
-
-func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCountsByID map[int]int) {
-	db := basestore.NewWithHandle(store.Handle())
-
-	referenceCountsByID, err := scanIntPairs(db.Query(context.Background(), sqlf.Sprintf(`SELECT upload_id, reference_count FROM lsif_uploads_reference_counts ORDER BY upload_id`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying reference counts: %s", err)
-	}
-
-	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
-	}
 }
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository

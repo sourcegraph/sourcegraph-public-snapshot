@@ -47,9 +47,6 @@ type UploadService interface {
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 
-	// References
-	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
-
 	// Audit logs
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 
