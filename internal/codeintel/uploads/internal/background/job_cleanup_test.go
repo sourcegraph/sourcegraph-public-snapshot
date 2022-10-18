@@ -1,4 +1,4 @@
-package uploads
+package background
 
 import (
 	"context"
@@ -98,16 +98,13 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	store := NewMockStore()
-	lsifStore := NewMockLsifStore()
-	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	janitor := &Service{
-		store:           store,
-		lsifstore:       lsifStore,
+	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	janitor := &backgroundJob{
+		uploadSvc:       mockUploadSvc,
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
-		operations:      newOperations(&observation.TestContext),
 		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
 	}
 
@@ -123,14 +120,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	}
 
 	var sanitizedCalls []updateInvocation
-	for _, call := range store.UpdateSourcedCommitsFunc.History() {
+	for _, call := range mockUploadSvc.UpdateSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
 			Delete:       false,
 		})
 	}
-	for _, call := range store.DeleteSourcedCommitsFunc.History() {
+	for _, call := range mockUploadSvc.DeleteSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,

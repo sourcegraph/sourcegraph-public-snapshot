@@ -96,6 +96,7 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
     return (
         <CreationUiLayout data-testid="code-stats-insight-creation-page-content" className={className}>
             <CreationUIForm
+                aria-label="Language usage Insight creation form"
                 as={LangStatsInsightCreationForm}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}

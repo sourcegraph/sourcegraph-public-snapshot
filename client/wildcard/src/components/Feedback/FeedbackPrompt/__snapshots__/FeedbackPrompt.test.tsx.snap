@@ -4,6 +4,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
 <body>
   <div>
     <button
+      aria-expanded="true"
       aria-label="Feedback"
       class=""
       type="button"
@@ -275,6 +276,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
 <body>
   <div>
     <button
+      aria-expanded="true"
       aria-label="Feedback"
       class=""
       type="button"
@@ -563,6 +565,7 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
 <body>
   <div>
     <button
+      aria-expanded="true"
       aria-label="Feedback"
       class=""
       type="button"

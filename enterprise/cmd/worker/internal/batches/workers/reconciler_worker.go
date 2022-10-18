@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -20,7 +21,7 @@ func NewReconcilerWorker(
 	ctx context.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store,
-	gitClient reconciler.GitserverClient,
+	gitClient gitserver.Client,
 	sourcer sources.Sourcer,
 	observationContext *observation.Context,
 ) *workerutil.Worker {

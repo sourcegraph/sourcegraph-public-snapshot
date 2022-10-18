@@ -24,6 +24,7 @@ var environments = []environment{
 	{Name: "s2", URL: "https://sourcegraph.sourcegraph.com"},
 	{Name: "dotcom", URL: "https://sourcegraph.com"},
 	{Name: "k8s", URL: "https://k8s.sgdev.org"},
+	{Name: "scaletesting", URL: "https://scaletesting.sgdev.org"},
 }
 
 func environmentNames() []string {

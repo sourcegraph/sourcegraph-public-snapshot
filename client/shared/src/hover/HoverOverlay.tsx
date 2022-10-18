@@ -4,7 +4,6 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
-// eslint-disable-next-line no-restricted-imports
 import { Card, Icon, Button } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
@@ -149,7 +148,6 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         <Card
             // needed for dynamic styling
             data-testid="hover-overlay"
-            // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
             className={classNames(hoverOverlayStyle.card, hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
@@ -240,6 +238,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
 
                 {pinOptions && (
                     <button
+                        data-testid="hover-copy-link"
                         className={classNames('d-flex', 'align-items-center', hoverOverlayStyle.actionsCopyLink)}
                         onClick={onCopyLink}
                         onKeyPress={onCopyLink}

@@ -1,7 +1,5 @@
 import { Line, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { OperatorFunction, pipe } from 'rxjs'
-import { scan, distinctUntilChanged } from 'rxjs/operators'
 
 import { Position } from '@sourcegraph/extension-api-types'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
@@ -21,14 +19,6 @@ export function zeroToOneBasedRange(range: {
         start: zeroToOneBasedPosition(range.start),
         end: zeroToOneBasedPosition(range.end),
     }
-}
-
-/**
- * Returns true of any of the document offset ranges contains the provided
- * point.
- */
-export function rangesContain(ranges: readonly { from: number; to: number }[], point: number): boolean {
-    return ranges.some(range => range.from <= point && range.to >= point)
 }
 
 /**
@@ -150,38 +140,19 @@ export function preciseOffsetAtCoords(view: EditorView, coords: { x: number; y: 
 }
 
 /**
- * Helper operator to find the distinct position of words at coordinates. Used
- * together with mousemove events.
+ * Gets the word at the precise offsets at the provided coordinates.
+ * See {@link preciseOffsetAtCoords} for more information.
  */
-export function distinctWordAtCoords(
-    view: EditorView
-): OperatorFunction<{ x: number; y: number }, { from: number; to: number } | null> {
-    return pipe(
-        scan((position: { from: number; to: number } | null, coords) => {
-            const offset = preciseOffsetAtCoords(view, coords)
+export function preciseWordAtCoords(
+    view: EditorView,
+    coords: { x: number; y: number }
+): { from: number; to: number } | null {
+    const offset = preciseOffsetAtCoords(view, coords)
+    if (offset !== null) {
+        return view.state.wordAt(offset)
+    }
 
-            if (offset === null) {
-                return null
-            }
-
-            // Still hovering over the same word
-            if (position && position.from <= offset && position.to >= offset) {
-                return position
-            }
-
-            {
-                const word = view.state.wordAt(offset)
-                // Update position if we are hovering over a
-                // different word
-                if (word) {
-                    return { from: word.from, to: word.to }
-                }
-            }
-
-            return null
-        }, null),
-        distinctUntilChanged()
-    )
+    return null
 }
 
 /**

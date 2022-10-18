@@ -29,7 +29,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	return gitserver.NewClient(s.db).ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {

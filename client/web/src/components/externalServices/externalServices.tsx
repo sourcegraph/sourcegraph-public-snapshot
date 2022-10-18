@@ -13,7 +13,7 @@ import LanguageRubyIcon from 'mdi-react/LanguageRubyIcon'
 import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
-import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
+import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link, Code, Text } from '@sourcegraph/wildcard'
 
 import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema.json'
@@ -35,7 +35,6 @@ import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.j
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import { ExternalRepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
-import { PerforceIcon } from '../PerforceIcon'
 
 /**
  * Metadata associated with adding a given external service.

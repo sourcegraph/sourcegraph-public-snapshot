@@ -1746,6 +1746,8 @@ type Settings struct {
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
+	// CodeIntelBlobKeyboardNavigation description: Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available
+	CodeIntelBlobKeyboardNavigation string `json:"codeIntel.blobKeyboardNavigation,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
 	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
@@ -1801,6 +1803,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
+	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.

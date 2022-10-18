@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,8 +40,8 @@ type GitHubWebhook struct {
 	*Webhook
 }
 
-func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, gitserverClient, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
