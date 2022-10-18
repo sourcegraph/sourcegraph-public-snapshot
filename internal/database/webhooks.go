@@ -201,15 +201,14 @@ func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error
 	return nil
 }
 
-func buildDeletePredicate(opts DeleteWebhookOpts) (predicate *sqlf.Query, err error) {
+func buildDeletePredicate(opts DeleteWebhookOpts) (*sqlf.Query, error) {
 	if opts.ID > 0 {
-		predicate = sqlf.Sprintf("ID = %d", opts.ID)
-	} else if opts.UUID == uuid.Nil {
-		err = errors.New("neither ID or UUID were provided to delete the webhook")
-	} else {
-		predicate = sqlf.Sprintf("UUID = %s", opts.UUID)
+		return sqlf.Sprintf("ID = %d", opts.ID), nil
 	}
-	return
+	if opts.UUID == uuid.Nil {
+		return nil, errors.New("neither ID or UUID were provided to delete the webhook")
+	}
+	return sqlf.Sprintf("UUID = %s", opts.UUID), nil
 }
 
 // WebhookNotFoundError occurs when a webhook is not found.
