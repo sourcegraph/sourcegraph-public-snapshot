@@ -1,4 +1,4 @@
-# Using file mounts in server-side
+# Using file mounts with server-side execution
 
 <aside class="experimental">
 <p>
@@ -7,10 +7,10 @@
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 
-<p>It's available in Sourcegraph 4.1 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1 and later.</p>
+<p>This feature is available in Sourcegraph 4.1 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1 and later.</p>
 </aside>
 
-> NOTE: Running a server-side execution with file [`mounts`](../references/batch_spec_yaml_reference.md#steps-mount) are
+> NOTE: Running a batch spec [server-side](../explanations/server_side.md) with file mounts is
 > currently only supported with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.
 
 File [`mounts`](../references/batch_spec_yaml_reference.md#steps-mount) are a powerful way to run custom files without
@@ -65,15 +65,15 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
-<sub>NOTE: when running mounting files, ensure the appropriate `container` is used.</sub>
-
-Based on the above `mountpoint`, the Python script should live besides the batch spec.
+In this example, the Python script should live besides the batch spec file, as indicated by the `path`:
 
 ```text
 .
 ├── batch-spec.yml
 └── hello_appender.py
 ```
+
+Note that a `container` appropriate for the mounted file has also been chosen for this step.
 
 ## Running server-side
 
