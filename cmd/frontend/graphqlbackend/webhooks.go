@@ -8,13 +8,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -131,31 +130,10 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
-	if err != nil {
-		return nil, err
-	}
-	var secret *types.EncryptableSecret
-	if args.Secret != nil {
-		secret = types.NewUnencryptedSecret(*args.Secret)
-	}
-	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, actor.FromContext(ctx).UID, secret)
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
-}
-
-func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
-	switch codeHostKind {
-	case extsvc.KindGitHub, extsvc.KindGitLab:
-		return nil
-	case extsvc.KindBitbucketCloud, extsvc.KindBitbucketServer:
-		if secret != nil {
-			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
-		}
-		return nil
-	default:
-		return errors.Newf("webhooks are not supported for code host kind %s", codeHostKind)
-	}
 }
