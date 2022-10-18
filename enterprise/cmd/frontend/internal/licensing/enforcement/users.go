@@ -99,7 +99,7 @@ func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 			return err
 		}
 
-		if info != nil {
+		if info != nil && info.Plan() != licensing.PlanFree0 {
 			return nil
 		}
 

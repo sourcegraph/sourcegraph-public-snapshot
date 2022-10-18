@@ -212,8 +212,6 @@ require (
 	go.uber.org/goleak v1.1.12 // indirect
 )
 
-require github.com/hmarr/codeowners v0.4.0
-
 require (
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
@@ -225,7 +223,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221010111059-022743fd1ac0
+	github.com/sourcegraph/zoekt v0.0.0-20221017155433-cc0ca865f592
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

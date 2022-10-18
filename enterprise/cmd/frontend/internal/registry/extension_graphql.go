@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,23 +55,23 @@ func (r *extensionDBResolver) Manifest(ctx context.Context) (graphqlbackend.Exte
 	return registry.NewExtensionManifest(&release.Manifest), nil
 }
 
-func (r *extensionDBResolver) CreatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.CreatedAt}
+func (r *extensionDBResolver) CreatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
-func (r *extensionDBResolver) UpdatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.UpdatedAt}
+func (r *extensionDBResolver) UpdatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.UpdatedAt}
 }
 
-func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *extensionDBResolver) PublishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	release, err := r.release(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if release == nil {
-		return &graphqlbackend.DateTime{Time: time.Time{}}, nil
+		return &gqlutil.DateTime{Time: time.Time{}}, nil
 	}
-	return &graphqlbackend.DateTime{Time: release.CreatedAt}, nil
+	return &gqlutil.DateTime{Time: release.CreatedAt}, nil
 }
 
 func (r *extensionDBResolver) URL() string {

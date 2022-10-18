@@ -21,6 +21,7 @@ var liveCommand = &cli.Command{
 sg live s2
 sg live dotcom
 sg live k8s
+sg live scaletesting
 
 # See which version is deployed on a custom environment
 sg live https://demo.sourcegraph.com

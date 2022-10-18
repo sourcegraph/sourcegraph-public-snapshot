@@ -52,7 +52,6 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:getRepositoriesForIndexScanQuery
 WITH
 repositories_matching_policy AS (
 	(
@@ -146,7 +145,6 @@ func (s *store) SetRepositoriesForRetentionScanWithTime(ctx context.Context, pro
 }
 
 const repositoryIDsForRetentionScanQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:setRepositoriesForRetentionScan
 WITH candidate_repositories AS (
 	SELECT DISTINCT u.repository_id AS id
 	FROM lsif_uploads u
@@ -195,7 +193,6 @@ func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int
 }
 
 const setRepositoryAsDirtyQuery = `
--- source: internal/codeintel/uploads/internal/stores/store_repositories.go:SetRepositoryAsDirty
 INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
 VALUES (%s, 1, 0)
 ON CONFLICT (repository_id) DO UPDATE SET
@@ -222,7 +219,6 @@ func (s *store) GetDirtyRepositories(ctx context.Context) (_ map[int]int, err er
 }
 
 const dirtyRepositoriesQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:GetDirtyRepositories
 SELECT ldr.repository_id, ldr.dirty_token
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
@@ -250,7 +246,6 @@ func (s *store) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration
 }
 
 const maxStaleAgeQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:MaxStaleAge
 SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
@@ -282,7 +277,6 @@ func (s *store) RepoName(ctx context.Context, repositoryID int) (_ string, err e
 }
 
 const repoNameQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:RepoName
 SELECT name FROM repo WHERE id = %s
 `
 
@@ -297,7 +291,6 @@ func (s *store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]
 }
 
 const repoNamesQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:RepoNames
 SELECT id, name FROM repo WHERE id = ANY(%s)
 `
 
@@ -313,6 +306,5 @@ func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 }
 
 const hasRepositoryQuery = `
--- source: internal/codeintel/uploads/internal/store/store_repositories.go:HasRepository
 SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `

@@ -1,14 +1,16 @@
 package sharedresolvers
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type CodeIntelRepositorySummaryResolver interface {
 	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
-	LastUploadRetentionScan() *DateTime
-	LastIndexScan() *DateTime
+	LastUploadRetentionScan() *gqlutil.DateTime
+	LastIndexScan() *gqlutil.DateTime
 }
 
 type repositorySummaryResolver struct {
@@ -22,13 +24,14 @@ type repositorySummaryResolver struct {
 }
 
 func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, summary RepositorySummary, prefetcher *Prefetcher, errTracer *observation.ErrCollector) CodeIntelRepositorySummaryResolver {
+	db := autoindexingSvc.GetUnsafeDB()
 	return &repositorySummaryResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
 		summary:          summary,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:        errTracer,
 	}
 }
@@ -60,10 +63,10 @@ func (r *repositorySummaryResolver) RecentIndexes() []LSIFIndexesWithRepositoryN
 	return resolvers
 }
 
-func (r *repositorySummaryResolver) LastUploadRetentionScan() *DateTime {
-	return DateTimeOrNil(r.summary.LastUploadRetentionScan)
+func (r *repositorySummaryResolver) LastUploadRetentionScan() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.summary.LastUploadRetentionScan)
 }
 
-func (r *repositorySummaryResolver) LastIndexScan() *DateTime {
-	return DateTimeOrNil(r.summary.LastIndexScan)
+func (r *repositorySummaryResolver) LastIndexScan() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.summary.LastIndexScan)
 }

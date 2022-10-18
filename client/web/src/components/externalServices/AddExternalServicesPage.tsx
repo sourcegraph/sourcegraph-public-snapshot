@@ -33,6 +33,9 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
      */
     nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
 
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
+
     /** For testing only. */
     autoFocusForm?: boolean
 }
@@ -52,6 +55,8 @@ export const AddExternalServicesPage: React.FunctionComponent<
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
@@ -74,6 +79,8 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     userID={userID}
                     externalService={externalService}
                     autoFocusForm={autoFocusForm}
+                    externalServicesFromFile={externalServicesFromFile}
+                    allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                 />
             )
         }

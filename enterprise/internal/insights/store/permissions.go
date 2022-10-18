@@ -51,7 +51,6 @@ func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results 
 }
 
 const fetchUnauthorizedReposSql = `
--- source: enterprise/internal/insights/resolver/permissions.go:FetchUnauthorizedRepos
 	SELECT id FROM repo WHERE NOT`
 
 func NewInsightPermissionStore(db database.DB) *InsightPermStore {

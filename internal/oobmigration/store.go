@@ -254,7 +254,6 @@ func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
 }
 
 const synchronizeMetadataUpsertQuery = `
--- source: internal/oobmigration/store.go:SynchronizeMetadata
 INSERT INTO out_of_band_migrations
 (
 	id,
@@ -321,7 +320,6 @@ func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 }
 
 const synchronizeMetadataFallbackUpsertQuery = `
--- source: internal/oobmigration/store.go:SynchronizeMetadataFallback
 INSERT INTO out_of_band_migrations
 (
 	id,
@@ -359,7 +357,6 @@ func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err e
 }
 
 const getByIDQuery = `
--- source: internal/oobmigration/store.go:GetByID
 SELECT
 	m.id,
 	m.team,
@@ -418,7 +415,6 @@ func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
 }
 
 const listQuery = `
--- source: internal/oobmigration/store.go:List
 SELECT
 	m.id,
 	m.team,
@@ -444,7 +440,6 @@ ORDER BY m.id desc, e.created DESC
 `
 
 const listFallbackQuery = `
--- source: internal/oobmigration/store.go:List
 WITH split_migrations AS (
 	SELECT
 		m.*,
@@ -485,7 +480,6 @@ func (s *Store) UpdateDirection(ctx context.Context, id int, applyReverse bool) 
 }
 
 const updateDirectionQuery = `
--- source: internal/oobmigration/store.go:UpdateDirection
 UPDATE out_of_band_migrations SET apply_reverse = %s WHERE id = %s
 `
 
@@ -499,7 +493,6 @@ func (s *Store) updateProgress(ctx context.Context, id int, progress float64, no
 }
 
 const updateProgressQuery = `
--- source: internal/oobmigration/store.go:UpdateProgress
 UPDATE out_of_band_migrations SET progress = %s, last_updated = %s WHERE id = %s AND progress != %s
 `
 
@@ -513,7 +506,6 @@ func (s *Store) updateMetadata(ctx context.Context, id int, meta json.RawMessage
 }
 
 const updateMetadataQuery = `
--- source: internal/oobmigration/store.go:UpdateProgress
 UPDATE out_of_band_migrations SET metadata = %s, last_updated = %s WHERE id = %s AND metadata != %s
 `
 
@@ -551,17 +543,14 @@ func (s *Store) addError(ctx context.Context, id int, message string, now time.T
 }
 
 const addErrorQuery = `
--- source: internal/oobmigration/store.go:AddError
 INSERT INTO out_of_band_migrations_errors (migration_id, message, created) VALUES (%s, %s, %s)
 `
 
 const addErrorUpdateTimeQuery = `
--- source: internal/oobmigration/store.go:AddError
 UPDATE out_of_band_migrations SET last_updated = %s where id = %s
 `
 
 const addErrorPruneQuery = `
--- source: internal/oobmigration/store.go:AddError
 DELETE FROM out_of_band_migrations_errors WHERE id IN (
 	SELECT id FROM out_of_band_migrations_errors WHERE migration_id = %s ORDER BY created DESC OFFSET %s
 )

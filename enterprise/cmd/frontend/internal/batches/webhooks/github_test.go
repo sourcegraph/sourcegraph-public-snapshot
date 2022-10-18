@@ -25,9 +25,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -153,12 +155,18 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
+
+		gsClient := gitserver.NewMockClient()
+		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+			return "", nil
+		})
+
+		err = syncer.SyncChangeset(ctx, s, gsClient, src, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s)
+		hook := NewGitHubWebhook(s, gsClient)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {

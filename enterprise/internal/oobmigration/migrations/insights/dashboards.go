@@ -55,7 +55,6 @@ func (m *insightsMigrator) migrateDashboard(ctx context.Context, job insightsMig
 }
 
 const insightsMigratorMigrateDashboardQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:migrateDashboard
 SELECT COUNT(*) from dashboard
 JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
 WHERE dashboard.title = %s AND %s
@@ -106,7 +105,6 @@ func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.St
 }
 
 const insightsMigratorCreateDashboardSelectQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 SELECT unique_id
 FROM insight_view
 WHERE unique_id = %s OR unique_id SIMILAR TO %s
@@ -114,14 +112,12 @@ LIMIT 1
 `
 
 const insightsMigratorCreateDashboardInsertQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 INSERT INTO dashboard (title, save, type)
 VALUES (%s, true, 'standard')
 RETURNING id
 `
 
 const insightsMigratorCreateDashboardInsertInsightViewQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
 SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
 FROM insight_view
@@ -132,7 +128,6 @@ ON CONFLICT DO NOTHING
 `
 
 const insightsMigratorCreateDashboardInsertGrantQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/dashboards.go:createDashboard
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
 `
 

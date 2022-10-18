@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { HTMLAttributes, useContext, useMemo, FC } from 'react'
 
 import { groupBy } from 'lodash'
 
@@ -33,7 +33,7 @@ interface LanguageUsageDatum {
     group?: string
 }
 
-interface ComputeLivePreviewProps {
+interface ComputeLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
     repositories: string
     className?: string
@@ -41,8 +41,8 @@ interface ComputeLivePreviewProps {
     series: EditableDataSeries[]
 }
 
-export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps> = props => {
-    const { disabled, repositories, series, groupBy, className } = props
+export const ComputeLivePreview: FC<ComputeLivePreviewProps> = props => {
+    const { disabled, repositories, series, groupBy, ...attribute } = props
     const { getInsightPreviewContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
@@ -74,7 +74,7 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
     const { state, update } = useLivePreview(getLivePreview)
 
     return (
-        <aside className={className}>
+        <aside {...attribute}>
             <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
             <LivePreviewCard>

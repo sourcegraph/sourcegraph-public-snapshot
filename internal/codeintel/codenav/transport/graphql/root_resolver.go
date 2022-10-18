@@ -2,7 +2,9 @@ package graphql
 
 import (
 	"context"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -55,6 +57,15 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDat
 
 	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil || len(uploads) == 0 {
+		return nil, err
+	}
+
+	if len(uploads) == 0 {
+		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
+		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
+			err = r.autoindexingSvc.QueueRepoRev(ctx, int(args.Repo.ID), string(args.Commit))
+		}
+
 		return nil, err
 	}
 

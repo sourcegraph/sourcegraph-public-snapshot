@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import { LineMatch } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './FileSearchResult.module.scss'
 
 interface Props {
-    line: NonNullable<ContentMatch['lineMatches']>[0]
+    line: LineMatch
 }
 
 export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = React.memo<Props>(

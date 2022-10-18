@@ -258,6 +258,58 @@ func createWebhookWithActorUID(ctx context.Context, t *testing.T, actorUID int32
 	return created
 }
 
+func TestWebhookList(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(et.ByteaTestKey{})
+	ctx := context.Background()
+
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
+	numGitlabHooks := 0
+	totalWebhooks := 10
+	for i := 1; i <= totalWebhooks; i++ {
+		var err error
+		if i%3 == 0 {
+			numGitlabHooks++
+			_, err = store.Create(ctx, extsvc.KindGitLab, fmt.Sprintf("http://instance-%d.github.com", i), 0, encryptedSecret)
+		} else {
+			_, err = store.Create(ctx, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.gitlab.com", i), 0, encryptedSecret)
+		}
+		assert.NoError(t, err)
+	}
+
+	t.Run("basic, no opts", func(t *testing.T) {
+		allWebhooks, err := store.List(ctx, WebhookListOptions{})
+		assert.NoError(t, err)
+		assert.Len(t, allWebhooks, totalWebhooks)
+	})
+
+	t.Run("specify code host kind", func(t *testing.T) {
+		gitlabWebhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitLab})
+		assert.NoError(t, err)
+		assert.Len(t, gitlabWebhooks, numGitlabHooks)
+	})
+
+	t.Run("with pagination", func(t *testing.T) {
+		webhooks, err := store.List(ctx, WebhookListOptions{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}})
+		assert.NoError(t, err)
+		assert.Len(t, webhooks, 2)
+		assert.Equal(t, webhooks[0].ID, int32(2))
+		assert.Equal(t, webhooks[0].CodeHostKind, extsvc.KindGitHub)
+		assert.Equal(t, webhooks[1].ID, int32(3))
+		assert.Equal(t, webhooks[1].CodeHostKind, extsvc.KindGitLab)
+	})
+
+	t.Run("with pagination and filtering by code host kind", func(t *testing.T) {
+		webhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitHub, LimitOffset: &LimitOffset{Limit: 3, Offset: 2}})
+		assert.NoError(t, err)
+		assert.Len(t, webhooks, 3)
+		for _, wh := range webhooks {
+			assert.Equal(t, wh.CodeHostKind, extsvc.KindGitHub)
+		}
+	})
+}
+
 func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {
 	return createWebhookWithActorUID(ctx, t, 0, store)
 }

@@ -81,7 +81,6 @@ func GetCodeHostIntegrationUsageStatistics(ctx context.Context, db database.DB) 
 }
 
 var codeHostIntegrationUsageQuery = `
-  -- source: internal/usagestats/browser_extension.go
   WITH events as (
     -- This sub-query is here to avoid re-doing this work above on each aggregation.
     SELECT name,

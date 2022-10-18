@@ -2,6 +2,6 @@ package cratesyncer
 
 import "github.com/sourcegraph/sourcegraph/internal/goroutine"
 
-type DependenciesService interface {
+type DependenciesServiceBackgroundJobs interface {
 	NewCrateSyncer() goroutine.BackgroundRoutine
 }
