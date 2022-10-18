@@ -28,7 +28,12 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	defer cancel()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	repos := database.NewMockRepoStore()
-	routines := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext).Routines()
+	config := JobMonitorConfig{
+		InsightsDB: insightsDB,
+		RepoStore:  repos,
+		ObsContext: &observation.TestContext,
+	}
+	routines := NewBackgroundJobMonitor(ctx, config).Routines()
 	goroutine.MonitorBackgroundRoutines(ctx, routines...)
 }
 
@@ -42,7 +47,12 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
-	monitor := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext)
+	config := JobMonitorConfig{
+		InsightsDB: insightsDB,
+		RepoStore:  repos,
+		ObsContext: &observation.TestContext,
+	}
+	monitor := NewBackgroundJobMonitor(ctx, config)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",
@@ -92,7 +102,12 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	repos := database.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
-	monitor := NewBackgroundJobMonitor(ctx, insightsDB, repos, &observation.TestContext)
+	config := JobMonitorConfig{
+		InsightsDB: insightsDB,
+		RepoStore:  repos,
+		ObsContext: &observation.TestContext,
+	}
+	monitor := NewBackgroundJobMonitor(ctx, config)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",

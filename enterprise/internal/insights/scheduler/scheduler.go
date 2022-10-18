@@ -106,11 +106,17 @@ type BackgroundJobMonitor struct {
 	newBackfillStore    dbworkerstore.Store
 }
 
-func NewBackgroundJobMonitor(ctx context.Context, insightsDB edb.InsightsDB, repoStore database.RepoStore, obsContext *observation.Context) *BackgroundJobMonitor {
+type JobMonitorConfig struct {
+	InsightsDB edb.InsightsDB
+	RepoStore  database.RepoStore
+	ObsContext *observation.Context
+}
+
+func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
 	monitor := &BackgroundJobMonitor{}
 
-	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, insightsDB, obsContext)
-	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, insightsDB, repoStore, obsContext)
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, config)
+	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, config)
 
 	return monitor
 }
@@ -124,7 +130,8 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 	}
 }
 
-func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+	db := config.InsightsDB
 	backfillStore := newBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
@@ -138,7 +145,7 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
-	}, obsContext)
+	}, config.ObsContext)
 
 	task := inProgressHandler{
 		workerStore:   workerStore,
@@ -149,19 +156,20 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 		Name:        name,
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(obsContext, name),
+		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(obsContext, name),
+		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
 	})
 
 	return worker, resetter, workerStore
 }
 
-func makeNewBackfillWorker(ctx context.Context, insightsDB edb.InsightsDB, repoStore database.RepoStore, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+	insightsDB := config.InsightsDB
 	backfillStore := newBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
@@ -175,26 +183,26 @@ func makeNewBackfillWorker(ctx context.Context, insightsDB edb.InsightsDB, repoS
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
-	}, obsContext)
+	}, config.ObsContext)
 
 	task := newBackfillHandler{
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, repoStore), //TODO add in a real all repos iterator
+		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), //TODO add in a real all repos iterator
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
 		Name:        name,
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(obsContext, name),
+		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(obsContext, name),
+		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
 	})
 
 	return worker, resetter, workerStore
