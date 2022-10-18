@@ -51,13 +51,12 @@ import {
     GitCommitFields,
     RepositoryCommitResult,
     RepositoryCommitVariables,
-    RepositoryComparisonFileDiffConnection,
     RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
 import styles from './RepositoryCommitPage.module.scss'
 
@@ -347,7 +346,9 @@ export class RepositoryCommitPage extends React.Component<RepositoryCommitPagePr
         )
     }
 
-    private queryDiffs = (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonFileDiffConnection> =>
+    private queryDiffs = (
+        args: FilteredConnectionQueryArguments
+    ): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

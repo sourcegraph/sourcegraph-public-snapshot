@@ -18,7 +18,7 @@ import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryComparisonRangeFields, Scalars, RepositoryComparisonRepository } from '../../graphql-operations'
+import { RepositoryComparisonFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -29,33 +29,29 @@ function queryRepositoryComparison(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-}): Observable<RepositoryComparisonRangeFields> {
+}): Observable<RepositoryComparisonFields['comparison']['range']> {
     return queryGraphQL(
         gql`
             query RepositoryComparison($repo: ID!, $base: String, $head: String) {
                 node(id: $repo) {
-                    ...RepositoryComparisonRepository
+                    ...RepositoryComparisonFields
                 }
             }
 
-            fragment RepositoryComparisonRepository on Repository {
+            fragment RepositoryComparisonFields on Repository {
                 comparison(base: $base, head: $head) {
                     range {
-                        ...RepositoryComparisonRangeFields
-                    }
-                }
-            }
-
-            fragment RepositoryComparisonRangeFields on GitRevisionRange {
-                expr
-                baseRevSpec {
-                    object {
-                        oid
-                    }
-                }
-                headRevSpec {
-                    object {
-                        oid
+                        expr
+                        baseRevSpec {
+                            object {
+                                oid
+                            }
+                        }
+                        headRevSpec {
+                            object {
+                                oid
+                            }
+                        }
                     }
                 }
             }
@@ -66,7 +62,7 @@ function queryRepositoryComparison(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as RepositoryComparisonRepository
+            const repo = data.node as RepositoryComparisonFields
             if (
                 !repo.comparison ||
                 !repo.comparison.range ||
@@ -104,7 +100,7 @@ interface Props
 
 interface State {
     /** The comparison's range, null when no comparison is requested, undefined while loading, or an error. */
-    rangeOrError?: null | RepositoryComparisonRangeFields | ErrorLike
+    rangeOrError?: null | RepositoryComparisonFields['comparison']['range'] | ErrorLike
 }
 
 /** A page with an overview of the comparison. */

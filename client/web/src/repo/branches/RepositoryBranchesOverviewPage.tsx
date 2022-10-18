@@ -50,7 +50,6 @@ export const queryGitBranches = memoizeObservable(
                         }
                     }
                 }
-
                 ${gitReferenceFragments}
             `,
             { ...args, withBehindAhead: true }

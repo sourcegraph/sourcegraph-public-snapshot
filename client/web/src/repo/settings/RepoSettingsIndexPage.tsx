@@ -16,21 +16,17 @@ import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } fr
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import {
-    RepositoryTextSearchIndexFields,
-    Scalars,
-    SettingsAreaRepositoryFields,
-    RepositoryTextSearchIndexRepository,
-} from '../../graphql-operations'
+import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import styles from './RepoSettingsIndexPage.module.scss'
 
+type RepositoryTextSearchIndex = RepositoryTextSearchIndexRepository['textSearchIndex']
 /**
  * Fetches a repository's text search index information.
  */
-function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndexFields | null> {
+function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndex> {
     return queryGraphQL(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
@@ -41,37 +37,33 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
 
             fragment RepositoryTextSearchIndexRepository on Repository {
                 textSearchIndex {
-                    ...RepositoryTextSearchIndexFields
-                }
-            }
-
-            fragment RepositoryTextSearchIndexFields on RepositoryTextSearchIndex {
-                status {
-                    updatedAt
-                    contentByteSize
-                    contentFilesCount
-                    indexByteSize
-                    indexShardsCount
-                    newLinesCount
-                    defaultBranchNewLinesCount
-                    otherBranchesNewLinesCount
-                }
-                refs {
-                    ref {
-                        displayName
-                        url
+                    status {
+                        updatedAt
+                        contentByteSize
+                        contentFilesCount
+                        indexByteSize
+                        indexShardsCount
+                        newLinesCount
+                        defaultBranchNewLinesCount
+                        otherBranchesNewLinesCount
                     }
-                    skippedIndexed {
-                        count
-                        query
-                    }
-                    indexed
-                    current
-                    indexedCommit {
-                        oid
-                        abbreviatedOID
-                        commit {
+                    refs {
+                        ref {
+                            displayName
                             url
+                        }
+                        skippedIndexed {
+                            count
+                            query
+                        }
+                        indexed
+                        current
+                        indexedCommit {
+                            oid
+                            abbreviatedOID
+                            commit {
+                                url
+                            }
                         }
                     }
                 }
@@ -91,7 +83,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
 const TextSearchIndexedReference: React.FunctionComponent<
     React.PropsWithChildren<{
         repo: SettingsAreaRepositoryFields
-        indexedRef: RepositoryTextSearchIndexFields['refs'][number]
+        indexedRef: NonNullable<RepositoryTextSearchIndex>['refs'][number]
     }>
 > = ({ repo, indexedRef }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
@@ -141,7 +133,7 @@ interface Props extends RouteComponentProps<{}> {
 }
 
 interface State {
-    textSearchIndex?: RepositoryTextSearchIndexFields | null
+    textSearchIndex?: RepositoryTextSearchIndex
     loading: boolean
     error?: Error
 }

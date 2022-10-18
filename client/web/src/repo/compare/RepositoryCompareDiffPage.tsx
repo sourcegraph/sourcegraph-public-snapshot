@@ -19,9 +19,11 @@ import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
-import { RepositoryComparisonFileDiffConnection, RepositoryComparisonDiffRepository } from '../../graphql-operations'
+import { RepositoryComparisonDiffResult } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
@@ -30,7 +32,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     first?: number
     after?: string | null
     paths?: string[]
-}): Observable<RepositoryComparisonFileDiffConnection> {
+}): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
     return queryGraphQL(
         gql`
             query RepositoryComparisonDiff(
@@ -42,29 +44,23 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $paths: [String!]
             ) {
                 node(id: $repo) {
-                    ...RepositoryComparisonDiffRepository
-                }
-            }
-
-            fragment RepositoryComparisonDiffRepository on Repository {
-                comparison(base: $base, head: $head) {
-                    fileDiffs(first: $first, after: $after, paths: $paths) {
-                        ...RepositoryComparisonFileDiffConnection
+                    ... on Repository {
+                        comparison(base: $base, head: $head) {
+                            fileDiffs(first: $first, after: $after, paths: $paths) {
+                                nodes {
+                                    ...FileDiffFields
+                                }
+                                totalCount
+                                pageInfo {
+                                    endCursor
+                                    hasNextPage
+                                }
+                                diffStat {
+                                    ...DiffStatFields
+                                }
+                            }
+                        }
                     }
-                }
-            }
-
-            fragment RepositoryComparisonFileDiffConnection on FileDiffConnection {
-                nodes {
-                    ...FileDiffFields
-                }
-                totalCount
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                diffStat {
-                    ...DiffStatFields
                 }
             }
 
@@ -78,7 +74,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as RepositoryComparisonDiffRepository
+            const repo = data.node as RepositoryComparisonDiff
             if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
                 throw createAggregateError(errors)
             }
@@ -142,7 +138,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonFileDiffConnection> =>
+    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

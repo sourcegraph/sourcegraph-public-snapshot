@@ -29,7 +29,6 @@ import {
     GetRepoBatchChangesSummaryResult,
     GetRepoBatchChangesSummaryVariables,
     GitCommitFields,
-    TreeCommitsAncestorFields,
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
@@ -37,7 +36,7 @@ import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 
-import { fetchTreeCommits } from './TreePageContent'
+import { fetchTreeCommits, TreeCommitsRepositoryCommit } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
@@ -143,7 +142,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     )
 
     const queryCommits = useCallback(
-        (args: { first?: number }): Observable<TreeCommitsAncestorFields> => {
+        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,

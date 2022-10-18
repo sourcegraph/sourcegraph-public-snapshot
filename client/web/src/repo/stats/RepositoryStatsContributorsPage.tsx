@@ -25,7 +25,6 @@ import {
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
-    ContributorCommitNodeFields,
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
     RepositoryContributorsVariables,
@@ -59,7 +58,7 @@ const RepositoryContributorNode: React.FunctionComponent<React.PropsWithChildren
     path,
     globbing,
 }) => {
-    const commit = node.commits.nodes[0] as ContributorCommitNodeFields | undefined
+    const commit = node.commits.nodes[0] as RepositoryContributorNodeFields['commits']['nodes'][number] | undefined
 
     const query: string = [
         searchQueryForRepoRevision(repoName, globbing),
@@ -148,18 +147,14 @@ const CONTRIBUTORS_QUERY = gql`
         count
         commits(first: 1) {
             nodes {
-                ...ContributorCommitNodeFields
+                oid
+                abbreviatedOID
+                url
+                subject
+                author {
+                    date
+                }
             }
-        }
-    }
-
-    fragment ContributorCommitNodeFields on GitCommit {
-        oid
-        abbreviatedOID
-        url
-        subject
-        author {
-            date
         }
     }
 `
