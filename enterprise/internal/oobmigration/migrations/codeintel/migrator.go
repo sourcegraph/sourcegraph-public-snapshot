@@ -2,12 +2,14 @@ package codeintel
 
 import (
 	"context"
+	"runtime"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
@@ -21,16 +23,18 @@ import (
 //
 // We have the following assumptions about the schema (for a configured table T):
 //
-// 1. There is an index on T.dump_id
-// 2. For each distinct dump_id in table T, there is a corresponding row in table
-//    T_schema_version. This invariant is kept up to date via triggers on insert.
-// 3. Table T_schema_version has the following schema:
+//  1. There is an index on T.dump_id
 //
-//    CREATE TABLE T_schema_versions (
-//        dump_id            integer PRIMARY KEY NOT NULL,
-//        min_schema_version integer,
-//        max_schema_version integer
-//    );
+//  2. For each distinct dump_id in table T, there is a corresponding row in table
+//     T_schema_version. This invariant is kept up to date via triggers on insert.
+//
+//  3. Table T_schema_version has the following schema:
+//
+//     CREATE TABLE T_schema_versions (
+//     dump_id            integer PRIMARY KEY NOT NULL,
+//     min_schema_version integer,
+//     max_schema_version integer
+//     );
 //
 // When selecting a set of candidate records to migrate, we first use the each upload record's
 // schema version bounds to determine if there are still records associated with that upload
@@ -59,6 +63,11 @@ type migratorOptions struct {
 
 	// batchSize limits the number of rows that will be scanned on each call to Up/Down.
 	batchSize int
+
+	// numRoutines is the maximum number of routines that can run at once on invocation of the
+	// migrator's Up or Down methods. If zero, a number of routines equal to the number of available
+	// CPUs will be used.
+	numRoutines int
 
 	// fields is an ordered set of fields used to construct temporary tables and update queries.
 	fields []fieldSpec
@@ -130,6 +139,10 @@ func newMigrator(store *basestore.Store, driver migrationDriver, options migrato
 		}
 	}
 
+	if options.numRoutines == 0 {
+		options.numRoutines = runtime.GOMAXPROCS(0)
+	}
+
 	return &migrator{
 		store:                    store,
 		driver:                   driver,
@@ -170,19 +183,46 @@ func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, er
 }
 
 const migratorProgressQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:Progress
 SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
 	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE %s >= %s) c1,
 	(SELECT COUNT(*) as count FROM %s_schema_versions) c2
 `
 
 // Up runs a batch of the migration.
+//
+// Each invocation of the internal method `up` (and symmetrically, `down`) selects an upload identifier
+// that still has data in the target range. Records associated with this upload identifier are read and
+// transformed, then updated in-place in the database.
+//
+// Two migrators (of the same concrete type) will not process the same upload identifier concurrently as
+// the selection of the upload holds a row lock associated with that upload for the duration of the method's
+// enclosing transaction.
 func (m *migrator) Up(ctx context.Context) (err error) {
+	g := group.New().WithErrors()
+	for i := 0; i < m.options.numRoutines; i++ {
+		g.Go(func() error { return m.up(ctx) })
+	}
+
+	return g.Wait()
+}
+
+func (m *migrator) up(ctx context.Context) (err error) {
 	return m.run(ctx, m.options.targetVersion-1, m.options.targetVersion, m.driver.MigrateRowUp)
 }
 
 // Down runs a batch of the migration in reverse.
+//
+// For notes on parallelism, see the symmetric `Up` method on this migrator.
 func (m *migrator) Down(ctx context.Context) error {
+	g := group.New().WithErrors()
+	for i := 0; i < m.options.numRoutines; i++ {
+		g.Go(func() error { return m.down(ctx) })
+	}
+
+	return g.Wait()
+}
+
+func (m *migrator) down(ctx context.Context) error {
 	return m.run(ctx, m.options.targetVersion, m.options.targetVersion-1, m.driver.MigrateRowDown)
 }
 
@@ -243,7 +283,6 @@ func (m *migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 }
 
 const runUpdateBoundsQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:run
 WITH
 	current_bounds AS (
 		-- Find the current bounds by scanning the data rows for the
@@ -308,7 +347,6 @@ func (m *migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, s
 }
 
 const selectAndLockDumpQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:selectAndLockDump
 SELECT dump_id
 FROM %s_schema_versions
 WHERE
@@ -355,7 +393,6 @@ func (m *migrator) processRows(ctx context.Context, tx *basestore.Store, dumpID,
 }
 
 const processRowsQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:processRows
 SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
 `
 
@@ -403,11 +440,9 @@ func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID,
 }
 
 const updateBatchTemporaryTableQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
 `
 
 const updateBatchUpdateQuery = `
--- source: enterprise/internal/oobmigrations/migrations/codeintel/migrator.go:updateBatch
 UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
 `

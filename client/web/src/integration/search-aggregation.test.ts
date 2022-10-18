@@ -168,13 +168,26 @@ describe('Search aggregation', () => {
         beforeEach(() =>
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                EvaluateFeatureFlag: variables => {
-                    if (variables.flagName === 'search-aggregation-filters') {
-                        return { evaluateFeatureFlag: true }
-                    }
-
-                    return { evaluateFeatureFlag: false }
-                },
+                ViewerSettings: () => ({
+                    viewerSettings: {
+                        __typename: 'SettingsCascade',
+                        subjects: [
+                            {
+                                __typename: 'DefaultSettings',
+                                id: 'TestDefaultSettingsID',
+                                settingsURL: null,
+                                viewerCanAdminister: false,
+                                latestSettings: {
+                                    id: 0,
+                                    contents: JSON.stringify({
+                                        experimentalFeatures: { searchResultsAggregations: true },
+                                    }),
+                                },
+                            },
+                        ],
+                        final: JSON.stringify({}),
+                    },
+                }),
             })
         )
 
@@ -234,6 +247,8 @@ describe('Search aggregation', () => {
             await delay(100)
 
             await driver.page.click('[data-testid="file-aggregation-mode"]')
+
+            await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
 
             await driver.page.waitForSelector('[aria-label="Aggregation results panel"]')
@@ -290,7 +305,7 @@ describe('Search aggregation', () => {
             const editor = await createEditorAPI(driver, QUERY_INPUT_SELECTOR)
             await editor.waitForIt()
 
-            await driver.page.waitForSelector('[aria-label="chart content group"] a')
+            await driver.page.waitForSelector('[aria-label="Bar chart content"] a')
             await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
@@ -298,13 +313,39 @@ describe('Search aggregation', () => {
             await driver.page.waitForSelector('[data-testid="expand-aggregation-ui"]')
             await driver.page.click('[data-testid="expand-aggregation-ui"]')
             await driver.page.waitForSelector(
-                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
+                '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )
             await driver.page.click(
-                '[aria-label="Expanded search aggregation chart"] [aria-label="chart content group"] g:nth-child(2) a'
+                '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourecegraph/about')
+        })
+
+        test('should preserve case sensitive filter in a query', async () => {
+            const origQuery = 'context:global insights('
+
+            await driver.page.goto(
+                `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal&case=yes`
+            )
+
+            const variables = await testContext.waitForGraphQLRequest(() => {}, 'GetSearchAggregation')
+
+            expect(variables.query).toEqual(`${origQuery} case:yes`)
+
+            const variablesForFileMode = await testContext.waitForGraphQLRequest(async () => {
+                await driver.page.waitForSelector('[aria-label="Aggregation mode picker"]')
+                await driver.page.click('[data-testid="file-aggregation-mode"]')
+            }, 'GetSearchAggregation')
+
+            expect(variablesForFileMode.query).toEqual(`${origQuery} case:yes`)
+
+            const variablesWithoutCaseSensitivity = await testContext.waitForGraphQLRequest(
+                async () => driver.page.click('.test-case-sensitivity-toggle'),
+                'GetSearchAggregation'
+            )
+
+            expect(variablesWithoutCaseSensitivity.query).toEqual(origQuery)
         })
     })
 })

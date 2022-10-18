@@ -223,27 +223,22 @@ func TestDiff(t *testing.T) {
 			{opts: DiffOptions{Base: "foo", Head: "bar"}, want: "foo...bar"},
 		} {
 			t.Run("rangeSpec: "+tc.want, func(t *testing.T) {
-				c := NewClient(db)
-				Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+				c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 					// The range spec is the sixth argument.
 					if args[5] != tc.want {
 						t.Errorf("unexpected rangeSpec: have: %s; want: %s", args[5], tc.want)
 					}
 					return nil, nil
-				}
-				t.Cleanup(ResetMocks)
+				})
 				_, _ = c.Diff(ctx, tc.opts, nil)
 			})
 		}
 	})
 
 	t.Run("ExecReader error", func(t *testing.T) {
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return nil, errors.New("ExecReader error")
-		}
-		t.Cleanup(ResetMocks)
-
+		})
 		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
@@ -319,11 +314,9 @@ index 9bd8209..d2acfa9 100644
 			"README.md",
 		}
 
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		t.Cleanup(ResetMocks)
+		})
 
 		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i == nil {
@@ -364,18 +357,15 @@ index 51a59ef1c..493090958 100644
 -this is my file content
 +this is my file contnent
 `
-	db := database.NewMockDB()
-	client := NewClient(db)
 	t.Run("basic", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -384,12 +374,11 @@ index 51a59ef1c..493090958 100644
 		}
 	})
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
 		fileName := "foo"
@@ -403,7 +392,8 @@ index 51a59ef1c..493090958 100644
 			}
 			return authz.Read, nil
 		})
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
+		usePermissionsForFilePermissionsFunc(checker)
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -491,6 +481,7 @@ func TestRepository_BlameFile(t *testing.T) {
 			}
 			return authz.None, nil
 		})
+		usePermissionsForFilePermissionsFunc(checker)
 		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
 
 		// Sub-repo permissions
@@ -714,6 +705,7 @@ func runFileListingTest(t *testing.T,
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -851,6 +843,7 @@ func TestListDirectoryChildren(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -1158,6 +1151,7 @@ func TestStat(t *testing.T) {
 		}
 		return authz.None, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
@@ -2372,6 +2366,7 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 		}
 		return authz.Read, nil
 	})
+	usePermissionsForFilePermissionsFunc(checker)
 	return checker
 }
 
@@ -2557,6 +2552,7 @@ func TestRead(t *testing.T) {
 
 	for name, test := range tests {
 		checker := authz.NewMockSubRepoPermissionChecker()
+		usePermissionsForFilePermissionsFunc(checker)
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
@@ -2816,4 +2812,12 @@ func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.
 	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
 		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
+	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
+	})
 }

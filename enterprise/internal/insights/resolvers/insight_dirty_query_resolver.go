@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -18,8 +19,8 @@ func (i *insightDirtyQueryResolver) Reason(ctx context.Context) string {
 	return i.data.Reason
 }
 
-func (i *insightDirtyQueryResolver) Time(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: i.data.ForTime}
+func (i *insightDirtyQueryResolver) Time(ctx context.Context) gqlutil.DateTime {
+	return gqlutil.DateTime{Time: i.data.ForTime}
 }
 
 func (i *insightDirtyQueryResolver) Count(ctx context.Context) int32 {

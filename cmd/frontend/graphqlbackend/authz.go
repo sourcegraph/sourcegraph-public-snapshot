@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -56,8 +57,9 @@ type SubRepoPermsArgs struct {
 	Repository      graphql.ID
 	UserPermissions []struct {
 		BindID       string
-		PathIncludes []string
-		PathExcludes []string
+		PathIncludes *[]string
+		PathExcludes *[]string
+		Paths        *[]string
 	}
 }
 
@@ -91,10 +93,10 @@ type BitbucketProjectsPermissionJobResolver interface {
 	InternalJobID() int32
 	State() string
 	FailureMessage() *string
-	QueuedAt() DateTime
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
-	ProcessAfter() *DateTime
+	QueuedAt() gqlutil.DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
+	ProcessAfter() *gqlutil.DateTime
 	NumResets() int32
 	NumFailures() int32
 	ProjectKey() string
@@ -110,7 +112,7 @@ type UserPermissionResolver interface {
 
 type PermissionsInfoResolver interface {
 	Permissions() []string
-	SyncedAt() *DateTime
-	UpdatedAt() DateTime
+	SyncedAt() *gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 	Unrestricted() bool
 }

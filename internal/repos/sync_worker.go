@@ -70,6 +70,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		Name:              "repo_sync_worker",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
+		CancelInterval:    5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
@@ -87,7 +88,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 	return worker, resetter
 }
 
-func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
+func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerObservability {
 	var observationContext *observation.Context
 
 	if r == nil {
@@ -121,7 +122,6 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 }
 
 const cleanSyncJobsQueryFmtstr = `
--- source: internal/repos/sync_worker.go:runJobCleaner
 DELETE FROM external_service_sync_jobs
 WHERE
 	finished_at < NOW() - INTERVAL '1 day'

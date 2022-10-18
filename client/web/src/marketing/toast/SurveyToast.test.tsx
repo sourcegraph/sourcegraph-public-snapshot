@@ -213,11 +213,11 @@ describe('SurveyToast', () => {
 
         it('Should render use case form correctly', () => {
             expect(renderResult.getByLabelText('What do you use Sourcegraph for?')).toBeVisible()
-            expect(renderResult.getByLabelText('What would make Sourcegraph better?')).toBeVisible()
+            expect(renderResult.getByLabelText('How can we make Sourcegraph better?')).toBeVisible()
         })
 
         it('Should show some gratitude after usecase submission', async () => {
-            const reasonInput = renderResult.getByLabelText('What would make Sourcegraph better?')
+            const reasonInput = renderResult.getByLabelText('How can we make Sourcegraph better?')
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 

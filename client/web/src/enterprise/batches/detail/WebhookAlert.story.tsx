@@ -1,9 +1,9 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../components/WebStory'
+import { BatchSpecSource } from '../../../graphql-operations'
 
 import { WebhookAlert } from './WebhookAlert'
 
@@ -23,6 +23,10 @@ const currentSpec = {
     originalInput: '',
     supersedingBatchSpec: null,
     source: BatchSpecSource.REMOTE,
+    viewerBatchChangesCodeHosts: {
+        totalCount: 0,
+        nodes: [],
+    },
 }
 
 const batchChange = (totalCount: number, hasNextPage: boolean) => ({
@@ -41,7 +45,7 @@ const batchChange = (totalCount: number, hasNextPage: boolean) => ({
                 },
                 {
                     externalServiceKind: 'BITBUCKETSERVER' as ExternalServiceKind,
-                    externalServiceURL: 'https://bitbucket.com/',
+                    externalServiceURL: 'https://bitbucket.org/',
                 },
             ],
             pageInfo: { hasNextPage },

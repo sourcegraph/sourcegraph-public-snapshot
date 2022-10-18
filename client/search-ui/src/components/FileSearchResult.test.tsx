@@ -10,7 +10,8 @@ import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
-    RESULT,
+    CHUNK_MATCH_RESULT,
+    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
@@ -23,7 +24,19 @@ describe('FileSearchResult', () => {
     const defaultProps = {
         index: 0,
         location: history.location,
-        result: RESULT,
+        result: CHUNK_MATCH_RESULT,
+        icon: FileIcon,
+        onSelect: sinon.spy(),
+        expanded: true,
+        showAllMatches: true,
+        fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
+        settingsCascade: NOOP_SETTINGS_CASCADE,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+    }
+    const lineMatchResultProps = {
+        index: 0,
+        location: history.location,
+        result: LINE_MATCH_RESULT,
         icon: FileIcon,
         onSelect: sinon.spy(),
         expanded: true,
@@ -39,16 +52,39 @@ describe('FileSearchResult', () => {
         expect(getAllByTestId(container, 'result-container').length).toBe(1)
     })
 
+    it('renders one result container with legacy line match format', () => {
+        const { container } = renderWithBrandedContext(<FileSearchResult {...lineMatchResultProps} />)
+        expect(getByTestId(container, 'result-container')).toBeVisible()
+        expect(getAllByTestId(container, 'result-container').length).toBe(1)
+    })
+
     it('correctly shows number of context lines when search.contextLines setting is set', () => {
         const result: ContentMatch = {
             type: 'content',
             path: '.travis.yml',
             repository: 'github.com/golang/oauth2',
-            lineMatches: [
+            chunkMatches: [
                 {
-                    line: '  - go test -v golang.org/x/oauth2/...',
-                    lineNumber: 4,
-                    offsetAndLengths: [[7, 4]],
+                    content: '  - go test -v golang.org/x/oauth2/...',
+                    contentStart: {
+                        offset: 223,
+                        line: 12,
+                        column: 0,
+                    },
+                    ranges: [
+                        {
+                            start: {
+                                offset: 230,
+                                line: 12,
+                                column: 7,
+                            },
+                            end: {
+                                offset: 234,
+                                line: 12,
+                                column: 11,
+                            },
+                        },
+                    ],
                 },
             ],
         }
@@ -57,7 +93,7 @@ describe('FileSearchResult', () => {
             subjects: [
                 {
                     lastID: 1,
-                    settings: { 'search.contextLines': '3' },
+                    settings: { 'search.contextLines': 3 },
                     extensions: null,
                     subject: {
                         __typename: 'User' as const,
@@ -74,7 +110,7 @@ describe('FileSearchResult', () => {
             <FileSearchResult {...defaultProps} result={result} settingsCascade={settingsCascade} />
         )
         const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
-        expect(tableRows.length).toBe(7)
+        expect(tableRows.length).toBe(4)
     })
 })
 
@@ -84,14 +120,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 2,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 2,
+                    startCharacter: 0,
+                    endLine: 2,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -106,9 +144,10 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -127,9 +166,10 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -148,14 +188,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 1,
+                    startCharacter: 0,
+                    endLine: 1,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -170,14 +212,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 1,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 1,
+                    startCharacter: 0,
+                    endLine: 1,
+                    endCharacter: 1,
                 },
             ],
             position: {
@@ -196,14 +240,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1', 'line2'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
+                    startLine: 0,
+                    startCharacter: 2,
+                    endLine: 0,
+                    endCharacter: 5,
                 },
             ],
             position: {
@@ -218,14 +264,16 @@ describe('limitGroup', () => {
             blobLines: ['line0', 'line1'],
             matches: [
                 {
-                    line: 0,
-                    character: 0,
-                    highlightLength: 1,
+                    startLine: 0,
+                    startCharacter: 0,
+                    endLine: 0,
+                    endCharacter: 1,
                 },
                 {
-                    line: 0,
-                    character: 2,
-                    highlightLength: 3,
+                    startLine: 0,
+                    startCharacter: 2,
+                    endLine: 0,
+                    endCharacter: 5,
                 },
             ],
             position: {

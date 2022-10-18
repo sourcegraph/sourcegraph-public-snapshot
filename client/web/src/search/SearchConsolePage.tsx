@@ -23,6 +23,7 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
+import { eventLogger } from '../tracking/eventLogger'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -48,6 +49,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
         features => features.enableGoImportsSearchQueryTransform
     )
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -70,6 +73,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             query,
             extensionHostAPIPromise: extensionHostAPI,
             enableGoImportsSearchQueryTransform,
+            eventLogger,
         })
     }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 
@@ -79,8 +83,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom]
+        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(

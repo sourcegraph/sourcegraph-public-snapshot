@@ -9,7 +9,6 @@ import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -17,6 +16,8 @@ import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+
+import { useRecentSearches } from './useRecentSearches'
 
 interface Props
     extends ActivationProps,
@@ -32,7 +33,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const selectQueryState = ({
@@ -63,10 +63,10 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
-    const applySuggestionsOnEnter = useExperimentalFeatures(
-        features => features.applySearchQuerySuggestionOnEnter ?? false
-    )
-    const [enableCoreWorkflowImprovements] = useCoreWorkflowImprovementsEnabled()
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
+    const { addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -75,10 +75,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
+                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(
@@ -97,7 +98,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 editorComponent={editorComponent}
-                applySuggestionsOnEnter={enableCoreWorkflowImprovements || applySuggestionsOnEnter}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
@@ -111,7 +112,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
-                onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />

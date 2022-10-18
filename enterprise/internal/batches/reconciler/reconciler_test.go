@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
-
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -15,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
@@ -127,15 +128,20 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			}
 			changeset := bt.CreateChangeset(t, ctx, store, changesetOpts)
 
-			// Setup gitserver dependency.
-			gitClient := &bt.FakeGitserverClient{ResponseErr: nil}
-			if changesetSpec != nil {
-				gitClient.Response = changesetSpec.HeadRef
-			}
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+				if changesetSpec != nil {
+					return changesetSpec.HeadRef, nil
+				}
+				return "", nil
+			})
 
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
-			fakeSource := &stesting.FakeChangesetSource{Svc: extSvc, FakeMetadata: githubPR}
+			fakeSource := &stesting.FakeChangesetSource{
+				Svc:                  extSvc,
+				FakeMetadata:         githubPR,
+				CurrentAuthenticator: &auth.OAuthBearerTokenWithSSH{},
+			}
 			if changesetSpec != nil {
 				fakeSource.WantHeadRef = changesetSpec.HeadRef
 				fakeSource.WantBaseRef = changesetSpec.BaseRef
@@ -146,7 +152,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			// Run the reconciler
 			rec := Reconciler{
 				noSleepBeforeSync: true,
-				gitserverClient:   gitClient,
+				client:            state.MockClient,
 				sourcer:           sourcer,
 				store:             store,
 			}

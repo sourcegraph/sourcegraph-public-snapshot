@@ -23,7 +23,7 @@ import (
 // SettingStore is a subset of the API exposed by the database.Settings() store.
 type SettingStore interface {
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 }
 
 // InsightFilterArgs contains arguments that will filter out insights when discovered if matched.
@@ -304,7 +304,6 @@ func clearDashboards(ctx context.Context, db dbutil.DB) error {
 }
 
 const deleteAllDashboardsSql = `
--- source: enterprise/internal/insights/discovery/discovery.go:clearDashboards
 delete from dashboard where save != true;
 `
 
@@ -317,7 +316,6 @@ func purgeOrphanFrontendSeries(ctx context.Context, db dbutil.DB) error {
 }
 
 const purgeOrphanedFrontendSeries = `
--- source: enterprise/internal/insights/discovery/discovery.go:purgeOrphanFrontendSeries
 with distinct_series_ids as (select distinct ivs.insight_series_id from insight_view_series ivs)
 delete from insight_series
 where id not in (select * from distinct_series_ids);

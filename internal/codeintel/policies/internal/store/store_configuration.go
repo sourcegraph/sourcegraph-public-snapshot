@@ -9,7 +9,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,7 +19,7 @@ import (
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
-func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error) {
+func (s *store) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
 	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("term", opts.Term),
@@ -84,7 +85,6 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 }
 
 const getConfigurationPoliciesCountQuery = `
--- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT COUNT(*)
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
@@ -92,7 +92,6 @@ WHERE %s
 `
 
 const getConfigurationPoliciesUnlimitedQuery = `
--- source: internal/codeintel/policies/internal/store/store_configuration.go:GetConfigurationPolicies
 SELECT
 	p.id,
 	p.repository_id,
@@ -118,7 +117,7 @@ LIMIT %s OFFSET %s
 `
 
 // GetConfigurationPolicyByID retrieves the configuration policy with the given identifier.
-func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error) {
+func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -126,14 +125,13 @@ func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ share
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.ConfigurationPolicy{}, false, err
+		return types.ConfigurationPolicy{}, false, err
 	}
 
 	return scanFirstConfigurationPolicy(s.db.Query(ctx, sqlf.Sprintf(getConfigurationPolicyByIDQuery, id, authzConds)))
 }
 
 const getConfigurationPolicyByIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicyByID
 SELECT
 	p.id,
 	p.repository_id,
@@ -157,7 +155,7 @@ WHERE p.id = %s AND (p.repository_id IS NULL OR (%s))
 
 // CreateConfigurationPolicy creates a configuration policy with the given fields (ignoring ID). The hydrated
 // configuration policy record is returned.
-func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (_ shared.ConfigurationPolicy, err error) {
+func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (_ types.ConfigurationPolicy, err error) {
 	ctx, _, endObservation := s.operations.createConfigurationPolicy.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -193,14 +191,13 @@ func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.IndexIntermediateCommits,
 	)))
 	if err != nil {
-		return shared.ConfigurationPolicy{}, err
+		return types.ConfigurationPolicy{}, err
 	}
 
 	return hydratedConfigurationPolicy, nil
 }
 
 const createConfigurationPolicyQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:CreateConfigurationPolicy
 INSERT INTO lsif_configuration_policies (
 	repository_id,
 	repository_patterns,
@@ -237,7 +234,7 @@ var (
 )
 
 // UpdateConfigurationPolicy updates the fields of the configuration policy record with the given identifier.
-func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error) {
+func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error) {
 	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", policy.ID),
 	}})
@@ -299,7 +296,6 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.Con
 }
 
 const updateConfigurationPolicySelectQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 SELECT
 	id,
 	repository_id,
@@ -320,7 +316,6 @@ FOR UPDATE
 `
 
 const updateConfigurationPolicyQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 UPDATE lsif_configuration_policies SET
 	name = %s,
 	repository_patterns = %s,
@@ -357,7 +352,6 @@ func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err 
 }
 
 const deleteConfigurationPolicyByIDQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:DeleteConfigurationPolicyByID
 WITH
 candidate AS (
 	SELECT id, protected

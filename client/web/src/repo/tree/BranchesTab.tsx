@@ -16,6 +16,12 @@ import { GitRefConnectionFields, GitRefFields, GitRefType, TreePageRepositoryFie
 import { queryGitBranches } from '../branches/RepositoryBranchesOverviewPage'
 import { GitReferenceNode, queryGitReferences } from '../GitReference'
 
+interface RepositoryBranchesTabProps {
+    repo?: TreePageRepositoryFields
+    location?: H.Location
+    history?: H.History
+}
+
 interface Props {
     repo: TreePageRepositoryFields
     location?: H.Location
@@ -36,7 +42,7 @@ interface Data {
 /**
  * Renders pages related to repository branches.
  */
-export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChildren<RepositoryBranchesTabProps>> = ({
     repo,
     history,
     location,
@@ -69,11 +75,12 @@ export const RepositoryBranchesTab: React.FunctionComponent<React.PropsWithChild
                     </Button>
                 </li>
             </ul>
-            {showAll ? (
-                <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
-            ) : (
-                <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
-            )}
+            {repo &&
+                (showAll ? (
+                    <RepositoryBranchesAllTab repo={repo} location={location} history={history} />
+                ) : (
+                    <RepositoryBranchesOverviewTab repo={repo} setShowAll={setShowAll} />
+                ))}
         </div>
     )
 }

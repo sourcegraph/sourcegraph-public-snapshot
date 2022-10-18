@@ -94,7 +94,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 	var (
 		added   int32 = 77
 		deleted int32 = 88
-		changed int32 = 99
 	)
 
 	t.Run("Create", func(t *testing.T) {
@@ -136,7 +135,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			// we handle nil pointers correctly
 			if i != cap(changesets)-1 {
 				th.DiffStatAdded = &added
-				th.DiffStatChanged = &changed
 				th.DiffStatDeleted = &deleted
 
 				th.StartedAt = clock.Now()
@@ -393,6 +391,44 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 			if have, want := countUnpublished, len(changesets)-1; have != want {
 				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			}
+		})
+
+		t.Run("State", func(t *testing.T) {
+			countOpen, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpen, 1; have != want {
+				t.Fatalf("have countOpen: %d, want: %d", have, want)
+			}
+
+			countClosed, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateClosed}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countClosed, 0; have != want {
+				t.Fatalf("have countClosed: %d, want: %d", have, want)
+			}
+
+			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countUnpublished, 2; have != want {
+				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			}
+
+			countOpenAndUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateUnpublished}})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := countOpenAndUnpublished, 3; have != want {
+				t.Fatalf("have countOpenAndUnpublished: %d, want: %d", have, want)
 			}
 		})
 
@@ -1176,7 +1212,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			ExternalReviewState: btypes.ChangesetReviewStatePending,
 			ExternalCheckState:  btypes.ChangesetCheckStatePending,
 			DiffStatAdded:       10,
-			DiffStatChanged:     10,
 			DiffStatDeleted:     10,
 			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 			UiPublicationState:  &unpublished,
@@ -1194,7 +1229,6 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
 		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
 		cs.DiffStatAdded = intptr(100)
-		cs.DiffStatChanged = intptr(100)
 		cs.DiffStatDeleted = intptr(100)
 		cs.Metadata = &github.PullRequest{Title: "The title"}
 		want := cs.Clone()
@@ -1419,6 +1453,54 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		wantStats.Total = wantStats.Open + wantStats.Closed + wantStats.Draft
 
 		if diff := cmp.Diff(wantStats, *haveStats); diff != "" {
+			t.Fatalf("wrong stats returned. diff=%s", diff)
+		}
+	})
+
+	t.Run("GetGlobalChangesetsStats", func(t *testing.T) {
+		var batchChangeID int64 = 191918
+		currentBatchChangeStats, err := s.GetGlobalChangesetsStats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		baseOpts := bt.TestChangesetOpts{Repo: repo.ID}
+
+		// Closed changeset
+		opts1 := baseOpts
+		opts1.BatchChange = batchChangeID
+		opts1.ExternalState = btypes.ChangesetExternalStateClosed
+		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts1)
+
+		// Open changeset
+		opts2 := baseOpts
+		opts2.BatchChange = batchChangeID
+		opts2.ExternalState = btypes.ChangesetExternalStateOpen
+		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts2)
+
+		// Draft changeset
+		opts3 := baseOpts
+		opts3.BatchChange = batchChangeID
+		opts3.ExternalState = btypes.ChangesetExternalStateDraft
+		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
+		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
+		bt.CreateChangeset(t, ctx, s, opts3)
+
+		haveStats, err := s.GetGlobalChangesetsStats(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantStats := currentBatchChangeStats
+		wantStats.Open += 1
+		wantStats.Closed += 1
+		wantStats.Draft += 1
+		wantStats.Total += 3
+
+		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
 			t.Fatalf("wrong stats returned. diff=%s", diff)
 		}
 	})

@@ -11,10 +11,10 @@ import (
 
 // HTTPMiddleware wraps the handler with the following:
 //
-// - If the HTTP header, X-Sourcegraph-Should-Trace, is set to a truthy value, set the
-//   shouldTraceKey context.Context value to true
-// - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp, which applies the
-//   desired instrumentation.
+//   - If the HTTP header, X-Sourcegraph-Should-Trace, is set to a truthy value, set the
+//     shouldTraceKey context.Context value to true
+//   - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp, which applies the
+//     desired instrumentation.
 //
 // The provided operation name is used to add details to spans.
 func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) http.Handler {

@@ -149,6 +149,10 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    // Remove negation from the field for lookup
+    if (field.startsWith('-')) {
+        field = field.slice(1)
+    }
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {
@@ -192,6 +196,16 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.description(...)',
                 insertText: 'has.description(${1})',
+                asSnippet: true,
+            },
+            {
+                label: 'has.tag(...)',
+                insertText: 'has.tag(${1})',
+                asSnippet: true,
+            },
+            {
+                label: 'has(...)',
+                insertText: 'has(${1:key}:${2:value})',
                 asSnippet: true,
             },
         ]

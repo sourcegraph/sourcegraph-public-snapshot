@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -36,7 +36,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     >
     showDotComMarketing: boolean
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
-    showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showKeyboardShortcutsHelp: () => void
@@ -113,14 +112,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
-                            {props.showRepositorySection && (
-                                <MenuLink
-                                    as={Link}
-                                    to={`/users/${props.authenticatedUser.username}/settings/repositories`}
-                                >
-                                    Your repositories
-                                </MenuLink>
-                            )}
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>

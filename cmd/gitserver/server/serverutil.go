@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -29,7 +30,7 @@ import (
 // GitDir is an absolute path to a GIT_DIR.
 // They will all follow the form:
 //
-//    ${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${name}/.git
 type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
@@ -79,6 +80,11 @@ func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
 }
 
+func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return (strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest"))
+}
+
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
 func checkSpecArgSafety(spec string) error {
@@ -121,6 +127,21 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 			b.WriteString(cert)
 			b.WriteString("\n")
 		}
+
+		// git will ignore the system certificates when specifying SSLCAInfo,
+		// so we additionally include the system certificates. Note: this only
+		// works on linux, see cacert package for more information.
+		root, err := cacert.System()
+		if err != nil {
+			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.", log.Error(err))
+		} else if len(root) == 0 {
+			logger.Warn("no system certificates found for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.")
+		}
+		for _, cert := range root {
+			b.Write(cert)
+			b.WriteString("\n")
+		}
+
 		// We don't clean up the file since it has a process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
@@ -223,7 +244,37 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
+	if executable == "p4-fusion" {
+		extraArgs = removeUnsupportedP4Args(extraArgs)
+	}
+
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+}
+
+// removeUnsupportedP4Args removes all -c arguments as `p4-fusion` command doesn't
+// support -c argument and passing this causes warning logs.
+func removeUnsupportedP4Args(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+
+	idx := 0
+	foundC := false
+	for _, arg := range args {
+		if arg == "-c" {
+			// removing any -c
+			foundC = true
+		} else if foundC {
+			// removing the argument following -c and resetting the flag
+			foundC = false
+		} else {
+			// keep the argument
+			args[idx] = arg
+			idx++
+		}
+	}
+	args = args[:idx]
+	return args
 }
 
 // writeTempFile writes data to the TempFile with pattern. Returns the path of
@@ -399,10 +450,9 @@ var logUnflushableResponseWriterOnce sync.Once
 // must call Close to free the resources created by the writer.
 //
 // If w does not support flushing, it returns nil.
-func newFlushingResponseWriter(w http.ResponseWriter) *flushingResponseWriter {
+func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
 	// We panic if we don't implement the needed interfaces.
 	flusher := hackilyGetHTTPFlusher(w)
-	logger := log.Scoped("flushingResponseWriter", "")
 	if flusher == nil {
 		logUnflushableResponseWriterOnce.Do(func() {
 			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",

@@ -1,37 +1,37 @@
 import assert from 'assert'
 
-import { subDays, addDays } from 'date-fns'
+import { addDays, subDays } from 'date-fns'
 
 import {
+    BatchSpecSource,
     ChangesetSpecOperation,
     ChangesetState,
     ExternalServiceKind,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetCountsOverTimeVariables,
-    ChangesetCountsOverTimeResult,
-    ExternalChangesetFileDiffsVariables,
-    ExternalChangesetFileDiffsResult,
-    WebGraphQlOperations,
-    ExternalChangesetFileDiffsFields,
-    DiffHunkLineType,
-    ChangesetSpecType,
-    ListBatchChange,
-    BatchChangeByNamespaceResult,
-    BatchChangeChangesetsVariables,
-    BatchChangeChangesetsResult,
-    BatchChangeState,
-    BatchSpecState,
     BatchChangeBatchSpecsResult,
     BatchChangeBatchSpecsVariables,
+    BatchChangeByNamespaceResult,
+    BatchChangeChangesetsResult,
+    BatchChangeChangesetsVariables,
+    BatchChangeState,
+    BatchSpecState,
+    ChangesetCheckState,
+    ChangesetCountsOverTimeResult,
+    ChangesetCountsOverTimeVariables,
+    ChangesetReviewState,
+    ChangesetSpecType,
+    DiffHunkLineType,
+    ExternalChangesetFileDiffsFields,
+    ExternalChangesetFileDiffsResult,
+    ExternalChangesetFileDiffsVariables,
+    ListBatchChange,
+    WebGraphQlOperations,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -121,9 +121,8 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                     },
                 ],
                 stat: {
-                    added: 10,
-                    changed: 3,
-                    deleted: 8,
+                    added: 13,
+                    deleted: 11,
                 },
             },
         ],
@@ -211,7 +210,6 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     diffStat: {
                         __typename: 'DiffStat',
                         added: 100,
-                        changed: 10,
                         deleted: 23,
                     },
                     error: null,
@@ -405,6 +403,11 @@ function mockCommonGraphQLResponses(
                     codeHostsWithoutWebhooks: {
                         nodes: [],
                         pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
+                    viewerBatchChangesCodeHosts: {
+                        __typename: 'BatchChangesCodeHostConnection',
+                        nodes: [],
                         totalCount: 0,
                     },
                 },
@@ -610,7 +613,7 @@ describe('Batches', () => {
     // See https://github.com/sourcegraph/sourcegraph/issues/37233
     describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
-            it.skip(`displays a single batch change for ${entityType}`, async () => {
+            it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
                     ...batchChangeLicenseGraphQlResults,
@@ -623,26 +626,29 @@ describe('Batches', () => {
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
-                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
+                await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change', {
+                    // Wait for page to be fully loaded.
+                    waitUntil: 'networkidle0',
+                })
                 // View overview page.
-                await driver.page.waitForSelector('.test-batch-change-details-page')
+                await driver.page.waitForSelector('.test-batch-change-details-page', { visible: true })
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
                 // we wait for the changesets to be loaded in the browser before proceeding
-                await driver.page.waitForSelector('.test-batches-expand-changeset')
+                await driver.page.waitForSelector('.test-batches-expand-changeset', { visible: true })
 
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
-                await driver.page.waitForSelector('.test-file-diff-node')
+                await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
                 // Switch to view burndown chart.
                 await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
-                await driver.page.waitForSelector('.test-batches-chart')
+                await driver.page.waitForSelector('.test-batches-chart', { visible: true })
 
                 // Switch to view executions.
                 await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(3)')
-                await driver.page.waitForSelector('.test-batches-executions')
+                await driver.page.waitForSelector('.test-batches-executions', { visible: true })
 
                 // Go to close page via button.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
@@ -650,7 +656,7 @@ describe('Batches', () => {
                     await driver.page.evaluate(() => window.location.href),
                     driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/close'
                 )
-                await driver.page.waitForSelector('.test-batch-change-close-page')
+                await driver.page.waitForSelector('.test-batch-change-close-page', { visible: true })
                 // Change overrides to make batch change appear closed.
                 testContext.overrideGraphQL({
                     ...commonWebGraphQlResults,
@@ -669,7 +675,7 @@ describe('Batches', () => {
 
                 // Return to details page.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-abort-btn')])
-                await driver.page.waitForSelector('.test-batch-change-details-page')
+                await driver.page.waitForSelector('.test-batch-change-details-page', { visible: true })
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
                     // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
@@ -689,13 +695,21 @@ describe('Batches', () => {
 
                 // Test read tab from location.
                 await driver.page.goto(
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?tab=chart'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?tab=chart',
+                    {
+                        // Wait for page to be fully loaded.
+                        waitUntil: 'networkidle0',
+                    }
                 )
-                await driver.page.waitForSelector('.test-batches-chart')
+                await driver.page.waitForSelector('.test-batches-chart', { visible: true })
                 await driver.page.goto(
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/executions'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/executions',
+                    {
+                        // Wait for page to be fully loaded.
+                        waitUntil: 'networkidle0',
+                    }
                 )
-                await driver.page.waitForSelector('.test-batches-executions')
+                await driver.page.waitForSelector('.test-batches-executions', { visible: true })
             })
         }
     })
@@ -726,7 +740,6 @@ describe('Batches', () => {
                             diffStat: {
                                 __typename: 'DiffStat',
                                 added: 1000,
-                                changed: 100,
                                 deleted: 182,
                             },
                             expiresAt: addDays(now, 3).toISOString(),
@@ -813,7 +826,6 @@ describe('Batches', () => {
                                                     diffStat: {
                                                         __typename: 'DiffStat',
                                                         added: 10,
-                                                        changed: 2,
                                                         deleted: 9,
                                                     },
                                                     title: 'Changeset title',

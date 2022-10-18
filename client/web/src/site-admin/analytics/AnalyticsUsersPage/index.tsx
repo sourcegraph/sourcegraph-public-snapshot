@@ -1,14 +1,12 @@
-import React, { useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, FC } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Card, LoadingSpinner, useMatchMedia, Text, LineChart, BarChart, Series } from '@sourcegraph/wildcard'
 
-import { GlobalAlert } from '../../../global/GlobalAlert'
 import { UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -21,8 +19,10 @@ import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 
-export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
-    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'registeredUsers' })
+import styles from './AnalyticsUsersPage.module.scss'
+
+export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
+    const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Users', aggregation: 'uniqueUsers' })
     const { data, error, loading } = useQuery<UsersStatisticsResult, UsersStatisticsVariables>(USERS_STATISTICS, {
         variables: {
             dateRange: dateRange.value,
@@ -32,6 +32,8 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsUsers')
     }, [])
+    const [uniqueOrPercentage, setUniqueOrPercentage] = useState<'unique' | 'percentage'>('unique')
+
     const [frequencies, legends] = useMemo(() => {
         if (!data) {
             return []
@@ -39,10 +41,10 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         const { users } = data.site.analytics
         const legends: ValueLegendListProps['items'] = [
             {
-                value: users.activity.summary.totalRegisteredUsers,
+                value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
                 color: 'var(--purple)',
-                tooltip: 'Currently registered users using the application in the selected timeframe.',
+                tooltip: 'The number of users using the application in the selected timeframe including deleted users.',
             },
             {
                 value: data.users.totalCount,
@@ -60,10 +62,10 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
             },
         ]
 
-        const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, 1, 30)
+        const frequencies: FrequencyDatum[] = buildFrequencyDatum(users.frequencies, uniqueOrPercentage, 30)
 
         return [frequencies, legends]
-    }, [data])
+    }, [data, uniqueOrPercentage])
 
     const activities = useMemo(() => {
         if (!data) {
@@ -90,27 +92,6 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         return activities
     }, [data, aggregation.selected, dateRange.value])
 
-    const summary = useMemo(() => {
-        if (!data) {
-            return []
-        }
-        const { avgDAU, avgWAU, avgMAU } = data.site.analytics.users.summary
-        return [
-            {
-                value: avgDAU,
-                label: 'DAU',
-            },
-            {
-                value: avgWAU,
-                label: 'WAU',
-            },
-            {
-                value: avgMAU,
-                label: 'MAU',
-            },
-        ]
-    }, [data])
-
     const isWideScreen = useMatchMedia('(min-width: 992px)', false)
 
     if (error) {
@@ -130,15 +111,6 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
-                <GlobalAlert
-                    alert={{
-                        message:
-                            'Note these charts are experimental. For billing information, use [usage stats](/site-admin/usage-statistics).',
-                        type: AlertType.INFO,
-                        isDismissibleWithKey: '',
-                    }}
-                    className="my-3"
-                />
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {activities && (
                     <div>
@@ -160,48 +132,73 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                     </div>
                 )}
                 <div className={classNames(isWideScreen && 'd-flex')}>
-                    {summary && (
+                    {!!data?.site.analytics.users.monthlyActiveUsers && (
                         <ChartContainer
-                            title="Average user activity by period"
-                            className="mb-5"
-                            labelX="Average DAU/WAU/MAU"
+                            title="Monthly active users"
+                            labelX="Months"
                             labelY="Unique users"
+                            className={classNames(styles.barChart)}
                         >
                             {width => (
                                 <BarChart
                                     width={isWideScreen ? 280 : width}
                                     height={300}
-                                    data={summary}
-                                    getDatumName={datum => datum.label}
-                                    getDatumValue={datum => datum.value}
-                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                    data={data?.site.analytics.users.monthlyActiveUsers}
+                                    getDatumName={datum => datum.date}
+                                    getDatumValue={datum => datum.count}
+                                    getDatumColor={() => 'var(--bar-color)'}
+                                    getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                 />
                             )}
                         </ChartContainer>
                     )}
                     {frequencies && (
                         <ChartContainer
-                            className="mb-5"
                             title="Frequency of use"
                             labelX="Days used"
-                            labelY="Unique users"
+                            labelY={uniqueOrPercentage === 'unique' ? 'Unique users' : 'Percentage of active users'}
+                            className={classNames(styles.barChart)}
                         >
                             {width => (
                                 <BarChart
                                     width={isWideScreen ? 540 : width}
                                     height={300}
                                     data={frequencies}
+                                    pixelsPerXTick={20}
                                     getDatumName={datum => datum.label}
                                     getDatumValue={datum => datum.value}
-                                    getDatumColor={() => 'var(--oc-blue-2)'}
+                                    getDatumColor={() => 'var(--bar-color)'}
+                                    getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                 />
                             )}
                         </ChartContainer>
                     )}
                 </div>
+                <div className="d-flex justify-content-end align-items-stretch mb-4 text-nowrap">
+                    {frequencies && (
+                        <ToggleSelect<'unique' | 'percentage'>
+                            className={styles.toggleSelect}
+                            selected={uniqueOrPercentage}
+                            onChange={setUniqueOrPercentage}
+                            items={[
+                                {
+                                    value: 'unique',
+                                    label: 'Total',
+                                    tooltip: 'The number of users who used the platform atleast n days.',
+                                },
+                                {
+                                    value: 'percentage',
+                                    label: 'Percentage',
+                                    tooltip:
+                                        'Percentage of users out of total active users who used the platform atleast n days.',
+                                },
+                            ]}
+                        />
+                    )}
+                </div>
             </Card>
             <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table and are updated every 24 hours..
+                All events are generated from entries in the event logs table and are updated every 24 hours.
             </Text>
         </>
     )

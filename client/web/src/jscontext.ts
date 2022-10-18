@@ -10,7 +10,8 @@ export interface AuthProvider {
     serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
     displayName: string
     isBuiltin: boolean
-    authenticationURL?: string
+    authenticationURL: string
+    serviceID: string
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
@@ -112,9 +113,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
-    /** Whether the new gql api for code insights is enabled. */
-    codeInsightsGqlApiEnabled: boolean
-
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
@@ -156,9 +154,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the product research sign-up page is enabled on the site. */
     productResearchPageEnabled: boolean
-
-    /** The publishable key for the billing service (Stripe). */
-    billingPublishableKey?: string
 
     /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
     enableLegacyExtensions?: boolean

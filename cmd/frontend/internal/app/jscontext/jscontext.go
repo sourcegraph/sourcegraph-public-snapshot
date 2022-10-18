@@ -37,6 +37,7 @@ type authProviderInfo struct {
 	DisplayName       string `json:"displayName"`
 	ServiceType       string `json:"serviceType"`
 	AuthenticationURL string `json:"authenticationURL"`
+	ServiceID         string `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -106,8 +107,6 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
-	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
-
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
@@ -154,6 +153,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 				DisplayName:       info.DisplayName,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
+				ServiceID:         info.ServiceID,
 			})
 		}
 	}
@@ -242,8 +242,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-
-		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

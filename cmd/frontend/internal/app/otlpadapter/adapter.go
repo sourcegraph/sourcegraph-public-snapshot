@@ -1,13 +1,16 @@
 package otlpadapter
 
 import (
+	"bytes"
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"path"
 
 	"go.opentelemetry.io/collector/component"
+	"go.uber.org/atomic"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -43,6 +46,8 @@ type adaptedSignal struct {
 	// CreateAdapter creates the receiver for this signal that redirects to the
 	// appropriate exporter.
 	CreateAdapter func() (*signalAdapter, error)
+	// Enabled can be used to toggle whether the adapter should no-op.
+	Enabled *atomic.Bool
 }
 
 // Register attaches a route to the router that adapts requests on the `/otlp` path.
@@ -67,8 +72,31 @@ func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mu
 			req.URL.Host = receiverURL.Host
 			req.URL.Path = sig.PathPrefix
 		},
+		Transport: &roundTripper{
+			roundTrip: func(r *http.Request) (*http.Response, error) {
+				if sig.Enabled != nil && !sig.Enabled.Load() {
+					body := "tunnel disabled via site configuration"
+					return &http.Response{
+						StatusCode:    http.StatusUnprocessableEntity,
+						Body:          ioutil.NopCloser(bytes.NewBufferString(body)),
+						ContentLength: int64(len(body)),
+						Request:       r,
+						Header:        make(http.Header, 0),
+					}, nil
+				}
+				return http.DefaultTransport.RoundTrip(r)
+			},
+		},
 		ErrorLog: std.NewLogger(adapterLogger, log.LevelWarn),
 	})
 
 	adapterLogger.Info("signal adapter registered")
+}
+
+type roundTripper struct {
+	roundTrip func(*http.Request) (*http.Response, error)
+}
+
+func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return r.roundTrip(req)
 }

@@ -29,9 +29,23 @@ func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind str
 	svc := types.ExternalService{
 		Kind:        serviceKind,
 		DisplayName: serviceKind + " - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
+	}
+
+	switch serviceKind {
+	case extsvc.KindGitHub:
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`)
+	case extsvc.KindGitLab:
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["repo"]}`)
+	case extsvc.KindBitbucketCloud:
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "appPassword": "pass"}`)
+	case extsvc.KindBitbucketServer:
+		svc.Config = extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "user", "token": "abc", "repos": ["owner/name"]}`)
+	case extsvc.KindAWSCodeCommit:
+		svc.Config = extsvc.NewUnencryptedConfig(`{"region": "us-east-1", "accessKeyID": "abc", "secretAccessKey": "abc", "gitCredentials": {"username": "user", "password": "pass"}}`)
+	default:
+		panic(fmt.Sprintf("unhandled kind: %q", serviceKind))
 	}
 
 	if err := store.Upsert(context.Background(), &svc); err != nil {
@@ -40,7 +54,7 @@ func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind str
 
 	repo := TestRepoWithService(t, store, fmt.Sprintf("repo-%d", svc.ID), &svc)
 
-	repo.Sources[svc.URN()].CloneURL = "https://secrettoken@github.com/sourcegraph/sourcegraph"
+	repo.Sources[svc.URN()].CloneURL = "https://github.com/sourcegraph/sourcegraph"
 	return repo
 }
 
@@ -103,6 +117,8 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count in
 			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
 		}
 
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name))
+
 		rs = append(rs, r)
 	}
 
@@ -124,8 +140,9 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab",
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-			Url:   "https://gitlab.com",
-			Token: "SECRETTOKEN",
+			Url:          "https://gitlab.com",
+			Token:        "SECRETTOKEN",
+			ProjectQuery: []string{"none"},
 		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {
@@ -140,6 +157,8 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 				HTTPURLToRepo: fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name)),
 			},
 		}
+
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("https://gitlab.com/sourcegraph/%s", string(r.Name))
 
 		rs = append(rs, r)
 	}
@@ -161,6 +180,7 @@ func CreateBbsTestRepos(t *testing.T, ctx context.Context, db database.DB, count
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sourcegraph.com",
 			Token: "SECRETTOKEN",
+			Repos: []string{"owner/name"},
 		})),
 	}
 
@@ -177,6 +197,7 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db database.DB,
 			Url:        "https://github.com",
 			Token:      "SECRETTOKEN",
 			GitURLType: "ssh",
+			Repos:      []string{"owner/name"},
 		})),
 	}
 	esStore := db.ExternalServices()
@@ -212,6 +233,7 @@ func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db database.DB, co
 			Url:        "https://bitbucket.sgdev.org",
 			Token:      "SECRETTOKEN",
 			GitURLType: "ssh",
+			Repos:      []string{"owner/name"},
 		})),
 	}
 
@@ -244,6 +266,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db database.DB, ext *type
 			Href: cloneBaseURL + "/" + string(r.Name),
 		})
 		r.Metadata = &metadata
+		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("%s/%s", cloneBaseURL, string(r.Name))
 		rs = append(rs, r)
 	}
 
@@ -266,7 +289,11 @@ func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database
 		DisplayName: "AWS CodeCommit",
 		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
 			AccessKeyID: "horse-key",
-			Region:      "horse-town",
+			Region:      "us-east-1",
+			GitCredentials: schema.AWSCodeCommitGitCredentials{
+				Username: "horse",
+				Password: "graph",
+			},
 		})),
 	}
 	if err := esStore.Upsert(ctx, ext); err != nil {

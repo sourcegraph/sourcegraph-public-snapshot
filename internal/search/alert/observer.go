@@ -9,13 +9,13 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -47,7 +47,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, o.Searcher, o.Zoekt)
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(o.Db), o.Searcher, o.Zoekt)
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -81,7 +81,7 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 		}
 	}
 
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
+	isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
@@ -210,7 +210,10 @@ func (o *Observer) Done() (*search.Alert, error) {
 
 type alertKind string
 
-const luckySearchQueries alertKind = "lucky-search-queries"
+const (
+	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
+	smartSearchPureResults                 = "smart-search-pure-results"
+)
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
 	if err == nil {
@@ -262,14 +265,16 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	if errors.As(err, &lErr) {
 		title := "Also showing additional results"
 		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		kind := string(smartSearchAdditionalResults)
 		if lErr.Type == LuckyAlertPure {
 			title = "No results for original query. Showing related results instead"
 			description = "The original query returned no results. Below are results for similar queries that might interest you."
+			kind = string(smartSearchPureResults)
 		}
 		return &search.Alert{
-			PrometheusType:  "lucky_search_notice",
+			PrometheusType:  "smart_search_notice",
 			Title:           title,
-			Kind:            string(luckySearchQueries),
+			Kind:            kind,
 			Description:     description,
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil
@@ -321,19 +326,6 @@ func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, er
 
 	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: kinds,
-	})
-	if err != nil {
-		return false, err
-	}
-	return count == 0, nil
-}
-
-func needsPackageHostConfiguration(ctx context.Context, db database.DB) (bool, error) {
-	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{
-			extsvc.KindNpmPackages,
-			extsvc.KindGoPackages,
-		},
 	})
 	if err != nil {
 		return false, err

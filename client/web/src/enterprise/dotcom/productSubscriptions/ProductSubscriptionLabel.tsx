@@ -1,7 +1,6 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-
+import { ProductSubscriptionFields } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 
 /**
@@ -10,26 +9,12 @@ import { formatUserCount } from '../../../productSubscription/helpers'
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<
     React.PropsWithChildren<{
-        productSubscription: {
-            invoiceItem?:
-                | ({
-                      plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'>
-                  } & Pick<GQL.IProductSubscriptionInvoiceItem, 'userCount'>)
-                | null
-        } & Pick<GQL.IProductSubscription, 'activeLicense'>
-
-        planField?: 'name' | 'nameWithBrand'
-
+        productSubscription: ProductSubscriptionFields
         className?: string
     }>
-> = ({ productSubscription, planField, className = '' }) => (
+> = ({ productSubscription, className = '' }) => (
     <span className={className}>
-        {productSubscription.invoiceItem ? (
-            <>
-                {productSubscription.invoiceItem.plan[planField || 'nameWithBrand']} (
-                {formatUserCount(productSubscription.invoiceItem.userCount)})
-            </>
-        ) : productSubscription.activeLicense?.info ? (
+        {productSubscription.activeLicense?.info ? (
             <>
                 {productSubscription.activeLicense.info.productNameWithBrand} (
                 {formatUserCount(productSubscription.activeLicense.info.userCount)})

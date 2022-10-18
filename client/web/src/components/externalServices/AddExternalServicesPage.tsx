@@ -3,7 +3,6 @@ import React from 'react'
 import { mdiInformation } from '@mdi/js'
 import * as H from 'history'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text } from '@sourcegraph/wildcard'
@@ -34,6 +33,9 @@ export interface AddExternalServicesPageProps extends ThemeProps, TelemetryProps
      */
     nonCodeHostExternalServices: Record<string, AddExternalServiceOptions>
 
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
+
     /** For testing only. */
     autoFocusForm?: boolean
 }
@@ -53,6 +55,8 @@ export const AddExternalServicesPage: React.FunctionComponent<
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
         'hasDismissedCodeHostPrivacyWarning',
@@ -75,15 +79,21 @@ export const AddExternalServicesPage: React.FunctionComponent<
                     userID={userID}
                     externalService={externalService}
                     autoFocusForm={autoFocusForm}
+                    externalServicesFromFile={externalServicesFromFile}
+                    allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                 />
             )
         }
     }
 
     const licenseInfo = window.context.licenseInfo
-    let allowedCodeHosts: ExternalServiceKind[] | null = null
+    let allowedCodeHosts: AddExternalServiceOptions[] | null = null
     if (licenseInfo && licenseInfo.currentPlan === 'business-0') {
-        allowedCodeHosts = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
+        allowedCodeHosts = [
+            codeHostExternalServices.github,
+            codeHostExternalServices.gitlabcom,
+            codeHostExternalServices.bitbucket,
+        ]
     }
 
     return (
@@ -141,7 +151,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                 </Alert>
             )}
             {Object.entries(codeHostExternalServices)
-                .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1].kind))
+                .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
                 .map(([id, externalService]) => (
                     <div className={styles.addExternalServicesPageCard} key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
@@ -156,9 +166,7 @@ export const AddExternalServicesPage: React.FunctionComponent<
                         repositories from other code hosts.
                     </Text>
                     {Object.entries(codeHostExternalServices)
-                        .filter(
-                            externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1].kind)
-                        )
+                        .filter(externalService => allowedCodeHosts && !allowedCodeHosts.includes(externalService[1]))
                         .map(([id, externalService]) => (
                             <div className={styles.addExternalServicesPageCard} key={id}>
                                 <ExternalServiceCard

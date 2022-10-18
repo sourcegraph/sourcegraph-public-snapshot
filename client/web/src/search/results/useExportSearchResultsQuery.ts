@@ -5,13 +5,15 @@ import { LazyQueryResult } from '@apollo/client'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { IQuery, SearchResult } from '@sourcegraph/shared/src/schema'
+
+import { SearchResultsResult, SearchResultsFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface ExportSearchResultsConfig extends SearchPatternTypeProps, Pick<PlatformContext, 'sourcegraphURL'> {
     query: string
 }
 
-type ExportSearchResultsQueryResult = Pick<IQuery, 'search'>
+type ExportSearchResultsQueryResult = Pick<SearchResultsResult, 'search'>
 
 interface ExportSearchResultsQueryVariables extends SearchPatternTypeProps {
     query: string
@@ -26,51 +28,55 @@ const SEARCH_RESULTS_QUERY = gql`
         search(query: $query, patternType: $patternType) {
             results {
                 results {
-                    __typename
-                    ... on CommitSearchResult {
-                        url
-                        commit {
-                            subject
-                            author {
-                                date
-                                person {
-                                    displayName
-                                }
-                            }
-                        }
-                    }
-                    ... on Repository {
-                        name
-                        externalURLs {
-                            url
-                        }
-                    }
-                    ... on FileMatch {
-                        repository {
-                            name
-                            externalURLs {
-                                url
-                            }
-                        }
-                        file {
-                            path
-                            canonicalURL
-                            externalURLs {
-                                url
-                            }
-                        }
-                        lineMatches {
-                            preview
-                            offsetAndLengths
-                        }
+                    ...SearchResultsFields
+                }
+            }
+        }
+    }
+
+    fragment SearchResultsFields on SearchResult {
+        __typename
+        ... on CommitSearchResult {
+            url
+            commit {
+                subject
+                author {
+                    date
+                    person {
+                        displayName
                     }
                 }
+            }
+        }
+        ... on Repository {
+            name
+            externalURLs {
+                url
+            }
+        }
+        ... on FileMatch {
+            repository {
+                name
+                externalURLs {
+                    url
+                }
+            }
+            file {
+                path
+                canonicalURL
+                externalURLs {
+                    url
+                }
+            }
+            lineMatches {
+                preview
+                offsetAndLengths
             }
         }
     }
 `
 
-const searchResultsToFileContent = (searchResults: SearchResult[], sourcegraphURL: string): string => {
+const searchResultsToFileContent = (searchResults: SearchResultsFields[], sourcegraphURL: string): string => {
     const headers =
         searchResults[0].__typename !== 'CommitSearchResult'
             ? [
@@ -142,6 +148,7 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
             onCompleted: data => {
                 const results = data.search?.results.results
                 if (!results?.length || !results[0]) {
+                    eventLogger.log('SearchExportFailed')
                     throw new Error('No results to be exported.')
                 }
                 const content = searchResultsToFileContent(results, sourcegraphURL)
@@ -154,6 +161,7 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
                 a.style.display = 'none'
                 a.download = downloadFilename
                 a.click()
+                eventLogger.log('SearchExportPerformed', { count: results.length }, { count: results.length })
 
                 // cleanup
                 a.remove()

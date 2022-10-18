@@ -23,7 +23,6 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
@@ -107,7 +106,6 @@ type CommonResultContainerProps = Omit<
 
 // This is a search result for types file (content), path, or symbol.
 export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
@@ -115,10 +113,10 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     const ranking = useMemo(() => {
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking(coreWorkflowImprovementsEnabled ? 5 : 10)
+            return new LineRanking(5)
         }
-        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 3 : 5)
-    }, [settings, coreWorkflowImprovementsEnabled])
+        return new ZoektRanking(3)
+    }, [settings])
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
@@ -139,15 +137,31 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     const items: MatchItem[] = useMemo(
         () =>
             result.type === 'content'
-                ? result.lineMatches?.map(match => ({
-                      highlightRanges: match.offsetAndLengths.map(([start, highlightLength]) => ({
-                          start,
-                          highlightLength,
+                ? result.chunkMatches?.map(match => ({
+                      highlightRanges: match.ranges.map(range => ({
+                          startLine: range.start.line,
+                          startCharacter: range.start.column,
+                          endLine: range.end.line,
+                          endCharacter: range.end.column,
                       })),
-                      preview: match.line,
-                      line: match.lineNumber,
+                      content: match.content,
+                      startLine: match.contentStart.line,
+                      endLine: match.ranges[match.ranges.length - 1].end.line,
                       aggregableBadges: match.aggregableBadges,
-                  })) || []
+                  })) ||
+                  result.lineMatches?.map(match => ({
+                      highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
+                          startLine: match.lineNumber,
+                          startCharacter: offsetAndLength[0],
+                          endLine: match.lineNumber,
+                          endCharacter: offsetAndLength[0] + offsetAndLength[1],
+                      })),
+                      content: match.line,
+                      startLine: match.lineNumber,
+                      endLine: match.lineNumber,
+                      aggregableBadges: match.aggregableBadges,
+                  })) ||
+                  []
                 : [],
         [result]
     )
@@ -193,16 +207,14 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
                 filePath={result.path}
+                pathMatchRanges={'pathMatches' in result ? result.pathMatches : []}
                 fileURL={getFileMatchUrl(result)}
                 repoDisplayName={
                     props.repoDisplayName
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(
-                    styles.titleInner,
-                    coreWorkflowImprovementsEnabled && result.type !== 'path' && styles.mutedRepoFileLink
-                )}
+                className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
             />
         ),
         allExpanded: props.allExpanded,
@@ -223,9 +235,10 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             result.hunks?.map(hunk => ({
                 blobLines: hunk.content.html?.split(/\r?\n/),
                 matches: hunk.matches.map(match => ({
-                    line: match.start.line,
-                    character: match.start.column,
-                    highlightLength: match.end.column - match.start.column,
+                    startLine: match.start.line,
+                    startCharacter: match.start.column,
+                    endLine: match.end.line,
+                    endCharacter: match.end.column,
                 })),
                 startLine: hunk.lineStart,
                 endLine: hunk.lineStart + hunk.lineCount,
@@ -279,10 +292,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 collapsible: limitedMatchCount < matchCount,
                 collapsedChildren,
                 expandedChildren,
-                collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${hideCount}`,
-                expandLabel: coreWorkflowImprovementsEnabled
-                    ? `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`
-                    : `${hideCount} more`,
+                collapseLabel: 'Show less',
+                expandLabel: `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`,
                 matchCountLabel,
             }
         }
@@ -302,10 +313,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             description,
             collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
             expandedChildren,
-            collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${length}`,
-            expandLabel: coreWorkflowImprovementsEnabled
-                ? `Show ${length} more ${pluralize('match', length, 'matches')}`
-                : `${length} more`,
+            collapseLabel: 'Show less',
+            expandLabel: `Show ${length} more ${pluralize('match', length, 'matches')}`,
             matchCountLabel,
             as: props.as,
         }
@@ -346,14 +355,14 @@ export function limitGroup(group: MatchGroup, limit: number): MatchGroup {
     // Add matches on the same line and next line (context line) as the limited match
     const [lastMatch] = partialGroup.matches.slice(-1)
     for (const match of group.matches.slice(limit, undefined)) {
-        if (match.line <= lastMatch.line + 1) {
+        if (match.endLine <= lastMatch.endLine + 1) {
             // include an extra context line
             partialGroup.matches.push(match)
             continue
         }
         break
     }
-    partialGroup.endLine = lastMatch.line + 2 // include an extra context line
+    partialGroup.endLine = lastMatch.endLine + 2 // include an extra context line
     partialGroup.blobLines = partialGroup.blobLines?.slice(0, partialGroup.endLine - partialGroup.startLine)
     return partialGroup
 }

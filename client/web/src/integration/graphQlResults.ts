@@ -28,6 +28,7 @@ export const createViewerSettingsGraphQLOverride = (
                 subjects: [
                     {
                         __typename: 'DefaultSettings',
+                        id: 'TestDefaultSettingsID',
                         settingsURL: null,
                         viewerCanAdminister: false,
                         latestSettings: {
@@ -217,16 +218,6 @@ export const commonWebGraphQlResults: Partial<
     }),
     IsSearchContextAvailable: () => ({
         isSearchContextAvailable: false,
-    }),
-    UserRepositories: () => ({
-        node: {
-            __typename: 'User',
-            repositories: {
-                totalCount: 0,
-                nodes: [],
-                pageInfo: { hasNextPage: false },
-            },
-        },
     }),
     ExternalServices: () => ({
         externalServices: {

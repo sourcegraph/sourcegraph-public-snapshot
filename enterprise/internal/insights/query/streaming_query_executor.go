@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type StreamingQueryExecutor struct {
@@ -34,6 +36,32 @@ func NewStreamingExecutor(postgres database.DB, clock func() time.Time) *Streami
 	}
 }
 
+func (c *StreamingQueryExecutor) ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error) {
+	modified, err := querybuilder.SelectRepoQuery(querybuilder.BasicQuery(query), querybuilder.CodeInsightsQueryDefaults(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "SelectRepoQuery")
+	}
+
+	decoder, selectRepoResult := streaming.SelectRepoDecoder()
+	err = streaming.Search(ctx, modified.String(), nil, decoder)
+	if err != nil {
+		return nil, errors.Wrap(err, "streaming.Search")
+	}
+
+	repoResult := *selectRepoResult
+	if len(repoResult.SkippedReasons) > 0 {
+		log15.Error("insights query issue", "reasons", repoResult.SkippedReasons, "query", query)
+	}
+	if len(repoResult.Errors) > 0 {
+		return nil, errors.Errorf("streaming search: errors: %v", repoResult.Errors)
+	}
+	if len(repoResult.Alerts) > 0 {
+		return nil, errors.Errorf("streaming search: alerts: %v", repoResult.Alerts)
+	}
+
+	return repoResult.Repos, nil
+}
+
 func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seriesLabel string, seriesID string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
@@ -45,9 +73,9 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	frames := BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
+	frames := timeseries.BuildFrames(7, interval, c.clock().Truncate(time.Hour*24))
 	points := timeCounts{}
-	timeseries := []TimeDataPoint{}
+	timeDataPoints := []TimeDataPoint{}
 
 	for _, repository := range repositories {
 		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
@@ -105,20 +133,19 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 	}
 
 	for pointTime, pointCount := range points {
-		timeseries = append(timeseries, TimeDataPoint{
+		timeDataPoints = append(timeDataPoints, TimeDataPoint{
 			Time:  pointTime,
 			Count: pointCount,
 		})
 	}
 
-	sort.Slice(timeseries, func(i, j int) bool {
-		return timeseries[i].Time.Before(timeseries[j].Time)
+	sort.Slice(timeDataPoints, func(i, j int) bool {
+		return timeDataPoints[i].Time.Before(timeDataPoints[j].Time)
 	})
 	generated := []GeneratedTimeSeries{{
 		Label:    seriesLabel,
 		SeriesId: seriesID,
-		Points:   timeseries,
+		Points:   timeDataPoints,
 	}}
 	return generated, nil
-
 }

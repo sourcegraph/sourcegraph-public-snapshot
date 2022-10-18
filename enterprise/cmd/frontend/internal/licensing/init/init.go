@@ -2,13 +2,12 @@ package init
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
@@ -17,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -26,14 +26,23 @@ import (
 
 // TODO(efritz) - de-globalize assignments in this function
 // TODO(efritz) - refactor licensing packages - this is a huge mess!
-func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	codeIntelServices codeintel.Services,
+	conf conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	database.BeforeCreateUser = enforcement.NewBeforeCreateUserHook()
 
 	// Enforce non-site admin roles in Free tier.
 	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
-	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+	// Uncomment this when the licensing for this feature should be enforced.
+	// See https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
+	//database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	// Enforce the license's max external service count by preventing the creation of new external
 	// services when the max is reached.
@@ -51,8 +60,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			return nil
 		}
 
-		// We don't enforce anything in Free instance as of 4.0 launch.
-		if info == nil {
+		if info.Plan() == licensing.PlanFree0 {
+			// We don't enforce anything on the free plan
 			return nil
 		}
 
@@ -81,42 +90,13 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 
 	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
 	// feature, then alternative debug handlers will be invoked.
-	app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
+	// Uncomment this when licensing for FeatureMonitoring should be enforced.
+	// See PR https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
+	// app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
 
 	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
 	// proper product name.
 	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
-
-	globals.WatchBranding(func() error {
-		if !licensing.EnforceTiers {
-			return nil
-		}
-		return licensing.Check(licensing.FeatureBranding)
-	})
-
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
-		if !licensing.EnforceTiers {
-			return nil
-		}
-
-		// Only site admins can act on this alert, so only show it to site admins.
-		if !args.IsSiteAdmin {
-			return nil
-		}
-
-		if licensing.IsFeatureEnabledLenient(licensing.FeatureBranding) {
-			return nil
-		}
-
-		if conf.SiteConfig().Branding == nil {
-			return nil
-		}
-
-		return []*graphqlbackend.Alert{{
-			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: "A Sourcegraph license is required to custom branding for the instance. [**Get a license.**](/site-admin/license)",
-		}}
-	})
 
 	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
 	// GraphQL fields return the proper max user count and timestamp on the current license.
@@ -141,6 +121,16 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			UserCountValue: info.UserCount,
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
+	}
+
+	graphqlbackend.IsFreePlan = func(info *graphqlbackend.ProductLicenseInfo) bool {
+		for _, tag := range info.Tags() {
+			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}

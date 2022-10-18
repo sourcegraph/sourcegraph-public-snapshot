@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 
 import {
     mdiLogoutVariant,
     mdiArchive,
     mdiDelete,
     mdiLockReset,
+    mdiChevronDown,
     mdiClipboardMinus,
     mdiClipboardPlus,
     mdiClose,
@@ -13,8 +14,23 @@ import classNames from 'classnames'
 import { formatDistanceToNowStrict, startOfDay, endOfDay } from 'date-fns'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { H2, LoadingSpinner, Text, Button, Alert, useDebounce, Link, Tooltip, Icon } from '@sourcegraph/wildcard'
+import {
+    H2,
+    LoadingSpinner,
+    Text,
+    Button,
+    Alert,
+    useDebounce,
+    Link,
+    Icon,
+    PopoverTrigger,
+    PopoverContent,
+    Popover,
+    Position,
+    PopoverOpenEvent,
+} from '@sourcegraph/wildcard'
 
 import {
     SiteUserOrderBy,
@@ -73,7 +89,7 @@ const DEFAULT_FILTERS = {
     maxEventsCount: '',
     lastActiveAt: '',
     createdAt: '',
-    deletedAt: '',
+    deletedAt: '{"isNegated":true}',
 }
 
 const dateRangeQueryParameterToVariable = (
@@ -138,7 +154,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
         (error?: any) => {
             if (!error) {
                 // reload data
-                refetch(variables).catch(console.error)
+                refetch(variables).catch(logger.error)
                 onActionEnd?.()
             }
         },
@@ -435,9 +451,8 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
                         ]}
                         note={
                             <Text as="span">
-                                {/* TODO: Fix link */}
-                                Note: Events is the count of <Link to="#">all billable events</Link> which equate to
-                                billable usage.
+                                Note: Events is the count of <Link to="/help/admin/pricing">all billable events</Link>{' '}
+                                performed by a user.
                             </Text>
                         }
                     />
@@ -448,20 +463,41 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd
 }
 
 function RenderUsernameAndEmail({ username, email, displayName, deletedAt }: SiteUser): JSX.Element {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const handleOpenChange = useCallback((event: PopoverOpenEvent): void => {
+        setIsOpen(event.isOpen)
+    }, [])
+
     return (
-        <Tooltip content={username}>
-            <div className={classNames('d-flex flex-column p-2', styles.usernameColumn)}>
-                {!deletedAt ? (
-                    <Link to={`/users/${username}`} className="text-truncate">
-                        @{username}
-                    </Link>
-                ) : (
-                    <Text className="mb-0 text-truncate">@{username}</Text>
-                )}
-                <Text className="mb-0 text-truncate">{displayName}</Text>
-                <Text className="mb-0 text-truncate">{email}</Text>
-            </div>
-        </Tooltip>
+        <div
+            className={classNames('d-flex p-2 align-items-center', styles.usernameColumn, {
+                [styles.visibleActionsOnHover]: !isOpen,
+            })}
+        >
+            {!deletedAt ? (
+                <Link to={`/users/${username}`} className="text-truncate">
+                    @{username}
+                </Link>
+            ) : (
+                <Text className="mb-0 text-truncate">@{username}</Text>
+            )}
+            <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+                <PopoverTrigger
+                    as={Button}
+                    className={classNames('ml-1 border-0 p-1', styles.actionsButton)}
+                    variant="secondary"
+                    outline={true}
+                >
+                    <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                </PopoverTrigger>
+                <PopoverContent position={Position.bottom} focusLocked={false}>
+                    <div className="p-2">
+                        <Text className="mb-0">{displayName}</Text>
+                        <Text className="mb-0">{email}</Text>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
     )
 }
 

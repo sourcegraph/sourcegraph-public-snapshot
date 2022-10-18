@@ -1,6 +1,6 @@
 import { MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
@@ -18,8 +18,6 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    SetExternalServiceReposVariables,
-    SetExternalServiceReposResult,
     AffiliatedRepositoriesVariables,
     AffiliatedRepositoriesResult,
     SyncExternalServiceResult,
@@ -27,6 +25,8 @@ import {
     ExternalServiceSyncJobsVariables,
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceSyncJobsResult,
+    CancelExternalServiceSyncVariables,
+    CancelExternalServiceSyncResult,
 } from '../../graphql-operations'
 
 export const externalServiceFragment = gql`
@@ -109,21 +109,6 @@ export function updateExternalService(
         .toPromise()
 }
 
-export function setExternalServiceRepos(variables: SetExternalServiceReposVariables): Promise<void> {
-    return requestGraphQL<SetExternalServiceReposResult, SetExternalServiceReposVariables>(
-        gql`
-            mutation SetExternalServiceRepos($id: ID!, $allRepos: Boolean!, $repos: [String!]) {
-                setExternalServiceRepos(id: $id, allRepos: $allRepos, repos: $repos) {
-                    alwaysNil
-                }
-            }
-        `,
-        variables
-    )
-        .pipe(map(dataOrThrowErrors), mapTo(undefined))
-        .toPromise()
-}
-
 export const FETCH_EXTERNAL_SERVICE = gql`
     query ExternalService($id: ID!) {
         node(id: $id) {
@@ -189,6 +174,7 @@ export const listExternalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
         namespace {
             id
             namespaceName
@@ -197,36 +183,6 @@ export const listExternalServiceFragment = gql`
         grantedScopes
     }
 `
-export const listExternalServiceInvitableCollaboratorsFragment = gql`
-    fragment ListExternalServiceInvitableCollaboratorsFields on ExternalService {
-        invitableCollaborators {
-            email
-            displayName
-            name
-            avatarURL
-        }
-    }
-`
-
-export const EXTERNAL_SERVICES_WITH_COLLABORATORS = gql`
-    query ExternalServicesWithCollaborators($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
-            nodes {
-                ...ListExternalServiceFields
-                ...ListExternalServiceInvitableCollaboratorsFields
-            }
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
-        }
-    }
-
-    ${listExternalServiceFragment}
-    ${listExternalServiceInvitableCollaboratorsFragment}
-`
-
 export const EXTERNAL_SERVICES = gql`
     query ExternalServices($first: Int, $after: String, $namespace: ID) {
         externalServices(first: $first, after: $after, namespace: $namespace) {
@@ -309,6 +265,23 @@ export function useSyncExternalService(): MutationTuple<SyncExternalServiceResul
     return useMutation<SyncExternalServiceResult, SyncExternalServiceVariables>(SYNC_EXTERNAL_SERVICE)
 }
 
+export const CANCEL_EXTERNAL_SERVICE_SYNC = gql`
+    mutation CancelExternalServiceSync($id: ID!) {
+        cancelExternalServiceSync(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useCancelExternalServiceSync(): MutationTuple<
+    CancelExternalServiceSyncResult,
+    CancelExternalServiceSyncVariables
+> {
+    return useMutation<CancelExternalServiceSyncResult, CancelExternalServiceSyncVariables>(
+        CANCEL_EXTERNAL_SERVICE_SYNC
+    )
+}
+
 export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
     query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
         node(id: $externalService) {
@@ -339,6 +312,12 @@ export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
         startedAt
         finishedAt
         failureMessage
+        reposSynced
+        repoSyncErrors
+        reposAdded
+        reposDeleted
+        reposModified
+        reposUnmodified
     }
 `
 

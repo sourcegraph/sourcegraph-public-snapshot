@@ -1,13 +1,12 @@
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
-export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> {
+export function siteSubjectNoAdmin(): SettingsSubjectCommonFields {
     return {
         id: window.context.siteGQLID,
         viewerCanAdminister: false,
@@ -41,20 +40,6 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
  */
 export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {
     return getFromSettings(settingsCascade, 'search.defaultCaseSensitive')
-}
-
-/**
- * Whether user wants to use default extensions functionality as core product features instead of the corresponding extensions.
- */
-export function extensionsAsCoreFeaturesEnabled(settingsCascade: SettingsCascadeOrError): boolean {
-    if (!settingsCascade.final) {
-        return false
-    }
-    if (isErrorLike(settingsCascade.final)) {
-        return false
-    }
-
-    return settingsCascade.final.experimentalFeatures?.extensionsAsCoreFeatures === true
 }
 
 /**

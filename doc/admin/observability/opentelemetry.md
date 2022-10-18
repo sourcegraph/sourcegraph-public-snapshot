@@ -1,8 +1,8 @@
 # OpenTelemetry
 
-<span class="badge badge-experimental">Experimental</span> <span class="badge badge-note">Sourcegraph 4.0+</span>
+<span class="badge badge-note">Sourcegraph 4.0+</span>
 
-> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md).
+> WARNING: Sourcegraph is actively working on implementing [OpenTelemetry](https://opentelemetry.io/) for all observability data. **The first - and currently only - [signal](https://opentelemetry.io/docs/concepts/signals/) to be fully integrated is [tracing](./tracing.md)**.
 
 Sourcegraph exports OpenTelemetry data to a bundled [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) instance.
 This service can be configured to ingest, process, and then export observability data to an observability backend of choice.
@@ -17,12 +17,13 @@ Refer to the [documentation](https://opentelemetry.io/docs/collector/configurati
 
 For more details on configuring the OpenTelemetry collector for your deployment method, refer to the deployment-specific guidance:
 
+- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#opentelemetry-collector)
 - [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#opentelemetry-collector)
-- [Docker Compose](../deploy/docker-compose/operations.md#opentelmeetry-collector)
+- [Docker Compose](../deploy/docker-compose/operations.md#opentelemetry-collector)
 
 ## Tracing
 
-Sourcegraph tarces are exported in OpenTelemetry format to the bundled OpenTelemetry collector.
+Sourcegraph traces are exported in OpenTelemetry format to the bundled OpenTelemetry collector.
 To learn more about Sourcegraph traces in general, refer to our [tracing documentation](tracing.md).
 
 `sourcegraph/opentelemetry-collector` includes the following exporters that support traces:
@@ -99,7 +100,7 @@ OTLP-compatible backends typically accept the [OTLP gRPC protocol](#otlp-grpc-ba
 
 #### OTLP gRPC backends
 
-Read the [`otlp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all options.
+Refer to the [`otlp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/blob/main/exporter/otlpexporter/README.md) for all available options.
 
 ```yaml
 exporters:
@@ -116,7 +117,7 @@ exporters:
 
 #### OTLP HTTP backends
 
-Read the [`otlphttp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all options.
+Refer to the [`otlphttp` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter/README.md) for all available options.
 
 ```yaml
 exporters:
@@ -126,15 +127,16 @@ exporters:
 
 ### Jaeger
 
-Read the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.  
+Refer to the [`jaeger` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/jaegerexporter/README.md) for all options.
 
-The example below describes how to connect to the bundled Jaeger backend, if it is enabled for your deployment. Connecting to your own Jaeger instance might require additional configuration.
+Most Sourcegraph deployment methods still ship with an opt-in Jaeger instance - to set this up, follow the relevant deployment guides, which will also set up the appropriate configuration for you:
 
-> NOTE: this requires the environment variable `$JAEGER_HOST` to be set on the Collector instance (i.e. the container in Kubernetes or Docker Compose).
+- [Kubernetes (with Helm)](../deploy/kubernetes/helm.md#enable-the-bundled-jaeger-deployment)
+- [Kubernetes (without Helm)](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment)
+- [Docker Compose](../deploy/docker-compose/operations.md#enable-the-bundled-jaeger-deployment)
 
-<span class="virtual-br"></span>
-
-> NOTE: the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml). If this configuration serves your need, you do not have to provide a separate config. The Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/jaeger.yaml`. If you enable the bundled Jaeger instance in our deployment methods, this is preconfigured for you.
+If you wish to do additional configuration or connect to your own Jaeger instance, the deployed Collector image is bundled with a [basic configuration with Jaeger exporting](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/jaeger.yaml).
+If this configuration serves your needs, you do not have to provide a separate config - the Collector startup command can be set to `/bin/otelcol-sourcegraph --config=/etc/otel-collector/configs/jaeger.yaml`. Note that this requires the environment variable `$JAEGER_HOST` to be set on the Collector instance (i.e. the container in Kubernetes or Docker Compose):
 
 ```yaml
 exporters:
@@ -147,7 +149,7 @@ exporters:
 
 ### Google Cloud
 
-Read the [`googlecloud` documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all options.
+Refer to the [`googlecloud` exporter documentation](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/exporter/googlecloudexporter/README.md) for all available options.
 
 If you run Sourcegraph on a GCP workload, all requests will be authenticated automatically. The documentation describes other authentication methods.
 

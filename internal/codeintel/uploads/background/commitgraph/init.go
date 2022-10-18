@@ -1,13 +1,15 @@
 package commitgraph
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewUpdater(uploadSvc UploadService) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &updater{
-		uploadSvc: uploadSvc,
-	})
+func NewUpdater(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		backgroundJobs.NewCommitGraphUpdater(
+			ConfigInst.CommitGraphUpdateTaskInterval,
+			ConfigInst.MaxAgeForNonStaleBranches,
+			ConfigInst.MaxAgeForNonStaleTags,
+		),
+	}
 }

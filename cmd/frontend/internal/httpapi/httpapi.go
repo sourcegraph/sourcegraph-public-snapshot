@@ -29,6 +29,7 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -42,12 +43,15 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook             webhooks.Registerer
-	GitLabWebhook             http.Handler
-	BitbucketServerWebhook    http.Handler
-	BitbucketCloudWebhook     http.Handler
-	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
-	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
+	GitHubWebhook                   webhooks.Registerer
+	GitLabWebhook                   http.Handler
+	BitbucketServerWebhook          http.Handler
+	BitbucketCloudWebhook           http.Handler
+	BatchesChangesFileGetHandler    http.Handler
+	BatchesChangesFileExistsHandler http.Handler
+	BatchesChangesFileUploadHandler http.Handler
+	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
+	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -97,7 +101,10 @@ func NewHandler(
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(false)))
+	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
+	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
+	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
+	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
 	ghSync := repos.GitHubWebhookHandler{}
@@ -107,7 +114,7 @@ func NewHandler(
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
 
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
+	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
 
 	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
@@ -134,7 +141,15 @@ func NewHandler(
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
+func NewInternalHandler(
+	m *mux.Router,
+	db database.DB,
+	schema *graphql.Schema,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newComputeStreamHandler enterprise.NewComputeStreamHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+	codeIntelServices internalcodeintel.Services,
+) http.Handler {
 	logger := sglog.Scoped("InternalHandler", "")
 	if m == nil {
 		m = apirouter.New(nil)
@@ -149,37 +164,41 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
 
 	// zoekt-indexserver endpoints
+	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
-		db:            db,
-		ListIndexable: backend.NewRepos(logger, db).ListIndexable,
-		RepoStore:     db.Repos(),
+		db:              db,
+		gitserverClient: gsClient,
+		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
 		Indexers: search.Indexers(),
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
+
+		codeIntelServices: codeIntelServices,
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
+	m.Get(apirouter.RepoRank).Handler(trace.Route(handler(indexer.serveRepoRank)))
+	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	gitService := &gitServiceHandler{
-		Gitserver: gitserver.NewClient(db),
+		Gitserver: gsClient,
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
 	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
+	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
-
-	m.Get(apirouter.Checks).Handler(trace.Route(healthCheckHandler))
+	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

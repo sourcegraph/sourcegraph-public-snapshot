@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -109,10 +110,6 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		}
 		return 0, nil
 	})
-	insightsStore.RecordSeriesPointFunc.SetDefaultHook(func(ctx context.Context, args store.RecordSeriesPointArgs) error {
-		r.operations = append(r.operations, fmt.Sprintf("recordSeriesPoint(point=%v, repoName=%v)", args.Point.String(), *args.RepoName))
-		return nil
-	})
 
 	repoStore := NewMockRepoStore()
 	repos := map[api.RepoName]*types.Repo{}
@@ -170,6 +167,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	}
 
 	historicalEnqueuer := &historicalEnqueuer{
+		logger:                logtest.Scoped(t),
 		now:                   clock,
 		insightsStore:         insightsStore,
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,

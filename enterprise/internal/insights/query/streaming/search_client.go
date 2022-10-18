@@ -15,7 +15,6 @@ import (
 )
 
 const ShardTimeoutSkippedReason = streamapi.ShardTimeout
-const LuckySearchAlertKind = "lucky-search-queries"
 
 type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)
@@ -35,15 +34,22 @@ type insightsSearchClient struct {
 }
 
 func (r *insightsSearchClient) Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error) {
-
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
-	inputs, err := r.searchClient.Plan(ctx, "", patternType, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := r.searchClient.Plan(
+		ctx,
+		"",
+		patternType,
+		query,
+		search.Precise,
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		return nil, err
 	}
 	return r.searchClient.Execute(ctx, sender, inputs)
-
 }

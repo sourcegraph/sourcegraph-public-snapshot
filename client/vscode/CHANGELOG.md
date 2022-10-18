@@ -10,7 +10,29 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Support for logical multiline matches in the UI for Sourcegraph instance versions >= 3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+
 ### Fixes
+
+- Fix issue where pattern type was always set to `literal` for Sourcegraph instance versions earlier than v3.43.0, which was overriding regex/structural toggles [pull/43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
+
+## 2.2.12
+
+### Changes
+
+### Fixes
+
+- Vary search pattern type depending on Sourcegraph instance version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [pull/42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
+
+## 2.2.10
+
+### Changes
+
+- Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
+### Fixes
+
+- Fix Sourcegraph blob link generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [pull/42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
 
 ## 2.2.9
 

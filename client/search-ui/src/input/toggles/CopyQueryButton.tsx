@@ -1,13 +1,13 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
-import { mdiClipboardOutline } from '@mdi/js'
+import { mdiContentCopy } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import copy from 'copy-to-clipboard'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { Button, Icon, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
@@ -55,7 +55,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                     aria-label={copyFullQueryTooltip}
                     onClick={nextClick}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiClipboardOutline} />
+                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
                 </Button>
             </Tooltip>
             {fullCopyShortcut?.keybindings.map((keybinding, index) => (

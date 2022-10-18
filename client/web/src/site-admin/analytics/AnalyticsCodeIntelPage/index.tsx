@@ -114,8 +114,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value:
-                    referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: referenceClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'References' : 'Users using references',
                 color: 'var(--cyan)',
                 tooltip:
@@ -124,8 +123,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         : "The number of users who clicked 'References'. in code navigation hovers to view usages of an item.",
             },
             {
-                value:
-                    definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: definitionClicks.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Definitions' : 'Users using definitions',
                 color: 'var(--orange)',
                 tooltip:
@@ -145,11 +143,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
         const calculatorProps: React.ComponentProps<typeof TimeSavedCalculatorGroup> = {
             page: 'CodeIntel',
-            label: 'Intel events',
+            label: 'Navigation events',
             dateRange: dateRange.value,
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code navigation to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
@@ -161,28 +159,28 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
-                    label: 'Code intel on code hosts <br/> via the browser extension',
+                    label: 'Code navigation on code hosts <br/> via the browser extension',
                     minPerItem: kindToMinPerItem.codeHost,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, codeHost: minPerItem })),
                     value: codeHostEvents.summary.totalCount,
                     description:
-                        'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
+                        'Navigation events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
-                    label: 'Cross repository <br/> code intel events',
+                    label: 'Cross repository <br/> code navigation events',
                     minPerItem: kindToMinPerItem.crossRepo,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, crossRepo: minPerItem })),
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                        'Cross repository code navigation identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
                 },
                 {
-                    label: 'Precise code intel*',
+                    label: 'Precise code navigation*',
                     minPerItem: kindToMinPerItem.precise,
                     onMinPerItemChange: minPerItem => setKindToMinPerItem(old => ({ ...old, precise: minPerItem })),
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
+                        'Compiler-accurate code navigation takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
         }
@@ -253,35 +251,58 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             ),
             preciseEnabled: rows[0]?.hasPrecise ?? false,
             preciseNavigation: ((): JSX.Element => {
-                const items = Object.entries(groupBy(rows, row => row.language)).map(([lang, rows]) => {
-                    const searchBased = sumBy(
-                        rows.filter(row => row.precision === 'search-based'),
-                        row => row.events
-                    )
-                    const precise = sumBy(
-                        rows.filter(row => row.precision === 'precise'),
-                        row => row.events
-                    )
-                    const total = searchBased + precise
+                interface Item {
+                    brand: 'precise' | 'configurable'
+                    element: React.ReactNode
+                }
 
-                    if (precise > 0) {
-                        return (
-                            <div key={lang}>
-                                <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
-                                <strong>{lang}</strong>
-                            </div>
+                const items: Item[] = Object.entries(groupBy(rows, row => row.language))
+                    .map(([lang, rows]): Item | undefined => {
+                        const searchBased = sumBy(
+                            rows.filter(row => row.precision === 'search-based'),
+                            row => row.events
                         )
-                    }
-                    if (lang in langToIndexerUrl) {
-                        return (
-                            <div key={lang}>
-                                Configure precise navigation for <Link to={langToIndexerUrl[lang]}>{lang}</Link>
-                            </div>
+                        const precise = sumBy(
+                            rows.filter(row => row.precision === 'precise'),
+                            row => row.events
                         )
-                    }
-                    return <></>
-                })
-                return <>{items}</>
+                        const total = searchBased + precise
+
+                        if (precise > 0) {
+                            return {
+                                brand: 'precise',
+                                element: (
+                                    <div key={lang} className={styles.preciseItem}>
+                                        <strong>{Math.round((precise / total) * 100)}%</strong> Precise coverage for{' '}
+                                        <strong>{lang}</strong>
+                                    </div>
+                                ),
+                            }
+                        }
+                        if (lang in langToIndexerUrl) {
+                            return {
+                                brand: 'configurable',
+                                element: <Link to={langToIndexerUrl[lang]}>{lang}</Link>,
+                            }
+                        }
+                        return undefined
+                    })
+                    .filter((item): item is Item => item !== undefined)
+
+                return (
+                    <>
+                        {items.filter(item => item.brand === 'precise').map(item => item.element)}
+                        {items.some(item => item.brand === 'configurable') && (
+                            <div className={styles.preciseItem}>
+                                Configure precise navigation for{' '}
+                                {items
+                                    .filter(item => item.brand === 'configurable')
+                                    .map(item => item.element)
+                                    .reduce((acc, item) => [acc, ', ', item])}
+                            </div>
+                        )}
+                    </>
+                )
             })(),
         }))
 
@@ -290,7 +311,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
     return (
         <>
-            <AnalyticsPageTitle>Code intel</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Code navigation</AnalyticsPageTitle>
 
             <Card className="p-3 position-relative">
                 <div className="d-flex justify-content-end align-items-stretch mb-2 text-nowrap">
@@ -332,12 +353,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         {repos && (
                             <Text as="li">
                                 <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
-                                precise code intel.{' '}
+                                precise code navigation.{' '}
                                 <AnchorLink
                                     to="/help/code_navigation/explanations/precise_code_intelligence"
                                     target="_blank"
                                 >
-                                    Learn how to improve precise code intel coverage.
+                                    Learn how to improve precise code navigation coverage.
                                 </AnchorLink>
                             </Text>
                         )}
@@ -385,13 +406,17 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             <div className="text-muted text-nowrap">Precise navigation</div>
                             {topRepos.map((repo, index) => (
                                 <React.Fragment key={index}>
-                                    <td className="text-muted">{repo.repoName}</td>
-                                    <td className="text-center font-weight-bold">{formatNumber(repo.events)}</td>
-                                    <td className="text-center font-weight-bold">{formatNumber(repo.hoursSaved)}</td>
-                                    <td className="text-center font-weight-bold">
+                                    <Text className="text-muted">{repo.repoName}</Text>
+                                    <Text weight="bold" className="text-center">
+                                        {formatNumber(repo.events)}
+                                    </Text>
+                                    <Text weight="bold" className="text-center">
+                                        {formatNumber(repo.hoursSaved)}
+                                    </Text>
+                                    <Text weight="bold" className="text-center">
                                         {repo.preciseEnabled ? 'Yes' : 'No'}
-                                    </td>
-                                    <td>{repo.preciseNavigation}</td>
+                                    </Text>
+                                    <Text>{repo.preciseNavigation}</Text>
                                 </React.Fragment>
                             ))}
                         </div>
@@ -400,7 +425,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
-                <br />* Calculated from precise code intel events
+                <br />* Calculated from precise code navigation events
             </Text>
         </>
     )

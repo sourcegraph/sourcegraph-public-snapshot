@@ -17,11 +17,6 @@ type Client struct {
 	limiter *ratelimit.InstrumentedLimiter
 }
 
-type RustFile struct {
-	Name string
-	URL  string
-}
-
 func NewClient(urn string, cli httpcli.Doer) *Client {
 	return &Client{
 		cli:     cli,

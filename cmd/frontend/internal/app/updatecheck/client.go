@@ -106,11 +106,11 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphAdmins: true})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalUsersCount")(&err)
+	defer recordOperation("getTotalOrgsCount")(&err)
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
@@ -305,6 +305,17 @@ func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_
 	return json.Marshal(ideExtensionsUsage)
 }
 
+func getAndMarshalMigratedExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalMigratedExtensionsUsageJSON")
+
+	migratedExtensionsUsage, err := usagestats.GetMigratedExtensionsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(migratedExtensionsUsage)
+}
+
 func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
@@ -406,6 +417,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		NotebooksUsage:                []byte("{}"),
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
+		MigratedExtensionsUsage:       []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -524,6 +536,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
+		}
+
+		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)

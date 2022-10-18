@@ -2,7 +2,6 @@ package executorqueue
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,19 +20,31 @@ func Init(
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
-	codeintelUploadHandler http.Handler,
 ) error {
+	autoIndexingService := enterpriseServices.CodeIntelAutoIndexingService
+	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
+	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
+	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
+	//
+	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	queueOptions := []handler.QueueOptions{
-		codeintelqueue.QueueOptions(db, accessToken, observationContext),
+		codeintelqueue.QueueOptions(autoIndexingService, accessToken, observationContext),
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	queueHandler, err := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler)
+	queueHandler, err := newExecutorQueueHandler(
+		db,
+		queueOptions,
+		accessToken,
+		codeintelUploadHandler,
+		batchesWorkspaceFileGetHandler,
+		batchesWorkspaceFileExistsHandler,
+	)
 	if err != nil {
 		return err
 	}

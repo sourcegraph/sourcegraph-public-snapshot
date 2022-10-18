@@ -170,7 +170,8 @@ CREATE TABLE insight_series (
     just_in_time boolean DEFAULT false NOT NULL,
     group_by text,
     backfill_attempts integer DEFAULT 0 NOT NULL,
-    needs_migration boolean
+    needs_migration boolean,
+    backfill_completed_at timestamp without time zone
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
@@ -194,6 +195,24 @@ COMMENT ON COLUMN insight_series.deleted_at IS 'Timestamp of a soft-delete of th
 COMMENT ON COLUMN insight_series.generation_method IS 'Specifies the execution method for how this series is generated. This helps the system understand how to generate the time series data.';
 
 COMMENT ON COLUMN insight_series.just_in_time IS 'Specifies if the series should be resolved just in time at query time, or recorded in background processing.';
+
+CREATE TABLE insight_series_backfill (
+    id integer NOT NULL,
+    series_id integer NOT NULL,
+    repo_iterator_id integer,
+    estimated_cost double precision,
+    state text DEFAULT 'new'::text NOT NULL
+);
+
+CREATE SEQUENCE insight_series_backfill_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insight_series_backfill_id_seq OWNED BY insight_series_backfill.id;
 
 CREATE SEQUENCE insight_series_id_seq
     AS integer
@@ -288,6 +307,75 @@ COMMENT ON COLUMN insight_view_series.label IS 'Label text for this data series.
 
 COMMENT ON COLUMN insight_view_series.stroke IS 'Stroke color metadata for this data series. This may render in a chart depending on the view type.';
 
+CREATE TABLE insights_background_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    backfill_id integer
+);
+
+CREATE SEQUENCE insights_background_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insights_background_jobs_id_seq OWNED BY insights_background_jobs.id;
+
+CREATE VIEW insights_jobs_backfill_in_progress AS
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'processing'::text);
+
+CREATE VIEW insights_jobs_backfill_new AS
+ SELECT jobs.id,
+    jobs.state,
+    jobs.failure_message,
+    jobs.queued_at,
+    jobs.started_at,
+    jobs.finished_at,
+    jobs.process_after,
+    jobs.num_resets,
+    jobs.num_failures,
+    jobs.last_heartbeat_at,
+    jobs.execution_logs,
+    jobs.worker_hostname,
+    jobs.cancel,
+    jobs.backfill_id,
+    isb.state AS backfill_state,
+    isb.estimated_cost
+   FROM (insights_background_jobs jobs
+     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
+  WHERE (isb.state = 'new'::text);
+
 CREATE TABLE metadata (
     id bigint NOT NULL,
     metadata jsonb NOT NULL
@@ -307,6 +395,48 @@ CREATE SEQUENCE metadata_id_seq
     CACHE 1;
 
 ALTER SEQUENCE metadata_id_seq OWNED BY metadata.id;
+
+CREATE TABLE repo_iterator (
+    id integer NOT NULL,
+    created_at timestamp without time zone DEFAULT now(),
+    started_at timestamp without time zone,
+    completed_at timestamp without time zone,
+    last_updated_at timestamp without time zone DEFAULT now() NOT NULL,
+    runtime_duration bigint DEFAULT 0 NOT NULL,
+    percent_complete double precision DEFAULT 0 NOT NULL,
+    total_count integer DEFAULT 0 NOT NULL,
+    success_count integer DEFAULT 0 NOT NULL,
+    repos integer[],
+    repo_cursor integer DEFAULT 0
+);
+
+CREATE TABLE repo_iterator_errors (
+    id integer NOT NULL,
+    repo_iterator_id integer NOT NULL,
+    repo_id integer NOT NULL,
+    error_message text[] NOT NULL,
+    failure_count integer DEFAULT 1
+);
+
+CREATE SEQUENCE repo_iterator_errors_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_iterator_errors_id_seq OWNED BY repo_iterator_errors.id;
+
+CREATE SEQUENCE repo_iterator_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_iterator_id_seq OWNED BY repo_iterator.id;
 
 CREATE TABLE repo_names (
     id bigint NOT NULL,
@@ -381,11 +511,19 @@ ALTER TABLE ONLY insight_dirty_queries ALTER COLUMN id SET DEFAULT nextval('insi
 
 ALTER TABLE ONLY insight_series ALTER COLUMN id SET DEFAULT nextval('insight_series_id_seq'::regclass);
 
+ALTER TABLE ONLY insight_series_backfill ALTER COLUMN id SET DEFAULT nextval('insight_series_backfill_id_seq'::regclass);
+
 ALTER TABLE ONLY insight_view ALTER COLUMN id SET DEFAULT nextval('insight_view_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insight_view_grants_id_seq'::regclass);
 
+ALTER TABLE ONLY insights_background_jobs ALTER COLUMN id SET DEFAULT nextval('insights_background_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY metadata ALTER COLUMN id SET DEFAULT nextval('metadata_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_iterator ALTER COLUMN id SET DEFAULT nextval('repo_iterator_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_iterator_errors ALTER COLUMN id SET DEFAULT nextval('repo_iterator_errors_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_names ALTER COLUMN id SET DEFAULT nextval('repo_names_id_seq'::regclass);
 
@@ -407,6 +545,9 @@ ALTER TABLE ONLY dashboard
 ALTER TABLE ONLY insight_dirty_queries
     ADD CONSTRAINT insight_dirty_queries_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY insight_series_backfill
+    ADD CONSTRAINT insight_series_backfill_pk PRIMARY KEY (id);
+
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
 
@@ -419,8 +560,17 @@ ALTER TABLE ONLY insight_view
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_pkey PRIMARY KEY (insight_view_id, insight_series_id);
 
+ALTER TABLE ONLY insights_background_jobs
+    ADD CONSTRAINT insights_background_jobs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY metadata
     ADD CONSTRAINT metadata_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_iterator_errors
+    ADD CONSTRAINT repo_iterator_errors_pk PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_iterator
+    ADD CONSTRAINT repo_iterator_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_names
     ADD CONSTRAINT repo_names_pkey PRIMARY KEY (id);
@@ -460,9 +610,13 @@ CREATE INDEX insight_view_grants_user_id_idx ON insight_view_grants USING btree 
 
 CREATE UNIQUE INDEX insight_view_unique_id_unique_idx ON insight_view USING btree (unique_id);
 
+CREATE INDEX insights_jobs_state_idx ON insights_background_jobs USING btree (state);
+
 CREATE INDEX metadata_metadata_gin ON metadata USING gin (metadata);
 
 CREATE UNIQUE INDEX metadata_metadata_unique_idx ON metadata USING btree (metadata);
+
+CREATE INDEX repo_iterator_errors_fk_idx ON repo_iterator_errors USING btree (repo_iterator_id);
 
 CREATE INDEX repo_names_name_trgm ON repo_names USING gin (lower((name)::text) gin_trgm_ops);
 
@@ -500,6 +654,9 @@ ALTER TABLE ONLY dashboard_insight_view
 ALTER TABLE ONLY insight_dirty_queries
     ADD CONSTRAINT insight_dirty_queries_insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY insight_series_backfill
+    ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
@@ -508,6 +665,12 @@ ALTER TABLE ONLY insight_view_series
 
 ALTER TABLE ONLY insight_view_series
     ADD CONSTRAINT insight_view_series_insight_view_id_fkey FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY insights_background_jobs
+    ADD CONSTRAINT insights_background_jobs_backfill_id_fkey FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY repo_iterator_errors
+    ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_metadata_id_fkey FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE;

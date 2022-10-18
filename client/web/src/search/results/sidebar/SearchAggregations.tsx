@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -34,6 +34,8 @@ interface SearchAggregationsProps extends TelemetryProps {
     /** Whether to proactively load and display search aggregations */
     proactive: boolean
 
+    caseSensitive: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected
@@ -42,8 +44,10 @@ interface SearchAggregationsProps extends TelemetryProps {
     onQuerySubmit: (newQuery: string) => void
 }
 
-export const SearchAggregations: FC<SearchAggregationsProps> = props => {
-    const { query, patternType, proactive, telemetryService, onQuerySubmit } = props
+export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
+    const { query, patternType, proactive, caseSensitive, telemetryService, onQuerySubmit } = props
+
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
 
     const [, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
@@ -52,10 +56,21 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
         patternType,
         aggregationMode,
         proactive,
-        limit: 10,
+        caseSensitive,
+        extendedTimeout,
     })
 
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
+
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
+
     const handleBarLinkClick = (query: string, index: number): void => {
+        // Clearing the aggregation mode on drill down would provide a better experience
+        // in most cases and preserve the desired behavior of the capture group search
+        // when the original query had multiple capture groups
+        setAggregationMode(null)
+
         onQuerySubmit(query)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,
@@ -115,9 +130,11 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
                         loading={loading}
                         error={error}
                         mode={aggregationMode}
+                        showLoading={extendedTimeout}
                         className={styles.chartContainer}
                         onBarLinkClick={handleBarLinkClick}
                         onBarHover={handleBarHover}
+                        onExtendTimeout={handleExtendTimeout}
                     />
 
                     <footer className={styles.actions}>
@@ -138,4 +155,4 @@ export const SearchAggregations: FC<SearchAggregationsProps> = props => {
             )}
         </article>
     )
-}
+})

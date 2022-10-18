@@ -147,6 +147,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
@@ -232,7 +233,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            console.log({ patternType })
             onSubmit({ patternType })
         },
         [onSubmit]

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -26,27 +27,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewHandler(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
+	traceFamily := fmt.Sprintf("oauth.%s", serviceType)
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// This span should be manually finished before delegating to the next handler or
+		// redirecting.
+		span, ctx := trace.New(r.Context(), traceFamily, "Middleware.Handle")
+		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
+
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
+			span.AddEvent("delegate to auth flow handler")
 			r = withOAuthExternalClient(r)
+			span.Finish()
 			oauthFlowHandler.ServeHTTP(w, r)
 			return
 		}
 
 		// If the actor is authenticated and not performing an OAuth flow, then proceed to
 		// next.
-		if actor.FromContext(r.Context()).IsAuthenticated() {
+		if actor.FromContext(ctx).IsAuthenticated() {
+			span.AddEvent("authenticated, proceeding to next")
+			span.Finish()
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -56,13 +68,17 @@ func NewHandler(db database.DB, serviceType, authPrefix string, isAPIHandler boo
 		// able to do anything else anyway; there's no point in showing them a signin screen with
 		// just a single signin option.
 		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
+			span.AddEvent("redirect to singin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
 			v.Set("pc", pc.ConfigID().ID)
+			span.Finish()
 			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
 			return
 		}
 
+		span.AddEvent("proceeding to next")
+		span.Finish()
 		next.ServeHTTP(w, r)
 	})
 }
@@ -152,7 +168,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+		auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
 		if err != nil {
 			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)

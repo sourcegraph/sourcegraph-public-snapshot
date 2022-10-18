@@ -2,6 +2,12 @@
 
 set -euxo pipefail
 
+TMP=$(mktemp -d)
+cleanup() {
+  rm -rf "$TMP"
+}
+trap cleanup EXIT
+
 cd "$GIT_DIR"
 
 # chore: get rid of GNU parallel citation spam
@@ -11,22 +17,34 @@ cd "$GIT_DIR"
 }
 
 function print_remote_and_default_branch() {
+  # set shell options again since they aren't exported
+  # when we export the bash function
+  set -euo pipefail
+
   local remote="$1"
 
   local default_branch
-  default_branch="$(git remote show "$remote" | sed -n '/HEAD branch/s/.*: //p')"
+  default_branch="$(git remote show "$remote" | awk '/HEAD branch/ {print $NF}' | grep .)"
 
   echo "${remote}" "${default_branch}"
 }
 export -f print_remote_and_default_branch
 
 # discover the current default branch for each remote
-mapfile -t remotes_to_default < <(git remote | parallel --keep-order --line-buffer print_remote_and_default_branch)
+{
+  defaults_file="${TMP}/remotes_branches.txt"
+  git remote |
+    parallel \
+      --keep-order \
+      --line-buffer \
+      print_remote_and_default_branch \
+      >"$defaults_file"
+}
 
 # set the appropriate default branch for each remote
-for line in "${remotes_to_default[@]}"; do
+while IFS= read -r line; do
   remote="$(awk '{printf $1}' <<<"$line")"
   default="$(awk '{printf $2}' <<<"$line")"
 
   git remote set-branches "$remote" "$default"
-done
+done <"$defaults_file"

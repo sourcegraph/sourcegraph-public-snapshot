@@ -23,22 +23,24 @@ function renderResultElementsForContentMatch(
     selectResult: (resultId: string) => void,
     openResult: (resultId: string) => void
 ): JSX.Element[] {
-    return match.lineMatches.map(line => (
-        <SelectableSearchResult
-            key={getResultId(match, line)}
-            lineOrSymbolMatch={line}
-            match={match}
-            selectedResult={selectedResult}
-            selectResult={selectResult}
-            openResult={openResult}
-        >
-            {isActive => (
-                <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
-                    <TrimmedCodeLineWithHighlights line={line} />
-                </SearchResultLayout>
-            )}
-        </SelectableSearchResult>
-    ))
+    return (
+        match.lineMatches?.map(line => (
+            <SelectableSearchResult
+                key={getResultId(match, line)}
+                lineOrSymbolMatch={line}
+                match={match}
+                selectedResult={selectedResult}
+                selectResult={selectResult}
+                openResult={openResult}
+            >
+                {isActive => (
+                    <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
+                        <TrimmedCodeLineWithHighlights line={line} />
+                    </SearchResultLayout>
+                )}
+            </SelectableSearchResult>
+        )) || []
+    )
 }
 
 interface Props {
@@ -88,7 +90,16 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
 
     const onClick = (): void =>
         lines.length
-            ? selectResult(getResultId(match, match.type === 'content' ? match.lineMatches[0] : match.symbols[0]))
+            ? selectResult(
+                  getResultId(
+                      match,
+                      match.type === 'content'
+                          ? match.lineMatches
+                              ? match.lineMatches[0]
+                              : undefined
+                          : match.symbols[0]
+                  )
+              )
             : undefined
 
     const title = (

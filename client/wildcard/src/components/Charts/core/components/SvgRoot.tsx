@@ -122,7 +122,10 @@ export const SvgAxisLeft: FC<SvgAxisLeftProps> = props => {
     const { content, yScale, setPadding } = useContext(SVGRootContext)
 
     const handleResize = ({ width = 0 }): void => {
-        setPadding(padding => ({ ...padding, left: width }))
+        // Why + 8, because visx adds internally negative margin to each
+        // tick (tickLength * tickSign) which is "-8" in our case see
+        // https://github.com/airbnb/visx/blob/a3b79fd3bae63b100b1a8781f844631a2f3aa2ea/packages/visx-axis/src/axis/Axis.tsx#L60
+        setPadding(padding => ({ ...padding, left: width + 8 }))
     }
 
     const { ref } = useResizeObserver({ onResize: handleResize })
@@ -149,15 +152,16 @@ export const reverseTruncatedTick = (tick: string): string => (tick.length >= 15
 interface SvgAxisBottomProps<Tick> {
     tickFormat?: (tick: Tick) => string
     pixelsPerTick?: number
+    minRotateAngle?: number
     maxRotateAngle?: number
     hideTicks?: boolean
     getTruncatedTick?: (formattedTick: string) => string
     getScaleTicks?: <T>(options: GetScaleTicksOptions) => T[]
 }
-
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
     const {
         pixelsPerTick = 0,
+        minRotateAngle = 0,
         maxRotateAngle = 45,
         tickFormat = defaultToString,
         getTruncatedTick = defaultTruncatedTick,
@@ -183,23 +187,29 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
         }
 
         return getMaxTickWidth(axisGroup, ticks.map(tickFormat))
-    }, [ticks, tickFormat])
+    }, [tickFormat, ticks])
 
     const getXTickProps = (props: TickRendererProps): TickProps => {
+        // TODO: Improve rotation math see https://github.com/sourcegraph/sourcegraph/issues/41310
         const measuredSize = ticks.length * maxWidth
         const fontSize = 12 // 0.75rem
         const rotate =
-            upperRangeBound < measuredSize
-                ? maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2)
+            upperRangeBound <= measuredSize
+                ? Math.max(maxRotateAngle * Math.min(1, (measuredSize / upperRangeBound - 0.8) / 2), minRotateAngle)
                 : 0
 
         if (rotate) {
+            const xCoord = props.x
+            const yCoord = hideTicks ? props.y - fontSize / 2 : props.y
+
             return {
                 ...props,
+                x: xCoord,
+                y: yCoord,
                 // Truncate ticks only if we rotate them, this means truncate labels only
                 // when they overlap
                 getTruncatedTick,
-                transform: `rotate(${rotate}, ${props.x + fontSize / 2} ${props.y - fontSize / 2})`,
+                transform: `rotate(${rotate}, ${xCoord} ${yCoord})`,
                 textAnchor: 'start',
             }
         }

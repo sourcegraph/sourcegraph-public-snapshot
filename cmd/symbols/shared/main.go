@@ -62,7 +62,6 @@ func Main(setup SetupFunc) {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	routines := []goroutine.BackgroundRoutine{}
@@ -75,7 +74,7 @@ func Main(setup SetupFunc) {
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-symbols",
-			SampleRate: 5,
+			SampleRate: 20,
 		},
 	}
 
@@ -122,7 +121,7 @@ func Main(setup SetupFunc) {
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = actor.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,

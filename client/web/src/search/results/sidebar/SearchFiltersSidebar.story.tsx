@@ -1,6 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchPatternType } from '@sourcegraph/search'
 import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
@@ -26,12 +26,14 @@ export default config
 const defaultProps: SearchFiltersSidebarProps = {
     liveQuery: '',
     submittedURLQuery: '',
+    caseSensitive: false,
     patternType: SearchPatternType.literal,
     onNavbarQueryChange: () => {},
     onSearchSubmit: () => {},
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    setSidebarCollapsed: () => {},
 }
 
 const quicklinks: QuickLink[] = [
@@ -71,8 +73,15 @@ const filters: Filter[] = [
         kind: 'repo',
     },
     {
-        label: 'bitbucket.com/test/test',
-        value: 'repo:^bitbucket\\.com/test/test$',
+        label: 'bitbucket.org/com/test',
+        value: 'repo:^bitbucket\\.org/com/test$',
+        count: 1,
+        limitHit: true,
+        kind: 'repo',
+    },
+    {
+        label: 'bitbucket.org/org/test',
+        value: 'repo:^bitbucket\\.org/org/test$',
         count: 1,
         limitHit: true,
         kind: 'repo',

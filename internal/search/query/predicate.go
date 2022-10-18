@@ -1,9 +1,11 @@
 package query
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/grafana/regexp"
+	"github.com/grafana/regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,9 +19,9 @@ type Predicate interface {
 	// For example, with `repo:contains.file`, Name returns "contains.file".
 	Name() string
 
-	// ParseParams parses the contents of the predicate arguments
+	// Unmarshal parses the contents of the predicate arguments
 	// into the predicate object.
-	ParseParams(string) error
+	Unmarshal(params string, negated bool) error
 }
 
 var DefaultPredicateRegistry = PredicateRegistry{
@@ -39,8 +41,15 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
-		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
+}
+
+type NegatedPredicateError struct {
+	name string
+}
+
+func (e *NegatedPredicateError) Error() string {
+	return fmt.Sprintf("search predicate %q does not support negation", e.name)
 }
 
 // PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
@@ -85,18 +94,25 @@ func ParseAsPredicate(value string) (name, params string) {
 // EmptyPredicate is a noop value that satisfies the Predicate interface.
 type EmptyPredicate struct{}
 
-func (EmptyPredicate) Field() string            { return "" }
-func (EmptyPredicate) Name() string             { return "" }
-func (EmptyPredicate) ParseParams(string) error { return nil }
+func (EmptyPredicate) Field() string { return "" }
+func (EmptyPredicate) Name() string  { return "" }
+func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
+	if negated {
+		return &NegatedPredicateError{"empty"}
+	}
+
+	return nil
+}
 
 // RepoContainsFilePredicate represents the `repo:contains.file()` predicate,
 // which filters to repos that contain a path and/or content
 type RepoContainsFilePredicate struct {
 	Path    string
 	Content string
+	Negated bool
 }
 
-func (f *RepoContainsFilePredicate) ParseParams(params string) error {
+func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error {
 	nodes, err := Parse(params, SearchTypeRegex)
 	if err != nil {
 		return err
@@ -111,7 +127,7 @@ func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 	if f.Path == "" && f.Content == "" {
 		return errors.New("one of path or content must be set")
 	}
-
+	f.Negated = negated
 	return nil
 }
 
@@ -126,7 +142,7 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			if f.Path != "" {
 				return errors.New("cannot specify path multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
+			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
 				return errors.Errorf("`contains.file` predicate has invalid `path` argument: %w", err)
 			}
 			f.Path = v.Value
@@ -134,7 +150,7 @@ func (f *RepoContainsFilePredicate) parseNode(n Node) error {
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
+			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
 				return errors.Errorf("`contains.file` predicate has invalid `content` argument: %w", err)
 			}
 			f.Content = v.Value
@@ -165,16 +181,18 @@ func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
 
 type RepoContainsContentPredicate struct {
 	Pattern string
+	Negated bool
 }
 
-func (f *RepoContainsContentPredicate) ParseParams(params string) error {
-	if _, err := regexp.Compile(params); err != nil {
+func (f *RepoContainsContentPredicate) Unmarshal(params string, negated bool) error {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("contains.content argument: %w", err)
 	}
 	if params == "" {
 		return errors.Errorf("contains.content argument should not be empty")
 	}
 	f.Pattern = params
+	f.Negated = negated
 	return nil
 }
 
@@ -185,16 +203,18 @@ func (f *RepoContainsContentPredicate) Name() string  { return "contains.content
 
 type RepoContainsPathPredicate struct {
 	Pattern string
+	Negated bool
 }
 
-func (f *RepoContainsPathPredicate) ParseParams(params string) error {
-	if _, err := regexp.Compile(params); err != nil {
+func (f *RepoContainsPathPredicate) Unmarshal(params string, negated bool) error {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("contains.path argument: %w", err)
 	}
 	if params == "" {
 		return errors.Errorf("contains.path argument should not be empty")
 	}
 	f.Pattern = params
+	f.Negated = negated
 	return nil
 }
 
@@ -205,10 +225,12 @@ func (f *RepoContainsPathPredicate) Name() string  { return "contains.path" }
 
 type RepoContainsCommitAfterPredicate struct {
 	TimeRef string
+	Negated bool
 }
 
-func (f *RepoContainsCommitAfterPredicate) ParseParams(params string) error {
+func (f *RepoContainsCommitAfterPredicate) Unmarshal(params string, negated bool) error {
 	f.TimeRef = params
+	f.Negated = negated
 	return nil
 }
 
@@ -223,8 +245,12 @@ type RepoHasDescriptionPredicate struct {
 	Pattern string
 }
 
-func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
-	if _, err := regexp.Compile(params); err != nil {
+func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (err error) {
+	if negated {
+		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
+	}
+
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("invalid repo:has.description() argument: %w", err)
 	}
 	if len(params) == 0 {
@@ -238,14 +264,16 @@ func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
 
 type RepoHasTagPredicate struct {
-	Key string
+	Key     string
+	Negated bool
 }
 
-func (f *RepoHasTagPredicate) ParseParams(params string) (err error) {
+func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error) {
 	if len(params) == 0 {
 		return errors.New("tag must be non-empty")
 	}
 	f.Key = params
+	f.Negated = negated
 	return nil
 }
 
@@ -253,17 +281,19 @@ func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
 func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
 type RepoHasKVPPredicate struct {
-	Key   string
-	Value string
+	Key     string
+	Value   string
+	Negated bool
 }
 
-func (p *RepoHasKVPPredicate) ParseParams(params string) (err error) {
+func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
 	split := strings.Split(params, ":")
 	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
 		return errors.New("expected params in the form of key:value")
 	}
 	p.Key = split[0]
 	p.Value = split[1]
+	p.Negated = negated
 	return nil
 }
 
@@ -276,8 +306,12 @@ type FileContainsContentPredicate struct {
 	Pattern string
 }
 
-func (f *FileContainsContentPredicate) ParseParams(params string) error {
-	if _, err := regexp.Compile(params); err != nil {
+func (f *FileContainsContentPredicate) Unmarshal(params string, negated bool) error {
+	if negated {
+		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
+	}
+
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("file:contains.content argument: %w", err)
 	}
 	if params == "" {
@@ -289,20 +323,3 @@ func (f *FileContainsContentPredicate) ParseParams(params string) error {
 
 func (f FileContainsContentPredicate) Field() string { return FieldFile }
 func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
-
-/* file:has.owner(pattern) */
-
-type FileHasOwnerPredicate struct {
-	Owner string
-}
-
-func (f *FileHasOwnerPredicate) ParseParams(params string) error {
-	if params == "" {
-		return errors.Errorf("file:has.owner argument should not be empty")
-	}
-	f.Owner = params
-	return nil
-}
-
-func (f FileHasOwnerPredicate) Field() string { return FieldFile }
-func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }

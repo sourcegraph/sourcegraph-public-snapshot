@@ -78,7 +78,6 @@ import { HoverContext, HoverOverlay, HoverOverlayClassProps } from '@sourcegraph
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { UnbrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { PlatformContext, URLToFileContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
@@ -97,6 +96,7 @@ import {
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey } from '../../../browser-extension/web-extension-api/storage'
 import { BackgroundPageApi } from '../../../browser-extension/web-extension-api/types'
+import { UserSettingsURLResult } from '../../../graphql-operations'
 import { toTextDocumentPositionParameters } from '../../backend/extension-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { TrackAnchorClick } from '../../components/TrackAnchorClick'
@@ -120,7 +120,7 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -287,6 +287,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Called before injecting the code intelligence to the code host.
+     */
+    prepareCodeHost?: (requestGraphQL: BrowserPlatformContext['requestGraphQL']) => Promise<boolean>
 }
 
 /**
@@ -424,7 +429,7 @@ function initCodeIntelligence({
                         ...hoverAlerts,
                         repoSyncErrors.pipe(
                             distinctUntilChanged(),
-                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            map(showAlert => (showAlert ? createRepoNotFoundHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
                         ),
                     ]),
@@ -709,7 +714,7 @@ const buildManageRepositoriesURL = (sourcegraphURL: string, settingsURL: string,
 }
 
 const observeUserSettingsURL = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<string> =>
-    requestGraphQL<GQL.IQuery>({
+    requestGraphQL<UserSettingsURLResult>({
         request: gql`
             query UserSettingsURL {
                 currentUser {
@@ -1575,6 +1580,8 @@ export function injectCodeIntelligenceToCodeHost(
         subscriptions.add(extensionsController)
     }
 
+    const codeHostReady = codeHost.prepareCodeHost ? from(codeHost.prepareCodeHost(requestGraphQL)) : of(true)
+
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
         from(codeHost.getContext?.().then(context => context.privateRepository) ?? Promise.resolve(true)),
@@ -1615,14 +1622,14 @@ export function injectCodeIntelligenceToCodeHost(
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
-        extensionDisabled.subscribe(async disableExtension => {
+        combineLatest([codeHostReady, extensionDisabled]).subscribe(async ([isCodeHostReady, disableExtension]) => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else if (extensionsController !== null) {
+            } else if (isCodeHostReady && extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

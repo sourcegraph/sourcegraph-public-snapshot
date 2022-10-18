@@ -5,14 +5,16 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import { useHistory } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Card, CardBody, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
 
-import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
+import { BatchSpecExecutionFields, BatchSpecSource } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
-import { queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs } from '../backend'
+import {
+    queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
+    queryWorkspacesList as _queryWorkspacesList,
+} from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { WorkspacesPanel } from './WorkspacesPanel'
@@ -24,6 +26,7 @@ interface ExecutionWorkspacesProps extends ThemeProps {
     /** For testing purposes only */
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
     queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const ExecutionWorkspaces: React.FunctionComponent<
@@ -59,10 +62,13 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
     errors,
     queryBatchSpecWorkspaceStepFileDiffs,
     queryChangesetSpecFileDiffs,
+    queryWorkspacesList,
 }) {
     const history = useHistory()
 
-    const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
+    const deselectWorkspace = useCallback(() => {
+        history.push({ ...history.location, pathname: `${batchSpec.executionURL}/execution` })
+    }, [batchSpec.executionURL, history])
 
     const videoRef = useRef<HTMLVideoElement | null>(null)
     // Pause the execution animation loop when the batch spec stops executing.
@@ -80,6 +86,7 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
                     batchSpecID={batchSpec.id}
                     selectedNode={selectedWorkspaceID}
                     executionURL={batchSpec.executionURL}
+                    queryWorkspacesList={queryWorkspacesList}
                 />
                 <Card className="w-100 overflow-auto flex-grow-1">
                     {/* This is necessary to prevent the margin collapse on `Card` */}

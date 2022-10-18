@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	pool     = redispool.Store
-	scopeKey = "adminanalytics:"
+	pool                = redispool.Store
+	scopeKey            = "adminanalytics:"
+	cacheDisabledInTest = false
 )
 
 func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
@@ -57,6 +58,10 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 }
 
 func setDataToCache(key string, data string) (bool, error) {
+	if cacheDisabledInTest {
+		return true, nil
+	}
+
 	rdb := pool.Get()
 	defer rdb.Close()
 
@@ -107,12 +112,23 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 				&Repos{DB: db, Cache: true},
 				&BatchChanges{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 				&Extensions{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&CodeInsights{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 			}
 			for _, store := range stores {
 				if err := store.CacheAll(ctx); err != nil {
 					return err
 				}
 			}
+		}
+
+		_, err := GetCodeIntelByLanguage(ctx, db, true, dateRange)
+		if err != nil {
+			return err
+		}
+
+		_, err = GetCodeIntelTopRepositories(ctx, db, true, dateRange)
+		if err != nil {
+			return err
 		}
 	}
 

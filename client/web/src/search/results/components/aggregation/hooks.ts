@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
+import {
+    GetSearchAggregationResult,
+    GetSearchAggregationVariables,
+    SearchAggregationMode,
+    SearchPatternType,
+} from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { AggregationUIMode } from './types'
@@ -168,10 +170,11 @@ export const AGGREGATION_SEARCH_QUERY = gql`
         $patternType: SearchPatternType!
         $mode: SearchAggregationMode
         $limit: Int!
+        $extendedTimeout: Boolean!
         $skipAggregation: Boolean!
     ) {
         searchQueryAggregate(query: $query, patternType: $patternType) {
-            aggregations(mode: $mode, limit: $limit) @skip(if: $skipAggregation) {
+            aggregations(mode: $mode, limit: $limit, extendedTimeout: $extendedTimeout) @skip(if: $skipAggregation) {
                 __typename
                 ... on ExhaustiveSearchAggregationResult {
                     mode
@@ -191,6 +194,7 @@ export const AGGREGATION_SEARCH_QUERY = gql`
 
                 ... on SearchAggregationNotAvailable {
                     reason
+                    reasonType
                     mode
                 }
             }
@@ -205,9 +209,17 @@ interface SearchAggregationDataInput {
     query: string
     patternType: SearchPatternType
     aggregationMode: SearchAggregationMode | null
-    limit: number
+    caseSensitive: boolean
+    extendedTimeout: boolean
     proactive?: boolean
 }
+
+interface AggregationState {
+    data: GetSearchAggregationResult | undefined
+    calculatedMode: SearchAggregationMode | null
+}
+
+const INITIAL_STATE: AggregationState = { calculatedMode: null, data: undefined }
 
 type SearchAggregationResults =
     | { data: undefined; loading: true; error: undefined }
@@ -215,32 +227,35 @@ type SearchAggregationResults =
     | { data: GetSearchAggregationResult; loading: false; error: undefined }
 
 export const useSearchAggregationData = (input: SearchAggregationDataInput): SearchAggregationResults => {
-    const { query, patternType, aggregationMode, limit, proactive } = input
+    const { query, patternType, aggregationMode, proactive, caseSensitive, extendedTimeout } = input
 
-    const calculatedAggregationModeRef = useRef<SearchAggregationMode | null>(null)
     const [, setAggregationMode] = useAggregationSearchMode()
+    const [state, setState] = useState<AggregationState>(INITIAL_STATE)
 
-    const [data, setData] = useState<GetSearchAggregationResult | undefined>()
+    // Search parses out the case argument, but backend needs it in the query
+    // Here we're checking the caseSensitive flag and adding it back to the query if it's true
+    const aggregationQuery = caseSensitive ? `${query} case:yes` : query
+
     const { error, loading } = useQuery<GetSearchAggregationResult, GetSearchAggregationVariables>(
         AGGREGATION_SEARCH_QUERY,
         {
             fetchPolicy: 'cache-first',
             variables: {
-                query,
+                query: aggregationQuery,
                 patternType,
                 mode: aggregationMode,
-                limit,
+                limit: 30,
                 skipAggregation: aggregationMode === null && !proactive,
+                extendedTimeout,
             },
 
             // Skip extra API request when we had no aggregation mode, and then
             // we got calculated aggregation mode from the BE. We should update
             // FE aggregationMode but this shouldn't trigger AGGREGATION_SEARCH_QUERY
             // fetching.
-            skip: aggregationMode !== null && calculatedAggregationModeRef.current === aggregationMode,
+            skip: aggregationMode !== null && state.calculatedMode === aggregationMode,
             onError: () => {
-                calculatedAggregationModeRef.current = null
-                setData(undefined)
+                setState({ calculatedMode: null, data: undefined })
             },
             onCompleted: data => {
                 const calculatedAggregationMode = getCalculatedAggregationMode(data)
@@ -260,33 +275,29 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                     setAggregationMode(calculatedAggregationMode)
                 }
 
-                // Preserve calculated aggregation mode in order to use it for skipping
-                // extra API calls in useQuery "skip" field.
-                calculatedAggregationModeRef.current = calculatedAggregationMode
-
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
-                setData(data)
+                setState({ data, calculatedMode: calculatedAggregationMode })
             },
         }
     )
 
-    useEffect(() => {
-        // If query or pattern type have been changed we should "reset" our assumptions
+    useLayoutEffect(() => {
+        // If query, pattern type or extendedTimeout have been changed we should "reset" our assumptions
         // about calculated aggregation mode and make another api call to determine it
-        calculatedAggregationModeRef.current = null
-    }, [query, patternType])
+        setState(state => ({ ...state, calculatedMode: null }))
+    }, [aggregationQuery, patternType, extendedTimeout])
 
     if (loading) {
         return { data: undefined, error: undefined, loading: true }
     }
 
     if (error) {
-        return { data, error, loading: false }
+        return { data: state.data, error, loading: false }
     }
 
     return {
-        data: data as GetSearchAggregationResult,
+        data: state.data as GetSearchAggregationResult,
         error: undefined,
         loading: false,
     }

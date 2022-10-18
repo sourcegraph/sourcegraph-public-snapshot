@@ -103,7 +103,7 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
                 <div className="d-flex flex-row position-relative mt-2">
                     <small>
                         <span className="text-muted">
-                            During open beta for Sourcegraph Cloud for small teams, all members invited to your
+                            During open beta for Sourcegraph.com for small teams, all members invited to your
                             organization will be admins for your organization.{' '}
                         </span>
                         <Link to="#">Learn more.</Link>
@@ -169,7 +169,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
         }
     }, [setModalOpened, orgId, eventLoggerEventName])
 
-    const onCloseIviteModal = useCallback(() => {
+    const onCloseInviteModal = useCallback(() => {
         setModalOpened(false)
     }, [setModalOpened])
 
@@ -184,7 +184,7 @@ export const InviteMemberModalHandler: React.FunctionComponent<
                     orgId={orgId}
                     orgName={orgName}
                     onInviteSent={onInviteSent}
-                    onDismiss={onCloseIviteModal}
+                    onDismiss={onCloseInviteModal}
                     showBetaBanner={showBetaBanner}
                 />
             )}

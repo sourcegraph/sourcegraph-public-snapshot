@@ -95,6 +95,8 @@ From a parent logger, you can create sub-loggers that have additional context at
 All the above mechanisms attach metadata to *all* log entries created by the sub-logger, and they do not modify the parent logger.
 Using sub-loggers allows you to easily trace, for example, the execution of an event or a particular execution type by looking for shared log fields.
 
+> WARNING: All sub-logger constructors and functions on the `log.Logger` type (e.g. `(Logger).Soped(...)`, `(Logger).With(...)`, `(Logger).WithTrace(...)`) **do not** modify the underlying logger - you must hold and use the reference to the returned `log.Logger` instance.
+
 #### Scoped loggers
 
 Scopes are used to identify the component of a system a log message comes from, and generally should provide enough information for an uninitiated reader (such as a new teammate, or a Sourcegraph administrator) to get a rough idea the context in which a log message might have occurred.
@@ -164,7 +166,7 @@ func (w *Worker) DoBigThing(ctx context.Context, id int) {
 
 Traced loggers are loggers with trace context (trace and span IDs) attached to them. These loggers can be created in several ways:
 
-1. [`internal/trace.Logger(ctx, logger)`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/trace) creates a sub-logger with trace context from `context.Context`
+1. [`internal/trace.Logger(ctx, logger)`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/trace/logger.go) creates a sub-logger with trace context from `context.Context`
 2. [`(internal/observation.Operation).With`](add_observability.md) creates a sub-logger with trace context and fields from the operation
 3. `(Logger).WithTrace(...)` creates a sub-logger with explicitly provided trace context
 
@@ -196,13 +198,24 @@ func doSubTask(logger log.Logger) {
 }
 ```
 
+Note that if `trace.Logger` finds an `internal/trace.Trace`, it will use that instead, and also apply the trace family as the logger scope.
+If the result proves problematic, you can bypass the behaviour by using `WithTrace` with `internal/trace.Context(...)` directly:
+
+```go
+func doSomething(ctx context.Context, logger log.Logger) {
+  logger = logger.WithTrace(trace.Context(ctx))
+}
+```
+
 ## Writing log messages
 
 The message in a log line should generally be in lowercase, and should generally not have ending punctuation.
 
 ```go
-log.Info("this is my lowercase log line")
-log.Error("this is an error")
+logger.Info("this is my lowercase log line",
+  log.String("someField", value))
+logger.Error("this is an error",
+  log.Error(err))
 ```
 
 If writing log messages that, for example, indicate the results of a function, simply use the Go conventions for naming (i.e. just copy the function name).
@@ -211,6 +224,8 @@ If multiple log lines have similar components (such as a message prefix, or the 
 
 - instead of repeating a message prefix to e.g. indicate a component, [create a scoped sub-logger](#scoped-loggers) instead
 - instead of adding the same field to multiple log calls, [create a fields sub-logger](#fields-sub-loggers) instead
+
+> WARNING: Field constructors provided by the `sourcegraph/log` package, for example `log.Error(error)`, **do not** create log entries - they create fields (`type log.Field`) that are intended to be provided to `Logger` functions like `(Logger).Info` and so on.
 
 ### Log levels
 
@@ -226,7 +241,7 @@ Guidance on when to use each log level is available on the docstrings of each re
 
 See [observability: logs](../../admin/observability/logs.md) in the administration docs.
 
-### Automatic error Reporting with Sentry
+### Automatic error reporting with Sentry
 
 If the optional sink [`log.NewSentrySink()`](https://doctree.org/github.com/sourcegraph/log/-/go/-//?id=NewSentrySink) is passed when initializing the logger, when an error is passed in a field to the logger with `log.Error(err)`, it will be reported to Sentry automatically if and only if the log level is above or equal to `Warn`.
 The log message and all fields will be used to annotate the error report and the logger scope will be used as a tag, which being indexed by Sentry, enables to group reports. 
@@ -262,7 +277,7 @@ For testing purposes, we also provide:
    2. Programatically iterable logs are available from the `logtest.Captured` logger instance
    3. Can be provided in code that accepts [injected loggers](#injected-loggers)
 2. An *optional* initialization function to be called in `func TestMain(*testing.M)`, [`logtest.Init`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+logtest.Init+lang:go&patternType=literal).
-   1. Useful for testing code that [*does not* accept injected loggers](#instantiated-loggers)
+   1. This is required for testing code that [*does not* accept injected loggers](#instantiated-loggers)
 
 ### Injected loggers
 

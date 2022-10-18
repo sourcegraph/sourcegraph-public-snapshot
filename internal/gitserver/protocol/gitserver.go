@@ -180,6 +180,16 @@ type RepoUpdateResponse struct {
 	Error string `json:",omitempty"`
 }
 
+// RepoCloneRequest is a request to clone a repository asynchronously.
+type RepoCloneRequest struct {
+	Repo api.RepoName `json:"repo"`
+}
+
+// RepoCloneResponse returns an error if the repo clone request failed.
+type RepoCloneResponse struct {
+	Error string `json:",omitempty"`
+}
+
 type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 

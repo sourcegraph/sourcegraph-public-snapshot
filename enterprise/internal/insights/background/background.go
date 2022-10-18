@@ -77,6 +77,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
 		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+		NewBackfillCompletedCheckJob(ctx, mainAppDB, insightsDB),
 	)
 
 	return routines
@@ -114,13 +115,13 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 
 // newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
 //
-// * WorkerMetrics records worker operations & number of jobs.
-// * ResetterMetrics records the number of jobs that got reset because workers timed out / took too
-//   long.
+//   - WorkerMetrics records worker operations & number of jobs.
+//   - ResetterMetrics records the number of jobs that got reset because workers timed out / took too
+//     long.
 //
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
-func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
+func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
 	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics

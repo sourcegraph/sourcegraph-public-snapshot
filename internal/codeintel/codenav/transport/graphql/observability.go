@@ -14,7 +14,6 @@ import (
 )
 
 type operations struct {
-	symbol          *observation.Operation
 	hover           *observation.Operation
 	definitions     *observation.Operation
 	references      *observation.Operation
@@ -23,13 +22,13 @@ type operations struct {
 	stencil         *observation.Operation
 	ranges          *observation.Operation
 
-	getGitBlobLSIFDataResolver *observation.Operation
+	gitBlobLsifData *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_symbols_transport_graphql",
+		"codeintel_codenav_transport_graphql",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
@@ -43,9 +42,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		symbol: op("Symbol"),
-		hover:  op("Hover"),
-
+		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
 		implementations: op("Implementations"),
@@ -53,7 +50,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
 
-		getGitBlobLSIFDataResolver: op("GetGitBlobLSIFDataResolver"),
+		gitBlobLsifData: op("GitBlobLsifData"),
 	}
 }
 

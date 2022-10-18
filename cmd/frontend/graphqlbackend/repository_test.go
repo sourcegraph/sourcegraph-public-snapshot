@@ -105,7 +105,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -120,7 +120,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(db), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -200,14 +200,10 @@ func TestRepository_DefaultBranch(t *testing.T) {
 	}
 	for _, tt := range ts {
 		t.Run(tt.name, func(t *testing.T) {
-			gitserver.Mocks.GetDefaultBranch = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
-				return tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr
-			}
-			t.Cleanup(func() {
-				gitserver.Mocks.ResolveRevision = nil
-			})
+			gsClient := gitserver.NewMockClient()
+			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t)}
+			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {
@@ -244,7 +240,7 @@ func TestRepository_KVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db)
+	schema := newSchemaResolver(db, gitserver.NewClient(db))
 	gqlID := MarshalRepositoryID(repo.ID)
 
 	strPtr := func(s string) *string { return &s }

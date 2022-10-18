@@ -145,8 +145,9 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	svc := types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(`{
-"URL": "https://github.com",
-"Token": "secret-token"
+"url": "https://github.com",
+"token": "secret-token",
+"repos": ["owner/name"]
 }`),
 	}
 
@@ -246,21 +247,44 @@ func TestServer_RepoLookup(t *testing.T) {
 	githubSource := types.ExternalService{
 		Kind:         extsvc.KindGitHub,
 		CloudDefault: true,
-		Config:       extsvc.NewEmptyConfig(),
+		Config: extsvc.NewUnencryptedConfig(`{
+"url": "https://github.com",
+"token": "secret-token",
+"repos": ["owner/name"]
+}`),
 	}
 	awsSource := types.ExternalService{
-		Kind:   extsvc.KindAWSCodeCommit,
-		Config: extsvc.NewEmptyConfig(),
+		Kind: extsvc.KindAWSCodeCommit,
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "region": "us-east-1",
+  "accessKeyID": "abc",
+  "secretAccessKey": "abc",
+  "gitCredentials": {
+    "username": "user",
+    "password": "pass"
+  }
+}
+`),
 	}
 	gitlabSource := types.ExternalService{
 		Kind:         extsvc.KindGitLab,
 		CloudDefault: true,
-		Config:       extsvc.NewEmptyConfig(),
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "url": "https://gitlab.com",
+  "token": "abc",
+  "projectQuery": ["none"]
+}
+`),
 	}
-
 	npmSource := types.ExternalService{
-		Kind:   extsvc.KindNpmPackages,
-		Config: extsvc.NewEmptyConfig(),
+		Kind: extsvc.KindNpmPackages,
+		Config: extsvc.NewUnencryptedConfig(`
+{
+  "registry": "npm.org"
+}
+`),
 	}
 
 	if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
@@ -763,7 +787,7 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 	}
 }
 
-func TestServer_handleExternalServiceSync(t *testing.T) {
+func TestServer_handleExternalServiceValidate(t *testing.T) {
 	tests := []struct {
 		name        string
 		err         error
@@ -793,17 +817,11 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 					return test.err
 				},
 			}
-			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalServiceID": 1}`))
-			w := httptest.NewRecorder()
-			s := repos.NewMockStore()
-			es := database.NewMockExternalServiceStore()
-			s.ExternalServiceStoreFunc.SetDefaultReturn(es)
-			es.ListFunc.PushReturn([]*types.ExternalService{{ID: 1, Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}}, nil)
 
-			srv := &Server{Logger: logtest.Scoped(t), Store: s, Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
-			srv.handleExternalServiceSync(w, r)
-			if w.Code != test.wantErrCode {
-				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
+			es := &types.ExternalService{ID: 1, Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}
+			statusCode, _ := handleExternalServiceValidate(context.Background(), logtest.Scoped(t), es, src)
+			if statusCode != test.wantErrCode {
+				t.Errorf("Code: want %v but got %v", test.wantErrCode, statusCode)
 			}
 		})
 	}

@@ -21,17 +21,22 @@ type operations struct {
 	hasCommit                 *observation.Operation
 
 	// Repositories
-	getRepositoriesForIndexScan     *observation.Operation
-	getRepositoriesMaxStaleAge      *observation.Operation
-	setRepositoryAsDirty            *observation.Operation
-	setRepositoryAsDirtyWithTx      *observation.Operation
-	getDirtyRepositories            *observation.Operation
-	repoName                        *observation.Operation
-	setRepositoriesForRetentionScan *observation.Operation
-	hasRepository                   *observation.Operation
+	getRepositoriesForIndexScan             *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoryAsDirty                    *observation.Operation
+	setRepositoryAsDirtyWithTx              *observation.Operation
+	getDirtyRepositories                    *observation.Operation
+	repoName                                *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	hasRepository                           *observation.Operation
 
 	// Uploads
 	getUploads                        *observation.Operation
+	getUploadByID                     *observation.Operation
+	getUploadsByIDs                   *observation.Operation
+	getVisibleUploadsMatchingMonikers *observation.Operation
 	updateUploadsVisibleToCommits     *observation.Operation
 	writeVisibleUploads               *observation.Operation
 	persistNearestUploads             *observation.Operation
@@ -46,22 +51,32 @@ type operations struct {
 	deleteUploadsStuckUploading       *observation.Operation
 	softDeleteExpiredUploads          *observation.Operation
 	hardDeleteUploadsByIDs            *observation.Operation
-	getVisibleUploadsMatchingMonikers *observation.Operation
+	deleteUploadByID                  *observation.Operation
+	insertUpload                      *observation.Operation
+	addUploadPart                     *observation.Operation
+	markQueued                        *observation.Operation
+	markFailed                        *observation.Operation
+	deleteUploads                     *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
 	findClosestDumpsFromGraphFragment  *observation.Operation
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
+	deleteOverlappingDumps             *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit logs
 	deleteOldAuditLogs *observation.Operation
+
+	// Dependencies
+	insertDependencySyncingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -94,17 +109,22 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasCommit:                 op("HasCommit"),
 
 		// Repositories
-		getRepositoriesForIndexScan:     op("GetRepositoriesForIndexScan"),
-		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:            op("GetDirtyRepositories"),
-		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
-		setRepositoryAsDirtyWithTx:      op("SetRepositoryAsDirtyWithTx"),
-		repoName:                        op("RepoName"),
-		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
-		hasRepository:                   op("HasRepository"),
+		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		getDirtyRepositories:                    op("GetDirtyRepositories"),
+		setRepositoryAsDirty:                    op("SetRepositoryAsDirty"),
+		setRepositoryAsDirtyWithTx:              op("SetRepositoryAsDirtyWithTx"),
+		repoName:                                op("RepoName"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		hasRepository:                           op("HasRepository"),
 
 		// Uploads
 		getUploads:                        op("GetUploads"),
+		getUploadByID:                     op("GetUploadByID"),
+		getUploadsByIDs:                   op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
 		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
 		updateUploadRetention:             op("UpdateUploadRetention"),
 		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
@@ -115,7 +135,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
 		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
+		deleteUploadByID:                  op("DeleteUploadByID"),
+		insertUpload:                      op("InsertUpload"),
+		addUploadPart:                     op("AddUploadPart"),
+		markQueued:                        op("MarkQueued"),
+		markFailed:                        op("MarkFailed"),
+		deleteUploads:                     op("DeleteUploads"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),
@@ -127,14 +152,19 @@ func newOperations(observationContext *observation.Context) *operations {
 		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
 		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
+		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+
+		// Dependencies
+		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 	}
 }

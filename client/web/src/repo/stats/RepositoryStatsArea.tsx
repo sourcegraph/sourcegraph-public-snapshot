@@ -3,6 +3,8 @@ import React, { useMemo } from 'react'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
+import { LoadingSpinner } from '@sourcegraph/wildcard'
+
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { RepositoryFields } from '../../graphql-operations'
@@ -19,7 +21,8 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 )
 
 interface Props extends RouteComponentProps<{}>, BreadcrumbSetters {
-    repo: RepositoryFields
+    repo: RepositoryFields | undefined
+    repoName: string
     globbing: boolean
 }
 
@@ -40,22 +43,25 @@ const showNavbar = false
  */
 export const RepositoryStatsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     useBreadcrumb,
-
     ...props
 }) => {
     useBreadcrumb(useMemo(() => ({ key: 'contributors', element: 'Contributors' }), []))
 
     return (
         <div className="repository-stats-area container mt-3">
-            {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repo.name} />}
+            {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={props.repoName} />}
             <Switch>
                 <Route
                     path={`${props.match.url}/contributors`}
                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                     exact={true}
-                    render={routeComponentProps => (
-                        <RepositoryStatsContributorsPage {...routeComponentProps} {...props} />
-                    )}
+                    render={routeComponentProps =>
+                        props.repo ? (
+                            <RepositoryStatsContributorsPage {...routeComponentProps} {...props} repo={props.repo} />
+                        ) : (
+                            <LoadingSpinner />
+                        )
+                    }
                 />
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>

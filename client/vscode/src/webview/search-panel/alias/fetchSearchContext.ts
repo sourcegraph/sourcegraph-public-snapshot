@@ -3,7 +3,6 @@ import { map } from 'rxjs/operators'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] }
 export type Maybe<T> = T | null
 
@@ -78,7 +77,7 @@ export function fetchSearchContexts({
     query?: string
     namespaces?: Maybe<Scalars['ID']>[]
     after?: string
-    orderBy?: GQL.SearchContextsOrderBy
+    orderBy?: SearchContextsOrderBy
     descending?: boolean
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<ListSearchContextsResult['searchContexts']> {
@@ -118,7 +117,7 @@ export function fetchSearchContexts({
                 after: after ?? null,
                 query: query ?? null,
                 namespaces: namespaces ?? [],
-                orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                orderBy: orderBy ?? SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                 descending: descending ?? false,
             },
             mightContainPrivateInfo: true,

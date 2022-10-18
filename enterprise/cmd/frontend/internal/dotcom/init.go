@@ -8,9 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,7 +18,6 @@ import (
 // dotcomRootResolver implements the GraphQL types DotcomMutation and DotcomQuery.
 type dotcomRootResolver struct {
 	productsubscription.ProductSubscriptionLicensingResolver
-	billing.BillingResolver
 }
 
 func (d dotcomRootResolver) Dotcom() graphqlbackend.DotcomResolver {
@@ -39,15 +37,20 @@ func (d dotcomRootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFu
 
 var _ graphqlbackend.DotcomRootResolver = dotcomRootResolver{}
 
-func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	stripeEnabled := stripeutil.ValidateAndPublishConfig()
-	// Only enabled on Sourcegraph.com or when Stripe is configured correctly.
-	if envvar.SourcegraphDotComMode() || stripeEnabled {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	_ codeintel.Services,
+	_ conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
+	// Only enabled on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
 		enterpriseServices.DotcomResolver = dotcomRootResolver{
 			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
 				DB: db,
 			},
-			BillingResolver: billing.BillingResolver{DB: db},
 		}
 	}
 	return nil

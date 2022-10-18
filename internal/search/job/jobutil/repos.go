@@ -21,13 +21,14 @@ import (
 type RepoSearchJob struct {
 	RepoOpts            search.RepoOptions
 	DescriptionPatterns []*regexp.Regexp
+	RepoNamePatterns    []*regexp.Regexp // used for getting repo name match ranges
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
@@ -41,7 +42,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		}
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(page.RepoRevs, descriptionMatches),
+			Results: repoRevsToRepoMatches(page.RepoRevs, s.RepoNamePatterns, descriptionMatches),
 		})
 
 		return nil
@@ -83,12 +84,12 @@ func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]s
 					Start: result.Location{
 						Offset: sm[0],
 						Line:   0,
-						Column: utf8.RuneCount([]byte(repoDescription[:sm[0]])),
+						Column: utf8.RuneCountInString(repoDescription[:sm[0]]),
 					},
 					End: result.Location{
 						Offset: sm[1],
 						Line:   0,
-						Column: utf8.RuneCount([]byte(repoDescription[:sm[1]])),
+						Column: utf8.RuneCountInString(repoDescription[:sm[1]]),
 					},
 				})
 			}
@@ -109,6 +110,7 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	case job.VerbosityBasic:
 		res = append(res,
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+			log.Object("repoNamePatterns", s.RepoNamePatterns),
 		)
 	}
 	return res
@@ -117,14 +119,19 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, repoNameRegexps []*regexp.Regexp, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
+
 	for _, r := range repos {
+		// Get repo name matches once per repo
+		repoNameMatches := repoMatchRanges(string(r.Repo.Name), repoNameRegexps)
+
 		for _, rev := range r.Revs {
 			rm := result.RepoMatch{
-				Name: r.Repo.Name,
-				ID:   r.Repo.ID,
-				Rev:  rev,
+				Name:            r.Repo.Name,
+				ID:              r.Repo.ID,
+				Rev:             rev,
+				RepoNameMatches: repoNameMatches,
 			}
 			if ranges, ok := descriptionMatches[r.Repo.ID]; ok {
 				rm.DescriptionMatches = ranges
@@ -133,4 +140,26 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatch
 		}
 	}
 	return matches
+}
+
+func repoMatchRanges(repoName string, repoNameRegexps []*regexp.Regexp) (res []result.Range) {
+	for _, repoNameRe := range repoNameRegexps {
+		submatches := repoNameRe.FindAllStringSubmatchIndex(repoName, -1)
+		for _, sm := range submatches {
+			res = append(res, result.Range{
+				Start: result.Location{
+					Offset: sm[0],
+					Line:   0, // we can treat repo names as single-line
+					Column: utf8.RuneCountInString(repoName[:sm[0]]),
+				},
+				End: result.Location{
+					Offset: sm[1],
+					Line:   0,
+					Column: utf8.RuneCountInString(repoName[:sm[1]]),
+				},
+			})
+		}
+	}
+
+	return res
 }

@@ -13,8 +13,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
@@ -46,8 +45,7 @@ describe('Blob viewer', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-        ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl),
+        ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl),
         FileExternalLinks: ({ filePath }) =>
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
@@ -108,6 +106,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -192,6 +191,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")',
                                 richHTML: '',
@@ -297,8 +297,12 @@ describe('Blob viewer', () => {
 
         /**
          * This test is meant to prevent regression: https://github.com/sourcegraph/sourcegraph/pull/15099
+         *
+         * TODO(philipp-spiess): This test no longer works after enabling the migrated git blame
+         * extension. We can remove it once we remove the extension support completely.
          */
-        it('adds and clears line decoration attachments properly', async () => {
+        it.skip('adds and clears line decoration attachments properly', async () => {
+            testContext.overrideJsContext({ enableLegacyExtensions: true })
             const mockExtensions: MockExtension[] = [
                 {
                     id: 'test',
@@ -459,6 +463,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -598,6 +603,7 @@ describe('Blob viewer', () => {
         })
 
         it('sends the latest document to extensions', async () => {
+            testContext.overrideJsContext({ enableLegacyExtensions: true })
             // This test is meant to prevent regression of
             // "extensions receive wrong text documents": https://github.com/sourcegraph/sourcegraph/issues/14965
 
@@ -753,6 +759,7 @@ describe('Blob viewer', () => {
                         repository: {
                             commit: {
                                 file,
+                                blob: null,
                             },
                         },
                     }
@@ -918,6 +925,7 @@ describe('Blob viewer', () => {
                 Blob: ({ filePath }) => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
                                 richHTML: '',
@@ -950,7 +958,7 @@ describe('Blob viewer', () => {
                     },
                 }),
                 TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, files),
-                ResolveRev: () => createResolveRevisionResult(repositorySourcegraphUrl, commitID),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositorySourcegraphUrl, commitID),
                 HighlightedFile: ({ filePath }) => ({
                     repository: {
                         commit: {

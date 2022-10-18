@@ -1,14 +1,13 @@
-import { FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes, useEffect, useState } from 'react'
 
 import { mdiArrowCollapse } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, Icon, Code, Card, CardBody } from '@sourcegraph/wildcard'
 
-import { AggregationChartCard, getAggregationData } from './AggregationChartCard'
-import { AggregationLimitLabel } from './AggregationLimitLabel'
-import { AggregationModeControls } from './AggregationModeControls'
+import { AggregationLimitLabel, AggregationModeControls } from './components'
+import { AggregationChartCard, getAggregationData } from './components/aggregation-chart-card/AggregationChartCard'
 import {
     isNonExhaustiveAggregationResults,
     useAggregationSearchMode,
@@ -31,6 +30,8 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
     /** Current search query pattern type. */
     patternType: SearchPatternType
 
+    caseSensitive: boolean
+
     /**
      * Emits whenever a user clicks one of aggregation chart segments (bars).
      * That should update the query and re-trigger search (but this should be connected
@@ -40,16 +41,18 @@ interface SearchAggregationResultProps extends TelemetryProps, HTMLAttributes<HT
 }
 
 export const SearchAggregationResult: FC<SearchAggregationResultProps> = props => {
-    const { query, patternType, onQuerySubmit, telemetryService, ...attributes } = props
+    const { query, patternType, caseSensitive, onQuerySubmit, telemetryService, ...attributes } = props
 
-    const [, setAggregationUIMode] = useAggregationUIMode()
+    const [extendedTimeout, setExtendedTimeoutLocal] = useState(false)
+    const [aggregationUIMode, setAggregationUIMode] = useAggregationUIMode()
     const [aggregationMode, setAggregationMode] = useAggregationSearchMode()
     const { data, error, loading } = useSearchAggregationData({
         query,
         patternType,
         aggregationMode,
-        limit: 30,
+        caseSensitive,
         proactive: true,
+        extendedTimeout,
     })
 
     const handleCollapseClick = (): void => {
@@ -57,7 +60,19 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
         telemetryService.log(GroupResultsPing.CollapseFullViewPanel, { aggregationMode }, { aggregationMode })
     }
 
+    const resetUIMode = (): void => {
+        if (aggregationUIMode !== AggregationUIMode.Sidebar) {
+            setAggregationUIMode(AggregationUIMode.Sidebar)
+        }
+    }
+
     const handleBarLinkClick = (query: string, index: number): void => {
+        // Clearing the aggregation mode on drill down would provide a better experience
+        // in most cases and preserve the desired behavior of the capture group search
+        // when the original query had multiple capture groups
+        setAggregationMode(null)
+
+        resetUIMode()
         onQuerySubmit(query)
         telemetryService.log(
             GroupResultsPing.ChartBarClick,
@@ -92,6 +107,11 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
             )
         }
     }
+
+    const handleExtendTimeout = (): void => setExtendedTimeoutLocal(true)
+
+    // When query is updated reset extendedTimeout as per business rules
+    useEffect(() => setExtendedTimeoutLocal(false), [query])
 
     return (
         <section {...attributes}>
@@ -131,9 +151,11 @@ export const SearchAggregationResult: FC<SearchAggregationResultProps> = props =
                     loading={loading}
                     error={error}
                     size="md"
+                    showLoading={extendedTimeout}
                     className={styles.chartContainer}
                     onBarLinkClick={handleBarLinkClick}
                     onBarHover={handleBarHover}
+                    onExtendTimeout={handleExtendTimeout}
                 />
 
                 {data && (

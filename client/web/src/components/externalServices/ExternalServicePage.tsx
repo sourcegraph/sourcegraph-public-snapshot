@@ -3,7 +3,8 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
-import { Observable, Subject } from 'rxjs'
+import { Subject } from 'rxjs'
+import { delay, repeatWhen } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { hasProperty } from '@sourcegraph/common'
@@ -20,7 +21,9 @@ import {
     ExternalServiceSyncJobConnectionFields,
     ExternalServiceResult,
     ExternalServiceVariables,
+    ExternalServiceSyncJobState,
 } from '../../graphql-operations'
+import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
@@ -32,17 +35,23 @@ import {
     queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs,
     useUpdateExternalService,
     FETCH_EXTERNAL_SERVICE,
+    useCancelExternalServiceSync,
 } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
+import styles from './ExternalServicePage.module.scss'
+
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
     isLightTheme: boolean
     history: H.History
     afterUpdateRoute: string
+
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -67,6 +76,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     isLightTheme,
     telemetryService,
     afterUpdateRoute,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     autoFocusForm,
 }) => {
@@ -210,6 +221,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                             isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
+                            externalServicesFromFile={externalServicesFromFile}
+                            allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                         />
                     )}
                     <LoaderButton
@@ -235,7 +248,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
 
 interface ExternalServiceSyncJobsListProps {
     externalServiceID: Scalars['ID']
-    updates: Observable<void>
+    updates: Subject<void>
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -251,7 +264,7 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
             queryExternalServiceSyncJobs({
                 first: args.first ?? null,
                 externalService: externalServiceID,
-            }),
+            }).pipe(repeatWhen(obs => obs.pipe(delay(1500)))),
         [externalServiceID, queryExternalServiceSyncJobs]
     )
 
@@ -272,7 +285,7 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
                 pluralNoun="sync jobs"
                 queryConnection={queryConnection}
                 nodeComponent={ExternalServiceSyncJobNode}
-                nodeComponentProps={{}}
+                nodeComponentProps={{ onUpdate: updates }}
                 hideSearch={true}
                 noSummaryIfAllNodesVisible={true}
                 history={history}
@@ -285,47 +298,126 @@ const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJo
 
 interface ExternalServiceSyncJobNodeProps {
     node: ExternalServiceSyncJobListFields
+    onUpdate: Subject<void>
 }
 
-const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node }) => (
-    <li className="list-group-item py-3">
-        <div className="d-flex align-items-center justify-content-between">
-            <div className="flex-shrink-0 mr-2">
-                <Badge>{node.state}</Badge>
-            </div>
-            <div className="flex-shrink-0">
-                {node.startedAt && (
-                    <>
-                        {node.finishedAt === null && <>Running since </>}
-                        {node.finishedAt !== null && <>Ran for </>}
-                        <Duration
-                            start={node.startedAt}
-                            end={node.finishedAt ?? undefined}
-                            stableWidth={false}
-                            className="d-inline"
-                        />
-                    </>
+const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node, onUpdate }) => {
+    const [
+        cancelExternalServiceSync,
+        { error: cancelSyncJobError, loading: cancelSyncJobLoading },
+    ] = useCancelExternalServiceSync()
+
+    const cancelJob = useCallback(
+        () =>
+            cancelExternalServiceSync({ variables: { id: node.id } }).then(() => {
+                onUpdate.next()
+                // Optimistically set state.
+                node.state = ExternalServiceSyncJobState.CANCELING
+            }),
+        [cancelExternalServiceSync, node, onUpdate]
+    )
+
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!node) {
+            return undefined
+        }
+        return [
+            {
+                value: node.reposAdded,
+                description: 'Added',
+                tooltip: 'The number of new repos discovered during this sync job.',
+            },
+            {
+                value: node.reposDeleted,
+                description: 'Deleted',
+                tooltip: 'The number of repos deleted as a result of this sync job.',
+            },
+            {
+                value: node.reposModified,
+                description: 'Modified',
+                tooltip: 'The number of existing repos whose metadata has changed during this sync job.',
+            },
+            {
+                value: node.reposUnmodified,
+                description: 'Unmodified',
+                tooltip: 'The number of existing repos whose metadata did not change during this sync job.',
+            },
+            {
+                value: node.reposSynced,
+                description: 'Synced',
+                color: 'var(--green)',
+                tooltip: 'The number of repos synced during this sync job.',
+                position: 'right',
+            },
+            {
+                value: node.repoSyncErrors,
+                description: 'Errors',
+                color: 'var(--red)',
+                tooltip: 'The number of times an error occurred syncing a repo during this sync job.',
+                position: 'right',
+            },
+        ]
+    }, [node])
+
+    return (
+        <li className="list-group-item py-3">
+            <div className="d-flex align-items-center justify-content-between">
+                <div className="flex-shrink-0 mr-2">
+                    <Badge>{node.state}</Badge>
+                </div>
+                <div className="flex-shrink-0 flex-grow-1 mr-2">
+                    {node.startedAt && (
+                        <>
+                            {node.finishedAt === null && <>Running for </>}
+                            {node.finishedAt !== null && <>Ran for </>}
+                            <Duration
+                                start={node.startedAt}
+                                end={node.finishedAt ?? undefined}
+                                stableWidth={false}
+                                className="d-inline"
+                            />
+                            {cancelSyncJobError && <ErrorAlert error={cancelSyncJobError} />}
+                        </>
+                    )}
+                </div>
+                {[
+                    ExternalServiceSyncJobState.QUEUED,
+                    ExternalServiceSyncJobState.PROCESSING,
+                    ExternalServiceSyncJobState.CANCELING,
+                ].includes(node.state) && (
+                    <LoaderButton
+                        label="Cancel"
+                        alwaysShowLabel={true}
+                        variant="danger"
+                        outline={true}
+                        size="sm"
+                        onClick={cancelJob}
+                        loading={cancelSyncJobLoading || node.state === ExternalServiceSyncJobState.CANCELING}
+                        disabled={cancelSyncJobLoading || node.state === ExternalServiceSyncJobState.CANCELING}
+                        className={styles.cancelButton}
+                    />
                 )}
-            </div>
-            <div className="text-right flex-grow-1">
-                <div>
-                    {node.startedAt === null && 'Not started yet'}
-                    {node.startedAt !== null && (
-                        <>
-                            Started <Timestamp date={node.startedAt} />
-                        </>
-                    )}
+                <div className="text-right flex-shrink-0">
+                    <div>
+                        {node.startedAt === null && 'Not started yet'}
+                        {node.startedAt !== null && (
+                            <>
+                                Started <Timestamp date={node.startedAt} />
+                            </>
+                        )}
+                    </div>
+                    <div>
+                        {node.finishedAt === null && 'Not finished yet'}
+                        {node.finishedAt !== null && (
+                            <>
+                                Finished <Timestamp date={node.finishedAt} />
+                            </>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    {node.finishedAt === null && 'Not finished yet'}
-                    {node.finishedAt !== null && (
-                        <>
-                            Finished <Timestamp date={node.finishedAt} />
-                        </>
-                    )}
-                </div>
             </div>
-        </div>
-        {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
-    </li>
-)
+            {legends && <ValueLegendList className="mb-1" items={legends} />}
+            {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+        </li>
+    )
+}

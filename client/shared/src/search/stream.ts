@@ -45,12 +45,14 @@ export interface PathMatch {
 export interface ContentMatch {
     type: 'content'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 
@@ -77,10 +79,17 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -130,6 +139,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string
@@ -223,7 +233,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'lucky-search-queries'
+export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 
 interface Alert {
     title: string
@@ -428,6 +438,7 @@ export interface StreamSearchOptions {
     decorationKinds?: string[]
     decorationContextLines?: number
     displayLimit?: number
+    chunkMatches?: boolean
 }
 
 function initiateSearchStream(
@@ -441,6 +452,7 @@ function initiateSearchStream(
         decorationContextLines,
         displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -455,6 +467,7 @@ function initiateSearchStream(
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])

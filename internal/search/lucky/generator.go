@@ -93,7 +93,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 				// Base case: we exhausted the set of narrow
 				// rules (if any) and we've attempted every
 				// widen rule with the sets of narrow rules.
-				return func() (*autoQuery, next) { return nil, nil }
+				return nil
 			}
 
 			transform = append(transform, widen[w].transform...)
@@ -182,6 +182,15 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 
 // pruneRules produces a minimum set of rules that apply successfully on the seed query.
 func pruneRules(seed query.Basic, rules []rule) []rule {
+	types, _ := seed.IncludeExcludeValues(query.FieldType)
+	for _, t := range types {
+		// Running additional diff searches is expensive, we clamp this
+		// until things improve.
+		if t == "diff" {
+			return []rule{}
+		}
+	}
+
 	applies := make([]rule, 0, len(rules))
 	for _, r := range rules {
 		g := applyTransformation(seed, r.transform)

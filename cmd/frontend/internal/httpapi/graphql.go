@@ -2,27 +2,32 @@ package httpapi
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
 			// The URL router should not have routed to this handler if method is not POST, but just in
@@ -68,6 +73,7 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		defer func() {
 			instrumentGraphQL(traceData)
 			traceGraphQL(traceData)
+			recordAuditLog(r.Context(), logger, traceData)
 		}()
 
 		uid, isIP, anonymous := getUID(r)
@@ -215,4 +221,43 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 		return ip, true, anonymous
 	}
 	return "unknown", false, anonymous
+}
+
+func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
+	if !auditLogEnabled() {
+		return
+	}
+
+	audit.Log(ctx, logger, audit.Record{
+		Entity: "GraphQL",
+		Action: "request",
+		Fields: []sglog.Field{
+			sglog.Object("request",
+				sglog.String("name", data.requestName),
+				sglog.String("source", data.requestSource),
+				sglog.String("variables", toJson(data.queryParams.Variables)),
+				sglog.String("query", data.queryParams.Query)),
+			sglog.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
+			sglog.Bool("successful", len(data.queryErrors) == 0),
+		},
+	})
+}
+
+func auditLogEnabled() bool {
+	logCfg := conf.Get().Log
+	if logCfg != nil {
+		auditCfg := logCfg.AuditLog
+		if auditCfg != nil {
+			return auditCfg.GraphQL
+		}
+	}
+	return false
+}
+
+func toJson(variables map[string]any) string {
+	encoded, err := json.Marshal(variables)
+	if err != nil {
+		return "query variables marshalling failure"
+	}
+	return string(encoded)
 }

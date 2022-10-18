@@ -4,7 +4,10 @@ import { Remote } from 'comlink'
 import { from, Observable, of, TimeoutError } from 'rxjs'
 import { catchError, filter, first, switchMap, timeout } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { FlatExtensionHostAPI } from '../contract'
+import { SharedEventLogger } from '../sharedEventLogger'
 
 import { wrapRemoteObservable } from './api/common'
 
@@ -17,15 +20,17 @@ export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
     enableGoImportsSearchQueryTransform,
+    eventLogger,
 }: {
     query: string
     extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
     enableGoImportsSearchQueryTransform: undefined | boolean
+    eventLogger: SharedEventLogger
 }): Observable<string> {
     // We apply any non-extension transform before we send the query to the
     // extensions since we want these to take presedence over the extensions.
     if (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) {
-        query = goImportsTransform(query)
+        query = goImportsTransform(query, eventLogger)
     }
 
     if (extensionHostAPIPromise === null) {
@@ -54,14 +59,14 @@ export function transformSearchQuery({
         timeout(TRANSFORM_QUERY_TIMEOUT),
         catchError(error => {
             if (error instanceof TimeoutError) {
-                console.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
+                logger.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
             }
             return of(query)
         })
     )
 }
 
-function goImportsTransform(query: string): string {
+function goImportsTransform(query: string, eventLogger: SharedEventLogger): string {
     const goImportsRegex = /\bgo.imports:(\S*)/
     if (query.match(goImportsRegex)) {
         // Get package name
@@ -75,6 +80,8 @@ function goImportsTransform(query: string): string {
         // Match packages in single import statement
         const matchSingle = 'import\\s"[^\\s]*' + packageName + '[^\\s]*"$'
         const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
+
+        eventLogger.log('GoImportsSearchQueryTransformed')
 
         return query.replace(goImportsRegex, finalRegex)
     }

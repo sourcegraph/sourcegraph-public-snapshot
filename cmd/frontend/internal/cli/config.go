@@ -103,12 +103,11 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 
 func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
 	logger = logger.Scoped("overrideSiteConfig", "")
-	path := os.Getenv("SITE_CONFIG_FILE")
-	if path == "" {
+	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
+	if len(paths) == 0 {
 		return nil
 	}
 	cs := newConfigurationSource(logger, db)
-	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
 		raw, err := cs.Read(ctx)
 		if err != nil {
@@ -120,7 +119,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.Write(ctx, raw)
+		err = cs.Write(ctx, raw, raw.ID)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -131,7 +130,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, updateFunc)
+	go watchUpdate(ctx, logger, updateFunc, paths...)
 	return nil
 }
 
@@ -169,7 +168,7 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 	if err := update(ctx); err != nil {
 		return err
 	}
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
@@ -348,14 +347,14 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 		return err
 	}
 
-	go watchUpdate(ctx, logger, path, update)
+	go watchUpdate(ctx, logger, update, path)
 
 	return nil
 }
 
-func watchUpdate(ctx context.Context, logger log.Logger, path string, update func(context.Context) error) {
-	logger = logger.Scoped("watch", "")
-	events, err := watchPaths(ctx, path)
+func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) error, paths ...string) {
+	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
+	events, err := watchPaths(ctx, paths...)
 	if err != nil {
 		logger.Error("failed to watch config override files", log.Error(err))
 		return
@@ -368,10 +367,10 @@ func watchUpdate(ctx context.Context, logger log.Logger, path string, update fun
 		}
 
 		if err := update(ctx); err != nil {
-			logger.Error("failed to update configuration from modified config override file", log.Error(err), log.String("file", path))
+			logger.Error("failed to update configuration from modified config override file", log.Error(err))
 			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
 		} else {
-			logger.Info("updated configuration from modified config override files", log.String("file", path))
+			logger.Info("updated configuration from modified config override files")
 			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
 		}
 	}
@@ -446,16 +445,19 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 	}
 
 	return conftypes.RawUnified{
+		ID:                 site.ID,
 		Site:               site.Contents,
 		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
-	// TODO(slimsag): future: pass lastID through for race prevention
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
+	}
+	if site.ID != lastID {
+		return errors.New("site config has been modified by another request, write not allowed")
 	}
 	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
 	if err != nil {

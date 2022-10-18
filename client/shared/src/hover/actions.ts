@@ -18,7 +18,7 @@ import {
 
 import { ContributableMenu, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, isErrorLike, isExternalLink } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isExternalLink, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { Context } from '@sourcegraph/template-parser'
 
@@ -28,6 +28,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
+import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
@@ -479,12 +480,61 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
+            let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
+            if (window.context?.enableLegacyExtensions === false) {
+                const promise = extensionHostAPI.registerContributions({
+                    actions: [
+                        ...languageSpecs.map(spec => ({
+                            actionItem: { label: 'Find implementations' },
+                            command: 'open',
+                            commandArguments: [
+                                "${get(context, 'implementations_" +
+                                    spec.languageID +
+                                    "') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_" +
+                                    spec.languageID +
+                                    "') || 'noop'}",
+                            ],
+                            id: 'findImplementations_' + spec.languageID,
+                            title: 'Find implementations',
+                        })),
+                    ],
+                    menus: {
+                        hover: languageSpecs.map(spec => ({
+                            action: 'findImplementations_' + spec.languageID,
+                            when:
+                                "resource.language == '" +
+                                spec.languageID +
+                                // eslint-disable-next-line no-template-curly-in-string
+                                "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
+                        })),
+                    },
+                })
+                implementationsContributionPromise = promise
+                subscriptions.add(syncRemoteSubscription(promise))
+                for (const spec of languageSpecs) {
+                    if (spec.textDocumentImplemenationSupport) {
+                        extensionHostAPI
+                            .updateContext({
+                                [`implementations_${spec.languageID}`]: true,
+                            })
+                            .then(
+                                () => {},
+                                () => {}
+                            )
+                    }
+                }
+            }
+
+            return Promise.all([
+                definitionContributionsPromise,
+                referencesContributionPromise,
+                implementationsContributionPromise,
+            ])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
         .catch(() => {
-            console.error('Failed to register "Go to Definition" and "Find references" actions with extension host')
+            logger.error('Failed to register "Go to Definition" and "Find references" actions with extension host')
         })
 
     // Return promise to provide a way for callers to know when contributions have been successfully registered

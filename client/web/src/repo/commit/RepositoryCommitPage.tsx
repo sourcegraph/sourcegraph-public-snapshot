@@ -17,6 +17,7 @@ import {
     isDefined,
     memoizeObservable,
     property,
+    logger,
 } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -115,7 +116,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props
+interface RepositoryCommitPageProps
     extends RouteComponentProps<{ revspec: string }>,
         TelemetryProps,
         PlatformContextProps,
@@ -138,8 +139,8 @@ interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.Component<Props, State> {
-    private componentUpdates = new Subject<Props>()
+export class RepositoryCommitPage extends React.Component<RepositoryCommitPageProps, State> {
+    private componentUpdates = new Subject<RepositoryCommitPageProps>()
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -156,7 +157,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         ActionItemAction
     >
 
-    constructor(props: Props) {
+    constructor(props: RepositoryCommitPageProps) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -238,13 +239,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
         this.componentUpdates.next(this.props)
     }
 
-    public shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<State>): boolean {
+    public shouldComponentUpdate(nextProps: Readonly<RepositoryCommitPageProps>, nextState: Readonly<State>): boolean {
         return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
     }
 

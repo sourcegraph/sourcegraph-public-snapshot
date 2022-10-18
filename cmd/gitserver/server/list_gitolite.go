@@ -6,19 +6,26 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
+	// Ensure the request came from us
+	if h := r.Header.Get("X-Requested-With"); h != "Sourcegraph" {
+		http.Error(w, "incorrect headers", http.StatusBadRequest)
+		return
+	}
+
 	defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"), w)
 }
 
 var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}}
 
 type gitoliteFetcher struct {
-	client iGitoliteClient
+	client gitoliteRepoLister
 }
 
-type iGitoliteClient interface {
+type gitoliteRepoLister interface {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
@@ -29,7 +36,7 @@ func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w h
 		err   error
 	)
 
-	if gitoliteHost != "" {
+	if gitoliteHost != "" || !security.ValidateRemoteAddr(gitoliteHost) {
 		if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

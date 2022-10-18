@@ -103,5 +103,5 @@ func (t *Trace) LogFields(fields ...log.Field) {
 // Deprecated: Use SetAttributes(...) instead.
 //
 // TagFields adds fields to the opentracing.Span as tags
-// as well as as logs to the nettrace.Trace.
+// as well as logs to the nettrace.Trace.
 func (t *Trace) TagFields(fields ...log.Field) { t.SetAttributes(otLogFieldsToOTelAttrs(fields)...) }

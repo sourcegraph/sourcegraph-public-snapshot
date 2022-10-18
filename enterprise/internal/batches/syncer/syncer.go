@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -483,7 +484,8 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	source, err := loadChangesetSource(ctx, s.httpFactory, s.syncStore, cs, repo)
+	srcer := sources.NewSourcer(s.httpFactory)
+	source, err := srcer.ForChangeset(ctx, s.syncStore, cs)
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
 			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")
@@ -492,12 +494,12 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(s.syncStore.DatabaseDB()), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
-func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
+func SyncChangeset(ctx context.Context, syncStore SyncStore, client gitserver.Client, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
 	repoChangeset := &sources.Changeset{TargetRepo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		if !errors.HasType(err, sources.ChangesetNotFoundError{}) {
@@ -519,7 +521,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	if err != nil {
 		return err
 	}
-	state.SetDerivedState(ctx, syncStore.Repos(), c, events)
+	state.SetDerivedState(ctx, syncStore.Repos(), client, c, events)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {
@@ -536,19 +538,4 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
-}
-
-func loadChangesetSource(
-	ctx context.Context, cf *httpcli.Factory, syncStore SyncStore,
-	ch *btypes.Changeset, repo *types.Repo,
-) (sources.ChangesetSource, error) {
-	srcer := sources.NewSourcer(cf)
-	// This is a ChangesetSource authenticated with the external service
-	// token.
-	source, err := srcer.ForRepo(ctx, syncStore, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	return sources.WithAuthenticatorForChangeset(ctx, syncStore, source, ch, repo, true)
 }

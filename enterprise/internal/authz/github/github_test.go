@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,7 +43,7 @@ func mockClientFunc(mockClient client) func() (client, error) {
 // which is lost during moving the client interface to mockgen usage
 func newMockClientWithTokenMock() *MockClient {
 	mockClient := NewMockClient()
-	mockClient.WithTokenFunc.SetDefaultReturn(mockClient)
+	mockClient.WithAuthenticatorFunc.SetDefaultReturn(mockClient)
 	return mockClient
 }
 
@@ -225,8 +226,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				})
 			// should call with token
 			calledWithToken := false
-			mockClient.WithTokenFunc.SetDefaultHook(
-				func(_ string) client {
+			mockClient.WithAuthenticatorFunc.SetDefaultHook(
+				func(_ auth.Authenticator) client {
 					calledWithToken = true
 					return mockClient
 				})

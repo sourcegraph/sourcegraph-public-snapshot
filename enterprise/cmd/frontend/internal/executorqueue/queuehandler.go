@@ -8,18 +8,20 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 )
 
-func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
-	executorStore := executorDB.New(db)
+	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
+	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -36,7 +38,10 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+
+		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
 	}
 
 	return factory, nil
@@ -79,6 +84,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 	if token == "" {
 		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
+		return false
 	}
 
 	if token != expectedAccessToken {

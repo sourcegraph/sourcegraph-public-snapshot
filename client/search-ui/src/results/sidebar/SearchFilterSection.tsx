@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
@@ -19,6 +18,8 @@ export interface SearchFilterSectionProps {
     showSearch?: boolean // Search only works if children are FilterLink
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
+
+    forcedRender?: boolean
 
     /**
      * Shown when the built-in search doesn't find any results.
@@ -58,6 +59,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         children = [],
         className,
         showSearch = false,
+        forcedRender = true,
         onToggle,
         startCollapsed,
         minItems = 0,
@@ -65,7 +67,6 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         clearSearchOnChange = children,
     } = props
 
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [filter, setFilter] = useState('')
 
     // Clears the filter whenever clearSearchOnChange changes (defaults to the
@@ -156,20 +157,11 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     >
                         {header}
                     </H5>
-                    <Icon
-                        aria-hidden={true}
-                        className={classNames(!coreWorkflowImprovementsEnabled && 'mr-1')}
-                        as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
-                    />
+                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                 </CollapseHeader>
 
-                <CollapsePanel>
-                    <div
-                        className={classNames(
-                            'pb-4',
-                            !searchVisible && !coreWorkflowImprovementsEnabled && 'border-top'
-                        )}
-                    >
+                <CollapsePanel forcedRender={forcedRender}>
+                    <div className="pb-4">
                         {searchVisible && (
                             <Input
                                 type="search"

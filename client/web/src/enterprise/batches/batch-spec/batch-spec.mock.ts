@@ -2,7 +2,6 @@ import { subDays, subHours, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -21,6 +20,8 @@ import {
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
+    BatchSpecSource,
+    ExecutorCompatibility,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
 
@@ -215,7 +216,7 @@ export const mockStep = (
     __typename: 'BatchSpecWorkspaceStep',
     cachedResultFound: false,
     container: 'ubuntu:18.04',
-    diffStat: { __typename: 'DiffStat', added: 10, changed: 5, deleted: 5 },
+    diffStat: { __typename: 'DiffStat', added: 15, deleted: 10 },
     environment: [],
     exitCode: 0,
     finishedAt: subMinutes(now, 1).toISOString(),
@@ -259,7 +260,7 @@ export const mockWorkspace = (
                     url: '/github.com/sourcegraph-testing/batch-changes-test-repo',
                 },
                 body: 'My first batch change!',
-                diffStat: { __typename: 'DiffStat', added: 100, changed: 50, deleted: 90 },
+                diffStat: { __typename: 'DiffStat', added: 150, deleted: 140 },
                 headRef: 'hello-world',
                 published: null,
                 title: 'Hello World',
@@ -270,7 +271,7 @@ export const mockWorkspace = (
             __typename: 'VisibleChangesetSpec',
         },
     ],
-    diffStat: { __typename: 'DiffStat', added: 100, changed: 50, deleted: 90, ...workspace?.diffStat },
+    diffStat: { __typename: 'DiffStat', added: 150, deleted: 140, ...workspace?.diffStat },
     stages: {
         __typename: 'BatchSpecWorkspaceStages',
         setup: [
@@ -309,6 +310,7 @@ export const mockWorkspace = (
         igniteVersion: '',
         lastSeenAt: subMinutes(now, 2).toISOString(),
         os: 'darwin',
+        compatibility: ExecutorCompatibility.UP_TO_DATE,
         queueName: 'batches',
         srcCliVersion: '3.38.0',
         __typename: 'Executor',
@@ -331,6 +333,7 @@ export const mockWorkspace = (
 export const QUEUED_WORKSPACE = mockWorkspace(1, {
     state: BatchSpecWorkspaceState.QUEUED,
     placeInQueue: 2,
+    placeInGlobalQueue: 4,
     startedAt: null,
     finishedAt: null,
     diffStat: null,
@@ -384,9 +387,8 @@ export const HIDDEN_WORKSPACE: HiddenBatchSpecWorkspaceFields = {
     state: BatchSpecWorkspaceState.COMPLETED,
     diffStat: {
         __typename: 'DiffStat',
-        added: 10,
-        changed: 2,
-        deleted: 5,
+        added: 12,
+        deleted: 7,
     },
     placeInQueue: null,
     placeInGlobalQueue: null,
@@ -419,7 +421,7 @@ export const CANCELED_WORKSPACE = mockWorkspace(1, {
 export const mockWorkspaces = (
     count: number,
     workspace?: Partial<VisibleBatchSpecWorkspaceFields>
-): BatchSpecWorkspacesResult => ({
+): BatchSpecWorkspacesResult & { node: { __typename: 'BatchSpec' } } => ({
     node: {
         __typename: 'BatchSpec',
         id: 'spec1234',

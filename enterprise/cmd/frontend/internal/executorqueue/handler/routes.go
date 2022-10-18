@@ -18,15 +18,15 @@ import (
 	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
 		h := newHandler(executorStore, metricsStore, queueOptions)
 

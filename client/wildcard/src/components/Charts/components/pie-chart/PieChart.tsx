@@ -9,7 +9,6 @@ import { MaybeLink } from '../../core'
 import { CategoricalLikeChart } from '../../types'
 
 import { PieArc } from './components/PieArc'
-import { distributePieArcs } from './distribute-pie-data'
 
 import styles from './PieChart.module.scss'
 
@@ -53,7 +52,10 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
     // hovered arc last in arcs array. By that we sort of change z-index (ordering) of svg element
     // and put hovered label and arc over other arc elements
     const [hoveredArc, setHoveredArc] = useState<PieArcDatum<Datum> | null>(null)
-    const sortedData = useMemo(() => distributePieArcs(data, getDatumValue), [data, getDatumValue])
+    const sortedData = useMemo(() => [...data].sort((first, second) => getDatumValue(second) - getDatumValue(first)), [
+        data,
+        getDatumValue,
+    ])
 
     const innerWidth = width - padding.left - padding.right
     const innerHeight = height - padding.top - padding.bottom
@@ -81,6 +83,7 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
         <svg
             {...attributes}
             aria-label="Pie chart"
+            role="group"
             width={width}
             height={height}
             className={classNames(styles.svg, className)}
@@ -93,32 +96,34 @@ export function PieChart<Datum>(props: PieChartProps<Datum>): ReactElement | nul
                             : pie.arcs
 
                         return (
-                            <Group>
+                            <Group role="list">
                                 {arcs.map((arc, index) => (
-                                    <MaybeLink
-                                        key={getDatumName(arc.data)}
-                                        to={getDatumLink(arc.data)}
-                                        target="_blank"
-                                        rel="noopener"
-                                        className={styles.link}
-                                        role={getDatumLink(arc.data) ? 'link' : 'graphics-dataunit'}
-                                        aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getDatumName(
-                                            arc.data
-                                        )}. Value: ${getSubtitle(arc, total)}.`}
-                                        onClick={event => onDatumLinkClick(event, arc.data, index)}
-                                    >
-                                        <PieArc
-                                            arc={arc}
-                                            path={pie.path}
-                                            title={getDatumName(arc.data)}
-                                            subtitle={getSubtitle(arc, total)}
-                                            className={classNames(styles.arcPath, {
-                                                [styles.arcPathWithLink]: !!getDatumLink(arc.data),
-                                            })}
-                                            getColor={getDatumColor}
-                                            onPointerMove={() => setHoveredArc(arc)}
-                                        />
-                                    </MaybeLink>
+                                    <Group key={getDatumName(arc.data)} role="listitem">
+                                        <MaybeLink
+                                            to={getDatumLink(arc.data)}
+                                            target="_blank"
+                                            rel="noopener"
+                                            role={getDatumLink(arc.data) ? 'link' : 'graphics-dataunit'}
+                                            aria-label={`Name: ${getDatumName(arc.data)}. Value: ${getSubtitle(
+                                                arc,
+                                                total
+                                            )}.`}
+                                            className={styles.link}
+                                            onClick={event => onDatumLinkClick(event, arc.data, index)}
+                                        >
+                                            <PieArc
+                                                arc={arc}
+                                                path={pie.path}
+                                                title={getDatumName(arc.data)}
+                                                subtitle={getSubtitle(arc, total)}
+                                                className={classNames(styles.arcPath, {
+                                                    [styles.arcPathWithLink]: !!getDatumLink(arc.data),
+                                                })}
+                                                getColor={getDatumColor}
+                                                onPointerMove={() => setHoveredArc(arc)}
+                                            />
+                                        </MaybeLink>
+                                    </Group>
                                 ))}
                             </Group>
                         )

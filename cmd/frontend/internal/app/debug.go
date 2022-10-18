@@ -14,12 +14,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"go.uber.org/atomic"
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -270,6 +272,16 @@ func addJaeger(r *mux.Router, db database.DB) {
 	}
 }
 
+func clientOtelEnabled(s schema.SiteConfiguration) bool {
+	if s.ObservabilityClient == nil {
+		return false
+	}
+	if s.ObservabilityClient.OpenTelemetry == nil {
+		return false
+	}
+	return s.ObservabilityClient.OpenTelemetry.Endpoint != ""
+}
+
 // addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
 // (OTLP) requests in the http/json format to the configured backend.
 func addOpenTelemetryProtocolAdapter(r *mux.Router) {
@@ -281,9 +293,17 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 
+	// Clients can take a while to receive new site configuration - since this debug
+	// tunnel should only be receiving OpenTelemetry from clients, if client OTEL is
+	// disabled this tunnel should no-op.
+	clientEnabled := atomic.NewBool(clientOtelEnabled(conf.SiteConfig()))
+	conf.Watch(func() {
+		clientEnabled.Store(clientOtelEnabled(conf.SiteConfig()))
+	})
+
 	// If no endpoint is configured, we export a no-op handler
 	if endpoint == "" {
-		logger.Error("unable to parse OTLP export target")
+		logger.Info("no OTLP endpoint configured, data received at /-/debug/otlp will not be exported")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
@@ -293,13 +313,13 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 	}
 
 	// Register adapter endpoints
-	otlpadapter.Register(ctx, logger, protocol, endpoint, r)
+	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler, db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
