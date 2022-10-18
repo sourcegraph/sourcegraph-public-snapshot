@@ -33,16 +33,16 @@ import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedi
 
 import { BlockInput } from '../notebooks'
 import {
-    useNotepadState,
+    addNotepadEntry,
+    NotepadEntry,
+    NotepadEntryID,
+    NotepadEntryInput,
+    removeAllNotepadEntries,
+    removeFromNotepad,
     restorePreviousSession,
     SearchEntry,
-    NotepadEntry,
-    removeFromNotepad,
-    NotepadEntryInput,
-    addNotepadEntry,
     setEntryAnnotation,
-    NotepadEntryID,
-    removeAllNotepadEntries,
+    useNotepadState,
 } from '../stores/notepad'
 
 import styles from './Notepad.module.scss'
