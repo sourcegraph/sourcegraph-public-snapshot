@@ -45,7 +45,7 @@ const staticExtensions: Extension = [
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
-            backgroundColor: '#FCFCFC',
+            backgroundColor: '#FCFCFC', // todo
         },
         '&:focus-within': {
             backgroundColor: 'var(--code-bg)',
@@ -63,15 +63,15 @@ const staticExtensions: Extension = [
             background: 'transparent',
         },
         '.cm-scroller::-webkit-scrollbar-thumb': {
-            backgroundColor: 'var(--gray-03)',
+            backgroundColor: 'var(--gray-04)', // todo
             borderRadius: '16px',
-            border: '4px solid #FCFCFC',
+            border: '4px solid #FCFCFC', // todo
         },
         '.cm-scroller::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: 'var(--gray-04)',
+            backgroundColor: 'var(--gray-03)', // todo
         },
         '.cm-gutters': {
-            backgroundColor: '#FCFCFC',
+            backgroundColor: '#FCFCFC', // todo
             borderRight: 'initial',
         },
         '.cm-line': {
@@ -81,7 +81,7 @@ const staticExtensions: Extension = [
             borderLeft: '2px solid var(--brand-secondary)', // todo doesn't work in isolation, causes layout shift
         },
         '.cm-line:focus': {
-            backgroundColor: 'var(--gray-02)',
+            backgroundColor: 'var(--gray-02)', // todo
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',

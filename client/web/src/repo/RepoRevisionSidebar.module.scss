@@ -1,6 +1,24 @@
 .tabpanels {
     margin-top: 0.25rem;
     flex-grow: 1;
+
+    &::-webkit-scrollbar {
+        width: 16px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: var(--gray-04);
+        border-radius: 16px;
+        border: 4px solid var(--body-bg); // todo
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        backgroundColor: var(--gray-03);
+    }
 }
 
 .close-icon {
