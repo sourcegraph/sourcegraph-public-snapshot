@@ -120,7 +120,7 @@ func (s *confStore) addDefault(ctx context.Context, contents string) (newLastID 
 		return nil, nil
 	}
 
-	latest, err = s.createIfUpToDate(ctx, nil, contents, false)
+	latest, err = s.createIfUpToDate(ctx, nil, contents, true)
 	if err != nil {
 		return nil, err
 	}
