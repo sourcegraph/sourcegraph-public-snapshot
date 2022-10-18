@@ -382,7 +382,6 @@
     "@reach/accordion": "^0.16.1",
     "@reach/combobox": "^0.16.5",
     "@reach/dialog": "^0.16.2",
-    "@reach/listbox": "^0.16.2",
     "@reach/menu-button": "^0.16.2",
     "@reach/tabs": "^0.16.4",
     "@reach/visually-hidden": "^0.16.0",
