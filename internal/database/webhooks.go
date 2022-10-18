@@ -312,14 +312,11 @@ type WebhookListOptions struct {
 
 // parseWebhookCursorCond returns the WHERE conditions for the given cursor
 func parseWebhookCursorCond(cursor *types.Cursor) (cond *sqlf.Query, err error) {
-	var (
-		operator string
-	)
-
 	if cursor == nil || cursor.Column == "" || cursor.Value == "" {
 		return nil, nil
 	}
 
+	var operator string
 	switch cursor.Direction {
 	case "next":
 		operator = ">="
