@@ -71,9 +71,9 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 | **Series**       | N2         | N2          | N2          | N2          | N2          |
 | **Recommended**  | standard-8 | standard-16 | standard-32 | standard-48 | standard-96 |
 | **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-48 |
-| **Download Links**   | [click here](https://storage.googleapis.com/sourcegraph-amis/latest/Soucegraph-XS.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-amis/latest/Soucegraph-S.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-amis/latest/Soucegraph-M.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-amis/latest/Soucegraph-L.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-amis/latest/Soucegraph-XL.tar.gz) |
+| **Download Links**   | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
 
-<span class="badge badge-critical">IMPORTANT</span> **sourcegraph** is the default username for these images.
+<span class="badge badge-critical">IMPORTANT</span> **sourcegraph** is the default username for all GCE images.
 
 > NOTE: Sourcegraph GCE images are optimized for the specific set of resources provided by the machine type, please ensure you use the correct GCE image for the associated GCE machine type. You can [resize your machine type anytime](https://cloud.google.com/compute/docs/instances/changing-machine-type-of-stopped-instance), but your Sourcegraph GCE image must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct GCE image that is optimized for your machine type.
 

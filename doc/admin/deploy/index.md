@@ -19,9 +19,9 @@ Each of the deployment types listed below provides a different level of capabili
 
 Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
-### [Custom Images](images/index.md)
+### [Machine Images](machines-images/index.md)
 
-<span class="badge badge-note">RECOMMENDED</span> Custom image allows you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 5 minutes!
+<span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
 
 ### [Docker Compose](docker-compose/index.md)
 

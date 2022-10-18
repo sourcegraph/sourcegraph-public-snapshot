@@ -75,7 +75,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 </div>
 <div class="grid">
   <!-- GCE Images-->
-  <a class="app-btn btn" href="/admin/deploy/images/gce">
+  <a class="app-btn btn" href="/admin/deploy/machine-images/gce">
     <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
     <h3>Goole Compute Engine</h3>
     <p>Launch a pre-configured Sourcegraph instance from a GCE Image</p>
