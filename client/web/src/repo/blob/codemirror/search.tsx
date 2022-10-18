@@ -17,7 +17,6 @@ import { Compartment, Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 
-import { isMacPlatform } from '@sourcegraph/common'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 import { createRoot, Root } from 'react-dom/client'
@@ -28,6 +27,21 @@ import { History } from 'history'
 import { blobPropsFacet } from '.'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
+import { Keybindings, renderShortcutKey } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
+
+const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
+
+const platformKeycombo = renderShortcutKey('Mod') + '+F'
+const tooltipContent = `When enabled, ${platformKeycombo} searches the file only. Disable to search the page, and press ${platformKeycombo} for changes to apply.`
+const searchKeybindingTooltip = (
+    <Tooltip content={tooltipContent}>
+        <Icon
+            className="cm-sg-search-info ml-1 align-textbottom"
+            svgPath={mdiInformationOutline}
+            aria-label="Search keybinding information"
+        />
+    </Tooltip>
+)
 
 class SearchPanel implements Panel {
     public dom: HTMLElement
@@ -90,9 +104,6 @@ class SearchPanel implements Panel {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
-
-        const platformKeycombo = (isMacPlatform() ? 'Cmd' : 'Ctrl') + '+f'
-        const tooltipContent = `When enabled ${platformKeycombo} is overwritten to trigger a search within the file only. Disable it to trigger the browser's default search (you have to press ${platformKeycombo} again to re-trigger the search).`
 
         this.root.render(
             <Container
@@ -163,15 +174,9 @@ class SearchPanel implements Panel {
                             value={overrideBrowserSearch}
                             onToggle={this.setOverrideBrowserSearch}
                         />
-                        Use file search
+                        {searchKeybinding} searches file
                     </Label>
-                    <Tooltip content={tooltipContent}>
-                        <Icon
-                            className="cm-sg-search-info ml-1 align-textbottom"
-                            svgPath={mdiInformationOutline}
-                            aria-label="Search mode information"
-                        />
-                    </Tooltip>
+                    {searchKeybindingTooltip}
                 </div>
             </Container>
         )
