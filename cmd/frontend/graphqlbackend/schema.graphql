@@ -1645,6 +1645,8 @@ type Query {
 
     """
     Looks up a webhook by id or uuid.
+
+    Only site admins may access webhooks.
     """
     webhook(
         """

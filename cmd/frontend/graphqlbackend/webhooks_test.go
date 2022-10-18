@@ -146,8 +146,14 @@ func TestGetWebhook(t *testing.T) {
                     uuid
                 }
     }`
-	errorQueryStr := `query GetWebhook($uuid: String, $id: ID) {
+	errorBothQueryStr := `query GetWebhook($uuid: String, $id: ID) {
                 webhook(uuid: $uuid, id: $id) {
+                    id
+                    uuid
+                }
+    }`
+	errorNoneQueryStr := `query GetWebhook {
+                webhook {
                     id
                     uuid
                 }
@@ -193,17 +199,30 @@ func TestGetWebhook(t *testing.T) {
 			Label:          "error with both ID and UUID",
 			Context:        ctx,
 			Schema:         schema,
-			Query:          errorQueryStr,
+			Query:          errorBothQueryStr,
 			ExpectedResult: `{"webhook": null}`,
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "either 1 of ID or UUID must be provided, but not both",
+					Message: "either one of ID or UUID must be provided, but not both",
 					Path:    []any{"webhook"},
 				},
 			},
 			Variables: map[string]any{
 				"id":   "V2ViaG9vazox",
 				"uuid": whUUID.String(),
+			},
+		},
+		{
+			Label:          "error with neither ID or UUID",
+			Context:        ctx,
+			Schema:         schema,
+			Query:          errorNoneQueryStr,
+			ExpectedResult: `{"webhook": null}`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "either one of ID or UUID must be provided, but not both",
+					Path:    []any{"webhook"},
+				},
 			},
 		},
 	})

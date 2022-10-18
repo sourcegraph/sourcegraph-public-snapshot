@@ -84,31 +84,13 @@ func (r *schemaResolver) Webhook(ctx context.Context, args *struct {
 	}
 
 	if (args.ID == nil && args.UUID == nil) || (args.ID != nil && args.UUID != nil) {
-		return nil, errors.New("either 1 of ID or UUID must be provided, but not both")
+		return nil, errors.New("either one of ID or UUID must be provided, but not both")
 	}
 
 	if args.ID != nil {
-		hookID, err := unmarshalWebhookID(*args.ID)
-		if err != nil {
-			return nil, err
-		}
-		webhook, err := r.db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, hookID)
-		if err != nil {
-			return nil, err
-		}
-
-		return &webhookResolver{db: r.db, hook: webhook}, nil
+		return webhookByID(ctx, r.db, *args.ID)
 	} else {
-		uuidFromString, err := uuid.Parse(*args.UUID)
-		if err != nil {
-			return nil, err
-		}
-
-		webhook, err := r.db.Webhooks(keyring.Default().WebhookLogKey).GetByUUID(ctx, uuidFromString)
-		if err != nil {
-			return nil, err
-		}
-		return &webhookResolver{db: r.db, hook: webhook}, nil
+		return webhookByUUID(ctx, r.db, *args.UUID)
 	}
 }
 
@@ -138,6 +120,24 @@ func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhoo
 	}
 
 	hook, err := db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &webhookResolver{db: db, hook: hook}, nil
+}
+
+func webhookByUUID(ctx context.Context, db database.DB, whUUID string) (*webhookResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
+
+	id, err := uuid.Parse(whUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	hook, err := db.Webhooks(keyring.Default().WebhookLogKey).GetByUUID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
