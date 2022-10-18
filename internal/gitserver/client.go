@@ -72,20 +72,23 @@ var _ Client = &clientImplementor{}
 
 // NewClient returns a new gitserver.Client.
 func NewClient(db database.DB) Client {
-	return &clientImplementor{
-		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		addrs: func() []string {
-			return conf.Get().ServiceConnections().GitServers
+	// fmt.Println("### gitserver.NewClient")
+	return &localClient{
+		remoteClient: &clientImplementor{
+			logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
+			addrs: func() []string {
+				return conf.Get().ServiceConnections().GitServers
+			},
+			pinned:      pinnedReposFromConfig,
+			db:          db,
+			httpClient:  defaultDoer,
+			HTTPLimiter: defaultLimiter,
+			// Use the binary name for userAgent. This should effectively identify
+			// which service is making the request (excluding requests proxied via the
+			// frontend internal API)
+			userAgent:  filepath.Base(os.Args[0]),
+			operations: getOperations(),
 		},
-		pinned:      pinnedReposFromConfig,
-		db:          db,
-		httpClient:  defaultDoer,
-		HTTPLimiter: defaultLimiter,
-		// Use the binary name for userAgent. This should effectively identify
-		// which service is making the request (excluding requests proxied via the
-		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: getOperations(),
 	}
 }
 
@@ -829,6 +832,7 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 }
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
+	fmt.Printf("### clientImplementor.gitCommand %v %v\n", repo, strings.Join(arg, " "))
 	if ClientMocks.LocalGitserver {
 		cmd := NewLocalGitCommand(repo, arg...)
 		if ClientMocks.LocalGitCommandReposDir != "" {

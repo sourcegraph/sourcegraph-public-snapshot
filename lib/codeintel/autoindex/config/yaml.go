@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func UnmarshalYAML(data []byte) (IndexConfiguration, error) {
