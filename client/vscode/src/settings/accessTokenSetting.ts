@@ -26,14 +26,14 @@ export async function handleAccessTokenError(badToken: string, endpointURL: stri
 
         const message = !badToken
             ? `A valid access token is required to connect to ${endpointURL}`
-            : `Connection to ${endpointURL} failed because the token is invalid. Please reload VS Code if your Sourcegraph instance URL has changed.`
+            : `Connection to ${endpointURL} failed. Please try reloading VS Code if your Sourcegraph instance URL has been updated.`
 
         const version = await observeInstanceVersionNumber(badToken, endpointURL).toPromise()
         const supportsTokenCallback = version && isOlderThan(version, { major: 3, minor: 41 })
-        const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Update URL in Setting')
+        const action = await vscode.window.showErrorMessage(message, 'Get Token', 'Reload Window')
 
-        if (action === 'Open Settings') {
-            await vscode.commands.executeCommand('workbench.action.openSettings', 'sourcegraph.url')
+        if (action === 'Reload Window') {
+            await vscode.commands.executeCommand('workbench.action.reloadWindow')
         } else if (action === 'Get Token') {
             const path = supportsTokenCallback ? '/user/settings/tokens/new/callback' : '/user/settings/'
             const query = supportsTokenCallback ? 'requestFrom=VSCEAUTH' : ''

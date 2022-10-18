@@ -3,20 +3,14 @@ import * as vscode from 'vscode'
 import { readConfiguration } from './readConfiguration'
 
 export function endpointSetting(): string {
-    // has default value
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const url = readConfiguration().get<string>('url')!
+    const url = readConfiguration().get<string>('url') || 'https://sourcegraph.com'
     return removeEndingSlash(url)
 }
 
-export async function setEndpoint(newEndpoint: string): Promise<boolean> {
-    const newEndpointURL = removeEndingSlash(newEndpoint)
-    try {
-        await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
-        return true
-    } catch {
-        return false
-    }
+export async function setEndpoint(newEndpoint: string | undefined): Promise<void> {
+    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : undefined
+    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
+    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Workspace)
 }
 
 export function endpointHostnameSetting(): string {

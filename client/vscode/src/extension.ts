@@ -27,17 +27,19 @@ import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './setting
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, openSourcegraphLinks, registerWebviews, copySourcegraphLinks } from './webview/commands'
-import { scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { processOldToken, scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    // Register SourcegraphAuthProvider
     const secretStorage = context.secrets
+    // Move token from user setting to secret storage
+    await processOldToken(secretStorage)
+    // Register SourcegraphAuthProvider
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
             endpointSetting(),
-            'Sourcegraph Auth',
+            scretTokenKey,
             new SourcegraphAuthProvider(secretStorage)
         )
     )
@@ -45,10 +47,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = await secretStorage.get(scretTokenKey)
-    // Ensure the token will not be reused after URL has been updated
-    if (initialAccessToken && !authenticatedUser) {
-        await secretStorage.delete(scretTokenKey)
-    }
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
@@ -57,7 +55,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const editorTheme = vscode.ColorThemeKind[vscode.window.activeColorTheme.kind]
     const eventSourceType = initializeInstanceVersionNumber(localStorageService, initialAccessToken, initialInstanceURL)
     // Sets global `EventSource` for Node, which is required for streaming search.
-    // Used for VS Code web as well to be able to add Authorization header.
     // Add custom headers to `EventSource` Authorization header when provided
     const customHeaders = endpointRequestHeadersSetting()
     polyfillEventSource(initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {})
@@ -76,16 +73,21 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         session,
     })
     async function login(newtoken: string, newuri: string): Promise<void> {
-        if (newuri) {
-            await secretStorage.store(scretTokenKey, newtoken)
+        try {
+            const newEndpoint = new URL(newuri)
+            const newTokenKey = newEndpoint.hostname
+            await secretStorage.store(newTokenKey, newtoken)
+            await setEndpoint(newEndpoint.href)
+            // stateMachine.emit({ type: 'sourcegraph_url_change' })
+        } catch (error) {
+            console.error(error)
         }
-        await setEndpoint(newuri)
-        await vscode.authentication.getSession(newuri, [], { forceNewSession: true })
     }
     async function logout(): Promise<void> {
         await secretStorage.delete(scretTokenKey)
+        await setEndpoint(undefined)
+        extensionCoreAPI.reloadWindow()
     }
-
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),

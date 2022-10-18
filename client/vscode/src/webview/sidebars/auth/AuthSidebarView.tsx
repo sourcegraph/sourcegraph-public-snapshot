@@ -36,7 +36,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
-    const [usePrivateInstance, setUsePrivateInstance] = useState(false)
+    const [usePrivateInstance, setUsePrivateInstance] = useState(true)
     const signUpURL = VSCE_LINK_AUTH('sign-up')
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
@@ -98,7 +98,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 variables: {},
                 mightContainPrivateInfo: true,
                 overrideAccessToken: accessToken,
-                overrideSourcegraphURL: '',
+                overrideSourcegraphURL: endpointUrl,
             }
             if (usePrivateInstance) {
                 setHostname(new URL(endpointUrl).hostname)
@@ -111,19 +111,15 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     .toPromise()
                 currentAuthStateResult
                     .then(async ({ data }) => {
+                        await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
                         if (data?.currentUser) {
                             setState('success')
-                            // Update access token and instance url in user config for the extension
-                            await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
-                            return
                         }
-                        await extensionCoreAPI.setEndpointUri('', endpointUrl)
                         setState('failure')
                         return
                     })
                     // v2/debt: Disambiguate network vs auth errors like we do in the browser extension.
-                    .catch(async () => {
-                        await extensionCoreAPI.setEndpointUri('', endpointUrl)
+                    .catch(() => {
                         setState('failure')
                     })
             } catch (error) {
