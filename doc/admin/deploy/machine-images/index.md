@@ -35,7 +35,7 @@ Unique AMI IDs can be found in our [release page](https://github.com/sourcegraph
 Our AWS AMIs are all based on the HVM method, which provides us with the ability to create a Sourcegraph instance directly on the virtual machine using the verified Amazon Linux 2 Kernel 5.10 x86_64 HVM as the base image. The following steps are performed during the AMI creation process through our [install script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh):
 1. De-escalate to `ec2-user` to make sure tasks are performed by non-root user
 1. Install Git
-1. Clone the deployment repository
+1. Clone the [deployment repository](https://github.com/sourcegraph/deploy)
 1. Data volumes are formatted and labeled for the AMI instance to mount later
 1. [Add configurations to the kernel](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh?L64-73) that would otherwise limit Sourcegraph search performance
 1. [Adjust the local firewall settings](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/install.sh?L78-84) to ensure k3s cluster networking/DNS can pass through
@@ -44,8 +44,8 @@ Our AWS AMIs are all based on the HVM method, which provides us with the ability
 1. Link the k3s's embedded database to our data disk
 1. Install k3s on root volume
 1. Correct permission of the k3s kube config file located in /etc/rancher/k3s/k3s.yaml
-1. Install Helm
-1. Download Sourcegraph Helm Charts
+1. Install Helm on root volume
+1. Download Sourcegraph Helm Charts on root volume
 1. Deploy Sourcegraph using the local Helm Charts
 1. Save the version number to both root and data volumes
 1. Add a cronjob to run the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot
@@ -68,7 +68,7 @@ Sourcegraph does not have access to your cluster and data.
 
 #### Network and Security
 
-![diagram-export-10_14_2022, 10_18_46 AM](https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png)
+![ami-diagram](https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png)
 
 - K3s exposes the kubelet API to the Kubernetes control plane node through a websocket tunnel in order to eliminate the need to expose extra ports on the worker nodes.
 - No ingress requirements which allow cluster owners to restrict inbound traffic to only traffic within their network
