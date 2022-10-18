@@ -7,7 +7,7 @@ import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sour
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader, SidebarNewNavItem } from '../../components/Sidebar'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -68,9 +68,9 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 {props.items.map(
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
-                            <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                            <SidebarNewNavItem key={label} to={props.match.path + to} exact={exact}>
                                 {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
-                            </SidebarNavItem>
+                            </SidebarNewNavItem>
                         )
                 )}
             </SidebarGroup>
@@ -78,20 +78,20 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 <SidebarGroup>
                     <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (
-                        <SidebarNavItem
+                        <SidebarNewNavItem
                             key={org.id}
                             to={`/organizations/${org.name}/settings`}
                             className="text-truncate text-nowrap align-items-center"
                         >
                             <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
-                        </SidebarNavItem>
+                        </SidebarNewNavItem>
                     ))}
                     {!siteAdminViewingOtherUser &&
                         (window.context.sourcegraphDotComMode &&
                         !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
-                            <SidebarNavItem to={`${props.match.path}/about-organizations`}>
+                            <SidebarNewNavItem to={`${props.match.path}/about-organizations`}>
                                 About organizations
-                            </SidebarNavItem>
+                            </SidebarNewNavItem>
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
@@ -103,8 +103,8 @@ export const UserSettingsSidebar: React.FunctionComponent<
             )}
             <SidebarGroup>
                 <SidebarGroupHeader label="Other actions" />
-                {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
-                {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
+                {!siteAdminViewingOtherUser && <SidebarNewNavItem to="/api/console">API console</SidebarNewNavItem>}
+                {props.authenticatedUser.siteAdmin && <SidebarNewNavItem to="/site-admin">Site admin</SidebarNewNavItem>}
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

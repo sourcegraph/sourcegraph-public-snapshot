@@ -16,3 +16,31 @@
 .chevron {
     color: var(--icon-color);
 }
+
+.newNavItem {
+    display: block;
+    border-radius: 4px;
+    background: transparent;
+    padding: 4px 8px;
+    color: var(--body-color);
+    margin-bottom: 2px;
+
+    &:last-of-type {
+        margin-bottom: 0;
+    }
+
+    &:hover {
+        background: var(--color-bg-2);
+        text-decoration: none;
+        color: var(--body-color);
+    }
+
+    &:focus {
+        background: var(--color-bg-3);
+    }
+}
+
+.current {
+    color: var(--light-text);
+    background: var(--primary);
+}

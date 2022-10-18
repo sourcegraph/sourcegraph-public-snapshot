@@ -7,7 +7,7 @@ import { useRouteMatch } from 'react-router-dom'
 
 import {
     AnchorLink,
-    ButtonLink,
+    ListItem,
     Icon,
     Collapse,
     CollapseHeader,
@@ -35,18 +35,47 @@ export const SidebarNavItem: React.FunctionComponent<
 
     if (source === 'server') {
         return (
-            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
+            <ListItem as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
                 {children}
-            </ButtonLink>
+            </ListItem>
         )
     }
 
     return (
-        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
+        <ListItem to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
             {children}
-        </ButtonLink>
+        </ListItem>
     )
 }
+
+/**
+ * Hacky temporary item of `SideBarGroup`.
+ */
+
+export const SidebarNewNavItem: React.FunctionComponent<React.PropsWithChildren<{
+    to: string,
+    className?: string,
+    exact?: boolean,
+    source?: string
+}>
+    > = ({ children, className, to, exact, source }) => {
+    const routeMatch = useRouteMatch({ path: to, exact })
+
+    if (source === 'server') {
+        return (
+            <AnchorLink to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
+                {children}
+            </AnchorLink>
+        )
+    }
+
+    return (
+        <AnchorLink to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
+            {children}
+        </AnchorLink>
+    )
+}
+
 /**
  *
  * Header of a `SideBarGroup`
@@ -110,7 +139,7 @@ interface SidebarGroupProps {
 }
 
 /**
- * A box of items in the side bar. Use `SideBarGroupHeader` as children.
+ * A box of items in the sidebar. Use `SideBarGroupHeader` as children.
  */
 export const SidebarGroup: React.FunctionComponent<React.PropsWithChildren<SidebarGroupProps>> = ({
     children,
