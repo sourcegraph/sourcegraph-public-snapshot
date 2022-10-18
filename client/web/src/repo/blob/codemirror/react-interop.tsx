@@ -14,6 +14,8 @@ export const Container: React.FunctionComponent<
     React.PropsWithChildren<{ history: History; onMount?: () => void; onRender?: () => void }>
 > = ({ history, onMount, onRender, children }) => {
     useEffect(() => onRender?.())
+    // This should only be called once when the component is mounted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => onMount?.(), [])
 
     return (

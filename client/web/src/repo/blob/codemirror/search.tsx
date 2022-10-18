@@ -16,18 +16,20 @@ import {
 import { Compartment, Extension } from '@codemirror/state'
 import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
-
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
+import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
 
-import { createElement } from '../../../util/dom'
-import { Container } from './react-interop'
-import { History } from 'history'
-import { blobPropsFacet } from '.'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
+
 import { Keybindings, renderShortcutKey } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
+import { createElement } from '../../../util/dom'
+
+import { Container } from './react-interop'
+
+import { blobPropsFacet } from '.'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
@@ -100,7 +102,7 @@ class SearchPanel implements Panel {
         searchQuery: SearchQuery
         overrideBrowserSearch: boolean
         history: History
-    }) {
+    }): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
@@ -182,7 +184,7 @@ class SearchPanel implements Panel {
         )
     }
 
-    private setOverrideBrowserSearch = (override: boolean) =>
+    private setOverrideBrowserSearch = (override: boolean): void =>
         this.view.dispatch({
             effects: setOverrideBrowserFindInPageShortcut.of(override),
         })
