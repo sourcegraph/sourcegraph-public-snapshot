@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -44,6 +45,7 @@ func TestCreateWebhook(t *testing.T) {
 			label:        "basic",
 			codeHostKind: extsvc.KindGitHub,
 			codeHostURN:  ghURN,
+			secret:       &testSecret,
 			expected: types.Webhook{
 				ID:              1,
 				UUID:            whUUID,
@@ -70,6 +72,12 @@ func TestCreateWebhook(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.label, func(t *testing.T) {
 			webhookStore.CreateFunc.SetDefaultReturn(&test.expected, nil)
+			webhookStore.CreateFunc.SetDefaultHook(func(_ context.Context, _ string, _ string, _ int32, secret *encryption.Encryptable) (*types.Webhook, error) {
+				if test.secret != nil {
+					assert.NotZero(t, secret)
+				}
+				return &test.expected, nil
+			})
 			wh, err := ws.CreateWebhook(ctx, test.codeHostKind, test.codeHostURN, test.secret)
 			if test.expectedErr == nil {
 				assert.NoError(t, err)
