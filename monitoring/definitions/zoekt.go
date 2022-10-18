@@ -16,7 +16,6 @@ func Zoekt() *monitoring.Dashboard {
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
 
-		mountInfoDataDir          = "indexDir"
 		nodeExporterInstanceRegex = `node-exporter.*`
 	)
 
