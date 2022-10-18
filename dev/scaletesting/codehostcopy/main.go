@@ -8,9 +8,17 @@ import (
 	"cuelang.org/go/cue/errors"
 )
 
-type CodeHost interface {
+type CodeHostSource interface {
 	ListRepos(ctx context.Context) ([]*url.URL, error)
-	// CreateRepo(ctx context.Context, path string) (*url.URL, error)
+}
+
+type CodeHostDestination interface {
+	CreateRepo(ctx context.Context, name string) (*url.URL, error)
+}
+
+type Repo struct {
+	url  string
+	name string
 }
 
 func main() {
@@ -24,17 +32,30 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gh, err := NewGithubCodeHost(ctx, &cfg.From)
+	gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	res, err := gh.ListRepos(ctx)
+	project, err := gl.CreateRepo(ctx, "fooz")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, u := range res {
-		println(u.String())
-	}
+	println(project.String())
+
+	// gh, err := NewGithubCodeHost(ctx, &cfg.From)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	//
+	// res, err := gh.ListRepos(ctx)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// for _, r := range res {
+	// 	println(r.name)
+	// }
 }
