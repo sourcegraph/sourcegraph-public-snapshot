@@ -22,7 +22,7 @@ type WebhookStore interface {
 	Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, opts DeleteWebhookOpts) error
 	Update(ctx context.Context, actorUID int32, newWebhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 }
@@ -164,16 +164,45 @@ func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webh
 	return webhook, nil
 }
 
-const webhookDeleteQueryFmtstr = `
+const webhookDeleteByUUIDQueryFmtstr = `
 DELETE FROM webhooks
 WHERE uuid = %s
 `
 
-// Delete the webhook. Error is returned when provided UUID is invalid, the
-// webhook is not found or something went wrong during an SQL query.
-func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
-	q := sqlf.Sprintf(webhookDeleteQueryFmtstr, id)
-	result, err := s.ExecResult(ctx, q)
+const webhookDeleteByIDQueryFmtstr = `
+DELETE FROM webhooks
+WHERE id = %d
+`
+
+type DeleteWebhookOpts struct {
+	ID   int32
+	UUID uuid.UUID
+}
+
+func NewDeleteWebhookOptsWithID(ID int32) DeleteWebhookOpts {
+	return DeleteWebhookOpts{ID: ID}
+}
+
+func NewDeleteWebhookOptsWithUUID(UUID uuid.UUID) DeleteWebhookOpts {
+	return DeleteWebhookOpts{UUID: UUID}
+}
+
+// Delete the webhook with given options. Either ID or UUID can be provided.
+//
+// No error is returned if both ID and UUID are provided, ID is used in this
+// case. Error is returned when the webhook is not
+// found or something went wrong during an SQL query.
+func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error {
+	var query *sqlf.Query
+	if opts.ID > 0 {
+		query = sqlf.Sprintf(webhookDeleteByIDQueryFmtstr, opts.ID)
+	} else if opts.UUID == uuid.Nil {
+		return errors.New("Neither ID not UUID is provided to delete the webhook")
+	} else {
+		query = sqlf.Sprintf(webhookDeleteByUUIDQueryFmtstr, opts.UUID)
+	}
+
+	result, err := s.ExecResult(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "running delete SQL query")
 	}
@@ -183,7 +212,7 @@ func (s *webhookStore) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&WebhookNotFoundError{UUID: id}, "failed to delete webhook")
+		return errors.Wrap(NewWebhookNotFoundErrorFromOpts(opts), "failed to delete webhook")
 	}
 	return nil
 }
@@ -204,6 +233,13 @@ func (w *WebhookNotFoundError) Error() string {
 
 func (w *WebhookNotFoundError) NotFound() bool {
 	return true
+}
+
+func NewWebhookNotFoundErrorFromOpts(opts DeleteWebhookOpts) *WebhookNotFoundError {
+	return &WebhookNotFoundError{
+		ID:   opts.ID,
+		UUID: opts.UUID,
+	}
 }
 
 // Update the webhook
