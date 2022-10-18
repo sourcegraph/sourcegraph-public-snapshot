@@ -624,7 +624,7 @@ ranked_uploads_providing_packages AS (
 		) AND
 
 		-- Don't match deleted uploads
-		u.state NOT IN ('deleted', 'deleting')
+		u.state = 'completed'
 ),
 
 -- Filter the set of our original (expired) candidate uploads so that it includes only
