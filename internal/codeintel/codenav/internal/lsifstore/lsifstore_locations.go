@@ -72,7 +72,6 @@ func (s *store) getLocations(ctx context.Context, extractor func(r precise.Range
 }
 
 const locationsDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:{Definitions,References}
 SELECT
 	dump_id,
 	path,
@@ -176,7 +175,6 @@ func (s *store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID i
 }
 
 const translateIDsToResultChunkIndexesQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:translateIDsToResultChunkIndexes
 SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
 `
 
@@ -244,7 +242,6 @@ func (s *store) readLocationsFromResultChunks(ctx context.Context, bundleID int,
 }
 
 const readLocationsFromResultChunksQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:readLocationsFromResultChunks
 SELECT idx, data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx IN (%s)
 `
 
@@ -288,7 +285,6 @@ func (s *store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 }
 
 const readRangesFromDocumentsQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:readRangesFromDocuments
 SELECT
 	dump_id,
 	path,

@@ -11,13 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type changesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -37,6 +39,7 @@ func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphq
 	if r.repoAccessible() {
 		return &visibleChangesetApplyPreviewResolver{
 			store:                r.store,
+			gitserverClient:      r.gitserverClient,
 			mapping:              r.mapping,
 			preloadedNextSync:    r.preloadedNextSync,
 			preloadedBatchChange: r.preloadedBatchChange,
@@ -51,6 +54,7 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 	if !r.repoAccessible() {
 		return &hiddenChangesetApplyPreviewResolver{
 			store:             r.store,
+			gitserverClient:   r.gitserverClient,
 			mapping:           r.mapping,
 			preloadedNextSync: r.preloadedNextSync,
 		}, true
@@ -59,7 +63,8 @@ func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphql
 }
 
 type hiddenChangesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -80,13 +85,15 @@ func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphq
 func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
 	return &hiddenApplyPreviewTargetsResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		mapping:           r.mapping,
 		preloadedNextSync: r.preloadedNextSync,
 	}
 }
 
 type hiddenApplyPreviewTargetsResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -127,11 +134,12 @@ func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (grap
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.mapping.Changeset, nil, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, nil, r.preloadedNextSync), nil
 }
 
 type visibleChangesetApplyPreviewResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -177,6 +185,7 @@ func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graph
 func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
 	return &visibleApplyPreviewTargetsResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		mapping:           r.mapping,
 		preloadedNextSync: r.preloadedNextSync,
 	}
@@ -293,7 +302,8 @@ func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Co
 }
 
 type visibleApplyPreviewTargetsResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -334,7 +344,7 @@ func (r *visibleApplyPreviewTargetsResolver) Changeset(ctx context.Context) (gra
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
 }
 
 type changesetSpecDeltaResolver struct {

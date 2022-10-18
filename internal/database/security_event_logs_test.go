@@ -9,9 +9,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSecurityEventLogs_ValidInfo(t *testing.T) {
@@ -109,34 +107,4 @@ func assertEventField(t *testing.T, field map[string]any) {
 	assert.NotEmpty(t, field["argument"])
 	assert.NotEmpty(t, field["version"])
 	assert.NotEmpty(t, field["timestamp"])
-}
-
-func TestSecurityEventLogs_WithAuditLogDisabled(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	conf.Mock(
-		&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				Log: &schema.Log{
-					AuditLog: &schema.AuditLog{
-						SecurityEvents: false,
-					},
-				},
-			},
-		},
-	)
-	defer conf.Mock(nil)
-
-	logger, exportLogs := logtest.Captured(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	err := db.SecurityEventLogs().Insert(ctx, &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""})
-	assert.Nilf(t, err, "insert failed")
-
-	logs := exportLogs()
-	auditLogs := filterAudit(logs)
-	assert.Equal(t, 0, len(auditLogs))
 }

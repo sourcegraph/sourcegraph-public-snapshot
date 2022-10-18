@@ -187,7 +187,7 @@ func TestGetOldestCommitDate(t *testing.T) {
 		types.Upload{ID: 8, State: "completed", RepositoryID: 51},
 	)
 
-	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET committed_at = '-infinity' WHERE id = 3"); err != nil {
+	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(3), "-infinity"); err != nil {
 		t.Fatalf("unexpected error updating commit date %s", err)
 	}
 

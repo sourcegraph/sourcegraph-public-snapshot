@@ -23,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -266,11 +268,11 @@ func (r *RepositoryResolver) Enabled() bool { return true }
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
 // https://github.com/sourcegraph/sourcegraph/pull/4668
-func (r *RepositoryResolver) CreatedAt() DateTime {
-	return DateTime{Time: time.Now()}
+func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: time.Now()}
 }
 
-func (r *RepositoryResolver) UpdatedAt() *DateTime {
+func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }
 
@@ -625,6 +627,10 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, nil
@@ -643,6 +649,10 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 		return &EmptyResponse{}, err
 	}
 
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, nil
@@ -659,6 +669,10 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 ) (*EmptyResponse, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)

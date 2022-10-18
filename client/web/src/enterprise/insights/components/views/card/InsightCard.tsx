@@ -1,4 +1,4 @@
-import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
+import React, { FC, forwardRef, HTMLAttributes, ReactNode, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -76,12 +76,16 @@ const InsightCardHeader = forwardRef(function InsightCardHeader(props, reference
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
-    <InsightCardBanner>
-        <LoadingSpinner />
-        {props.children}
-    </InsightCardBanner>
-)
+const InsightCardLoading: FC<PropsWithChildren<HTMLAttributes<HTMLElement>>> = props => {
+    const { 'aria-label': ariaLabel = 'loading', children, ...attributes } = props
+
+    return (
+        <InsightCardBanner {...attributes}>
+            <LoadingSpinner aria-label={ariaLabel} />
+            {children}
+        </InsightCardBanner>
+    )
+}
 
 const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>

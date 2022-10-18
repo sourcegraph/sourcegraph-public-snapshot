@@ -26,9 +26,10 @@ import (
 // repository. Similarly, resolution of a path holds a lock associated with the parent commit.
 type CachedLocationResolver struct {
 	sync.RWMutex
-	children map[api.RepoID]*cachedRepositoryResolver
-	db       database.DB
-	logger   log.Logger
+	children        map[api.RepoID]*cachedRepositoryResolver
+	db              database.DB
+	gitserverClient gitserver.Client
+	logger          log.Logger
 }
 
 type cachedRepositoryResolver struct {
@@ -44,11 +45,12 @@ type cachedCommitResolver struct {
 }
 
 // NewCachedLocationResolver creates a location resolver with an empty cache.
-func NewCachedLocationResolver(db database.DB) *CachedLocationResolver {
+func NewCachedLocationResolver(db database.DB, gitserverClient gitserver.Client) *CachedLocationResolver {
 	return &CachedLocationResolver{
-		logger:   log.Scoped("CachedLocationResolver", ""),
-		db:       db,
-		children: map[api.RepoID]*cachedRepositoryResolver{},
+		logger:          log.Scoped("CachedLocationResolver", ""),
+		db:              db,
+		gitserverClient: gitserverClient,
+		children:        map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }
 
@@ -203,7 +205,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*RepositoryResolver, error) {
-	repo, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).Get(ctx, id)
+	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -223,7 +225,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	commitID, err := gitserver.NewClient(r.db).ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	commitID, err := r.gitserverClient.ResolveRevision(ctx, repo.Name, commit, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

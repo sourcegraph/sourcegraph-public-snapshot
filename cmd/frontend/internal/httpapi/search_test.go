@@ -32,17 +32,19 @@ func TestServeConfiguration(t *testing.T) {
 		Name:  "6",
 		Stars: 6,
 	}}
+
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID("!" + spec), nil
+	})
+
 	srv := &searchIndexerServer{
-		RepoStore: &fakeRepoStore{Repos: repos},
+		RepoStore:       &fakeRepoStore{Repos: repos},
+		gitserverClient: gsClient,
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
 	}
-
-	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("!" + spec), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	data := url.Values{
 		"repoID": []string{"1", "5", "6"},

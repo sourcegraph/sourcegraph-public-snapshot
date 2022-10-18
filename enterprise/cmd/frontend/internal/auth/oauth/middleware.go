@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -169,7 +168,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 
-		auther, err := eauth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
+		auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
 		if err != nil {
 			logger.Error("Unexpected error while creating Auth token.", log.Error(err))
 			http.Error(w, "Unexpected error while fetching installation data.", http.StatusBadRequest)

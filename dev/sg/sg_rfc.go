@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/rfc"
@@ -11,6 +14,12 @@ import (
 var rfcCommand = &cli.Command{
 	Name:  "rfc",
 	Usage: `List, search, and open Sourcegraph RFCs`,
+	Description: fmt.Sprintf("Sourcegraph RFCs live in the following drives - see flags to configure which drive to query:\n\n%s", func() (out string) {
+		for _, d := range []rfc.DriveSpec{rfc.PublicDrive, rfc.PrivateDrive} {
+			out += fmt.Sprintf("* %s: https://drive.google.com/drive/folders/%s\n", d.DisplayName, d.FolderID)
+		}
+		return out
+	}()),
 	UsageText: `
 # List all Public RFCs
 sg rfc list
@@ -34,43 +43,53 @@ sg rfc --private open 420
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:     "private",
-			Usage:    "perform the rfc action on the private RFC drive",
+			Usage:    "perform the RFC action on the private RFC drive",
 			Required: false,
 			Value:    false,
 		},
 	},
-	Action: rfcExec,
-}
-
-func rfcExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		args = append(args, "list")
-	}
-
-	driveSpec := rfc.PublicDrive
-	if ctx.Bool("private") {
-		driveSpec = rfc.PrivateDrive
-	}
-
-	switch args[0] {
-	case "list":
-		return rfc.List(ctx.Context, driveSpec, std.Out)
-
-	case "search":
-		if len(args) != 2 {
-			return errors.New("no search query given")
-		}
-
-		return rfc.Search(ctx.Context, args[1], driveSpec, std.Out)
-
-	case "open":
-		if len(args) != 2 {
-			return errors.New("no number given")
-		}
-
-		return rfc.Open(ctx.Context, args[1], driveSpec, std.Out)
-	}
-
-	return nil
+	Subcommands: []*cli.Command{
+		{
+			Name:      "list",
+			ArgsUsage: " ",
+			Usage:     "List Sourcegraph RFCs",
+			Action: func(c *cli.Context) error {
+				driveSpec := rfc.PublicDrive
+				if c.Bool("private") {
+					driveSpec = rfc.PrivateDrive
+				}
+				return rfc.List(c.Context, driveSpec, std.Out)
+			},
+		},
+		{
+			Name:      "search",
+			ArgsUsage: "[query]",
+			Usage:     "Search Sourcegraph RFCs",
+			Action: func(c *cli.Context) error {
+				driveSpec := rfc.PublicDrive
+				if c.Bool("private") {
+					driveSpec = rfc.PrivateDrive
+				}
+				if c.Args().Len() == 0 {
+					return errors.New("no search query given")
+				}
+				return rfc.Search(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out)
+			},
+		},
+		{
+			Name:      "open",
+			ArgsUsage: "[number]",
+			Usage:     "Open a Sourcegraph RFC - find and list RFC numbers with 'sg rfc list' or 'sg rfc search'",
+			Action: func(c *cli.Context) error {
+				driveSpec := rfc.PublicDrive
+				if c.Bool("private") {
+					driveSpec = rfc.PrivateDrive
+				}
+				if c.Args().Len() == 0 {
+					return errors.New("no RFC given")
+				}
+				return rfc.Open(c.Context, c.Args().First(), driveSpec, std.Out)
+			},
+		},
+	},
 }

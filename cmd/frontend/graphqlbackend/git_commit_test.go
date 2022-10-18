@@ -154,7 +154,6 @@ func TestGitCommitFileNames(t *testing.T) {
 	gitserverClient.LsFilesFunc.SetDefaultReturn([]string{"a", "b"}, nil)
 	defer func() {
 		backend.Mocks = backend.MockServices{}
-		gitserver.ResetMocks()
 	}()
 
 	RunTests(t, []*Test{

@@ -23,8 +23,7 @@ import (
 
 // webhookBuildJob implements the Job interface
 // from package job
-type webhookBuildJob struct {
-}
+type webhookBuildJob struct{}
 
 func NewWebhookBuildJob() *webhookBuildJob {
 	return &webhookBuildJob{}
@@ -69,7 +68,7 @@ func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goro
 	}, nil
 }
 
-func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
+func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
 	workerMetrics := workerutil.NewMetrics(observationContext, fmt.Sprintf("%s_processor", workerName))
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics

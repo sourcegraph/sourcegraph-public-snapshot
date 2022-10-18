@@ -286,7 +286,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 }
 
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
 UPDATE
 	batch_spec_workspaces
 SET

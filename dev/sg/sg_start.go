@@ -166,6 +166,16 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
+	pid, exists, err := run.PidExistsWithArgs(os.Args[1:])
+	if err != nil {
+		std.Out.WriteAlertf("Could not check if 'sg %s' is already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
+		return errors.Wrap(err, "Failed to check if sg is already running with the same arguments or not.")
+	}
+	if exists {
+		std.Out.WriteAlertf("Found 'sg %s' already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
+		return errors.New("no concurrent sg start with same arguments allowed")
+	}
+
 	commandset := args[0]
 	set, ok := config.Commandsets[commandset]
 	if !ok {

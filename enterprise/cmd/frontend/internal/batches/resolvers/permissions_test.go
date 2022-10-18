@@ -11,6 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -343,16 +345,40 @@ func TestPermissionLevels(t *testing.T) {
 					wantViewerCanAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing created-from-raw batch spec in org they belong to",
+					name:                    "non-site-admin viewing other's batch spec",
 					currentUser:             userID,
-					batchSpec:               orgBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: true,
+					batchSpec:               adminBatchSpec,
+					wantViewerCanAdminister: false,
+				},
+				{
+					name:                    "non-site-admin viewing other's created-from-raw batch spec",
+					currentUser:             userID,
+					batchSpec:               adminBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: false,
 				},
 				{
 					name:                    "non-site-admin viewing batch spec in org they belong to",
 					currentUser:             userID,
 					batchSpec:               orgBatchSpec,
 					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing batch spec in org they do not belong to",
+					currentUser:             nonOrgUserID,
+					batchSpec:               orgBatchSpec,
+					wantViewerCanAdminister: false,
+				},
+				{
+					name:                    "non-site-admin viewing created-from-raw batch spec in org they belong to",
+					currentUser:             userID,
+					batchSpec:               orgBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing created-from-raw batch spec in org they do not belong to",
+					currentUser:             nonOrgUserID,
+					batchSpec:               orgBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: false,
 				},
 			}
 
@@ -376,56 +402,6 @@ func TestPermissionLevels(t *testing.T) {
 					}
 					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
 						t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
-					}
-				})
-			}
-		})
-
-		t.Run("NonAdminBatchSpecByID", func(t *testing.T) {
-			tests := []struct {
-				name        string
-				currentUser int32
-				batchSpec   string
-			}{
-				{
-					name:        "non-site-admin viewing other's batch spec",
-					currentUser: userID,
-					batchSpec:   adminBatchSpec,
-				},
-				{
-					name:        "non-site-admin viewing other's created-from-raw batch spec",
-					currentUser: userID,
-					batchSpec:   adminBatchSpecCreatedFromRawRandID,
-				},
-				{
-					name:        "non-site-admin viewing batch spec in org they do not belong to",
-					currentUser: nonOrgUserID,
-					batchSpec:   orgBatchSpec,
-				},
-				{
-					name:        "non-site-admin viewing created-from-raw batch spec in org they do not belong to",
-					currentUser: nonOrgUserID,
-					batchSpec:   orgBatchSpecCreatedFromRawRandID,
-				},
-			}
-
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalBatchSpecRandID(tc.batchSpec))
-
-					var res struct{ Node *apitest.BatchSpec }
-
-					input := map[string]any{"batchSpec": graphqlID}
-					queryBatchSpec := `
-				  query($batchSpec: ID!) {
-				    node(id: $batchSpec) { ... on BatchSpec { id } }
-				  }`
-
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
-
-					if res.Node != nil {
-						t.Fatal("queried batch spec was visible when it should not be")
 					}
 				})
 			}
@@ -1380,6 +1356,7 @@ func TestRepositoryPermissions(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
+	gitserverClient := gitserver.NewMockClient()
 	sr := &Resolver{store: bstore}
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -1412,7 +1389,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		// Create 2 changesets for 2 repositories
 		changesetBaseRefOid := "f00b4r"
 		changesetHeadRefOid := "b4rf00"
-		mockRepoComparison(t, changesetBaseRefOid, changesetHeadRefOid, testDiff)
+		mockRepoComparison(t, gitserverClient, changesetBaseRefOid, changesetHeadRefOid, testDiff)
 		changesetDiffStat := apitest.DiffStat{Added: 2, Deleted: 2}
 
 		changesets := make([]*btypes.Changeset, 0, len(repos))

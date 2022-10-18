@@ -32,7 +32,7 @@ func (r *lsifIndexesWithRepositoryNamespaceResolver) Root() string {
 func (r *lsifIndexesWithRepositoryNamespaceResolver) Indexer() types.CodeIntelIndexerResolver {
 	// drop the tag if it exists
 	if idx, ok := types.ImageToIndexer[strings.Split(r.indexesSummary.Indexer, ":")[0]]; ok {
-		return idx
+		return types.NewCodeIntelIndexerResolverFrom(idx)
 	}
 
 	return types.NewCodeIntelIndexerResolver(r.indexesSummary.Indexer)

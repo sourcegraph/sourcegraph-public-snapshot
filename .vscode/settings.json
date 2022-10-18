@@ -50,8 +50,7 @@
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {
-  },
+  "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],

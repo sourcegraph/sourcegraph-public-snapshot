@@ -76,6 +76,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "insight_series_backfill_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "insight_series_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -1113,6 +1122,99 @@
       "Triggers": []
     },
     {
+      "Name": "insight_series_backfill",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "estimated_cost",
+          "Index": 4,
+          "TypeName": "double precision",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('insight_series_backfill_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_iterator_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "series_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "state",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'new'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "insight_series_backfill_pk",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX insight_series_backfill_pk ON insight_series_backfill USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "insight_series_backfill_series_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "insight_view",
       "Comment": "Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.",
       "Columns": [
@@ -1536,6 +1638,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "backfill_id",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "cancel",
           "Index": 13,
           "TypeName": "boolean",
@@ -1727,7 +1842,15 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "insights_background_jobs_backfill_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series_backfill",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -2652,5 +2775,14 @@
       "Triggers": []
     }
   ],
-  "Views": null
+  "Views": [
+    {
+      "Name": "insights_jobs_backfill_in_progress",
+      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'processing'::text);"
+    },
+    {
+      "Name": "insights_jobs_backfill_new",
+      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'new'::text);"
+    }
+  ]
 }

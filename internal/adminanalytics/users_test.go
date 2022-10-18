@@ -11,11 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type EventLogRow struct {
 	Name        string
-	UserId      int
+	UserId      int32
 	AnonymousId string
 	Time        time.Time
 }
@@ -41,30 +42,63 @@ func createEventLogs(db database.DB, rows []EventLogRow) error {
 	return nil
 }
 
+var employeeDetails = []database.NewUser{
+	{Username: "managed-naman", Email: "naman@sourcegraph.com"},
+	{Username: "sourcegraph-management-sqs", Email: "sqs@sourcegraph.com"},
+	{Username: "sourcegraph-admin", Email: "john@sourcegraph.com"},
+}
+
+func createEmployees(db database.DB) ([]*types.User, error) {
+	ctx := context.Background()
+
+	users := make([]*types.User, 0)
+	for _, detail := range employeeDetails {
+		user, err := db.Users().Create(ctx, database.NewUser{Username: detail.Username, Email: detail.Email, EmailVerificationCode: "abc"})
+		if err != nil {
+			return users, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func TestUserActivityLastMonth(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
-	err := createEventLogs(db, []EventLogRow{
-		{"SearchNotebookCreated", 1, "1", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 1, "2", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 2, "3", now.AddDate(0, 0, -5)},
+	eventLogs := []EventLogRow{
+		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, 0, -5)},
+		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -5)},
+		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "4", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -2, 0)},
 		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
 		{"SearchNotebookCreated", 0, "backend", now.AddDate(0, 0, -5)},
-		{"ViewSignIn", 3, "8", now.AddDate(0, 0, -5)},
-	})
+		{"ViewSignIn", 300000, "8", now.AddDate(0, 0, -5)},
+	}
+
+	employeeUsers, err := createEmployees(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, user := range employeeUsers {
+		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now.AddDate(0, 0, -5)})
+	}
+
+	err = createEventLogs(db, eventLogs)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	store := Users{
+		Ctx:       ctx,
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
@@ -134,27 +168,38 @@ func TestUserFrequencyLastMonth(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
-	err := createEventLogs(db, []EventLogRow{
-		{"SearchNotebookCreated", 1, "1", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 1, "2", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 1, "2", now.AddDate(0, 0, -4)},
-		{"SearchNotebookCreated", 1, "2", now.AddDate(0, 0, -3)},
-		{"SearchNotebookCreated", 2, "3", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 2, "3", now.AddDate(0, 0, -5)},
+	eventLogs := []EventLogRow{
+		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, 0, -5)},
+		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -5)},
+		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -4)},
+		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -3)},
+		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
+		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "4", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -4)},
 		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -2, 0)},
 		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
 		{"SearchNotebookCreated", 0, "backend", now.AddDate(0, 0, -5)},
-		{"ViewSignIn", 3, "8", now.AddDate(0, 0, -5)},
-	})
+		{"ViewSignIn", 300000, "8", now.AddDate(0, 0, -5)},
+	}
+
+	employeeUsers, err := createEmployees(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, user := range employeeUsers {
+		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now.AddDate(0, 0, -5)})
+	}
+
+	err = createEventLogs(db, eventLogs)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	store := Users{
+		Ctx:       ctx,
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
@@ -211,28 +256,39 @@ func TestMonthlyActiveUsersLast3Month(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
-	err := createEventLogs(db, []EventLogRow{
-		{"SearchNotebookCreated", 1, "1", now},
-		{"SearchNotebookCreated", 1, "1", now},
-		{"SearchNotebookCreated", 1, "1", now.AddDate(0, -1, 0)},
-		{"SearchNotebookCreated", 1, "1", now.AddDate(0, -1, 0)},
-		{"SearchNotebookCreated", 1, "1", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 2, "3", now},
-		{"SearchNotebookCreated", 2, "3", now.AddDate(0, -1, 0)},
+	eventLogs := []EventLogRow{
+		{"SearchNotebookCreated", 100000, "1", now},
+		{"SearchNotebookCreated", 100000, "1", now},
+		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -1, 0)},
+		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -1, 0)},
+		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -2, 0)},
+		{"SearchNotebookCreated", 200000, "3", now},
+		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, -1, 0)},
 		{"SearchNotebookCreated", 0, "4", now.AddDate(0, -2, 0)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, -2, 0)},
 		{"SearchNotebookCreated", 0, "5", now.AddDate(0, -2, 0)},
 		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -3, 0)},
 		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
 		{"SearchNotebookCreated", 0, "backend", now},
-		{"ViewSignIn", 3, "8", now},
-	})
+		{"ViewSignIn", 300000, "8", now},
+	}
+
+	employeeUsers, err := createEmployees(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, user := range employeeUsers {
+		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now})
+	}
+
+	err = createEventLogs(db, eventLogs)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	store := Users{
+		Ctx:       ctx,
 		DateRange: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,

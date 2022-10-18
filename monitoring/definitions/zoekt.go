@@ -15,7 +15,11 @@ func Zoekt() *monitoring.Dashboard {
 		indexServerContainerName = "zoekt-indexserver"
 		webserverContainerName   = "zoekt-webserver"
 		bundledContainerName     = "indexed-search"
+
+		nodeExporterInstanceRegex = `node-exporter.*`
 	)
+
+	joinOnMountInfo := "zoekt_indexserver_mount_point_info{mount_name=\"indexDir\",instance=~`${instance:regex}`} * on (nodename, device) group_left"
 
 	return &monitoring.Dashboard{
 		Name:                     "zoekt",
@@ -913,6 +917,252 @@ func Zoekt() *monitoring.Dashboard {
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "An increase in errors while receiving could indicate a networking issue.",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Disk I/O metrics (only available on Sourcegraph internal instances)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "data_disk_reads_sec",
+							Description: "data disk read request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.ReadsPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The number of read requests that were issued to the device per second.
+
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+						{
+							Name:        "data_disk_writes_sec",
+							Description: "data disk write request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.WritesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The number of write requests that were issued to the device per second.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "data_disk_read_throughput",
+							Description: "data disk read throughput over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The amount of data that was read from the device per second.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+						{
+							Name:        "data_disk_write_throughput",
+							Description: "data disk write throughput over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.BytesPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The amount of data that was written to the device per second.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "data_disk_read_duration",
+							Description: "data disk average read duration over 2m (per instance)",
+
+							Query: fmt.Sprintf("((%s) / (%s))",
+								fmt.Sprintf("%s rate(node_disk_read_time_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							),
+							NoAlert: true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Seconds).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The average time for read requests issued to the device to be served. This includes the time spent
+								by the requests in queue and the time spent servicing them.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+						{
+							Name:        "data_disk_write_duration",
+							Description: "data disk average write duration over 2m (per instance)",
+
+							Query: fmt.Sprintf("((%s) / (%s))",
+								fmt.Sprintf("%s rate(node_disk_write_time_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							),
+							NoAlert: true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Seconds).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The average time for write requests issued to the device to be served. This includes the time spent
+								by the requests in queue and the time spent servicing them.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "data_disk_read_request_size",
+							Description: "data disk average read request size over 2m (per instance)",
+							Query: fmt.Sprintf("((%s) / (%s))",
+								fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							),
+							NoAlert: true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Bytes).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The average size of read requests that were issued to the device.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+						`,
+						},
+						{
+							Name:        "data_disk_write_request_size",
+							Description: "data disk average write request size over 2m (per instance)",
+							Query: fmt.Sprintf("((%s) / (%s))",
+								fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							),
+							NoAlert: true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.Bytes).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The average size of write requests that were issued to the device.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+						`,
+						},
+					},
+					{
+						{
+							Name:        "data_disk_reads_merged_sec",
+							Description: "data disk merged read request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_reads_merged_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.RequestsPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The number of read requests merged per second that were queued to the device.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+						`,
+						},
+						{
+							Name:        "data_disk_writes_merged_sec",
+							Description: "data disk merged writes request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_writes_merged_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit(monitoring.RequestsPerSecond).
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The number of write requests merged per second that were queued to the device.
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+						`,
+						},
+					},
+					{
+						{
+
+							Name:        "data_disk_average_queue_size",
+							Description: "data disk average queue size over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_io_time_weighted_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+								Unit("req").
+								With(monitoring.PanelOptions.LegendOnRight()),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The number of I/O operations that were being queued or being serviced. See
+								https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
+								Note: Disk statistics are per _device_, not per _service_. In certain environments (such
+								as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
+
+								These statistics are best interpreted as the load experienced by the device Zoekt is
+								using, not the load Zoekt is solely responsible for causing.
+`,
 						},
 					},
 				},

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -47,8 +46,6 @@ func (s *Service) indexRepositories(ctx context.Context) (err error) {
 	s.logger.Debug("Refreshed all ranking indexes")
 	return nil
 }
-
-var symbolPattern = lazyregexp.New(`func ([A-Z][^(]*)`)
 
 func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})

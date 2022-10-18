@@ -198,9 +198,6 @@ func TestReposGetInventory(t *testing.T) {
 		logger:          logtest.Scoped(t),
 		gitserverClient: gitserverClient,
 	}
-	defer func() {
-		gitserver.ResetMocks()
-	}()
 
 	tests := []struct {
 		useEnhancedLanguageDetection bool

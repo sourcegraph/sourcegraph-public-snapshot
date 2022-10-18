@@ -13,6 +13,8 @@ type AutoIndexingServiceBackgroundJobs interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
+		failedIndexBatchSize int,
+		failedIndexMaxAge time.Duration,
 	) goroutine.BackgroundRoutine
 
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter

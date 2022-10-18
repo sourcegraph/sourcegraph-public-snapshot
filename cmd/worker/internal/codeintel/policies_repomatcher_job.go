@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/background/repomatcher"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -34,5 +35,5 @@ func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logg
 		return nil, err
 	}
 
-	return repomatcher.NewRepositoryMatcher(services.PoliciesService), nil
+	return repomatcher.NewRepositoryMatcher(policies.GetBackgroundJobs(services.PoliciesService)), nil
 }

@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -17,6 +17,8 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { PageTitle } from '../PageTitle'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
 interface Props extends ActivationProps, TelemetryProps {
@@ -26,6 +28,9 @@ interface Props extends ActivationProps, TelemetryProps {
     afterDeleteRoute: string
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
+
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
@@ -43,6 +48,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     userID,
     telemetryService,
     authenticatedUser,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
@@ -79,6 +86,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
         }
     }, [])
 
+    const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
+
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
     if (!isManagingOtherUser && noExternalServices) {
@@ -94,19 +103,23 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 actions={
                     <>
                         {!isManagingOtherUser && (
-                            <Button
+                            <ButtonLink
                                 className="test-goto-add-external-service-page"
                                 to={`${routingPrefix}/external-services/new`}
                                 variant="primary"
                                 as={Link}
+                                disabled={editingDisabled}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                            </Button>
+                            </ButtonLink>
                         )}
                     </>
                 }
                 className="mb-3"
             />
+
+            {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">
                 <FilteredConnection<
@@ -127,6 +140,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         history,
                         routingPrefix,
                         afterDeleteRoute,
+                        editingDisabled,
                     }}
                     hideSearch={true}
                     cursorPaging={true}

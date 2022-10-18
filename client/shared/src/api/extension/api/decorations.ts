@@ -11,7 +11,8 @@ import { hasProperty } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 // LINE DECORATIONS
-
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: This errors even though we removed config from TextDocumentDecorationType
 export const createDecorationType = (): TextDocumentDecorationType => ({ key: uniqueId('TextDocumentDecorationType') })
 
 /**

@@ -38,7 +38,6 @@ func (s *store) RepoName(ctx context.Context, repositoryID int) (_ string, err e
 }
 
 const repoNameQuery = `
--- source: internal/codeintel/stores/dbstore/repos.go:RepoName
 SELECT name FROM repo WHERE id = %s
 `
 
@@ -48,7 +47,6 @@ func (s *store) RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]
 }
 
 const repoNamesQuery = `
--- source: internal/codeintel/stores/dbstore/repos.go:RepoNames
 SELECT id, name FROM repo WHERE id = ANY(%s)
 `
 

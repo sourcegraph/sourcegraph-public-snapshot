@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -80,7 +80,7 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
-		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 			ForIndexing:  true,
 			Limit:        policyBatchSize,
@@ -124,30 +124,6 @@ func (b backgroundJob) NewOnDemandScheduler(interval time.Duration, batchSize in
 			return nil
 		}
 
-		return b.processRepoRevs(ctx, batchSize)
+		return b.autoindexingSvc.ProcessRepoRevs(ctx, batchSize)
 	}))
-}
-
-func (b backgroundJob) processRepoRevs(ctx context.Context, batchSize int) (err error) {
-	tx, err := b.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-	if err != nil {
-		return err
-	}
-
-	ids := make([]int, 0, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		if _, err := b.autoindexingSvc.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
-			return err
-		}
-
-		ids = append(ids, repoRev.ID)
-	}
-
-	return tx.MarkRepoRevsAsProcessed(ctx, ids)
 }

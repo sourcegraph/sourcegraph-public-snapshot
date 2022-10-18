@@ -62,7 +62,7 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 				return
 			}
 			// 🚨 SECURITY: check if user can access external service
-			err = backend.CheckExternalServiceAccess(ctx, a.db, svc.NamespaceUserID, svc.NamespaceOrgID)
+			err = backend.CheckExternalServiceAccess(ctx, a.db)
 			if err != nil {
 				a.err = err
 				return

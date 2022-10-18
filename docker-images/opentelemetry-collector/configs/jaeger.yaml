@@ -21,7 +21,7 @@ extensions:
   health_check:
     port: 13133
   zpages:
-   endpoint: "localhost:55679"
+   endpoint: ":55679"
 
 service:
   extensions: [health_check,zpages]

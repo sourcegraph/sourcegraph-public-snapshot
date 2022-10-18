@@ -8,7 +8,6 @@ import (
 
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -281,8 +280,8 @@ func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
-	n, ok := r.Node.(*executor.ExecutorResolver)
+func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
+	n, ok := r.Node.(*ExecutorResolver)
 	return n, ok
 }
 

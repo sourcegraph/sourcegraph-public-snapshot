@@ -190,7 +190,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, mockState.MockClient, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}

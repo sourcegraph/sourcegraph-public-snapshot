@@ -1059,6 +1059,57 @@ Flags:
 * `--fix, -f`: Fix all checks
 * `--oss`: Omit Sourcegraph-teammate-specific setup
 
+## sg src
+
+Run src-cli on a given instance defined with 'sg src-instance'.
+
+```sh
+$ sg src [src-cli args]
+$ sg src help # get src-cli help
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg src-instance
+
+Interact with Sourcegraph instances that 'sg src' will use.
+
+```sh
+$ sg src-instance [command]
+```
+
+### sg src-instance register
+
+Register (or edit an existing) Sourcegraph instance to target with src-cli.
+
+```sh
+$ sg src instance register [name] [endpoint]
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance use
+
+Set current src-cli instance to use with 'sg src'.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance list
+
+List registered instances for src-cli.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg teammate
 
 Get information about Sourcegraph teammates.
@@ -1100,6 +1151,12 @@ Flags:
 
 List, search, and open Sourcegraph RFCs.
 
+Sourcegraph RFCs live in the following drives - see flags to configure which drive to query:
+
+* Public: https://drive.google.com/drive/folders/1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa
+* Private: https://drive.google.com/drive/folders/1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv
+
+
 ```sh
 # List all Public RFCs
 $ sg rfc list
@@ -1122,8 +1179,36 @@ $ sg rfc --private open 420
 
 Flags:
 
+* `--private`: perform the RFC action on the private RFC drive
+
+### sg rfc list
+
+List Sourcegraph RFCs.
+
+
+Flags:
+
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--private`: perform the rfc action on the private RFC drive
+
+### sg rfc search
+
+Search Sourcegraph RFCs.
+
+Arguments: `[query]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc open
+
+Open a Sourcegraph RFC - find and list RFC numbers with 'sg rfc list' or 'sg rfc search'.
+
+Arguments: `[number]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg adr
 
@@ -1205,12 +1290,14 @@ Available preset environments:
 * s2
 * dotcom
 * k8s
+* scaletesting
 
 ```sh
 # See which version is deployed on a preset environment
 $ sg live s2
 $ sg live dotcom
 $ sg live k8s
+$ sg live scaletesting
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com

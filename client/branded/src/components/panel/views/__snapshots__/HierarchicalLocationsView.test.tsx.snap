@@ -12,7 +12,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       >
         <div>
           <div
-            class="test-search-result resultContainer copyButtonContainer resultContainer"
+            class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -38,67 +39,40 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   />
                 </svg>
                 <div
-                  class="headerTitle"
+                  class="headerTitle test-search-result-label"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <div
+                    class="titleInner mutedRepoFileLink"
+                  >
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar"
+                    >
+                      foo/bar
+                    </a>
                     <span
-                      class="titleInner mutedRepoFileLink"
+                      aria-hidden="true"
                     >
-                      <span>
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar"
-                        >
-                          foo/bar
-                        </a>
-                        <span
-                          aria-hidden="true"
-                        >
-                           ›
-                        </span>
-                         
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar/-/blob/?subtree=true"
-                        >
-                          <strong />
-                        </a>
-                      </span>
+                       ›
                     </span>
-                    <button
-                      aria-label="Copy path to clipboard"
-                      class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
-                      type="button"
+                     
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
-                      <svg
-                        aria-hidden="true"
-                        class="mdi-icon iconInline copyIcon"
-                        fill="currentColor"
-                        height="24"
-                        role="img"
-                        viewBox="0 0 24 24"
-                        width="24"
-                      >
-                        <path
-                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
+                      <strong />
+                    </a>
+                  </div>
                   <span
                     class="ml-2 headerDescription"
                   />
                 </div>
               </div>
               <div
-                class="result"
+                class="collapsibleResults"
               >
-                <div
-                  data-expanded="true"
-                  data-testid="file-search-result"
-                >
+                <div>
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"
@@ -259,7 +233,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       >
         <div>
           <div
-            class="test-search-result resultContainer copyButtonContainer resultContainer"
+            class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -285,69 +260,42 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   />
                 </svg>
                 <div
-                  class="headerTitle"
+                  class="headerTitle test-search-result-label"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <div
+                    class="titleInner mutedRepoFileLink"
+                  >
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar"
+                    >
+                      foo/bar
+                    </a>
                     <span
-                      class="titleInner mutedRepoFileLink"
+                      aria-hidden="true"
                     >
-                      <span>
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar"
-                        >
-                          foo/bar
-                        </a>
-                        <span
-                          aria-hidden="true"
-                        >
-                           ›
-                        </span>
-                         
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
-                        >
-                          <strong>
-                            file1.txt
-                          </strong>
-                        </a>
-                      </span>
+                       ›
                     </span>
-                    <button
-                      aria-label="Copy path to clipboard"
-                      class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
-                      type="button"
+                     
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                     >
-                      <svg
-                        aria-hidden="true"
-                        class="mdi-icon iconInline copyIcon"
-                        fill="currentColor"
-                        height="24"
-                        role="img"
-                        viewBox="0 0 24 24"
-                        width="24"
-                      >
-                        <path
-                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
+                      <strong>
+                        file1.txt
+                      </strong>
+                    </a>
+                  </div>
                   <span
                     class="ml-2 headerDescription"
                   />
                 </div>
               </div>
               <div
-                class="result"
+                class="collapsibleResults"
               >
-                <div
-                  data-expanded="true"
-                  data-testid="file-search-result"
-                >
+                <div>
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"
@@ -454,7 +402,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       >
         <div>
           <div
-            class="test-search-result resultContainer copyButtonContainer resultContainer"
+            class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -480,67 +429,40 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   />
                 </svg>
                 <div
-                  class="headerTitle"
+                  class="headerTitle test-search-result-label"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <div
+                    class="titleInner mutedRepoFileLink"
+                  >
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar"
+                    >
+                      foo/bar
+                    </a>
                     <span
-                      class="titleInner mutedRepoFileLink"
+                      aria-hidden="true"
                     >
-                      <span>
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar"
-                        >
-                          foo/bar
-                        </a>
-                        <span
-                          aria-hidden="true"
-                        >
-                           ›
-                        </span>
-                         
-                        <a
-                          class="anchorLink"
-                          href="/github.com/foo/bar/-/blob/?subtree=true"
-                        >
-                          <strong />
-                        </a>
-                      </span>
+                       ›
                     </span>
-                    <button
-                      aria-label="Copy path to clipboard"
-                      class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
-                      type="button"
+                     
+                    <a
+                      class="anchorLink"
+                      href="/github.com/foo/bar/-/blob/?subtree=true"
                     >
-                      <svg
-                        aria-hidden="true"
-                        class="mdi-icon iconInline copyIcon"
-                        fill="currentColor"
-                        height="24"
-                        role="img"
-                        viewBox="0 0 24 24"
-                        width="24"
-                      >
-                        <path
-                          d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
-                        />
-                      </svg>
-                    </button>
-                  </span>
+                      <strong />
+                    </a>
+                  </div>
                   <span
                     class="ml-2 headerDescription"
                   />
                 </div>
               </div>
               <div
-                class="result"
+                class="collapsibleResults"
               >
-                <div
-                  data-expanded="true"
-                  data-testid="file-search-result"
-                >
+                <div>
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"

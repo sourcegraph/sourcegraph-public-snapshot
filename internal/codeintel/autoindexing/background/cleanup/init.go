@@ -9,6 +9,8 @@ func NewJanitor(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine.Ba
 			ConfigInst.MinimumTimeSinceLastCheck,
 			ConfigInst.CommitResolverBatchSize,
 			ConfigInst.CommitResolverMaximumCommitLag,
+			ConfigInst.FailedIndexBatchSize,
+			ConfigInst.FailedIndexMaxAge,
 		),
 	}
 }

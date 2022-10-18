@@ -89,7 +89,6 @@ func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID 
 }
 
 const dequeueJobFmtStr = `
--- source: internal/repos/worker/worker.go:dequeueJob
 SELECT
 	repo_id,
 	repo_name,

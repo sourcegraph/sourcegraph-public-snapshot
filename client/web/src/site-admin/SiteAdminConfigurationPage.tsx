@@ -9,7 +9,6 @@ import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -17,6 +16,7 @@ import { Button, LoadingSpinner, Link, Alert, Code, Text, PageHeader, Container 
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
+import { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -207,7 +207,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
 }
 
 interface State {
-    site?: GQL.ISite
+    site?: SiteResult['site']
     loading: boolean
     error?: Error
 

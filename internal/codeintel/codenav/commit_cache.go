@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,12 +17,12 @@ type CommitCache interface {
 }
 
 type commitCache struct {
-	gitserverClient shared.GitserverClient
+	gitserverClient GitserverClient
 	mutex           sync.RWMutex
 	cache           map[int]map[string]bool
 }
 
-func NewCommitCache(client shared.GitserverClient) CommitCache {
+func NewCommitCache(client GitserverClient) CommitCache {
 	return &commitCache{
 		gitserverClient: client,
 		cache:           map[int]map[string]bool{},

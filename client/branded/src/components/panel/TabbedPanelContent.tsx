@@ -24,7 +24,18 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    useObservable,
+    Tab,
+    TabList,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    Icon,
+    Tooltip,
+    useKeyboard,
+} from '@sourcegraph/wildcard'
 
 import { LegacyGroupByFileToggle } from './LegacyGroupByFileToggle'
 import { MixPreciseAndSearchBasedReferencesToggle } from './MixPreciseAndSearchBasedReferencesToggle'
@@ -271,6 +282,8 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                 : [],
         [location, panelViews, props, trackTabClick]
     )
+
+    useKeyboard({ detectKeys: ['Escape'] }, handlePanelClose)
 
     const handleActiveTab = useCallback(
         (index: number): void => {

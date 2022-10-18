@@ -2,6 +2,7 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,7 +35,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     as,
     index,
 }) => {
-    const title = (
+    const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
             <span
                 className={classNames(
@@ -65,23 +66,29 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         </div>
     )
 
+    const renderBody = (): JSX.Element => (
+        <CommitSearchResultMatch
+            key={result.url}
+            item={result}
+            platformContext={platformContext}
+            openInNewTab={openInNewTab}
+        />
+    )
+
     return (
         <ResultContainer
             index={index}
-            title={title}
+            icon={SourceCommitIcon}
+            collapsible={false}
+            defaultExpanded={true}
+            title={renderTitle()}
             resultType={result.type}
             onResultClicked={onSelect}
+            expandedChildren={renderBody()}
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
-        >
-            <CommitSearchResultMatch
-                key={result.url}
-                item={result}
-                platformContext={platformContext}
-                openInNewTab={openInNewTab}
-            />
-        </ResultContainer>
+        />
     )
 }

@@ -41,6 +41,7 @@ type operations struct {
 	setRequestLanguageSupport *observation.Operation
 
 	insertDependencyIndexingJob *observation.Operation
+	expireFailedRecords         *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -98,5 +99,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 
 		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
+		expireFailedRecords:         op("ExpireFailedRecords"),
 	}
 }

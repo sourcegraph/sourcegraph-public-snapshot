@@ -6,18 +6,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type LSIFUploadsAuditLogsResolver interface {
-	LogTimestamp() DateTime
-	UploadDeletedAt() *DateTime
+	LogTimestamp() gqlutil.DateTime
+	UploadDeletedAt() *gqlutil.DateTime
 	Reason() *string
 	ChangedColumns() []AuditLogColumnChange
 	UploadID() graphql.ID
 	InputCommit() string
 	InputRoot() string
 	InputIndexer() string
-	UploadedAt() DateTime
+	UploadedAt() gqlutil.DateTime
 	Operation() string
 	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 }
@@ -44,12 +45,12 @@ func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []AuditLogColumnC
 	return values
 }
 
-func (r *lsifUploadsAuditLogResolver) LogTimestamp() DateTime {
-	return DateTime{Time: r.log.LogTimestamp}
+func (r *lsifUploadsAuditLogResolver) LogTimestamp() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.LogTimestamp}
 }
 
-func (r *lsifUploadsAuditLogResolver) UploadDeletedAt() *DateTime {
-	return DateTimeOrNil(r.log.RecordDeletedAt)
+func (r *lsifUploadsAuditLogResolver) UploadDeletedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.log.RecordDeletedAt)
 }
 
 func (r *lsifUploadsAuditLogResolver) UploadID() graphql.ID {
@@ -58,8 +59,8 @@ func (r *lsifUploadsAuditLogResolver) UploadID() graphql.ID {
 func (r *lsifUploadsAuditLogResolver) InputCommit() string  { return r.log.Commit }
 func (r *lsifUploadsAuditLogResolver) InputRoot() string    { return r.log.Root }
 func (r *lsifUploadsAuditLogResolver) InputIndexer() string { return r.log.Indexer }
-func (r *lsifUploadsAuditLogResolver) UploadedAt() DateTime {
-	return DateTime{Time: r.log.UploadedAt}
+func (r *lsifUploadsAuditLogResolver) UploadedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.UploadedAt}
 }
 
 func (r *lsifUploadsAuditLogResolver) Operation() string {

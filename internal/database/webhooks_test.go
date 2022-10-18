@@ -143,21 +143,39 @@ func TestWebhookDelete(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(nil)
 
-	// Test that delete with wrong ID returns an error
+	// Test that delete with wrong UUID returns an error
 	nonExistentUUID := uuid.New()
-	err := store.Delete(ctx, nonExistentUUID)
+	err := store.Delete(ctx, DeleteWebhookOpts{UUID: nonExistentUUID})
 	if !errors.HasType(err, &WebhookNotFoundError{}) {
 		t.Fatalf("want WebhookNotFoundError, got: %s", err)
 	}
 	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID %s not found", nonExistentUUID))
 
-	// Test that delete with right ID deletes the webhook
-	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
-	assert.NoError(t, err)
-	err = store.Delete(ctx, createdWebhook.UUID)
+	// Test that delete with wrong ID returns an error
+	nonExistentID := int32(123)
+	err = store.Delete(ctx, DeleteWebhookOpts{ID: nonExistentID})
+	if !errors.HasType(err, &WebhookNotFoundError{}) {
+		t.Fatalf("want WebhookNotFoundError, got: %s", err)
+	}
+	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with ID %d not found", nonExistentID))
+
+	// Test that delete with empty options returns an error
+	err = store.Delete(ctx, DeleteWebhookOpts{})
+	assert.EqualError(t, err, "neither ID or UUID were provided to delete the webhook")
+
+	// Creating something to be deleted
+	createdWebhook1 := createWebhook(ctx, t, store)
+	createdWebhook2 := createWebhook(ctx, t, store)
+
+	// Test that delete with right UUID deletes the webhook
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: createdWebhook1.UUID})
 	assert.NoError(t, err)
 
-	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.UUID))
+	// Test that delete with both ID and UUID deletes the webhook by ID
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: uuid.New(), ID: createdWebhook2.ID})
+	assert.NoError(t, err)
+
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE id IN ($1, $2))", createdWebhook1.ID, createdWebhook2.ID))
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }
@@ -256,6 +274,58 @@ func createWebhookWithActorUID(ctx context.Context, t *testing.T, actorUID int32
 	created, err := store.Create(ctx, kind, testURN, actorUID, encryptedSecret)
 	assert.NoError(t, err)
 	return created
+}
+
+func TestWebhookList(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(et.ByteaTestKey{})
+	ctx := context.Background()
+
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
+	numGitlabHooks := 0
+	totalWebhooks := 10
+	for i := 1; i <= totalWebhooks; i++ {
+		var err error
+		if i%3 == 0 {
+			numGitlabHooks++
+			_, err = store.Create(ctx, extsvc.KindGitLab, fmt.Sprintf("http://instance-%d.github.com", i), 0, encryptedSecret)
+		} else {
+			_, err = store.Create(ctx, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.gitlab.com", i), 0, encryptedSecret)
+		}
+		assert.NoError(t, err)
+	}
+
+	t.Run("basic, no opts", func(t *testing.T) {
+		allWebhooks, err := store.List(ctx, WebhookListOptions{})
+		assert.NoError(t, err)
+		assert.Len(t, allWebhooks, totalWebhooks)
+	})
+
+	t.Run("specify code host kind", func(t *testing.T) {
+		gitlabWebhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitLab})
+		assert.NoError(t, err)
+		assert.Len(t, gitlabWebhooks, numGitlabHooks)
+	})
+
+	t.Run("with pagination", func(t *testing.T) {
+		webhooks, err := store.List(ctx, WebhookListOptions{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}})
+		assert.NoError(t, err)
+		assert.Len(t, webhooks, 2)
+		assert.Equal(t, webhooks[0].ID, int32(2))
+		assert.Equal(t, webhooks[0].CodeHostKind, extsvc.KindGitHub)
+		assert.Equal(t, webhooks[1].ID, int32(3))
+		assert.Equal(t, webhooks[1].CodeHostKind, extsvc.KindGitLab)
+	})
+
+	t.Run("with pagination and filtering by code host kind", func(t *testing.T) {
+		webhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitHub, LimitOffset: &LimitOffset{Limit: 3, Offset: 2}})
+		assert.NoError(t, err)
+		assert.Len(t, webhooks, 3)
+		for _, wh := range webhooks {
+			assert.Equal(t, wh.CodeHostKind, extsvc.KindGitHub)
+		}
+	})
 }
 
 func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {

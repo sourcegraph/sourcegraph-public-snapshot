@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -35,5 +36,5 @@ func (j *uploadExpirerJob) Routines(startupCtx context.Context, logger log.Logge
 		return nil, err
 	}
 
-	return expiration.NewExpirationTasks(services.UploadsService), nil
+	return expiration.NewExpirationTasks(uploads.GetBackgroundJob(services.UploadsService)), nil
 }

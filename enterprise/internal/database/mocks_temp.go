@@ -6838,6 +6838,9 @@ type MockEnterpriseDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *EnterpriseDBExecContextFunc
+	// ExecutorsFunc is an instance of a mock function object controlling
+	// the behavior of the method Executors.
+	ExecutorsFunc *EnterpriseDBExecutorsFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *EnterpriseDBExternalServicesFunc
@@ -6977,6 +6980,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 sql.Result, r1 error) {
+				return
+			},
+		},
+		ExecutorsFunc: &EnterpriseDBExecutorsFunc{
+			defaultHook: func() (r0 database.ExecutorStore) {
 				return
 			},
 		},
@@ -7187,6 +7195,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.ExecContext")
 			},
 		},
+		ExecutorsFunc: &EnterpriseDBExecutorsFunc{
+			defaultHook: func() database.ExecutorStore {
+				panic("unexpected invocation of MockEnterpriseDB.Executors")
+			},
+		},
 		ExternalServicesFunc: &EnterpriseDBExternalServicesFunc{
 			defaultHook: func() database.ExternalServiceStore {
 				panic("unexpected invocation of MockEnterpriseDB.ExternalServices")
@@ -7378,6 +7391,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExecutorsFunc: &EnterpriseDBExecutorsFunc{
+			defaultHook: i.Executors,
 		},
 		ExternalServicesFunc: &EnterpriseDBExternalServicesFunc{
 			defaultHook: i.ExternalServices,
@@ -8291,6 +8307,105 @@ func (c EnterpriseDBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c EnterpriseDBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnterpriseDBExecutorsFunc describes the behavior when the Executors
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBExecutorsFunc struct {
+	defaultHook func() database.ExecutorStore
+	hooks       []func() database.ExecutorStore
+	history     []EnterpriseDBExecutorsFuncCall
+	mutex       sync.Mutex
+}
+
+// Executors delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Executors() database.ExecutorStore {
+	r0 := m.ExecutorsFunc.nextHook()()
+	m.ExecutorsFunc.appendCall(EnterpriseDBExecutorsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Executors method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBExecutorsFunc) SetDefaultHook(hook func() database.ExecutorStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Executors method of the parent MockEnterpriseDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBExecutorsFunc) PushHook(hook func() database.ExecutorStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBExecutorsFunc) SetDefaultReturn(r0 database.ExecutorStore) {
+	f.SetDefaultHook(func() database.ExecutorStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBExecutorsFunc) PushReturn(r0 database.ExecutorStore) {
+	f.PushHook(func() database.ExecutorStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBExecutorsFunc) nextHook() func() database.ExecutorStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBExecutorsFunc) appendCall(r0 EnterpriseDBExecutorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBExecutorsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBExecutorsFunc) History() []EnterpriseDBExecutorsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBExecutorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBExecutorsFuncCall is an object that describes an invocation
+// of method Executors on an instance of MockEnterpriseDB.
+type EnterpriseDBExecutorsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ExecutorStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBExecutorsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBExecutorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // EnterpriseDBExternalServicesFunc describes the behavior when the

@@ -5,7 +5,6 @@ import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import {
     EventLogsDataResult,
@@ -30,6 +29,8 @@ import {
     FetchSearchContextBySpecVariables,
     highlightCodeResult,
     highlightCodeVariables,
+    SearchContextsOrderBy,
+    SearchContextFields,
 } from './graphql-operations'
 
 const searchContextFragment = gql`
@@ -50,12 +51,15 @@ const searchContextFragment = gql`
         viewerCanManage
         query
         repositories {
-            __typename
-            repository {
-                name
-            }
-            revisions
+            ...SearchContextRepositoryRevisisonsFields
         }
+    }
+
+    fragment SearchContextRepositoryRevisisonsFields on SearchContextRepositoryRevisions {
+        repository {
+            name
+        }
+        revisions
     }
 `
 
@@ -136,7 +140,7 @@ export function fetchSearchContexts({
     query?: string
     namespaces?: Maybe<Scalars['ID']>[]
     after?: string
-    orderBy?: GQL.SearchContextsOrderBy
+    orderBy?: SearchContextsOrderBy
     descending?: boolean
     useMinimalFields?: boolean
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
@@ -178,7 +182,7 @@ export function fetchSearchContexts({
                 after: after ?? null,
                 query: query ?? null,
                 namespaces: namespaces ?? [],
-                orderBy: orderBy ?? GQL.SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
+                orderBy: orderBy ?? SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                 descending: descending ?? false,
                 useMinimalFields: useMinimalFields ?? false,
             },
@@ -193,7 +197,7 @@ export function fetchSearchContexts({
 export const fetchSearchContext = (
     id: Scalars['ID'],
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<GQL.ISearchContext> => {
+): Observable<SearchContextFields> => {
     const query = gql`
         query FetchSearchContext($id: ID!) {
             node(id: $id) {
@@ -215,14 +219,14 @@ export const fetchSearchContext = (
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.node as GQL.ISearchContext)
+            map(data => data.node as SearchContextFields)
         )
 }
 
 export const fetchSearchContextBySpec = (
     spec: string,
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<GQL.ISearchContext> => {
+): Observable<SearchContextFields> => {
     const query = gql`
         query FetchSearchContextBySpec($spec: String!) {
             searchContextBySpec(spec: $spec) {
@@ -242,14 +246,14 @@ export const fetchSearchContextBySpec = (
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.searchContextBySpec as GQL.ISearchContext)
+            map(data => data.searchContextBySpec as SearchContextFields)
         )
 }
 
 export function createSearchContext(
     variables: CreateSearchContextVariables,
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<GQL.ISearchContext> {
+): Observable<SearchContextFields> {
     return platformContext
         .requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>({
             request: gql`
@@ -268,14 +272,14 @@ export function createSearchContext(
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.createSearchContext as GQL.ISearchContext)
+            map(data => data.createSearchContext as SearchContextFields)
         )
 }
 
 export function updateSearchContext(
     variables: UpdateSearchContextVariables,
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
-): Observable<GQL.ISearchContext> {
+): Observable<SearchContextFields> {
     return platformContext
         .requestGraphQL<UpdateSearchContextResult, UpdateSearchContextVariables>({
             request: gql`
@@ -295,12 +299,12 @@ export function updateSearchContext(
         })
         .pipe(
             map(dataOrThrowErrors),
-            map(data => data.updateSearchContext as GQL.ISearchContext)
+            map(data => data.updateSearchContext as SearchContextFields)
         )
 }
 
 export function deleteSearchContext(
-    id: GQL.ID,
+    id: Scalars['ID'],
     platformContext: Pick<PlatformContext, 'requestGraphQL'>
 ): Observable<DeleteSearchContextResult> {
     return platformContext

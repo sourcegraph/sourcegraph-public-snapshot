@@ -7,8 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,6 +27,8 @@ type BackgroundJob interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
+		failedIndexBatchSize int,
+		failedIndexMaxAge time.Duration,
 	) goroutine.BackgroundRoutine
 
 	SetService(service AutoIndexingService)
@@ -38,16 +38,15 @@ type BackgroundJob interface {
 }
 
 type backgroundJob struct {
-	uploadSvc       shared.UploadService
+	uploadSvc       UploadService
 	depsSvc         DependenciesService
 	policiesSvc     PoliciesService
 	autoindexingSvc AutoIndexingService
 
 	policyMatcher   PolicyMatcher
-	repoUpdater     shared.RepoUpdaterClient
-	gitserverClient shared.GitserverClient
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
 
-	store                   store.Store
 	repoStore               ReposStore
 	workerutilStore         dbworkerstore.Store
 	gitserverRepoStore      GitserverRepoStore
@@ -61,19 +60,18 @@ type backgroundJob struct {
 
 	metrics                *resetterMetrics
 	janitorMetrics         *janitorMetrics
-	depencencySyncMetrics  workerutil.WorkerMetrics
-	depencencyIndexMetrics workerutil.WorkerMetrics
+	depencencySyncMetrics  workerutil.WorkerObservability
+	depencencyIndexMetrics workerutil.WorkerObservability
 }
 
 func New(
 	db database.DB,
-	store store.Store,
-	uploadSvc shared.UploadService,
+	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
-	gitserverClient shared.GitserverClient,
-	repoUpdater shared.RepoUpdaterClient,
+	gitserverClient GitserverClient,
+	repoUpdater RepoUpdaterClient,
 	observationContext *observation.Context,
 ) BackgroundJob {
 	repoStore := db.Repos()
@@ -92,7 +90,6 @@ func New(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserverClient,
 
-		store:                   store,
 		repoStore:               repoStore,
 		workerutilStore:         workerutilStore,
 		gitserverRepoStore:      gitserverRepoStore,

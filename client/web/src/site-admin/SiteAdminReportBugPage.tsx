@@ -23,6 +23,7 @@ import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../schema/phabricator.schema.json'
 import pythonPackagesSchemaJSON from '../../../../schema/python-packages.schema.json'
+import rubyPackagesSchemaJSON from '../../../../schema/ruby-packages.schema.json'
 import rustPackagesSchemaJSON from '../../../../schema/rust-packages.schema.json'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../../schema/site.schema.json'
@@ -53,6 +54,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     NPMPACKAGES: npmPackagesSchemaJSON,
     PYTHONPACKAGES: pythonPackagesSchemaJSON,
     RUSTPACKAGES: rustPackagesSchemaJSON,
+    RUBYPACKAGES: rubyPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,

@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
-	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 )
 
 func TestMakeGetIndexesOptions(t *testing.T) {
@@ -26,7 +26,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := codeinteltypes.GetIndexesOptions{
+	expected := shared.GetIndexesOptions{
 		RepositoryID: 50,
 		State:        "s",
 		Term:         "q",
@@ -46,7 +46,7 @@ func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
 		t.Fatalf("unexpected error making options: %s", err)
 	}
 
-	expected := codeinteltypes.GetIndexesOptions{
+	expected := shared.GetIndexesOptions{
 		RepositoryID: 0,
 		State:        "",
 		Term:         "",

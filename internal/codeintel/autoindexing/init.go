@@ -4,7 +4,6 @@ import (
 	backgroundjobs "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,10 +17,10 @@ import (
 // If the service is not yet initialized, it will use the provided dependencies.
 func GetService(
 	db database.DB,
-	uploadSvc shared.UploadService,
+	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
-	gitserver shared.GitserverClient,
+	gitserver GitserverClient,
 ) *Service {
 	svc, _ := initServiceMemo.Init(serviceDependencies{
 		db,
@@ -36,15 +35,13 @@ func GetService(
 
 type serviceDependencies struct {
 	db          database.DB
-	uploadSvc   shared.UploadService
+	uploadSvc   UploadService
 	depsSvc     DependenciesService
 	policiesSvc PoliciesService
-	gitserver   shared.GitserverClient
+	gitserver   GitserverClient
 }
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	scopedCtx := scopedContext("service")
-
 	store := store.New(deps.db, scopedContext("store"))
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gitserver, policiesEnterprise.IndexingExtractor, false, true)
 	symbolsClient := symbols.DefaultClient
@@ -52,17 +49,16 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	inferenceSvc := inference.NewService(deps.db)
 	backgroundJobs := backgroundjobs.New(
 		deps.db,
-		store,
 		deps.uploadSvc,
 		deps.depsSvc,
 		deps.policiesSvc,
 		policyMatcher,
 		deps.gitserver,
 		repoUpdater,
-		scopedCtx,
+		scopedContext("background"),
 	)
 
-	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, backgroundJobs, scopedCtx)
+	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, backgroundJobs, scopedContext("service"))
 	backgroundJobs.SetService(svc)
 
 	return svc, nil

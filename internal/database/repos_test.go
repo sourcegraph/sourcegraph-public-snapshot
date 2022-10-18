@@ -2781,17 +2781,12 @@ func TestListIndexableRepos(t *testing.T) {
 	}{
 		{
 			name: "no opts",
-			want: []api.RepoID{2, 1}, // No private repos returned by default
+			want: []api.RepoID{2, 1, 3},
 		},
 		{
 			name: "only uncloned",
 			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
-		},
-		{
-			name: "include private",
-			opts: ListIndexableReposOptions{IncludePrivate: true},
-			want: []api.RepoID{2, 1, 3},
 		},
 		{
 			name: "limit 1",

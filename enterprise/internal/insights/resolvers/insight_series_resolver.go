@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
@@ -169,8 +170,8 @@ var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct{ p store.SeriesPoint }
 
-func (i insightsDataPointResolver) DateTime() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: i.p.Time}
+func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: i.p.Time}
 }
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
@@ -184,8 +185,8 @@ func (i insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
 func (i insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
 func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
 func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
-func (i insightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(i.backfillQueuedAt)
+func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
 }
 
 func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {

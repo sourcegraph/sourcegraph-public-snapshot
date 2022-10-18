@@ -12,6 +12,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -108,7 +109,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			policies, totalCount, err := store.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+			policies, totalCount, err := store.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 				RepositoryID:     testCase.repositoryID,
 				Term:             testCase.term,
 				ForDataRetention: testCase.forDataRetention,

@@ -67,7 +67,7 @@ func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 	return err
 }
 
-// Implimentation of steps for Backfill process
+// Implementation of steps for Backfill process
 
 func makeSearchJobsFunc(logger log.Logger, commitClient gitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
@@ -236,7 +236,8 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
 		g := group.New().WithContext(groupContext).WithMaxConcurrency(searchWorkerLimit).WithCancelOnError()
-		for _, job := range jobs {
+		for i := 0; i < len(jobs); i++ {
+			job := jobs[i]
 			g.Go(func(ctx context.Context) error {
 				h := searchHandlers[series.GenerationMethod]
 				searchPoints, err := h(ctx, job, series, *job.RecordTime)

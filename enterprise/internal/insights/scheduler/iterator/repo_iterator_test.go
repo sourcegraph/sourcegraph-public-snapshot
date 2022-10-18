@@ -22,7 +22,7 @@ import (
 
 type testFunc func(context.Context, api.RepoID, finishFunc) bool
 
-func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *persistentRepoIterator, seen []api.RepoID, do testFunc) (*persistentRepoIterator, []api.RepoID) {
+func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
 	ctx := context.Background()
 
 	for true {
@@ -69,7 +69,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with no errors and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with no errors and no interruptions", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("iterate with one error and no interruptions", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestForNextAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate with 1 error and no interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with 1 error and no interruptions", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:05Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":4,"Cursor":5}`).Equal(t, string(jsonify))
 		autogold.Want("iterate with 1 error and no interruptions error check", errorMap{6: &IterationError{
 			id:            1,
 			RepoId:        6,
@@ -126,13 +126,13 @@ func TestForNextAndFinish(t *testing.T) {
 		got, seen := testForNextAndFinish(t, store, itr, seen, do)
 
 		require.Equal(t, got.Cursor, 2)
-		reloaded, _ := LoadWithClock(ctx, store, got.id, clock)
+		reloaded, _ := LoadWithClock(ctx, store, got.Id, clock)
 		require.Equal(t, reloaded.Cursor, got.Cursor)
 
 		// now iterate from the starting position _after_ reloading from the db
 		secondItr, _ := testForNextAndFinish(t, store, reloaded, seen, do)
 		jsonify, _ := json.Marshal(secondItr)
-		autogold.Want("iterate with no error and 1 interruptions", `{"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+		autogold.Want("iterate with no error and 1 interruptions", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
 	})
 }
 
@@ -149,7 +149,7 @@ func TestNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	load, err := Load(ctx, store, itr.id)
+	load, err := Load(ctx, store, itr.Id)
 	if err != nil {
 		return
 	}

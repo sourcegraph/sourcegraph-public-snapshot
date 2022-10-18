@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -589,17 +590,25 @@ type ExternalServiceRepo struct {
 
 // ExternalServiceSyncJob represents an sync job for an external service
 type ExternalServiceSyncJob struct {
-	ID                int64
+	ID                int64 // TODO: Why is this an int64, it's a 32 bit int in the database
 	State             string
 	FailureMessage    string
 	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
-	NumResets         int
+	NumResets         int // TODO: This is a 32 bit int in the database
 	ExternalServiceID int64
 	NumFailures       int
 	Cancel            bool
+
+	// Counters that show progress of a running job
+	ReposSynced     int32
+	RepoSyncErrors  int32
+	ReposAdded      int32
+	ReposDeleted    int32
+	ReposModified   int32
+	ReposUnmodified int32
 }
 
 // URN returns a unique resource identifier of this external service,

@@ -32,7 +32,6 @@ type Services struct {
 	AuthzResolver                   graphqlbackend.AuthzResolver
 	BatchChangesResolver            graphqlbackend.BatchChangesResolver
 	CodeIntelResolver               graphqlbackend.CodeIntelResolver
-	ExecutorResolver                graphqlbackend.ExecutorResolver
 	InsightsResolver                graphqlbackend.InsightsResolver
 	CodeMonitorsResolver            graphqlbackend.CodeMonitorsResolver
 	LicenseResolver                 graphqlbackend.LicenseResolver

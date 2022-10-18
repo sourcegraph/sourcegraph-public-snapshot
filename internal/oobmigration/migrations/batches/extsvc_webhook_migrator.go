@@ -44,7 +44,6 @@ func (m *externalServiceWebhookMigrator) Progress(ctx context.Context, _ bool) (
 }
 
 const externalServiceWebhookMigratorProgressQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Progress
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
 		CAST(c1.count AS float) / CAST(c2.count AS float)
@@ -159,12 +158,10 @@ func (m *externalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 }
 
 const externalServiceWebhookMigratorSelectQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
 SELECT id, kind, config, encryption_key_id FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL ORDER BY id LIMIT %s FOR UPDATE
 `
 
 const externalServiceWebhookMigratorUpdateQuery = `
--- source: internal/oobmigration/migrations/extsvc_webhook_migrator.go:Up
 UPDATE external_services SET has_webhooks = %s WHERE id = %s
 `
 

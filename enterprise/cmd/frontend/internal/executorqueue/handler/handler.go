@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -17,7 +17,7 @@ import (
 
 type handler struct {
 	QueueOptions
-	executorStore executor.Store
+	executorStore database.ExecutorStore
 	metricsStore  metricsstore.DistributedStore
 	logger        log.Logger
 }
@@ -34,7 +34,7 @@ type QueueOptions struct {
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
 }
 
-func newHandler(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions) *handler {
+func newHandler(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions) *handler {
 	return &handler{
 		executorStore: executorStore,
 		metricsStore:  metricsStore,

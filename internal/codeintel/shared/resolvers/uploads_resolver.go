@@ -5,13 +5,14 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
 // UploadsResolver wraps store.GetUploads so that the underlying function can be
 // invoked lazily and its results memoized.
 type UploadsResolver struct {
 	svc  UploadsService
-	opts types.GetUploadsOptions
+	opts shared.GetUploadsOptions
 	once sync.Once
 
 	Uploads    []types.Upload
@@ -22,7 +23,7 @@ type UploadsResolver struct {
 
 // NewUploadsResolver creates a new UploadsResolver which wil invoke store.GetUploads
 // with the given options.
-func NewUploadsResolver(svc UploadsService, opts types.GetUploadsOptions) *UploadsResolver {
+func NewUploadsResolver(svc UploadsService, opts shared.GetUploadsOptions) *UploadsResolver {
 	return &UploadsResolver{svc: svc, opts: opts}
 }
 

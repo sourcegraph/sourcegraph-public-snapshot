@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -38,7 +37,7 @@ type GitTreeTranslator interface {
 }
 
 type gitTreeTranslator struct {
-	client           shared.GitserverClient
+	client           GitserverClient
 	localRequestArgs *requestArgs
 	hunkCache        HunkCache
 }
@@ -74,7 +73,7 @@ func NewHunkCache(size int) (HunkCache, error) {
 }
 
 // NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client shared.GitserverClient, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
+func NewGitTreeTranslator(client GitserverClient, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
 		client:           client,
 		hunkCache:        hunkCache,

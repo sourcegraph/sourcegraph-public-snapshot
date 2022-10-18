@@ -97,10 +97,10 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	store := NewMockStore()
-	store.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	mockAutoindexingSvc := NewMockAutoIndexingService()
+	mockAutoindexingSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 	janitor := &backgroundJob{
-		store:           store,
+		autoindexingSvc: mockAutoindexingSvc,
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
@@ -118,14 +118,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	}
 
 	var sanitizedCalls []updateInvocation
-	for _, call := range store.UpdateSourcedCommitsFunc.History() {
+	for _, call := range mockAutoindexingSvc.UpdateSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
 			Delete:       false,
 		})
 	}
-	for _, call := range store.DeleteSourcedCommitsFunc.History() {
+	for _, call := range mockAutoindexingSvc.DeleteSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,

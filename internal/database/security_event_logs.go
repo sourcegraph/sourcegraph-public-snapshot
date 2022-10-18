@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -115,35 +114,22 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 		return errors.Wrap(err, "INSERT")
 	}
 
-	if securityEventsAuditLogEnabled() {
-		for _, event := range events {
-			audit.Log(ctx, s.logger, audit.Record{
-				Entity: "security events",
-				Action: string(event.Name),
-				Fields: []log.Field{
-					log.Object("event",
-						log.String("URL", event.URL),
-						log.String("source", event.Source),
-						log.String("argument", event.marshalArgumentAsJSON()),
-						log.String("version", version.Version()),
-						log.String("timestamp", event.Timestamp.UTC().String()),
-					),
-				},
-			})
-		}
+	for _, event := range events {
+		audit.Log(ctx, s.logger, audit.Record{
+			Entity: "security events",
+			Action: string(event.Name),
+			Fields: []log.Field{
+				log.Object("event",
+					log.String("URL", event.URL),
+					log.String("source", event.Source),
+					log.String("argument", event.marshalArgumentAsJSON()),
+					log.String("version", version.Version()),
+					log.String("timestamp", event.Timestamp.UTC().String()),
+				),
+			},
+		})
 	}
 	return nil
-}
-
-func securityEventsAuditLogEnabled() bool {
-	if logCfg := conf.Get().Log; logCfg != nil {
-		if auditCfg := logCfg.AuditLog; auditCfg != nil {
-			return auditCfg.SecurityEvents
-		}
-	}
-
-	// enabled by default for security events
-	return true
 }
 
 func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent) {

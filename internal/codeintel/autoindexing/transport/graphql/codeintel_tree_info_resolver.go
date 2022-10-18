@@ -81,7 +81,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]GitT
 				resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 					confidence: indexJobInfered,
 					// drop the tag if it exists
-					indexer: codeinteltypes.ImageToIndexer[strings.Split(job.Indexer, ":")[0]],
+					indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[strings.Split(job.Indexer, ":")[0]]),
 				})
 			}
 		}
@@ -106,7 +106,7 @@ func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]GitT
 			resolvers = append(resolvers, &codeIntelTreePreciseCoverageResolver{
 				confidence: confidence,
 				// expected that job hints don't include a tag in the indexer name
-				indexer: codeinteltypes.ImageToIndexer[hint.Indexer],
+				indexer: codeinteltypes.NewCodeIntelIndexerResolverFrom(codeinteltypes.ImageToIndexer[hint.Indexer]),
 			})
 		}
 	}
