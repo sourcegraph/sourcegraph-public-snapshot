@@ -66,7 +66,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <div class="grid">
   <!-- AWS AMI-->
-  <a class="app-btn btn" href="/admin/deploy/aws-ami">
+  <a class="app-btn btn" href="/admin/deploy/machine-images/aws-ami">
     <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
     <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS</h3>
