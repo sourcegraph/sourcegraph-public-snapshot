@@ -214,7 +214,7 @@ func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	}
 }
 
-func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs, recordTime time.Time) (err error) {
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -241,7 +241,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	}
 
 	metadataTx := r.metadadataStore.With(tx)
-	if err := metadataTx.StampRecordingTime(ctx, *series, store.PersistMode(job.PersistMode), *job.RecordTime); err != nil {
+	if err := metadataTx.StampRecordingTime(ctx, *series, store.PersistMode(job.PersistMode), recordTime); err != nil {
 		return errors.Wrap(err, "StampRecordingTime")
 	}
 
