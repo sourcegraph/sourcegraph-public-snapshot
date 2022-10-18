@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestCreateWebhook(t *testing.T) {
@@ -113,6 +115,66 @@ func TestCreateWebhook(t *testing.T) {
 			"codeHostKind": "GITHUB",
 			"codeHostURN":  "https://github.com",
 			"secret":       "mysupersecret",
+		},
+	})
+}
+
+func TestGetWebhookWithURL(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	testURL := "https://testurl.com"
+	webhookID := int32(1)
+	webhookIDMarshaled := marshalWebhookID(webhookID)
+	conf.Mock(
+		&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: testURL,
+			},
+		},
+	)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	whUUID, err := uuid.NewUUID()
+	assert.NoError(t, err)
+	expectedWebhook := types.Webhook{
+		ID: webhookID, UUID: whUUID,
+	}
+	webhookStore.GetByIDFunc.SetDefaultReturn(&expectedWebhook, nil)
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	queryStr := `query GetWebhook($id: ID!) {
+                node(id: $id) {
+                    ... on Webhook {
+                        id
+                        uuid
+                        url
+                    }
+                }
+			}`
+	schema := mustParseGraphQLSchema(t, db)
+
+	RunTests(t, []*Test{
+		{
+			Label:   "basic",
+			Context: ctx,
+			Schema:  schema,
+			Query:   queryStr,
+			ExpectedResult: fmt.Sprintf(`
+				{
+					"node": {
+						"id": %q,
+						"uuid": %q,
+                        "url": "%s/webhooks/%s"
+					}
+				}
+			`, webhookIDMarshaled, whUUID.String(), testURL, whUUID.String()),
+			Variables: map[string]any{
+				"id": "V2ViaG9vazox",
+			},
 		},
 	})
 }
