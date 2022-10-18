@@ -19,11 +19,17 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 4.1.0
+
+### Changed
+
+- All current and future versions of src-cli from version 3.43.2 and up will now be available for installation via Homebrew in addition to the latest version. A specific version can be installed with the command `brew install sourcegraph/src-cli/src-cli@X.Y.Z`. [#864](https://github.com/sourcegraph/src-cli/pull/864)
+
 ## 4.0.1
 
 ### Added
 
-- Mounting files now works when running batch changes server side. [sourcegraph/src-cli#816](https://github.com/sourcegraph/src-cli/pull/816)
+- Mounting files now works when running batch changes server side. [#816](https://github.com/sourcegraph/src-cli/pull/816)
 
 ## 4.0.0
 
@@ -139,7 +145,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Global git email gets inserted as plain text when running `src batch new -f <file_name>` and doesn't result in a schema validation failure. [sourcegraph/src-cli#773](https://github.com/sourcegraph/src-cli/pull/773)
+- Global git email gets inserted as plain text when running `src batch new -f <file_name>` and doesn't result in a schema validation failure. [#773](https://github.com/sourcegraph/src-cli/pull/773)
 
 ## 3.40.8
 
@@ -155,7 +161,7 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- It's now possible to install src-cli via `npm install -g @sourcegraph/src`. [sourcegraph/src-cli#760](https://github.com/sourcegraph/src-cli/pull/760)
+- It's now possible to install src-cli via `npm install -g @sourcegraph/src`. [#760](https://github.com/sourcegraph/src-cli/pull/760)
 
 ## 3.40.3
 
