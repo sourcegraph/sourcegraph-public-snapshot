@@ -57,7 +57,7 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string) (bool, error) {
+func setDataToCache(key string, data string, expire int64) (bool, error) {
 	if cacheDisabledInTest {
 		return true, nil
 	}
@@ -65,11 +65,15 @@ func setDataToCache(key string, data string) (bool, error) {
 	rdb := pool.Get()
 	defer rdb.Close()
 
-	if _, err := rdb.Do("SET", key, data); err != nil {
+	if _, err := rdb.Do("SET", scopeKey+key, data); err != nil {
 		return false, err
 	}
 
-	if _, err := rdb.Do("EXPIRE", key, int64(24*time.Hour/time.Second)); err != nil {
+	if expire == 0 {
+		expire = int64((24 * time.Hour).Seconds())
+	}
+
+	if _, err := rdb.Do("EXPIRE", scopeKey+key, expire); err != nil {
 		return false, err
 	}
 
@@ -82,7 +86,7 @@ func setArrayToCache[T interface{}](cacheKey string, nodes []*T) (bool, error) {
 		return false, err
 	}
 
-	return setDataToCache(scopeKey+cacheKey, string(data))
+	return setDataToCache(cacheKey, string(data), 0)
 }
 
 func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
@@ -91,7 +95,7 @@ func setItemToCache[T interface{}](cacheKey string, summary *T) (bool, error) {
 		return false, err
 	}
 
-	return setDataToCache(scopeKey+cacheKey, string(data))
+	return setDataToCache(cacheKey, string(data), 0)
 }
 
 var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}

@@ -8,10 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
 
 type Users struct {
+	Ctx       context.Context
 	DateRange string
 	Grouping  string
 	DB        database.DB
@@ -19,7 +19,7 @@ type Users struct {
 }
 
 func (s *Users) Activity() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,40 +38,39 @@ func (s *Users) Activity() (*AnalyticsFetcher, error) {
 var (
 	frequencyQuery = `
 	WITH user_days_used AS (
-		SELECT 
-			CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END AS user_id,
-			COUNT(DISTINCT DATE(timestamp)) AS days_used 
-		FROM event_logs
-		WHERE 
-			anonymous_user_id <> 'backend' 
-			AND DATE(timestamp) %s
-			AND name NOT IN (%s)
-		GROUP BY 1
-	),
-	days_used_frequency AS (
-		SELECT days_used, COUNT(*) AS frequency
-		FROM user_days_used
-		GROUP BY 1
-	),
-	days_used_total_frequency AS (
-		SELECT 
-			days_used_frequency.days_used, 
-			SUM(more_days_used_frequency.frequency) AS frequency
-		FROM days_used_frequency
-			LEFT JOIN days_used_frequency AS more_days_used_frequency
-			ON more_days_used_frequency.days_used >= days_used_frequency.days_used
-		GROUP BY 1
-	),
-	max_days_used_total_frequency AS (
-		SELECT MAX(frequency) AS max_frequency
-		FROM days_used_total_frequency
-	)
-	SELECT 
-		days_used, 
-		frequency, 
-		frequency * 100.00 / COALESCE(max_frequency, 1) AS percentage
-	FROM days_used_total_frequency, max_days_used_total_frequency
-	ORDER BY 1 ASC;
+        SELECT 
+            CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END AS user_id,
+            COUNT(DISTINCT DATE(timestamp)) AS days_used 
+        FROM event_logs
+        WHERE 
+            DATE(timestamp) %s
+            AND %s
+        GROUP BY 1
+    ),
+    days_used_frequency AS (
+        SELECT days_used, COUNT(*) AS frequency
+        FROM user_days_used
+        GROUP BY 1
+    ),
+    days_used_total_frequency AS (
+        SELECT 
+            days_used_frequency.days_used, 
+            SUM(more_days_used_frequency.frequency) AS frequency
+        FROM days_used_frequency
+            LEFT JOIN days_used_frequency AS more_days_used_frequency
+            ON more_days_used_frequency.days_used >= days_used_frequency.days_used
+        GROUP BY 1
+    ),
+    max_days_used_total_frequency AS (
+        SELECT MAX(frequency) AS max_frequency
+        FROM days_used_total_frequency
+    )
+    SELECT 
+        days_used, 
+        frequency, 
+        frequency * 100.00 / COALESCE(max_frequency, 1) AS percentage
+    FROM days_used_total_frequency, max_days_used_total_frequency
+    ORDER BY 1 ASC;
 	`
 )
 
@@ -88,12 +87,12 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		return nil, err
 	}
 
-	nonActiveUserEvents := []*sqlf.Query{}
-	for _, name := range eventlogger.NonActiveUserEvents {
-		nonActiveUserEvents = append(nonActiveUserEvents, sqlf.Sprintf("%s", name))
+	defaultConds, err := getDefaultConds(f.Ctx, f.DB, f.Cache)
+	if err != nil {
+		return nil, err
 	}
 
-	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(nonActiveUserEvents, ","))
+	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(defaultConds, " AND "))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -144,9 +143,8 @@ var (
 		COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 	FROM event_logs
 	WHERE 
-		anonymous_user_id <> 'backend' 
-		AND timestamp BETWEEN %s AND %s
-		AND name NOT IN (%s)
+		timestamp BETWEEN %s AND %s
+    AND %s
 	GROUP BY 1
 	ORDER BY 1 ASC
 	`
@@ -165,12 +163,12 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 	prevMonth := now.AddDate(0, -2, 0) // going back 2 months
 	from := time.Date(prevMonth.Year(), prevMonth.Month(), 1, 0, 0, 0, 0, now.Location()).Format(time.RFC3339)
 
-	nonActiveUserEvents := []*sqlf.Query{}
-	for _, name := range eventlogger.NonActiveUserEvents {
-		nonActiveUserEvents = append(nonActiveUserEvents, sqlf.Sprintf("%s", name))
+	defaultConds, err := getDefaultConds(f.Ctx, f.DB, f.Cache)
+	if err != nil {
+		return nil, err
 	}
 
-	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(nonActiveUserEvents, ","))
+	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(defaultConds, " AND "))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
