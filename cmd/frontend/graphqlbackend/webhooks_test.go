@@ -6,15 +6,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/errors"
-
 	"github.com/google/uuid"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	sgerrors "github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -202,6 +202,84 @@ func TestGetWebhookWithURL(t *testing.T) {
 		},
 		Variables: map[string]any{
 			"id": "V2ViaG9vazox",
+		},
+	})
+}
+
+func TestDeleteWebhook(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	webhookStore.DeleteFunc.SetDefaultReturn(sgerrors.New("oops"))
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	id := marshalWebhookID(42)
+	queryStr := `mutation DeleteWebhook($id: ID!) {
+				deleteWebhook(id: $id) {
+					alwaysNil
+				}
+			}`
+	schema := mustParseGraphQLSchema(t, db)
+
+	// validate error if not site admin
+	RunTest(t, &Test{
+		Label:          "only site admin can delete webhook",
+		Context:        ctx,
+		Schema:         schema,
+		Query:          queryStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "must be site admin",
+				Path:    []any{"deleteWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id": string(id),
+		},
+	})
+
+	// User is site admin
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	RunTest(t, &Test{
+		Label:          "database error",
+		Context:        ctx,
+		Schema:         schema,
+		Query:          queryStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "delete webhook: oops",
+				Path:    []any{"deleteWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id": string(id),
+		},
+	})
+
+	// database layer behaves
+	webhookStore.DeleteFunc.SetDefaultReturn(nil)
+
+	RunTest(t, &Test{
+		Label:   "webhook successfully deleted",
+		Context: ctx,
+		Schema:  schema,
+		Query:   queryStr,
+		ExpectedResult: `
+				{
+					"deleteWebhook": {
+						"alwaysNil": null
+					}
+				}
+			`,
+		Variables: map[string]any{
+			"id": string(id),
 		},
 	})
 }

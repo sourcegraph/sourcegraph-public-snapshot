@@ -137,3 +137,18 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
+
+func (r *schemaResolver) DeleteWebhook(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+	id, err := unmarshalWebhookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "delete webhook")
+	}
+	return &EmptyResponse{}, nil
+}
