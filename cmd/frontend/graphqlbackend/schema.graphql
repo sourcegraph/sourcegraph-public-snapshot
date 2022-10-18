@@ -1642,6 +1642,20 @@ type Query {
         """
         kind: ExternalServiceKind
     ): WebhookConnection!
+
+    """
+    Looks up a webhook by id or uuid.
+    """
+    webhook(
+        """
+        The webhook ID. Provide either ID or UUID, not both.
+        """
+        id: ID
+        """
+        The webhook UUID. Provide either UUID or ID, not both.
+        """
+        uuid: String
+    ): Webhook
 }
 
 """

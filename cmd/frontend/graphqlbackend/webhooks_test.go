@@ -116,3 +116,114 @@ func TestCreateWebhook(t *testing.T) {
 		},
 	})
 }
+
+func TestGetWebhook(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	whUUID, err := uuid.NewUUID()
+	assert.NoError(t, err)
+	expectedWebhook := types.Webhook{
+		ID: 1, UUID: whUUID,
+	}
+	webhookStore.GetByIDFunc.SetDefaultReturn(&expectedWebhook, nil)
+	webhookStore.GetByUUIDFunc.SetDefaultReturn(&expectedWebhook, nil)
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	idQueryStr := `query GetWebhook($id: ID) {
+				webhook(id: $id) {
+					id
+					uuid
+				}
+			}`
+	uuidQueryStr := `query GetWebhook($uuid: String) {
+                webhook(uuid: $uuid) {
+                    id
+                    uuid
+                }
+    }`
+	errorQueryStr := `query GetWebhook($uuid: String, $id: ID) {
+                webhook(uuid: $uuid, id: $id) {
+                    id
+                    uuid
+                }
+    }`
+	schema := mustParseGraphQLSchema(t, db)
+
+	RunTests(t, []*Test{
+		{
+			Label:   "query by ID",
+			Context: ctx,
+			Schema:  schema,
+			Query:   idQueryStr,
+			ExpectedResult: fmt.Sprintf(`
+				{
+					"webhook": {
+						"id": "V2ViaG9vazox",
+						"uuid": "%s"
+					}
+				}
+			`, whUUID.String()),
+			Variables: map[string]any{
+				"id": "V2ViaG9vazox",
+			},
+		},
+		{
+			Label:   "query by UUID",
+			Context: ctx,
+			Schema:  schema,
+			Query:   uuidQueryStr,
+			ExpectedResult: fmt.Sprintf(`
+				{
+					"webhook": {
+						"id": "V2ViaG9vazox",
+						"uuid": "%s"
+					}
+				}
+			`, whUUID.String()),
+			Variables: map[string]any{
+				"uuid": whUUID.String(),
+			},
+		},
+		{
+			Label:          "error with both ID and UUID",
+			Context:        ctx,
+			Schema:         schema,
+			Query:          errorQueryStr,
+			ExpectedResult: `{"webhook": null}`,
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "either 1 of ID or UUID must be provided, but not both",
+					Path:    []any{"webhook"},
+				},
+			},
+			Variables: map[string]any{
+				"id":   "V2ViaG9vazox",
+				"uuid": whUUID.String(),
+			},
+		},
+	})
+
+	// validate error if not site admin
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	RunTest(t, &Test{
+		Label:          "only site admin can get webhooks",
+		Context:        ctx,
+		Schema:         schema,
+		Query:          idQueryStr,
+		ExpectedResult: `{"webhook": null}`,
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "must be site admin",
+				Path:    []any{"webhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id": "V2ViaG9vazox",
+		},
+	})
+}

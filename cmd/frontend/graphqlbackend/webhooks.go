@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -72,6 +73,43 @@ func (r *schemaResolver) Webhooks(ctx context.Context, args *struct {
 }) *webhookConnectionResolver {
 	// TODO: Use the fields above to fetch the list of desired hooks
 	return &webhookConnectionResolver{}
+}
+
+func (r *schemaResolver) Webhook(ctx context.Context, args *struct {
+	ID   *graphql.ID
+	UUID *string
+}) (*webhookResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, errors.New("must be site admin")
+	}
+
+	if (args.ID == nil && args.UUID == nil) || (args.ID != nil && args.UUID != nil) {
+		return nil, errors.New("either 1 of ID or UUID must be provided, but not both")
+	}
+
+	if args.ID != nil {
+		hookID, err := unmarshalWebhookID(*args.ID)
+		if err != nil {
+			return nil, err
+		}
+		webhook, err := r.db.Webhooks(keyring.Default().WebhookLogKey).GetByID(ctx, hookID)
+		if err != nil {
+			return nil, err
+		}
+
+		return &webhookResolver{db: r.db, hook: webhook}, nil
+	} else {
+		uuidFromString, err := uuid.Parse(*args.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		webhook, err := r.db.Webhooks(keyring.Default().WebhookLogKey).GetByUUID(ctx, uuidFromString)
+		if err != nil {
+			return nil, err
+		}
+		return &webhookResolver{db: r.db, hook: webhook}, nil
+	}
 }
 
 type webhookConnectionResolver struct {
