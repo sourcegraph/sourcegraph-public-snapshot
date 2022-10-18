@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -194,4 +195,46 @@ func TestIsEnabled(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSwitchingSeverityLevel(t *testing.T) {
+	useAuditLogLevel("INFO")
+	defer conf.Mock(nil)
+
+	logs := auditLogMessage(t)
+	assert.Equal(t, 1, len(logs))
+	assert.Equal(t, log.LevelInfo, logs[0].Level)
+
+	useAuditLogLevel("WARN")
+	logs = auditLogMessage(t)
+	assert.Equal(t, 1, len(logs))
+	assert.Equal(t, log.LevelWarn, logs[0].Level)
+}
+
+func useAuditLogLevel(level string) {
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			AuditLog: &schema.AuditLog{
+				InternalTraffic: true,
+				GitserverAccess: true,
+				GraphQL:         true,
+				SeverityLevel:   level,
+			}}}})
+}
+
+func auditLogMessage(t *testing.T) []logtest.CapturedLog {
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+	ctx = requestclient.WithClient(ctx, &requestclient.Client{IP: "192.168.1.1"})
+
+	record := Record{
+		Entity: "test entity",
+		Action: "test audit action",
+		Fields: nil,
+	}
+
+	logger, exportLogs := logtest.Captured(t)
+	Log(ctx, logger, record)
+
+	return exportLogs()
 }
