@@ -21,8 +21,10 @@ import {
 
 import { isValidLineRange, preciseOffsetAtCoords } from './utils'
 
-// The MouseEvent uses numbers to indicate which button was pressed.
-// See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
+ */
 const MOUSE_MAIN_BUTTON = 0
 
 /**
@@ -275,9 +277,10 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         selectedLines.init(() => config.initialSelection),
         lineNumbers({
             domEventHandlers: {
-                mousedown(view, block, event: MouseEvent) {
-                    if (event.button !== MOUSE_MAIN_BUTTON) {
-                        return
+                mousedown(view, block, event) {
+                    const mouseEvent = event as MouseEvent // make TypeScript happy
+                    if (mouseEvent.button !== MOUSE_MAIN_BUTTON) {
+                        return false
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
@@ -290,7 +293,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     } else {
                         const range = view.state.field(selectedLines)
                         view.dispatch({
-                            effects: event.shiftKey
+                            effects: mouseEvent.shiftKey
                                 ? setEndLine.of(line)
                                 : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
                             annotations: lineSelectionSource.of('gutter'),
@@ -301,7 +304,11 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
 
                     dragging = true
 
-                    function onmouseup(): void {
+                    function onmouseup(event: MouseEvent): void {
+                        if (event.button !== MOUSE_MAIN_BUTTON) {
+                            return
+                        }
+
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
                         window.removeEventListener('mousemove', onmousemove)
@@ -317,6 +324,8 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                                     annotations: lineSelectionSource.of('gutter'),
                                 })
                             }
+                            // Prevents the browser from selecting the line
+                            // numbers as text
                             event.preventDefault()
                         }
                     }
