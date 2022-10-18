@@ -1221,8 +1221,8 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "backgroundJobs": {
-              "description": "Capture security events performed by the background jobs (adds significant noise).",
+            "internalTraffic": {
+              "description": "Capture security events performed by the internal traffic (adds significant noise).",
               "type": "boolean",
               "default": false
             },
@@ -1237,10 +1237,10 @@
               "default": false
             }
           },
-          "required": ["backgroundJobs", "graphQL", "gitserverAccess"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
           "examples": [
             {
-              "backgroundJobs": false,
+              "internalTraffic": false,
               "graphQL": false,
               "gitserverAccess": false
             }

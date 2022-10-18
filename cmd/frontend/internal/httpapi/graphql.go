@@ -224,7 +224,7 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 }
 
 func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
-	if !auditLogEnabled() {
+	if !audit.IsEnabled(conf.SiteConfig(), audit.GraphQL) {
 		return
 	}
 
@@ -241,17 +241,6 @@ func recordAuditLog(ctx context.Context, logger sglog.Logger, data traceData) {
 			sglog.Bool("successful", len(data.queryErrors) == 0),
 		},
 	})
-}
-
-func auditLogEnabled() bool {
-	logCfg := conf.Get().Log
-	if logCfg != nil {
-		auditCfg := logCfg.AuditLog
-		if auditCfg != nil {
-			return auditCfg.GraphQL
-		}
-	}
-	return false
 }
 
 func toJson(variables map[string]any) string {
