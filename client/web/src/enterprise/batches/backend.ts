@@ -50,58 +50,6 @@ export const queryBatchSpecs = ({
         map(data => data.batchSpecs)
     )
 
-export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
-    first,
-    after,
-    includeLocallyExecutedSpecs,
-    excludeEmptySpecs,
-}: Omit<BatchChangeBatchSpecsVariables, 'id'>): Observable<BatchSpecListConnectionFields> =>
-    requestGraphQL<BatchChangeBatchSpecsResult, BatchChangeBatchSpecsVariables>(
-        gql`
-            query BatchChangeBatchSpecs(
-                $id: ID!
-                $first: Int
-                $after: String
-                $includeLocallyExecutedSpecs: Boolean
-                $excludeEmptySpecs: Boolean
-            ) {
-                node(id: $id) {
-                    __typename
-                    ... on BatchChange {
-                        batchSpecs(
-                            first: $first
-                            after: $after
-                            includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs
-                            excludeEmptySpecs: $excludeEmptySpecs
-                        ) {
-                            ...BatchSpecListConnectionFields
-                        }
-                    }
-                }
-            }
-
-            ${BATCH_SPEC_LIST_CONNECTION_FIELDS}
-        `,
-        {
-            id,
-            first,
-            after,
-            includeLocallyExecutedSpecs,
-            excludeEmptySpecs,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('Batch change not found')
-            }
-            if (data.node.__typename !== 'BatchChange') {
-                throw new Error(`Node is a ${data.node.__typename}, not a BatchChange`)
-            }
-            return data.node.batchSpecs
-        })
-    )
-
 const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
     fragment BatchSpecListFields on BatchSpec {
         __typename
@@ -139,3 +87,41 @@ const BATCH_SPEC_LIST_CONNECTION_FIELDS = gql`
 
     ${BATCH_SPEC_LIST_FIELDS_FRAGMENT}
 `
+
+export const BATCH_CHANGE_BATCH_SPECS = gql`
+    query BatchChangeBatchSpecs($id: ID!, $first: Int, $after: String, $includeLocallyExecutedSpecs: Boolean) {
+        node(id: $id) {
+            __typename
+            ... on BatchChange {
+                batchSpecs(first: $first, after: $after, includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
+                    ...BatchSpecListConnectionFields
+                }
+            }
+        }
+    }
+
+    ${BATCH_SPEC_LIST_CONNECTION_FIELDS}
+`
+
+export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
+    first,
+    after,
+    includeLocallyExecutedSpecs,
+}: Omit<BatchChangeBatchSpecsVariables, 'id'>): Observable<BatchSpecListConnectionFields> =>
+    requestGraphQL<BatchChangeBatchSpecsResult, BatchChangeBatchSpecsVariables>(BATCH_CHANGE_BATCH_SPECS, {
+        id,
+        first,
+        after,
+        includeLocallyExecutedSpecs,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.node) {
+                throw new Error('Batch change not found')
+            }
+            if (data.node.__typename !== 'BatchChange') {
+                throw new Error(`Node is a ${data.node.__typename}, not a BatchChange`)
+            }
+            return data.node.batchSpecs
+        })
+    )

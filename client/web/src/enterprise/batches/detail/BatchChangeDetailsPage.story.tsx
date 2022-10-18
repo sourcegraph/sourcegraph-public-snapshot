@@ -10,6 +10,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
+import { BATCH_CHANGE_BATCH_SPECS } from '../backend'
 
 import {
     queryExternalChangesetWithFileDiffs,
@@ -25,6 +26,7 @@ import {
     MOCK_BULK_OPERATIONS,
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
+    BATCH_CHANGE_WITH_BATCH_SPECS_RESULT,
 } from './BatchChangeDetailsPage.mock'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -198,6 +200,14 @@ const Template: Story<{
             result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        {
+            request: {
+                query: getDocumentNode(BATCH_CHANGE_BATCH_SPECS),
+                variables: MATCH_ANY_PARAMETERS
+            },
+            result: { data: { node: BATCH_CHANGE_WITH_BATCH_SPECS_RESULT } },
+            nMatches: Number.POSITIVE_INFINITY,
+        }
     ])
 
     return (

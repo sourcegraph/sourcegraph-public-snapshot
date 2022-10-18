@@ -13,6 +13,7 @@ import {
     BatchSpecState,
     BatchChangeState,
     BatchSpecSource,
+    BatchChangeBatchSpecsResult,
 } from '../../../graphql-operations'
 
 const now = new Date()
@@ -329,4 +330,55 @@ export const EMPTY_BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['
         nodes: [],
         pageInfo: { endCursor: null, hasNextPage: false },
     },
+}
+
+export const BATCH_CHANGE_WITH_BATCH_SPECS_RESULT: BatchChangeBatchSpecsResult['node'] = {
+    __typename: 'BatchChange',
+    batchSpecs: {
+        __typename: 'BatchSpecConnection',
+        totalCount: 2,
+        pageInfo: {endCursor: null, hasNextPage: false},
+        nodes: [
+            {
+                __typename: 'BatchSpec',
+                id: 'QmF0Y2hTcGVjOiIzRU1TUTBHYzhjbyI=',
+                state: BatchSpecState.COMPLETED,
+                startedAt: '2022-10-12T16:12:18Z',
+                finishedAt: '2022-10-12T16:12:20Z',
+                createdAt: '2022-10-12T16:12:17Z',
+                source: BatchSpecSource.REMOTE,
+                description: {
+                    name: 'test-batch-change'
+                },
+                namespace: {
+                    namespaceName: 'test-user',
+                    url: '/users/test-user'
+                },
+                creator: {
+                    username: 'test-user'
+                },
+                originalInput: 'name: awesome-batch-changes\ndescription: somestring',
+            },
+            {
+                __typename: 'BatchSpec',
+                id: 'JiF0Y2hTcGVjOiIzRU1TUTBHYzhjbyI=',
+                state: BatchSpecState.COMPLETED,
+                startedAt: '2022-09-12T16:12:18Z',
+                finishedAt: '2022-09-12T16:12:20Z',
+                createdAt: '2022-09-12T16:12:17Z',
+                source: BatchSpecSource.REMOTE,
+                description: {
+                    name: 'test-batch-change-2'
+                },
+                namespace: {
+                    namespaceName: 'test-user',
+                    url: '/users/test-user'
+                },
+                creator: {
+                    username: 'test-user'
+                },
+                originalInput: 'name: awesome-batch-changes-2\ndescription: somestring',
+            }
+        ],
+    }
 }
