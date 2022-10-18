@@ -273,9 +273,9 @@ mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
 
 func (c *Client) SetFeatureFlag(name string, value bool) error {
 	const query = `
-mutation SetFeatureFlag($name: ID!, $value: Boolean!) {
+mutation SetFeatureFlag($name: String!, $value: Boolean!) {
 	createFeatureFlag(name: $name, value: $value) {
-		alwaysNil
+		__typename
 	}
 }
 `
