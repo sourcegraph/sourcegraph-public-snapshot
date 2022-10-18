@@ -35,6 +35,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 		RepoStore:  repos,
 		ObsContext: &observation.TestContext,
 	}
+	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)
 
 	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
@@ -53,28 +54,29 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
 	require.NoError(t, err)
 
-	dequeue, found, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	require.NoError(t, err)
 	handler := newBackfillHandler{
 		workerStore:   monitor.newBackfillStore,
 		backfillStore: bfs,
 		seriesReader:  store.NewInsightStore(insightsDB),
 		repoIterator:  discovery.NewSeriesRepoIterator(nil, repos),
 	}
-	err = handler.Handle(ctx, logger, dequeue)
+	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)
 
-	dequeue, found, err = monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	_, dupFound, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
-	if found {
+	if dupFound {
 		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
 	}
 
 	// now ensure the in progress handler _can_ pick it up
-	dequeue, found, err = monitor.inProgressStore.Dequeue(ctx, "test", nil)
+	inProgressDequeue, inProgressFound, err := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
-	if !found {
+	if !inProgressFound {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := dequeue.(*BaseJob)
+	job, _ := inProgressDequeue.(*BaseJob)
 	require.Equal(t, backfill.Id, job.backfillId)
 }
