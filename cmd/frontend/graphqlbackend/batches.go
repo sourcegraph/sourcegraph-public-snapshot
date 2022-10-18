@@ -595,6 +595,7 @@ type ListBatchSpecArgs struct {
 	First                       int32
 	After                       *string
 	IncludeLocallyExecutedSpecs *bool
+	ExcludeEmptySpecs           *bool
 }
 
 type ListBatchSpecWorkspaceFilesArgs struct {

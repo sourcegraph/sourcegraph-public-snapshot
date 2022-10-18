@@ -1856,6 +1856,10 @@ extend type Query {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2734,6 +2738,10 @@ type BatchChange implements Node {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 

@@ -1511,6 +1511,10 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
 	}
 
+	if args.ExcludeEmptySpecs != nil {
+		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
+	}
+
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include
 	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
 	// by the user
