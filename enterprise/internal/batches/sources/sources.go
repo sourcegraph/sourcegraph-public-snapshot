@@ -420,13 +420,15 @@ func GetRemoteRepo(
 	ch *btypes.Changeset,
 	spec *btypes.ChangesetSpec,
 ) (*types.Repo, error) {
-	fmt.Printf("EXTERNAL FORK NAMESPACE: %v", ch.ExternalForkNamespace)
+	fmt.Printf("EXTERNAL FORK NAMESPACE: %v\n\n", ch.ExternalForkNamespace)
+	fmt.Printf("IS FORK??: %t\n\n", spec.IsFork())
 
 	// If the changeset spec doesn't expect a fork _and_ we're not updating a
 	// changeset that was previously created using a fork, then we don't need to
 	// even check if the changeset source is forkable, let alone set up the
 	// remote repo: we can just return the target repo and be done with it.
 	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
+		fmt.Printf("NOT USING FORK AT ALL?!?!?!?!?!?!?!?!?!?!?!?")
 		return targetRepo, nil
 	}
 
@@ -448,7 +450,7 @@ func GetRemoteRepo(
 		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
 	}
 
-	fmt.Printf("SHOULD USE USER FORK!")
+	fmt.Printf("SHOULD USE USER FORK!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	// Otherwise, we're pushing to a user fork.
 	return fss.GetUserFork(ctx, targetRepo)
