@@ -26,10 +26,16 @@ curl -L https://sourcegraph.com/.api/src-cli/src_darwin_amd64 -o /usr/local/bin/
 chmod +x /usr/local/bin/src
 ```
 
-or
+or with Homebrew:
 
 ```bash
 brew install sourcegraph/src-cli/src-cli
+```
+
+or with npm:
+
+```bash
+npm install -g @sourcegraph/src
 ```
 
 #### Version compatible with your Sourcegraph instance
@@ -41,6 +47,20 @@ curl -L https://sourcegraph.example.com/.api/src-cli/src_darwin_amd64 -o /usr/lo
 chmod +x /usr/local/bin/src
 ```
 
+or, if you know the specific version to target, for example 3.43.2:
+
+```bash
+brew install sourcegraph/src-cli/src-cli@3.43.2
+```
+
+or with npm/npx:
+
+```bash
+npx @sourcegraph/src@3.43.2 version
+```
+
+> Note: Versioned formulas are available on Homebrew for Sourcegraph versions 3.43.2 and later.
+
 ### Installation: Linux
 
 #### Latest version
@@ -50,6 +70,12 @@ curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/s
 chmod +x /usr/local/bin/src
 ```
 
+or with npm:
+
+```bash
+npm install -g @sourcegraph/src
+```
+
 #### Version compatible with your Sourcegraph instance
 
 Replace `sourcegraph.example.com` with your Sourcegraph instance URL:
@@ -57,6 +83,12 @@ Replace `sourcegraph.example.com` with your Sourcegraph instance URL:
 ```bash
 curl -L https://sourcegraph.example.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
 chmod +x /usr/local/bin/src
+```
+
+or, with npm/npx, if you know the specific version to target, for example 3.43.2:
+
+```bash
+npx @sourcegraph/src@3.43.2 version
 ```
 
 ### Installation: Windows

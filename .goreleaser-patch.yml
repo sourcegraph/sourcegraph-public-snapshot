@@ -1,6 +1,7 @@
-# This is the main configuration for goreleaser, which builds and publishes a new latest
-# release. It updates the main formula in the Homebrew tap. It should match
-# .goreleaser-patch.yml in every way except for the brews.name template and the
+# This is the patch release configuration for goreleaser, which builds and publishes a new
+# patch release for an older version of src-cli. It publishes a new versioned formula in
+# the Homebrew tap and does not publish a "latest" image to Docker Hub. It should match
+# .goreleaser.yml in every way except for the brews.name template and the
 # dockers.image_templates list.
 dist: release
 env:
@@ -33,7 +34,7 @@ archives:
   name_template: "src_{{ .Os }}_{{ .Arch }}"
 brews:
   -
-    name: src-cli
+    name: src-cli@{{ .Major }}.{{ .Minor }}.{{ .Patch }}
     homepage: "https://sourcegraph.com/"
     description: "Sourcegraph CLI"
     tap:
@@ -54,7 +55,6 @@ dockers:
     - "sourcegraph/src-cli:{{ .Tag }}"
     - "sourcegraph/src-cli:{{ .Major }}"
     - "sourcegraph/src-cli:{{ .Major }}.{{ .Minor }}"
-    - "sourcegraph/src-cli:latest"
 changelog:
   sort: asc
   filters:

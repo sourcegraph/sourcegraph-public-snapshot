@@ -59,7 +59,7 @@ We adhere to the [general Sourcegraph principles for testing](https://docs.sourc
 1.  Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
 2.  (optional) If this is a non-patch release, update the changelog. Add a new section `## $MAJOR.MINOR` to [`CHANGELOG.md`](https://github.com/sourcegraph/src-cli/blob/main/CHANGELOG.md#unreleased) immediately under `## Unreleased changes`. Add new empty `Added`, `Changed`, `Fixed`, and `Removed` sections under `## Unreleased changes`. Open a pull request with the new changelog. Get the pull request merged before completing the next step.
 3.  `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
-4.  GitHub will automatically perform the release via the [goreleaser action](https://github.com/sourcegraph/src-cli/actions?query=workflow%3AGoreleaser). Once it has finished, **you need to confirm**:
+4.  GitHub will automatically perform the release via the [Build and Release action](https://github.com/sourcegraph/src-cli/actions?query=workflow%3ABuild+and+Release). Once it has finished, **you need to confirm**:
     1. The [curl commands in the README](README.markdown#installation) fetch the latest version above.
     2. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
 5.  Make the necessary updates to the main Sourcegraph repo:
@@ -69,22 +69,11 @@ We adhere to the [general Sourcegraph principles for testing](https://docs.sourc
 
 ### Patch releases
 
-If a backwards-compatible change is made _after_ a backwards-incompatible one, the backwards-compatible one should be re-released to older instances that support it.
+If a backwards-compatible change, such as a bug fix, is made _after_ a backwards-incompatible one, the backwards-compatible one should be re-released to older instances that support it.
 
 A Sourcegraph instance returns the highest patch version with the same major and minor version as `MinimumVersion` as defined in the instance. Patch versions are reserved solely for non-breaking changes and minor bug fixes. This allows us to dynamically release fixes for older versions of `src-cli` without having to update the instance.
 
-To release a bug fix or a new feature that is backwards compatible with one of the previous two minor version of Sourcegraph, cherry-pick the changes into a patch branch and re-releases with a new patch version. 
-
-For example, suppose we have the the recommended versions.
-
-| Sourcegraph version | Recommended src-cli version |
-| ------------------- | --------------------------- | 
-| `3.100`             | `3.90.5`                    |
-| `3.99`              | `3.85.7`                    |
-
-If a new feature is added to a new `3.91.6` release of src-cli and this change requires only features available in Sourcegraph `3.99`, then this feature should also be present in a new `3.85.8` release of src-cli. Because a Sourcegraph instance will automatically select the highest patch version, all non-breaking changes should increment only the patch version. 
-
-Note that if instead the recommended src-cli version for Sourcegraph `3.99` was `3.90.4` in the example above, there is no additional step required, and the new patch version of src-cli will be available to both Sourcegraph versions.
+To release a bug fix or a new feature that is backwards compatible with one of the previous two minor version of Sourcegraph, cherry-pick the changes into a patch branch, then follow the steps above to release the patch, specifying the appropriate patch `VERSION`. The Build and Release action will automatically create the appropriate versioned release, without overwriting the latest one.
 
 ## Docker
 
