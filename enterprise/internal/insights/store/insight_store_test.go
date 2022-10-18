@@ -1628,7 +1628,6 @@ func TestInsightStore_StampRecording(t *testing.T) {
 		}
 
 		want := created
-		want.LastRecordedAt = now
 		want.NextRecordingAfter = time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC)
 
 		got, err := store.StampRecording(ctx, created)

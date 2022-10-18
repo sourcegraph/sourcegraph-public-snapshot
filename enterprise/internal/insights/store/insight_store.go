@@ -803,15 +803,13 @@ type InsightMetadataStore interface {
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
-	current := s.Now()
 	next := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
-	}.StepForwards(current)
-	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+	}.StepForwards(s.Now())
+	if err := s.Exec(ctx, sqlf.Sprintf(stampNextRecordingSql, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
-	series.LastRecordedAt = current
 	series.NextRecordingAfter = next
 	return series, nil
 }
@@ -823,14 +821,22 @@ func NextSnapshot(current time.Time) time.Time {
 
 // StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
-	current := s.Now()
-	next := NextSnapshot(current)
-	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
+	next := NextSnapshot(s.Now())
+	if err := s.Exec(ctx, sqlf.Sprintf(stampNextSnapshotSql, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
-	series.LastRecordedAt = current
 	series.NextRecordingAfter = next
 	return series, nil
+}
+
+func (s *InsightStore) StampRecordingTime(ctx context.Context, series types.InsightSeries, mode PersistMode, stampTime time.Time) error {
+	if mode == SnapshotMode {
+		return s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, stampTime, series.ID))
+	}
+	if mode == RecordMode {
+		return s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, stampTime, series.ID))
+	}
+	return nil
 }
 
 // StampBackfill will update the backfill queued time for this series and return the InsightSeries struct with updated values.
@@ -959,17 +965,27 @@ SET backfill_queued_at = %s
 WHERE id = %s;
 `
 
+const stampNextRecordingSql = `
+UPDATE insight_series
+SET next_recording_after = %s
+WHERE id = %s;
+`
+
 const stampRecordingSql = `
 UPDATE insight_series
-SET last_recorded_at = %s,
-    next_recording_after = %s
+SET last_recorded_at = %s
+WHERE id = %s;
+`
+
+const stampNextSnapshotSql = `
+UPDATE insight_series
+SET next_snapshot_after = %s
 WHERE id = %s;
 `
 
 const stampSnapshotSql = `
 UPDATE insight_series
-SET last_snapshot_at = %s,
-    next_snapshot_after = %s
+SET last_snapshot_at = %s
 WHERE id = %s;
 `
 

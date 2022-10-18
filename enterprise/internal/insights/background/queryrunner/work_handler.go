@@ -99,6 +99,7 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	recordTime := time.Now()
 	if job.RecordTime != nil {
 		recordTime = *job.RecordTime
+		job.RecordTime = &recordTime
 	}
 
 	executableHandler, ok := r.searchHandlers[series.GenerationMethod]

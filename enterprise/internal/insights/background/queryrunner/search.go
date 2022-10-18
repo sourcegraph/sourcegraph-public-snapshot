@@ -239,6 +239,12 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
 		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
+
+	metadataTx := r.metadadataStore.With(tx)
+	if err := metadataTx.StampRecordingTime(ctx, *series, store.PersistMode(job.PersistMode), *job.RecordTime); err != nil {
+		return errors.Wrap(err, "StampRecordingTime")
+	}
+
 	return err
 }
 
