@@ -222,6 +222,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
+	github.com/xanzy/go-gitlab v0.73.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 )
 

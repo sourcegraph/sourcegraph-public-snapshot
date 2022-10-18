@@ -8,12 +8,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type githubCodeHost struct {
+type GithubCodeHost struct {
 	def *CodeHostDefinition
 	c   *github.Client
 }
 
-func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (CodeHost, error) {
+func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCodeHost, error) {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: def.Token},
 	))
@@ -22,13 +22,13 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (CodeHost, 
 	if err != nil {
 		return nil, err
 	}
-	return &githubCodeHost{
+	return &GithubCodeHost{
 		def: def,
 		c:   gh,
 	}, nil
 }
 
-func (g *githubCodeHost) ListRepos(ctx context.Context) ([]*url.URL, error) {
+func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 	opts := github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{},
 	}
@@ -46,7 +46,7 @@ func (g *githubCodeHost) ListRepos(ctx context.Context) ([]*url.URL, error) {
 		opts.ListOptions.Page = resp.NextPage
 	}
 
-	urls := make([]*url.URL, 0, len(repos))
+	res := make([]*Repo, 0, len(repos))
 	for _, repo := range repos {
 		u, err := url.Parse(repo.GetGitURL())
 		if err != nil {
@@ -54,8 +54,11 @@ func (g *githubCodeHost) ListRepos(ctx context.Context) ([]*url.URL, error) {
 		}
 		u.User = url.UserPassword(g.def.Username, g.def.Password)
 		u.Scheme = "https"
-		urls = append(urls, u)
+		res = append(res, &Repo{
+			name: repo.GetName(),
+			url:  u.String(),
+		})
 	}
 
-	return urls, nil
+	return res, nil
 }
