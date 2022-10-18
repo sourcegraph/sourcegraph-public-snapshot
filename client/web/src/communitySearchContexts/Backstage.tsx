@@ -9,13 +9,8 @@ export const backstage: CommunitySearchContextMetadata = {
     title: 'Backstage',
     spec: 'backstage',
     url: '/backstage',
-    description: 'Explore over 30 different Backstage repositories. Search with examples below.',
+    description: 'Explore over 25 different Backstage related repositories. Search with examples below.',
     examples: [
-        {
-            title: "List all TODO's in Julia code",
-            query: 'lang:Julia TODO case:yes',
-            patternType: SearchPatternType.standard,
-        },
         {
             title: 'Browse diffs for recent code changes',
             query: 'type:diff after:"1 week ago"',
