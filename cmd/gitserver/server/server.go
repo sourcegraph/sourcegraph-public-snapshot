@@ -505,6 +505,22 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
+// TODO: Update docs
+// 🚨 SECURITY: checkXRequestedWith will ensure that the X-Requested-With header contains
+// the correct value. See "What does X-Requested-With do, anyway?" in
+// https://github.com/sourcegraph/sourcegraph/pull/27931.
+func XRequestedWithMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
+			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
+			return
+		}
+
+	})
+
+	return nil
+}
+
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
@@ -552,17 +568,6 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 
 func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitServerAddresses) (string, error) {
 	return gitserver.AddrForRepo(ctx, filepath.Base(os.Args[0]), s.DB, repoName, gitServerAddrs)
-}
-
-// 🚨 SECURITY: checkXRequestedWith will ensure that the X-Requested-With header contains
-// the correct value. See "What does X-Requested-With do, anyway?" in
-// https://github.com/sourcegraph/sourcegraph/pull/27931.
-func checkXRequestedWith(h http.Header) error {
-	if value := h.Get("X-Requested-With"); value != "Sourcegraph" {
-		return errors.New("header X-Requested-With is not set or is invalid")
-	}
-
-	return nil
 }
 
 func currentGitserverAddresses() gitserver.GitServerAddresses {
