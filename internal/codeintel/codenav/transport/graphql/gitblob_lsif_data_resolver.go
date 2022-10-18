@@ -2,10 +2,15 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	traceLog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,26 +36,43 @@ type GitBlobLSIFDataResolver interface {
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type gitBlobLSIFDataResolverQueryResolver struct {
+	codeNavSvc              CodeNavService
 	autoindexingSvc         AutoIndexingService
 	uploadSvc               UploadsService
 	policiesSvc             PolicyService
 	gitBlobLSIFDataResolver GitBlobResolver
+	requestState            codenav.RequestState
 	locationResolver        *sharedresolvers.CachedLocationResolver
 	errTracer               *observation.ErrCollector
+
+	operations *operations
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitBlobResolver GitBlobResolver, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
+func NewGitBlobLSIFDataResolverQueryResolver(
+	codeNavSvc CodeNavService,
+	autoindexSvc AutoIndexingService,
+	uploadSvc UploadsService,
+	policiesSvc PolicyService,
+	gitBlobResolver GitBlobResolver,
+	requestState codenav.RequestState,
+	errTracer *observation.ErrCollector,
+	operations *operations,
+) GitBlobLSIFDataResolver {
 	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolverQueryResolver{
 		gitBlobLSIFDataResolver: gitBlobResolver,
-		autoindexingSvc:         autoindexSvc,
-		uploadSvc:               uploadSvc,
-		policiesSvc:             policiesSvc,
-		locationResolver:        sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
-		errTracer:               errTracer,
+
+		codeNavSvc:       codeNavSvc,
+		autoindexingSvc:  autoindexSvc,
+		uploadSvc:        uploadSvc,
+		policiesSvc:      policiesSvc,
+		requestState:     requestState,
+		locationResolver: sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		errTracer:        errTracer,
+		operations:       operations,
 	}
 }
 
@@ -63,11 +85,14 @@ func (r *gitBlobLSIFDataResolverQueryResolver) ToGitBlobLSIFData() (GitBlobLSIFD
 }
 
 func (r *gitBlobLSIFDataResolverQueryResolver) Stencil(ctx context.Context) (_ []RangeResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "stencil"))
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "stencil"))
+	args := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
+	defer endObservation()
 
-	ranges, err := r.gitBlobLSIFDataResolver.Stencil(ctx)
+	ranges, err := r.codeNavSvc.GetStencil(ctx, args, r.requestState)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "svc.GetStencil")
 	}
 
 	resolvers := make([]RangeResolver, 0, len(ranges))
@@ -86,14 +111,32 @@ type LSIFRangesArgs struct {
 // ErrIllegalBounds occurs when a negative or zero-width bound is supplied by the user.
 var ErrIllegalBounds = errors.New("illegal bounds")
 
+// Ranges returns code intelligence for the ranges that fall within the given range of lines. These
+// results are partial and do not include references outside the current file, or any location that
+// requires cross-linking of bundles (cross-repo or cross-root).
 func (r *gitBlobLSIFDataResolverQueryResolver) Ranges(ctx context.Context, args *LSIFRangesArgs) (_ CodeIntelligenceRangeConnectionResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "ranges"))
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "ranges"))
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{
+		LogFields: []log.Field{
+			log.Int("repositoryID", requestArgs.RepositoryID),
+			log.String("commit", requestArgs.Commit),
+			log.String("path", requestArgs.Path),
+			log.Int("startLine", int(args.StartLine)),
+			log.Int("endLine", int(args.EndLine)),
+		},
+	})
+	defer endObservation()
 
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
 	}
 
-	ranges, err := r.gitBlobLSIFDataResolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
+	// ranges, err := r.gitBlobLSIFDataResolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	ranges, err := r.codeNavSvc.GetRanges(ctx, requestArgs, r.requestState, int(args.StartLine), int(args.EndLine))
 	if err != nil {
 		return nil, err
 	}
@@ -101,58 +144,99 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Ranges(ctx context.Context, args 
 	return NewCodeIntelligenceRangeConnectionResolver(ranges, r.locationResolver), nil
 }
 
+// Definitions returns the list of source locations that define the symbol at the given position.
 func (r *gitBlobLSIFDataResolverQueryResolver) Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (_ LocationConnectionResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "definitions"))
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "definitions"))
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{
+		LogFields: []traceLog.Field{
+			traceLog.Int("repositoryID", requestArgs.RepositoryID),
+			traceLog.String("commit", requestArgs.Commit),
+			traceLog.String("path", requestArgs.Path),
+			traceLog.Int("line", requestArgs.Line),
+			traceLog.Int("character", requestArgs.Character),
+			traceLog.Int("limit", requestArgs.Limit),
+		},
+	})
+	defer endObservation()
 
-	locations, err := r.gitBlobLSIFDataResolver.Definitions(ctx, int(args.Line), int(args.Character))
+	// locations, err := r.gitBlobLSIFDataResolver.Definitions(ctx, int(args.Line), int(args.Character))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "codeNavSvc.GetDefinitions")
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
-		filtered := locations[:0]
-		for _, loc := range locations {
+		filtered := def[:0]
+		for _, loc := range def {
 			if strings.Contains(loc.Path, *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}
-		locations = filtered
+		def = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, nil, r.locationResolver), nil
+	return NewLocationConnectionResolver(def, nil, r.locationResolver), nil
 }
 
 const DefaultReferencesPageSize = 100
 
+// References returns the list of source locations that reference the symbol at the given position.
 func (r *gitBlobLSIFDataResolverQueryResolver) References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (_ LocationConnectionResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "references"))
-
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "references"))
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
 
-	cursor, err := DecodeCursor(args.After)
+	rawCursor, err := DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
 
-	locations, cursor, err := r.gitBlobLSIFDataResolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
+	defer endObservation()
+
+	// locations, cursor, err := r.gitBlobLSIFDataResolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Decode cursor given from previous response or create a new one with default values.
+	// We use the cursor state track offsets with the result set and cache initial data that
+	// is used to resolve each page. This cursor will be modified in-place to become the
+	// cursor used to fetch the subsequent page of results in this result set.
+	var nextCursor string
+	cursor, err := decodeReferencesCursor(rawCursor)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
+	}
+
+	refs, refCursor, err := r.codeNavSvc.GetReferences(ctx, requestArgs, r.requestState, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "svc.GetReferences")
+	}
+
+	if refCursor.Phase != "done" {
+		nextCursor = encodeReferencesCursor(refCursor)
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
-		filtered := locations[:0]
-		for _, loc := range locations {
+		filtered := refs[:0]
+		for _, loc := range refs {
 			if strings.Contains(loc.Path, *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}
-		locations = filtered
+		refs = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(refs, strPtr(nextCursor), r.locationResolver), nil
 }
 
 // DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
@@ -175,34 +259,51 @@ type LSIFQueryPositionArgs struct {
 }
 
 func (r *gitBlobLSIFDataResolverQueryResolver) Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (_ LocationConnectionResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "implementations"))
-
 	limit := derefInt32(args.First, DefaultImplementationsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
 
-	cursor, err := DecodeCursor(args.After)
+	rawCursor, err := DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
 
-	locations, cursor, err := r.gitBlobLSIFDataResolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "implementations"))
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.implementations, time.Second, getObservationArgs(requestArgs))
+	defer endObservation()
+
+	// Decode cursor given from previous response or create a new one with default values.
+	// We use the cursor state track offsets with the result set and cache initial data that
+	// is used to resolve each page. This cursor will be modified in-place to become the
+	// cursor used to fetch the subsequent page of results in this result set.
+	var nextCursor string
+	cursor, err := decodeImplementationsCursor(rawCursor)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
+	}
+
+	impls, implsCursor, err := r.codeNavSvc.GetImplementations(ctx, requestArgs, r.requestState, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "svc.GetImplementations")
+	}
+
+	if implsCursor.Phase != "done" {
+		nextCursor = encodeImplementationsCursor(implsCursor)
 	}
 
 	if args.Filter != nil && *args.Filter != "" {
-		filtered := locations[:0]
-		for _, loc := range locations {
+		filtered := impls[:0]
+		for _, loc := range impls {
 			if strings.Contains(loc.Path, *args.Filter) {
 				filtered = append(filtered, loc)
 			}
 		}
-		locations = filtered
+		impls = filtered
 	}
 
-	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+	return NewLocationConnectionResolver(impls, strPtr(nextCursor), r.locationResolver), nil
 }
 
 func (r *gitBlobLSIFDataResolverQueryResolver) Hover(ctx context.Context, args *LSIFQueryPositionArgs) (_ HoverResolver, err error) {
