@@ -29,15 +29,15 @@ import styles from './SearchPage.module.scss'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
-        ThemeProps,
-        ThemePreferenceProps,
-        ActivationProps,
-        TelemetryProps,
-        ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
-        SearchContextInputProps,
-        HomePanelsProps,
-        CodeInsightsProps {
+    ThemeProps,
+    ThemePreferenceProps,
+    ActivationProps,
+    TelemetryProps,
+    ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
+    PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
+    SearchContextInputProps,
+    HomePanelsProps,
+    CodeInsightsProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -77,13 +77,13 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
+                {props.isSourcegraphDotCom}
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
-
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
                 )}
 
-                {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
+                {!showEnterpriseHomePanels && (
                     <QueryExamplesHomepage
                         telemetryService={props.telemetryService}
                         queryState={queryState}
