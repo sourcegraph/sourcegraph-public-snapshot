@@ -2638,6 +2638,15 @@ type ExternalServiceSyncJob implements Node {
 }
 
 """
+A specific kind of external account.
+"""
+enum ExternalAccountKind {
+    GITHUB
+    GITLAB
+    SAML
+}
+
+"""
 A list of repositories.
 """
 type RepositoryConnection {
