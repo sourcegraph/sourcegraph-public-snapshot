@@ -54,7 +54,7 @@ func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) h
 	})
 }
 
-// Experimental: it order to mitigate the amount of traces sent by components which are
+// Experimental: it order to mitigate the amount of traces sent by components which are not
 // respecting the tracing policy, we can delegate the final decision to the collector,
 // and merely indicate that when it's selective or all, we want requests to be retained.
 //
