@@ -4,14 +4,15 @@ import classNames from 'classnames'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { ExternalAccountKind } from '@sourcegraph/shared/src/graphql-operations'
 
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
 import { ExternalAccount } from './ExternalAccount'
 import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 interface GitHubExternalData {
     name: string
@@ -49,12 +50,12 @@ const getNormalizedAccount = (
     authProvider: AuthProvider
 ): NormalizedMinAccount => {
     // kind and type match except for the casing
-    const kind = authProvider.serviceType.toLocaleUpperCase() as ExternalServiceKind
+    const kind = authProvider.serviceType.toLocaleUpperCase() as ExternalAccountKind
+
     const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
 
-    // get external service icon and name as they will match external account
-    const { icon, title: name } = defaultExternalServices[kind]
+    const { icon, title: name } = defaultExternalAccounts[kind] ??  { icon: AlertCircleIcon, title: kind }
 
     let normalizedAccount: NormalizedMinAccount = {
         icon,
