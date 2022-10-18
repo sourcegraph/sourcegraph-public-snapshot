@@ -17,9 +17,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
   <div
     aria-modal="true"
     class="floatingPanel popover menu"
-    hidden=""
     role="dialog"
-    style="visibility: hidden;"
   >
     <div
       data-focus-guard="true"
@@ -291,9 +289,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
   <div
     aria-modal="true"
     class="floatingPanel popover menu"
-    hidden=""
     role="dialog"
-    style="visibility: hidden;"
   >
     <div
       data-focus-guard="true"
