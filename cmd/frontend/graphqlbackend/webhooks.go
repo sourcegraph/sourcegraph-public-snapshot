@@ -123,7 +123,10 @@ func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolv
 		return nil, err
 	}
 	resolvers := make([]*webhookResolver, 0, len(webhooks))
-	for _, wh := range webhooks {
+	for i, wh := range webhooks {
+		if r.opt.LimitOffset != nil && i == r.opt.Limit {
+			break
+		}
 		resolvers = append(resolvers, &webhookResolver{
 			hook: wh,
 		})
@@ -159,15 +162,13 @@ func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webho
 
 func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	opt := copyOpts(r.opt)
+	// Need to fetch one more entry than requested in order to create the next page cursor
 	if r.opt.LimitOffset != nil {
 		opt.Limit++
 	}
 	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opt)
 	if err != nil {
 		return nil, err
-	}
-	if r.opt.LimitOffset != nil {
-		opt.Limit--
 	}
 	if len(webhooks) == 0 || r.opt.LimitOffset == nil || len(webhooks) <= r.opt.Limit || r.opt.Cursor == nil {
 		return graphqlutil.HasNextPage(false), nil
@@ -237,7 +238,7 @@ func UnmarshalWebhookCursor(cursor *string) (*types.Cursor, error) {
 		return nil, nil
 	}
 	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != webhookCursorKind {
-		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+		return nil, errors.Errorf("cannot unmarshal webhook cursor type: %q", kind)
 	}
 	var spec *types.Cursor
 	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {

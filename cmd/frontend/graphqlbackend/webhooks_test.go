@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/google/uuid"
@@ -171,6 +173,189 @@ func TestListWebhooks(t *testing.T) {
 				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
 			},
 		},
+	})
+}
+
+func TestWebhooks_CursorPagination(t *testing.T) {
+	mockWebhooks := []*types.Webhook{
+		{ID: 0, CodeHostURN: "gitlab.com"},
+		{ID: 1, CodeHostURN: "github.com"},
+		{ID: 2, CodeHostURN: "bb.com"},
+	}
+
+	store := database.NewMockWebhookStore()
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(store)
+
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	db.UsersFunc.SetDefaultReturn(users)
+
+	t.Run("Initial page without a cursor present", func(t *testing.T) {
+		store.ListFunc.SetDefaultReturn(mockWebhooks[0:2], nil)
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					webhooks(first: 1) {
+						nodes {
+							id
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"webhooks": {
+						"nodes": [{
+							"id": "V2ViaG9vazow"
+						}],
+						"pageInfo": {
+						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						}
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("Second page", func(t *testing.T) {
+		store.ListFunc.SetDefaultReturn(mockWebhooks[1:], nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					webhooks(first: 1, after: "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9") {
+						nodes {
+							id
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"webhooks": {
+						"nodes": [{
+							"id": "V2ViaG9vazox"
+						}],
+						"pageInfo": {
+						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIyIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						}
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
+		store.ListFunc.SetDefaultReturn(mockWebhooks, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					webhooks(first: 3) {
+						nodes {
+							id
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"webhooks": {
+						"nodes": [{
+							"id": "V2ViaG9vazow"
+						}, {
+							"id": "V2ViaG9vazox"
+						}, {
+							"id": "V2ViaG9vazoy"
+						}],
+						"pageInfo": {
+						  "endCursor": null
+						}
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("With no webhooks present", func(t *testing.T) {
+		store.ListFunc.SetDefaultReturn(nil, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					webhooks(first: 1) {
+						nodes {
+							id
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"webhooks": {
+						"nodes": [],
+						"pageInfo": {
+						  "endCursor": null
+						}
+					}
+				}
+			`,
+			},
+		})
+	})
+
+	t.Run("With an invalid cursor provided", func(t *testing.T) {
+		store.ListFunc.SetDefaultReturn(nil, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					webhooks(first: 1, after: "invalid-cursor-value") {
+						nodes {
+							id
+						}
+						pageInfo {
+							endCursor
+						}
+					}
+				}
+			`,
+				ExpectedResult: "null",
+				ExpectedErrors: []*errors.QueryError{
+					{
+						Path:          []any{"webhooks"},
+						Message:       `cannot unmarshal webhook cursor type: ""`,
+						ResolverError: errors.Errorf(`cannot unmarshal webhook cursor type: ""`),
+					},
+				},
+			},
+		})
 	})
 }
 
@@ -359,5 +544,26 @@ func TestGetWebhookWithURL(t *testing.T) {
 		Variables: map[string]any{
 			"id": "V2ViaG9vazox",
 		},
+	})
+}
+
+func TestWebhookCursor(t *testing.T) {
+	var (
+		webhookCursor       = types.Cursor{Column: "id", Value: "4", Direction: "next"}
+		opaqueWebhookCursor = "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiI0IiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+	)
+	t.Run("Marshal", func(t *testing.T) {
+		if got, want := MarshalWebhookCursor(&webhookCursor), opaqueWebhookCursor; got != want {
+			t.Errorf("got opaque cursor %q, want %q", got, want)
+		}
+	})
+	t.Run("Unmarshal", func(t *testing.T) {
+		cursor, err := UnmarshalWebhookCursor(&opaqueWebhookCursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(cursor, &webhookCursor); diff != "" {
+			t.Fatal(diff)
+		}
 	})
 }
