@@ -203,7 +203,9 @@ export const ComboboxOption = forwardRef((props, ref) => {
             // Schedule scroll into view in the next frame in order to wait for possible
             // on going positioning work in the ComboboxPopover component.
             requestAnimationFrame(() => {
-                scrollIntoView({ view: listElement, element: optionElement, center: true })
+                requestAnimationFrame(() => {
+                    scrollIntoView({ view: listElement, element: optionElement, center: true })
+                })
             })
         }
     }, [listRef, mergedRef])
