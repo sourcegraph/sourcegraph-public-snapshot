@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -833,6 +834,7 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 
 func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	fmt.Printf("### clientImplementor.gitCommand %v %v\n", repo, strings.Join(arg, " "))
+	debug.PrintStack()
 	if ClientMocks.LocalGitserver {
 		cmd := NewLocalGitCommand(repo, arg...)
 		if ClientMocks.LocalGitCommandReposDir != "" {
@@ -1231,6 +1233,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+	fmt.Printf("### clientImplementor.GetObject(%v, %v)\n", repo, objectName)
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
 	}

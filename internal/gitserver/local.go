@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -173,6 +174,7 @@ func (c *localClient) Search(ctx context.Context, sr *protocol.SearchRequest, on
 func (c *localClient) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	if strings.HasPrefix(string(repo), "local/") {
 		// TODO: handle non-HEAD commits
+		fmt.Printf("### local::Stat(%v, %v, %v)\n", repo, commit, path)
 		return os.Stat(filepath.Join(root, strings.TrimPrefix(string(repo), "local/"), path))
 	}
 	return c.remoteClient.Stat(ctx, checker, repo, commit, path)
@@ -182,7 +184,18 @@ func (c *localClient) DiffPath(ctx context.Context, checker authz.SubRepoPermiss
 	return c.remoteClient.DiffPath(ctx, checker, repo, sourceCommit, targetCommit, path)
 }
 func (c *localClient) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	fmt.Println("### localClient.ReadDir")
+	if strings.HasPrefix(string(repo), "local/") {
+		// TODO: recurse, commit
+		relpath := path
+		if repoBase := filepath.Base(string(repo)); repoBase == path {
+			relpath = ""
+		}
+		// else if strings.HasPrefix(path, repoBase+"/") {
+		// 	relpath = strings.TrimPrefix(path, repoBase+"/")
+		// }
+		p := filepath.Join(root, strings.TrimPrefix(string(repo), "local/"), relpath)
+		return ioutil.ReadDir(p)
+	}
 	return c.remoteClient.ReadDir(ctx, checker, repo, commit, path, recurse)
 }
 func (c *localClient) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
@@ -198,7 +211,9 @@ func (c *localClient) ListFiles(ctx context.Context, repo api.RepoName, commit a
 	return c.remoteClient.ListFiles(ctx, repo, commit, pattern, checker)
 }
 func (c *localClient) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	fmt.Println("### localClient.Commits")
+	if strings.HasPrefix(string(repo), "local/") {
+		return nil, nil
+	}
 	return c.remoteClient.Commits(ctx, repo, opt, checker)
 }
 func (c *localClient) FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error) {
