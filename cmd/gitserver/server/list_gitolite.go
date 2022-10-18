@@ -10,11 +10,6 @@ import (
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	if err := checkXRequestedWith(r.Header); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"), w)
 }
 
