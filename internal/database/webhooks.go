@@ -179,25 +179,27 @@ type DeleteWebhookOpts struct {
 	UUID uuid.UUID
 }
 
-func NewDeleteWebhookOptsWithID(ID int32) DeleteWebhookOpts {
-	return DeleteWebhookOpts{ID: ID}
+func NewDeleteWebhookOptsWithID(id int32) DeleteWebhookOpts {
+	return DeleteWebhookOpts{ID: id}
 }
 
-func NewDeleteWebhookOptsWithUUID(UUID uuid.UUID) DeleteWebhookOpts {
-	return DeleteWebhookOpts{UUID: UUID}
+func NewDeleteWebhookOptsWithUUID(uuid uuid.UUID) DeleteWebhookOpts {
+	return DeleteWebhookOpts{UUID: uuid}
 }
 
-// Delete the webhook with given options. Either ID or UUID can be provided.
+// Delete the webhook with given options.
+//
+// Either ID or UUID can be provided.
 //
 // No error is returned if both ID and UUID are provided, ID is used in this
-// case. Error is returned when the webhook is not
-// found or something went wrong during an SQL query.
+// case. Error is returned when the webhook is not found or something went wrong
+// during an SQL query.
 func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error {
 	var query *sqlf.Query
 	if opts.ID > 0 {
 		query = sqlf.Sprintf(webhookDeleteByIDQueryFmtstr, opts.ID)
 	} else if opts.UUID == uuid.Nil {
-		return errors.New("Neither ID not UUID is provided to delete the webhook")
+		return errors.New("neither ID or UUID were provided to delete the webhook")
 	} else {
 		query = sqlf.Sprintf(webhookDeleteByUUIDQueryFmtstr, opts.UUID)
 	}
@@ -224,10 +226,10 @@ type WebhookNotFoundError struct {
 }
 
 func (w *WebhookNotFoundError) Error() string {
-	if w.UUID != uuid.Nil {
-		return fmt.Sprintf("webhook with UUID %s not found", w.UUID)
-	} else {
+	if w.ID > 0 {
 		return fmt.Sprintf("webhook with ID %d not found", w.ID)
+	} else {
+		return fmt.Sprintf("webhook with UUID %s not found", w.UUID)
 	}
 }
 

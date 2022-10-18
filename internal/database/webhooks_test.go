@@ -161,7 +161,7 @@ func TestWebhookDelete(t *testing.T) {
 
 	// Test that delete with empty options returns an error
 	err = store.Delete(ctx, DeleteWebhookOpts{})
-	assert.EqualError(t, err, "Neither ID not UUID is provided to delete the webhook")
+	assert.EqualError(t, err, "neither ID or UUID were provided to delete the webhook")
 
 	// Creating something to be deleted
 	createdWebhook1 := createWebhook(ctx, t, store)
