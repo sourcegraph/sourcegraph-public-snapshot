@@ -9,7 +9,7 @@ import (
 )
 
 type CodeHostSource interface {
-	ListRepos(ctx context.Context) ([]*url.URL, error)
+	ListRepos(ctx context.Context) ([]*Repo, error)
 }
 
 type CodeHostDestination interface {
@@ -32,30 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	gh, err := NewGithubCodeHost(ctx, &cfg.From)
+	if err != nil {
+		log.Fatal(err)
+	}
 	gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	project, err := gl.CreateRepo(ctx, "fooz")
-	if err != nil {
+	runner := NewRunner(gh, gl)
+	if err := runner.Run(ctx); err != nil {
 		log.Fatal(err)
 	}
-
-	println(project.String())
-
-	// gh, err := NewGithubCodeHost(ctx, &cfg.From)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	//
-	//
-	// res, err := gh.ListRepos(ctx)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	//
-	// for _, r := range res {
-	// 	println(r.name)
-	// }
 }
