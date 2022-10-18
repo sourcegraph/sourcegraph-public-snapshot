@@ -109,6 +109,11 @@ type Mutation {
     createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
     """
+    Deletes a webhook by given UUID. Only site admins may perform this mutation.
+    """
+    deleteWebhook(uuid: String!): EmptyResponse!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!

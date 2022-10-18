@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -137,6 +138,21 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
+}
+
+func (r *schemaResolver) DeleteWebhook(ctx context.Context, args *struct{ UUID string }) (*EmptyResponse, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+	parsedUUID, err := uuid.Parse(args.UUID)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing UUID")
+	}
+	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, parsedUUID)
+	if err != nil {
+		return nil, errors.Wrap(err, "delete webhook")
+	}
+	return &EmptyResponse{}, nil
 }
 
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
