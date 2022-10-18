@@ -420,6 +420,8 @@ func GetRemoteRepo(
 	ch *btypes.Changeset,
 	spec *btypes.ChangesetSpec,
 ) (*types.Repo, error) {
+	fmt.Printf("EXTERNAL FORK NAMESPACE: %v", ch.ExternalForkNamespace)
+
 	// If the changeset spec doesn't expect a fork _and_ we're not updating a
 	// changeset that was previously created using a fork, then we don't need to
 	// even check if the changeset source is forkable, let alone set up the
@@ -434,15 +436,19 @@ func GetRemoteRepo(
 	}
 
 	if ch.ExternalForkNamespace != "" {
+		fmt.Printf("SHOULD USE EXTERNAL NAMESPACE FORK")
 		// If we're updating an existing changeset, we should push/modify the
 		// same fork, even if the user credential would now fork into a
 		// different namespace.
 		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
 	} else if namespace := spec.GetForkNamespace(); namespace != nil {
+		fmt.Printf("SHOULD USE NAMESPACE FORK")
 		// If the changeset spec requires a specific fork namespace, then we
 		// should handle that here.
 		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
 	}
+
+	fmt.Printf("SHOULD USE USER FORK!")
 
 	// Otherwise, we're pushing to a user fork.
 	return fss.GetUserFork(ctx, targetRepo)

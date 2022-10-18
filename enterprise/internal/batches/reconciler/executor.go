@@ -175,6 +175,9 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return err
 	}
 	remoteRepo, err := e.remoteRepo(ctx)
+
+	fmt.Printf("GOT REMOTE REPO FOR COMMIT: %v", remoteRepo.URI)
+
 	if err != nil {
 		return err
 	}

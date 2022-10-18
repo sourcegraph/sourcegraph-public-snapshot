@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -328,10 +329,16 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+		fmt.Printf("GOING TO CREATE FORK! %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
+		hikelly := parent.Project.Key + "-" + parent.Slug
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &hikelly})
+
+		fmt.Printf("FORK CREATED SUCCESSFULLY! Origin ID: %v", fork.Origin.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
+	} else {
+		fmt.Printf("FORK WAS FOUND! %v/%v", fork.Project.Key, fork.Name)
 	}
 
 	return createRemoteRepo(targetRepo, fork), nil
@@ -348,7 +355,8 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
+		hikelly := parent.Project.Key + "-" + parent.Slug
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &hikelly,
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
 		})
 		if err != nil {
@@ -376,7 +384,7 @@ var (
 )
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
-	repo, err := s.client.Repo(ctx, namespace, parent.Slug)
+	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
 			return nil, nil
@@ -384,10 +392,14 @@ func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketser
 		return nil, err
 	}
 
+	fmt.Printf("Origin ID: %v, parent ID: %v", repo.Origin.ID, parent.ID)
+
 	// Sanity check: is the returned repo _actually_ a fork of the original?
 	if repo.Origin == nil {
+		fmt.Printf("DOES NOT HAVE ORIGIN")
 		return nil, errNotAFork
 	} else if repo.Origin.ID != parent.ID {
+		fmt.Printf("WRONG ORIGIN")
 		return nil, errNotForkedFromParent
 	}
 

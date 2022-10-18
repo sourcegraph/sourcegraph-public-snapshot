@@ -813,6 +813,10 @@ func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*
 
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+
+	// rest/api/1.0/projects/~milton/repos/GAB-baetest
+	fmt.Printf("GET REQUEST URL: %v", u)
+
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
