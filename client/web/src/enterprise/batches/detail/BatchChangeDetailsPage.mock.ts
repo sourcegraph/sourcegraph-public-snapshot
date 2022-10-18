@@ -337,7 +337,7 @@ export const BATCH_CHANGE_WITH_BATCH_SPECS_RESULT: BatchChangeBatchSpecsResult['
     batchSpecs: {
         __typename: 'BatchSpecConnection',
         totalCount: 2,
-        pageInfo: {endCursor: null, hasNextPage: false},
+        pageInfo: { endCursor: null, hasNextPage: false },
         nodes: [
             {
                 __typename: 'BatchSpec',
@@ -348,14 +348,14 @@ export const BATCH_CHANGE_WITH_BATCH_SPECS_RESULT: BatchChangeBatchSpecsResult['
                 createdAt: '2022-10-12T16:12:17Z',
                 source: BatchSpecSource.REMOTE,
                 description: {
-                    name: 'test-batch-change'
+                    name: 'test-batch-change',
                 },
                 namespace: {
                     namespaceName: 'test-user',
-                    url: '/users/test-user'
+                    url: '/users/test-user',
                 },
                 creator: {
-                    username: 'test-user'
+                    username: 'test-user',
                 },
                 originalInput: 'name: awesome-batch-changes\ndescription: somestring',
             },
@@ -368,17 +368,17 @@ export const BATCH_CHANGE_WITH_BATCH_SPECS_RESULT: BatchChangeBatchSpecsResult['
                 createdAt: '2022-09-12T16:12:17Z',
                 source: BatchSpecSource.REMOTE,
                 description: {
-                    name: 'test-batch-change-2'
+                    name: 'test-batch-change-2',
                 },
                 namespace: {
                     namespaceName: 'test-user',
-                    url: '/users/test-user'
+                    url: '/users/test-user',
                 },
                 creator: {
-                    username: 'test-user'
+                    username: 'test-user',
                 },
                 originalInput: 'name: awesome-batch-changes-2\ndescription: somestring',
-            }
+            },
         ],
-    }
+    },
 }

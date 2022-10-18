@@ -203,11 +203,11 @@ const Template: Story<{
         {
             request: {
                 query: getDocumentNode(BATCH_CHANGE_BATCH_SPECS),
-                variables: MATCH_ANY_PARAMETERS
+                variables: MATCH_ANY_PARAMETERS,
             },
             result: { data: { node: BATCH_CHANGE_WITH_BATCH_SPECS_RESULT } },
             nMatches: Number.POSITIVE_INFINITY,
-        }
+        },
     ])
 
     return (
