@@ -16561,7 +16561,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 #### zoekt: data_disk_reads_sec
 
-<p class="subtitle">Data disk read request rate over 1m (per instance)</p>
+<p class="subtitle">Data disk read request rate over 2m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
 
@@ -16581,7 +16581,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16589,7 +16589,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_writes_sec
 
-<p class="subtitle">Data disk write request rate over 1m (per instance)</p>
+<p class="subtitle">Data disk write request rate over 2m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
 
@@ -16608,7 +16608,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16616,7 +16616,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_read_throughput
 
-<p class="subtitle">Data disk read throughput over 1m (per instance)</p>
+<p class="subtitle">Data disk read throughput over 2m (per instance)</p>
 
 The amount of data that was read from the device per second.
 
@@ -16635,7 +16635,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16643,7 +16643,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_write_throughput
 
-<p class="subtitle">Data disk write throughput over 1m (per instance)</p>
+<p class="subtitle">Data disk write throughput over 2m (per instance)</p>
 
 The amount of data that was written to the device per second.
 
@@ -16662,7 +16662,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16670,7 +16670,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_read_duration
 
-<p class="subtitle">Data disk average read duration over 1m (per instance)</p>
+<p class="subtitle">Data disk average read duration over 2m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent
 by the requests in queue and the time spent servicing them.
@@ -16690,7 +16690,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[1m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))`
+Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))`
 
 </details>
 
@@ -16698,7 +16698,7 @@ Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${
 
 #### zoekt: data_disk_write_duration
 
-<p class="subtitle">Data disk average write duration over 1m (per instance)</p>
+<p class="subtitle">Data disk average write duration over 2m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent
 by the requests in queue and the time spent servicing them.
@@ -16718,7 +16718,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[1m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))`
+Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))`
 
 </details>
 
@@ -16726,7 +16726,7 @@ Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${
 
 #### zoekt: data_disk_read_request_size
 
-<p class="subtitle">Data disk average read request size over 1m (per instance)</p>
+<p class="subtitle">Data disk average read request size over 2m (per instance)</p>
 
 	The average size of read requests that were issued to the device.
 
@@ -16745,7 +16745,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))`
+Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))`
 
 </details>
 
@@ -16753,7 +16753,7 @@ Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${
 
 #### zoekt: data_disk_write_request_size
 
-<p class="subtitle">Data disk average write request size over 1m (per instance)</p>
+<p class="subtitle">Data disk average write request size over 2m (per instance)</p>
 
 	The average size of write requests that were issued to the device.
 
@@ -16772,7 +16772,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))`
+Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))`
 
 </details>
 
@@ -16780,7 +16780,7 @@ Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${
 
 #### zoekt: data_disk_reads_merged_sec
 
-<p class="subtitle">Data disk merged read request rate over 1m (per instance)</p>
+<p class="subtitle">Data disk merged read request rate over 2m (per instance)</p>
 
 	The number of read requests merged per second that were queued to the device.
 
@@ -16799,7 +16799,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16807,7 +16807,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_writes_merged_sec
 
-<p class="subtitle">Data disk merged writes request rate over 1m (per instance)</p>
+<p class="subtitle">Data disk merged writes request rate over 2m (per instance)</p>
 
 	The number of write requests merged per second that were queued to the device.
 
@@ -16826,7 +16826,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 
@@ -16834,7 +16834,7 @@ Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${in
 
 #### zoekt: data_disk_average_queue_size
 
-<p class="subtitle">Data disk average queue size over 1m (per instance)</p>
+<p class="subtitle">Data disk average queue size over 2m (per instance)</p>
 
 							The number of I/O operations that were being queued or being serviced. See
 							https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
@@ -16854,7 +16854,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[1m])`
+Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])`
 
 </details>
 

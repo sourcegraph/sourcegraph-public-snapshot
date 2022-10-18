@@ -929,8 +929,8 @@ func Zoekt() *monitoring.Dashboard {
 					{
 						{
 							Name:        "data_disk_reads_sec",
-							Description: "data disk read request rate over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk read request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.ReadsPerSecond).
@@ -949,8 +949,8 @@ func Zoekt() *monitoring.Dashboard {
 						},
 						{
 							Name:        "data_disk_writes_sec",
-							Description: "data disk write request rate over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk write request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.WritesPerSecond).
@@ -970,8 +970,8 @@ func Zoekt() *monitoring.Dashboard {
 					{
 						{
 							Name:        "data_disk_read_throughput",
-							Description: "data disk read throughput over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk read throughput over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.BytesPerSecond).
@@ -989,8 +989,8 @@ func Zoekt() *monitoring.Dashboard {
 						},
 						{
 							Name:        "data_disk_write_throughput",
-							Description: "data disk write throughput over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk write throughput over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.BytesPerSecond).
@@ -1010,11 +1010,11 @@ func Zoekt() *monitoring.Dashboard {
 					{
 						{
 							Name:        "data_disk_read_duration",
-							Description: "data disk average read duration over 1m (per instance)",
+							Description: "data disk average read duration over 2m (per instance)",
 
 							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("%s rate(node_disk_read_time_seconds_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_read_time_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							),
 							NoAlert: true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -1034,11 +1034,11 @@ func Zoekt() *monitoring.Dashboard {
 						},
 						{
 							Name:        "data_disk_write_duration",
-							Description: "data disk average write duration over 1m (per instance)",
+							Description: "data disk average write duration over 2m (per instance)",
 
 							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("%s rate(node_disk_write_time_seconds_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_write_time_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							),
 							NoAlert: true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -1060,10 +1060,10 @@ func Zoekt() *monitoring.Dashboard {
 					{
 						{
 							Name:        "data_disk_read_request_size",
-							Description: "data disk average read request size over 1m (per instance)",
+							Description: "data disk average read request size over 2m (per instance)",
 							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_read_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_reads_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							),
 							NoAlert: true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -1082,10 +1082,10 @@ func Zoekt() *monitoring.Dashboard {
 						},
 						{
 							Name:        "data_disk_write_request_size",
-							Description: "data disk average write request size over 1m (per instance)",
+							Description: "data disk average write request size over 2m (per instance)",
 							Query: fmt.Sprintf("((%s) / (%s))",
-								fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
-								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_written_bytes_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
+								fmt.Sprintf("%s rate(node_disk_writes_completed_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							),
 							NoAlert: true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -1106,8 +1106,8 @@ func Zoekt() *monitoring.Dashboard {
 					{
 						{
 							Name:        "data_disk_reads_merged_sec",
-							Description: "data disk merged read request rate over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_reads_merged_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk merged read request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_reads_merged_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.RequestsPerSecond).
@@ -1125,8 +1125,8 @@ func Zoekt() *monitoring.Dashboard {
 						},
 						{
 							Name:        "data_disk_writes_merged_sec",
-							Description: "data disk merged writes request rate over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_writes_merged_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk merged writes request rate over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_writes_merged_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.RequestsPerSecond).
@@ -1147,8 +1147,8 @@ func Zoekt() *monitoring.Dashboard {
 						{
 
 							Name:        "data_disk_average_queue_size",
-							Description: "data disk average queue size over 1m (per instance)",
-							Query:       fmt.Sprintf("%s rate(node_disk_io_time_weighted_seconds_total{instance=~`%s`}[1m])", joinOnMountInfo, nodeExporterInstanceRegex),
+							Description: "data disk average queue size over 2m (per instance)",
+							Query:       fmt.Sprintf("%s rate(node_disk_io_time_weighted_seconds_total{instance=~`%s`}[2m])", joinOnMountInfo, nodeExporterInstanceRegex),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit("req").
