@@ -628,9 +628,8 @@ ranked_uploads_providing_packages AS (
 ),
 
 -- Filter the set of our original (expired) candidate uploads so that it includes only
--- uploads that canonically provide a referenced package. This will remove from the candidate
--- set uploads that do not canonically provdie a package, or it canonically provides a package
--- with no references from another upload.
+-- uploads that canonically provide a referenced package. In the candidate set below,
+-- we will select all of the expired uploads that do NOT appear in this result set.
 referenced_uploads_providing_package_canonically AS (
 	SELECT ru.id
 	FROM ranked_uploads_providing_packages ru
@@ -638,12 +637,10 @@ referenced_uploads_providing_package_canonically AS (
 		-- Only select from our original set (not the larger intermediate ones)
 		ru.id IN (SELECT id FROM expired_uploads) AND
 
-		-- Ignore uploads that do not provide their package canonically
+		-- Only select canonical package providers
 		ru.rank = 1 AND
 
-		-- Ignore uploads that do not have references. We will also do a periodic but
-		-- more expensive graph traversal operation that handles the case of all-expired
-		-- connected components.
+		-- Only select packages with non-zero references
 		EXISTS (
 			SELECT 1
 			FROM lsif_references r
