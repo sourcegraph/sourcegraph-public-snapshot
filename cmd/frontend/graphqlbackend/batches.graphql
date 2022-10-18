@@ -2952,7 +2952,7 @@ type BatchSpecConnection {
 
 """
 A batch spec is an immutable description of the desired state of a batch change. To create a
-batch spec, use the createBatchSpec mutation. For security, a batch spec is only visible to viewers who can administer it.
+batch spec, use the createBatchSpec mutation.
 """
 type BatchSpec implements Node {
     """
