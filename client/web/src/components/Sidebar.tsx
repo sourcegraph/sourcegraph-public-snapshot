@@ -6,8 +6,8 @@ import kebabCase from 'lodash/kebabCase'
 import { useRouteMatch } from 'react-router-dom'
 
 import {
+    Link,
     AnchorLink,
-    ListItem,
     Icon,
     Collapse,
     CollapseHeader,
@@ -63,16 +63,16 @@ export const SidebarNewNavItem: React.FunctionComponent<React.PropsWithChildren<
 
     if (source === 'server') {
         return (
-            <AnchorLink to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
+            <Link to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
                 {children}
-            </AnchorLink>
+            </Link>
         )
     }
 
     return (
-        <AnchorLink to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
+        <Link to={to} className={classNames(styles.newNavItem, { [styles.current]: routeMatch?.isExact }, className)}>
             {children}
-        </AnchorLink>
+        </Link>
     )
 }
 

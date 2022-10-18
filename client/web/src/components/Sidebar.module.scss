@@ -43,4 +43,9 @@
 .current {
     color: var(--light-text);
     background: var(--primary);
+
+    &:focus {
+        color: var(--light-text);
+        background: var(--primary);
+    }
 }
