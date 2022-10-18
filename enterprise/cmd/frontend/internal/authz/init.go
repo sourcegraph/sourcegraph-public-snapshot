@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,7 +32,14 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	_ codeintel.Services,
+	_ conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
 		return edb.NewAuthzStore(observationContext.Logger, db, clock)

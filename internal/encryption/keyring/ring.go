@@ -106,6 +106,13 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
+	if keyConfig.WebhookKey != nil {
+		r.WebhookKey, err = NewKey(ctx, keyConfig.WebhookKey, keyConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	if keyConfig.WebhookLogKey != nil {
 		r.WebhookLogKey, err = NewKey(ctx, keyConfig.WebhookLogKey, keyConfig)
 		if err != nil {
@@ -120,6 +127,7 @@ type Ring struct {
 	BatchChangesCredentialKey encryption.Key
 	ExternalServiceKey        encryption.Key
 	UserExternalAccountKey    encryption.Key
+	WebhookKey                encryption.Key
 	WebhookLogKey             encryption.Key
 }
 

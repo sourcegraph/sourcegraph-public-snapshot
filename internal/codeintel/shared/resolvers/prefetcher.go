@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 )
 
 // Prefetcher is a batch query utility and cache used to reduce the amount of database

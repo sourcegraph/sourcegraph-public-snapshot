@@ -152,7 +152,7 @@ func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.User
 func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
 	now := timeNow().UTC()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs().CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1), &database.CountUniqueUsersOptions{ExcludeSystemUsers: true})
+	return db.EventLogs().CountUniqueUsersAll(ctx, today, today.AddDate(0, 0, 1), &database.CountUniqueUsersOptions{CommonUsageOptions: database.CommonUsageOptions{ExcludeSystemUsers: true, ExcludeSourcegraphAdmins: true}})
 }
 
 // ListRegisteredUsersToday returns a list of the registered users that were active today.
@@ -212,7 +212,7 @@ func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageS
 	return usage, nil
 }
 
-// activeUsers returns counts of active users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
+// activeUsers returns counts of active (non-SG) users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
 func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.SiteUsageStatistics, error) {
 	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
 		return &types.SiteUsageStatistics{
@@ -223,8 +223,11 @@ func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, m
 	}
 
 	return db.EventLogs().SiteUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
-		ExcludeSystemUsers:    true,
-		ExcludeNonActiveUsers: true,
+		CommonUsageOptions: database.CommonUsageOptions{
+			ExcludeSystemUsers:       true,
+			ExcludeNonActiveUsers:    true,
+			ExcludeSourcegraphAdmins: true,
+		},
 	})
 }
 

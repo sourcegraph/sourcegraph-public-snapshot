@@ -10,7 +10,6 @@ import (
 	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CodeIntelResolver interface {
@@ -23,24 +22,22 @@ type CodeIntelResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 
 	AutoindexingServiceResolver
-	ExecutorResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
-}
-
-type ExecutorResolver interface {
-	ExecutorResolver() executor.Resolver
 }
 
 type AutoindexingServiceResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (autoindexinggraphql.IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFIndexes(ctx context.Context, args *autoindexinggraphql.DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *autoindexinggraphql.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *autoindexinggraphql.LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *autoindexinggraphql.QueueAutoIndexJobsForRepoArgs) ([]sharedresolvers.LSIFIndexResolver, error)
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *autoindexinggraphql.UpdateRepositoryIndexConfigurationArgs) (*sharedresolvers.EmptyResponse, error)
 	RepositorySummary(ctx context.Context, id graphql.ID) (sharedresolvers.CodeIntelRepositorySummaryResolver, error)
+	CodeIntelligenceInferenceScript(ctx context.Context) (string, error)
+	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *autoindexinggraphql.UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
 }
 
 type UploadsServiceResolver interface {

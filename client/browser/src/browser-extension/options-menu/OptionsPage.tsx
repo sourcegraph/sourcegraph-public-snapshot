@@ -42,7 +42,7 @@ export interface OptionsPageProps {
 
     initialShowAdvancedSettings?: boolean
     isFullPage: boolean
-    showSourcegraphCloudAlert?: boolean
+    showSourcegraphComAlert?: boolean
     permissionAlert?: { name: string; icon?: React.ComponentType<{ className?: string }> }
     requestPermissionsHandler?: React.MouseEventHandler
 
@@ -67,7 +67,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
     onToggleActivated,
     initialShowAdvancedSettings = false,
     isFullPage,
-    showSourcegraphCloudAlert,
+    showSourcegraphComAlert,
     permissionAlert,
     requestPermissionsHandler,
     optionFlags,
@@ -123,7 +123,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <PermissionAlert {...permissionAlert} onClickGrantPermissions={requestPermissionsHandler} />
             )}
 
-            {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
+            {showSourcegraphComAlert && <SourcegraphComAlert />}
 
             {hasRepoSyncError && currentUser && (
                 <RepoSyncErrorAlert sourcegraphUrl={sourcegraphUrl} currentUser={currentUser} />
@@ -163,7 +163,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <div className={styles.splitSectionPart}>
                     <Link to="https://sourcegraph.com/search" {...NEW_TAB_LINK_PROPS}>
                         <Icon className="mr-2" aria-hidden={true} svgPath={mdiEarth} />
-                        Sourcegraph Cloud
+                        Sourcegraph.com
                     </Link>
                 </div>
                 <div className={styles.splitSectionPart}>
@@ -259,11 +259,11 @@ const RepoSyncErrorAlert: React.FunctionComponent<
     )
 }
 
-const SourcegraphCloudAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
+const SourcegraphComAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <section className={classNames('bg-2', styles.section)}>
         <H4>
             <Icon aria-hidden={true} className="mr-2" svgPath={mdiCheckCircleOutline} />
-            You're on Sourcegraph Cloud
+            You're on Sourcegraph.com
         </H4>
         <Text>Naturally, the browser extension is not necessary to browse public code on sourcegraph.com.</Text>
     </section>

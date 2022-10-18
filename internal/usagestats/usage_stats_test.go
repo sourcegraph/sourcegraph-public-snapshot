@@ -255,15 +255,17 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 
 	ctx := context.Background()
 
-	user1 := types.User{
-		ID: 1,
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	user2 := types.User{
-		ID: 2,
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Test single user
-	err := logLocalEvents(ctx, db, []Event{{
+	err = logLocalEvents(ctx, db, []Event{{
 		EventName:        "ViewBlob",
 		URL:              "https://sourcegraph.example.com/",
 		UserID:           user1.ID,
@@ -362,11 +364,13 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	db := setupForTest(t)
 
-	user1 := types.User{
-		ID: 1,
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	user2 := types.User{
-		ID: 2,
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// hardcode "now" as 2018/03/31
@@ -380,7 +384,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := logLocalEvents(ctx, db, []Event{{
+	err = logLocalEvents(ctx, db, []Event{{
 		EventName:        "ViewBlob",
 		URL:              "https://sourcegraph.example.com/",
 		UserID:           user1.ID,

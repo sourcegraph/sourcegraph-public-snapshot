@@ -106,11 +106,11 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphAdmins: true})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalUsersCount")(&err)
+	defer recordOperation("getTotalOrgsCount")(&err)
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
@@ -394,6 +394,8 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if envvar.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
 	}
+	// Used for cases where large pings objects might otherwise fail silently.
+	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
 		ClientSiteID:                  siteid.Get(),
@@ -515,7 +517,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+			logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)

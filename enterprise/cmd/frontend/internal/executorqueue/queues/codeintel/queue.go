@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -18,7 +18,7 @@ func QueueOptions(autoIndexingSvc *autoindexing.Service, accessToken func() stri
 
 	return handler.QueueOptions{
 		Name:              "codeintel",
-		Store:             autoIndexingSvc.WorkerutilStore(),
+		Store:             autoindexing.GetWorkerutilStore(autoIndexingSvc),
 		RecordTransformer: recordTransformer,
 	}
 }

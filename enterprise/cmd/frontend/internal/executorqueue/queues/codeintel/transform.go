@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
@@ -48,11 +48,18 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 		outfile = defaultOutfile
 	}
 
+	fetchTags := false
+	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
+	if strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go") {
+		fetchTags = true
+	}
+
 	return apiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
 		RepositoryName: index.RepositoryName,
-		FetchTags:      true,
+		ShallowClone:   true,
+		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,
 		CliSteps: []apiclient.CliStep{
 			{

@@ -202,9 +202,6 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
-			t.Cleanup(func() {
-				gitserver.Mocks.ResolveRevision = nil
-			})
 
 			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)

@@ -1,7 +1,10 @@
 import { CaseInsensitiveFuzzySearch } from './CaseInsensitiveFuzzySearch'
 
 function fuzzyMatches(query: string, values: string[]): string[] {
-    const fuzzy = new CaseInsensitiveFuzzySearch(values.map(value => ({ text: value })))
+    const fuzzy = new CaseInsensitiveFuzzySearch(
+        values.map(value => ({ text: value })),
+        undefined
+    )
     const results = fuzzy.search({ query, maxResults: 100 })
     return results.links.map(link => link.text)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // productLicense implements the GraphQL type ProductLicense.
@@ -97,8 +98,8 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 
 func (r *productLicense) LicenseKey() string { return r.v.LicenseKey }
 
-func (r *productLicense) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
+func (r *productLicense) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {

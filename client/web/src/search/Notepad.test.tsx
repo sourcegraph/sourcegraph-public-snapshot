@@ -44,7 +44,15 @@ describe('Notepad', () => {
 
     const mockEntries: NotepadEntry[] = [
         { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.standard },
-        { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
+        {
+            id: 1,
+            type: 'file',
+            path: 'path/to/file',
+            repo: 'test',
+            revision: 'master',
+            lineRange: null,
+            annotation: '',
+        },
     ]
 
     describe('closed state', () => {
@@ -353,9 +361,11 @@ describe('Notepad', () => {
             list.focus()
             userEvent.keyboard('{arrowdown}')
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[0]])
+            expect(items[0]).toHaveFocus()
 
             userEvent.keyboard('{arrowdown}')
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[1]])
+            expect(items[1]).toHaveFocus()
         })
 
         it('selects the previous item on arrow-up', () => {
@@ -368,9 +378,11 @@ describe('Notepad', () => {
             list.focus()
             userEvent.keyboard('{arrowup}')
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[3]])
+            expect(items[3]).toHaveFocus()
 
             userEvent.keyboard('{arrowup}')
             expect(screen.queryAllByRole('option', { selected: true })).toEqual([items[2]])
+            expect(items[2]).toHaveFocus()
         })
 
         it('extends/shrinks selection on shift+arrow-down/up', () => {

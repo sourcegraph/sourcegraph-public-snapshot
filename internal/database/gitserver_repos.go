@@ -104,7 +104,6 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 }
 
 const updateGitserverReposQueryFmtstr = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.Update
 UPDATE gitserver_repos AS gr
 SET
 	clone_status = tmp.clone_status,
@@ -128,7 +127,6 @@ func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) 
 }
 
 const totalErroredCloudDefaultReposQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
 SELECT
 	COUNT(*)
 FROM gitserver_repos gr
@@ -166,7 +164,6 @@ func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, r
 }
 
 const nonemptyLastErrorQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateWithNonemptyLastError
 SELECT
 	repo.name
 FROM repo
@@ -224,7 +221,6 @@ func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options 
 }
 
 const purgableReposQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.IteratePurgeableRepos
 SELECT
 	repo.name
 FROM repo
@@ -294,7 +290,6 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 }
 
 const iterateRepoGitserverQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateRepoGitserverStatus
 SELECT
 	gr.repo_id,
 	repo.name,
@@ -321,7 +316,6 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 }
 
 const getGitserverRepoByIDQueryFmtstr = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByID
 SELECT
 	repo_id,
 	-- We don't need this here, but the scanner needs it.
@@ -348,7 +342,6 @@ func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (
 }
 
 const getGitserverRepoByNameQueryFmtstr = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
 SELECT
 	gr.repo_id,
 	-- We don't need this here, but the scanner needs it.
@@ -371,7 +364,6 @@ func (err *errGitserverRepoNotFound) Error() string { return "gitserver repo not
 func (errGitserverRepoNotFound) NotFound() bool     { return true }
 
 const getByNamesQueryTemplate = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByNames
 SELECT
 	gr.repo_id,
 	r.name,
@@ -432,7 +424,6 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 
 func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetCloneStatus
 UPDATE gitserver_repos
 SET
 	clone_status = %s,
@@ -454,7 +445,6 @@ func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName
 	ns := dbutil.NewNullString(sanitizeToUTF8(error))
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastError
 UPDATE gitserver_repos
 SET
 	last_error = %s,
@@ -474,7 +464,6 @@ WHERE
 
 func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetRepoSize
 UPDATE gitserver_repos
 SET
 	repo_size_bytes = %s,
@@ -506,7 +495,6 @@ type GitserverFetchData struct {
 
 func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastFetched
 UPDATE gitserver_repos
 SET
 	last_fetched = %s,
@@ -551,7 +539,6 @@ func (s *gitserverRepoStore) ListReposWithoutSize(ctx context.Context) (_ map[ap
 }
 
 const listReposWithoutSizeQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.ListReposWithoutSize
 SELECT
 	repo.name,
     repo.id
@@ -607,7 +594,6 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, s
 }
 
 const updateRepoSizesQueryFmtstr = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.UpdateRepoSizes
 UPDATE gitserver_repos AS gr
 SET
     repo_size_bytes = tmp.repo_size_bytes,

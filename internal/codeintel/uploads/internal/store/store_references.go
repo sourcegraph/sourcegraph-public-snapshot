@@ -52,7 +52,6 @@ func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 }
 
 const updateReferencesTemporaryTableQuery = `
--- source: internal/codeintel/uploads/internal/store/store_references.go:UpdatePackageReferences
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
 	name text NOT NULL,
@@ -61,7 +60,6 @@ CREATE TEMPORARY TABLE t_lsif_references (
 `
 
 const updateReferencesInsertQuery = `
--- source: internal/codeintel/uploads/internal/store/store_references.go:UpdatePackageReferences
 INSERT INTO lsif_references (dump_id, scheme, name, version)
 SELECT %s, source.scheme, source.name, source.version
 FROM t_lsif_references source
@@ -97,7 +95,6 @@ func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared
 }
 
 const referencesForUploadQuery = `
--- source: internal/codeintel/stores/dbstore/xrepo.go:ReferencesForUpload
 SELECT r.dump_id, r.scheme, r.name, r.version
 FROM lsif_references r
 WHERE dump_id = %s

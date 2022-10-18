@@ -324,19 +324,16 @@ func scanDirtyQueriesAggregated(rows *sql.Rows, queryErr error) (_ []*types.Dirt
 }
 
 const insertDirtyQuerySql = `
--- source: enterprise/internal/insights/store/insight_store.go:InsertDirtyQuery
 INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
 VALUES (%s, %s, %s, %s, %s);
 `
 
 const getDirtyQueriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueries
 select id, query, reason, for_time, dirty_at from insight_dirty_queries
 where insight_series_id = %s
 limit %s;`
 
 const getDirtyQueriesAggregatedSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDirtyQueriesAggregated
 select count(*) as count, for_time, reason from insight_dirty_queries
 where insight_dirty_queries.insight_series_id = (select id from insight_series where series_id = %s)
 group by for_time, reason;
@@ -422,7 +419,6 @@ func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, 
 }
 
 const completeJustInTimeConversionAttemptSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CompleteJustInTimeConversionAttempt
 UPDATE insight_series
 SET just_in_time = false,
     next_recording_after = %s,
@@ -696,7 +692,6 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 }
 
 const addViewGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
 INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
 VALUES %s;
 `
@@ -717,7 +712,6 @@ func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string
 }
 
 const deleteViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:DeleteView
 delete from insight_view where %s;
 `
 
@@ -727,7 +721,6 @@ func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series typ
 }
 
 const incrementSeriesBackfillAttemptsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:IncrementSeriesBackfillAttempts
 update insight_series set backfill_attempts = backfill_attempts + 1 where series_id = %s;
 `
 
@@ -737,7 +730,6 @@ func (s *InsightStore) StartJustInTimeConversionAttempt(ctx context.Context, ser
 }
 
 const startJustInTimeConversionAttemptSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StartJITConversionAttempt
 update insight_series set backfill_attempts = backfill_attempts + 1, created_at=%s, series_id = %s where id = %d;
 `
 
@@ -956,21 +948,18 @@ func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId s
 }
 
 const setSeriesStatusSql = `
--- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
 SET deleted_at = %s
 WHERE series_id = %s;
 `
 
 const stampBackfillSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampRecording
 UPDATE insight_series
 SET backfill_queued_at = %s
 WHERE id = %s;
 `
 
 const stampRecordingSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampRecording
 UPDATE insight_series
 SET last_recorded_at = %s,
     next_recording_after = %s
@@ -978,7 +967,6 @@ WHERE id = %s;
 `
 
 const stampSnapshotSql = `
--- source: enterprise/internal/insights/store/insight_store.go:StampSnapshot
 UPDATE insight_series
 SET last_snapshot_at = %s,
     next_snapshot_after = %s
@@ -986,20 +974,17 @@ WHERE id = %s;
 `
 
 const attachSeriesToViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AttachSeriesToView
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, %s, %s);
 `
 
 const removeSeriesFromViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:RemoveSeriesFromView
 DELETE FROM insight_view_series vs
 USING insight_series s
 WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s;
 `
 
 const updateInsightViewSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateViewSeries
 UPDATE insight_view_series vs
 SET label = %s, stroke = %s
 FROM insight_series s
@@ -1007,14 +992,12 @@ WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = 
 `
 
 const createInsightViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
 default_filter_search_contexts, other_threshold, presentation_type)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
 default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, series_sort_mode = %s, series_sort_direction = %s,
 series_limit = %s
@@ -1022,7 +1005,6 @@ WHERE unique_id = %s
 RETURNING id;`
 
 const createInsightSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
@@ -1031,7 +1013,6 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
 RETURNING id;`
 
 const getInsightByViewSql = `
--- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
@@ -1062,12 +1043,11 @@ ORDER BY dbiv.id
 `
 
 const getInsightDataSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
+SELECT id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
 just_in_time, generation_method, repositories, group_by, backfill_attempts
-from insight_series
+FROM insight_series
 WHERE %s
 `
 
@@ -1087,7 +1067,6 @@ ORDER BY iv.unique_id
 `
 
 const getInsightsWithSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
@@ -1102,27 +1081,23 @@ ORDER BY iv.unique_id
 `
 
 const countSeriesReferencesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
 SELECT COUNT(*) FROM insight_view_series viewSeries
 	INNER JOIN insight_series series ON viewSeries.insight_series_id = series.id
 WHERE series.series_id = %s
 `
 
 const updateFrontendSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
 UPDATE insight_series
 SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s, group_by = %s
 WHERE series_id = %s
 `
 
 const getReferenceCountSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetReferenceCount
 SELECT COUNT(*) from dashboard_insight_view
 WHERE insight_view_id = %s
 `
 
 const getSoftDeletedSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:GetSoftDeletedSeries
 SELECT series_id
 FROM insight_series i
 LEFT JOIN insight_view_series ivs ON i.id = ivs.insight_series_id
@@ -1132,22 +1107,18 @@ WHERE i.deleted_at IS NOT NULL
 `
 
 const hardDeleteSeries = `
--- source: enterprise/internal/insights/store/insight_store.go:HardDeleteSeries
 DELETE FROM insight_series WHERE series_id = %s;
 `
 
 const freezeAllInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:FreezeAllInsights
 UPDATE insight_view SET is_frozen = TRUE
 `
 
 const unfreezeAllInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeAllInsights
 UPDATE insight_view SET is_frozen = FALSE
 `
 
 const getUnfrozenInsightCountSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetFrozenInsightCounts
 SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTotal FROM (
 	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
 	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
@@ -1162,7 +1133,6 @@ CROSS JOIN
 `
 
 const unfreezeGlobalInsightsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 UPDATE insight_view SET is_frozen = FALSE
 WHERE id IN (
 	SELECT DISTINCT(iv.id) from insight_view as iv
@@ -1175,11 +1145,9 @@ WHERE id IN (
 `
 
 const getUnfrozenInsightUniqueIdsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:UnfreezeGlobalInsights
 SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
 `
 
 const setSeriesBackfillComplete = `
--- source: enterprise/internal/insights/store/insight_store.go:SetSeriesBackfillComplete
-update insight_series set backfill_completed_at = %s where series_id = %s;
+UPDATE insight_series SET backfill_completed_at = %s WHERE series_id = %s;
 `

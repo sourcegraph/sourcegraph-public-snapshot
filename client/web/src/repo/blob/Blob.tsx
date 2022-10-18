@@ -87,6 +87,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { BlobStencilFields } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -129,6 +130,9 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
+    // Enables keyboard navigation across precise code intelligence
+    tokenKeyboardNavigation?: boolean
+
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
@@ -148,6 +152,8 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
+
+    stencil?: BlobStencilFields[]
 }
 
 const domFunctions = {

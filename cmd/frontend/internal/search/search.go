@@ -154,23 +154,35 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		}()
 	}
 
-	eventHandler := newEventHandler(
-		ctx,
-		h.logger,
-		h.db,
-		eventWriter,
-		progress,
-		h.flushTickerInternal,
-		h.pingTickerInterval,
-		displayLimit,
-		args.EnableChunkMatches,
-		logLatency,
-	)
-	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
-	// Clean up streams before writing to eventWriter again.
-	batchedStream.Done()
-	eventHandler.Done()
+	// HACK: We awkwardly call an inline function here so that we can defer the
+	// cleanups. Defers are guaranteed to run even when unrolling a panic, so
+	// we can guarantee that the goroutines spawned by `newEventHandler` are
+	// cleaned up when this function exits. This is necessary because otherwise
+	// the background goroutines might try to write to the http response, which
+	// is no longer valid, which will cause a panic of its own that crashes the
+	// process because they are running in a goroutine that does not have a
+	// panic handler. We cannot add a panic handler because the goroutines are
+	// spawned by the go runtime.
+	alert, err := func() (*search.Alert, error) {
+		eventHandler := newEventHandler(
+			ctx,
+			h.logger,
+			h.db,
+			eventWriter,
+			progress,
+			h.flushTickerInternal,
+			h.pingTickerInterval,
+			displayLimit,
+			args.EnableChunkMatches,
+			logLatency,
+		)
+		defer eventHandler.Done()
+
+		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
+		defer batchedStream.Done()
+
+		return h.searchClient.Execute(ctx, batchedStream, inputs)
+	}()
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}

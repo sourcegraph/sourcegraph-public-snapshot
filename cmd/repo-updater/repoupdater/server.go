@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"

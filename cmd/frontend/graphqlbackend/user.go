@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -157,12 +158,12 @@ func (r *UserResolver) URL() string {
 
 func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
-func (r *UserResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.user.CreatedAt}
+func (r *UserResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.user.CreatedAt}
 }
 
-func (r *UserResolver) UpdatedAt() *DateTime {
-	return &DateTime{Time: r.user.UpdatedAt}
+func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.user.UpdatedAt}
 }
 
 func (r *UserResolver) settingsSubject() api.SettingsSubject {

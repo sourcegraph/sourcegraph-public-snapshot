@@ -8,7 +8,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -19,11 +21,11 @@ type LSIFIndexResolver interface {
 	InputRoot() string
 	InputIndexer() string
 	Indexer() types.CodeIntelIndexerResolver
-	QueuedAt() DateTime
+	QueuedAt() gqlutil.DateTime
 	State() string
 	Failure() *string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
@@ -49,25 +51,30 @@ func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsSer
 		prefetcher.MarkUpload(*index.AssociatedUploadID)
 	}
 
+	db := autoindexingSvc.GetUnsafeDB()
 	return &indexResolver{
 		autoindexingSvc:  autoindexingSvc,
 		uploadsSvc:       uploadsSvc,
 		policySvc:        policySvc,
 		index:            index,
 		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(autoindexingSvc.GetUnsafeDB()),
+		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		traceErrs:        errTrace,
 	}
 }
 
-func (r *indexResolver) ID() graphql.ID        { return marshalLSIFIndexGQLID(int64(r.index.ID)) }
-func (r *indexResolver) InputCommit() string   { return r.index.Commit }
-func (r *indexResolver) InputRoot() string     { return r.index.Root }
-func (r *indexResolver) InputIndexer() string  { return r.index.Indexer }
-func (r *indexResolver) QueuedAt() DateTime    { return DateTime{Time: r.index.QueuedAt} }
-func (r *indexResolver) Failure() *string      { return r.index.FailureMessage }
-func (r *indexResolver) StartedAt() *DateTime  { return DateTimeOrNil(r.index.StartedAt) }
-func (r *indexResolver) FinishedAt() *DateTime { return DateTimeOrNil(r.index.FinishedAt) }
+func (r *indexResolver) ID() graphql.ID             { return marshalLSIFIndexGQLID(int64(r.index.ID)) }
+func (r *indexResolver) InputCommit() string        { return r.index.Commit }
+func (r *indexResolver) InputRoot() string          { return r.index.Root }
+func (r *indexResolver) InputIndexer() string       { return r.index.Indexer }
+func (r *indexResolver) QueuedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: r.index.QueuedAt} }
+func (r *indexResolver) Failure() *string           { return r.index.FailureMessage }
+func (r *indexResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.index.StartedAt)
+}
+func (r *indexResolver) FinishedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.index.FinishedAt)
+}
 func (r *indexResolver) Steps() IndexStepsResolver {
 	return NewIndexStepsResolver(r.autoindexingSvc, r.index)
 }
@@ -120,7 +127,7 @@ func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolve
 func (r *indexResolver) Indexer() types.CodeIntelIndexerResolver {
 	// drop the tag if it exists
 	if idx, ok := types.ImageToIndexer[strings.Split(r.index.Indexer, ":")[0]]; ok {
-		return idx
+		return types.NewCodeIntelIndexerResolverFrom(idx)
 	}
 
 	return types.NewCodeIntelIndexerResolver(r.index.Indexer)

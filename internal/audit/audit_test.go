@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestLog(t *testing.T) {
@@ -154,6 +155,43 @@ func TestLog(t *testing.T) {
 			assert.Equal(t, expectedActor["actorUID"], actualActor["actorUID"])
 			assert.Equal(t, expectedActor["ip"], actualActor["ip"])
 			assert.Equal(t, expectedActor["X-Forwarded-For"], actualActor["X-Forwarded-For"])
+		})
+	}
+}
+
+func TestIsEnabled(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      schema.SiteConfiguration
+		expected map[AuditLogSetting]bool
+	}{
+		{
+			name:     "empty log results in default audit log settings",
+			cfg:      schema.SiteConfiguration{},
+			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
+		},
+		{
+			name:     "empty audit log config results in default audit log settings",
+			cfg:      schema.SiteConfiguration{Log: &schema.Log{}},
+			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
+		},
+		{
+			name: "fully populated audit log is read  correctly",
+			cfg: schema.SiteConfiguration{
+				Log: &schema.Log{
+					AuditLog: &schema.AuditLog{
+						InternalTraffic: true,
+						GitserverAccess: true,
+						GraphQL:         true,
+					}}},
+			expected: map[AuditLogSetting]bool{GitserverAccess: true, InternalTraffic: true, GraphQL: true},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for setting, want := range tt.expected {
+				assert.Equalf(t, want, IsEnabled(tt.cfg, setting), "IsEnabled(%v, %v)", tt.cfg, setting)
+			}
 		})
 	}
 }

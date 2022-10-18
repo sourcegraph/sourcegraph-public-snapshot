@@ -3,11 +3,13 @@ package graphql
 import (
 	"context"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type CodeIntelligenceCommitGraphResolver interface {
 	Stale(ctx context.Context) (bool, error)
-	UpdatedAt(ctx context.Context) (*DateTime, error)
+	UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error)
 }
 
 type CommitGraphResolver struct {
@@ -26,6 +28,6 @@ func (r *CommitGraphResolver) Stale(ctx context.Context) (bool, error) {
 	return r.stale, nil
 }
 
-func (r *CommitGraphResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
-	return DateTimeOrNil(r.updatedAt), nil
+func (r *CommitGraphResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	return gqlutil.DateTimeOrNil(r.updatedAt), nil
 }

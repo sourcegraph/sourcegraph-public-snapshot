@@ -7,7 +7,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { QueryState, SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
@@ -16,7 +16,7 @@ import {
     SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
+import { ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -116,7 +116,7 @@ export interface SearchContextFormProps
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
-    searchContext?: ISearchContext
+    searchContext?: SearchContextFields
     query?: string
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
@@ -125,10 +125,10 @@ export interface SearchContextFormProps
         id: Scalars['ID'] | undefined,
         searchContext: SearchContextInput,
         repositories: SearchContextRepositoryRevisionsInput[]
-    ) => Observable<ISearchContext>
+    ) => Observable<SearchContextFields>
 }
 
-const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibility =>
+const searchContextVisibility = (searchContext: SearchContextFields): SelectedVisibility =>
     searchContext.public ? 'public' : 'private'
 
 type RepositoriesParseResult =

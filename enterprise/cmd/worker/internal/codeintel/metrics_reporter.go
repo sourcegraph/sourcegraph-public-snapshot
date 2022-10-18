@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -41,11 +43,11 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 		logger.Scoped("routines", "metrics reporting routines"),
 	)
 
-	services.UploadsService.MetricReporters(observationContext)
-	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.DependencySyncStore(), "codeintel", "dependency_sync", nil)
-	dbworker.InitPrometheusMetric(observationContext, services.AutoIndexingService.DependencyIndexingStore(), "codeintel", "dependency_index", nil)
+	uploads.GetBackgroundJob(services.UploadsService).SetMetricReporters(observationContext)
+	dbworker.InitPrometheusMetric(observationContext, autoindexing.GetDependencySyncStore(services.AutoIndexingService), "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationContext, autoindexing.GetDependencyIndexingStore(services.AutoIndexingService), "codeintel", "dependency_index", nil)
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", services.AutoIndexingService.WorkerutilStore(), configInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", autoindexing.GetWorkerutilStore(services.AutoIndexingService), configInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}

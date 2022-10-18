@@ -11,6 +11,7 @@ export interface AuthProvider {
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
+    serviceID: string
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {

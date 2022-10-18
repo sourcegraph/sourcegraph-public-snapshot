@@ -28,6 +28,7 @@ type ServiceConnections struct {
 
 // RawUnified is the unparsed variant of conf.Unified.
 type RawUnified struct {
+	ID                 int32
 	Site               string
 	ServiceConnections ServiceConnections
 }

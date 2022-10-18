@@ -5,20 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -47,6 +51,8 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // interacts with (search-indexer).
 type searchIndexerServer struct {
 	db database.DB
+
+	gitserverClient gitserver.Client
 	// ListIndexable returns the repositories to index.
 	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
@@ -74,6 +80,8 @@ type searchIndexerServer struct {
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
 	MinLastChangedDisabled bool
+
+	codeIntelServices internalcodeintel.Services
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -158,7 +166,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := gitserver.NewClient(h.db).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 				NoEnsureRevision: true,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -169,7 +177,30 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 			return string(commitID), err
 		}
 
-		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
+		var priority float64
+
+		// We have to enable experimental ranking either for all or none of the repos.
+		// We cannot mix star-based priorities [0, inf] with ranks [0, 1], because in
+		// Zoekt, shards are sorted and searched based on their priority, and the rank
+		// and star-count are in principle not comparable.
+		if rankingEnabled, _ := strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING")); rankingEnabled {
+			rankVec, err := h.codeIntelServices.RankingService.GetRepoRank(ctx, repo.Name)
+			if err != nil {
+				return nil, errors.Wrapf(err, "serveConfiguration: error getting repo rank")
+			}
+			// Hack: we take the first non-zero rank as priority. This is fine for now
+			// because, unlike documents, repos don't have categorical ranks like
+			// "generated" or "test" (yet). In the future we can persist the full ranking
+			// vector in the Zoekt shard.
+			for _, r := range rankVec {
+				if r > 0 {
+					priority = r
+					break
+				}
+			}
+		} else {
+			priority = float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
+		}
 
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
@@ -266,3 +297,38 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
+
+func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
+	return serveRank(h.codeIntelServices.RankingService.GetRepoRank, w, r)
+}
+
+func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
+	return serveRank(h.codeIntelServices.RankingService.GetDocumentRanks, w, r)
+}
+
+func serveRank[T []float64 | map[string][]float64](
+	f func(ctx context.Context, name api.RepoName) (r T, err error),
+	w http.ResponseWriter,
+	r *http.Request,
+) error {
+	ctx := r.Context()
+
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+
+	rank, err := f(ctx, repoName)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return nil
+		}
+		return err
+	}
+
+	b, err := json.Marshal(rank)
+	if err != nil {
+		return err
+	}
+
+	_, _ = w.Write(b)
+	return nil
+}

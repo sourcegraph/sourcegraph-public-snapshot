@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,7 +24,6 @@ func (s *store) GetAuditLogsForUpload(ctx context.Context, uploadID int) (_ []ty
 }
 
 const getAuditLogsForUploadQuery = `
--- source: internal/codeintel/stores/dbstore/audit_logs.go:GetAuditLogsForUpload
 SELECT
 	u.log_timestamp,
 	u.record_deleted_at,
@@ -57,7 +56,6 @@ func (s *store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, no
 }
 
 const deleteOldAuditLogsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_audit_logs.go:DeleteOldAuditLogs
 WITH deleted AS (
 	DELETE FROM lsif_uploads_audit_logs
 	WHERE %s - log_timestamp > (%s * '1 second'::interval)

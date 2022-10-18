@@ -99,6 +99,9 @@ type ExternalServiceStore interface {
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, id int64) error
 
+	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
+	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
+
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
 	//
@@ -219,6 +222,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
 	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -619,8 +623,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
-			nullInt32Column(es.NamespaceUserID),
-			nullInt32Column(es.NamespaceOrgID),
+			dbutil.NullInt32Column(es.NamespaceUserID),
+			dbutil.NullInt32Column(es.NamespaceOrgID),
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
@@ -771,11 +775,11 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			keyID,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
-			nullTimeColumn(s.DeletedAt),
-			nullTimeColumn(s.LastSyncAt),
-			nullTimeColumn(s.NextSyncAt),
-			nullInt32Column(s.NamespaceUserID),
-			nullInt32Column(s.NamespaceOrgID),
+			dbutil.NullTimeColumn(s.DeletedAt),
+			dbutil.NullTimeColumn(s.LastSyncAt),
+			dbutil.NullTimeColumn(s.NextSyncAt),
+			dbutil.NullInt32Column(s.NamespaceUserID),
+			dbutil.NullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -793,7 +797,6 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: internal/database/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,
@@ -1089,7 +1092,13 @@ SELECT
 	num_resets,
 	external_service_id,
 	num_failures,
-	cancel
+	cancel,
+	repos_synced,
+	repo_sync_errors,
+	repos_added,
+	repos_modified,
+	repos_unmodified,
+	repos_deleted
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1180,6 +1189,36 @@ func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*t
 	return &job, nil
 }
 
+// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
+func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
+	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
+	result, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "updating sync job counters")
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking affected rows")
+	}
+	if affected == 0 {
+		return &errSyncJobNotFound{id: job.ID}
+	}
+	return nil
+}
+
+const updateSyncJobQueryFmtstr = `
+UPDATE external_service_sync_jobs
+SET
+	repos_synced = %d,
+	repo_sync_errors = %d,
+	repos_added = %d,
+	repos_modified = %d,
+	repos_unmodified = %d,
+	repos_deleted = %d
+WHERE
+    id = %d
+`
+
 func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
 	return sc.Scan(
 		&job.ID,
@@ -1193,6 +1232,12 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&dbutil.NullInt64{N: &job.ExternalServiceID},
 		&job.NumFailures,
 		&job.Cancel,
+		&job.ReposSynced,
+		&job.RepoSyncErrors,
+		&job.ReposAdded,
+		&job.ReposModified,
+		&job.ReposUnmodified,
+		&job.ReposDeleted,
 	)
 }
 

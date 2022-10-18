@@ -2,6 +2,10 @@
     background-color: var(--mark-bg);
 }
 
+.link:hover {
+    cursor: pointer;
+}
+
 .link {
     display: inline-block;
     width: 100%;

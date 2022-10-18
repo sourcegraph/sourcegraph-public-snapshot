@@ -3,7 +3,7 @@ package lsifstore
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -30,7 +30,7 @@ type store struct {
 	operations *operations
 }
 
-func New(db stores.CodeIntelDB, observationContext *observation.Context) LsifStore {
+func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),

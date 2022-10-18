@@ -50,9 +50,7 @@
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-  },
+  "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],
@@ -64,5 +62,8 @@
   "[nix]": {
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
+  },
+  "files.watcherExclude": {
+    "**/target": true,
   },
 }

@@ -67,7 +67,7 @@ type Store struct {
 	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
 
 	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
-	FilterTar func(ctx context.Context, db database.DB, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
+	FilterTar func(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
 
 	// Path is the directory to store the cache
 	Path string
@@ -274,7 +274,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, s.DB, repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(s.DB), repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}

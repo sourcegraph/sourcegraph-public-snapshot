@@ -159,12 +159,14 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	}
 
 	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-		SeriesID:    seriesID,
-		SearchQuery: finalQuery,
-		State:       "queued",
-		Priority:    int(priority.High),
-		Cost:        int(priority.Indexed),
-		PersistMode: string(mode),
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    seriesID,
+			SearchQuery: finalQuery,
+			PersistMode: string(mode),
+		},
+		State:    "queued",
+		Priority: int(priority.High),
+		Cost:     int(priority.Indexed),
 	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID)

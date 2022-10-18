@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,8 +32,8 @@ type GitLabWebhook struct {
 	failHandleEvent error
 }
 
-func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{Webhook: &Webhook{store, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *GitLabWebhook {
+	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.

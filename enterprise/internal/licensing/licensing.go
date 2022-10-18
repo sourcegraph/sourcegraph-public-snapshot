@@ -3,6 +3,7 @@ package licensing
 import (
 	"log"
 	"sync"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 
@@ -52,6 +53,10 @@ func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *
 // key (publicKey in this package).
 func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, err error) {
 	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
+}
+
+func GetFreeLicenseInfo() (info *Info) {
+	return &Info{license.Info{Tags: []string{"plan:free-0"}, UserCount: 10, ExpiresAt: time.Now().Add(time.Hour * 8760)}}
 }
 
 var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
@@ -127,9 +132,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 			lastSignature = signature
 		}
 		return info, signature, nil
+	} else {
+		// If no license key, default to free tier
+		return GetFreeLicenseInfo(), "", nil
 	}
-	// No license key.
-	return nil, "", nil
 }
 
 // licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for

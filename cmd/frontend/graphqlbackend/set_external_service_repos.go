@@ -36,7 +36,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	namespaceUserID, namespaceOrgID = es.NamespaceUserID, es.NamespaceOrgID
 
 	// 🚨 SECURITY: make sure the user has access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 

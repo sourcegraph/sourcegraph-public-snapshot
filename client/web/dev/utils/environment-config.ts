@@ -38,6 +38,8 @@ export const ENVIRONMENT_CONFIG = {
     // Allow overriding default Webpack naming behavior for debugging
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
 
+    WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
+
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
     // The current Docker image version, use to associate builds with Sentry's source maps.

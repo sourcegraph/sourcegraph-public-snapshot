@@ -196,13 +196,13 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
         ])
     )
 
-    const showSourcegraphCloudAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
+    const showSourcegraphComAlert = currentTabStatus?.status.host.endsWith('sourcegraph.com')
 
     let permissionAlert: Optional<KnownCodeHost, 'host' | 'icon'> | undefined
     if (
         currentTabStatus &&
         !currentTabStatus?.status.hasPermissions &&
-        !showSourcegraphCloudAlert &&
+        !showSourcegraphComAlert &&
         !PERMISSIONS_PROTOCOL_BLOCKLIST.has(currentTabStatus.status.protocol)
     ) {
         const knownCodeHost = knownCodeHosts.find(({ host }) => host === currentTabStatus.status.host)
@@ -267,7 +267,7 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
                     onChangeOptionFlag={handleChangeOptionFlag}
                     hasRepoSyncError={currentTabStatus?.status.hasRepoSyncError}
                     currentUser={currentUser}
-                    showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                    showSourcegraphComAlert={showSourcegraphComAlert}
                     permissionAlert={permissionAlert}
                     requestPermissionsHandler={currentTabStatus?.handler}
                 />

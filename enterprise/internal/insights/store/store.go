@@ -258,12 +258,10 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 }
 
 const deleteForSeries = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points where series_id = %s;
 `
 
 const deleteForSeriesSnapshots = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points_snapshots where series_id = %s;
 `
 
@@ -272,7 +270,6 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
--- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
@@ -454,8 +451,7 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 }
 
 const deleteSnapshotsSql = `
--- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
-delete from %s where series_id = %s;
+DELETE FROM %s WHERE series_id = %s;
 `
 
 type PersistMode string
@@ -549,7 +545,6 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 }
 
 const upsertRepoNameFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
 	INSERT INTO repo_names(name)
 	VALUES (%s)

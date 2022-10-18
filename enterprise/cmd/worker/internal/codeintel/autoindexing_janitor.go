@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/cleanup"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -34,5 +35,8 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log
 		return nil, err
 	}
 
-	return cleanup.NewResetters(services.AutoIndexingService), nil
+	return append(
+		cleanup.NewJanitor(autoindexing.GetBackgroundJobs(services.AutoIndexingService)),
+		cleanup.NewResetters(autoindexing.GetBackgroundJobs(services.AutoIndexingService))...,
+	), nil
 }

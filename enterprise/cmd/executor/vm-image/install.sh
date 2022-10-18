@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -ex -o nounset -o pipefail
 
-export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/executor-vm:$VERSION"
 export NODE_EXPORTER_VERSION=1.2.2
 export NODE_EXPORTER_ADDR="127.0.0.1:9100"
 
@@ -72,36 +71,24 @@ function install_executor() {
   # Move binary into PATH
   mv /tmp/executor /usr/local/bin
 
-  # Run all the installers:
-  # TODO: Replace this by executor install all. For that install images executor-vm
-  # has to work in this VM box though.
+  # Import executor-vm image.
+  docker load --input /tmp/executor-vm.tar
+  rm /tmp/executor-vm.tar
 
-  # Install Weaveworks Ignite
-  # Reference: https://ignite.readthedocs.io/en/stable/installation/
-  # Install dependencies. Most of these are actually bundled by default, but
+  # Install dependencies of ignite. Most of these are actually bundled by default, but
   # listing them out here explicitly makes it so that upstream image changes never
   # negatively impact us.
   apt-get update
   apt-get install -y mount tar binutils e2fsprogs openssh-client dmsetup
-  # Download and install ignite binary.
-  /usr/local/bin/executor install ignite
-  # Install the CNI plus plugins, used by ignite.
-  /usr/local/bin/executor install cni
-  # Install src-cli to the host system. It's needed for src steps outside of firecracker.
-  /usr/local/bin/executor install src-cli
-  # Loads the required kernel image so it doesn't have to happen on the first VM start.
-  /usr/local/bin/executor install image kernel
-  # Loads the required sandbox docker image so it doesn't have to happen on the first VM start.
-  /usr/local/bin/executor install image sandbox
-  # Configures iptables rules for our ignite VMs. We don't want to allow any local
-  # traffic except the traffic to nameservers. This is to prevent any internal attack
-  # vector and talking to link-local services like the google metadata server.
+
+  # Install iptables-persistent.
   # Make sure the below install doesn't block.
   echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-  # Ensure iptables-persistent is installed.
   apt-get install -y iptables-persistent
-  # Install all required rules.
-  /usr/local/bin/executor install iptables-rules
+
+  # Run all the installers.
+  /usr/local/bin/executor install all
+
   # Store the iptables config.
   mkdir -p /etc/iptables
   iptables-save >/etc/iptables/rules.v4
@@ -121,7 +108,6 @@ Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
 Environment=SRC_LOG_LEVEL=dbug
-Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 Environment=NODE_EXPORTER_URL="http://${NODE_EXPORTER_ADDR}"
 
 [Install]
@@ -201,18 +187,6 @@ EOF
   systemctl enable node_exporter
 }
 
-## Build the sourcegraph/executor-vm image for use in firecracker.
-## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
-function generate_ignite_base_image() {
-  # TODO: Find a way to use executor install image executor-vm here.
-  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/executor-vm
-  ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
-  docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
-  # Remove intermediate layers and base image used in executor-vm.
-  # TODO: This removes the already pulled sandbox image.
-  # docker system prune --force
-}
-
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -237,7 +211,6 @@ install_node_exporter
 
 # Install and setup executor.
 install_executor
-generate_ignite_base_image
 verify_executor
 
 # Final cleanup.

@@ -18,6 +18,7 @@ export interface HighlightedLinkProps {
     text: string
     positions: RangePosition[]
     url?: string
+    icon?: JSX.Element
     onClick?: () => void
 }
 
@@ -55,7 +56,17 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
             spans.push(<span key={key}>{text}</span>)
         }
     }
-    for (const position of props.positions) {
+    for (const [index, position] of props.positions.entries()) {
+        if (index > 0) {
+            const previous = props.positions[index - 1]
+            if (
+                previous.startOffset === position.startOffset &&
+                previous.endOffset === position.endOffset &&
+                previous.isExact === position.isExact
+            ) {
+                continue
+            }
+        }
         if (position.startOffset > start) {
             pushElement('span', start, position.startOffset)
         }
@@ -66,11 +77,26 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
 
     return props.url ? (
         <Code>
-            <Link tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
+            <Link key="link" tabIndex={-1} className={styles.link} to={props.url} onClick={props.onClick}>
+                {props.icon && <span key="icon">{props.icon}</span>}
                 {spans}
             </Link>
         </Code>
     ) : (
-        <>{spans}</>
+        <Link
+            key="link"
+            tabIndex={-1}
+            className={styles.link}
+            to={`/commands/${props.text}`}
+            onClick={event => {
+                event.preventDefault()
+                props.onClick?.()
+            }}
+        >
+            {props.icon && <span key="icon">{props.icon}</span>}
+            {spans}
+        </Link>
     )
 }
+
+export const linkStyle = styles.link

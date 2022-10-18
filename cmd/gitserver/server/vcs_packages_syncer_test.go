@@ -198,7 +198,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			t.Fatal("Cannot parse Maven dependency")
 		}
 		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
-		require.NoError(t, err)
+		require.NotNil(t, err)
 	})
 }
 

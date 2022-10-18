@@ -12,22 +12,23 @@ import { isEqual } from 'lodash'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
-    LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
-import { hovercardRanges } from './codemirror/hovercard'
+import { pin, updatePin } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { tokensAsLinks } from './codemirror/tokens-as-links'
+import { isValidLineRange } from './codemirror/utils'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -58,13 +59,13 @@ const staticExtensions: Extension = [
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.selected-line:focus': {
+            boxShadow: 'none',
+        },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
-    // Note that these only work out-of-the-box because the editor is
-    // *focusable* by setting `tab-index: 0`.
-    search,
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
@@ -88,6 +89,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         location,
         history,
         blameHunks,
+        tokenKeyboardNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -95,14 +97,16 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
+        'data-testid': dataTestId,
     } = props
+
+    const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
     const blobInfo = useDistinctBlob(props.blobInfo)
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
-    // const position = parseQueryAndHash(location.search, location.hash)
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
     const blobProps = useMemo(() => blobPropsFacet.of(props), [props])
@@ -113,6 +117,19 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+
+    const tokenLinks = useMemo(() => {
+        if (!blobInfo.stencil) {
+            return []
+        }
+
+        return blobInfo.stencil.map(range => ({
+            range,
+            url: `?${toPositionOrRangeQueryParameter({
+                position: { line: range.start.line + 1, character: range.start.character + 1 },
+            })}#tab=references`,
+        }))
+    }, [blobInfo.stencil])
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -126,6 +143,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const onSelection = useCallback(
         (range: SelectedLineRange) => {
             const parameters = new URLSearchParams(locationRef.current.search)
+            parameters.delete('popover')
+
             let query: string | undefined
 
             if (range?.line !== range?.endLine && range?.endLine) {
@@ -162,8 +181,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
+            tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
             syntaxHighlight.of(blobInfo),
-            pinnedRangeField.init(() => (hasPin ? position : null)),
+            pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
@@ -176,13 +196,20 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
+            search({
+                // useFileSearch is not a dependency because the search
+                // extension manages its own state. This is just the initial
+                // value
+                overrideBrowserFindInPageShortcut: useFileSearch,
+                onOverrideBrowserFindInPageToggle: setUseFileSearch,
+            }),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
         // further below. However they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, tokenLinks]
     )
 
     const editorRef = useRef<EditorView>()
@@ -254,7 +281,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
             // Only update range if position is valid inside the document.
-            updatePinnedRangeField(editor, hasPin ? position : null)
+            updatePin(editor, hasPin ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -273,10 +300,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 ref={setContainer}
                 aria-label={ariaLabel}
                 role={role}
-                data-testid="repo-blob"
-                className={`${className} overflow-hidden`}
+                data-testid={dataTestId}
+                className={`${className} overflow-hidden test-editor`}
+                data-editor="codemirror6"
             />
-            {overrideBrowserSearchKeybinding && (
+            {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
         </>
@@ -304,69 +332,3 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         return blobRef.current
     }, [blobInfo])
 }
-
-/**
- * Field used by the CodeMirror blob view to provide hovercard range information
- * for pinned cards. Since we have to use the editor's current state to compute
- * the final position we are using a field instead of a compartment to provide
- * this information.
- */
-const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrPositionOrRange | null>(null, field =>
-    hovercardRanges.computeN([field], state => {
-        const position = state.field(field)
-        if (!position) {
-            return []
-        }
-
-        if (!position.line || !position.character) {
-            return []
-        }
-        const startLine = state.doc.line(position.line)
-
-        const startPosition = {
-            line: position.line,
-            character: position.character,
-        }
-        const from = uiPositionToOffset(state.doc, startPosition, startLine)
-
-        if (from === null) {
-            return []
-        }
-
-        let endPosition: UIPositionSpec['position']
-        let to: number | null = null
-
-        if (position.endLine && position.endCharacter) {
-            endPosition = {
-                line: position.endLine,
-                character: position.endCharacter,
-            }
-            to = uiPositionToOffset(state.doc, endPosition)
-        } else {
-            // To determine the end position we have to find the word at the
-            // start position
-            const word = state.wordAt(from)
-            if (!word) {
-                return []
-            }
-            to = word.to
-            endPosition = offsetToUIPosition(state.doc, word.to)
-        }
-
-        if (to === null || endPosition === null) {
-            return []
-        }
-
-        return [
-            {
-                to,
-                from,
-                range: {
-                    start: startPosition,
-                    end: endPosition,
-                },
-                pinned: true,
-            },
-        ]
-    })
-)

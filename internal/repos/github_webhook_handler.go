@@ -23,7 +23,7 @@ func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
 	router.Register(g.handleGitHubWebhook, "push")
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ *types.ExternalService, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
@@ -46,7 +46,7 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 func getNameFromEvent(event *gh.PushEvent) (api.RepoName, error) {
 	url := *event.Repo.URL
 	if len(url) <= 8 {
-		return api.RepoName(""), errors.Newf("expected URL length > 8, got %v", len(url))
+		return "", errors.Newf("expected URL length > 8, got %v", len(url))
 	}
 	repoName := url[8:] // [ https:// ] accounts for 8 chars
 	return api.RepoName(repoName), nil

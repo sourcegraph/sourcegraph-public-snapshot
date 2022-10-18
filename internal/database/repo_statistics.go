@@ -73,7 +73,6 @@ func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (RepoStatis
 }
 
 const getRepoStatisticsQueryFmtstr = `
--- source: internal/database/repo_statistics.go:repoStatisticsStore.GetRepoStatistics
 SELECT
 	SUM(total),
 	SUM(soft_deleted),
@@ -89,7 +88,6 @@ func (s *repoStatisticsStore) CompactRepoStatistics(ctx context.Context) error {
 }
 
 const compactRepoStatisticsQueryFmtstr = `
--- source: internal/database/repo_statistics.go:repoStatisticsStore.CompactRepoStatistics
 WITH deleted AS (
 	DELETE FROM repo_statistics
 	RETURNING
@@ -117,7 +115,6 @@ func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) (
 }
 
 const getGitserverReposStatisticsQueryFmtStr = `
--- source: internal/database/repo_statistics.go:repoStatisticsStore.GetGitserverReposStatistics
 SELECT
 	shard_id,
 	total,

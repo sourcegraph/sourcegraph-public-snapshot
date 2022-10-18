@@ -40,6 +40,7 @@ import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO }
 import { BatchChangeListFilters } from './BatchChangeListFilters'
 import { BatchChangeNode } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
+import { BatchChangeStatsBar } from './BatchChangeStatsBar'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
 import { useBatchChangeListFilters } from './useBatchChangeListFilters'
@@ -158,24 +159,27 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
             {selectedTab === 'batchChanges' && (
-                <Container className="mb-4">
-                    <ConnectionContainer>
-                        <div className={styles.filtersRow}>
-                            {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
-                                <H3 className="align-self-end flex-1">
-                                    {lastTotalCount} of {currentTotalCount}{' '}
-                                    {pluralize('batch change', currentTotalCount)}
-                                </H3>
-                            )}
-                            <BatchChangeListFilters
-                                className="m-0"
-                                isExecutionEnabled={isExecutionEnabled}
-                                value={selectedFilters}
-                                onChange={setSelectedFilters}
-                            />
-                        </div>
-                        {error && <ConnectionError errors={[error.message]} />}
-                        {/*
+                <>
+                    <BatchChangeStatsBar className="mb-4" />
+                    <Container className="mb-4">
+                        <ConnectionContainer>
+                            <div className={styles.filtersRow}>
+                                {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
+                                    <H3 className="align-self-end flex-1">
+                                        {lastTotalCount} of {currentTotalCount}{' '}
+                                        {pluralize('batch change', currentTotalCount)}
+                                    </H3>
+                                )}
+
+                                <BatchChangeListFilters
+                                    className="m-0"
+                                    isExecutionEnabled={isExecutionEnabled}
+                                    value={selectedFilters}
+                                    onChange={setSelectedFilters}
+                                />
+                            </div>
+                            {error && <ConnectionError errors={[error.message]} />}
+                            {/*
                             The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
                             to live on the wrapper as opposed to each `BatchChangeNode`.
 
@@ -183,40 +187,41 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             has a grid.
                             Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
                         */}
-                        <ConnectionList
-                            as="div"
-                            className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
-                        >
-                            {connection?.nodes?.map(node => (
-                                <BatchChangeNode
-                                    key={node.id}
-                                    node={node}
-                                    isExecutionEnabled={isExecutionEnabled}
-                                    // Show the namespace unless we're viewing batch changes for a single namespace.
-                                    displayNamespace={!namespaceID}
-                                />
-                            ))}
-                        </ConnectionList>
-                        {loading && <ConnectionLoading />}
-                        {connection && (
-                            <SummaryContainer centered={true}>
-                                <ConnectionSummary
-                                    centered={true}
-                                    noSummaryIfAllNodesVisible={true}
-                                    first={BATCH_CHANGES_PER_PAGE_COUNT}
-                                    connection={connection}
-                                    noun="batch change"
-                                    pluralNoun="batch changes"
-                                    hasNextPage={hasNextPage}
-                                    emptyElement={
-                                        <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
-                                    }
-                                />
-                                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                            </SummaryContainer>
-                        )}
-                    </ConnectionContainer>
-                </Container>
+                            <ConnectionList
+                                as="div"
+                                className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
+                            >
+                                {connection?.nodes?.map(node => (
+                                    <BatchChangeNode
+                                        key={node.id}
+                                        node={node}
+                                        isExecutionEnabled={isExecutionEnabled}
+                                        // Show the namespace unless we're viewing batch changes for a single namespace.
+                                        displayNamespace={!namespaceID}
+                                    />
+                                ))}
+                            </ConnectionList>
+                            {loading && <ConnectionLoading />}
+                            {connection && (
+                                <SummaryContainer centered={true}>
+                                    <ConnectionSummary
+                                        centered={true}
+                                        noSummaryIfAllNodesVisible={true}
+                                        first={BATCH_CHANGES_PER_PAGE_COUNT}
+                                        connection={connection}
+                                        noun="batch change"
+                                        pluralNoun="batch changes"
+                                        hasNextPage={hasNextPage}
+                                        emptyElement={
+                                            <BatchChangeListEmptyElement canCreate={canCreate} location={location} />
+                                        }
+                                    />
+                                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                                </SummaryContainer>
+                            )}
+                        </ConnectionContainer>
+                    </Container>
+                </>
             )}
         </Page>
     )

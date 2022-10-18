@@ -200,26 +200,52 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	// Several of the events will belong to a Sourcegraph employee admin user
+	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	user3, err := db.Users().Create(ctx, NewUser{Username: "c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	user4, err := db.Users().Create(ctx, NewUser{Username: "d"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	now := time.Now()
 	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
 	events := []*Event{
-		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 1, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 
-		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 2, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 3, Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: 1, Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
+		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
 
-		makeTestEvent(&Event{UserID: 5, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 6, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 7, Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: 8, Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
+		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
 	}
 
 	for _, e := range events {
@@ -236,6 +262,15 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
 	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 3, 3, 0, 0)
 	assertUsageValue(t, values.DAUs[2], startDate, 2, 2, 0, 0)
+
+	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}, nil})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
+	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 2, 2, 0, 0)
+	assertUsageValue(t, values.DAUs[2], startDate, 1, 1, 0, 0)
 }
 
 func TestEventLogs_UsersUsageCounts(t *testing.T) {
@@ -399,6 +434,134 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		IntegrationUniquesMonth: 11,
 		IntegrationUniquesWeek:  7,
 		IntegrationUniquesDay:   5,
+	}
+	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	// Several of the events will belong to a Sourcegraph employee admin user
+	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	days := map[time.Time]struct {
+		users   []uint32
+		names   []string
+		sources []string
+	}{
+		// Today
+		now: {
+			[]uint32{uint32(sgAdmin.ID)},
+			[]string{"ViewSiteAdminX"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This week
+		now.Add(-time.Hour * 24 * 3): {
+			[]uint32{uint32(sgAdmin.ID), uint32(user1.ID)},
+			[]string{"ViewRepository", "ViewTree"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+		// This month
+		now.Add(-time.Hour * 24 * 6): {
+			[]uint32{uint32(user2.ID)},
+			[]string{"ViewSiteAdminX", "SavedSearchSlackClicked"},
+			[]string{"test", "CODEHOSTINTEGRATION"},
+		},
+	}
+
+	for day, data := range days {
+		for _, user := range data.users {
+			for _, name := range data.names {
+				for _, source := range data.sources {
+					for i := 0; i < 5; i++ {
+						e := &Event{
+							UserID: user,
+							Name:   name,
+							URL:    "http://sourcegraph.com",
+							Source: source,
+							// Jitter current time +/- 30 minutes
+							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						}
+
+						if err := db.EventLogs().Insert(ctx, e); err != nil {
+							t.Fatal(err)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: false}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedSummary := types.SiteUsageSummary{
+		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                     now.Truncate(time.Hour * 24),
+		UniquesMonth:            3,
+		UniquesWeek:             2,
+		UniquesDay:              1,
+		RegisteredUniquesMonth:  3,
+		RegisteredUniquesWeek:   2,
+		RegisteredUniquesDay:    1,
+		IntegrationUniquesMonth: 3,
+		IntegrationUniquesWeek:  2,
+		IntegrationUniquesDay:   1,
+	}
+	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
+		t.Fatal(diff)
+	}
+
+	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedSummary = types.SiteUsageSummary{
+		Month:                   time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                    now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
+		Day:                     now.Truncate(time.Hour * 24),
+		UniquesMonth:            2,
+		UniquesWeek:             1,
+		UniquesDay:              0,
+		RegisteredUniquesMonth:  2,
+		RegisteredUniquesWeek:   1,
+		RegisteredUniquesDay:    0,
+		IntegrationUniquesMonth: 2,
+		IntegrationUniquesWeek:  1,
+		IntegrationUniquesDay:   0,
 	}
 	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
 		t.Fatal(diff)

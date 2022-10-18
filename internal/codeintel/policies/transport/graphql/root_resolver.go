@@ -14,8 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -91,7 +92,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		pageSize = int(*args.First)
 	}
 
-	opts := types.GetConfigurationPoliciesOptions{
+	opts := policiesshared.GetConfigurationPoliciesOptions{
 		Limit:  pageSize,
 		Offset: offset,
 	}

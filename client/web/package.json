@@ -31,6 +31,7 @@
     "lint:css": "yarn run -T stylelint 'src/**/*.scss' --quiet",
     "browserslist": "yarn run -T browserslist",
     "analyze-bundle": "WEBPACK_USE_NAMED_CHUNKS=true NODE_ENV=production ENTERPRISE=1 WEBPACK_BUNDLE_ANALYZER=1 yarn build",
-    "bundlesize": "yarn run -T bundlesize --config=./bundlesize.config.js"
+    "bundlesize": "yarn run -T bundlesize --config=./bundlesize.config.js",
+    "report-bundle-diff": "yarn run -T ts-node scripts/report-bundle-diff"
   }
 }

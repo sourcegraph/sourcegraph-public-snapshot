@@ -5,13 +5,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExecutionLogEntryResolver interface {
 	Key() string
 	Command() []string
-	StartTime() DateTime
+	StartTime() gqlutil.DateTime
 	ExitCode() *int32
 	Out(ctx context.Context) (string, error)
 	DurationMilliseconds() *int32
@@ -42,8 +43,8 @@ func (r *executionLogEntryResolver) ExitCode() *int32 {
 	return &val
 }
 
-func (r *executionLogEntryResolver) StartTime() DateTime {
-	return DateTime{Time: r.entry.StartTime}
+func (r *executionLogEntryResolver) StartTime() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.StartTime}
 }
 
 func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {

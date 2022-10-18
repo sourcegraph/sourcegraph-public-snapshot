@@ -11,6 +11,7 @@ type operations struct {
 	// Indexes
 	getRecentIndexesSummary       *observation.Operation
 	getLastIndexScanForRepository *observation.Operation
+	deleteLsifIndex               *observation.Operation
 	deleteLsifIndexes             *observation.Operation
 	queueAutoIndexJobsForRepo     *observation.Operation
 	lsifIndexByID                 *observation.Operation
@@ -55,6 +56,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRecentIndexesSummary:       op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository: op("GetLastIndexScanForRepository"),
 		queueAutoIndexJobsForRepo:     op("QueueAutoIndexJobsForRepo"),
+		deleteLsifIndex:               op("DeleteLsifIndex"),
 		deleteLsifIndexes:             op("DeleteLsifIndexes"),
 		lsifIndexByID:                 op("LsifIndexByID"),
 		lsifIndexes:                   op("LsifIndexes"),

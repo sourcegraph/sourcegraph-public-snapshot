@@ -41,7 +41,7 @@ type client interface {
 	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)
 
 	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
-	WithToken(token string) client
+	WithAuthenticator(auther auth.Authenticator) client
 }
 
 var _ client = (*ClientAdapter)(nil)
@@ -51,8 +51,8 @@ type ClientAdapter struct {
 	*github.V3Client
 }
 
-func (c *ClientAdapter) WithToken(token string) client {
+func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
 	return &ClientAdapter{
-		V3Client: c.V3Client.WithAuthenticator(&auth.OAuthBearerToken{Token: token}),
+		V3Client: c.V3Client.WithAuthenticator(auther),
 	}
 }

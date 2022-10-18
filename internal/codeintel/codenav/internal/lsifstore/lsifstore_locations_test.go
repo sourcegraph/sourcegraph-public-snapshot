@@ -9,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -68,7 +67,7 @@ func TestDatabaseReferences(t *testing.T) {
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	codeIntelDB := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := New(codeIntelDB, &observation.TestContext)
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")

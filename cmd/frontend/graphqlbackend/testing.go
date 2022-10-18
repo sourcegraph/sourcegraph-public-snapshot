@@ -45,6 +45,7 @@ type Test struct {
 	Variables      map[string]any
 	ExpectedResult string
 	ExpectedErrors []*gqlerrors.QueryError
+	Label          string
 }
 
 // RunTests runs the given GraphQL test cases as subtests.
@@ -57,7 +58,11 @@ func RunTests(t *testing.T, tests []*Test) {
 	}
 
 	for i, test := range tests {
-		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
+		testName := strconv.Itoa(i + 1)
+		if test.Label != "" {
+			testName = fmt.Sprintf("%s/%s", testName, test.Label)
+		}
+		t.Run(testName, func(t *testing.T) {
 			t.Helper()
 			RunTest(t, test)
 		})

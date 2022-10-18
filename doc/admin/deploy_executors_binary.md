@@ -67,7 +67,10 @@ you run the latest version of Sourcegraph.
 Download and setup the `executor` binary:
 
 ```bash
-curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+# Plug in the version of your Sourcegraph instance, like v4.1.0.
+# Before Sourcegraph 3.43.0, tagged releases of executors are not available and you should default to using "latest" instead.
+# Using latest is NOT recommended, because it might be incompatible with your Sourcegraph version.
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/${SOURCEGRAPH_VERSION}/linux-amd64/executor
 chmod +x executor
 # Assuming /usr/local/bin is in $PATH.
 mv executor /usr/local/bin

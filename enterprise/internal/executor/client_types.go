@@ -104,6 +104,7 @@ func (j *Job) UnmarshalJSON(bytes []byte) error {
 		for i, s := range dockerSteps {
 			step := s.(map[string]interface{})
 			jobDockerSteps[i] = DockerStep{
+				Key:      toString(step["key"]),
 				Image:    toString(step["image"]),
 				Commands: toStringSlice(step["commands"]),
 				Dir:      toString(step["dir"]),
@@ -119,6 +120,7 @@ func (j *Job) UnmarshalJSON(bytes []byte) error {
 		for i, s := range cliSteps {
 			step := s.(map[string]interface{})
 			jobCliSteps[i] = CliStep{
+				Key:      toString(step["key"]),
 				Commands: toStringSlice(step["command"]),
 				Dir:      toString(step["dir"]),
 				Env:      toStringSlice(step["env"]),
@@ -196,6 +198,10 @@ func (j Job) RecordID() int {
 }
 
 type DockerStep struct {
+	// Key is a unique identifier of the step. It can be used to retrieve the
+	// associated log entry.
+	Key string `json:"key"`
+
 	// Image specifies the docker image.
 	Image string `json:"image"`
 
@@ -210,6 +216,10 @@ type DockerStep struct {
 }
 
 type CliStep struct {
+	// Key is a unique identifier of the step. It can be used to retrieve the
+	// associated log entry.
+	Key string `json:"key"`
+
 	// Commands specifies the arguments supplied to the src command.
 	Commands []string `json:"command"`
 

@@ -159,6 +159,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
         ),
         exact: true,
     },
+    {
+        path: '/code-graph/inference-configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
+            'CodeIntelInferenceConfigurationPage'
+        ),
+        exact: true,
+    },
 
     // Legacy routes
     {
@@ -176,11 +184,5 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
         ),
         exact: true,
         condition: () => Boolean(window.context?.executorsEnabled),
-    },
-    // Organization routes
-    {
-        path: '/organizations/early-access-orgs-code',
-        render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
-        exact: true,
     },
 ] as readonly (SiteAdminAreaRoute | undefined)[]).filter(Boolean) as readonly SiteAdminAreaRoute[]

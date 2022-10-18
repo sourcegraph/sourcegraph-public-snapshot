@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,9 +15,10 @@ import (
 
 func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	db := database.NewMockDB()
-	got := NewGitTreeEntryResolver(db, gitserver.NewClient(db),
+	gitserverClient := gitserver.NewMockClient()
+	got := NewGitTreeEntryResolver(db, gitserverClient,
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo("a/b", true)).
 		RawZipArchiveURL()
@@ -30,18 +32,19 @@ func TestGitTreeEntry_Content(t *testing.T) {
 	wantPath := "foobar.md"
 	wantContent := "foobar"
 
-	gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+	db := database.NewMockDB()
+	gitserverClient := gitserver.NewMockClient()
+
+	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
 		if name != wantPath {
 			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
 		}
 		return []byte(wantContent), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
+	})
 
-	db := database.NewMockDB()
-	gitTree := NewGitTreeEntryResolver(db, gitserver.NewClient(db),
+	gitTree := NewGitTreeEntryResolver(db, gitserverClient,
 		&GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, gitserver.NewClient(db), &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
 		CreateFileInfo(wantPath, true))
 

@@ -138,6 +138,20 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		}
 	}
 
+	commands := []string{
+		"batch",
+		"exec",
+		"-f", srcInputPath,
+		"-repo", srcRepoDir,
+		// Tell src to store tmp files inside the workspace. Src currently
+		// runs on the host and we don't want pollution outside of the workspace.
+		"-tmp", srcTempDir,
+	}
+	// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
+	if len(workspaceFiles) > 0 {
+		commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
+	}
+
 	return apiclient.Job{
 		ID:                  int(job.ID),
 		VirtualMachineFiles: files,
@@ -150,18 +164,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		SparseCheckout: sparseCheckout,
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch",
-					"exec",
-					"-f", srcInputPath,
-					"-repo", srcRepoDir,
-					// Tell src to store tmp files inside the workspace. Src currently
-					// runs on the host and we don't want pollution outside of the workspace.
-					"-tmp", srcTempDir,
-					"-workspaceFiles", srcWorkspaceFilesDir,
-				},
-				Dir: ".",
-				Env: []string{},
+				Commands: commands,
+				Dir:      ".",
+				Env:      []string{},
 			},
 		},
 		// Nothing to redact for now. We want to add secrets here once implemented.

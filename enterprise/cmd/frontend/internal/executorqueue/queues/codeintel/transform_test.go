@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -42,7 +42,8 @@ func TestTransformRecord(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
-		FetchTags:           true,
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
@@ -121,7 +122,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		ID:                  42,
 		Commit:              "deadbeef",
 		RepositoryName:      "linux",
-		FetchTags:           true,
+		ShallowClone:        true,
+		FetchTags:           false,
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{

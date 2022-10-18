@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 public class ApiAuthenticator {
     private final static Logger logger = Logger.getInstance(ApiAuthenticator.class);
 
-    public static void testConnection(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull Consumer<ConnectionStatus> callback) {
+    public static void testConnection(@NotNull String instanceUrl, @Nullable String accessToken, @Nullable String customRequestHeaders, @NotNull Consumer<ConnectionStatus> callback) {
         new Thread(() -> {
             String query = "" +
                 "query {" +
@@ -25,7 +25,7 @@ public class ApiAuthenticator {
                 "}";
 
             try {
-                GraphQlResponse response = GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, new JsonObject());
+                GraphQlResponse response = GraphQlClient.callGraphQLService(instanceUrl, accessToken, customRequestHeaders, query, new JsonObject());
                 if (response.getStatusCode() == 200) {
                     JsonElement id = response.getBodyAsJson().getAsJsonObject("data").getAsJsonObject("currentUser").get("id");
                     callback.accept(id.isJsonNull() ? ConnectionStatus.COULD_CONNECT_BUT_NOT_AUTHENTICATED : ConnectionStatus.AUTHENTICATED);

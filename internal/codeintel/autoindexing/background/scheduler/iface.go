@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type AutoIndexingService interface {
+type AutoIndexingServiceBackgroundJobs interface {
 	NewScheduler(
 		interval time.Duration,
 		repositoryProcessDelay time.Duration,

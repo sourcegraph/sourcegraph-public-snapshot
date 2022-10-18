@@ -116,8 +116,9 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 }
 
 // categoryProgrammingLanguagesAndTools sets up programming languages and tooling using
-// asdf, which is uniform across platforms.
-func categoryProgrammingLanguagesAndTools() category {
+// asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
+// when they depend on the plaftorm we're installing them on.
+func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
 	return category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},

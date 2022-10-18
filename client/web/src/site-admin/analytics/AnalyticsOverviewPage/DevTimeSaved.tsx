@@ -119,7 +119,7 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
             <div className={classNames(styles.statsBox, 'p-4 mb-3')}>
                 <div className="d-flex">
                     <ValueLegendItem
-                        value={users.activity.summary.totalRegisteredUsers}
+                        value={users.activity.summary.totalUniqueUsers}
                         className={classNames('flex-1', styles.borderRight)}
                         description="Active Users"
                         color="var(--body-color)"

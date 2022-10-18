@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -166,6 +167,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	}
 
 	historicalEnqueuer := &historicalEnqueuer{
+		logger:                logtest.Scoped(t),
 		now:                   clock,
 		insightsStore:         insightsStore,
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,

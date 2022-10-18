@@ -121,7 +121,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 //
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
-func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
+func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
 	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics

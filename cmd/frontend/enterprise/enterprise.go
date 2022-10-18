@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -24,6 +25,7 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
+	CodeIntelAutoIndexingService    *autoindexing.Service
 	NewExecutorProxyHandler         NewExecutorProxyHandler
 	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
 	NewComputeStreamHandler         NewComputeStreamHandler
@@ -67,6 +69,7 @@ func DefaultServices() Services {
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		CodeIntelAutoIndexingService:    nil,
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },

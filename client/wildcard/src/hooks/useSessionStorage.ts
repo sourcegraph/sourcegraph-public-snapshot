@@ -1,3 +1,5 @@
+import { Dispatch, SetStateAction } from 'react'
+
 import { useStorageHook } from './useStorageHook'
 
 /**
@@ -7,7 +9,5 @@ import { useStorageHook } from './useStorageHook'
  * @param initialValue The initial value to use when there is no value in sessionStorage for the key.
  * @returns A getter and setter for the value (`const [foo, setFoo] = useSessionStorage('key', 123)`).
  */
-export const useSessionStorage = <T>(
-    key: string,
-    initialValue: T
-): [T, (value: T | ((previousValue: T) => T)) => void] => useStorageHook(window.sessionStorage, key, initialValue)
+export const useSessionStorage = <T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] =>
+    useStorageHook(window.sessionStorage, key, initialValue)

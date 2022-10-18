@@ -3,7 +3,7 @@ package policies
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 )
 
 // Extractor returns a max age and include intermediate commits flags from a policy. These fields exist for
