@@ -9,6 +9,7 @@ import (
 	log "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -35,8 +36,11 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	}, config.ObsContext)
 
 	task := inProgressHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
+		workerStore:    workerStore,
+		backfillStore:  backfillStore,
+		seriesReader:   store.NewInsightStore(config.InsightsDB),
+		backfillRunner: config.BackfillRunner,
+		repoStore:      config.RepoStore,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
@@ -99,6 +103,11 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 		logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
 		err = h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}})
+		if err != nil {
+			// TODO: this repo should be marked as errored and processing should continue
+			// revisit when error handling added.
+			return err
+		}
 
 		err = finish(ctx, h.backfillStore.Store, nil)
 		if err != nil {
@@ -107,6 +116,15 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	}
 
 	// todo handle errors down here after the main loop https://github.com/sourcegraph/sourcegraph/issues/42724
+
+	err = itr.MarkComplete(ctx, h.backfillStore.Store)
+	if err != nil {
+		return err
+	}
+	err = backfillJob.setState(ctx, h.backfillStore, BackfillStateCompleted)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

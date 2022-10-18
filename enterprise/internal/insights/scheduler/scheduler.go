@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -100,9 +101,10 @@ type BackgroundJobMonitor struct {
 }
 
 type JobMonitorConfig struct {
-	InsightsDB edb.InsightsDB
-	RepoStore  database.RepoStore
-	ObsContext *observation.Context
+	InsightsDB     edb.InsightsDB
+	RepoStore      database.RepoStore
+	BackfillRunner pipeline.Backfiller
+	ObsContext     *observation.Context
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
