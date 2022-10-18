@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -625,6 +626,10 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, nil
@@ -643,6 +648,10 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 		return &EmptyResponse{}, err
 	}
 
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, nil
@@ -659,6 +668,10 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 ) (*EmptyResponse, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
