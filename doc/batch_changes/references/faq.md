@@ -34,8 +34,8 @@ Note: If you run memory-intensive jobs, you might need to reduce the number of p
 Batch Changes does not support a declarative syntax for issues or tickets.
 However, [steps](../references/batch_spec_yaml_reference.md#steps-run) can be used to run any container. Some users have built scripts to create tickets at each apply:
 
-- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/tree/main/jira-tickets)
-- [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/main/github-issues)
+- [Jira tickets](https://github.com/sourcegraph/batch-change-examples/tree/outdated-examples/jira-tickets)
+- [GitHub issues](https://github.com/sourcegraph/batch-change-examples/tree/outdated-examples/github-issues)
 
 ### What happens to the preview page if the batch spec is not applied?
 Unapplied batch specs are removed from the database after 7 days.
