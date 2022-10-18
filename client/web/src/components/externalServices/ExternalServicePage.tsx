@@ -9,7 +9,6 @@ import { delay, repeatWhen } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, H2, H3, Badge, Container } from '@sourcegraph/wildcard'
 
@@ -22,6 +21,7 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
     ExternalServiceSyncJobState,
+    ExternalServiceKind,
 } from '../../graphql-operations'
 import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
@@ -159,10 +159,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     )
 
     let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
-    if (
-        externalService &&
-        [GQL.ExternalServiceKind.GITHUB, GQL.ExternalServiceKind.GITLAB].includes(externalService.kind)
-    ) {
+    if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
         const parsedConfig: unknown = parseJSONC(externalService.config)
         const url =
             typeof parsedConfig === 'object' &&
@@ -173,11 +170,11 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 ? new URL(parsedConfig.url)
                 : undefined
         // We have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the URL.
-        if (externalService.kind === GQL.ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
+        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
             externalServiceCategory = codeHostExternalServices.ghe
         }
         // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
-        if (externalService.kind === GQL.ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
             externalServiceCategory = codeHostExternalServices.gitlab
         }
     }
