@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
@@ -94,7 +93,7 @@ func TestUpdateExternalService(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		t.Run("no namespace", func(t *testing.T) {
+		t.Run("cannot update external services", func(t *testing.T) {
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
@@ -119,139 +118,6 @@ func TestUpdateExternalService(t *testing.T) {
 			if result != nil {
 				t.Errorf("result: want nil but got %v", result)
 			}
-		})
-
-		t.Run("has mismatched user namespace", func(t *testing.T) {
-			userID := int32(2)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:              id,
-					NamespaceUserID: userID,
-					Config:          extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
-				Input: updateExternalServiceInput{
-					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-				},
-			})
-
-			want := backend.ErrNoAccessExternalService.Error()
-			got := fmt.Sprintf("%v", err)
-			if got != want {
-				t.Errorf("err: want %q but got %q", want, got)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("has mismatched org namespace", func(t *testing.T) {
-			orgID := int32(42)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:             id,
-					NamespaceOrgID: orgID,
-					Config:         extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
-			orgMembers := database.NewMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
-				Input: updateExternalServiceInput{
-					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-				},
-			})
-
-			want := backend.ErrNoAccessExternalService.Error()
-			got := fmt.Sprintf("%v", err)
-			if got != want {
-				t.Errorf("err: want %q but got %q", want, got)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("has matching user namespace", func(t *testing.T) {
-			userID := int32(1)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:              id,
-					NamespaceUserID: userID,
-					Config:          extsvc.NewEmptyConfig(),
-				}, nil
-			})
-			externalServices.UpdateFunc.SetDefaultReturn(nil)
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
-				Input: updateExternalServiceInput{
-					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-				},
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			mockrequire.Called(t, externalServices.UpdateFunc)
-		})
-
-		t.Run("has matching org namespace", func(t *testing.T) {
-			orgID := int32(1)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.UpdateFunc.SetDefaultReturn(nil)
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:             id,
-					NamespaceOrgID: orgID,
-					Config:         extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
-			orgMembers := database.NewMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return &types.OrgMembership{
-					OrgID:  orgID,
-					UserID: 1,
-				}, nil
-			})
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
-				Input: updateExternalServiceInput{
-					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-				},
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			mockrequire.Called(t, externalServices.UpdateFunc)
 		})
 	})
 
@@ -355,7 +221,7 @@ func TestDeleteExternalService(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		t.Run("no namespace", func(t *testing.T) {
+		t.Run("cannot delete external services", func(t *testing.T) {
 			externalServices := database.NewMockExternalServiceStore()
 			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
@@ -378,131 +244,6 @@ func TestDeleteExternalService(t *testing.T) {
 			if result != nil {
 				t.Errorf("result: want nil but got %v", result)
 			}
-		})
-
-		t.Run("has mismatched user namespace", func(t *testing.T) {
-			userID := int32(2)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:              id,
-					NamespaceUserID: userID,
-					Config:          extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
-				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-			})
-
-			want := backend.ErrNoAccessExternalService.Error()
-			got := fmt.Sprintf("%v", err)
-			if got != want {
-				t.Errorf("err: want %q but got %q", want, got)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("has matching user namespace", func(t *testing.T) {
-			userID := int32(1)
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:              id,
-					NamespaceUserID: userID,
-					Config:          extsvc.NewEmptyConfig(),
-				}, nil
-			})
-			externalServices.DeleteFunc.SetDefaultReturn(nil)
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
-				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			mockrequire.Called(t, externalServices.DeleteFunc)
-		})
-
-		t.Run("has mismatched org namespace", func(t *testing.T) {
-			orgID := int32(2)
-			orgMembers := database.NewMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
-
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:             id,
-					NamespaceOrgID: orgID,
-					Config:         extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
-				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-			})
-
-			want := backend.ErrNoAccessExternalService.Error()
-			got := fmt.Sprintf("%v", err)
-			if got != want {
-				t.Errorf("err: want %q but got %q", want, got)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("has matching org namespace", func(t *testing.T) {
-			orgID := int32(1)
-			orgMembers := database.NewMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return &types.OrgMembership{
-					OrgID:  orgID,
-					UserID: 1,
-				}, nil
-			})
-
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:             id,
-					NamespaceOrgID: orgID,
-					Config:         extsvc.NewEmptyConfig(),
-				}, nil
-			})
-			externalServices.DeleteFunc.SetDefaultReturn(nil)
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
-				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			mockrequire.Called(t, externalServices.DeleteFunc)
 		})
 	})
 
@@ -546,7 +287,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 func TestExternalServices(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("read users external services", func(t *testing.T) {
+		t.Run("cannot read users external services", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
@@ -589,7 +330,7 @@ func TestExternalServices(t *testing.T) {
 			}
 		})
 
-		t.Run("read site-level external services", func(t *testing.T) {
+		t.Run("cannot read site-level external services", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -610,28 +351,6 @@ func TestExternalServices(t *testing.T) {
 	})
 
 	t.Run("authenticated as admin", func(t *testing.T) {
-		t.Run("read other users external services", func(t *testing.T) {
-			users := database.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-				return &types.User{ID: id, SiteAdmin: true}, nil
-			})
-
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-
-			id := MarshalUserID(2)
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
-				Namespace: &id,
-			})
-			if want := backend.ErrNoAccessExternalService; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
 		t.Run("can read site-level external service", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
@@ -712,27 +431,6 @@ func TestExternalServices(t *testing.T) {
 				}
 			}
 		`,
-		},
-		// Not allowed to read someone else's external service
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
-			{
-				externalServices(namespace: "VXNlcjoy") {
-					nodes {
-						id
-					}
-				}
-			}
-		`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Path:          []any{"externalServices"},
-					Message:       backend.ErrNoAccessExternalService.Error(),
-					ResolverError: backend.ErrNoAccessExternalService,
-				},
-			},
-			ExpectedResult: `null`,
 		},
 		// LastSyncError included
 		{
