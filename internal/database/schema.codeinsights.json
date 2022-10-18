@@ -1259,7 +1259,7 @@
       ],
       "Constraints": [
         {
-          "Name": "series_id_fkey",
+          "Name": "insight_series_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "insight_series",
           "IsDeferrable": false,

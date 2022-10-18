@@ -665,6 +665,9 @@ ALTER TABLE ONLY insight_dirty_queries
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;
 
@@ -679,9 +682,6 @@ ALTER TABLE ONLY insights_background_jobs
 
 ALTER TABLE ONLY repo_iterator_errors
     ADD CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator(id);
-
-ALTER TABLE ONLY insight_series_recording_times
-    ADD CONSTRAINT series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY series_points
     ADD CONSTRAINT series_points_metadata_id_fkey FOREIGN KEY (metadata_id) REFERENCES metadata(id) ON DELETE CASCADE DEFERRABLE;
