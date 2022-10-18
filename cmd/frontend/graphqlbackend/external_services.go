@@ -230,10 +230,12 @@ type ExternalServicesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
+	var namespaceUserID int32
+	var namespaceOrgID int32
+
 	if err := backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
-
 	var afterID int64
 	if args.After != nil {
 		var err error
@@ -244,7 +246,14 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
-		AfterID: afterID,
+		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
+		// specified we need to explicitly specify `NoNamespace`, otherwise site
+		// admins will be able to list all user code host connections that are not
+		// accessible when trying to access them individually.
+		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
+		NamespaceUserID: namespaceUserID,
+		NamespaceOrgID:  namespaceOrgID,
+		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
