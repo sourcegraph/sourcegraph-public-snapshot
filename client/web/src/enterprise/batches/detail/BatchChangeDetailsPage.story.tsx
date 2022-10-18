@@ -249,7 +249,7 @@ SpecFile.argTypes = {
     },
     viewerCanAdminister: {
         defaultValue: false,
-    }
+    },
 }
 
 export const Archived = Template.bind({})

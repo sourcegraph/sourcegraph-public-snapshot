@@ -137,7 +137,9 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 ### Publishing from your local machine
 
 1. Update `pluginVersion` in `gradle.properties`
-  - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+
+- To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
 3. Go through the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (private doc)
 4. Make sure `runIde` is not running

@@ -40,7 +40,8 @@ export enum TabName {
     BulkOperations = 'bulkoperations',
 }
 
-const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number => ([
+const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number =>
+    ([
         TabName.Changesets,
         TabName.Chart,
         shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
@@ -48,7 +49,7 @@ const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): numb
         TabName.BulkOperations,
     ] as string[]).indexOf(tabName)
 
-const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName => 
+const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName =>
     [
         TabName.Changesets,
         TabName.Chart,
