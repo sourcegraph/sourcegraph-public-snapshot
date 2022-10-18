@@ -20,7 +20,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	act := actor.FromContext(ctx)
 
 	// internal actors add a lot of noise to the audit log
-	if act.Internal && !IsEnabled(conf.SiteConfig(), BackgroundJobs) {
+	if act.Internal && !IsEnabled(conf.SiteConfig(), InternalTraffic) {
 		return
 	}
 
@@ -78,7 +78,7 @@ type AuditLogSetting = int
 
 const (
 	GitserverAccess = iota
-	BackgroundJobs
+	InternalTraffic
 	GraphQL
 )
 
@@ -90,8 +90,8 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 			switch setting {
 			case GitserverAccess:
 				return auditCfg.GitserverAccess
-			case BackgroundJobs:
-				return auditCfg.BackgroundJobs
+			case InternalTraffic:
+				return auditCfg.InternalTraffic
 			case GraphQL:
 				return auditCfg.GraphQL
 			}

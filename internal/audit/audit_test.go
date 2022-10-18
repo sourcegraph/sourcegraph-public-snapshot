@@ -168,23 +168,23 @@ func TestIsEnabled(t *testing.T) {
 		{
 			name:     "empty log results in default audit log settings",
 			cfg:      schema.SiteConfiguration{},
-			expected: map[AuditLogSetting]bool{GitserverAccess: false, BackgroundJobs: false, GraphQL: false},
+			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
 		},
 		{
 			name:     "empty audit log config results in default audit log settings",
 			cfg:      schema.SiteConfiguration{Log: &schema.Log{}},
-			expected: map[AuditLogSetting]bool{GitserverAccess: false, BackgroundJobs: false, GraphQL: false},
+			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
 		},
 		{
 			name: "fully populated audit log is read  correctly",
 			cfg: schema.SiteConfiguration{
 				Log: &schema.Log{
 					AuditLog: &schema.AuditLog{
-						BackgroundJobs:  true,
+						InternalTraffic: true,
 						GitserverAccess: true,
 						GraphQL:         true,
 					}}},
-			expected: map[AuditLogSetting]bool{GitserverAccess: true, BackgroundJobs: true, GraphQL: true},
+			expected: map[AuditLogSetting]bool{GitserverAccess: true, InternalTraffic: true, GraphQL: true},
 		},
 	}
 	for _, tt := range tests {

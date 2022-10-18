@@ -68,12 +68,12 @@ type ApiRatelimit struct {
 
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
-	// BackgroundJobs description: Capture security events performed by the background jobs (adds significant noise).
-	BackgroundJobs bool `json:"backgroundJobs"`
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
 	GitserverAccess bool `json:"gitserverAccess"`
 	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
 	GraphQL bool `json:"graphQL"`
+	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
+	InternalTraffic bool `json:"internalTraffic"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
