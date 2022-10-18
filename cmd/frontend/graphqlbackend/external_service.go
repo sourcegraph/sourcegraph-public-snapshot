@@ -358,3 +358,15 @@ func (r *externalServiceSyncJobResolver) FinishedAt() *gqlutil.DateTime {
 
 	return &gqlutil.DateTime{Time: r.job.FinishedAt}
 }
+
+func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
+
+func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
+
+func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
+
+func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
+
+func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
+
+func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
