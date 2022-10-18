@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/run"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type Runner struct {
@@ -26,37 +27,47 @@ func (r *Runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	for _, repo := range srcRepos[0:3] {
-		gitURL, err := r.destination.CreateRepo(ctx, repo.name)
-		if err != nil {
-			return err
-		}
+	err = inTempFolder(func() error {
+		g := group.NewWithResults[error]().WithMaxConcurrency(10)
+		for _, repo := range srcRepos[21:30] {
+			repo := repo
+			g.Go(func() error {
+				gitURL, err := r.destination.CreateRepo(ctx, repo.name)
+				if err != nil {
+					return err
+				}
 
-		err = uploadRepo(ctx, repo, gitURL)
-		if err != nil {
-			return err
+				err = uploadRepo(ctx, repo, gitURL)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
 		}
-		println("pushed", repo.name)
+		errs := g.Wait()
+		for _, err := range errs {
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func uploadRepo(ctx context.Context, repo *Repo, gitURL *url.URL) error {
-	return inTempFolder(func() error {
-		err := run.Bash(ctx, "git clone", repo.url).Run().Stream(os.Stdout)
-		if err != nil {
-			return err
-		}
-		err = os.Chdir(repo.name)
-		if err != nil {
-			return err
-		}
-		err = run.Bash(ctx, "git remote add destination", gitURL.String()).Run().Stream(os.Stdout)
-		if err != nil {
-			return err
-		}
-		return run.Bash(ctx, "git push destination").Run().Stream(os.Stdout)
-	})
+	err := run.Bash(ctx, "git clone", repo.url).Run().Stream(os.Stdout)
+	if err != nil {
+		return err
+	}
+	err = run.Bash(ctx, "git remote add destination", gitURL.String()).Dir(repo.name).Run().Stream(os.Stdout)
+	if err != nil {
+		return err
+	}
+	return run.Bash(ctx, "git push destination").Dir(repo.name).Run().Stream(os.Stdout)
 }
 
 func inTempFolder(f func() error) error {
