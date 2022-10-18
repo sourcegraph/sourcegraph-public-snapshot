@@ -110,12 +110,6 @@ func TestGetUploads(t *testing.T) {
 		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
 
-	t.Logf("%v", sqlf.Sprintf(
-		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
-		50,
-		t5,
-	).Query(sqlf.PostgresBindVar))
-
 	dirtyRepositoryQuery := sqlf.Sprintf(
 		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
 		50,
