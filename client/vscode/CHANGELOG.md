@@ -10,7 +10,16 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+### Fixes
+
+## 2.2.13
+
+### Changes
+
 - Support for logical multiline matches in the UI for Sourcegraph instance versions >= 3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+- Tokens will now be stored in secret storage and removed from user settings [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+- Users can now log in through the built-in [authentication API](https://code.visualstudio.com/api/references/vscode-api#authentication) [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+- Add log out button to `Help and Feedback` sidebar under `User` [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
 
 ### Fixes
 
