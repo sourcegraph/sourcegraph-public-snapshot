@@ -541,8 +541,8 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (co
 	defer func() { err = tx.Done(err) }()
 
 	// Just in case
-	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
-		s.logger.Warn("Reference count operations are currently disabled")
+	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
+		s.logger.Warn("Soft deletion is currently disabled")
 		return 0, nil
 	}
 
