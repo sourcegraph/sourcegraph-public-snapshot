@@ -58,7 +58,7 @@ func (r *batchSpecWorkspaceFileResolver) IsDirectory() bool {
 }
 
 func (r *batchSpecWorkspaceFileResolver) Content(ctx context.Context) (string, error) {
-	return string(r.file.Content), nil
+	return "", errors.New("not implemented")
 }
 
 func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, error) {
