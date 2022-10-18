@@ -47,11 +47,13 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "indexer",
 				Image:    "lsif-node",
 				Commands: []string{"-p ."},
 				Dir:      "web",
@@ -59,6 +61,7 @@ func TestTransformRecord(t *testing.T) {
 		},
 		CliSteps: []apiclient.CliStep{
 			{
+				Key: "upload",
 				Commands: []string{
 					"lsif", "upload",
 					"-no-progress",
@@ -127,11 +130,13 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "pre-index.1",
 				Image:    "lsif-node",
 				Commands: []string{"-p", "."},
 				Dir:      "web",
@@ -139,6 +144,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		},
 		CliSteps: []apiclient.CliStep{
 			{
+				Key: "upload",
 				Commands: []string{
 					"lsif", "upload",
 					"-no-progress",
