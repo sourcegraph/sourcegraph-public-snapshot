@@ -47,7 +47,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const opts: any = {
+        const options: any = {
             agent: getProxyAgent(),
             body: JSON.stringify({
                 query: request,
@@ -57,13 +57,10 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
             headers,
         }
 
-        const response = (await fetch(url, opts)) as any
+        const response = await fetch(url, options)
         // TODO request cancellation w/ VS Code cancellation tokens.
-        const json = (await response.json()) as GraphQLResult<any>
-        console.log('why return', json)
-        return json
+        return (await response.json()) as GraphQLResult<R>
     } catch (error) {
-        console.error(error)
         // If `overrideAccessToken` is set, we're validating the token
         // and errors will be displayed in the UI.
         if (isHTTPAuthError(error) && !overrideAccessToken) {
