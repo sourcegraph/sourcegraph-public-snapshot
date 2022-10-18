@@ -11,7 +11,7 @@ Sourcegraph is backed by two Redis caches, `redis-cache` and `redis-store`.
 Engineers are welcome to cache data as they see fit.
 
 The cache instances are instantiated in [`internal/redispool`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/redispool/redispool.go).
-You can use the [redis-cache helpers](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/internal/rcache/rcache.go) to read and write data to and from `redis-cache`, which you are also welcome to add to.
+You can use the [`rcache` package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/internal/rcache/rcache.go) to read and write data to and from `redis-cache`, which you are also welcome to add to.
 
 ## Troubleshooting local redis access
 
