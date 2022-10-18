@@ -23,6 +23,7 @@ import {
     ExternalServiceVariables,
     ExternalServiceSyncJobState,
 } from '../../graphql-operations'
+import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
@@ -42,8 +43,6 @@ import { defaultExternalServices, codeHostExternalServices } from './externalSer
 import { ExternalServiceWebhook } from './ExternalServiceWebhook'
 
 import styles from './ExternalServicePage.module.scss'
-
-import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 
 interface Props extends TelemetryProps {
     externalServiceID: Scalars['ID']
