@@ -1249,7 +1249,7 @@
               "internalTraffic": false,
               "graphQL": false,
               "gitserverAccess": false,
-              "securityLevel": "INFO"
+              "severityLevel": "INFO"
             }
           ]
         }
