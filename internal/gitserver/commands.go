@@ -105,6 +105,13 @@ type DiffFileIterator struct {
 	fileFilterFunc diffFileIteratorFilter
 }
 
+func NewDiffFileIterator(rdr io.ReadCloser) *DiffFileIterator {
+	return &DiffFileIterator{
+		rdr:  rdr,
+		mfdr: diff.NewMultiFileDiffReader(rdr),
+	}
+}
+
 type diffFileIteratorFilter func(fileName string) (bool, error)
 
 func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) diffFileIteratorFilter {
@@ -184,10 +191,6 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
 func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	if Mocks.ExecReader != nil {
-		return Mocks.ExecReader(args)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
@@ -869,10 +872,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
-	if Mocks.ResolveRevision != nil {
-		return Mocks.ResolveRevision(spec, opt)
-	}
-
 	labelEnsureRevisionValue := "true"
 	if opt.NoEnsureRevision {
 		labelEnsureRevisionValue = "false"

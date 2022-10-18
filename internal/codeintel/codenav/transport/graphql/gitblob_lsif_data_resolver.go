@@ -8,6 +8,7 @@ import (
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,12 +43,13 @@ type gitBlobLSIFDataResolverQueryResolver struct {
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
 func NewGitBlobLSIFDataResolverQueryResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitBlobResolver GitBlobResolver, errTracer *observation.ErrCollector) GitBlobLSIFDataResolver {
+	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolverQueryResolver{
 		gitBlobLSIFDataResolver: gitBlobResolver,
 		autoindexingSvc:         autoindexSvc,
 		uploadSvc:               uploadSvc,
 		policiesSvc:             policiesSvc,
-		locationResolver:        sharedresolvers.NewCachedLocationResolver(autoindexSvc.GetUnsafeDB()),
+		locationResolver:        sharedresolvers.NewCachedLocationResolver(db, gitserver.NewClient(db)),
 		errTracer:               errTracer,
 	}
 }

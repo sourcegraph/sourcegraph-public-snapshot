@@ -562,6 +562,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypeRustPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRubyPackages:
+		r.Metadata = &struct{}{}
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
@@ -1168,9 +1170,6 @@ type ListIndexableReposOptions struct {
 	// status.
 	CloneStatus types.CloneStatus
 
-	// IncludePrivate when true will include user added private repos.
-	IncludePrivate bool
-
 	*LimitOffset
 }
 
@@ -1198,10 +1197,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf(
 			"gr.clone_status = %s", opts.CloneStatus,
 		))
-	}
-
-	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT repo.private"))
 	}
 
 	if len(where) == 0 {

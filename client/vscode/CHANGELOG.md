@@ -10,7 +10,11 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
+- Support for logical multiline matches in the UI for Sourcegraph instance versions >= 3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+
 ### Fixes
+
+- Fix issue where pattern type was always set to `literal` for Sourcegraph instance versions earlier than v3.43.0, which was overriding regex/structural toggles [pull/43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
 
 ## 2.2.12
 

@@ -166,9 +166,10 @@ func NewInternalHandler(
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
-		db:            db,
-		ListIndexable: backend.NewRepos(logger, db, gsClient).ListIndexable,
-		RepoStore:     db.Repos(),
+		db:              db,
+		gitserverClient: gsClient,
+		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		RepoStore:       db.Repos(),
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},

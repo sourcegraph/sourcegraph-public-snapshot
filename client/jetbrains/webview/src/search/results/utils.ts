@@ -14,8 +14,8 @@ export function getFirstResultId(results: SearchMatch[]): string | null {
                     ? firstSupportedMatch.lineMatches[0]
                     : undefined
                 : firstSupportedMatch.type === 'symbol'
-                    ? firstSupportedMatch.symbols[0]
-                    : undefined
+                ? firstSupportedMatch.symbols[0]
+                : undefined
         )
     }
     return null

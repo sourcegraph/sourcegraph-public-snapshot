@@ -18,7 +18,7 @@ type IndexesResolver struct {
 	//
 	Indexes    []types.Index
 	TotalCount int
-	NextOffset *int
+	NextOffset *int32
 	err        error
 }
 

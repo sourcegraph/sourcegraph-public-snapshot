@@ -29,6 +29,17 @@ body,
     background-color: var(--secondary);
 }
 
+// Token link is used when we have converted token ranges into links within the blob view
+// This primarily removes some default link styles and adds a more suitable focus style.
+.sourcegraph-token-link {
+    color: inherit;
+    text-decoration: inherit;
+
+    &:focus {
+        background-color: rgba($blue, 0.1);
+    }
+}
+
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
 // or identifying the token the references panel is toggled for.

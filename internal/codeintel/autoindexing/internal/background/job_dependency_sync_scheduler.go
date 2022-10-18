@@ -59,8 +59,9 @@ var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 var schemeToExternalService = map[string]string{
 	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
 	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
-	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
 	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
 }
 
 func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
@@ -244,6 +245,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript" ||
 		upload.Indexer == "scip-python" ||
+		upload.Indexer == "scip-ruby" ||
 		upload.Indexer == "rust-analyzer", nil
 }
 

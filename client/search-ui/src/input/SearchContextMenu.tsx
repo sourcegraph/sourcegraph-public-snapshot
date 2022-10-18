@@ -279,6 +279,7 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
     return (
         <ComboboxOption
             value={spec}
+            selected={selected}
             data-testid="search-context-menu-item"
             data-search-context-spec={spec}
             data-selected={selected || undefined}

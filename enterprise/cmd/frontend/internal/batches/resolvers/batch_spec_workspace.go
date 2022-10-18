@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -426,7 +425,7 @@ func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
 	if r.execution == nil {
 		return nil, nil
 	}
@@ -438,12 +437,15 @@ func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.Executo
 		return nil, nil
 	}
 
-	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	e, found, err := r.store.DatabaseDB().Executors().GetByHostname(ctx, r.execution.WorkerHostname)
 	if err != nil {
 		return nil, err
 	}
+	if !found {
+		return nil, nil
+	}
 
-	return executor, nil
+	return graphqlbackend.NewExecutorResolver(e), nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {

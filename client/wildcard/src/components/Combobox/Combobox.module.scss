@@ -13,6 +13,8 @@
 }
 
 .list {
+    overflow: auto;
+
     [data-reach-combobox-option]:hover {
         background-color: var(--dropdown-link-hover-bg);
         color: var(--dropdown-link-hover-color);

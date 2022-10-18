@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -39,7 +40,7 @@ func TestDequeue(t *testing.T) {
 		return transformedJob, nil
 	}
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -60,7 +61,7 @@ func TestDequeue(t *testing.T) {
 }
 
 func TestDequeueNoRecord(t *testing.T) {
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: workerstoremocks.NewMockStore()})
@@ -83,7 +84,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	fakeEntryID := 99
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(fakeEntryID, nil)
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -123,7 +124,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -143,7 +144,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -183,7 +184,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -204,7 +205,7 @@ func TestMarkComplete(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -233,7 +234,7 @@ func TestMarkComplete(t *testing.T) {
 func TestMarkCompleteUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkCompleteFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -246,7 +247,7 @@ func TestMarkCompleteStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	internalErr := errors.New("something went wrong")
 	store.MarkCompleteFunc.SetDefaultReturn(false, internalErr)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -263,7 +264,7 @@ func TestMarkErrored(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -295,7 +296,7 @@ func TestMarkErrored(t *testing.T) {
 func TestMarkErroredUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkErroredFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -308,7 +309,7 @@ func TestMarkErroredStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	storeErr := errors.New("something went wrong")
 	store.MarkErroredFunc.SetDefaultReturn(false, storeErr)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -325,7 +326,7 @@ func TestMarkFailed(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
@@ -357,7 +358,7 @@ func TestMarkFailed(t *testing.T) {
 func TestMarkFailedUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkFailedFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -370,7 +371,7 @@ func TestMarkFailedStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	storeErr := errors.New("something went wrong")
 	store.MarkFailedFunc.SetDefaultReturn(false, storeErr)
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
@@ -389,7 +390,7 @@ func TestHeartbeat(t *testing.T) {
 		return []int{testKnownID}, nil
 	})
 
-	executorStore := NewMockStore()
+	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 
 	executor := types.Executor{

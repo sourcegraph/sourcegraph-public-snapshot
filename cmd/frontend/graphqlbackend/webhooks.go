@@ -2,16 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,9 +34,13 @@ func (r *webhookResolver) UUID() string {
 	return r.hook.UUID.String()
 }
 
-func (r *webhookResolver) URL() string {
-	// TODO: Combine external URL and UUID
-	return "TODO"
+func (r *webhookResolver) URL() (string, error) {
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return "", errors.Wrap(err, "could not parse site config external URL")
+	}
+	externalURL.Path = fmt.Sprintf("webhooks/%v", r.hook.UUID)
+	return externalURL.String(), nil
 }
 
 func (r *webhookResolver) CodeHostURN() string {
@@ -124,31 +130,25 @@ func (r *schemaResolver) CreateWebhook(ctx context.Context, args *struct {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	err := validateCodeHostKindAndSecret(args.CodeHostKind, args.Secret)
-	if err != nil {
-		return nil, err
-	}
-	var secret *types.EncryptableSecret
-	if args.Secret != nil {
-		secret = types.NewUnencryptedSecret(*args.Secret)
-	}
-	webhook, err := r.db.Webhooks(keyring.Default().WebhookKey).Create(ctx, args.CodeHostKind, args.CodeHostURN, actor.FromContext(ctx).UID, secret)
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
-func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {
-	switch codeHostKind {
-	case extsvc.KindGitHub, extsvc.KindGitLab:
-		return nil
-	case extsvc.KindBitbucketCloud, extsvc.KindBitbucketServer:
-		if secret != nil {
-			return errors.Newf("webhooks do not support secrets for code host kind %s", codeHostKind)
-		}
-		return nil
-	default:
-		return errors.Newf("webhooks are not supported for code host kind %s", codeHostKind)
+func (r *schemaResolver) DeleteWebhook(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
 	}
+	id, err := unmarshalWebhookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "delete webhook")
+	}
+	return &EmptyResponse{}, nil
 }

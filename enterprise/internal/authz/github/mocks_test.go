@@ -10,6 +10,7 @@ import (
 	"context"
 	"sync"
 
+	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	github "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -59,9 +60,9 @@ type MockClient struct {
 	// ListTeamRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method ListTeamRepositories.
 	ListTeamRepositoriesFunc *ClientListTeamRepositoriesFunc
-	// WithTokenFunc is an instance of a mock function object controlling
-	// the behavior of the method WithToken.
-	WithTokenFunc *ClientWithTokenFunc
+	// WithAuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method WithAuthenticator.
+	WithAuthenticatorFunc *ClientWithAuthenticatorFunc
 }
 
 // NewMockClient creates a new mock of the client interface. All methods
@@ -128,8 +129,8 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		WithTokenFunc: &ClientWithTokenFunc{
-			defaultHook: func(string) (r0 client) {
+		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (r0 client) {
 				return
 			},
 		},
@@ -200,9 +201,9 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListTeamRepositories")
 			},
 		},
-		WithTokenFunc: &ClientWithTokenFunc{
-			defaultHook: func(string) client {
-				panic("unexpected invocation of MockClient.WithToken")
+		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) client {
+				panic("unexpected invocation of MockClient.WithAuthenticator")
 			},
 		},
 	}
@@ -224,7 +225,7 @@ type surrogateMockClient interface {
 	ListRepositoryTeams(context.Context, string, string, int) ([]*github.Team, bool, error)
 	ListTeamMembers(context.Context, string, string, int) ([]*github.Collaborator, bool, error)
 	ListTeamRepositories(context.Context, string, string, int) ([]*github.Repository, bool, int, error)
-	WithToken(string) client
+	WithAuthenticator(auth.Authenticator) client
 }
 
 // NewMockClientFrom creates a new mock of the MockClient interface. All
@@ -267,8 +268,8 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 		ListTeamRepositoriesFunc: &ClientListTeamRepositoriesFunc{
 			defaultHook: i.ListTeamRepositories,
 		},
-		WithTokenFunc: &ClientWithTokenFunc{
-			defaultHook: i.WithToken,
+		WithAuthenticatorFunc: &ClientWithAuthenticatorFunc{
+			defaultHook: i.WithAuthenticator,
 		},
 	}
 }
@@ -1682,34 +1683,35 @@ func (c ClientListTeamRepositoriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// ClientWithTokenFunc describes the behavior when the WithToken method of
-// the parent MockClient instance is invoked.
-type ClientWithTokenFunc struct {
-	defaultHook func(string) client
-	hooks       []func(string) client
-	history     []ClientWithTokenFuncCall
+// ClientWithAuthenticatorFunc describes the behavior when the
+// WithAuthenticator method of the parent MockClient instance is invoked.
+type ClientWithAuthenticatorFunc struct {
+	defaultHook func(auth.Authenticator) client
+	hooks       []func(auth.Authenticator) client
+	history     []ClientWithAuthenticatorFuncCall
 	mutex       sync.Mutex
 }
 
-// WithToken delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) WithToken(v0 string) client {
-	r0 := m.WithTokenFunc.nextHook()(v0)
-	m.WithTokenFunc.appendCall(ClientWithTokenFuncCall{v0, r0})
+// WithAuthenticator delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) WithAuthenticator(v0 auth.Authenticator) client {
+	r0 := m.WithAuthenticatorFunc.nextHook()(v0)
+	m.WithAuthenticatorFunc.appendCall(ClientWithAuthenticatorFuncCall{v0, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the WithToken method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientWithTokenFunc) SetDefaultHook(hook func(string) client) {
+// SetDefaultHook sets function that is called when the WithAuthenticator
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientWithAuthenticatorFunc) SetDefaultHook(hook func(auth.Authenticator) client) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// WithToken method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientWithTokenFunc) PushHook(hook func(string) client) {
+// WithAuthenticator method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientWithAuthenticatorFunc) PushHook(hook func(auth.Authenticator) client) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1717,20 +1719,20 @@ func (f *ClientWithTokenFunc) PushHook(hook func(string) client) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientWithTokenFunc) SetDefaultReturn(r0 client) {
-	f.SetDefaultHook(func(string) client {
+func (f *ClientWithAuthenticatorFunc) SetDefaultReturn(r0 client) {
+	f.SetDefaultHook(func(auth.Authenticator) client {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientWithTokenFunc) PushReturn(r0 client) {
-	f.PushHook(func(string) client {
+func (f *ClientWithAuthenticatorFunc) PushReturn(r0 client) {
+	f.PushHook(func(auth.Authenticator) client {
 		return r0
 	})
 }
 
-func (f *ClientWithTokenFunc) nextHook() func(string) client {
+func (f *ClientWithAuthenticatorFunc) nextHook() func(auth.Authenticator) client {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1743,29 +1745,29 @@ func (f *ClientWithTokenFunc) nextHook() func(string) client {
 	return hook
 }
 
-func (f *ClientWithTokenFunc) appendCall(r0 ClientWithTokenFuncCall) {
+func (f *ClientWithAuthenticatorFunc) appendCall(r0 ClientWithAuthenticatorFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ClientWithTokenFuncCall objects describing
-// the invocations of this function.
-func (f *ClientWithTokenFunc) History() []ClientWithTokenFuncCall {
+// History returns a sequence of ClientWithAuthenticatorFuncCall objects
+// describing the invocations of this function.
+func (f *ClientWithAuthenticatorFunc) History() []ClientWithAuthenticatorFuncCall {
 	f.mutex.Lock()
-	history := make([]ClientWithTokenFuncCall, len(f.history))
+	history := make([]ClientWithAuthenticatorFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ClientWithTokenFuncCall is an object that describes an invocation of
-// method WithToken on an instance of MockClient.
-type ClientWithTokenFuncCall struct {
+// ClientWithAuthenticatorFuncCall is an object that describes an invocation
+// of method WithAuthenticator on an instance of MockClient.
+type ClientWithAuthenticatorFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 auth.Authenticator
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 client
@@ -1773,12 +1775,12 @@ type ClientWithTokenFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ClientWithTokenFuncCall) Args() []interface{} {
+func (c ClientWithAuthenticatorFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientWithTokenFuncCall) Results() []interface{} {
+func (c ClientWithAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

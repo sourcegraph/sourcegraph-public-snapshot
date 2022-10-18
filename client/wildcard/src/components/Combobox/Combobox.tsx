@@ -1,4 +1,14 @@
-import { createContext, forwardRef, useContext, useState, HTMLAttributes } from 'react'
+import {
+    createContext,
+    forwardRef,
+    useContext,
+    useState,
+    HTMLAttributes,
+    RefObject,
+    useMemo,
+    useRef,
+    useLayoutEffect,
+} from 'react'
 
 import {
     Combobox as ReachCombobox,
@@ -13,6 +23,7 @@ import {
     ComboboxOptionProps as ReachComboboxOptionProps,
     ComboboxOptionText as ReachComboboxOptionText,
     useComboboxOptionContext,
+    useComboboxContext,
 } from '@reach/combobox'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -123,12 +134,27 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
     )
 })
 
+interface ComboboxListContextData {
+    listRef: RefObject<HTMLUListElement>
+}
+
+const ComboboxListContext = createContext<ComboboxListContextData>({
+    listRef: { current: null },
+})
+
 interface ComboboxListProps extends ReachComboboxListProps, HTMLAttributes<HTMLUListElement> {}
 
 export const ComboboxList = forwardRef<HTMLUListElement, ComboboxListProps>((props, ref) => {
     const { className, ...attributes } = props
 
-    return <ReachComboboxList {...attributes} ref={ref} className={classNames(className, styles.list)} />
+    const mergedRefs = useMergeRefs([ref])
+    const contextValue = useMemo(() => ({ listRef: mergedRefs }), [mergedRefs])
+
+    return (
+        <ComboboxListContext.Provider value={contextValue}>
+            <ReachComboboxList {...attributes} ref={mergedRefs} className={classNames(className, styles.list)} />
+        </ComboboxListContext.Provider>
+    )
 })
 
 interface ComboboxOptionGroupProps {
@@ -151,16 +177,46 @@ export const ComboboxOptionGroup = forwardRef((props, ref) => {
 
 interface ComboboxOptionProps extends ReachComboboxOptionProps {
     disabled?: boolean
+    selected?: boolean
 }
 
 export const ComboboxOption = forwardRef((props, ref) => {
-    const { value, disabled, children, className, ...attributes } = props
+    const { value, disabled, children, className, selected, ...attributes } = props
     const context = useComboboxOptionContext()
+    const { navigationValue } = useComboboxContext()
+    const { listRef } = useContext(ComboboxListContext)
+
+    const isSelectedRef = useRef(selected)
+    const mergedRef = useMergeRefs([ref])
+
+    // Scroll intro view on the first option mount if option
+    // is selected
+    useLayoutEffect(() => {
+        const isSelected = isSelectedRef.current
+        const listElement = listRef.current
+        const optionElement = mergedRef.current
+
+        if (isSelected) {
+            scrollIntoView(listElement, optionElement)
+        }
+    }, [listRef, mergedRef])
+
+    // Scroll into view active option as user navigates through
+    // suggested options
+    useLayoutEffect(() => {
+        const isOptionActive = navigationValue === value
+        const listElement = listRef.current
+        const optionElement = mergedRef.current
+
+        if (isOptionActive) {
+            scrollIntoView(listElement, optionElement)
+        }
+    }, [navigationValue, value, listRef, mergedRef])
 
     if (disabled) {
         return (
             <li
-                ref={ref}
+                ref={mergedRef}
                 data-option-disabled={true}
                 className={classNames(className, styles.itemDisabled)}
                 {...attributes}
@@ -171,10 +227,52 @@ export const ComboboxOption = forwardRef((props, ref) => {
     }
 
     return (
-        <ReachComboboxOption ref={ref} value={value} className={className} {...attributes}>
+        <ReachComboboxOption ref={mergedRef} value={value} className={className} {...attributes}>
             {children}
         </ReachComboboxOption>
     )
 }) as ForwardReferenceComponent<'li', ComboboxOptionProps>
 
 export { ReachComboboxOptionText as ComboboxOptionText }
+
+/**
+ * It scrolls element into view in case if element is placed outside of visible view area.
+ *
+ * ```
+ *    ┌─────────────────────┐                ┌─────────────────────┐
+ * ┏Container viewport ━ ━ ━│━ ┓             │                     │
+ *    │                     │                │                     │
+ * ┃  │                     │  ┃             │                     │
+ *    │                     │             ┏Container viewport ━ ━ ━│━ ┓
+ * ┃  │┌ Element ─ ─ ─ ─ ─ ┐│  ┃ ──────▶     │┌ Element ─ ─ ─ ─ ─ ┐│
+ *    │ ░░░░░░░░░░░░░░░░░░░ │             ┃  │ ░░░░░░░░░░░░░░░░░░░ │  ┃
+ * ┗ ━│╋░━░━░━░━░━░━░━░━░━░╋│━ ┛             ││░░░░░░░░░░░░░░░░░░░││
+ *    │ ░░░░░░░░░░░░░░░░░░░ │             ┃  │ ░░░░░░░░░░░░░░░░░░░ │  ┃
+ *    │└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘│                │└ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘│
+ *    └─────────────────────┘             ┗ ━└━─━─━─━─━─━─━─━─━─━─━┘━ ┛
+ *```
+ */
+function scrollIntoView(view: HTMLElement | null, element: HTMLElement | null): void {
+    if (!view || !element) {
+        return
+    }
+
+    const viewBox = view.getBoundingClientRect()
+    const elementBox = element.getBoundingClientRect()
+
+    // Calculate scroll shift window coordinate
+    const scrollStart = view.scrollTop
+    const scrollEnd = viewBox.height + scrollStart
+
+    // Get relative option position relate to list element (combobox scrolling container)
+    const topOptionPosition = elementBox.y - viewBox.y + scrollStart
+    const bottomOptionPosition = topOptionPosition + elementBox.height
+
+    if (topOptionPosition < scrollStart) {
+        view.scrollTop -= scrollStart - topOptionPosition
+    }
+
+    if (bottomOptionPosition > scrollEnd) {
+        view.scrollTop += bottomOptionPosition - scrollEnd
+    }
+}

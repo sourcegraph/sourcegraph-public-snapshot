@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
-type UploadService interface {
+type UploadServiceBackgroundJobs interface {
 	NewJanitor(
 		interval time.Duration,
 		uploadTimeout time.Duration,

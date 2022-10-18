@@ -12,6 +12,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -119,14 +119,8 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-type mockExecutorResolver struct{}
-
-func (mockExecutorResolver) ExecutorResolver() executor.Resolver {
-	return nil
-}
-
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r, mockExecutorResolver{})
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
@@ -186,24 +180,11 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 }
 
-func mockRepoComparison(t *testing.T, gitserverClient gitserver.MockClient, baseRev, headRev, diff string) {
+func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, baseRev, headRev, diff string) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != baseRev && spec != headRev {
-			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
-		}
-		return api.CommitID(spec), nil
-	}
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != baseRev && spec != headRev {
-			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
-		}
-		return api.CommitID(spec), nil
-	})
-
-	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
@@ -212,15 +193,22 @@ func mockRepoComparison(t *testing.T, gitserverClient gitserver.MockClient, base
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
 		return io.NopCloser(strings.NewReader(diff)), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
+	})
 
-	gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
+	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != baseRev && spec != headRev {
+			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	})
+
+	gitserverClientWithExecReader.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
 	})
+	*gitserverClient = *gitserverClientWithExecReader
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {

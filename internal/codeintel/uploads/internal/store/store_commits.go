@@ -255,11 +255,11 @@ type backfillIncompleteError struct {
 }
 
 func (e backfillIncompleteError) Error() string {
-	return fmt.Sprintf("repository %d has not yet completed its backfill of column committed_at", e.repositoryID)
+	return fmt.Sprintf("repository %d has not yet completed its backfill of commit dates", e.repositoryID)
 }
 
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no
-// non-nil values, a false-valued flag is returned. If there are any null values, the committed_at backfill job
+// non-nil values, a false-valued flag is returned. If there are any null values, the commit date backfill job
 // has not yet completed and an error is returned to prevent downstream expiration errors being made due to
 // outdated commit graph data.
 func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
@@ -284,13 +284,14 @@ func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ ti
 // having pristine database.
 const getOldestCommitDateQuery = `
 SELECT
-	committed_at
-FROM lsif_uploads
+	cd.committed_at
+FROM lsif_uploads u
+LEFT JOIN codeintel_commit_dates cd ON cd.repository_id = u.repository_id AND cd.commit_bytea = decode(u.commit, 'hex')
 WHERE
-	repository_id = %s AND
-	state = 'completed' AND
-	(committed_at != '-infinity' OR committed_at IS NULL)
-ORDER BY committed_at NULLS FIRST
+	u.repository_id = %s AND
+	u.state = 'completed' AND
+	(cd.committed_at != '-infinity' OR cd.committed_at IS NULL)
+ORDER BY cd.committed_at NULLS FIRST
 LIMIT 1
 `
 

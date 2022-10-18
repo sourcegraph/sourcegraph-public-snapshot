@@ -41,7 +41,7 @@ func (codeIntelligence) NewUploadsStoreGroup(containerName string) monitoring.Gr
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > Store",
+			DescriptionRoot: "Uploads > Store (internal)",
 			Hidden:          false,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
@@ -111,6 +111,38 @@ func (codeIntelligence) NewUploadsHTTPTransportGroup(containerName string) monit
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "codeintel_uploads_transport_http",
 				MetricDescriptionRoot: "http handler",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_codeintel_uploads_background_total
+// src_codeintel_uploads_background_duration_seconds_bucket
+// src_codeintel_uploads_background_errors_total
+func (codeIntelligence) NewUploadsBackgroundGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Uploads > Background (internal)",
+			Hidden:          false,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_uploads_background",
+				MetricDescriptionRoot: "background",
 				By:                    []string{"op"},
 			},
 		},

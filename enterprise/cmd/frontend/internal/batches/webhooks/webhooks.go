@@ -16,13 +16,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Webhook struct {
-	Store *store.Store
+	Store           *store.Store
+	gitserverClient gitserver.Client
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
@@ -171,7 +173,7 @@ func (h Webhook) upsertChangesetEvent(
 	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
 		ChangesetIDs: []int64{cs.ID},
 	})
-	state.SetDerivedState(ctx, tx.Repos(), cs, events)
+	state.SetDerivedState(ctx, tx.Repos(), h.gitserverClient, cs, events)
 	if err := tx.UpdateChangesetCodeHostState(ctx, cs); err != nil {
 		return err
 	}

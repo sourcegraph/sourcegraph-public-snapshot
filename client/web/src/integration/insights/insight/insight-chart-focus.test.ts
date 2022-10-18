@@ -20,7 +20,7 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({ devtools: true })
+        driver = await createDriverForTest()
     })
 
     beforeEach(async function () {
@@ -121,11 +121,15 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         for (let arcIndex = 0; arcIndex < Math.min(arcs.length, 6); arcIndex++) {
             await driver.page.keyboard.press(Key.Tab)
-            assert.strictEqual(
-                await hasFocus(driver, `[aria-label="Pie chart"] a:nth-child(${arcIndex + 1})`),
-                true,
-                'Insight pie arc should be focused'
+
+            const aElement = await driver.page.evaluate(
+                (arcIndex: number) => document.querySelector(`[aria-label="Pie chart"] g:nth-child(${arcIndex + 1}) a`),
+                arcIndex
             )
+
+            const activeElement = await driver.page.evaluate(() => document.activeElement)
+
+            assert.strictEqual(aElement === activeElement, true, 'Insight pie arc should be focused')
         }
     })
 })

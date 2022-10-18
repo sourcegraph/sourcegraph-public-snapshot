@@ -84,6 +84,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
           },
+          {
+            group: ['**/out/*'],
+            message:
+              "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
+          },
         ],
       },
     ],

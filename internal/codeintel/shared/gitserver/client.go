@@ -36,6 +36,14 @@ func New(db database.DB, observationContext *observation.Context) *Client {
 	}
 }
 
+func NewWithGitserverClient(db database.DB, gitserverClient gitserver.Client, observationContext *observation.Context) *Client {
+	return &Client{
+		gitserverClient: gitserverClient,
+		dbStore:         newWithDB(db),
+		operations:      newOperations(observationContext),
+	}
+}
+
 func (c *Client) ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error) {
 	return c.gitserverClient.ArchiveReader(ctx, checker, repo, options)
 }

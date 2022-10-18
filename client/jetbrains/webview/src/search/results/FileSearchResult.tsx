@@ -90,12 +90,16 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
 
     const onClick = (): void =>
         lines.length
-            ? selectResult(getResultId(match,
-                match.type === 'content'
-                    ? match.lineMatches
-                        ? match.lineMatches[0]
-                        : undefined
-                    : match.symbols[0]))
+            ? selectResult(
+                  getResultId(
+                      match,
+                      match.type === 'content'
+                          ? match.lineMatches
+                              ? match.lineMatches[0]
+                              : undefined
+                          : match.symbols[0]
+                  )
+              )
             : undefined
 
     const title = (

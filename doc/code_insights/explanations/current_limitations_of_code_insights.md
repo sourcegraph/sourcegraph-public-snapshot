@@ -44,6 +44,10 @@ In this case, you may want to try:
 * Using a more granular query
 * Changing your site configuration so that the timeout is increased, provided your instance setup allows it. [More information on timeouts](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts).
 
+## Creating insights over specific branches and revisions
+
+Code Insights does not yet support running over specific revisions. 
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories
