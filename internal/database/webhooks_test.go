@@ -145,7 +145,7 @@ func TestWebhookDelete(t *testing.T) {
 
 	// Test that delete with wrong UUID returns an error
 	nonExistentUUID := uuid.New()
-	err := store.Delete(ctx, NewDeleteWebhookOptsWithUUID(nonExistentUUID))
+	err := store.Delete(ctx, DeleteWebhookOpts{UUID: nonExistentUUID})
 	if !errors.HasType(err, &WebhookNotFoundError{}) {
 		t.Fatalf("want WebhookNotFoundError, got: %s", err)
 	}
@@ -153,7 +153,7 @@ func TestWebhookDelete(t *testing.T) {
 
 	// Test that delete with wrong ID returns an error
 	nonExistentID := int32(123)
-	err = store.Delete(ctx, NewDeleteWebhookOptsWithID(nonExistentID))
+	err = store.Delete(ctx, DeleteWebhookOpts{ID: nonExistentID})
 	if !errors.HasType(err, &WebhookNotFoundError{}) {
 		t.Fatalf("want WebhookNotFoundError, got: %s", err)
 	}
@@ -168,7 +168,7 @@ func TestWebhookDelete(t *testing.T) {
 	createdWebhook2 := createWebhook(ctx, t, store)
 
 	// Test that delete with right UUID deletes the webhook
-	err = store.Delete(ctx, NewDeleteWebhookOptsWithUUID(createdWebhook1.UUID))
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: createdWebhook1.UUID})
 	assert.NoError(t, err)
 
 	// Test that delete with both ID and UUID deletes the webhook by ID
