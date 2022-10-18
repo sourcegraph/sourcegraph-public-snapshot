@@ -54,7 +54,7 @@ type Store interface {
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)

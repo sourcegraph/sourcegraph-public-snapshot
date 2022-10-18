@@ -437,11 +437,11 @@ func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefor
 	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
 }
 
-func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (int, error) {
+func (s *Service) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error) {
 	ctx, _, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, nil, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.SoftDeleteExpiredUploads(ctx)
+	return s.store.SoftDeleteExpiredUploads(ctx, batchSize)
 }
 
 // BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have

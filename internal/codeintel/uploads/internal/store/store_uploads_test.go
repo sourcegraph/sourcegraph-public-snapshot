@@ -771,13 +771,13 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertUploads(t, db,
-		types.Upload{ID: 50, State: "completed"},
-		types.Upload{ID: 51, State: "completed"},
-		types.Upload{ID: 52, State: "completed"},
-		types.Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
-		types.Upload{ID: 54, State: "completed"}, // referenced by 52
-		types.Upload{ID: 55, State: "completed"}, // referenced by 51
-		types.Upload{ID: 56, State: "completed"}, // referenced by 52, 53
+		types.Upload{ID: 50, RepositoryID: 100, State: "completed"},
+		types.Upload{ID: 51, RepositoryID: 101, State: "completed"},
+		types.Upload{ID: 52, RepositoryID: 102, State: "completed"},
+		types.Upload{ID: 53, RepositoryID: 102, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		types.Upload{ID: 54, RepositoryID: 103, State: "completed"}, // referenced by 52
+		types.Upload{ID: 55, RepositoryID: 103, State: "completed"}, // referenced by 51
+		types.Upload{ID: 56, RepositoryID: 103, State: "completed"}, // referenced by 52, 53
 	)
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
@@ -800,15 +800,12 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
+	// expire uploads 51-54
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, shared.DependencyReferenceCountUpdateTypeAdd); err != nil {
-		t.Fatalf("unexpected error updating reference counts: %s", err)
-	}
-
-	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
+	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
@@ -842,8 +839,9 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 	sort.Ints(keys)
 
-	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
+	expectedKeys := []int{101, 102}
+	if diff := cmp.Diff(expectedKeys, keys); diff != "" {
+		t.Errorf("unexpected dirty repositories (-want +got):\n%s", diff)
 	}
 }
 

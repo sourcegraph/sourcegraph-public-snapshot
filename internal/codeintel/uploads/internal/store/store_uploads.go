@@ -524,13 +524,13 @@ deleted AS (
 	WHERE id IN (SELECT id FROM candidates)
 	RETURNING u.repository_id
 )
-SELECT count(*) FROM deleted
+SELECT COUNT(*) FROM deleted
 `
 
 // SoftDeleteExpiredUploads marks upload records that are both expired and have no references
 // as deleted. The associated repositories will be marked as dirty so that their commit graphs
 // are updated in the near future.
-func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (count int, err error) {
 	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -548,7 +548,7 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 
 	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
-	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
+	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
 	if err != nil {
 		return 0, err
 	}
@@ -571,25 +571,129 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 }
 
 const softDeleteExpiredUploadsQuery = `
-WITH candidates AS (
+WITH
+
+-- First, select the set of uploads that are not protected by any policy. This will
+-- be the set that we _may_ soft-delete due to age, as long as it's unreferenced by
+-- any other upload that canonically provides some package. The following CTES will
+-- handle the "unreference" part of that condition.
+expired_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
-	JOIN lsif_uploads_reference_counts urc ON urc.upload_id = u.id
+	WHERE u.state = 'completed' AND u.expired
+	ORDER BY u.last_referenced_scan_at NULLS FIRST, u.finished_at, u.id
+	LIMIT %s
+),
+
+-- From the set of unprotected uploads, find out the set of packages that they provide.
+packages_defined_by_target_uploads AS (
+	SELECT p.scheme, p.name, p.version
+	FROM lsif_packages p
+	WHERE p.dump_id IN (SELECT id FROM expired_uploads)
+),
+
+-- From the set of provided packages, find the entire set of uploads that provide those
+-- packages. This will necessarily include the set of target uploads above, as well as
+-- any other uploads that happen to define the same package (including version). This
+-- result set also includes a _rank_ column, where rank=1 indicates that the upload
+-- canonically provides that package and will be visible in cross-index navigation for
+-- that package.
+ranked_uploads_providing_packages AS (
+	SELECT
+		u.id,
+		p.scheme,
+		p.name,
+		p.version,
+		-- Rank each upload providing the same package from the same directory
+		-- within a repository by commit date. We'll choose the oldest commit
+		-- date as the canonical choice, and set the reference counts to all
+		-- of the duplicate commits to zero.
+		` + packageRankingQueryFragment + ` AS rank
+	FROM lsif_uploads u
+	LEFT JOIN lsif_packages p ON p.dump_id = u.id
 	WHERE
-		u.state = 'completed' AND
-		u.expired AND
-		urc.reference_count = 0
+		(
+			-- Select our target uploads
+			u.id = ANY (SELECT id FROM expired_uploads) OR
+
+			-- Also select uploads that provide the same package as a target upload.
+			(p.scheme, p.name, p.version) IN (
+				SELECT p.scheme, p.name, p.version
+				FROM packages_defined_by_target_uploads p
+			)
+		) AND
+
+		-- Don't match deleted uploads
+		u.state NOT IN ('deleted', 'deleting')
+),
+
+-- Filter the set of our original (expired) candidate uploads so that it includes only
+-- uploads that canonically provide a referenced package. This will remove from the candidate
+-- set uploads that do not canonically provdie a package, or it canonically provides a package
+-- with no references from another upload.
+referenced_uploads_providing_package_canonically AS (
+	SELECT ru.id
+	FROM ranked_uploads_providing_packages ru
+	WHERE
+		-- Only select from our original set (not the larger intermediate ones)
+		ru.id IN (SELECT id FROM expired_uploads) AND
+
+		-- Ignore uploads that do not provide their package canonically
+		ru.rank = 1 AND
+
+		-- Ignore uploads that do not have references. We will also do a periodic but
+		-- more expensive graph traversal operation that handles the case of all-expired
+		-- connected components.
+		EXISTS (
+			SELECT 1
+			FROM lsif_references r
+			WHERE
+				r.scheme = ru.scheme AND
+				r.name = ru.name AND
+				r.version = ru.version AND
+				r.dump_id != ru.id
+			)
+),
+
+-- Filter the set of our original candidate uploads to exlude the "safe" uploads found
+-- above. This should include uploads that are expired and either not a canonical provider
+-- of their package, or their package is unreferenced by any other uplaod. We can then lock
+-- the uploads in a deterministic order and update the state of each upload to 'deleting'.
+-- Before hard-deletion, we will clear all associated data for this upload in the codeintel-db.
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE
+		u.id IN (SELECT id FROM expired_uploads) AND
+		NOT EXISTS (
+			SELECT 1
+			FROM referenced_uploads_providing_package_canonically pkg_refcount
+			WHERE pkg_refcount.id = u.id
+		)
+),
+locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id IN (SELECT id FROM expired_uploads)
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.
 	ORDER BY u.id FOR UPDATE
 ),
 updated AS (
 	UPDATE lsif_uploads u
-	SET state = 'deleting'
-	WHERE u.id IN (SELECT id FROM candidates)
-	RETURNING u.id, u.repository_id
+
+	SET
+		-- Update this value unconditionally
+		last_referenced_scan_at = NOW(),
+
+		-- Delete the candidates we've identified, but keep the state the same for all other uploads
+		state = CASE WHEN u.id IN (SELECT id FROM candidates) THEN 'deleting' ELSE 'completed' END
+	WHERE u.id IN (SELECT id FROM locked_uploads)
+	RETURNING u.id, u.repository_id, u.state
 )
-SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
+
+-- Return the repositories which were affected so we can recalculate the commit graph
+SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
 `
 
 // HardDeleteUploadsByIDs deletes the upload record with the given identifier.
