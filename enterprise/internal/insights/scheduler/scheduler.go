@@ -12,11 +12,7 @@ import (
 	log "github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -168,46 +164,6 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	return worker, resetter, workerStore
 }
 
-func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
-	insightsDB := config.InsightsDB
-	backfillStore := newBackfillStore(insightsDB)
-
-	name := "backfill_new_backfill_worker"
-
-	workerStore := dbworkerstore.NewWithMetrics(insightsDB.Handle(), dbworkerstore.Options{
-		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "insights_background_jobs",
-		ViewName:          "insights_jobs_backfill_new",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
-	}, config.ObsContext)
-
-	task := newBackfillHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
-		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), //TODO add in a real all repos iterator
-	}
-
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
-	})
-
-	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
-		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
-	})
-
-	return worker, resetter, workerStore
-}
-
 type inProgressHandler struct {
 	workerStore   dbworkerstore.Store
 	backfillStore *BackfillStore
@@ -252,79 +208,6 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 type SeriesReader interface {
 	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
-}
-
-// newBackfillHandler - Handles series that are in the "new" state
-// The new state is the initial state post creation.  This handler is responsible only for determining the work
-// that needs to be completed to backfill this series.  It then queues the record to run the acutal backfill.
-type newBackfillHandler struct {
-	workerStore   dbworkerstore.Store
-	backfillStore *BackfillStore
-	seriesReader  SeriesReader
-	repoIterator  discovery.SeriesRepoIterator
-	costAnalyzer  priority.QueryAnalyzer
-}
-
-var _ workerutil.Handler = &newBackfillHandler{}
-
-func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	logger.Info("newBackfillHandler called", log.Int("recordId", record.RecordID()))
-	job, ok := record.(*BaseJob)
-	if !ok {
-		return errors.New("invalid job received")
-	}
-	// setup transactions
-	queueTx, err := h.workerStore.Handle().Transact(ctx)
-	if err != nil {
-		return err
-	}
-	backfillTx, err := h.backfillStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		queueTx.Done(err)
-		backfillTx.Done(err)
-	}()
-
-	// load backfill and series
-	backfill, err := backfillTx.loadBackfill(ctx, job.backfillId)
-	if err != nil {
-		return errors.Wrap(err, "loadBackfill")
-	}
-	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfill.SeriesId)
-	if err != nil {
-		return errors.Wrap(err, "GetDataSeriesByID")
-	}
-
-	// set backfill repo scope
-	repoIds := []int32{}
-	reposIterator, err := h.repoIterator.SeriesRepoIterator(ctx, series)
-	if err != nil {
-		return errors.Wrap(err, "repoIterator.SeriesRepoIterator")
-	}
-	err = reposIterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
-		repoIds = append(repoIds, int32(id))
-		return nil
-	})
-	if err != nil {
-		return errors.Wrap(err, "reposIterator.ForEach")
-	}
-
-	//TODO: use query costing
-	backfill, err = backfill.SetScope(ctx, backfillTx, repoIds, 0)
-	if err != nil {
-		return errors.Wrap(err, "backfill.SetScope")
-	}
-
-	// update series state
-	err = backfill.setState(ctx, backfillTx, BackfillStateProcessing)
-	if err != nil {
-		return errors.Wrap(err, "backfill.setState")
-	}
-
-	// enqueue backfill for next step in processing
-	return enqueueBackfill(ctx, queueTx, backfill)
 }
 
 type Scheduler struct {
