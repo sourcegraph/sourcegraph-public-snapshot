@@ -46,7 +46,7 @@ You cannot combinatorially combine capture groups. Queries containing multiple c
 
 ### Searches are limited to file content
 
-You can't use capture groups in queries for `type:commit`, `type:repo`, `type:path`, or `type:diff`. 
+You can't use capture groups in queries for `type:commit`, `type:repo`, `type:path`, `type:diff`, or `type:symbol`. 
 
 ### Match values are limited to a 100 characters
 
