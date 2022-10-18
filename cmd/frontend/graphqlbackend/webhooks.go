@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -9,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -32,9 +35,13 @@ func (r *webhookResolver) UUID() string {
 	return r.hook.UUID.String()
 }
 
-func (r *webhookResolver) URL() string {
-	// TODO: Combine external URL and UUID
-	return "TODO"
+func (r *webhookResolver) URL() (string, error) {
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		return "", errors.Wrap(err, "could not parse site config external URL")
+	}
+	externalURL.Path = fmt.Sprintf("webhooks/%v", r.hook.UUID)
+	return externalURL.String(), nil
 }
 
 func (r *webhookResolver) CodeHostURN() string {
