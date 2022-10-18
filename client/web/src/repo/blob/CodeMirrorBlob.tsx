@@ -12,23 +12,22 @@ import { isEqual } from 'lodash'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
-    LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { createUpdateableField, editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
-import { hovercardRanges } from './codemirror/hovercard'
+import { pin, updatePin } from './codemirror/hovercard'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
-import { isValidLineRange, offsetToUIPosition, uiPositionToOffset } from './codemirror/utils'
+import { isValidLineRange } from './codemirror/utils'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -144,6 +143,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const onSelection = useCallback(
         (range: SelectedLineRange) => {
             const parameters = new URLSearchParams(locationRef.current.search)
+            parameters.delete('popover')
+
             let query: string | undefined
 
             if (range?.line !== range?.endLine && range?.endLine) {
@@ -182,7 +183,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             }),
             tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
             syntaxHighlight.of(blobInfo),
-            pinnedRangeField.init(() => (hasPin ? position : null)),
+            pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
@@ -273,7 +274,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     useEffect(() => {
         if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
             // Only update range if position is valid inside the document.
-            updatePinnedRangeField(editor, hasPin ? position : null)
+            updatePin(editor, hasPin ? position : null)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
@@ -324,69 +325,3 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         return blobRef.current
     }, [blobInfo])
 }
-
-/**
- * Field used by the CodeMirror blob view to provide hovercard range information
- * for pinned cards. Since we have to use the editor's current state to compute
- * the final position we are using a field instead of a compartment to provide
- * this information.
- */
-const [pinnedRangeField, updatePinnedRangeField] = createUpdateableField<LineOrPositionOrRange | null>(null, field =>
-    hovercardRanges.computeN([field], state => {
-        const position = state.field(field)
-        if (!position) {
-            return []
-        }
-
-        if (!position.line || !position.character) {
-            return []
-        }
-        const startLine = state.doc.line(position.line)
-
-        const startPosition = {
-            line: position.line,
-            character: position.character,
-        }
-        const from = uiPositionToOffset(state.doc, startPosition, startLine)
-
-        if (from === null) {
-            return []
-        }
-
-        let endPosition: UIPositionSpec['position']
-        let to: number | null = null
-
-        if (position.endLine && position.endCharacter) {
-            endPosition = {
-                line: position.endLine,
-                character: position.endCharacter,
-            }
-            to = uiPositionToOffset(state.doc, endPosition)
-        } else {
-            // To determine the end position we have to find the word at the
-            // start position
-            const word = state.wordAt(from)
-            if (!word) {
-                return []
-            }
-            to = word.to
-            endPosition = offsetToUIPosition(state.doc, word.to)
-        }
-
-        if (to === null || endPosition === null) {
-            return []
-        }
-
-        return [
-            {
-                to,
-                from,
-                range: {
-                    start: startPosition,
-                    end: endPosition,
-                },
-                pinned: true,
-            },
-        ]
-    })
-)

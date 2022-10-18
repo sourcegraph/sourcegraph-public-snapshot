@@ -1,5 +1,7 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .stats-bar {
-    display: flex;
+    gap: 1rem;
     padding: 1.5rem;
     background-color: var(--color-bg-1);
     border: 1px solid var(--border-color);
@@ -9,13 +11,18 @@
 }
 
 .left-side {
+    @media (--sm-breakpoint-up) {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
     display: flex;
-    width: 70%;
-    flex-direction: row;
+    margin-bottom: 1rem;
 }
 
 .right-side {
+    @media (--sm-breakpoint-up) {
+        justify-content: flex-end;
+    }
     display: flex;
-    width: 30%;
-    justify-content: flex-end;
+    flex-shrink: 0;
 }

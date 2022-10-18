@@ -30,8 +30,8 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
 }
 
 interface CaptureGroupCreationContentProps {
-    touched: boolean
     initialValues?: Partial<CaptureGroupFormFields>
+    touched: boolean
     className?: string
     children: (inputs: RenderPropertyInputs) => ReactNode
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
@@ -40,7 +40,7 @@ interface CaptureGroupCreationContentProps {
 }
 
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
-    const { touched, className, initialValues = {}, children, onSubmit, onChange = noop } = props
+    const { touched, initialValues = {}, className, children, onSubmit, onChange = noop } = props
 
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
@@ -118,6 +118,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     return (
         <CreationUiLayout className={className}>
             <CreationUIForm
+                aria-label="Detect and track Insight creation form"
                 as={CaptureGroupCreationForm}
                 form={form}
                 title={title}

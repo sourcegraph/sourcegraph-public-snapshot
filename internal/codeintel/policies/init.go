@@ -35,6 +35,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	backgroundJob := background.New(scopedContext("background"))
 
 	svc := newService(store, deps.uploadSvc, deps.gitserver, backgroundJob, scopedContext("service"))
+	backgroundJob.SetPolicyService(svc)
 
 	return svc, nil
 })

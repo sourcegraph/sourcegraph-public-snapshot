@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, HTMLAttributes, useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
@@ -19,7 +19,7 @@ import { CodeInsightsBackendContext, CategoricalChartContent } from '../../../..
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'
 
-export interface LangStatsInsightLivePreviewProps {
+export interface LangStatsInsightLivePreviewProps extends HTMLAttributes<HTMLElement> {
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
@@ -28,15 +28,14 @@ export interface LangStatsInsightLivePreviewProps {
     disabled?: boolean
     repository: string
     threshold: number
-    className?: string
 }
 
 /**
  * Displays live preview chart for creation UI with the latest insights settings
  * from creation UI form.
  */
-export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
-    const { repository = '', threshold, disabled = false, className } = props
+export const LangStatsInsightLivePreview: FC<LangStatsInsightLivePreviewProps> = props => {
+    const { repository = '', threshold, disabled = false, ...attributes } = props
     const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
@@ -56,7 +55,7 @@ export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsig
     const { state, update } = useLivePreview(getLivePreviewContent)
 
     return (
-        <aside className={className}>
+        <aside {...attributes}>
             <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
             <LivePreviewCard>

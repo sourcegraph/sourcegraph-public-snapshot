@@ -5,16 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
@@ -24,172 +20,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) NewWorker(
-	uploadStore uploadstore.Store,
-	workerConcurrency int,
-	workerBudget int64,
-	workerPollInterval time.Duration,
-	maximumRuntimePerJob time.Duration,
-) *workerutil.Worker {
-	rootContext := actor.WithInternalActor(context.Background())
-
-	handler := s.WorkerutilHandler(
-		uploadStore,
-		workerConcurrency,
-		workerBudget,
-	)
-	return dbworker.NewWorker(rootContext, s.WorkerutilStore(), handler, workerutil.WorkerOptions{
-		Name:                 "precise_code_intel_upload_worker",
-		NumHandlers:          workerConcurrency,
-		Interval:             workerPollInterval,
-		HeartbeatInterval:    time.Second,
-		Metrics:              s.workerMetrics,
-		MaximumRuntimePerJob: maximumRuntimePerJob,
-	})
-}
-
-func (s *Service) WorkerutilStore() dbworkerstore.Store {
-	return s.workerutilStore
-}
-
-func (s *Service) WorkerutilHandler(
-	uploadStore uploadstore.Store,
-	numProcessorRoutines int,
-	budgetMax int64,
-) workerutil.Handler {
-	return &handler{
-		dbStore:           s.store,
-		repoStore:         s.repoStore,
-		workerStore:       s.workerutilStore,
-		lsifStore:         s.lsifstore,
-		uploadStore:       uploadStore,
-		gitserverClient:   s.gitserverClient,
-		handleOp:          s.operations.uploadProcessor,
-		budgetRemaining:   budgetMax,
-		enableBudget:      budgetMax > 0,
-		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),
-		uploadSizeGuage:   s.operations.uploadSizeGuage,
-	}
-}
-
-type handler struct {
-	dbStore         store.Store
-	repoStore       RepoStore
-	workerStore     dbworkerstore.Store
-	lsifStore       lsifstore.LsifStore
-	uploadStore     uploadstore.Store
-	gitserverClient GitserverClient
-	handleOp        *observation.Operation
-	budgetRemaining int64
-	enableBudget    bool
-	// Map of upload ID to uncompressed size. Uploads are deleted before
-	// PostHandle, so we store it here.
-	// Should only contain entries for processing in-progress uploads.
-	uncompressedSizes map[int]uint64
-	uploadSizeGuage   prometheus.Gauge
-}
-
-var (
-	_ workerutil.Handler        = &handler{}
-	_ workerutil.WithPreDequeue = &handler{}
-	_ workerutil.WithHooks      = &handler{}
-)
-
-// errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
-var errCommitDoesNotExist = errors.Errorf("commit does not exist")
-
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	upload, ok := record.(codeinteltypes.Upload)
-	if !ok {
-		return errors.Newf("unexpected record type %T", record)
-	}
-
-	var requeued bool
-
-	ctx, otLogger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
-	defer func() {
-		endObservation(1, observation.Args{
-			LogFields: append(
-				createLogFields(upload),
-				otlog.Bool("requeued", requeued),
-			),
-		})
-	}()
-
-	requeued, err = h.handle(ctx, logger, upload, otLogger)
-
-	return err
-}
-
-func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (bool, any, error) {
-	if !h.enableBudget {
-		return true, nil, nil
-	}
-
-	budgetRemaining := atomic.LoadInt64(&h.budgetRemaining)
-	if budgetRemaining <= 0 {
-		return false, nil, nil
-	}
-
-	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
-}
-
-func (h *handler) PreHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload, ok := record.(codeinteltypes.Upload)
-	if !ok {
-		return
-	}
-
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGuage.Add(float64(uncompressedSize))
-
-	gzipSize := h.getUploadSize(upload.UploadSize)
-	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
-}
-
-func (h *handler) PostHandle(ctx context.Context, logger log.Logger, record workerutil.Record) {
-	upload, ok := record.(codeinteltypes.Upload)
-	if !ok {
-		return
-	}
-
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGuage.Sub(float64(uncompressedSize))
-
-	gzipSize := h.getUploadSize(upload.UploadSize)
-	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
-}
-
-func (h *handler) getUploadSize(field *int64) int64 {
-	if field != nil {
-		return *field
-	}
-
-	return 0
-}
-
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, trace observation.TraceLogger) (requeued bool, err error) {
-	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+func (s *Service) HandleRawUpload(ctx context.Context, logger log.Logger, upload codeinteltypes.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
+	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.repoStore, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, s.repoStore, s.workerutilStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
 	// Determine if the upload is for the default Git branch.
-	isDefaultBranch, err := h.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
+	isDefaultBranch, err := s.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
 	if err != nil {
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
@@ -197,14 +47,14 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinte
 	trace.Log(otlog.Bool("defaultBranch", isDefaultBranch))
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
+		directoryChildren, err := s.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
 		if err != nil {
 			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
 		}
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, logger, h.uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
 		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
@@ -212,7 +62,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinte
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, h.lsifStore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
+		if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -229,7 +79,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinte
 		// point fails, we want to update the upload record with an error message but do not want to
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
-		return inTransaction(ctx, h.dbStore, func(tx store.Store) error {
+		return inTransaction(ctx, s.store, func(tx store.Store) error {
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 			// will fail as these values form a unique constraint.
@@ -240,7 +90,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, upload codeinte
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
-			_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+			_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
 			if err != nil {
 				return errors.Wrap(err, "gitserverClient.CommitDate")
 			}
@@ -424,19 +274,5 @@ func isUniqueConstraintViolation(err error) bool {
 	return errors.As(err, &e) && e.Code == "23505"
 }
 
-func createLogFields(upload codeinteltypes.Upload) []otlog.Field {
-	fields := []otlog.Field{
-		otlog.Int("uploadID", upload.ID),
-		otlog.Int("repositoryID", upload.RepositoryID),
-		otlog.String("commit", upload.Commit),
-		otlog.String("root", upload.Root),
-		otlog.String("indexer", upload.Indexer),
-		otlog.Int("queueDuration", int(time.Since(upload.UploadedAt))),
-	}
-
-	if upload.UploadSize != nil {
-		fields = append(fields, otlog.Int64("uploadSize", *upload.UploadSize))
-	}
-
-	return fields
-}
+// errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
+var errCommitDoesNotExist = errors.Errorf("commit does not exist")
