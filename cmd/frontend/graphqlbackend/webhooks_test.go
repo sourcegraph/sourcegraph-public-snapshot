@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
@@ -124,6 +125,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	testURL := "https://testurl.com"
+	invalidURL := "https://invalid.com/%+o"
 	webhookID := int32(1)
 	webhookIDMarshaled := marshalWebhookID(webhookID)
 	conf.Mock(
@@ -155,15 +157,14 @@ func TestGetWebhookWithURL(t *testing.T) {
                     }
                 }
 			}`
-	schema := mustParseGraphQLSchema(t, db)
+	gqlSchema := mustParseGraphQLSchema(t, db)
 
-	RunTests(t, []*Test{
-		{
-			Label:   "basic",
-			Context: ctx,
-			Schema:  schema,
-			Query:   queryStr,
-			ExpectedResult: fmt.Sprintf(`
+	RunTest(t, &Test{
+		Label:   "basic",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   queryStr,
+		ExpectedResult: fmt.Sprintf(`
 				{
 					"node": {
 						"id": %q,
@@ -172,9 +173,35 @@ func TestGetWebhookWithURL(t *testing.T) {
 					}
 				}
 			`, webhookIDMarshaled, whUUID.String(), testURL, whUUID.String()),
-			Variables: map[string]any{
-				"id": "V2ViaG9vazox",
+		Variables: map[string]any{
+			"id": "V2ViaG9vazox",
+		},
+	})
+
+	conf.Mock(
+		&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: invalidURL,
 			},
+		},
+	)
+	RunTest(t, &Test{
+		Label:          "error if external URL invalid",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          queryStr,
+		ExpectedResult: `{"node": null}`,
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: strings.Join([]string{
+					"could not parse site config external URL:",
+					` parse "https://invalid.com/%+o": invalid URL escape "%+o"`,
+				}, ""),
+				Path: []any{"node", "url"},
+			},
+		},
+		Variables: map[string]any{
+			"id": "V2ViaG9vazox",
 		},
 	})
 }

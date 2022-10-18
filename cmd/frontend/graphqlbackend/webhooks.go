@@ -35,14 +35,13 @@ func (r *webhookResolver) UUID() string {
 	return r.hook.UUID.String()
 }
 
-func (r *webhookResolver) URL() string {
+func (r *webhookResolver) URL() (string, error) {
 	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
-		// The external URL in the site config should never be invalid
-		return ""
+		return "", errors.Wrap(err, "could not parse site config external URL")
 	}
-	externalURL.Path = fmt.Sprintf("webhooks/%s", r.hook.UUID.String())
-	return externalURL.String()
+	externalURL.Path = fmt.Sprintf("webhooks/%v", r.hook.UUID)
+	return externalURL.String(), nil
 }
 
 func (r *webhookResolver) CodeHostURN() string {
