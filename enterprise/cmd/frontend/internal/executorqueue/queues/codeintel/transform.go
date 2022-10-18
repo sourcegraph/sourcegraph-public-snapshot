@@ -16,8 +16,9 @@ const schemeExecutorToken = "token-executor"
 
 func transformRecord(index types.Index, accessToken string) (apiclient.Job, error) {
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
-	for _, dockerStep := range index.DockerSteps {
+	for i, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+			Key:      fmt.Sprintf("pre-index.%d", i),
 			Image:    dockerStep.Image,
 			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Root,
@@ -27,6 +28,7 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+			Key:      "indexer",
 			Image:    index.Indexer,
 			Commands: append(index.LocalSteps, strings.Join(index.IndexerArgs, " ")),
 			Dir:      index.Root,
@@ -63,6 +65,7 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 		DockerSteps:    dockerSteps,
 		CliSteps: []apiclient.CliStep{
 			{
+				Key: "upload",
 				Commands: []string{
 					"lsif", "upload",
 					"-no-progress",

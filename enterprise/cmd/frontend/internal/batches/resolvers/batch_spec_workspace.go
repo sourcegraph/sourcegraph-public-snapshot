@@ -124,7 +124,11 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
+		entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec")
+		// Backcompat: The step was unnamed before.
+		if !ok {
+			entry, ok = findExecutionLogEntry(r.execution, "step.src.0")
+		}
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
 			stepInfo = btypes.ParseLogLines(entry, logLines)
@@ -460,6 +464,11 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 }
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
+	if entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec"); ok {
+		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+	}
+
+	// Backcompat: The step was unnamed before.
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
 		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 	}

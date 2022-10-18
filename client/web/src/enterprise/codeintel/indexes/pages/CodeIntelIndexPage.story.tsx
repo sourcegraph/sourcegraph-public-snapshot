@@ -289,7 +289,7 @@ const completedSteps: LsifIndexStepsFields = {
         },
     },
     upload: {
-        key: 'step.src.0',
+        key: 'step.src.batch-exec',
         command: [
             'ignite',
             'exec',

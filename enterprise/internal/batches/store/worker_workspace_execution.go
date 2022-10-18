@@ -340,7 +340,7 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 	)
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" {
+		if e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
 			entry = e
 			found = true
 			break

@@ -40,7 +40,11 @@ func (r *indexStepsResolver) Setup() []ExecutionLogEntryResolver {
 func (r *indexStepsResolver) PreIndex() []PreIndexStepResolver {
 	var resolvers []PreIndexStepResolver
 	for i, step := range r.index.DockerSteps {
-		if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.%d", i)); ok {
+		if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.pre-index.%d", i)); ok {
+			resolvers = append(resolvers, NewPreIndexStepResolver(r.svc, step, &entry))
+			// This is here for backwards compatibility for records that were created before
+			// named keys for steps existed.
+		} else if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.%d", i)); ok {
 			resolvers = append(resolvers, NewPreIndexStepResolver(r.svc, step, &entry))
 		} else {
 			resolvers = append(resolvers, NewPreIndexStepResolver(r.svc, step, nil))
@@ -51,6 +55,12 @@ func (r *indexStepsResolver) PreIndex() []PreIndexStepResolver {
 }
 
 func (r *indexStepsResolver) Index() IndexStepResolver {
+	if entry, ok := r.findExecutionLogEntry("step.docker.indexer"); ok {
+		return NewIndexStepResolver(r.svc, r.index, &entry)
+	}
+
+	// This is here for backwards compatibility for records that were created before
+	// named keys for steps existed.
 	if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.%d", len(r.index.DockerSteps))); ok {
 		return NewIndexStepResolver(r.svc, r.index, &entry)
 	}
@@ -59,6 +69,12 @@ func (r *indexStepsResolver) Index() IndexStepResolver {
 }
 
 func (r *indexStepsResolver) Upload() ExecutionLogEntryResolver {
+	if entry, ok := r.findExecutionLogEntry("step.src.upload"); ok {
+		return NewExecutionLogEntryResolver(r.svc, entry)
+	}
+
+	// This is here for backwards compatibility for records that were created before
+	// named keys for steps existed.
 	if entry, ok := r.findExecutionLogEntry("step.src.0"); ok {
 		return NewExecutionLogEntryResolver(r.svc, entry)
 	}
