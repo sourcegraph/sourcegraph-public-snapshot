@@ -15,7 +15,22 @@ import { upperFirst } from 'lodash'
 
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Code, Button, Link, Icon, H3, H4, Text, Tooltip, Tab, TabPanel, TabPanels, Tabs, TabList, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Button,
+    Link,
+    Icon,
+    H3,
+    H4,
+    Text,
+    Tooltip,
+    Tab,
+    TabPanel,
+    TabPanels,
+    Tabs,
+    TabList,
+    LoadingSpinner,
+} from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -113,8 +128,8 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
 }
 
 interface BatchSpecAndFilesProps {
-    spec: BatchSpecListFields;
-    isLightTheme: boolean;
+    spec: BatchSpecListFields
+    isLightTheme: boolean
 }
 
 const BatchSpecAndFiles: React.FunctionComponent<BatchSpecAndFilesProps> = ({ spec, isLightTheme }) => {
@@ -123,7 +138,9 @@ const BatchSpecAndFiles: React.FunctionComponent<BatchSpecAndFilesProps> = ({ sp
             <Tabs lazy={true} behavior="memoize" size="small">
                 <TabList>
                     <Tab>Input Spec</Tab>
-                    {spec.files.nodes.map(file => <Tab key={file.id}>{file.name}</Tab>)}
+                    {spec.files.nodes.map(file => (
+                        <Tab key={file.id}>{file.name}</Tab>
+                    ))}
                 </TabList>
                 <TabPanels>
                     <TabPanel>
@@ -158,12 +175,12 @@ const BatchSpecAndFiles: React.FunctionComponent<BatchSpecAndFilesProps> = ({ sp
 }
 
 interface BatchSpecWorkspaceFileRendererProps {
-    specId: string; 
+    specId: string
     file: {
-        __typename?: 'BatchSpecWorkspaceFile';
-        id: string;
-        name: string;
-    }; 
+        __typename?: 'BatchSpecWorkspaceFile'
+        id: string
+        name: string
+    }
 }
 
 const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspaceFileRendererProps> = props => {
@@ -176,19 +193,13 @@ const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspace
             </div>
         )
     }
-    
+
     return (
         <Code className={styles.fileContainer}>
             <>
-                <Text>
-                    I am a god
-                </Text>
-                <Text>
-                    I am a god
-                </Text>
-                <Text>
-                    I am a god
-                </Text>
+                <Text>I am a god</Text>
+                <Text>I am a god</Text>
+                <Text>I am a god</Text>
             </>
         </Code>
     )
