@@ -12998,6 +12998,19 @@
           "Comment": "The last time this upload was checked against data retention policies."
         },
         {
+          "Name": "last_traversal_scan_at",
+          "Index": 32,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this upload was known to be reachable by a non-expired index."
+        },
+        {
           "Name": "num_failures",
           "Index": 16,
           "TypeName": "integer",

@@ -576,7 +576,7 @@ WITH
 -- First, select the set of uploads that are not protected by any policy. This will
 -- be the set that we _may_ soft-delete due to age, as long as it's unreferenced by
 -- any other upload that canonically provides some package. The following CTES will
--- handle the "unreference" part of that condition.
+-- handle the "unreferenced" part of that condition.
 expired_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -585,7 +585,7 @@ expired_uploads AS (
 	LIMIT %s
 ),
 
--- From the set of unprotected uploads, find out the set of packages that they provide.
+-- From the set of unprotected uploads, find the set of packages they provide.
 packages_defined_by_target_uploads AS (
 	SELECT p.scheme, p.name, p.version
 	FROM lsif_packages p
@@ -595,7 +595,7 @@ packages_defined_by_target_uploads AS (
 -- From the set of provided packages, find the entire set of uploads that provide those
 -- packages. This will necessarily include the set of target uploads above, as well as
 -- any other uploads that happen to define the same package (including version). This
--- result set also includes a _rank_ column, where rank=1 indicates that the upload
+-- result set also includes a _rank_ column, where rank = 1 indicates that the upload
 -- canonically provides that package and will be visible in cross-index navigation for
 -- that package.
 ranked_uploads_providing_packages AS (
@@ -685,6 +685,175 @@ updated AS (
 
 		-- Delete the candidates we've identified, but keep the state the same for all other uploads
 		state = CASE WHEN u.id IN (SELECT id FROM candidates) THEN 'deleting' ELSE 'completed' END
+	WHERE u.id IN (SELECT id FROM locked_uploads)
+	RETURNING u.id, u.repository_id, u.state
+)
+
+-- Return the repositories which were affected so we can recalculate the commit graph
+SELECT u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+`
+
+// SoftDeleteExpiredUploadsViaTraversal selects an expired upload and uses that as the starting
+// point for a backwards traversal through the reference graph. If all reachable uploads are expired,
+// then the entire set of reachable uploads can be soft-deleted. Otherwise, each of the uploads we
+// found during the traversal are accessible by some "live" upload and must be retained.
+//
+// We set a last-checked timestamp to attempt to round-robin this graph traversal.
+func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (count int, err error) {
+	ctx, trace, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+	defer unset(ctx)
+	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(
+		softDeleteExpiredUploadsViaTraversalQuery,
+		traversalLimit,
+		traversalLimit,
+	)))
+	if err != nil {
+		return 0, err
+	}
+
+	for _, numUpdated := range repositories {
+		count += numUpdated
+	}
+	trace.Log(
+		log.Int("count", count),
+		log.Int("numRepositories", len(repositories)),
+	)
+
+	for repositoryID := range repositories {
+		if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx); err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
+}
+
+const softDeleteExpiredUploadsViaTraversalQuery = `
+WITH RECURSIVE
+
+-- First, select a single root upload from which we will perform a traversal through
+-- its dependents. Our goal is to find the set of transitive dependents that terminate
+-- at our chosen root. If all the uploads reached on this traversal are expired, we can
+-- remove the entire en masse. Otherwise, there is a non-expired upload that can reach
+-- each of the traversed uploads, and we have to keep them as-is until the next check.
+--
+-- We choose an upload that is completed, expired, canonically provides some package.
+-- If there is more than one such candidate, we choose the one that we've seen in this
+-- traversal least recently.
+root_upload_and_packages AS (
+	SELECT * FROM (
+		SELECT
+			u.id,
+			u.expired,
+			u.last_traversal_scan_at,
+			u.finished_at,
+			p.scheme,
+			p.name,
+			p.version,
+			` + packageRankingQueryFragment + ` AS rank
+		FROM lsif_uploads u
+		LEFT JOIN lsif_packages p ON p.dump_id = u.id
+		WHERE u.state = 'completed' AND u.expired
+	) s
+
+	WHERE s.rank = 1 AND EXISTS (
+		SELECT 1
+		FROM lsif_references r
+		WHERE
+			r.scheme = s.scheme AND
+			r.name = s.name AND
+			r.version = s.version AND
+			r.dump_id != s.id
+		)
+	ORDER BY s.last_traversal_scan_at NULLS FIRST, s.finished_at, s.id
+	LIMIT 1
+),
+
+-- Traverse the dependency graph backwards starting from our chosen root upload. The result
+-- set will include all (canonical) id and expiration status of uploads that transitively
+-- depend on chosen our root.
+transitive_dependents(id, expired, scheme, name, version) AS MATERIALIZED (
+	(
+		-- Base case: select our root upload and its canonical packages
+		SELECT up.id, up.expired, up.scheme, up.name, up.version FROM root_upload_and_packages up
+	) UNION (
+		-- Iterative case: select new (canonical) uploads that have a direct dependency of
+		-- some upload in our working set. This condition will continue to be evaluated until
+		-- it reaches a fixed point, giving us the complete connected component containing our
+		-- root upload.
+
+		SELECT s.id, s.expired, s.scheme, s.name, s.version
+		FROM (
+			SELECT
+				u.id,
+				u.expired,
+				p.scheme,
+				p.name,
+				p.version,
+				` + packageRankingQueryFragment + ` AS rank
+			FROM transitive_dependents d
+			JOIN lsif_references r ON
+				r.scheme = d.scheme AND
+				r.name = d.name AND
+				r.version = d.version AND
+				r.dump_id != d.id
+			JOIN lsif_uploads u ON u.id = r.dump_id
+			JOIN lsif_packages p ON p.dump_id = u.id
+			WHERE
+				u.state = 'completed' AND
+				-- We don't need to continue to traverse paths that already have a non-expired
+				-- upload. We can cut the search short here. Unfortuantely I don't know a good
+				-- way to express that the ENTIRE traversal should stop. My attempts so far
+				-- have all required an (illegal) reference to the working table in a subquery
+				-- or aggregate.
+				d.expired
+		) s
+
+		-- Keep only canonical package providers from the iterative step
+		WHERE s.rank = 1
+	)
+),
+
+-- Force evaluation of the traversal defined above, but stop searching after we've seen a given
+-- number of nodes (our traversal limit). We don't want to spend unbounded time traversing a large
+-- subgraph, so we cap the number of rows we'll pull from that result set. We'll handle the case
+-- where we hit this limit in the update below as it would be unsafe to delete an upload based on
+-- an incomplete view of its dependency graph.
+candidates AS (
+	SELECT * FROM transitive_dependents d
+	LIMIT (%s + 1)
+),
+locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id IN (SELECT id FROM candidates)
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+updated AS (
+	UPDATE lsif_uploads u
+
+	SET
+		-- Update this value unconditionally
+		last_traversal_scan_at = NOW(),
+
+		-- Delete all of the upload we've traversed if and only if we've identified the entire
+		-- relevant subgraph (we didn't hit our LIMIT above) and every upload of the subgraph is
+		-- expired. If this is not the case, we leave the state the same for all uploads.
+		state = CASE
+			WHEN (SELECT bool_and(d.expired) AND COUNT(*) <= %s FROM candidates d) THEN 'deleting'
+			ELSE 'completed'
+		END
 	WHERE u.id IN (SELECT id FROM locked_uploads)
 	RETURNING u.id, u.repository_id, u.state
 )
