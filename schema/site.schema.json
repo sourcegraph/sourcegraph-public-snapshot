@@ -1684,13 +1684,15 @@
       "description": "The site wide maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 200000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "userRepos.maxPerUser": {
       "description": "The per user maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 2000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",

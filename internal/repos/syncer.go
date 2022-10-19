@@ -48,14 +48,6 @@ type Syncer struct {
 	// Registerer is the interface to register / unregister prometheus metrics.
 	Registerer prometheus.Registerer
 
-	// UserReposMaxPerUser can be used to override the value read from config.
-	// If zero, we'll read from config instead.
-	UserReposMaxPerUser int
-
-	// UserReposMaxPerSite can be used to override the value read from config.
-	// If zero, we'll read from config instead.
-	UserReposMaxPerSite int
-
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
 }
@@ -450,52 +442,6 @@ func isDeleteableRepoError(err error) bool {
 		errcode.IsForbidden(err) || errcode.IsAccountSuspended(err) || errcode.IsUnavailableForLegalReasons(err)
 }
 
-// RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
-// exceeds the user added repo limits.
-type RepoLimitError struct {
-	// Number of repos added to site
-	SiteAdded uint64
-
-	// Limit of repos that can be added to one site
-	SiteLimit uint64
-
-	// Number of repos added by user or org
-	ReposCount uint64
-
-	// Limit of repos that can be added by one user or org
-	ReposLimit uint64
-
-	// NamespaceUserID of an external service
-	UserID int32
-
-	// NamespaceUserID of an external service
-	OrgID int32
-}
-
-func (e *RepoLimitError) Error() string {
-	if e.UserID > 0 {
-		return fmt.Sprintf(
-			"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d)",
-			e.SiteAdded,
-			e.SiteLimit,
-			e.ReposCount,
-			e.ReposLimit,
-			e.UserID,
-		)
-	} else if e.OrgID > 0 {
-		return fmt.Sprintf(
-			"reached maximum allowed organization added repos: site:%d/%d, organization:%d/%d (org-id: %d)",
-			e.SiteAdded,
-			e.SiteLimit,
-			e.ReposCount,
-			e.ReposLimit,
-			e.OrgID,
-		)
-	} else {
-		return "expected either userID or orgID to be defined"
-	}
-}
-
 func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
 	var d Diff
 	for _, id := range deleted {
@@ -706,13 +652,6 @@ func (s *Syncer) SyncExternalService(
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
 
-			// Stop syncing this external service as soon as we know repository limits for user or
-			// site level has been exceeded. We want to avoid generating spurious errors here
-			// because all subsequent syncs will continue failing unless the limits are increased.
-			if errors.HasType(err, &RepoLimitError{}) {
-				break
-			}
-
 			continue
 		}
 
@@ -814,20 +753,6 @@ func (s *Syncer) SyncExternalService(
 	return errs
 }
 
-func (s *Syncer) userReposMaxPerSite() uint64 {
-	if n := uint64(s.UserReposMaxPerSite); n > 0 {
-		return n
-	}
-	return uint64(conf.UserReposMaxPerSite())
-}
-
-func (s *Syncer) userReposMaxPerUser() uint64 {
-	if s.UserReposMaxPerUser == 0 {
-		return uint64(conf.UserReposMaxPerUser())
-	}
-	return uint64(s.UserReposMaxPerUser)
-}
-
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
 func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *types.Repo) (d Diff, err error) {
 	tx, err := s.Store.Transact(ctx)
@@ -899,33 +824,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
 	case 0: // New repo, create.
-		if !svc.IsSiteOwned() { // enforce user and org repo limits
-			siteAdded, err := tx.CountNamespacedRepos(ctx, 0, 0)
-			if err != nil {
-				return Diff{}, errors.Wrap(err, "counting total user added repos")
-			}
-
-			// get either user ID or org ID. We cannot have both defined at the same time,
-			// so this naive addition should work
-			userAdded, err := tx.CountNamespacedRepos(ctx, svc.NamespaceUserID, svc.NamespaceOrgID)
-			if err != nil {
-				return Diff{}, errors.Wrap(err, "counting repos added by user or organization")
-			}
-
-			// TODO: For now we are using the same limit for users as for organizations
-			userLimit, siteLimit := s.userReposMaxPerUser(), s.userReposMaxPerSite()
-			if siteAdded >= siteLimit || userAdded >= userLimit {
-				return Diff{}, &RepoLimitError{
-					SiteAdded:  siteAdded,
-					SiteLimit:  siteLimit,
-					ReposCount: userAdded,
-					ReposLimit: userLimit,
-					UserID:     svc.NamespaceUserID,
-					OrgID:      svc.NamespaceOrgID,
-				}
-			}
-		}
-
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
