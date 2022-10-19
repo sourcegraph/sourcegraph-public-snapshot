@@ -4,7 +4,8 @@
 img.doc-screenshot {
     margin-top: 1em;
     margin-bottom: 1em;
-    border: 1px solid lightgray;
+    border: 2px solid var(--border-color);
+    border-radius: 2%;
 }
 </style>
 
@@ -14,29 +15,36 @@ Following these docs will provision the following resources:
 
 - A pre-configured Sourcegraph instance running on the latest version
 - A root EBS volume with 50GB of storage
-- An additional EBS volume with 500GB of storage for storing code and search indices
+- An additional EBS volume for storing code and search indices
 
 ---
 
 ## Deploy Sourcegraph
 
-#### Step 1: Upload the instance image to your GCP storage bucket
+#### Step 1: Upload the Sourcegraph instance image to your Google Cloud Storage
 
-1. In the [instance size chart](#instance-size-chart) below, download the image (`tar.gz`) file that matches your deployment size.
-2. Upload the tar.gz file to your GCP Storage bucket
-3. Copy the **URL**
+<img class="doc-screenshot" src="./assets/gcp-bucket.png"/>
+
+1. In the [instance size chart](#instance-size-chart) below, download the image (`tar.gz`) file that matches your deployment size
+2. Nevigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
+3. **Upload** the `tar.gz` file to a bucket (create one if needed)
+4. Copy the **URL**
    
-#### Step 2: Create a custom image
+#### Step 2: Create a new custom image
+
+<img class="doc-screenshot" src="./assets/gcp-custom-image.png"/>
 
 1. Click **CREATE IMAGE** on top of the [GCE Images Console](https://console.cloud.google.com/compute/images)
    - Name: [Any]
    - Source: Cloud Storage file
-   - Cloud Storage file: URL of the image stored in your GCP Storage bucket
+   - Cloud Storage file: Click **Browse** and look for the image you uploaded in step 1
    - Select location: select one that works best for you
    - Family: sourcegraph
-2. Click **CREATE**
+2. Click **CREATE** to create your custom image of Sourcegraph
 
 #### Step 3: Launch a new instance
+
+<img class="doc-screenshot" src="./assets/gcp-launch.png"/>
 
 1. Create a new VM instance from your [GCE Console](https://console.cloud.google.com/compute)
 2. Name the instance
@@ -53,10 +61,26 @@ Following these docs will provision the following resources:
    - Size: 500GB or more --_this should be at least 25-50% *more* than the size of all your repositories on disk. Please refer to the disk usage of your code host instances (eg. GitHub/BitBucket/GitLab) in order to adjust disk size accordingly._
    - Deletion rule: Keep disk
 7. <span class="badge badge-note">RECOMMENDED</span> Configure your network setting under the **Advanced options > Network** section
-   
-Please allow ~5 minutes for Sourcegraph to initialize. During this time you may observe a `404 page not found` response.
 
-> NOTE: If you cannot access the Sourcegraph homepage after 10 minutes, please try reboot your instance.
+> NOTE: Please allow ~5 minutes for Sourcegraph to initialize. During this time you may observe a `404 page not found` response. If you cannot access the Sourcegraph homepage after 10 minutes, please try reboot your instance.
+
+### SSH
+
+**sourcegraph** is the default username for all GCE image instances.
+
+To SSH into the instance as user `sourcegraph`, add the username in front of your instance name. For example:
+
+```bash
+# sourcegraph is the username
+$ gcloud compute ssh sourcegraph@your-instance-name --zone=us-central1-a
+```
+Your can also switch user in the terminal with the command below:
+
+```bash
+$ sudo su sourcegraph
+```
+
+---
 
 ## Instance size chart
 
@@ -70,10 +94,10 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 | **Repositories** | 5,000      | 10,000      | 50,000      | 100,000     | 250,000     |
 | **Series**       | N2         | N2          | N2          | N2          | N2          |
 | **Recommended**  | standard-8 | standard-16 | standard-32 | standard-48 | standard-96 |
-| **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-48 |
-| **Download Links**   | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
+| **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-64 |
+| **Latest Download Links**   | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
 
-<span class="badge badge-critical">IMPORTANT</span> **sourcegraph** is the default username for all GCE images.
+File Size: ~<2GB
 
 > NOTE: Sourcegraph GCE images are optimized for the specific set of resources provided by the machine type, please ensure you use the correct GCE image for the associated GCE machine type. You can [resize your machine type anytime](https://cloud.google.com/compute/docs/instances/changing-machine-type-of-stopped-instance), but your Sourcegraph GCE image must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct GCE image that is optimized for your machine type.
 
@@ -81,13 +105,9 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 
 ## Networking
 
-An ephemeral external IP address is assigned to all VM instances by default; however, the IP address is not static, meaning it changes everytime the VM is rebooted. As a result, setting up a static IP for your Sourcegraph instance is strongly recommended in production so that you can point your DNS to the static IP easily.
+An ephemeral external IP address is assigned to all VM instances by default; however, the IP address is not static, meaning it changes everytime the VM is rebooted.
 
-See the [official docs by Google on configuring IP addresses](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#promote_ephemeral_ip) for detailed instructions.
-
-Alternatively, you can set up a GCP HTTP(S) Load Balancer for your Sourcegraph GCE Image instance. For more information, please refer to the [official load balancing docs by Google](https://cloud.google.com/load-balancing/docs/https), including [how to use self-managed SSL certificates](https://cloud.google.com/load-balancing/docs/ssl-certificates/self-managed-certs).
-
----
+As a result, setting up a static IP for your Sourcegraph instance is strongly recommended in production so that you can point your DNS to the static IP easily.
 
 ## Upgrade
 
@@ -131,17 +151,33 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.0.
 4. Under the **Firewall** section
   - Allow both `HTTP` and `HTTPS` traffic if needed
 5. Under the **Advanced options > Disk** section
-   - Select **+ ATTACH EXISTING DISK**
-   - Select the volume you've detached in step 1
-   - Deletion rule: Keep disk
+  - Select **+ ATTACH EXISTING DISK**
+  - Select the volume you've detached in step 1
+  - Deletion rule: Keep disk
+6. Under the **Advanced options > Management > Automation** section
+  - Copy and paste the following script into the `Startup script` box to upgrade to a specified version
+
+  ```bash
+  # Replace version number to the version you are trying to upgrade to
+  VERSION='4.0.0'
+  echo $VERSION | sudo tee home/sourcegraph/.sourcegraph-version
+  ```
 
 You can terminate the stopped Sourcegraph Google Image instance once you have confirmed the new instance is up and running.
 
 ## Downgrade
 
-Please refer to the upgrade procedure above if you wish to rollback your instance. 
+Please refer to the upgrade procedure above if you wish to rollback your instance.
 
 ---
+
+## Networking
+
+An ephemeral external IP address is assigned to all VM instances by default; however, the IP address is not static, meaning it changes everytime the VM is rebooted. As a result, setting up a static IP for your Sourcegraph instance is strongly recommended in production so that you can point your DNS to the static IP easily.
+
+See the [official docs by Google on configuring IP addresses](https://cloud.google.com/compute/docs/ip-addresses/reserve-static-external-ip-address#promote_ephemeral_ip) for detailed instructions.
+
+Alternatively, you can set up a GCP HTTP(S) Load Balancer for your Sourcegraph GCE Image instance. For more information, please refer to the [official load balancing docs by Google](https://cloud.google.com/load-balancing/docs/https), including [how to use self-managed SSL certificates](https://cloud.google.com/load-balancing/docs/ssl-certificates/self-managed-certs).
 
 ## Storage and Backups
 
@@ -150,7 +186,6 @@ We strongly recommend you taking [snapshots of the entire data volume](https://c
 ## Manual deploy on GCE
 
 Click [here](../docker-compose/google_cloud.md) to view install instructions for deploying on GCE manually.
-
 
 ## Additional resources
 

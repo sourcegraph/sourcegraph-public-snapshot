@@ -21,8 +21,8 @@ All Sourcegraph machine images are free to download, and we strongly encourage y
 - Easy to maintain and configure
 - Supports all Sourcegraph features
 - Ability to perform upgrades easily with or without SSH access
-- 
-## Sourcegraph AWS AMI Instances
+
+### Sourcegraph AWS AMI Instances
 
 All AMI instances are currently pinned with a Sourcegraph version that the instance is launched with to ensure restarting the instance will not cause upgrades accidentally. The version number is saved into a text file on both the root (file path: /home/ec2-user/.sourcegraph-version) and data volumes (file path: /mnt/data/.sourcegraph-version) where it will be read by the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot. Upgrades will only happen on reboot if the version numbers from both volumes are different.
 
