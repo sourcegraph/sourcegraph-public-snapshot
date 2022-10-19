@@ -1,3 +1,9 @@
+<style>
+  .btn {
+    text-align: center;
+  }
+</style>
+
 # Deployment Overview
 
 Sourcegraph supports different deployment methods for different purposes. Each deployment type requires different levels of investment and technical understanding. What works best for you and your team depends on the needs and desired outcomes for your business.
@@ -8,7 +14,7 @@ In general:
 
 - For most customers, we recommend Sourcegraph Cloud, managed entirely by Sourcegraph.
 - For customers who want to self-host, we recommend one of the single-node deployment options.
-- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by [emails](sales@sourcegraph.com) if you pursue this option.
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by [emails](mailto:sales@sourcegraph.com) if you pursue this option.
 - If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
 ## Deployment types
@@ -19,9 +25,15 @@ Each of the deployment types listed below provides a different level of capabili
 
 Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
-### [Machine Images](machines-images/index.md)
+### [Machine Images](machine-images/index.md)
 
 <span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
+
+<div class="getting-started">
+  <a class="btn" href="[quickstart](https://about.sourcegraph.com/blog/)">AWS AMIs</a>
+  <a class="btn" href="https://discord.gg/s2qDtYGnAE">Azure</a>
+  <a class="btn" href="https://twitter.com/sourcegraph">Google Compute Images</a>
+</div>
 
 ### [Docker Compose](docker-compose/index.md)
 
@@ -30,6 +42,13 @@ We recommend Docker Compose for most production deployments due to how easily ad
 Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute Engine. It does not provide multi-machine capability such as high availability.
 
 Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
+
+<div class="getting-started">
+  <a class="btn" href="./docker-compose/aws">AWS</a>
+  <a class="btn" href="./docker-compose/azure">Azure</a>
+  <a class="btn" href="./docker-compose/digitalocean">DigitalOcean</a>
+  <a class="btn" href="./docker-compose/google_cloud">Google Cloud</a>
+</div>
 
 ### Kubernetes [with Helm](kubernetes/helm.md) or [ without Helm](kubernetes/index.md)
 
