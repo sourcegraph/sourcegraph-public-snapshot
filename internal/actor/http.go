@@ -125,7 +125,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
 				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
 			}
-			logger.Error("No actor", log.String("path", req.URL.Path))
 			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
 
 		// Request associated with authenticated user - add user actor to context
