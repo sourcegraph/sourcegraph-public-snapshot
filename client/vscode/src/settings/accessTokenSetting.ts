@@ -6,6 +6,19 @@ import { scretTokenKey } from '../webview/platform/AuthProvider'
 import { endpointHostnameSetting, endpointProtocolSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
 
+// IMPORTANT: Call this function only once when extention is first activated
+export async function processOldToken(secretStorage: vscode.SecretStorage): Promise<void> {
+    // Process the token that lives in user configuration
+    // Move them to secrets and then remove them by setting it as undefined
+    const storageToken = await secretStorage.get(scretTokenKey)
+    const oldToken = vscode.workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
+    if (!storageToken && oldToken.length > 8) {
+        await secretStorage.store(scretTokenKey, oldToken)
+        await removeOldAccessTokenSetting()
+    }
+    return
+}
+
 export async function accessTokenSetting(secretStorage: vscode.SecretStorage): Promise<string> {
     const currentToken = await secretStorage.get(scretTokenKey)
     return currentToken || ''

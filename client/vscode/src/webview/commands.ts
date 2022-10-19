@@ -57,19 +57,6 @@ export function registerWebviews({
         })
     )
 
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.auth', async (token: string, uri?: string) => {
-            // Get our PAT session.
-            await context.secrets.store(scretTokenKey, token)
-            const session = await vscode.authentication.getSession(uri || endpointSetting(), [], {
-                forceNewSession: true,
-            })
-            if (session) {
-                await vscode.window.showInformationMessage('Logged in sucessfully')
-            }
-        })
-    )
-
     // Update `EventSource` Authorization header on access token / headers change.
     // It will also be changed when the token has been changed --handled by Auth Provider
     context.subscriptions.push(

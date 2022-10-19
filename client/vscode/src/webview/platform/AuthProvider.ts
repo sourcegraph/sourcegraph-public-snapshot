@@ -4,17 +4,16 @@ import {
     AuthenticationProvider,
     AuthenticationProviderAuthenticationSessionsChangeEvent,
     AuthenticationSession,
+    commands,
     Disposable,
     Event,
     EventEmitter,
     SecretStorage,
-    workspace,
 } from 'vscode'
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 
-import { removeOldAccessTokenSetting } from '../../settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting } from '../../settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from '../../settings/endpointSetting'
 
 export const scretTokenKey = 'SOURCEGRAPH_AUTH'
 
@@ -126,13 +125,26 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
     }
 }
 
-// Call this function only once when extention is first activated
-export async function processOldToken(secretStorage: SecretStorage): Promise<void> {
-    // Process the token that lives in user configuration
-    // Move them to secrets and then remove them by setting it as undefined
-    const oldToken = workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
-    if (oldToken) {
-        await secretStorage.store(scretTokenKey, oldToken)
-        await removeOldAccessTokenSetting()
+export class SourcegraphAuthActions {
+    private currentEndpoint = endpointSetting()
+
+    constructor(private readonly secretStorage: SecretStorage) {}
+
+    public async login(newtoken: string, newuri: string): Promise<void> {
+        try {
+            await this.secretStorage.store(scretTokenKey, newtoken)
+            if (this.currentEndpoint !== newuri) {
+                await setEndpoint(newuri)
+            }
+            return
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(scretTokenKey)
+        await commands.executeCommand('workbench.action.reloadWindow')
+        return
     }
 }

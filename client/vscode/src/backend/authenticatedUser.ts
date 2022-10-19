@@ -55,9 +55,8 @@ export function observeAuthenticatedUser(secretStorage: vscode.SecretStorage): O
                     throw new Error('Not an authenticated user')
                 }
             })
-            .catch(async error => {
+            .catch(error => {
                 console.error('core auth error', error)
-                await secretStorage.delete(scretTokenKey)
                 // TODO surface error?
                 authenticatedUsers.next(null)
             })

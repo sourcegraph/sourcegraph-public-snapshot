@@ -7,9 +7,14 @@ export function endpointSetting(): string {
     return removeEndingSlash(url)
 }
 
-export async function setEndpoint(newEndpoint: string | undefined): Promise<void> {
+export async function setEndpoint(newEndpoint: string): Promise<void> {
     const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : 'https://sourcegraph.com'
-    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
+    const currentEndpointHostname = new URL(endpointSetting()).hostname
+    const newEndpointHostname = new URL(newEndpointURL).hostname
+    if (currentEndpointHostname !== newEndpointHostname) {
+        await readConfiguration().update('url', newEndpointURL)
+    }
+    return
 }
 
 export function endpointHostnameSetting(): string {
