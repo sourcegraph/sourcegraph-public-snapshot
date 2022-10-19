@@ -1,4 +1,4 @@
-import { forwardRef, HTMLAttributes, ReactNode, useContext, useRef, useState } from 'react'
+import { forwardRef, HTMLAttributes, ReactNode, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -9,22 +9,20 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import {
-    SeriesDisplayOptionsInput,
     GetInsightDataResult,
     GetInsightDataVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import { BackendInsight, InsightFilters } from '../../../../core'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
-import { InsightContext } from '../InsightContext'
 
 import {
     BackendInsightErrorAlert,
     DrillDownFiltersPopover,
-    DrillDownInsightCreationFormValues,
+    FiltersCreationFormValues,
     BackendInsightChart,
     parseSeriesLimit,
 } from './components'
@@ -38,13 +36,22 @@ interface BackendInsightProps extends TelemetryProps, Omit<HTMLAttributes<HTMLEl
     contextMenu: ReactNode
     isZeroYAxisMin: boolean
     isResizing?: boolean
+    onCreateInsight: (insight: BackendInsight) => Promise<unknown>
+    onUpdateInsight: (newInsight: BackendInsight) => Promise<unknown>
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { insight, contextMenu, isZeroYAxisMin, isResizing, children, telemetryService, ...otherProps } = props
-
-    const { currentDashboard } = useContext(InsightContext)
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const {
+        insight,
+        contextMenu,
+        isZeroYAxisMin,
+        isResizing,
+        children,
+        telemetryService,
+        onCreateInsight,
+        onUpdateInsight,
+        ...otherProps
+    } = props
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
@@ -104,18 +111,18 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
         try {
-            const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-                sortOptions: filters.seriesDisplayOptions.sortOptions,
-            }
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
+            await onUpdateInsight({
+                ...insight,
+                filters,
+                seriesDisplayOptions: {
+                    limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
+                    sortOptions: filters.seriesDisplayOptions.sortOptions,
+                }
+            })
 
-            await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-
-            setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
+            setOriginalInsightFilters(filters)
+            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -123,30 +130,17 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         return
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
-        const { insightName } = values
-
-        if (!currentDashboard) {
-            return
-        }
-
+    const handleInsightFilterCreation = async (values: FiltersCreationFormValues): Promise<SubmissionErrors> => {
         try {
-            const newInsight = {
+            await onCreateInsight({
                 ...insight,
-                title: insightName,
+                title: values.insightName,
                 filters,
-            }
+            })
 
-            await createInsight({
-                insight: newInsight,
-                dashboard: currentDashboard,
-            }).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-            setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
+            setOriginalInsightFilters(filters)
+            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
