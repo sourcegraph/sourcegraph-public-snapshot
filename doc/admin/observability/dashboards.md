@@ -11819,25 +11819,6 @@ Query: `max(rate(src_repoupdater_source_repos_total[1m]))`
 
 <br />
 
-#### repo-updater: user_added_repos
-
-<p class="subtitle">Total number of user added repos</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-user-added-repos) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100022` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_repoupdater_user_repos_total)`
-
-</details>
-
-<br />
-
 #### repo-updater: purge_failed
 
 <p class="subtitle">Repositories purge failed</p>
@@ -12166,25 +12147,6 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <summary>Technical details</summary>
 
 Query: `max(src_repoupdater_external_services_total)`
-
-</details>
-
-<br />
-
-#### repo-updater: src_repoupdater_user_external_services_total
-
-<p class="subtitle">The total number of user added external services</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-user-external-services-total) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_repoupdater_user_external_services_total)`
 
 </details>
 

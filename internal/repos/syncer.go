@@ -572,17 +572,12 @@ func (s *Syncer) SyncExternalService(
 		return ErrCloudDefaultSync
 	}
 
-	// Unless our site config explicitly allows private code or the user has the
-	// "AllowUserExternalServicePrivate" tag, user added external services should
-	// only sync public code.
-	// Organization owned external services are always considered allowed.
-	allowed := func(*types.Repo) bool { return true }
+	// Disable external service syncing for user or organisation owned services
 	if svc.NamespaceUserID != 0 {
-		if mode, err := database.UsersWith(s.Logger, s.Store).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
-			return errors.Wrap(err, "checking if user can add private code")
-		} else if mode != conf.ExternalServiceModeAll {
-			allowed = func(r *types.Repo) bool { return !r.Private }
-		}
+		return errors.New("syncing user owned external service not allowed")
+	}
+	if svc.NamespaceOrgID != 0 {
+		return errors.New("syncing organisation owned external service not allowed")
 	}
 
 	src, err := s.Sourcer(ctx, svc)
@@ -642,9 +637,6 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		sourced := res.Repo
-		if !allowed(sourced) {
-			continue
-		}
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {

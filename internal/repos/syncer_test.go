@@ -13,7 +13,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
@@ -166,34 +164,10 @@ func TestSyncerSync(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userAddedGithubSvc := githubService.With(func(service *types.ExternalService) {
-		service.ID = 0
-		service.NamespaceUserID = 1
-	})
-
-	userAddedGitlabSvc := gitlabService.With(func(service *types.ExternalService) {
-		service.ID = 0
-		service.NamespaceUserID = 1
-	})
-
 	// create a few external services
-	if err := store.ExternalServiceStore().Upsert(context.Background(), &svcdup, userAddedGithubSvc, userAddedGitlabSvc); err != nil {
+	if err := store.ExternalServiceStore().Upsert(context.Background(), &svcdup); err != nil {
 		t.Fatalf("failed to insert external services: %v", err)
 	}
-
-	userAddedGithubRepo := githubRepo.With(func(r *types.Repo) {
-		r.Name += "-2"
-		r.ExternalRepo.ID += "-2"
-	},
-		typestest.Opt.RepoSources(userAddedGithubSvc.URN()),
-	)
-
-	userAddedGitlabRepo := gitlabRepo.With(func(r *types.Repo) {
-		r.Name += "-2"
-		r.ExternalRepo.ID += "-2"
-	},
-		typestest.Opt.RepoSources(userAddedGitlabSvc.URN()),
-	)
 
 	type testCase struct {
 		name    string
@@ -214,8 +188,6 @@ func TestSyncerSync(t *testing.T) {
 	}{
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
-		{repo: userAddedGithubRepo, svc: userAddedGithubSvc},
-		{repo: userAddedGitlabRepo, svc: userAddedGitlabSvc},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
 		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
@@ -255,8 +227,6 @@ func TestSyncerSync(t *testing.T) {
 			testCase{
 				// If the source is unauthorized we should treat this as if zero repos were
 				// returned as it indicates that the source no longer has access to its repos
-				// This only applies to user added external services, since site level ones will
-				// usually regenerate a token.
 				name: string(tc.repo.Name) + "/unauthorized",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrUnauthorized{}),
@@ -298,8 +268,6 @@ func TestSyncerSync(t *testing.T) {
 			testCase{
 				// If the source is forbidden we should treat this as if zero repos were returned
 				// as it indicates that the source no longer has access to its repos
-				// This only applies to user added external services, since site level ones will
-				// usually regenerate a token.
 				name: string(tc.repo.Name) + "/forbidden",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrForbidden{}),
@@ -341,8 +309,6 @@ func TestSyncerSync(t *testing.T) {
 			testCase{
 				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
 				// that the source no longer has access to its repos
-				// This only applies to user added external services, since site level ones will
-				// usually regenerate a token.
 				name: string(tc.repo.Name) + "/accountsuspended",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrAccountSuspended{}),
@@ -1650,175 +1616,6 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 
 	// We should still have two sources
 	assertSourceCount(ctx, t, store, 2)
-}
-
-func TestUserAddedRepos(t *testing.T) {
-	t.Parallel()
-	store := getTestRepoStore(t)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	now := time.Now()
-
-	var userID int32
-	q := sqlf.Sprintf("INSERT INTO users (username) VALUES ('bbs-admin') RETURNING id")
-	err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).
-		Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx = actor.WithInternalActor(ctx)
-
-	userService := &types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - User",
-		Config:          extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:       now,
-		UpdatedAt:       now,
-		NamespaceUserID: userID,
-	}
-
-	adminService := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Private",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
-	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, userService, adminService); err != nil {
-		t.Fatal(err)
-	}
-
-	publicRepo := &types.Repo{
-		Name:     "github.com/org/user",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-user",
-			ServiceID:   "https://github.com/",
-			ServiceType: extsvc.TypeGitHub,
-		},
-	}
-
-	privateRepo := &types.Repo{
-		Name:     "github.com/org/private",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-private",
-			ServiceID:   "https://github.com/",
-			ServiceType: extsvc.TypeGitHub,
-		},
-		Private: true,
-	}
-
-	// Admin service will sync both repos
-	syncer := &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(adminService, nil, publicRepo, privateRepo)
-			return s, nil
-		},
-		Store: store,
-		Now:   time.Now,
-	}
-	if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
-
-	// Unsync the repo to clean things up
-	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(adminService, nil)
-			return s, nil
-		},
-		Store: store,
-		Now:   time.Now,
-	}
-	if err := syncer.SyncExternalService(ctx, adminService.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	// Confirm that there are zero relationships
-	assertSourceCount(ctx, t, store, 0)
-
-	// By default, user service can only sync public code, even if they have access to private code
-	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
-			return s, nil
-		},
-		Store: store,
-		Now:   time.Now,
-	}
-	if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	// Confirm that there is one relationship
-	assertSourceCount(ctx, t, store, 1)
-
-	// If the private code feature flag is set, user service can also sync private code
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExternalServiceUserMode: "all",
-		},
-	})
-
-	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
-			return s, nil
-		},
-		Store: store,
-		Now:   time.Now,
-	}
-	if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
-	conf.Mock(nil)
-
-	// If the user has the AllowUserExternalServicePrivate tag, user service can also sync private code
-	q = sqlf.Sprintf(
-		"UPDATE users SET tags = %s WHERE id = %s",
-		pq.Array([]string{database.TagAllowUserExternalServicePrivate}),
-		userID,
-	)
-	_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	syncer = &repos.Syncer{
-		Logger: logtest.Scoped(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(userService, nil, publicRepo, privateRepo)
-			return s, nil
-		},
-		Store: store,
-		Now:   time.Now,
-	}
-	if err := syncer.SyncExternalService(ctx, userService.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
-	}
-
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
-	q = sqlf.Sprintf("UPDATE users SET tags = '{}' WHERE id = %s", userID)
-	_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestNameOnConflictOnRename(t *testing.T) {
