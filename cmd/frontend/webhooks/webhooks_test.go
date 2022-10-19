@@ -113,4 +113,22 @@ func TestWebhooksHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
 	})
+
+	t.Run("incorrect GitHub secret returns 400", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWH.UUID)
+
+		h := hmac.New(sha1.New, []byte("wrongsecret"))
+		payload := []byte(`{"body": "text"}`)
+		h.Write(payload)
+		res := h.Sum(nil)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
 }
