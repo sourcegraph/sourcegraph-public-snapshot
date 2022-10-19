@@ -13,7 +13,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
-            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -39,7 +38,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   />
                 </svg>
                 <div
-                  class="headerTitle test-search-result-label"
+                  class="headerTitle"
                   data-testid="result-container-header"
                 >
                   <div
@@ -70,9 +69,12 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 </div>
               </div>
               <div
-                class="collapsibleResults"
+                class="result"
               >
-                <div>
+                <div
+                  data-expanded="true"
+                  data-testid="file-search-result"
+                >
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"
@@ -234,7 +236,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
-            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -260,7 +261,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   />
                 </svg>
                 <div
-                  class="headerTitle test-search-result-label"
+                  class="headerTitle"
                   data-testid="result-container-header"
                 >
                   <div
@@ -293,9 +294,12 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 </div>
               </div>
               <div
-                class="collapsibleResults"
+                class="result"
               >
-                <div>
+                <div
+                  data-expanded="true"
+                  data-testid="file-search-result"
+                >
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"
@@ -403,7 +407,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
-            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -429,7 +432,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   />
                 </svg>
                 <div
-                  class="headerTitle test-search-result-label"
+                  class="headerTitle"
                   data-testid="result-container-header"
                 >
                   <div
@@ -460,9 +463,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 </div>
               </div>
               <div
-                class="collapsibleResults"
+                class="result"
               >
-                <div>
+                <div
+                  data-expanded="true"
+                  data-testid="file-search-result"
+                >
                   <div
                     class="fileMatchChildren"
                     data-testid="file-match-children"
