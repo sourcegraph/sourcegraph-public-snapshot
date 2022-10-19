@@ -1,7 +1,11 @@
 package webhooks
 
 import (
+	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -27,12 +31,23 @@ func TestWebhooksHandler(t *testing.T) {
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
-	gitLabWH, err := db.Webhooks(keyring.Default().WebhookKey).Create(
+	dbWebhooks := db.Webhooks(keyring.Default().WebhookKey)
+	gitLabWH, err := dbWebhooks.Create(
 		context.Background(),
 		extsvc.KindGitLab,
 		"http://gitlab.com",
 		u.ID,
 		types.NewUnencryptedSecret("somesecret"))
+	require.NoError(t, err)
+
+	gitHubWH, err := dbWebhooks.Create(
+		context.Background(),
+		extsvc.KindGitHub,
+		"http://github.com",
+		u.ID,
+		types.NewUnencryptedSecret("githubsecret"),
+	)
+
 	require.NoError(t, err)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,5 +94,23 @@ func TestWebhooksHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("correct GitHub secret returns not implemented", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWH.UUID)
+
+		h := hmac.New(sha1.New, []byte("githubsecret"))
+		payload := []byte(`{"body": "text"}`)
+		h.Write(payload)
+		res := h.Sum(nil)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
 	})
 }

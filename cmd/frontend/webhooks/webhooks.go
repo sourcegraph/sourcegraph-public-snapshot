@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/google/go-github/v43/github"
+	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -60,14 +60,14 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
 				return
 			}
-			fallthrough
+			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindGitLab:
 			_, err := gitLabValidateSecret(r, secret)
 			if err != nil {
 				http.Error(w, "Could not validate secret.", http.StatusBadRequest)
 				return
 			}
-			fallthrough
+			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindBitbucketServer:
 			fallthrough
 		case extsvc.KindBitbucketCloud:
