@@ -1615,23 +1615,54 @@ func TestRunCommandGraceful(t *testing.T) {
 	})
 }
 
-func TestCheckXRequestedWith(t *testing.T) {
-	// No headers.
-	if err := checkXRequestedWith(http.Header{}); err == nil {
-		t.Fatal("expected error but got nil")
-	}
+func TestHeaderXRequestedWithMiddleware(t *testing.T) {
+	test := headerXRequestedWithMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			return
+		}),
+	)
 
-	if err := checkXRequestedWith(http.Header{
-		"X-Requested-With": []string{"foo"},
-	}); err == nil {
-		t.Fatal("expected error but got nil")
-	}
+	t.Run("x-requested-with not set", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
 
-	if err := checkXRequestedWith(http.Header{
-		"X-Requested-With": []string{"Sourcegraph"},
-	}); err != nil {
-		t.Fatalf("expected nil, but got error: %v", err)
-	}
+		test(w, r)
+
+		result := w.Result()
+
+		if result.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		}
+	})
+
+	t.Run("x-requested-with invalid value", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Add("X-Requested-With", "foo")
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+
+		if result.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		}
+	})
+
+	t.Run("x-requested-with correct value", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Add("X-Requested-With", "Sourcegraph")
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+
+		if result.StatusCode != http.StatusOK {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		}
+	})
 }
 
 func mustEncodeJSONResponse(value any) string {
