@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import { FC, HTMLAttributes, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -7,16 +7,11 @@ import useResizeObserver from 'use-resize-observer'
 import { BarChart, ScrollBox, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, InsightContent } from '../../../../../../core'
-import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
+import { BackendInsightData, InsightContentType } from '../../types'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
-
-function getLineColor(series: Series<any>): string {
-    return series.color ?? 'var(--gray-07)'
-}
 
 /**
  * If width of the chart is less than this var width value we should put the legend
@@ -35,24 +30,26 @@ function getLineColor(series: Series<any>): string {
  * ● Item 1 ● Item 2
  * ```
  */
-export const MINIMAL_HORIZONTAL_LAYOUT_WIDTH = 460
+const MINIMAL_HORIZONTAL_LAYOUT_WIDTH = 460
 
 /**
  * Even if you have a big enough width for putting legend aside (see {@link MINIMAL_HORIZONTAL_LAYOUT_WIDTH})
  * we should enable this mode only if line chart has more than N series
  */
-export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
+const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 
-interface BackendInsightChartProps<Datum> extends BackendInsightData {
-    locked: boolean
-    zeroYAxisMin: boolean
-    className?: string
-    onDatumClick: () => void
+interface BackendInsightChartProps extends HTMLAttributes<HTMLDivElement> {
+    data: BackendInsightData
     seriesToggleState: UseSeriesToggleReturn
+    isInProgress: boolean
+    isLocked: boolean
+    isZeroYAxisMin: boolean
+    onDatumClick: () => void
 }
 
-export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+export const BackendInsightChart: FC<BackendInsightChartProps> = props => {
+    const { data, seriesToggleState, isInProgress, isLocked, isZeroYAxisMin, className, onDatumClick } = props
+
     const { ref, width = 0 } = useResizeObserver()
     const { setHoveredId } = seriesToggleState
 
@@ -82,7 +79,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                             <>
                                 <BackendAlertOverlay
                                     hasNoData={isEmptyDataset}
-                                    isFetchingHistoricalData={isFetchingHistoricalData}
+                                    isFetchingHistoricalData={isInProgress}
                                     className={styles.alertOverlay}
                                 />
 
@@ -91,12 +88,12 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
-                                        locked={locked}
+                                        locked={isLocked}
                                         className={styles.chart}
                                         onDatumClick={onDatumClick}
-                                        zeroYAxisMin={zeroYAxisMin}
+                                        zeroYAxisMin={isZeroYAxisMin}
                                         seriesToggleState={seriesToggleState}
-                                        {...data.content}
+                                        series={data.series}
                                     />
                                 ) : (
                                     <BarChart
@@ -112,7 +109,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
 
                     {isSeriesLikeInsight && (
                         <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
-                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                            <SeriesLegends series={data.series} seriesToggleState={seriesToggleState} />
                         </ScrollBox>
                     )}
                 </>
@@ -121,17 +118,17 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     )
 }
 
-const isManyKeysInsight = (data: InsightContent<any>): boolean => {
+const isManyKeysInsight = (data: BackendInsightData): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+        return data.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     }
 
     return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
 }
 
-const hasNoData = (data: InsightContent<any>): boolean => {
+const hasNoData = (data: BackendInsightData): boolean => {
     if (data.type === InsightContentType.Series) {
-        return data.content.series.every(series => series.data.length === 0)
+        return data.series.every(series => series.data.length === 0)
     }
 
     // If all datum have zero matches render no data layout. We need to
@@ -139,6 +136,10 @@ const hasNoData = (data: InsightContent<any>): boolean => {
     // defined series with empty points in case of no matches for generated
     // series.
     return data.content.data.every(datum => datum.value === 0)
+}
+
+function getLineColor(series: Series<any>): string {
+    return series.color ?? 'var(--gray-07)'
 }
 
 interface SeriesLegendsProps {

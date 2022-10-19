@@ -10,14 +10,11 @@ import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import {
     SeriesDisplayOptionsInput,
-    GetInsightViewResult,
-    GetInsightViewVariables,
+    GetInsightDataResult,
+    GetInsightDataVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
-import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
-import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
+import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -32,6 +29,8 @@ import {
     BackendInsightChart,
     parseSeriesLimit,
 } from './components'
+import { GET_INSIGHT_DATA } from './query'
+import { parseBackendInsightResponse, insightPollingInterval } from './selectors'
 
 import styles from './BackendInsight.module.scss'
 
@@ -56,14 +55,13 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const { error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
-        GET_INSIGHT_VIEW_GQL,
+    const { data, error, loading, stopPolling, startPolling } = useQuery<GetInsightDataResult, GetInsightDataVariables>(
+        GET_INSIGHT_DATA,
         {
             skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
@@ -77,17 +75,13 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 seriesDisplayOptions: {
                     limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
-                }
-            },
-            onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
-                seriesToggleState.setSelectedSeriesIds([])
-                setInsightData(parsedData)
-            },
+                },
+            }
         }
     )
 
-    const isFetchingHistoricalData = insightData?.isFetchingHistoricalData
+    const insightData = parseBackendInsightResponse({ ...insight, filters }, data)
+    const isFetchingHistoricalData = insightData?.isInProgress
     const isPolling = useRef(false)
 
     // Not on the screen so stop polling if we are - multiple stop calls are safe
@@ -99,6 +93,11 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         // make sure we aren't already polling.
         isPolling.current = true
         startPolling(insightPollingInterval(insight))
+    }
+
+    const handleFiltersChange = (filters: InsightFilters): void => {
+        seriesToggleState.setSelectedSeriesIds([])
+        setFilters(filters)
     }
 
     async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
@@ -187,7 +186,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             anchor={cardElementRef}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
-                            onFilterChange={setFilters}
+                            onFilterChange={handleFiltersChange}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
@@ -211,10 +210,11 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 <InsightCardLoading>Loading code insight</InsightCardLoading>
             ) : (
                 <BackendInsightChart
-                    {...insightData}
-                    locked={insight.isFrozen}
-                    zeroYAxisMin={zeroYAxisMin}
+                    data={insightData.data}
                     seriesToggleState={seriesToggleState}
+                    isInProgress={insightData.isInProgress}
+                    isLocked={insight.isFrozen}
+                    isZeroYAxisMin={zeroYAxisMin}
                     onDatumClick={trackDatumClicks}
                 />
             )}
