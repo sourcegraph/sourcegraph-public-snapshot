@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 // Interface is the interface describing a code insights store. See the Store struct
@@ -114,7 +116,8 @@ type SeriesPointsOpts struct {
 
 // SeriesPoints queries data points over time for a specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
-	points := make([]SeriesPoint, 0, opts.Limit)
+	recordPoints := []SeriesPoint{}
+	snapshotPoints := []SeriesPoint{}
 	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
 	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
 	// time series results. 🚨
@@ -132,22 +135,45 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	}
 	opts.Excluded = append(opts.Excluded, denylist...)
 
-	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
-	err = s.query(ctx, q, func(sc scanner) error {
-		var point SeriesPoint
-		err := sc.Scan(
-			&point.SeriesID,
-			&point.Time,
-			&point.Value,
-			&point.Capture,
-		)
-		if err != nil {
-			return err
-		}
-		points = append(points, point)
-		return nil
+	g := group.New()
+	for _, pointType := range []string{"series_points", "series_points_snapshots"} {
+		pointType := pointType
+		g.Go(func() {
+			aggregationQuery := seriesPointsAggregationSql
+			if pointType == "series_points_snapshots" {
+				aggregationQuery = seriesPointsSnapshotsAggregationSql
+			}
+			q := seriesPointsQuery(aggregationQuery, opts)
+			err = s.query(ctx, q, func(sc scanner) error {
+				var point SeriesPoint
+				err := sc.Scan(
+					&point.SeriesID,
+					&point.Time,
+					&point.Value,
+					&point.Capture,
+				)
+				if err != nil {
+					return err
+				}
+				if pointType == "series_points" {
+					recordPoints = append(recordPoints, point)
+				} else {
+					snapshotPoints = append(snapshotPoints, point)
+				}
+				fmt.Println("point", point)
+				return nil
+			})
+		})
+	}
+	g.Wait()
+
+	pts := append(recordPoints, snapshotPoints...)
+	sort.Slice(pts, func(i, j int) bool {
+		return pts[i].Time.Before(pts[j].Time)
 	})
-	return points, err
+
+	// todo split snapshot and record points in function answer (won't need to sort together)
+	return pts, err
 }
 
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
@@ -269,13 +295,23 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // all desired repositories. By using the sub-query, we select the per-repository maximum (thus
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
-const fullVectorSeriesAggregation = `
+const seriesPointsAggregationSql = `
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
-	FROM (  select * from series_points
-			union all
-			select * from series_points_snapshots
-	) AS sp
+	FROM series_points AS sp
+	%s
+	WHERE %s
+	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
+	ORDER BY sp.series_id, interval_time, sp.repo_name_id
+) sub
+GROUP BY sub.series_id, sub.interval_time, sub.capture
+ORDER BY sub.series_id, sub.interval_time ASC
+`
+
+const seriesPointsSnapshotsAggregationSql = `
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
+	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
+	FROM series_points_snapshots AS sp
 	%s
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
