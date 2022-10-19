@@ -337,7 +337,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
     }, [confirmRemoveAll])
 
     // Focus the remove all button when the remove all confirmation box is hidden.
-    // If the remove all button is now diabled (because there are no entries left),
+    // If the remove all button is now disabled (because there are no entries left),
     // focus the top-level notepad button.
     const removeAllButton = useRef<HTMLButtonElement>(null)
     const rootButton = useRef<HTMLButtonElement>(null)
