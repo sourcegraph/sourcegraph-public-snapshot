@@ -60,6 +60,28 @@ func (s *Service) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "conversion.Correlate")
 		}
 
+		// Find the commit date for the commit attached to this upload record and insert it into the
+		// database (if not already present). We need to have the commit data of every processed upload
+		// for a repository when calculating the commit graph (triggered at the end of this handler).
+
+		_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+		if err != nil {
+			return errors.Wrap(err, "gitserverClient.CommitDate")
+		}
+		if !revisionExists {
+			return errCommitDoesNotExist
+		}
+		trace.Log(otlog.String("commitDate", commitDate.String()))
+
+		// We do the update here outside of the transaction started below to reduce the long blocking
+		// behavior we see when multiple uploads are being processed for the same repository and commit.
+		// We do choose to perform this before this the following transaction rather than after so that
+		// we can guarantee the presence of the date for this commit by the time the repository is set
+		// as dirty.
+		if err := s.store.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
+			return errors.Wrap(err, "store.CommitDate")
+		}
+
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
 		if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
@@ -85,22 +107,6 @@ func (s *Service) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			// will fail as these values form a unique constraint.
 			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
-			}
-
-			// Find the date of the commit and store that in the upload record. We do this now as we
-			// will need to find the _oldest_ commit with code intelligence data to efficiently update
-			// the commit graph for the repository.
-			_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
-			if err != nil {
-				return errors.Wrap(err, "gitserverClient.CommitDate")
-			}
-			if !revisionExists {
-				return errCommitDoesNotExist
-			}
-			trace.Log(otlog.String("commitDate", commitDate.String()))
-
-			if err := tx.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
-				return errors.Wrap(err, "store.CommitDate")
 			}
 
 			trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
