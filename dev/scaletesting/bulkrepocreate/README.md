@@ -17,6 +17,8 @@ Flags:
 - Generation parameters:
   - `count`: Number of repositories to create (default: `100`).
   - `prefix`: Prefix to use when naming the repos, i.e using `foobar` as prefix will create repos named `foobar0000001`, `foobar0000002`, ... (default: `repo`)
+- Resuming work: 
+  - `resume`: sqlite database name to create or resume from (default `state.db`)
 
 ## FAQ
 
@@ -27,3 +29,7 @@ _Creating organization on the fly requires having an GHE admin account, which is
 > Why require the login and password for the user, isn't the token enough?
 
 _The script will run `git push` which requires to authenticate as the user pushing the repos. Pushing over HTTPS is much simpler as it means it's not required to upload your public key on the GHE user account before running this script._
+
+> Can I `ctrl-c` the script as we have a `-resume` flag? 
+
+No. The script is made to handle errors from third parties, it's not handling anything else.

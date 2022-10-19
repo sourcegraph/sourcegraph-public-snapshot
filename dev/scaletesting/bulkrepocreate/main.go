@@ -3,13 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
-	"sync"
 	"sync/atomic"
 
 	"github.com/google/go-github/v41/github"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"golang.org/x/oauth2"
@@ -24,6 +23,7 @@ type config struct {
 
 	count  int
 	prefix string
+	resume string
 }
 
 func main() {
@@ -36,6 +36,7 @@ func main() {
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) GitHub organization for the destination GHE instance to add the repos")
 	flag.IntVar(&cfg.count, "count", 100, "Amount of blank repos to create")
 	flag.StringVar(&cfg.prefix, "prefix", "repo", "Prefix to use when naming the repo, ex '[prefix]000042'")
+	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
 
 	flag.Parse()
 
@@ -78,19 +79,38 @@ func main() {
 		os.Exit(-1)
 	}
 
-	r, err := newBlankRepo(cfg.githubUser, cfg.githubPassword)
+	blank, err := newBlankRepo(cfg.githubUser, cfg.githubPassword)
 	if err != nil {
 		writeFailure(out, "Failed to create folder for repository")
 		log.Fatal(err)
 	}
-	err = r.init(ctx)
+	err = blank.init(ctx)
 	if err != nil {
 		writeFailure(out, "Failed to initialize blank repository")
 		log.Fatal(err)
 	}
 
-	names := generateNames(cfg.prefix, cfg.count)
-	var mu sync.Mutex
+	state, err := newState(cfg.resume)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var repos []*repo
+	if repos, err = state.load(); err != nil {
+		log.Fatal(err)
+	}
+
+	if len(repos) == 0 {
+		repos, err = state.generate(cfg)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		writeSuccess(out, "resuming work from %s", cfg.resume)
+	}
+
+	if _, _, err := gh.Organizations.Get(ctx, cfg.githubOrg); err != nil {
+		log.Fatal(err)
+	}
 
 	bars := []output.ProgressBar{
 		{Label: "CreatingRepos", Max: float64(cfg.count)},
@@ -99,19 +119,32 @@ func main() {
 	}
 	progress := out.Progress(bars, nil)
 
-	g := group.New().WithMaxConcurrency(10)
+	g := group.New().WithMaxConcurrency(20)
 	var done int64
-	for name := range names {
-		name := name
+	for _, repo := range repos {
+		repo := repo
+		if repo.Created {
+			atomic.AddInt64(&done, 1)
+			progress.SetValue(0, float64(done))
+			continue
+		}
 		g.Go(func() {
-			newRepo, _, err := gh.Repositories.Create(ctx, cfg.githubOrg, &github.Repository{Name: github.String(name)})
+			newRepo, _, err := gh.Repositories.Create(ctx, cfg.githubOrg, &github.Repository{Name: github.String(repo.Name)})
 			if err != nil {
-				writeFailure(out, "Failed to create repository %s", name)
+				writeFailure(out, "Failed to create repository %s", repo.Name)
+				repo.Failed = err.Error()
+				if err := state.saveRepo(repo); err != nil {
+					log.Fatal(err)
+				}
+				return
+			}
+			repo.GitURL = newRepo.GetGitURL()
+			repo.Created = true
+			repo.Failed = ""
+			if err = state.saveRepo(repo); err != nil {
 				log.Fatal(err)
 			}
-			mu.Lock()
-			names[name] = newRepo.GetGitURL()
-			mu.Unlock()
+
 			atomic.AddInt64(&done, 1)
 			progress.SetValue(0, float64(done))
 		})
@@ -120,10 +153,10 @@ func main() {
 
 	done = 0
 	// Adding a remote will lock git configuration.
-	for name, gitURL := range names {
-		err = r.addRemote(ctx, name, gitURL)
+	for _, repo := range repos {
+		err = blank.addRemote(ctx, repo.Name, repo.GitURL)
 		if err != nil {
-			writeFailure(out, "Failed to add remote to repository %s", name)
+			writeFailure(out, "Failed to add remote to repository %s", repo.Name)
 			log.Fatal(err)
 		}
 		done++
@@ -131,13 +164,30 @@ func main() {
 	}
 
 	done = 0
-	g = group.New().WithMaxConcurrency(10)
-	for name := range names {
-		name := name
+	g = group.New().WithMaxConcurrency(20)
+	for _, repo := range repos {
+		repo := repo
+		if !repo.Created {
+			continue
+		}
+		if repo.Pushed {
+			atomic.AddInt64(&done, 1)
+			progress.SetValue(2, float64(done))
+			continue
+		}
 		g.Go(func() {
-			err := r.pushRemote(ctx, name)
+			err := blank.pushRemote(ctx, repo.Name)
 			if err != nil {
-				writeFailure(out, "Failed to push to repository %s", name)
+				writeFailure(out, "Failed to push to repository %s", repo.Name)
+				repo.Failed = err.Error()
+				if err := state.saveRepo(repo); err != nil {
+					log.Fatal(err)
+				}
+				return
+			}
+			repo.Pushed = true
+			repo.Failed = ""
+			if err := state.saveRepo(repo); err != nil {
 				log.Fatal(err)
 			}
 			atomic.AddInt64(&done, 1)
@@ -147,8 +197,17 @@ func main() {
 	g.Wait()
 
 	progress.Destroy()
-	writeSuccess(out, "Successfully added %d repositories on $GHE/%s", cfg.count, cfg.githubOrg)
-	defer r.teardown()
+	all, err := state.countAllRepos()
+	if err != nil {
+		log.Fatal(err)
+	}
+	completed, err := state.countCompletedRepos()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	writeSuccess(out, "Successfully added %d repositories on $GHE/%s (%d failures)", completed, cfg.githubOrg, all-completed)
+	defer blank.teardown()
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
@@ -157,13 +216,4 @@ func writeSuccess(out *output.Output, format string, a ...any) {
 
 func writeFailure(out *output.Output, format string, a ...any) {
 	out.WriteLine(output.Linef("❌", output.StyleFailure, format, a...))
-}
-
-func generateNames(prefix string, count int) map[string]string {
-	names := make(map[string]string, count)
-	for i := 0; i < count; i++ {
-		name := fmt.Sprintf("%s%09d", prefix, i)
-		names[name] = ""
-	}
-	return names
 }
