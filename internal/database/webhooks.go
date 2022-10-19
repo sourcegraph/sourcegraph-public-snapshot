@@ -43,6 +43,14 @@ func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookSto
 	}
 }
 
+type WebhookOpts struct {
+	ID   int32
+	UUID uuid.UUID
+}
+
+type DeleteWebhookOpts WebhookOpts
+type GetWebhookOpts WebhookOpts
+
 // Create the webhook
 //
 // secret is optional since some code hosts do not support signing payloads.
@@ -120,43 +128,42 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_by_user_id"),
 }
 
-const webhookGetByIDFmtstr = `
+const webhookGetFmtstr = `
 SELECT %s FROM webhooks
-WHERE id = %d
+WHERE %s
 `
 
 func (s *webhookStore) GetByID(ctx context.Context, id int32) (*types.Webhook, error) {
-	q := sqlf.Sprintf(webhookGetByIDFmtstr,
-		sqlf.Join(webhookColumns, ", "),
-		id,
-	)
-
-	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &WebhookNotFoundError{ID: id}
-		}
-		return nil, errors.Wrap(err, "scanning webhook")
-	}
-
-	return webhook, nil
+	return s.getBy(ctx, GetWebhookOpts{ID: id})
 }
 
-const webhookGetByUUIDFmtstr = `
-SELECT %s FROM webhooks
-WHERE uuid = %s
-`
-
 func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error) {
-	q := sqlf.Sprintf(webhookGetByUUIDFmtstr,
+	return s.getBy(ctx, GetWebhookOpts{UUID: id})
+}
+
+func (s *webhookStore) getBy(ctx context.Context, opts GetWebhookOpts) (*types.Webhook, error) {
+	var whereClause *sqlf.Query
+	if opts.ID > 0 {
+		whereClause = sqlf.Sprintf("ID = %d", opts.ID)
+	}
+
+	if opts.UUID != uuid.Nil {
+		whereClause = sqlf.Sprintf("UUID = %s", opts.UUID)
+	}
+
+	if whereClause == nil {
+		return nil, errors.New("not enough conditions to build query to delete webhook")
+	}
+
+	q := sqlf.Sprintf(webhookGetFmtstr,
 		sqlf.Join(webhookColumns, ", "),
-		id,
+		whereClause,
 	)
 
 	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &WebhookNotFoundError{UUID: id}
+			return nil, &WebhookNotFoundError{UUID: opts.UUID, ID: opts.ID}
 		}
 		return nil, errors.Wrap(err, "scanning webhook")
 	}
@@ -169,11 +176,6 @@ DELETE FROM webhooks
 WHERE %s
 `
 
-type DeleteWebhookOpts struct {
-	ID   int32
-	UUID uuid.UUID
-}
-
 // Delete the webhook with given options.
 //
 // Either ID or UUID can be provided.
@@ -182,12 +184,12 @@ type DeleteWebhookOpts struct {
 // case. Error is returned when the webhook is not found or something went wrong
 // during an SQL query.
 func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error {
-	predicate, err := buildDeletePredicate(opts)
+	query, err := buildDeleteWebhookQuery(opts)
 	if err != nil {
 		return err
 	}
 
-	result, err := s.ExecResult(ctx, sqlf.Sprintf(webhookDeleteByQueryFmtstr, predicate))
+	result, err := s.ExecResult(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "running delete SQL query")
 	}
@@ -201,14 +203,16 @@ func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error
 	return nil
 }
 
-func buildDeletePredicate(opts DeleteWebhookOpts) (*sqlf.Query, error) {
+func buildDeleteWebhookQuery(opts DeleteWebhookOpts) (*sqlf.Query, error) {
 	if opts.ID > 0 {
-		return sqlf.Sprintf("ID = %d", opts.ID), nil
+		return sqlf.Sprintf(webhookDeleteByQueryFmtstr, sqlf.Sprintf("ID = %d", opts.ID)), nil
 	}
-	if opts.UUID == uuid.Nil {
-		return nil, errors.New("neither ID or UUID were provided to delete the webhook")
+
+	if opts.UUID != uuid.Nil {
+		return sqlf.Sprintf(webhookDeleteByQueryFmtstr, sqlf.Sprintf("UUID = %s", opts.UUID)), nil
 	}
-	return sqlf.Sprintf("UUID = %s", opts.UUID), nil
+
+	return nil, errors.New("not enough conditions to build query to delete webhook")
 }
 
 // WebhookNotFoundError occurs when a webhook is not found.
@@ -284,13 +288,16 @@ RETURNING
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
-	q := sqlf.Sprintf(webhookListQueryFmtstr, sqlf.Join(webhookColumns, ", "))
+	predicates := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Kind != "" {
-		q = sqlf.Sprintf("%s\nWHERE code_host_kind = %s", q, opt.Kind)
+		predicates = append(predicates, sqlf.Sprintf("code_host_kind = %s", opt.Kind))
 	}
-	if opt.LimitOffset != nil {
-		q = sqlf.Sprintf("%s\n%s", q, opt.LimitOffset.SQL())
-	}
+
+	q := sqlf.Sprintf(
+		webhookListQueryFmtstr,
+		sqlf.Join(webhookColumns, ","),
+		sqlf.Join(predicates, "AND"),
+		opt.LimitOffset.SQL())
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return []*types.Webhook{}, errors.Wrap(err, "error running query")
@@ -316,6 +323,8 @@ const webhookListQueryFmtstr = `
 SELECT
 	%s
 FROM webhooks
+WHERE %s -- Predicates
+%s -- Limit/offset
 `
 
 func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
