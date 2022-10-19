@@ -395,6 +395,22 @@ func shortGitCommandSlow(args []string) time.Duration {
 	}
 }
 
+// 🚨 SECURITY: headerXRequestedWithMiddleware will ensure that the X-Requested-With
+// header contains the correct value. See "What does X-Requested-With do, anyway?" in
+// https://github.com/sourcegraph/sourcegraph/pull/27931.
+func headerXRequestedWithMiddleware(handler http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
+			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
+			return
+		}
+
+		handler(w, r)
+	})
+
+	return nil
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 // TODO: Add security doc
 func (s *Server) Handler() http.Handler {
@@ -508,22 +524,6 @@ func (s *Server) Handler() http.Handler {
 		)))
 
 	return mux
-}
-
-// TODO: Update docs
-// 🚨 SECURITY: checkXRequestedWith will ensure that the X-Requested-With header contains
-// the correct value. See "What does X-Requested-With do, anyway?" in
-// https://github.com/sourcegraph/sourcegraph/pull/27931.
-func headerXRequestedWithMiddleware(h http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
-			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
-			return
-		}
-
-	})
-
-	return nil
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
