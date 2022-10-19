@@ -185,13 +185,16 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 	}
 	ui.PreparingContainerImagesSuccess()
 
-	// Empty for now until we support secrets or env var settings in SSBC.
-	var globalEnv []string
-
 	// Set up the execution UI.
 	taskExecUI := ui.ExecutingTasks(false, 1)
 	taskExecUI.Start([]*executor.Task{task})
 	taskExecUI.TaskStarted(task)
+
+	// Pass the os.Environ to run steps to allow access to the secrets set
+	// in the executor environment.
+	// The executor runtime takes care of not forwarding any sensitive secrets
+	// from the host, so this is safe.
+	globalEnv := os.Environ()
 
 	opts := &executor.RunStepsOpts{
 		Logger:      &log.NoopTaskLogger{},
