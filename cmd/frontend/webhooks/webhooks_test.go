@@ -89,6 +89,7 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
 
 		req, err := http.NewRequest("POST", requestURL, nil)
+		require.NoError(t, err)
 		req.Header.Add("X-GitLab-Token", "someothersecret")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -105,6 +106,7 @@ func TestWebhooksHandler(t *testing.T) {
 		res := h.Sum(nil)
 
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
 		req.Header.Set("Content-Type", "application/json")
 
@@ -123,6 +125,7 @@ func TestWebhooksHandler(t *testing.T) {
 		res := h.Sum(nil)
 
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
 		req.Header.Set("Content-Type", "application/json")
 
