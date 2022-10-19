@@ -77,6 +77,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
+                {props.isSourcegraphDotCom}
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
