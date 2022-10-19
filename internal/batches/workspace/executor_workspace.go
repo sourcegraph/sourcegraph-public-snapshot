@@ -4,7 +4,6 @@ import (
 	"context"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
@@ -25,12 +24,6 @@ type executorWorkspaceCreator struct {
 var _ Creator = &executorWorkspaceCreator{}
 
 func (wc *executorWorkspaceCreator) Create(ctx context.Context, repo *graphql.Repository, steps []batcheslib.Step, archive repozip.Archive) (Workspace, error) {
-	// Cleanup the repo dir. We don't want any origin to be defined here. This
-	// reduces risk of accidentally pushing anything from the workspace execution.
-	if _, err := runGitCmd(ctx, wc.RepoDir, "remote", "rm", "origin"); err != nil {
-		return nil, errors.Wrap(err, "git init failed")
-	}
-
 	return &dockerBindExecutorWorkspace{
 		dockerBindWorkspace: dockerBindWorkspace{
 			tempDir: wc.TempDir,
