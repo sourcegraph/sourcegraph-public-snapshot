@@ -62,8 +62,8 @@ function getExtensionCoreConfiguration(targetType) {
       alias:
         targetType === 'webworker'
           ? {
-              'http-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'browser-fakes', 'proxy-agent.ts'),
-              'https-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'browser-fakes', 'proxy-agent.ts'),
+              'http-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'proxy-agent-fake.ts'),
+              'https-proxy-agent': path.resolve(__dirname, 'src', 'backend', 'proxy-agent-fake.ts'),
               path: require.resolve('path-browserify'),
               './browserActionsNode': path.resolve(__dirname, 'src', 'commands', 'browserActionsWeb'),
             }
