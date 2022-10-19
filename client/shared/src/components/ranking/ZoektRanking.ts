@@ -49,10 +49,9 @@ function sortHunkMatches(hunk: Hunk): void {
 }
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
-    return (
-        item.startLine + context + 1 >= group.startLine - context &&
-        item.endLine - context - 1 <= group.endLine + context
-    )
+    // Return true if item and group have overlapping or adjacent context
+    return (item.startLine >= group.endLine && item.startLine - group.endLine - 2 * context <= 1)
+        || (item.endLine <= group.startLine && group.startLine - item.endLine - 2 * context <= 1)
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
