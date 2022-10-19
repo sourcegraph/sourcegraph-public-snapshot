@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,12 +27,12 @@ func TestWebhooksHandler(t *testing.T) {
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
-	wh, err := db.Webhooks(keyring.Default().WebhookKey).Create(
+	gitLabWH, err := db.Webhooks(keyring.Default().WebhookKey).Create(
 		context.Background(),
-		extsvc.KindGitHub,
-		"http://github.com",
+		extsvc.KindGitLab,
+		"http://gitlab.com",
 		u.ID,
-		nil)
+		types.NewUnencryptedSecret("somesecret"))
 	require.NoError(t, err)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,10 +41,12 @@ func TestWebhooksHandler(t *testing.T) {
 		handler.ServeHTTP(w, r)
 	}))
 
-	t.Run("found webhook returns unimplemented", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, wh.UUID)
+	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
 
-		resp, err := http.Post(requestURL, "", nil)
+		req, err := http.NewRequest("POST", requestURL, nil)
+		req.Header.Add("X-GitLab-Token", "somesecret")
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
@@ -62,6 +65,17 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/SomeInvalidUUID", srv.URL)
 
 		resp, err := http.Post(requestURL, "", nil)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("incorrect GitLab secret returns 400", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
+
+		req, err := http.NewRequest("POST", requestURL, nil)
+		req.Header.Add("X-GitLab-Token", "someothersecret")
+		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)

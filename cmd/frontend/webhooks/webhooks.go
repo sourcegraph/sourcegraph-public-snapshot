@@ -1,9 +1,12 @@
 package webhooks
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
+	"github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -28,7 +31,7 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "missing uuid", http.StatusBadRequest)
 			return
 		}
 
@@ -44,10 +47,26 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 			return
 		}
 
+		secret, err := webhook.Secret.Decrypt(r.Context())
+		if err != nil {
+			http.Error(w, "Could not decrypt webhook secret.", http.StatusInternalServerError)
+			return
+		}
+
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
+			_, err := github.ValidatePayload(r, []byte(secret))
+			if err != nil {
+				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+				return
+			}
 			fallthrough
 		case extsvc.KindGitLab:
+			_, err := gitLabValidateSecret(r, secret)
+			if err != nil {
+				http.Error(w, "Could not validate secret.", http.StatusBadRequest)
+				return
+			}
 			fallthrough
 		case extsvc.KindBitbucketServer:
 			fallthrough
@@ -55,4 +74,19 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 			w.WriteHeader(http.StatusNotImplemented)
 		}
 	}
+}
+
+func gitLabValidateSecret(r *http.Request, secret string) ([]byte, error) {
+	glSecret := r.Header.Get("X-Gitlab-Token")
+	if glSecret != secret {
+		return nil, errors.New("secrets don't match!")
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	return body, nil
 }
