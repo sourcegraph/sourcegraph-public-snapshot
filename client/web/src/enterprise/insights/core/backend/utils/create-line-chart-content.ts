@@ -11,8 +11,6 @@ import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backen
 
 import { getParsedSeriesMetadata } from './parse-series-metadata'
 
-type SeriesDefinition = Record<string, SearchBasedInsightSeries>
-
 /**
  * Generates line chart content for visx chart. Note that this function relies on the fact that
  * all series are indexed.
@@ -22,7 +20,7 @@ export function createLineChartContent(
     seriesData: InsightDataSeries[]
 ): SeriesChartContent<BackendInsightDatum> {
     const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
-    const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
+    const seriesDefinitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id, definition])
     )
 
@@ -48,11 +46,6 @@ export function createLineChartContent(
         })),
     }
 }
-
-/**
- * Minimal input type model for {@link createLineChartContent} function
- */
-export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
 
 interface GenerateLinkInput {
     query: string

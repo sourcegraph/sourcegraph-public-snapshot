@@ -19,6 +19,7 @@ import {
 import styles from './DrillDownFiltersPopover.module.scss'
 
 const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
+
 interface DrillDownFiltersPopoverProps {
     isOpen: boolean
     initialFiltersValue: InsightFilters
