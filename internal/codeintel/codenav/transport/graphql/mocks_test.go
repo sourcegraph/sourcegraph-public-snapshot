@@ -2159,32 +2159,6 @@ func (c CodeNavServiceGetUnsafeDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockGitBlobResolver is a mock implementation of the GitBlobResolver
-// interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql)
-// used for unit testing.
-type MockGitBlobResolver struct{}
-
-// NewMockGitBlobResolver creates a new mock of the GitBlobResolver
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockGitBlobResolver() *MockGitBlobResolver {
-	return &MockGitBlobResolver{}
-}
-
-// NewStrictMockGitBlobResolver creates a new mock of the GitBlobResolver
-// interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockGitBlobResolver() *MockGitBlobResolver {
-	return &MockGitBlobResolver{}
-}
-
-// NewMockGitBlobResolverFrom creates a new mock of the MockGitBlobResolver
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockGitBlobResolverFrom(i GitBlobResolver) *MockGitBlobResolver {
-	return &MockGitBlobResolver{}
-}
-
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql)

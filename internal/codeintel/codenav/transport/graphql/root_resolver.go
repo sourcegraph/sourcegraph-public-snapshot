@@ -71,5 +71,5 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDat
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
 
-	return NewGitBlobLSIFDataResolverQueryResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
+	return NewGitBlobLSIFDataResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
 }
