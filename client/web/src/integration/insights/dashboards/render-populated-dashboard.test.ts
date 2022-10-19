@@ -5,7 +5,7 @@ import { Page } from 'puppeteer'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetInsightViewResult } from '../../../graphql-operations'
+import { GetInsightDataResult } from '../../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
@@ -64,7 +64,7 @@ describe('Code insights populated dashboard', () => {
                 },
             }),
             GetDashboardInsights: () => GET_DASHBOARD_INSIGHTS_POPULATED,
-            GetInsightView: ({ id }) => getInsightViewById(id),
+            GetInsightData: ({ id }) => getInsightViewById(id),
             InsightsDashboards: () => INSIGHTS_DASHBOARDS,
             LangStatsInsightContent: () => LANG_STAT_INSIGHT_CONTENT,
         })
@@ -124,7 +124,7 @@ async function getLinks(page: Page, labels: string[]): Promise<string[]> {
  * @param id - Insight id
  * @returns a GetInsightViewResult
  */
-function getInsightViewById(id: string | null): GetInsightViewResult {
+function getInsightViewById(id: string | null): GetInsightDataResult {
     const insightView = [
         GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
         GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
