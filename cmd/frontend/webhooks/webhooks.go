@@ -46,8 +46,11 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
+			fallthrough
 		case extsvc.KindGitLab:
+			fallthrough
 		case extsvc.KindBitbucketServer:
+			fallthrough
 		case extsvc.KindBitbucketCloud:
 			w.WriteHeader(http.StatusNotImplemented)
 		}
