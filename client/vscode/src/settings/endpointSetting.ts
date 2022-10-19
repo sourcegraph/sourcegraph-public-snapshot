@@ -3,10 +3,14 @@ import * as vscode from 'vscode'
 import { readConfiguration } from './readConfiguration'
 
 export function endpointSetting(): string {
-    // has default value
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const url = readConfiguration().get<string>('url')!
+    const url = readConfiguration().get<string>('url') || 'https://sourcegraph.com'
     return removeEndingSlash(url)
+}
+
+export async function setEndpoint(newEndpoint: string | undefined): Promise<void> {
+    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : undefined
+    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
+    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Workspace)
 }
 
 export function endpointHostnameSetting(): string {
@@ -22,28 +26,8 @@ export function endpointProtocolSetting(): string {
     return new URL(endpointSetting()).protocol
 }
 
-export function endpointAccessTokenSetting(): boolean {
-    if (readConfiguration().get<string>('accessToken')) {
-        return true
-    }
-    return false
-}
-
 export function endpointRequestHeadersSetting(): object {
     return readConfiguration().get<object>('requestHeaders') || {}
-}
-
-export async function updateEndpointSetting(newEndpoint: string, newAccessToken?: string): Promise<boolean> {
-    const newEndpointURL = removeEndingSlash(newEndpoint)
-    try {
-        if (newAccessToken) {
-            await readConfiguration().update('accessToken', newAccessToken, vscode.ConfigurationTarget.Global)
-        }
-        await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
-        return true
-    } catch {
-        return false
-    }
 }
 
 function removeEndingSlash(uri: string): string {
@@ -51,4 +35,9 @@ function removeEndingSlash(uri: string): string {
         return uri.slice(0, -1)
     }
     return uri
+}
+
+export function isSourcegraphDotCom(): boolean {
+    const hostname = new URL(endpointSetting()).hostname
+    return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
 }

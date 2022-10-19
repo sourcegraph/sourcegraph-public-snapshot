@@ -12,6 +12,7 @@ import { useQueryExamples } from './useQueryExamples'
 import styles from './QueryExamplesHomepage.module.scss'
 
 export interface QueryExamplesHomepageProps extends TelemetryProps {
+    selectedSearchContextSpec?: string
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
 }
@@ -35,6 +36,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 }
 
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+    selectedSearchContextSpec,
     telemetryService,
     queryState,
     setQueryState,
@@ -42,7 +44,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
 
-    const queryExampleSectionsColumns = useQueryExamples()
+    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global')
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {

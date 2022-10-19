@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.12",
+  "version": "2.2.13",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": true,
@@ -62,6 +62,17 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
+      },
+      {
+        "command": "sourcegraph.auth",
+        "category": "Sourcegraph",
+        "title": "Log in to Sourcegraph"
+      }
+    ],
+    "authentication": [
+      {
+        "id": "sourcegraphauth",
+        "label": "Sourcegraph Auth"
       }
     ],
     "viewsContainers": {
@@ -113,10 +124,9 @@
         },
         "sourcegraph.accessToken": {
           "type": [
-            "string"
+            null
           ],
-          "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
+          "description": "[Depreciated after v2.2.12] The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
         },
         "sourcegraph.remoteUrlReplacements": {
           "type": [

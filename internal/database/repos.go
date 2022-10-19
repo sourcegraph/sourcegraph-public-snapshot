@@ -1170,9 +1170,6 @@ type ListIndexableReposOptions struct {
 	// status.
 	CloneStatus types.CloneStatus
 
-	// IncludePrivate when true will include user added private repos.
-	IncludePrivate bool
-
 	*LimitOffset
 }
 
@@ -1183,7 +1180,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars.
 func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1200,10 +1197,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf(
 			"gr.clone_status = %s", opts.CloneStatus,
 		))
-	}
-
-	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT repo.private"))
 	}
 
 	if len(where) == 0 {

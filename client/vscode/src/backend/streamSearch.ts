@@ -16,10 +16,12 @@ export function createStreamSearch({
     context,
     stateMachine,
     sourcegraphURL,
+    session,
 }: {
     context: vscode.ExtensionContext
     stateMachine: VSCEStateMachine
     sourcegraphURL: string
+    session: vscode.AuthenticationSession | undefined
 }): ExtensionCoreAPI['streamSearch'] {
     // Ensure only one search is active at a time
     let previousSearchSubscription: Subscription | null
@@ -29,8 +31,8 @@ export function createStreamSearch({
             previousSearchSubscription?.unsubscribe()
         },
     })
-
-    const instanceVersionNumber = observeInstanceVersionNumber()
+    const token = session?.accessToken === undefined ? '' : session?.accessToken
+    const instanceVersionNumber = observeInstanceVersionNumber(token, sourcegraphURL)
 
     return function streamSearch(query, options) {
         previousSearchSubscription?.unsubscribe()

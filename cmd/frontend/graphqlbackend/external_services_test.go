@@ -70,7 +70,6 @@ func TestAddExternalService(t *testing.T) {
 					kind
 					displayName
 					config
-					namespace { id }
 				}
 			}
 		`,
@@ -79,8 +78,7 @@ func TestAddExternalService(t *testing.T) {
 				"addExternalService": {
 					"kind": "GITHUB",
 					"displayName": "GITHUB #1",
-					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}",
-					"namespace": null
+					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}"
 				}
 			}
 		`,
@@ -296,10 +294,7 @@ func TestExternalServices(t *testing.T) {
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			id := MarshalUserID(2)
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
-				Namespace: &id,
-			})
+			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -318,10 +313,7 @@ func TestExternalServices(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-			id := MarshalOrgID(2)
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
-				Namespace: &id,
-			})
+			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -361,10 +353,7 @@ func TestExternalServices(t *testing.T) {
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			id := MarshalUserID(0)
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
-				Namespace: &id,
-			})
+			_, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,7 +1,6 @@
 /* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
 import * as React from 'react'
 
-import * as H from 'history'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -42,7 +41,6 @@ const errorWidth = (width?: string): { width: string } => ({
 })
 
 export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    location: H.Location
     activeNode: TreeNode
     activePath: string
     depth: number
