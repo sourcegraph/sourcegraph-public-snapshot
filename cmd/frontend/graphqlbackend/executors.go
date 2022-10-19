@@ -145,7 +145,7 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 	if err := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey).Create(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
 		return nil, err
 	}
-	return &ExecutorSecretResolver{secret: secret}, nil
+	return &ExecutorSecretResolver{db: r.db, secret: secret}, nil
 }
 
 type UpdateExecutorSecretArgs struct {
@@ -179,7 +179,7 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 		return nil, err
 	}
 
-	return &ExecutorSecretResolver{secret: secret}, nil
+	return &ExecutorSecretResolver{db: r.db, secret: secret}, nil
 }
 
 type DeleteExecutorSecretArgs struct {
@@ -297,7 +297,7 @@ func (r *executorSecretConnectionResolver) Nodes(ctx context.Context) ([]*Execut
 
 	resolvers := make([]*ExecutorSecretResolver, 0, len(secrets))
 	for _, secret := range secrets {
-		resolvers = append(resolvers, &ExecutorSecretResolver{secret: secret})
+		resolvers = append(resolvers, &ExecutorSecretResolver{db: r.db, secret: secret})
 	}
 
 	return resolvers, nil

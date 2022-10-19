@@ -52,11 +52,17 @@ type ExecutorSecretStore interface {
 	Count(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) (int, error)
 }
 
-// ExecutorSecretsListOpts provide the options when listing secrets.
+// ExecutorSecretsListOpts provide the options when listing secrets. If no namespace
+// scoping is provided, only global credentials are returned (no namespace set).
 type ExecutorSecretsListOpts struct {
 	*LimitOffset
+
+	// NamespaceUserID, when set, returns secrets accessible in the user namespace.
+	// These may include global secrets.
 	NamespaceUserID int32
-	NamespaceOrgID  int32
+	// NamespaceOrgID, when set, returns secrets accessible in the user namespace.
+	// These may include global secrets.
+	NamespaceOrgID int32
 }
 
 func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
@@ -65,13 +71,15 @@ func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, 
 		return nil, err
 	}
 
+	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
+
 	preds := []*sqlf.Query{authz}
 	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_org_id = %s", opts.NamespaceOrgID))
+		preds = append(preds, sqlf.Sprintf("(namespace_org_id = %s OR (%s))", opts.NamespaceOrgID, globalSecret))
 	} else if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("namespace_user_id = %s", opts.NamespaceUserID))
+		preds = append(preds, sqlf.Sprintf("(namespace_user_id = %s OR (%s))", opts.NamespaceUserID, globalSecret))
 	} else {
-		preds = append(preds, sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL"))
+		preds = append(preds, globalSecret)
 	}
 
 	return sqlf.Join(preds, "\n AND "), nil
@@ -255,6 +263,7 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 	q := sqlf.Sprintf(
 		executorSecretsListQueryFmtstr,
 		sqlf.Join(executorSecretsColumns, ", "),
+		sqlf.Join(executorSecretsColumns, ", "),
 		conds,
 		opts.limitSQL(),
 	)
@@ -331,19 +340,39 @@ WHERE
 
 const executorSecretsListQueryFmtstr = `
 SELECT %s
-FROM executor_secrets
-WHERE %s
+FROM (
+	SELECT
+		%s,
+		RANK() OVER(
+			PARTITION BY key
+			ORDER BY
+				namespace_user_id NULLS LAST,
+				namespace_org_id NULLS LAST
+		)
+	FROM executor_secrets
+	WHERE %s
+) executor_secrets
+WHERE
+	executor_secrets.rank = 1
 ORDER BY key ASC
 %s  -- LIMIT clause
 `
 
 const executorSecretsCountQueryFmtstr = `
-SELECT
-	COUNT(*)
-FROM
-	executor_secrets
+SELECT COUNT(*)
+FROM (
+	SELECT
+		RANK() OVER(
+			PARTITION BY key
+			ORDER BY
+				namespace_user_id NULLS LAST,
+				namespace_org_id NULLS LAST
+		)
+	FROM executor_secrets
+	WHERE %s
+) executor_secrets
 WHERE
-	%s
+	executor_secrets.rank = 1
 `
 
 const executorSecretCreateQueryFmtstr = `

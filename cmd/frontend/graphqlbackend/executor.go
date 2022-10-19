@@ -150,6 +150,7 @@ func unmarshalExecutorSecretID(gqlID graphql.ID) (id int64, err error) {
 }
 
 type ExecutorSecretResolver struct {
+	db     database.DB
 	secret *database.ExecutorSecret
 }
 
@@ -159,6 +160,22 @@ func (e *ExecutorSecretResolver) ID() graphql.ID {
 func (e *ExecutorSecretResolver) Key() string   { return e.secret.Key }
 func (e *ExecutorSecretResolver) Scope() string { return strings.ToUpper(e.secret.Scope) }
 func (e *ExecutorSecretResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+	if e.secret.NamespaceUserID != 0 {
+		n, err := UserByIDInt32(ctx, e.db, e.secret.NamespaceUserID)
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+
+	if e.secret.NamespaceOrgID != 0 {
+		n, err := OrgByIDInt32(ctx, e.db, e.secret.NamespaceOrgID)
+		if err != nil {
+			return nil, err
+		}
+		return &NamespaceResolver{n}, nil
+	}
+
 	return nil, nil
 }
 func (e *ExecutorSecretResolver) Creator(ctx context.Context) (*UserResolver, error) {
