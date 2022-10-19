@@ -358,7 +358,7 @@ export function createDefaultSuggestionSources(
                     // suggestions, otherwise static suggestions won't be
                     // removed from the list (because we also disable
                     // filtering above)
-                    validFor: hasDynamicSuggestions ? undefined : /^[a-z.():]+$/i,
+                    validFor: hasDynamicSuggestions ? undefined : /^[().:a-z]+$/i,
                 }
             }),
 
