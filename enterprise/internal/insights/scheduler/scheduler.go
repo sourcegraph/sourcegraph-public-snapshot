@@ -9,7 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-        "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
