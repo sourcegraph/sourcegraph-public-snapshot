@@ -9,12 +9,7 @@ import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { GetInsightDataResult, GetInsightDataVariables } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import {
-    InsightCard,
-    InsightCardHeader,
-    InsightCardLoading,
-    FormChangeEvent,
-} from '../../../../../components'
+import { InsightCard, InsightCardHeader, InsightCardLoading, FormChangeEvent } from '../../../../../components'
 import {
     parseBackendInsightResponse,
     insightPollingInterval,

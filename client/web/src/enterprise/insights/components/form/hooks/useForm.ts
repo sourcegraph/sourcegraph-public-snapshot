@@ -15,7 +15,7 @@ import {
 import { debounce, DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
-import { asError } from '@sourcegraph/common';
+import { asError } from '@sourcegraph/common'
 
 import { useDistinctValue } from '../../../hooks'
 
@@ -308,7 +308,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
                     // Check isUnmounted state to prevent calling setState on
                     // unmounted components.
                     if (!isUnmounted.current) {
-                        setSubmitErrors({[FORM_ERROR]: asError(error)})
+                        setSubmitErrors({ [FORM_ERROR]: asError(error) })
                     }
                 } finally {
                     setSubmitting(false)
