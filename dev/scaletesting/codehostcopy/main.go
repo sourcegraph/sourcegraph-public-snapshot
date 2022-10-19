@@ -42,7 +42,7 @@ func main() {
 	}
 
 	runner := NewRunner(gh, gl)
-	if err := runner.Run(ctx); err != nil {
+	if err := runner.Run(ctx, 20); err != nil {
 		log.Fatal(err)
 	}
 }
