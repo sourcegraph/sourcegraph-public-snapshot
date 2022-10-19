@@ -4,12 +4,14 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -191,4 +193,107 @@ func (e *ExecutorSecretResolver) CreatedAt() gqlutil.DateTime {
 }
 func (e *ExecutorSecretResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: e.secret.UpdatedAt}
+}
+
+type ExecutorSecretAccessLogListArgs struct {
+	First int32
+	After *string
+}
+
+func (r *ExecutorSecretResolver) AccessLogs(args ExecutorSecretAccessLogListArgs) (*executorSecretAccessLogConnectionResolver, error) {
+	limit := &database.LimitOffset{Limit: int(args.First)}
+	if args.After != nil {
+		offset, err := graphqlutil.DecodeIntCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		limit.Offset = offset
+	}
+
+	return &executorSecretAccessLogConnectionResolver{
+		opts: database.ExecutorSecretAccessLogsListOpts{
+			LimitOffset:      limit,
+			ExecutorSecretID: r.secret.ID,
+		},
+		db: r.db,
+	}, nil
+}
+
+type executorSecretAccessLogConnectionResolver struct {
+	db   database.DB
+	opts database.ExecutorSecretAccessLogsListOpts
+
+	computeOnce sync.Once
+	logs        []*database.ExecutorSecretAccessLog
+	next        int
+	err         error
+}
+
+func (r *executorSecretAccessLogConnectionResolver) Nodes(ctx context.Context) ([]*executorSecretAccessLogResolver, error) {
+	logs, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*executorSecretAccessLogResolver, 0, len(logs))
+	for _, log := range logs {
+		resolvers = append(resolvers, &executorSecretAccessLogResolver{db: r.db, log: log})
+	}
+
+	return resolvers, nil
+}
+
+func (r *executorSecretAccessLogConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	totalCount, err := r.db.ExecutorSecretAccessLogs().Count(ctx, r.opts)
+	return int32(totalCount), err
+}
+
+func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if next != 0 {
+		n := int32(next)
+		return graphqlutil.EncodeIntCursor(&n), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
+}
+
+func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context) (_ []*database.ExecutorSecretAccessLog, next int, err error) {
+	r.computeOnce.Do(func() {
+		r.logs, r.next, r.err = r.db.ExecutorSecretAccessLogs().List(ctx, r.opts)
+	})
+	return r.logs, r.next, r.err
+}
+
+func marshalExecutorSecretAccessLogID(id int64) graphql.ID {
+	return relay.MarshalID("ExecutorSecretAccessLog", id)
+}
+
+func unmarshalExecutorSecretAccessLogID(gqlID graphql.ID) (id int64, err error) {
+	err = relay.UnmarshalSpec(gqlID, &id)
+	return
+}
+
+type executorSecretAccessLogResolver struct {
+	db  database.DB
+	log *database.ExecutorSecretAccessLog
+}
+
+func (r *executorSecretAccessLogResolver) ID() graphql.ID {
+	return marshalExecutorSecretAccessLogID(r.log.ID)
+}
+
+func (r *executorSecretAccessLogResolver) ExecutorSecret(ctx context.Context) (*ExecutorSecretResolver, error) {
+	return executorSecretByID(ctx, r.db, marshalExecutorSecretID(r.log.ExecutorSecretID))
+}
+
+func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolver, error) {
+	return UserByIDInt32(ctx, r.db, r.log.UserID)
+}
+
+func (r *executorSecretAccessLogResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.CreatedAt}
 }

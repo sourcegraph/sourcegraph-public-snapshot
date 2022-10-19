@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func unmarshalExecutorID(id graphql.ID) (executorID int64, err error) {
@@ -276,6 +277,26 @@ func (r *OrgResolver) ExecutorSecrets(args ExecutorSecretsListArgs) (*executorSe
 			NamespaceOrgID:  r.org.ID,
 		},
 	}, nil
+}
+
+func executorSecretByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*ExecutorSecretResolver, error) {
+	// TODO: perms?
+
+	id, err := unmarshalExecutorSecretID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: this should not hard code the scope.
+	secret, err := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey).GetByID(ctx, database.ExecutorSecretScopeBatches, id)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &ExecutorSecretResolver{db: db, secret: secret}, nil
 }
 
 type executorSecretConnectionResolver struct {

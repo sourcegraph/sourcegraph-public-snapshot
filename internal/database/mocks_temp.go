@@ -3641,6 +3641,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// ExecutorSecretAccessLogsFunc is an instance of a mock function object
+	// controlling the behavior of the method ExecutorSecretAccessLogs.
+	ExecutorSecretAccessLogsFunc *DBExecutorSecretAccessLogsFunc
 	// ExecutorSecretsFunc is an instance of a mock function object
 	// controlling the behavior of the method ExecutorSecrets.
 	ExecutorSecretsFunc *DBExecutorSecretsFunc
@@ -3778,6 +3781,11 @@ func NewMockDB() *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 sql.Result, r1 error) {
+				return
+			},
+		},
+		ExecutorSecretAccessLogsFunc: &DBExecutorSecretAccessLogsFunc{
+			defaultHook: func() (r0 ExecutorSecretAccessLogStore) {
 				return
 			},
 		},
@@ -3988,6 +3996,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.ExecContext")
 			},
 		},
+		ExecutorSecretAccessLogsFunc: &DBExecutorSecretAccessLogsFunc{
+			defaultHook: func() ExecutorSecretAccessLogStore {
+				panic("unexpected invocation of MockDB.ExecutorSecretAccessLogs")
+			},
+		},
 		ExecutorSecretsFunc: &DBExecutorSecretsFunc{
 			defaultHook: func(encryption.Key) ExecutorSecretStore {
 				panic("unexpected invocation of MockDB.ExecutorSecrets")
@@ -4180,6 +4193,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExecutorSecretAccessLogsFunc: &DBExecutorSecretAccessLogsFunc{
+			defaultHook: i.ExecutorSecretAccessLogs,
 		},
 		ExecutorSecretsFunc: &DBExecutorSecretsFunc{
 			defaultHook: i.ExecutorSecrets,
@@ -4992,6 +5008,105 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBExecutorSecretAccessLogsFunc describes the behavior when the
+// ExecutorSecretAccessLogs method of the parent MockDB instance is invoked.
+type DBExecutorSecretAccessLogsFunc struct {
+	defaultHook func() ExecutorSecretAccessLogStore
+	hooks       []func() ExecutorSecretAccessLogStore
+	history     []DBExecutorSecretAccessLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// ExecutorSecretAccessLogs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDB) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
+	r0 := m.ExecutorSecretAccessLogsFunc.nextHook()()
+	m.ExecutorSecretAccessLogsFunc.appendCall(DBExecutorSecretAccessLogsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ExecutorSecretAccessLogs method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBExecutorSecretAccessLogsFunc) SetDefaultHook(hook func() ExecutorSecretAccessLogStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExecutorSecretAccessLogs method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBExecutorSecretAccessLogsFunc) PushHook(hook func() ExecutorSecretAccessLogStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBExecutorSecretAccessLogsFunc) SetDefaultReturn(r0 ExecutorSecretAccessLogStore) {
+	f.SetDefaultHook(func() ExecutorSecretAccessLogStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBExecutorSecretAccessLogsFunc) PushReturn(r0 ExecutorSecretAccessLogStore) {
+	f.PushHook(func() ExecutorSecretAccessLogStore {
+		return r0
+	})
+}
+
+func (f *DBExecutorSecretAccessLogsFunc) nextHook() func() ExecutorSecretAccessLogStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBExecutorSecretAccessLogsFunc) appendCall(r0 DBExecutorSecretAccessLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBExecutorSecretAccessLogsFuncCall objects
+// describing the invocations of this function.
+func (f *DBExecutorSecretAccessLogsFunc) History() []DBExecutorSecretAccessLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBExecutorSecretAccessLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBExecutorSecretAccessLogsFuncCall is an object that describes an
+// invocation of method ExecutorSecretAccessLogs on an instance of MockDB.
+type DBExecutorSecretAccessLogsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorSecretAccessLogStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBExecutorSecretAccessLogsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBExecutorSecretAccessLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBExecutorSecretsFunc describes the behavior when the ExecutorSecrets
@@ -13015,6 +13130,909 @@ func (c EventLogStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockExecutorSecretAccessLogStore is a mock implementation of the
+// ExecutorSecretAccessLogStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockExecutorSecretAccessLogStore struct {
+	// CountFunc is an instance of a mock function object controlling the
+	// behavior of the method Count.
+	CountFunc *ExecutorSecretAccessLogStoreCountFunc
+	// CreateFunc is an instance of a mock function object controlling the
+	// behavior of the method Create.
+	CreateFunc *ExecutorSecretAccessLogStoreCreateFunc
+	// GetByIDFunc is an instance of a mock function object controlling the
+	// behavior of the method GetByID.
+	GetByIDFunc *ExecutorSecretAccessLogStoreGetByIDFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *ExecutorSecretAccessLogStoreHandleFunc
+	// ListFunc is an instance of a mock function object controlling the
+	// behavior of the method List.
+	ListFunc *ExecutorSecretAccessLogStoreListFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *ExecutorSecretAccessLogStoreTransactFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *ExecutorSecretAccessLogStoreWithFunc
+}
+
+// NewMockExecutorSecretAccessLogStore creates a new mock of the
+// ExecutorSecretAccessLogStore interface. All methods return zero values
+// for all results, unless overwritten.
+func NewMockExecutorSecretAccessLogStore() *MockExecutorSecretAccessLogStore {
+	return &MockExecutorSecretAccessLogStore{
+		CountFunc: &ExecutorSecretAccessLogStoreCountFunc{
+			defaultHook: func(context.Context, ExecutorSecretAccessLogsListOpts) (r0 int, r1 error) {
+				return
+			},
+		},
+		CreateFunc: &ExecutorSecretAccessLogStoreCreateFunc{
+			defaultHook: func(context.Context, *ExecutorSecretAccessLog) (r0 error) {
+				return
+			},
+		},
+		GetByIDFunc: &ExecutorSecretAccessLogStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (r0 *ExecutorSecretAccessLog, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &ExecutorSecretAccessLogStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListFunc: &ExecutorSecretAccessLogStoreListFunc{
+			defaultHook: func(context.Context, ExecutorSecretAccessLogsListOpts) (r0 []*ExecutorSecretAccessLog, r1 int, r2 error) {
+				return
+			},
+		},
+		TransactFunc: &ExecutorSecretAccessLogStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 ExecutorSecretAccessLogStore, r1 error) {
+				return
+			},
+		},
+		WithFunc: &ExecutorSecretAccessLogStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 ExecutorSecretAccessLogStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockExecutorSecretAccessLogStore creates a new mock of the
+// ExecutorSecretAccessLogStore interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockExecutorSecretAccessLogStore() *MockExecutorSecretAccessLogStore {
+	return &MockExecutorSecretAccessLogStore{
+		CountFunc: &ExecutorSecretAccessLogStoreCountFunc{
+			defaultHook: func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error) {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.Count")
+			},
+		},
+		CreateFunc: &ExecutorSecretAccessLogStoreCreateFunc{
+			defaultHook: func(context.Context, *ExecutorSecretAccessLog) error {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.Create")
+			},
+		},
+		GetByIDFunc: &ExecutorSecretAccessLogStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*ExecutorSecretAccessLog, error) {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.GetByID")
+			},
+		},
+		HandleFunc: &ExecutorSecretAccessLogStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.Handle")
+			},
+		},
+		ListFunc: &ExecutorSecretAccessLogStoreListFunc{
+			defaultHook: func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.List")
+			},
+		},
+		TransactFunc: &ExecutorSecretAccessLogStoreTransactFunc{
+			defaultHook: func(context.Context) (ExecutorSecretAccessLogStore, error) {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.Transact")
+			},
+		},
+		WithFunc: &ExecutorSecretAccessLogStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) ExecutorSecretAccessLogStore {
+				panic("unexpected invocation of MockExecutorSecretAccessLogStore.With")
+			},
+		},
+	}
+}
+
+// NewMockExecutorSecretAccessLogStoreFrom creates a new mock of the
+// MockExecutorSecretAccessLogStore interface. All methods delegate to the
+// given implementation, unless overwritten.
+func NewMockExecutorSecretAccessLogStoreFrom(i ExecutorSecretAccessLogStore) *MockExecutorSecretAccessLogStore {
+	return &MockExecutorSecretAccessLogStore{
+		CountFunc: &ExecutorSecretAccessLogStoreCountFunc{
+			defaultHook: i.Count,
+		},
+		CreateFunc: &ExecutorSecretAccessLogStoreCreateFunc{
+			defaultHook: i.Create,
+		},
+		GetByIDFunc: &ExecutorSecretAccessLogStoreGetByIDFunc{
+			defaultHook: i.GetByID,
+		},
+		HandleFunc: &ExecutorSecretAccessLogStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListFunc: &ExecutorSecretAccessLogStoreListFunc{
+			defaultHook: i.List,
+		},
+		TransactFunc: &ExecutorSecretAccessLogStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		WithFunc: &ExecutorSecretAccessLogStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// ExecutorSecretAccessLogStoreCountFunc describes the behavior when the
+// Count method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreCountFunc struct {
+	defaultHook func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error)
+	hooks       []func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error)
+	history     []ExecutorSecretAccessLogStoreCountFuncCall
+	mutex       sync.Mutex
+}
+
+// Count delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) Count(v0 context.Context, v1 ExecutorSecretAccessLogsListOpts) (int, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(ExecutorSecretAccessLogStoreCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Count method of the
+// parent MockExecutorSecretAccessLogStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretAccessLogStoreCountFunc) SetDefaultHook(hook func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Count method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreCountFunc) PushHook(hook func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreCountFunc) nextHook() func(context.Context, ExecutorSecretAccessLogsListOpts) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreCountFunc) appendCall(r0 ExecutorSecretAccessLogStoreCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreCountFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreCountFunc) History() []ExecutorSecretAccessLogStoreCountFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreCountFuncCall is an object that describes an
+// invocation of method Count on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExecutorSecretAccessLogsListOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorSecretAccessLogStoreCreateFunc describes the behavior when the
+// Create method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreCreateFunc struct {
+	defaultHook func(context.Context, *ExecutorSecretAccessLog) error
+	hooks       []func(context.Context, *ExecutorSecretAccessLog) error
+	history     []ExecutorSecretAccessLogStoreCreateFuncCall
+	mutex       sync.Mutex
+}
+
+// Create delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) Create(v0 context.Context, v1 *ExecutorSecretAccessLog) error {
+	r0 := m.CreateFunc.nextHook()(v0, v1)
+	m.CreateFunc.appendCall(ExecutorSecretAccessLogStoreCreateFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Create method of the
+// parent MockExecutorSecretAccessLogStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretAccessLogStoreCreateFunc) SetDefaultHook(hook func(context.Context, *ExecutorSecretAccessLog) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Create method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreCreateFunc) PushHook(hook func(context.Context, *ExecutorSecretAccessLog) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreCreateFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *ExecutorSecretAccessLog) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreCreateFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *ExecutorSecretAccessLog) error {
+		return r0
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreCreateFunc) nextHook() func(context.Context, *ExecutorSecretAccessLog) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreCreateFunc) appendCall(r0 ExecutorSecretAccessLogStoreCreateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreCreateFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreCreateFunc) History() []ExecutorSecretAccessLogStoreCreateFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreCreateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreCreateFuncCall is an object that describes an
+// invocation of method Create on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreCreateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *ExecutorSecretAccessLog
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreCreateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreCreateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorSecretAccessLogStoreGetByIDFunc describes the behavior when the
+// GetByID method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreGetByIDFunc struct {
+	defaultHook func(context.Context, int64) (*ExecutorSecretAccessLog, error)
+	hooks       []func(context.Context, int64) (*ExecutorSecretAccessLog, error)
+	history     []ExecutorSecretAccessLogStoreGetByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByID delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) GetByID(v0 context.Context, v1 int64) (*ExecutorSecretAccessLog, error) {
+	r0, r1 := m.GetByIDFunc.nextHook()(v0, v1)
+	m.GetByIDFunc.appendCall(ExecutorSecretAccessLogStoreGetByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByID method of
+// the parent MockExecutorSecretAccessLogStore instance is invoked and the
+// hook queue is empty.
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int64) (*ExecutorSecretAccessLog, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByID method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) PushHook(hook func(context.Context, int64) (*ExecutorSecretAccessLog, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) SetDefaultReturn(r0 *ExecutorSecretAccessLog, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*ExecutorSecretAccessLog, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) PushReturn(r0 *ExecutorSecretAccessLog, r1 error) {
+	f.PushHook(func(context.Context, int64) (*ExecutorSecretAccessLog, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) nextHook() func(context.Context, int64) (*ExecutorSecretAccessLog, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) appendCall(r0 ExecutorSecretAccessLogStoreGetByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreGetByIDFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreGetByIDFunc) History() []ExecutorSecretAccessLogStoreGetByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreGetByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreGetByIDFuncCall is an object that describes
+// an invocation of method GetByID on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreGetByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *ExecutorSecretAccessLog
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreGetByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreGetByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorSecretAccessLogStoreHandleFunc describes the behavior when the
+// Handle method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []ExecutorSecretAccessLogStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(ExecutorSecretAccessLogStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockExecutorSecretAccessLogStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretAccessLogStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreHandleFunc) appendCall(r0 ExecutorSecretAccessLogStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreHandleFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreHandleFunc) History() []ExecutorSecretAccessLogStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreHandleFuncCall is an object that describes an
+// invocation of method Handle on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExecutorSecretAccessLogStoreListFunc describes the behavior when the List
+// method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreListFunc struct {
+	defaultHook func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error)
+	hooks       []func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error)
+	history     []ExecutorSecretAccessLogStoreListFuncCall
+	mutex       sync.Mutex
+}
+
+// List delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) List(v0 context.Context, v1 ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
+	r0, r1, r2 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(ExecutorSecretAccessLogStoreListFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the List method of the
+// parent MockExecutorSecretAccessLogStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretAccessLogStoreListFunc) SetDefaultHook(hook func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// List method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreListFunc) PushHook(hook func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreListFunc) SetDefaultReturn(r0 []*ExecutorSecretAccessLog, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreListFunc) PushReturn(r0 []*ExecutorSecretAccessLog, r1 int, r2 error) {
+	f.PushHook(func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreListFunc) nextHook() func(context.Context, ExecutorSecretAccessLogsListOpts) ([]*ExecutorSecretAccessLog, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreListFunc) appendCall(r0 ExecutorSecretAccessLogStoreListFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreListFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreListFunc) History() []ExecutorSecretAccessLogStoreListFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreListFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreListFuncCall is an object that describes an
+// invocation of method List on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreListFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExecutorSecretAccessLogsListOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*ExecutorSecretAccessLog
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreListFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ExecutorSecretAccessLogStoreTransactFunc describes the behavior when the
+// Transact method of the parent MockExecutorSecretAccessLogStore instance
+// is invoked.
+type ExecutorSecretAccessLogStoreTransactFunc struct {
+	defaultHook func(context.Context) (ExecutorSecretAccessLogStore, error)
+	hooks       []func(context.Context) (ExecutorSecretAccessLogStore, error)
+	history     []ExecutorSecretAccessLogStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) Transact(v0 context.Context) (ExecutorSecretAccessLogStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(ExecutorSecretAccessLogStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockExecutorSecretAccessLogStore instance is invoked and the
+// hook queue is empty.
+func (f *ExecutorSecretAccessLogStoreTransactFunc) SetDefaultHook(hook func(context.Context) (ExecutorSecretAccessLogStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreTransactFunc) PushHook(hook func(context.Context) (ExecutorSecretAccessLogStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreTransactFunc) SetDefaultReturn(r0 ExecutorSecretAccessLogStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (ExecutorSecretAccessLogStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreTransactFunc) PushReturn(r0 ExecutorSecretAccessLogStore, r1 error) {
+	f.PushHook(func(context.Context) (ExecutorSecretAccessLogStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreTransactFunc) nextHook() func(context.Context) (ExecutorSecretAccessLogStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreTransactFunc) appendCall(r0 ExecutorSecretAccessLogStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExecutorSecretAccessLogStoreTransactFuncCall objects describing the
+// invocations of this function.
+func (f *ExecutorSecretAccessLogStoreTransactFunc) History() []ExecutorSecretAccessLogStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreTransactFuncCall is an object that describes
+// an invocation of method Transact on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorSecretAccessLogStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorSecretAccessLogStoreWithFunc describes the behavior when the With
+// method of the parent MockExecutorSecretAccessLogStore instance is
+// invoked.
+type ExecutorSecretAccessLogStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) ExecutorSecretAccessLogStore
+	hooks       []func(basestore.ShareableStore) ExecutorSecretAccessLogStore
+	history     []ExecutorSecretAccessLogStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockExecutorSecretAccessLogStore) With(v0 basestore.ShareableStore) ExecutorSecretAccessLogStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(ExecutorSecretAccessLogStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockExecutorSecretAccessLogStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorSecretAccessLogStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) ExecutorSecretAccessLogStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockExecutorSecretAccessLogStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorSecretAccessLogStoreWithFunc) PushHook(hook func(basestore.ShareableStore) ExecutorSecretAccessLogStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExecutorSecretAccessLogStoreWithFunc) SetDefaultReturn(r0 ExecutorSecretAccessLogStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) ExecutorSecretAccessLogStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExecutorSecretAccessLogStoreWithFunc) PushReturn(r0 ExecutorSecretAccessLogStore) {
+	f.PushHook(func(basestore.ShareableStore) ExecutorSecretAccessLogStore {
+		return r0
+	})
+}
+
+func (f *ExecutorSecretAccessLogStoreWithFunc) nextHook() func(basestore.ShareableStore) ExecutorSecretAccessLogStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorSecretAccessLogStoreWithFunc) appendCall(r0 ExecutorSecretAccessLogStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorSecretAccessLogStoreWithFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorSecretAccessLogStoreWithFunc) History() []ExecutorSecretAccessLogStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorSecretAccessLogStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorSecretAccessLogStoreWithFuncCall is an object that describes an
+// invocation of method With on an instance of
+// MockExecutorSecretAccessLogStore.
+type ExecutorSecretAccessLogStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ExecutorSecretAccessLogStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorSecretAccessLogStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

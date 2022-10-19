@@ -54,6 +54,7 @@ type DB interface {
 	RepoStatistics() RepoStatisticsStore
 	Executors() ExecutorStore
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
+	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -234,4 +235,8 @@ func (d *db) Executors() ExecutorStore {
 
 func (d *db) ExecutorSecrets(key encryption.Key) ExecutorSecretStore {
 	return ExecutorSecretsWith(d.logger, d.Store, key)
+}
+
+func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
+	return ExecutorSecretAccessLogsWith(d.Store)
 }

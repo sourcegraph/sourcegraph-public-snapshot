@@ -1828,6 +1828,23 @@ CREATE SEQUENCE executor_heartbeats_id_seq
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 
+CREATE TABLE executor_secret_access_logs (
+    id integer NOT NULL,
+    executor_secret_id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE executor_secret_access_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secret_access_logs_id_seq OWNED BY executor_secret_access_logs.id;
+
 CREATE TABLE executor_secrets (
     id integer NOT NULL,
     key text NOT NULL,
@@ -3699,6 +3716,8 @@ ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('ev
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
+ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval('executor_secret_access_logs_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
@@ -3910,6 +3929,9 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
@@ -4702,6 +4724,12 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY executor_secrets
     ADD CONSTRAINT executor_secrets_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;

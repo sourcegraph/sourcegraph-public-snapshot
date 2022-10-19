@@ -71,18 +71,14 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	// And build the env vars from the secrets.
 	secretEnvVars := make([]string, len(secrets))
 	redactedEnvVars := make(map[string]string, len(secrets))
+	esalStore := s.DatabaseDB().ExecutorSecretAccessLogs()
 	for i, secret := range secrets {
-		// TODO: Create audit log entry.
-
-		val, err := secret.EncryptedValue.Decrypt(ctx)
+		// Get the secret value. This created an access log entry in the name of the user.
+		val, err := secret.Value(userCtx, esalStore)
 		if err != nil {
 			return apiclient.Job{}, err
 		}
-		ev, err := secret.EnvVar(ctx)
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-		secretEnvVars[i] = ev
+		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
 		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
 	}
 
@@ -94,10 +90,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
-
-	// TODO: For now, until we can figure out which secrets are actually required:
-	// Load all global secrets and all secrets for the namespace this batch spec
-	// lives in, then overlay these, with org having higher precedence.
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		Repository: batcheslib.WorkspaceRepo{

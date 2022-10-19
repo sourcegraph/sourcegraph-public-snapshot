@@ -1689,6 +1689,8 @@ type ExecutorSecret implements Node {
     The date and time this secret has been last updated.
     """
     updatedAt: DateTime!
+
+    accessLogs(first: Int = 50, after: String): ExecutorSecretAccessLogConnection!
 }
 
 """
@@ -1709,6 +1711,33 @@ type ExecutorSecretConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
+}
+
+"""
+A list of executor secret access logs.
+"""
+type ExecutorSecretAccessLogConnection {
+    """
+    A list of access logs.
+    """
+    nodes: [ExecutorSecretAccessLog!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+type ExecutorSecretAccessLog implements Node {
+    id: ID!
+    executorSecret: ExecutorSecret!
+    user: User!
+    createdAt: DateTime!
 }
 
 extend type Query {

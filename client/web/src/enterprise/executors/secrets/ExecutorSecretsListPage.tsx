@@ -131,7 +131,7 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
                 <ConnectionContainer className="mb-3">
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="Code hosts">
+                    <ConnectionList as="ul" className="list-group" aria-label="Executor secrets">
                         {connection?.nodes?.map(node => (
                             <ExecutorSecretNode key={node.id} node={node} refetchAll={refetchAll} />
                         ))}
@@ -143,8 +143,8 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
                                 first={15}
                                 centered={true}
                                 connection={connection}
-                                noun="code host"
-                                pluralNoun="code hosts"
+                                noun="executor secret"
+                                pluralNoun="executor secrets"
                                 hasNextPage={hasNextPage}
                             />
                             {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}

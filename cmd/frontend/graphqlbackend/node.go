@@ -290,6 +290,11 @@ func (r *NodeResolver) ToExecutorSecret() (*ExecutorSecretResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToExecutorSecretAccessLog() (*executorSecretAccessLogResolver, bool) {
+	n, ok := r.Node.(*executorSecretAccessLogResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
 	n, ok := r.Node.(*externalServiceSyncJobResolver)
 	return n, ok

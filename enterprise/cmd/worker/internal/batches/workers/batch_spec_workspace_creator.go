@@ -88,13 +88,15 @@ func (r *batchSpecWorkspaceCreator) process(
 	if err != nil {
 		return errors.Wrap(err, "fetching secrets")
 	}
+	esalStore := r.store.DatabaseDB().ExecutorSecretAccessLogs()
 	envVars := make([]string, len(secrets))
 	for i, secret := range secrets {
-		ev, err := secret.EnvVar(ctx)
+		// This will create an audit log event in the name of the initiating user.
+		val, err := secret.Value(userCtx, esalStore)
 		if err != nil {
-			return errors.Wrap(err, "getting env var for secret")
+			return errors.Wrap(err, "getting value for secret")
 		}
-		envVars[i] = ev
+		envVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
 	}
 
 	resolver := newResolver(r.store)

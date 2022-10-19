@@ -8,6 +8,7 @@ import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
 import { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
+import { SecretAccessLogsModal } from './SecretAccessLogModal'
 import { UpdateSecretModal } from './UpdateSecretModal'
 
 import styles from './ExecutorSecretNode.module.scss'
@@ -17,7 +18,7 @@ export interface ExecutorSecretNodeProps {
     refetchAll: () => void
 }
 
-type OpenModal = 'update' | 'delete'
+type OpenModal = 'update' | 'delete' | 'accessLogs'
 
 export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren<ExecutorSecretNodeProps>> = ({
     node,
@@ -35,6 +36,10 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
         event.preventDefault()
         setOpenModal('update')
     }, [])
+    const onClickAccessLogs = useCallback<React.MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenModal('accessLogs')
+    }, [])
     const closeModal = useCallback(() => {
         setOpenModal(undefined)
     }, [])
@@ -46,6 +51,7 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
 
     const headingAriaLabel = 'Secret value'
 
+    // TODO: Show creator.
     return (
         <>
             <li className={classNames(styles.ExecutorSecretNodeContainer, 'list-group-item')}>
@@ -68,6 +74,13 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         )}
                     </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
+                        <Button
+                            onClick={onClickAccessLogs}
+                            variant="link"
+                            aria-label={`View access logs for secret ${node.key}`}
+                        >
+                            Access logs
+                        </Button>
                         <Button
                             onClick={onClickUpdate}
                             variant="link"
@@ -93,6 +106,7 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
             {openModal === 'update' && (
                 <UpdateSecretModal onCancel={closeModal} afterUpdate={afterAction} secret={node} />
             )}
+            {openModal === 'accessLogs' && <SecretAccessLogsModal onCancel={closeModal} secretID={node.id} />}
         </>
     )
 }

@@ -32,17 +32,20 @@ type ExecutorSecret struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	EncryptedValue *encryption.Encryptable
+	encryptedValue *encryption.Encryptable
 }
 
-// EnvVar decrypts the contained value and emits the key value pair in env var
-// notation KEY=value.
-func (e ExecutorSecret) EnvVar(ctx context.Context) (string, error) {
-	val, err := e.EncryptedValue.Decrypt(ctx)
-	if err != nil {
-		return "", err
+// Value decrypts the contained value and logs an access log event. Calling Value
+// multiple times will not require another decryption call, but will create an
+// additional access log entry.
+func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStore) (string, error) {
+	if err := s.Create(ctx, &ExecutorSecretAccessLog{
+		// user is set automatically from the context actor.
+		ExecutorSecretID: e.ID,
+	}); err != nil {
+		return "", errors.Wrap(err, "creating secret access log entry")
 	}
-	return fmt.Sprintf("%s=%s", e.Key, val), nil
+	return e.encryptedValue.Decrypt(ctx)
 }
 
 type ExecutorSecretScope string
@@ -360,15 +363,6 @@ var executorSecretsColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 }
 
-const executorSecretsGetByScopeQueryFmtstr = `
-SELECT %s
-FROM executor_secrets
-WHERE
-	scope = %s AND
-	id = %s AND
-	%s -- authz query conds
-`
-
 const executorSecretsListQueryFmtstr = `
 SELECT %s
 FROM (
@@ -471,7 +465,7 @@ func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface 
 		return err
 	}
 
-	secret.EncryptedValue = NewEncryptedCredential(string(value), keyID, key)
+	secret.encryptedValue = NewEncryptedCredential(string(value), keyID, key)
 	return nil
 }
 

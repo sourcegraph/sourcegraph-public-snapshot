@@ -19,6 +19,9 @@ import {
     UpdateExecutorSecretVariables,
     OrgExecutorSecretsResult,
     OrgExecutorSecretsVariables,
+    ExecutorSecretAccessLogFields,
+    ExecutorSecretAccessLogsResult,
+    ExecutorSecretAccessLogsVariables,
 } from '../../../graphql-operations'
 
 const EXECUTOR_SECRET_FIELDS = gql`
@@ -210,5 +213,68 @@ export const useGlobalExecutorSecretsConnection = (
             const { executorSecrets } = dataOrThrowErrors(result)
 
             return executorSecrets
+        },
+    })
+
+export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
+    query ExecutorSecretAccessLogs($secret: ID!, $first: Int, $after: String) {
+        node(id: $secret) {
+            __typename
+            ... on ExecutorSecret {
+                accessLogs(first: $first, after: $after) {
+                    ...ExecutorSecretAccessLogConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment ExecutorSecretAccessLogConnectionFields on ExecutorSecretAccessLogConnection {
+        nodes {
+            ...ExecutorSecretAccessLogFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+
+    fragment ExecutorSecretAccessLogFields on ExecutorSecretAccessLog {
+        id
+        user {
+            id
+            email
+            username
+            displayName
+            url
+        }
+        createdAt
+    }
+`
+
+export const useExecutorSecretAccessLogsConnection = (
+    secret: Scalars['ID']
+): UseConnectionResult<ExecutorSecretAccessLogFields> =>
+    useConnection<ExecutorSecretAccessLogsResult, ExecutorSecretAccessLogsVariables, ExecutorSecretAccessLogFields>({
+        query: EXECUTOR_SECRET_ACCESS_LOGS,
+        variables: {
+            secret,
+            after: null,
+            first: 15,
+        },
+        options: {
+            fetchPolicy: 'no-cache',
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
+            if (!node) {
+                throw new Error('Secret not found')
+            }
+            if (node.__typename !== 'ExecutorSecret') {
+                throw new Error(`Node is a ${node.__typename}, not an ExecutorSecret`)
+            }
+
+            return node.accessLogs
         },
     })
