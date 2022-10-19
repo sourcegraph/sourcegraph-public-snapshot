@@ -66,7 +66,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
 	require.NoError(t, err)
 
-	dequeue, found, err := monitor.inProgressStore.Dequeue(ctx, "test", nil)
+	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
 		workerStore:    monitor.newBackfillStore,
 		backfillStore:  bfs,
@@ -77,7 +77,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
 
-	dequeue, found, err = monitor.inProgressStore.Dequeue(ctx, "test", nil)
+	_, found, err := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if found {
 		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
