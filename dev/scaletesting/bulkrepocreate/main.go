@@ -104,11 +104,13 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		writeSuccess(out, "generated jobs in %s", cfg.resume)
 	} else {
-		writeSuccess(out, "resuming work from %s", cfg.resume)
+		writeSuccess(out, "resuming jobs from %s", cfg.resume)
 	}
 
 	if _, _, err := gh.Organizations.Get(ctx, cfg.githubOrg); err != nil {
+		writeFailure(out, "organization does not exists")
 		log.Fatal(err)
 	}
 
