@@ -407,8 +407,6 @@ func headerXRequestedWithMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 
 		handler(w, r)
 	})
-
-	return nil
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
