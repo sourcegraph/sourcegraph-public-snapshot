@@ -60,6 +60,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         initialAccessToken ? { Authorization: `token ${initialAccessToken}`, ...customHeaders } : {},
         getProxyAgent()
     )
+
     // For search panel webview to signal that it is ready for messages.
     // Replay subject with large buffer size just in case panels are opened in quick succession.
     const initializedPanelIDs = new ReplaySubject<string>(7)
