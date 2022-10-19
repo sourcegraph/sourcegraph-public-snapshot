@@ -27,6 +27,9 @@ export function getProxyAgent(): HttpsProxyAgentInterface | undefined {
         // Can't use dynamic imports here because this function is called from extension.ts:activate()
         // which is a sync context, so this can't be async either.
         const ProxyAgent = proxyProtocol === 'http' ? HttpProxyAgent : HttpsProxyAgent
+        if (!ProxyAgent) {
+            return undefined // This is in case we're in the browser and webpack points to browser-fakes/proxy-agent.ts
+        }
         return new ((ProxyAgent as unknown) as HttpsProxyAgentConstructor)({
             ...(proxyProtocol ? { port: proxyProtocol } : null),
             ...(proxyHost ? { port: proxyHost } : null),
