@@ -2,6 +2,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { fetchCache } from '@sourcegraph/common'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -122,6 +123,17 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
             username
         }
         originalInput
+        files {
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+            nodes {
+                id
+                name
+            }
+        }
     }
 `
 
@@ -139,3 +151,18 @@ const BATCH_SPEC_LIST_CONNECTION_FIELDS = gql`
 
     ${BATCH_SPEC_LIST_FIELDS_FRAGMENT}
 `
+
+const fileRetrieverBaseURL = '/.api/files/batch-changes'
+
+export const retrieveFile = async (batchSpecId: string, fileId: string): Promise<string> => {
+    const url = `${fileRetrieverBaseURL}/${batchSpecId}/${fileId}`
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: new Headers({
+            ...window.context.xhrHeaders,
+            // Authorization: `token ${fileId}`
+        }),
+    })
+
+    return response.text()
+}

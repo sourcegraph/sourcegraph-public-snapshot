@@ -22,3 +22,10 @@
     min-height: 400px;
     height: 100%;
 }
+
+.file-container {
+    min-height: 400px;
+    height: 100%;
+    overflow-y: scroll;
+    padding: 0.5rem;
+}
