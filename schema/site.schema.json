@@ -1235,6 +1235,12 @@
               "description": "Capture gitserver access logs as part of the audit log.",
               "type": "boolean",
               "default": false
+            },
+            "severityLevel": {
+              "description": "Severity logging level for the audit log.",
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+              "default": "INFO"
             }
           },
           "required": ["internalTraffic", "graphQL", "gitserverAccess"],
@@ -1242,7 +1248,8 @@
             {
               "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false
+              "gitserverAccess": false,
+              "severityLevel": "INFO"
             }
           ]
         }
