@@ -2,7 +2,7 @@ import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlR
 
 import {
     GetDashboardInsightsResult,
-    GetInsightViewResult,
+    GetInsightDataResult,
     InsightsDashboardNode,
     InsightViewNode,
 } from '../../../graphql-operations'
@@ -14,7 +14,7 @@ interface MakeOverridesOptions {
     testContext: WebIntegrationTestContext
     dashboardId: string
     insightMock: InsightViewNode
-    insightViewMock?: GetInsightViewResult
+    insightViewMock?: GetInsightDataResult
     overrides?: OverrideGraphQLExtensionsProps['overrides']
 }
 
@@ -46,7 +46,7 @@ export function mockDashboardWithInsights(options: MakeOverridesOptions): void {
     }
 
     if (insightViewMock) {
-        defaultOverrides.GetInsightView = () => insightViewMock
+        defaultOverrides.GetInsightData = () => insightViewMock
     }
 
     overrideInsightsGraphQLApi({

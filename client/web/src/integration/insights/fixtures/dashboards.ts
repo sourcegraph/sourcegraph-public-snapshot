@@ -3,7 +3,7 @@ import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlR
 
 import {
     GetDashboardInsightsResult,
-    GetInsightViewResult,
+    GetInsightDataResult,
     InsightsDashboardNode,
     InsightsDashboardsResult,
     InsightViewNode,
@@ -396,7 +396,7 @@ export const INSIGHTS_DASHBOARDS: InsightsDashboardsResult = {
     },
 }
 
-export const GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT: GetInsightViewResult = {
+export const GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT: GetInsightDataResult = {
     insightViews: {
         nodes: [
             {
@@ -879,7 +879,7 @@ export const GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT: GetInsightViewResult = {
     },
 }
 
-export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
+export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightDataResult = {
     insightViews: {
         nodes: [
             {
@@ -948,7 +948,7 @@ export const GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT: GetInsightViewResult = {
     },
 }
 
-export const GET_INSIGHT_VIEW_COMPUTE_INSIGHT: GetInsightViewResult = {
+export const GET_INSIGHT_VIEW_COMPUTE_INSIGHT: GetInsightDataResult = {
     insightViews: {
         nodes: [
             {

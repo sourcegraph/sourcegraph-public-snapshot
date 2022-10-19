@@ -5,7 +5,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Series } from '@sourcegraph/wildcard'
 
 import {
-    GetInsightViewResult,
+    GetInsightDataResult,
     InsightDataNode,
     InsightDataSeries,
     SearchPatternType,
@@ -38,7 +38,7 @@ export function insightPollingInterval(insight: BackendInsight): number {
  */
 export const parseBackendInsightResponse = (
     insight: BackendInsight,
-    response?: GetInsightViewResult
+    response?: GetInsightDataResult
 ): BackendInsightDTO | null => {
     if (!response) {
         return null
@@ -74,7 +74,7 @@ export const parseBackendInsightResponse = (
     }
 }
 
-function getInsightData(insightData: GetInsightViewResult): InsightDataNode {
+function getInsightData(insightData: GetInsightDataResult): InsightDataNode {
     // It's safe to get a first element of insightViews because in case of GET_INSIGHT_DATA query
     // we specifically query insight by insight ID, it should be exactly one insight
     return insightData.insightViews.nodes[0]
