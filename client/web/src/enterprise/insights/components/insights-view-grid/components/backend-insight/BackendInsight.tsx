@@ -3,19 +3,14 @@ import { forwardRef, HTMLAttributes, ReactNode, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import {
-    GetInsightDataResult,
-    GetInsightDataVariables,
-} from '../../../../../../graphql-operations'
+import { GetInsightDataResult, GetInsightDataVariables, } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { BackendInsight, InsightFilters } from '../../../../core'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
-import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
 
@@ -109,43 +104,31 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         setFilters(filters)
     }
 
-    async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
-        try {
-            await onUpdateInsight({
-                ...insight,
-                filters,
-                seriesDisplayOptions: {
-                    limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-                    sortOptions: filters.seriesDisplayOptions.sortOptions,
-                }
-            })
+    async function handleFilterSave(filters: InsightFilters): Promise<void> {
+        await onUpdateInsight({
+            ...insight,
+            filters,
+            seriesDisplayOptions: {
+                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
+                sortOptions: filters.seriesDisplayOptions.sortOptions,
+            }
+        })
 
-            setIsFiltersOpen(false)
-            setOriginalInsightFilters(filters)
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        setIsFiltersOpen(false)
+        setOriginalInsightFilters(filters)
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
     }
 
-    const handleInsightFilterCreation = async (values: FiltersCreationFormValues): Promise<SubmissionErrors> => {
-        try {
-            await onCreateInsight({
-                ...insight,
-                title: values.insightName,
-                filters,
-            })
+    const handleInsightFilterCreation = async (values: FiltersCreationFormValues): Promise<void> => {
+        await onCreateInsight({
+            ...insight,
+            title: values.insightName,
+            filters,
+        })
 
-            setIsFiltersOpen(false)
-            setOriginalInsightFilters(filters)
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        setIsFiltersOpen(false)
+        setOriginalInsightFilters(filters)
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
