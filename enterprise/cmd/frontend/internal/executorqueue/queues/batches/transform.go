@@ -72,12 +72,17 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	secretEnvVars := make([]string, len(secrets))
 	redactedEnvVars := make(map[string]string, len(secrets))
 	for i, secret := range secrets {
+		// TODO: Create audit log entry.
+
 		val, err := secret.EncryptedValue.Decrypt(ctx)
 		if err != nil {
 			return apiclient.Job{}, err
 		}
-		// TODO: Create audit log entry.
-		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		ev, err := secret.EnvVar(ctx)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		secretEnvVars[i] = ev
 		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
 	}
 

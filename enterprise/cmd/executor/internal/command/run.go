@@ -121,11 +121,9 @@ func prepCommand(ctx context.Context, command command) (cmd *exec.Cmd, stdout, s
 	cmd.Dir = command.Dir
 
 	env := command.Env
-	fmt.Printf("ENV VARS ARE SET!! %+v\n", env)
 	for _, k := range forwardedHostEnvVars {
 		env = append(env, fmt.Sprintf("%s=%s", k, os.Getenv(k)))
 	}
-	fmt.Printf("ENV VARS ARE SET!! %+v\n", env)
 	cmd.Env = env
 
 	stdout, err = cmd.StdoutPipe()

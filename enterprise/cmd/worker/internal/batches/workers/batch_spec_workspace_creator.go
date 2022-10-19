@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -73,8 +74,30 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	resolver := newResolver(r.store)
+	// Next, we fetch all secrets that are requested for the execution.
+	// Use a user context here, so that only secrets are returned that the user may see at this point in time.
+	// This is also important further down so that only workspaces visible to this
+	// user are resolved.
 	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
+	esStore := r.store.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	secrets, _, err := esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		NamespaceUserID: spec.NamespaceUserID,
+		NamespaceOrgID:  spec.NamespaceOrgID,
+		Keys:            requiredSecrets(spec.Spec),
+	})
+	if err != nil {
+		return errors.Wrap(err, "fetching secrets")
+	}
+	envVars := make([]string, len(secrets))
+	for i, secret := range secrets {
+		ev, err := secret.EnvVar(ctx)
+		if err != nil {
+			return errors.Wrap(err, "getting env var for secret")
+		}
+		envVars[i] = ev
+	}
+
+	resolver := newResolver(r.store)
 	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
 	if err != nil {
 		return err
@@ -150,6 +173,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				},
 				repo,
 				w.Path,
+				envVars,
 				w.OnlyFetchWorkspace,
 				spec.Spec.Steps,
 				i,
@@ -158,7 +182,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 			rawStepKey, err := key.Key()
 			if err != nil {
-				return nil
+				return err
 			}
 
 			stepCacheKeys = append(stepCacheKeys, stepCacheKey{index: i, key: rawStepKey})
@@ -386,4 +410,20 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 		cs = append(cs, changesetSpec)
 	}
 	return cs, nil
+}
+
+// requiredSecrets inspects all steps for env vars used and compiles a deduplicated
+// list from those.
+func requiredSecrets(spec *batcheslib.BatchSpec) []string {
+	requiredSecretsMap := map[string]struct{}{}
+	requiredSecrets := []string{}
+	for _, step := range spec.Steps {
+		for _, v := range step.Env.OuterVars() {
+			if _, ok := requiredSecretsMap[v]; !ok {
+				requiredSecretsMap[v] = struct{}{}
+				requiredSecrets = append(requiredSecrets, v)
+			}
+		}
+	}
+	return requiredSecrets
 }

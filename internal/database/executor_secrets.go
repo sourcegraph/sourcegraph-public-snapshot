@@ -35,6 +35,16 @@ type ExecutorSecret struct {
 	EncryptedValue *encryption.Encryptable
 }
 
+// EnvVar decrypts the contained value and emits the key value pair in env var
+// notation KEY=value.
+func (e ExecutorSecret) EnvVar(ctx context.Context) (string, error) {
+	val, err := e.EncryptedValue.Decrypt(ctx)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s=%s", e.Key, val), nil
+}
+
 type ExecutorSecretScope string
 
 const (
@@ -556,6 +566,9 @@ const executorSecretsAuthzQueryCondsFmtstr = `
 `
 
 func encryptExecutorSecret(ctx context.Context, key encryption.Key, raw string) ([]byte, string, error) {
+	if len(raw) == 0 {
+		return nil, "", errors.New("got empty secret")
+	}
 	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
 	return []byte(data), keyID, err
 }
