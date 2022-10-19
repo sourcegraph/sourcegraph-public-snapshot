@@ -54,6 +54,8 @@ const (
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	UI = "ui"
+
+	Webhooks = "webhooks"
 )
 
 // Router returns the frontend app router.
@@ -105,6 +107,8 @@ func newRouter() *mux.Router {
 
 	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
 	base.Path("/setup/github/app").Methods("GET").Name(SetupGitHubApp)
+
+	base.Path("/webhooks/{webhook_uuid}").Methods("POST").Name(Webhooks)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

@@ -45,6 +45,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	// get external service and validate webhook payload signature
 	extSvc, err := h.getExternalService(r, body)
@@ -56,13 +57,17 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	SetExternalServiceID(r.Context(), extSvc.ID)
 
+	h.HandleEvent(extSvc, w, r, body)
+}
+
+func (h *GitHubWebhook) HandleEvent(extSvc *types.ExternalService, w http.ResponseWriter, r *http.Request, requestBody []byte) {
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
 	// parse event
 	eventType := gh.WebHookType(r)
-	e, err := gh.ParseWebHook(eventType, body)
+	e, err := gh.ParseWebHook(eventType, requestBody)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
