@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kballard/go-shellquote"
+
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,7 +30,7 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Image:    index.Indexer,
-			Commands: append(index.LocalSteps, strings.Join(index.IndexerArgs, " ")),
+			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
 			Dir:      index.Root,
 			Env:      nil,
 		})
