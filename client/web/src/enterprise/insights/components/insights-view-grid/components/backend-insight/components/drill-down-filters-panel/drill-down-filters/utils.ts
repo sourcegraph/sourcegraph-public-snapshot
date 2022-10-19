@@ -4,25 +4,17 @@ import {
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../../../../../../graphql-operations'
-import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../../../constants'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
-import { Validator } from '../../../../../../form'
 
 import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'
 
-export const validRegexp: Validator<string> = (value = '') => {
-    if (value.trim() === '') {
-        return
-    }
-
-    try {
-        new RegExp(value)
-
-        return
-    } catch {
-        return 'Must be a valid regular expression string'
-    }
+const DEFAULT_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptionsInputRequired = {
+    limit: 20,
+    sortOptions: {
+        direction: SeriesSortDirection.DESC,
+        mode: SeriesSortMode.RESULT_COUNT,
+    },
 }
 
 interface InsightRepositoriesFilter {
@@ -87,7 +79,7 @@ export const parseSeriesDisplayOptions = (
     options?: SeriesDisplayOptions | SeriesDisplayOptionsInput | DrillDownFiltersFormValues['seriesDisplayOptions']
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
-        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: MAX_NUMBER_OF_SERIES }
+        return DEFAULT_SERIES_DISPLAY_OPTIONS
     }
 
     const limit = parseSeriesLimit(options?.limit) || MAX_NUMBER_OF_SERIES
