@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -39,16 +40,38 @@ const (
 	ExecutorSecretScopeBatches = "batches"
 )
 
+// ExecutorSecretNotFoundErr is returned when a secret cannot be found.
+type ExecutorSecretNotFoundErr struct {
+	id int64
+}
+
+func (err ExecutorSecretNotFoundErr) Error() string {
+	return fmt.Sprintf("executor secret not found: id=%d", err.id)
+}
+
+func (ExecutorSecretNotFoundErr) NotFound() bool {
+	return true
+}
+
+// ExecutorSecretStore provides access to the `executor_secrets` table.
 type ExecutorSecretStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) ExecutorSecretStore
 	Transact(context.Context) (ExecutorSecretStore, error)
 
+	// Create inserts the given ExecutorSecret into the database.
 	Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
+	// Update updates a secret in the database. If the secret cannot be found,
+	// an error is returned.
 	Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
+	// Delete deletes the given executor secret.
 	Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error
+	// GetByID returns the executor secret matching the given ID, or
+	// ExecutorSecretNotFoundErr if no such secret exists.
 	GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error)
+	// List returns all secrets matching the given options.
 	List(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error)
+	// Count counts all secrets matching the given options.
 	Count(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) (int, error)
 }
 
@@ -95,7 +118,6 @@ func (opts *ExecutorSecretsListOpts) limitSQL() *sqlf.Query {
 	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
-// executorSecretStore provides access to the `executor_secrets` table.
 type executorSecretStore struct {
 	logger log.Logger
 	*basestore.Store
@@ -128,7 +150,6 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
-// Create inserts the given ExecutorSecret into the database.
 func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
@@ -165,8 +186,6 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 	return nil
 }
 
-// Update updates a secret in the database. If the secret cannot be found,
-// an error is returned.
 func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
@@ -203,9 +222,6 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 	return nil
 }
 
-// Delete deletes the given user credential. Note that there is no concept of a
-// soft delete with user credentials: once deleted, the relevant records are
-// _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
@@ -221,14 +237,12 @@ func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretSc
 	if rows, err := res.RowsAffected(); err != nil {
 		return err
 	} else if rows == 0 {
-		return UserCredentialNotFoundErr{args: []any{id}}
+		return ExecutorSecretNotFoundErr{id: id}
 	}
 
 	return nil
 }
 
-// GetByID returns the user credential matching the given ID, or
-// UserCredentialNotFoundErr if no such credential exists.
 func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
@@ -245,7 +259,7 @@ func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretS
 	secret := ExecutorSecret{}
 	row := s.QueryRow(ctx, q)
 	if err := scanExecutorSecret(&secret, s.key, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []any{id}}
+		return nil, ExecutorSecretNotFoundErr{id: id}
 	} else if err != nil {
 		return nil, err
 	}
@@ -253,7 +267,6 @@ func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretS
 	return &secret, nil
 }
 
-// List returns all secrets matching the given options.
 func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
 	conds, err := opts.sqlConds(ctx)
 	if err != nil {
@@ -294,7 +307,6 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 	return secrets, next, nil
 }
 
-// Count counts all secrets matching the given options.
 func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) (int, error) {
 	conds, err := opts.sqlConds(ctx)
 	if err != nil {
