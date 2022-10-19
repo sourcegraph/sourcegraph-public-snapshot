@@ -20,7 +20,7 @@ import (
 
 // newBackfillHandler - Handles backfill that are in the "new" state
 // The new state is the initial state post creation of a series.  This handler is responsible only for determining the work
-// that needs to be completed to backfill this series.  It then requeues the backfill record to perform the acutal backfill work.
+// that needs to be completed to backfill this series.  It then requeues the backfill record into "processing" to perform the actual backfill work.
 type newBackfillHandler struct {
 	workerStore   dbworkerstore.Store
 	backfillStore *BackfillStore
