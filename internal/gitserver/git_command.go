@@ -63,8 +63,7 @@ type GitCommand interface {
 // This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
 // local system.
 type LocalGitCommand struct {
-	Logger  log.Logger
-	command *exec.Cmd
+	Logger log.Logger
 
 	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
 	// Unlike RemoteGitCommand, which is run against server who knows the directory where repos are located, LocalGitCommand is
@@ -79,10 +78,9 @@ type LocalGitCommand struct {
 func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 	args := append([]string{git}, arg...)
 	return &LocalGitCommand{
-		command: exec.Command(git, arg...), // no need for including "git" in args here
-		repo:    repo,
-		args:    args,
-		Logger:  log.Scoped("local", "local git command logger"),
+		repo:   repo,
+		args:   args,
+		Logger: log.Scoped("local", "local git command logger"),
 	}
 }
 
@@ -93,7 +91,6 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 		l.Logger.Error(NoReposDirErrorMsg)
 		return nil, nil, errors.New(NoReposDirErrorMsg)
 	}
-	// cmd is a version of the command in LocalGitCommand with given context
 	cmd := exec.CommandContext(ctx, git, l.Args()[1:]...) // stripping "git" itself
 	var stderrBuf bytes.Buffer
 	var stdoutBuf bytes.Buffer
