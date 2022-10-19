@@ -1,0 +1,7 @@
+genrule(
+    name = "rule1",
+    srcs = [],
+    outs = ["out.txt"],
+    cmd = "$(location build.sh) > $@",
+    tools = ["build.sh"],
+)

@@ -1,0 +1,3 @@
+build --remote_cache=https://storage.googleapis.com/sourcegraph_bazel_cache
+
+build --google_default_credentials
