@@ -61,7 +61,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
 	})
 
-	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
 		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
