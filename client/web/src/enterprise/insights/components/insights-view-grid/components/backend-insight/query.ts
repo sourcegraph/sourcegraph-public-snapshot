@@ -18,12 +18,6 @@ export const GET_INSIGHT_DATA = gql`
         dataSeries {
             ...InsightDataSeries
         }
-        #        status {
-        #            progress
-        #            errors {
-        #                reason
-        #            }
-        #        }
     }
 
     fragment InsightDataSeries on InsightsSeries {
@@ -36,9 +30,6 @@ export const GET_INSIGHT_DATA = gql`
         status {
             ...InsightDataSeriesStatus
         }
-        #        status2 {
-        #            ...InsightDataSeriesStatus2
-        #        }
     }
 
     fragment InsightDataSeriesStatus on InsightSeriesStatus {
@@ -47,11 +38,4 @@ export const GET_INSIGHT_DATA = gql`
         pendingJobs
         failedJobs
     }
-
-    #    fragment InsightDataSeriesStatus2 on InsightSeriesProgress {
-    #        progress
-    #        errors {
-    #            reason
-    #        }
-    #    }
 `
