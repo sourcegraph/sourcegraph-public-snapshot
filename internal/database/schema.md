@@ -1928,38 +1928,39 @@ Stores the retention policy of code intellience data for a repository.
 
 # Table "public.lsif_uploads"
 ```
-         Column         |           Type           | Collation | Nullable |                Default                 
-------------------------+--------------------------+-----------+----------+----------------------------------------
- id                     | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
- commit                 | text                     |           | not null | 
- root                   | text                     |           | not null | ''::text
- uploaded_at            | timestamp with time zone |           | not null | now()
- state                  | text                     |           | not null | 'queued'::text
- failure_message        | text                     |           |          | 
- started_at             | timestamp with time zone |           |          | 
- finished_at            | timestamp with time zone |           |          | 
- repository_id          | integer                  |           | not null | 
- indexer                | text                     |           | not null | 
- num_parts              | integer                  |           | not null | 
- uploaded_parts         | integer[]                |           | not null | 
- process_after          | timestamp with time zone |           |          | 
- num_resets             | integer                  |           | not null | 0
- upload_size            | bigint                   |           |          | 
- num_failures           | integer                  |           | not null | 0
- associated_index_id    | bigint                   |           |          | 
- committed_at           | timestamp with time zone |           |          | 
- commit_last_checked_at | timestamp with time zone |           |          | 
- worker_hostname        | text                     |           | not null | ''::text
- last_heartbeat_at      | timestamp with time zone |           |          | 
- execution_logs         | json[]                   |           |          | 
- num_references         | integer                  |           |          | 
- expired                | boolean                  |           | not null | false
- last_retention_scan_at | timestamp with time zone |           |          | 
- reference_count        | integer                  |           |          | 
- indexer_version        | text                     |           |          | 
- queued_at              | timestamp with time zone |           |          | 
- cancel                 | boolean                  |           | not null | false
- uncompressed_size      | bigint                   |           |          | 
+         Column          |           Type           | Collation | Nullable |                Default                 
+-------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                      | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
+ commit                  | text                     |           | not null | 
+ root                    | text                     |           | not null | ''::text
+ uploaded_at             | timestamp with time zone |           | not null | now()
+ state                   | text                     |           | not null | 'queued'::text
+ failure_message         | text                     |           |          | 
+ started_at              | timestamp with time zone |           |          | 
+ finished_at             | timestamp with time zone |           |          | 
+ repository_id           | integer                  |           | not null | 
+ indexer                 | text                     |           | not null | 
+ num_parts               | integer                  |           | not null | 
+ uploaded_parts          | integer[]                |           | not null | 
+ process_after           | timestamp with time zone |           |          | 
+ num_resets              | integer                  |           | not null | 0
+ upload_size             | bigint                   |           |          | 
+ num_failures            | integer                  |           | not null | 0
+ associated_index_id     | bigint                   |           |          | 
+ committed_at            | timestamp with time zone |           |          | 
+ commit_last_checked_at  | timestamp with time zone |           |          | 
+ worker_hostname         | text                     |           | not null | ''::text
+ last_heartbeat_at       | timestamp with time zone |           |          | 
+ execution_logs          | json[]                   |           |          | 
+ num_references          | integer                  |           |          | 
+ expired                 | boolean                  |           | not null | false
+ last_retention_scan_at  | timestamp with time zone |           |          | 
+ reference_count         | integer                  |           |          | 
+ indexer_version         | text                     |           |          | 
+ queued_at               | timestamp with time zone |           |          | 
+ cancel                  | boolean                  |           | not null | false
+ uncompressed_size       | bigint                   |           |          | 
+ last_referenced_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1995,6 +1996,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **indexer**: The name of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
 **indexer_version**: The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
+
+**last_referenced_scan_at**: The last time this upload was known to be referenced by another (possibly expired) index.
 
 **last_retention_scan_at**: The last time this upload was checked against data retention policies.
 

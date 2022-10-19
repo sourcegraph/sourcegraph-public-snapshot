@@ -1,11 +1,10 @@
 import { ApolloClient, gql } from '@apollo/client'
 
 import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
+import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from '../../../../constants'
 import { BackendInsightDatum, InsightPreviewSettings, SeriesChartContent } from '../../code-insights-backend-types'
-import { DATA_SERIES_COLORS_LIST, generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
+import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
-
-import { MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
 
 const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {

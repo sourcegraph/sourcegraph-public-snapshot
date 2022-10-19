@@ -1,3 +1,17 @@
+import { InsightsDashboardType, VirtualInsightsDashboard } from './core'
+
+/**
+ * Special virtual dashboard - "All Insights". This dashboard doesn't
+ * exist in settings or in BE database.
+ */
+export const ALL_INSIGHTS_DASHBOARD: VirtualInsightsDashboard = {
+    id: 'all',
+    type: InsightsDashboardType.Virtual,
+    title: 'All Insights',
+}
+
+export const MAX_NUMBER_OF_SERIES = 20
+
 export const DATA_SERIES_COLORS = {
     RED: 'var(--oc-red-7)',
     PINK: 'var(--oc-pink-7)',
@@ -13,4 +27,5 @@ export const DATA_SERIES_COLORS = {
     ORANGE: 'var(--oc-orange-7)',
 }
 
+export const DATA_SERIES_COLORS_LIST = Object.values(DATA_SERIES_COLORS)
 export const DEFAULT_DATA_SERIES_COLOR = DATA_SERIES_COLORS.GRAPE

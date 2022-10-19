@@ -19,6 +19,8 @@ import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
+import { OrgSettingsAreaRoute } from './settings/OrgSettingsArea'
+import { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage
@@ -40,6 +42,8 @@ export interface Props
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean

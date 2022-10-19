@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func main() {
@@ -35,6 +37,17 @@ func main() {
 	if err != nil {
 		os.Exit(-1)
 	}
+
+	// audit log depends on site config, but a mock is sufficient
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			AuditLog: &schema.AuditLog{
+				InternalTraffic: true,
+				GitserverAccess: true,
+				GraphQL:         true,
+				SeverityLevel:   "INFO",
+			}}}})
+	defer conf.Mock(nil)
 
 	for i := 0; i < logsCount; i++ {
 		audit.Log(ctx, logger, audit.Record{

@@ -38,10 +38,6 @@ type MockStore struct {
 	// AddUploadPartFunc is an instance of a mock function object
 	// controlling the behavior of the method AddUploadPart.
 	AddUploadPartFunc *StoreAddUploadPartFunc
-	// BackfillReferenceCountBatchFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// BackfillReferenceCountBatch.
-	BackfillReferenceCountBatchFunc *StoreBackfillReferenceCountBatchFunc
 	// DeleteOldAuditLogsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldAuditLogs.
 	DeleteOldAuditLogsFunc *StoreDeleteOldAuditLogsFunc
@@ -200,10 +196,6 @@ type MockStore struct {
 	// UpdateUploadRetentionFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateUploadRetention.
 	UpdateUploadRetentionFunc *StoreUpdateUploadRetentionFunc
-	// UpdateUploadsReferenceCountsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateUploadsReferenceCounts.
-	UpdateUploadsReferenceCountsFunc *StoreUpdateUploadsReferenceCountsFunc
 	// UpdateUploadsVisibleToCommitsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateUploadsVisibleToCommits.
@@ -219,11 +211,6 @@ func NewMockStore() *MockStore {
 	return &MockStore{
 		AddUploadPartFunc: &StoreAddUploadPartFunc{
 			defaultHook: func(context.Context, int, int) (r0 error) {
-				return
-			},
-		},
-		BackfillReferenceCountBatchFunc: &StoreBackfillReferenceCountBatchFunc{
-			defaultHook: func(context.Context, int) (r0 error) {
 				return
 			},
 		},
@@ -428,7 +415,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -467,11 +454,6 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		UpdateUploadsReferenceCountsFunc: &StoreUpdateUploadsReferenceCountsFunc{
-			defaultHook: func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (r0 int, r1 error) {
-				return
-			},
-		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) (r0 error) {
 				return
@@ -492,11 +474,6 @@ func NewStrictMockStore() *MockStore {
 		AddUploadPartFunc: &StoreAddUploadPartFunc{
 			defaultHook: func(context.Context, int, int) error {
 				panic("unexpected invocation of MockStore.AddUploadPart")
-			},
-		},
-		BackfillReferenceCountBatchFunc: &StoreBackfillReferenceCountBatchFunc{
-			defaultHook: func(context.Context, int) error {
-				panic("unexpected invocation of MockStore.BackfillReferenceCountBatch")
 			},
 		},
 		DeleteOldAuditLogsFunc: &StoreDeleteOldAuditLogsFunc{
@@ -700,7 +677,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &StoreSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (int, error) {
+			defaultHook: func(context.Context, int) (int, error) {
 				panic("unexpected invocation of MockStore.SoftDeleteExpiredUploads")
 			},
 		},
@@ -739,11 +716,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateUploadRetention")
 			},
 		},
-		UpdateUploadsReferenceCountsFunc: &StoreUpdateUploadsReferenceCountsFunc{
-			defaultHook: func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error) {
-				panic("unexpected invocation of MockStore.UpdateUploadsReferenceCounts")
-			},
-		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: func(context.Context, int, *gitdomain.CommitGraph, map[string][]gitdomain.RefDescription, time.Duration, time.Duration, int, time.Time) error {
 				panic("unexpected invocation of MockStore.UpdateUploadsVisibleToCommits")
@@ -763,9 +735,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
 		AddUploadPartFunc: &StoreAddUploadPartFunc{
 			defaultHook: i.AddUploadPart,
-		},
-		BackfillReferenceCountBatchFunc: &StoreBackfillReferenceCountBatchFunc{
-			defaultHook: i.BackfillReferenceCountBatch,
 		},
 		DeleteOldAuditLogsFunc: &StoreDeleteOldAuditLogsFunc{
 			defaultHook: i.DeleteOldAuditLogs,
@@ -911,9 +880,6 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		UpdateUploadRetentionFunc: &StoreUpdateUploadRetentionFunc{
 			defaultHook: i.UpdateUploadRetention,
 		},
-		UpdateUploadsReferenceCountsFunc: &StoreUpdateUploadsReferenceCountsFunc{
-			defaultHook: i.UpdateUploadsReferenceCounts,
-		},
 		UpdateUploadsVisibleToCommitsFunc: &StoreUpdateUploadsVisibleToCommitsFunc{
 			defaultHook: i.UpdateUploadsVisibleToCommits,
 		},
@@ -1027,114 +993,6 @@ func (c StoreAddUploadPartFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreAddUploadPartFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// StoreBackfillReferenceCountBatchFunc describes the behavior when the
-// BackfillReferenceCountBatch method of the parent MockStore instance is
-// invoked.
-type StoreBackfillReferenceCountBatchFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []StoreBackfillReferenceCountBatchFuncCall
-	mutex       sync.Mutex
-}
-
-// BackfillReferenceCountBatch delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) BackfillReferenceCountBatch(v0 context.Context, v1 int) error {
-	r0 := m.BackfillReferenceCountBatchFunc.nextHook()(v0, v1)
-	m.BackfillReferenceCountBatchFunc.appendCall(StoreBackfillReferenceCountBatchFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// BackfillReferenceCountBatch method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreBackfillReferenceCountBatchFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BackfillReferenceCountBatch method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreBackfillReferenceCountBatchFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreBackfillReferenceCountBatchFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreBackfillReferenceCountBatchFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *StoreBackfillReferenceCountBatchFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreBackfillReferenceCountBatchFunc) appendCall(r0 StoreBackfillReferenceCountBatchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreBackfillReferenceCountBatchFuncCall
-// objects describing the invocations of this function.
-func (f *StoreBackfillReferenceCountBatchFunc) History() []StoreBackfillReferenceCountBatchFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreBackfillReferenceCountBatchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreBackfillReferenceCountBatchFuncCall is an object that describes an
-// invocation of method BackfillReferenceCountBatch on an instance of
-// MockStore.
-type StoreBackfillReferenceCountBatchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreBackfillReferenceCountBatchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreBackfillReferenceCountBatchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -5645,24 +5503,24 @@ func (c StoreSetRepositoryAsDirtyFuncCall) Results() []interface{} {
 // SoftDeleteExpiredUploads method of the parent MockStore instance is
 // invoked.
 type StoreSoftDeleteExpiredUploadsFunc struct {
-	defaultHook func(context.Context) (int, error)
-	hooks       []func(context.Context) (int, error)
+	defaultHook func(context.Context, int) (int, error)
+	hooks       []func(context.Context, int) (int, error)
 	history     []StoreSoftDeleteExpiredUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // SoftDeleteExpiredUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
-	m.SoftDeleteExpiredUploadsFunc.appendCall(StoreSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
+func (m *MockStore) SoftDeleteExpiredUploads(v0 context.Context, v1 int) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0, v1)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(StoreSoftDeleteExpiredUploadsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // SoftDeleteExpiredUploads method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -5670,7 +5528,7 @@ func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Con
 // SoftDeleteExpiredUploads method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context, int) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5679,19 +5537,19 @@ func (f *StoreSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int, error) {
+	f.SetDefaultHook(func(context.Context, int) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context) (int, error) {
+	f.PushHook(func(context.Context, int) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+func (f *StoreSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context, int) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5728,6 +5586,9 @@ type StoreSoftDeleteExpiredUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -5739,7 +5600,7 @@ type StoreSoftDeleteExpiredUploadsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6512,120 +6373,6 @@ func (c StoreUpdateUploadRetentionFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateUploadRetentionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// StoreUpdateUploadsReferenceCountsFunc describes the behavior when the
-// UpdateUploadsReferenceCounts method of the parent MockStore instance is
-// invoked.
-type StoreUpdateUploadsReferenceCountsFunc struct {
-	defaultHook func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error)
-	hooks       []func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error)
-	history     []StoreUpdateUploadsReferenceCountsFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateUploadsReferenceCounts delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) UpdateUploadsReferenceCounts(v0 context.Context, v1 []int, v2 shared.DependencyReferenceCountUpdateType) (int, error) {
-	r0, r1 := m.UpdateUploadsReferenceCountsFunc.nextHook()(v0, v1, v2)
-	m.UpdateUploadsReferenceCountsFunc.appendCall(StoreUpdateUploadsReferenceCountsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateUploadsReferenceCounts method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreUpdateUploadsReferenceCountsFunc) SetDefaultHook(hook func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateUploadsReferenceCounts method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreUpdateUploadsReferenceCountsFunc) PushHook(hook func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreUpdateUploadsReferenceCountsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUpdateUploadsReferenceCountsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreUpdateUploadsReferenceCountsFunc) nextHook() func(context.Context, []int, shared.DependencyReferenceCountUpdateType) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreUpdateUploadsReferenceCountsFunc) appendCall(r0 StoreUpdateUploadsReferenceCountsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreUpdateUploadsReferenceCountsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreUpdateUploadsReferenceCountsFunc) History() []StoreUpdateUploadsReferenceCountsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreUpdateUploadsReferenceCountsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreUpdateUploadsReferenceCountsFuncCall is an object that describes an
-// invocation of method UpdateUploadsReferenceCounts on an instance of
-// MockStore.
-type StoreUpdateUploadsReferenceCountsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 shared.DependencyReferenceCountUpdateType
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreUpdateUploadsReferenceCountsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreUpdateUploadsReferenceCountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreUpdateUploadsVisibleToCommitsFunc describes the behavior when the

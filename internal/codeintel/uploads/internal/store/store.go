@@ -52,11 +52,9 @@ type Store interface {
 	GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
-	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 	SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) ([]shared.SourcedCommits, error)
 	UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) error
-	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
 	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)

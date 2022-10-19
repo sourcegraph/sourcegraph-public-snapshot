@@ -88,23 +88,6 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 	}
 }
 
-func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	var idList []string
-	if args != nil && args.Ids != nil {
-		idList = make([]string, len(*args.Ids))
-		for i, id := range *args.Ids {
-			idList[i] = string(id)
-		}
-	}
-	return &insightConnectionResolver{
-		insightsStore:        r.timeSeriesStore,
-		workerBaseStore:      r.workerBaseStore,
-		insightMetadataStore: r.insightMetadataStore,
-		ids:                  idList,
-		orgStore:             database.NewDBWith(r.logger, r.workerBaseStore).Orgs(),
-	}, nil
-}
-
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
 		baseInsightResolver: r.baseInsightResolver,

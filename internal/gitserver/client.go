@@ -614,6 +614,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
+		Stdin:          c.stdin,
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.execFn(ctx, repoName, "exec", req)

@@ -5,27 +5,23 @@ import (
 	"fmt"
 	"time"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/lib/pq"
-
-	log "github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BaseJob struct {
@@ -106,11 +102,17 @@ type BackgroundJobMonitor struct {
 	newBackfillStore    dbworkerstore.Store
 }
 
-func NewBackgroundJobMonitor(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *BackgroundJobMonitor {
+type JobMonitorConfig struct {
+	InsightsDB edb.InsightsDB
+	RepoStore  database.RepoStore
+	ObsContext *observation.Context
+}
+
+func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
 	monitor := &BackgroundJobMonitor{}
 
-	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, db, obsContext)
-	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, db, obsContext)
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, config)
+	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, config)
 
 	return monitor
 }
@@ -124,7 +126,8 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 	}
 }
 
-func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+	db := config.InsightsDB
 	backfillStore := newBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
@@ -138,7 +141,7 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
-	}, obsContext)
+	}, config.ObsContext)
 
 	task := inProgressHandler{
 		workerStore:   workerStore,
@@ -149,50 +152,13 @@ func makeInProgressWorker(ctx context.Context, db edb.InsightsDB, obsContext *ob
 		Name:        name,
 		NumHandlers: 1,
 		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(obsContext, name),
+		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
 	})
 
-	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(log.Scoped("BackfillInProgressResetter", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(obsContext, name),
-	})
-
-	return worker, resetter, workerStore
-}
-
-func makeNewBackfillWorker(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
-	backfillStore := newBackfillStore(db)
-
-	name := "backfill_new_backfill_worker"
-
-	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
-		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "insights_background_jobs",
-		ViewName:          "insights_jobs_backfill_new",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
-	}, obsContext)
-
-	task := newBackfillHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
-	}
-
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(obsContext, name),
-	})
-
-	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
-		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(obsContext, name),
+		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
 	})
 
 	return worker, resetter, workerStore
@@ -240,22 +206,8 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	return nil
 }
 
-type newBackfillHandler struct {
-	workerStore   dbworkerstore.Store
-	backfillStore *BackfillStore
-}
-
-var _ workerutil.Handler = &newBackfillHandler{}
-
-func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("newBackfillHandler called", log.Int("recordId", record.RecordID()))
-
-	// load repos
-	// estimate cost
-	// update backfill record (implies creating repo iterator)
-	// requeue
-
-	return nil
+type SeriesReader interface {
+	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
 }
 
 type Scheduler struct {

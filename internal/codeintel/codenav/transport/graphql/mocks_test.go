@@ -15,6 +15,7 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	codenav "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
@@ -827,193 +828,226 @@ func (c AutoIndexingServiceQueueRepoRevFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockGitBlobResolver is a mock implementation of the GitBlobResolver
+// MockCodeNavService is a mock implementation of the CodeNavService
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql)
 // used for unit testing.
-type MockGitBlobResolver struct {
-	// DefinitionsFunc is an instance of a mock function object controlling
-	// the behavior of the method Definitions.
-	DefinitionsFunc *GitBlobResolverDefinitionsFunc
-	// DiagnosticsFunc is an instance of a mock function object controlling
-	// the behavior of the method Diagnostics.
-	DiagnosticsFunc *GitBlobResolverDiagnosticsFunc
-	// HoverFunc is an instance of a mock function object controlling the
-	// behavior of the method Hover.
-	HoverFunc *GitBlobResolverHoverFunc
-	// ImplementationsFunc is an instance of a mock function object
-	// controlling the behavior of the method Implementations.
-	ImplementationsFunc *GitBlobResolverImplementationsFunc
-	// LSIFUploadsFunc is an instance of a mock function object controlling
-	// the behavior of the method LSIFUploads.
-	LSIFUploadsFunc *GitBlobResolverLSIFUploadsFunc
-	// RangesFunc is an instance of a mock function object controlling the
-	// behavior of the method Ranges.
-	RangesFunc *GitBlobResolverRangesFunc
-	// ReferencesFunc is an instance of a mock function object controlling
-	// the behavior of the method References.
-	ReferencesFunc *GitBlobResolverReferencesFunc
-	// StencilFunc is an instance of a mock function object controlling the
-	// behavior of the method Stencil.
-	StencilFunc *GitBlobResolverStencilFunc
+type MockCodeNavService struct {
+	// GetClosestDumpsForBlobFunc is an instance of a mock function object
+	// controlling the behavior of the method GetClosestDumpsForBlob.
+	GetClosestDumpsForBlobFunc *CodeNavServiceGetClosestDumpsForBlobFunc
+	// GetDefinitionsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDefinitions.
+	GetDefinitionsFunc *CodeNavServiceGetDefinitionsFunc
+	// GetDiagnosticsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDiagnostics.
+	GetDiagnosticsFunc *CodeNavServiceGetDiagnosticsFunc
+	// GetDumpsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDumpsByIDs.
+	GetDumpsByIDsFunc *CodeNavServiceGetDumpsByIDsFunc
+	// GetHoverFunc is an instance of a mock function object controlling the
+	// behavior of the method GetHover.
+	GetHoverFunc *CodeNavServiceGetHoverFunc
+	// GetImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetImplementations.
+	GetImplementationsFunc *CodeNavServiceGetImplementationsFunc
+	// GetRangesFunc is an instance of a mock function object controlling
+	// the behavior of the method GetRanges.
+	GetRangesFunc *CodeNavServiceGetRangesFunc
+	// GetReferencesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetReferences.
+	GetReferencesFunc *CodeNavServiceGetReferencesFunc
+	// GetStencilFunc is an instance of a mock function object controlling
+	// the behavior of the method GetStencil.
+	GetStencilFunc *CodeNavServiceGetStencilFunc
+	// GetUnsafeDBFunc is an instance of a mock function object controlling
+	// the behavior of the method GetUnsafeDB.
+	GetUnsafeDBFunc *CodeNavServiceGetUnsafeDBFunc
 }
 
-// NewMockGitBlobResolver creates a new mock of the GitBlobResolver
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockGitBlobResolver() *MockGitBlobResolver {
-	return &MockGitBlobResolver{
-		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
-			defaultHook: func(context.Context, int, int) (r0 []types.UploadLocation, r1 error) {
+// NewMockCodeNavService creates a new mock of the CodeNavService interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockCodeNavService() *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) (r0 []types.Dump, r1 error) {
 				return
 			},
 		},
-		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, int) (r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
+		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 []types.UploadLocation, r1 error) {
 				return
 			},
 		},
-		HoverFunc: &GitBlobResolverHoverFunc{
-			defaultHook: func(context.Context, int, int) (r0 string, r1 types.Range, r2 bool, r3 error) {
+		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
 				return
 			},
 		},
-		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
-			defaultHook: func(context.Context, int, int, int, string) (r0 []types.UploadLocation, r1 string, r2 error) {
+		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
+			defaultHook: func(context.Context, []int) (r0 []types.Dump, r1 error) {
 				return
 			},
 		},
-		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
-			defaultHook: func(context.Context) (r0 []types.Dump, r1 error) {
+		GetHoverFunc: &CodeNavServiceGetHoverFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 string, r1 types.Range, r2 bool, r3 error) {
 				return
 			},
 		},
-		RangesFunc: &GitBlobResolverRangesFunc{
-			defaultHook: func(context.Context, int, int) (r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
+		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) (r0 []types.UploadLocation, r1 shared1.ImplementationsCursor, r2 error) {
 				return
 			},
 		},
-		ReferencesFunc: &GitBlobResolverReferencesFunc{
-			defaultHook: func(context.Context, int, int, int, string) (r0 []types.UploadLocation, r1 string, r2 error) {
+		GetRangesFunc: &CodeNavServiceGetRangesFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) (r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
 				return
 			},
 		},
-		StencilFunc: &GitBlobResolverStencilFunc{
-			defaultHook: func(context.Context) (r0 []types.Range, r1 error) {
+		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) (r0 []types.UploadLocation, r1 shared1.ReferencesCursor, r2 error) {
+				return
+			},
+		},
+		GetStencilFunc: &CodeNavServiceGetStencilFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (r0 []types.Range, r1 error) {
+				return
+			},
+		},
+		GetUnsafeDBFunc: &CodeNavServiceGetUnsafeDBFunc{
+			defaultHook: func() (r0 database.DB) {
 				return
 			},
 		},
 	}
 }
 
-// NewStrictMockGitBlobResolver creates a new mock of the GitBlobResolver
+// NewStrictMockCodeNavService creates a new mock of the CodeNavService
 // interface. All methods panic on invocation, unless overwritten.
-func NewStrictMockGitBlobResolver() *MockGitBlobResolver {
-	return &MockGitBlobResolver{
-		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
-			defaultHook: func(context.Context, int, int) ([]types.UploadLocation, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Definitions")
+func NewStrictMockCodeNavService() *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
+				panic("unexpected invocation of MockCodeNavService.GetClosestDumpsForBlob")
 			},
 		},
-		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
-			defaultHook: func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Diagnostics")
+		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+				panic("unexpected invocation of MockCodeNavService.GetDefinitions")
 			},
 		},
-		HoverFunc: &GitBlobResolverHoverFunc{
-			defaultHook: func(context.Context, int, int) (string, types.Range, bool, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Hover")
+		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error) {
+				panic("unexpected invocation of MockCodeNavService.GetDiagnostics")
 			},
 		},
-		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
-			defaultHook: func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Implementations")
+		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]types.Dump, error) {
+				panic("unexpected invocation of MockCodeNavService.GetDumpsByIDs")
 			},
 		},
-		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
-			defaultHook: func(context.Context) ([]types.Dump, error) {
-				panic("unexpected invocation of MockGitBlobResolver.LSIFUploads")
+		GetHoverFunc: &CodeNavServiceGetHoverFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+				panic("unexpected invocation of MockCodeNavService.GetHover")
 			},
 		},
-		RangesFunc: &GitBlobResolverRangesFunc{
-			defaultHook: func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Ranges")
+		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error) {
+				panic("unexpected invocation of MockCodeNavService.GetImplementations")
 			},
 		},
-		ReferencesFunc: &GitBlobResolverReferencesFunc{
-			defaultHook: func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
-				panic("unexpected invocation of MockGitBlobResolver.References")
+		GetRangesFunc: &CodeNavServiceGetRangesFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockCodeNavService.GetRanges")
 			},
 		},
-		StencilFunc: &GitBlobResolverStencilFunc{
-			defaultHook: func(context.Context) ([]types.Range, error) {
-				panic("unexpected invocation of MockGitBlobResolver.Stencil")
+		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error) {
+				panic("unexpected invocation of MockCodeNavService.GetReferences")
+			},
+		},
+		GetStencilFunc: &CodeNavServiceGetStencilFunc{
+			defaultHook: func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error) {
+				panic("unexpected invocation of MockCodeNavService.GetStencil")
+			},
+		},
+		GetUnsafeDBFunc: &CodeNavServiceGetUnsafeDBFunc{
+			defaultHook: func() database.DB {
+				panic("unexpected invocation of MockCodeNavService.GetUnsafeDB")
 			},
 		},
 	}
 }
 
-// NewMockGitBlobResolverFrom creates a new mock of the MockGitBlobResolver
+// NewMockCodeNavServiceFrom creates a new mock of the MockCodeNavService
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockGitBlobResolverFrom(i GitBlobResolver) *MockGitBlobResolver {
-	return &MockGitBlobResolver{
-		DefinitionsFunc: &GitBlobResolverDefinitionsFunc{
-			defaultHook: i.Definitions,
+func NewMockCodeNavServiceFrom(i CodeNavService) *MockCodeNavService {
+	return &MockCodeNavService{
+		GetClosestDumpsForBlobFunc: &CodeNavServiceGetClosestDumpsForBlobFunc{
+			defaultHook: i.GetClosestDumpsForBlob,
 		},
-		DiagnosticsFunc: &GitBlobResolverDiagnosticsFunc{
-			defaultHook: i.Diagnostics,
+		GetDefinitionsFunc: &CodeNavServiceGetDefinitionsFunc{
+			defaultHook: i.GetDefinitions,
 		},
-		HoverFunc: &GitBlobResolverHoverFunc{
-			defaultHook: i.Hover,
+		GetDiagnosticsFunc: &CodeNavServiceGetDiagnosticsFunc{
+			defaultHook: i.GetDiagnostics,
 		},
-		ImplementationsFunc: &GitBlobResolverImplementationsFunc{
-			defaultHook: i.Implementations,
+		GetDumpsByIDsFunc: &CodeNavServiceGetDumpsByIDsFunc{
+			defaultHook: i.GetDumpsByIDs,
 		},
-		LSIFUploadsFunc: &GitBlobResolverLSIFUploadsFunc{
-			defaultHook: i.LSIFUploads,
+		GetHoverFunc: &CodeNavServiceGetHoverFunc{
+			defaultHook: i.GetHover,
 		},
-		RangesFunc: &GitBlobResolverRangesFunc{
-			defaultHook: i.Ranges,
+		GetImplementationsFunc: &CodeNavServiceGetImplementationsFunc{
+			defaultHook: i.GetImplementations,
 		},
-		ReferencesFunc: &GitBlobResolverReferencesFunc{
-			defaultHook: i.References,
+		GetRangesFunc: &CodeNavServiceGetRangesFunc{
+			defaultHook: i.GetRanges,
 		},
-		StencilFunc: &GitBlobResolverStencilFunc{
-			defaultHook: i.Stencil,
+		GetReferencesFunc: &CodeNavServiceGetReferencesFunc{
+			defaultHook: i.GetReferences,
+		},
+		GetStencilFunc: &CodeNavServiceGetStencilFunc{
+			defaultHook: i.GetStencil,
+		},
+		GetUnsafeDBFunc: &CodeNavServiceGetUnsafeDBFunc{
+			defaultHook: i.GetUnsafeDB,
 		},
 	}
 }
 
-// GitBlobResolverDefinitionsFunc describes the behavior when the
-// Definitions method of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverDefinitionsFunc struct {
-	defaultHook func(context.Context, int, int) ([]types.UploadLocation, error)
-	hooks       []func(context.Context, int, int) ([]types.UploadLocation, error)
-	history     []GitBlobResolverDefinitionsFuncCall
+// CodeNavServiceGetClosestDumpsForBlobFunc describes the behavior when the
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// is invoked.
+type CodeNavServiceGetClosestDumpsForBlobFunc struct {
+	defaultHook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
+	hooks       []func(context.Context, int, string, string, bool, string) ([]types.Dump, error)
+	history     []CodeNavServiceGetClosestDumpsForBlobFuncCall
 	mutex       sync.Mutex
 }
 
-// Definitions delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Definitions(v0 context.Context, v1 int, v2 int) ([]types.UploadLocation, error) {
-	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
-	m.DefinitionsFunc.appendCall(GitBlobResolverDefinitionsFuncCall{v0, v1, v2, r0, r1})
+// GetClosestDumpsForBlob delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetClosestDumpsForBlob(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 string) ([]types.Dump, error) {
+	r0, r1 := m.GetClosestDumpsForBlobFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.GetClosestDumpsForBlobFunc.appendCall(CodeNavServiceGetClosestDumpsForBlobFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the Definitions method
-// of the parent MockGitBlobResolver instance is invoked and the hook queue
-// is empty.
-func (f *GitBlobResolverDefinitionsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
+// SetDefaultHook sets function that is called when the
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// is invoked and the hook queue is empty.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockGitBlobResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitBlobResolverDefinitionsFunc) PushHook(hook func(context.Context, int, int) ([]types.UploadLocation, error)) {
+// GetClosestDumpsForBlob method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushHook(hook func(context.Context, int, string, string, bool, string) ([]types.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1021,20 +1055,20 @@ func (f *GitBlobResolverDefinitionsFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverDefinitionsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverDefinitionsFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
-	f.PushHook(func(context.Context, int, int) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) PushReturn(r0 []types.Dump, r1 error) {
+	f.PushHook(func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobResolverDefinitionsFunc) nextHook() func(context.Context, int, int) ([]types.UploadLocation, error) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) nextHook() func(context.Context, int, string, string, bool, string) ([]types.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1047,26 +1081,28 @@ func (f *GitBlobResolverDefinitionsFunc) nextHook() func(context.Context, int, i
 	return hook
 }
 
-func (f *GitBlobResolverDefinitionsFunc) appendCall(r0 GitBlobResolverDefinitionsFuncCall) {
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) appendCall(r0 CodeNavServiceGetClosestDumpsForBlobFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverDefinitionsFuncCall objects
-// describing the invocations of this function.
-func (f *GitBlobResolverDefinitionsFunc) History() []GitBlobResolverDefinitionsFuncCall {
+// History returns a sequence of
+// CodeNavServiceGetClosestDumpsForBlobFuncCall objects describing the
+// invocations of this function.
+func (f *CodeNavServiceGetClosestDumpsForBlobFunc) History() []CodeNavServiceGetClosestDumpsForBlobFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverDefinitionsFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetClosestDumpsForBlobFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverDefinitionsFuncCall is an object that describes an
-// invocation of method Definitions on an instance of MockGitBlobResolver.
-type GitBlobResolverDefinitionsFuncCall struct {
+// CodeNavServiceGetClosestDumpsForBlobFuncCall is an object that describes
+// an invocation of method GetClosestDumpsForBlob on an instance of
+// MockCodeNavService.
+type CodeNavServiceGetClosestDumpsForBlobFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1075,7 +1111,128 @@ type GitBlobResolverDefinitionsFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceGetClosestDumpsForBlobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceGetClosestDumpsForBlobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceGetDefinitionsFunc describes the behavior when the
+// GetDefinitions method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceGetDefinitionsFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)
+	history     []CodeNavServiceGetDefinitionsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetDefinitions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetDefinitions(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState) ([]types.UploadLocation, error) {
+	r0, r1 := m.GetDefinitionsFunc.nextHook()(v0, v1, v2)
+	m.GetDefinitionsFunc.appendCall(CodeNavServiceGetDefinitionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetDefinitions
+// method of the parent MockCodeNavService instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetDefinitions method of the parent MockCodeNavService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetDefinitionsFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceGetDefinitionsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceGetDefinitionsFunc) PushReturn(r0 []types.UploadLocation, r1 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeNavServiceGetDefinitionsFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.UploadLocation, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceGetDefinitionsFunc) appendCall(r0 CodeNavServiceGetDefinitionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceGetDefinitionsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavServiceGetDefinitionsFunc) History() []CodeNavServiceGetDefinitionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceGetDefinitionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceGetDefinitionsFuncCall is an object that describes an
+// invocation of method GetDefinitions on an instance of MockCodeNavService.
+type CodeNavServiceGetDefinitionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared1.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.UploadLocation
@@ -1086,45 +1243,46 @@ type GitBlobResolverDefinitionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverDefinitionsFuncCall) Args() []interface{} {
+func (c CodeNavServiceGetDefinitionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverDefinitionsFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetDefinitionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBlobResolverDiagnosticsFunc describes the behavior when the
-// Diagnostics method of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverDiagnosticsFunc struct {
-	defaultHook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)
-	hooks       []func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)
-	history     []GitBlobResolverDiagnosticsFuncCall
+// CodeNavServiceGetDiagnosticsFunc describes the behavior when the
+// GetDiagnostics method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceGetDiagnosticsFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error)
+	history     []CodeNavServiceGetDiagnosticsFuncCall
 	mutex       sync.Mutex
 }
 
-// Diagnostics delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Diagnostics(v0 context.Context, v1 int) ([]shared1.DiagnosticAtUpload, int, error) {
-	r0, r1, r2 := m.DiagnosticsFunc.nextHook()(v0, v1)
-	m.DiagnosticsFunc.appendCall(GitBlobResolverDiagnosticsFuncCall{v0, v1, r0, r1, r2})
+// GetDiagnostics delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetDiagnostics(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error) {
+	r0, r1, r2 := m.GetDiagnosticsFunc.nextHook()(v0, v1, v2)
+	m.GetDiagnosticsFunc.appendCall(CodeNavServiceGetDiagnosticsFuncCall{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the Diagnostics method
-// of the parent MockGitBlobResolver instance is invoked and the hook queue
-// is empty.
-func (f *GitBlobResolverDiagnosticsFunc) SetDefaultHook(hook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)) {
+// SetDefaultHook sets function that is called when the GetDiagnostics
+// method of the parent MockCodeNavService instance is invoked and the hook
+// queue is empty.
+func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Diagnostics method of the parent MockGitBlobResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error)) {
+// GetDiagnostics method of the parent MockCodeNavService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetDiagnosticsFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1132,20 +1290,20 @@ func (f *GitBlobResolverDiagnosticsFunc) PushHook(hook func(context.Context, int
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverDiagnosticsFunc) SetDefaultReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) SetDefaultReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverDiagnosticsFunc) PushReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) PushReturn(r0 []shared1.DiagnosticAtUpload, r1 int, r2 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobResolverDiagnosticsFunc) nextHook() func(context.Context, int) ([]shared1.DiagnosticAtUpload, int, error) {
+func (f *CodeNavServiceGetDiagnosticsFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]shared1.DiagnosticAtUpload, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1158,32 +1316,35 @@ func (f *GitBlobResolverDiagnosticsFunc) nextHook() func(context.Context, int) (
 	return hook
 }
 
-func (f *GitBlobResolverDiagnosticsFunc) appendCall(r0 GitBlobResolverDiagnosticsFuncCall) {
+func (f *CodeNavServiceGetDiagnosticsFunc) appendCall(r0 CodeNavServiceGetDiagnosticsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverDiagnosticsFuncCall objects
-// describing the invocations of this function.
-func (f *GitBlobResolverDiagnosticsFunc) History() []GitBlobResolverDiagnosticsFuncCall {
+// History returns a sequence of CodeNavServiceGetDiagnosticsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeNavServiceGetDiagnosticsFunc) History() []CodeNavServiceGetDiagnosticsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverDiagnosticsFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetDiagnosticsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverDiagnosticsFuncCall is an object that describes an
-// invocation of method Diagnostics on an instance of MockGitBlobResolver.
-type GitBlobResolverDiagnosticsFuncCall struct {
+// CodeNavServiceGetDiagnosticsFuncCall is an object that describes an
+// invocation of method GetDiagnostics on an instance of MockCodeNavService.
+type CodeNavServiceGetDiagnosticsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 shared1.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.DiagnosticAtUpload
@@ -1197,45 +1358,46 @@ type GitBlobResolverDiagnosticsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverDiagnosticsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c CodeNavServiceGetDiagnosticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverDiagnosticsFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobResolverHoverFunc describes the behavior when the Hover method of
-// the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverHoverFunc struct {
-	defaultHook func(context.Context, int, int) (string, types.Range, bool, error)
-	hooks       []func(context.Context, int, int) (string, types.Range, bool, error)
-	history     []GitBlobResolverHoverFuncCall
+// CodeNavServiceGetDumpsByIDsFunc describes the behavior when the
+// GetDumpsByIDs method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceGetDumpsByIDsFunc struct {
+	defaultHook func(context.Context, []int) ([]types.Dump, error)
+	hooks       []func(context.Context, []int) ([]types.Dump, error)
+	history     []CodeNavServiceGetDumpsByIDsFuncCall
 	mutex       sync.Mutex
 }
 
-// Hover delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Hover(v0 context.Context, v1 int, v2 int) (string, types.Range, bool, error) {
-	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
-	m.HoverFunc.appendCall(GitBlobResolverHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
-	return r0, r1, r2, r3
+// GetDumpsByIDs delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetDumpsByIDs(v0 context.Context, v1 []int) ([]types.Dump, error) {
+	r0, r1 := m.GetDumpsByIDsFunc.nextHook()(v0, v1)
+	m.GetDumpsByIDsFunc.appendCall(CodeNavServiceGetDumpsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the Hover method of the
-// parent MockGitBlobResolver instance is invoked and the hook queue is
-// empty.
-func (f *GitBlobResolverHoverFunc) SetDefaultHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
+// SetDefaultHook sets function that is called when the GetDumpsByIDs method
+// of the parent MockCodeNavService instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavServiceGetDumpsByIDsFunc) SetDefaultHook(hook func(context.Context, []int) ([]types.Dump, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockGitBlobResolver instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitBlobResolverHoverFunc) PushHook(hook func(context.Context, int, int) (string, types.Range, bool, error)) {
+// GetDumpsByIDs method of the parent MockCodeNavService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetDumpsByIDsFunc) PushHook(hook func(context.Context, []int) ([]types.Dump, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1243,20 +1405,20 @@ func (f *GitBlobResolverHoverFunc) PushHook(hook func(context.Context, int, int)
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
-	f.SetDefaultHook(func(context.Context, int, int) (string, types.Range, bool, error) {
-		return r0, r1, r2, r3
+func (f *CodeNavServiceGetDumpsByIDsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]types.Dump, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
-	f.PushHook(func(context.Context, int, int) (string, types.Range, bool, error) {
-		return r0, r1, r2, r3
+func (f *CodeNavServiceGetDumpsByIDsFunc) PushReturn(r0 []types.Dump, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]types.Dump, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitBlobResolverHoverFunc) nextHook() func(context.Context, int, int) (string, types.Range, bool, error) {
+func (f *CodeNavServiceGetDumpsByIDsFunc) nextHook() func(context.Context, []int) ([]types.Dump, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1269,35 +1431,143 @@ func (f *GitBlobResolverHoverFunc) nextHook() func(context.Context, int, int) (s
 	return hook
 }
 
-func (f *GitBlobResolverHoverFunc) appendCall(r0 GitBlobResolverHoverFuncCall) {
+func (f *CodeNavServiceGetDumpsByIDsFunc) appendCall(r0 CodeNavServiceGetDumpsByIDsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverHoverFuncCall objects
+// History returns a sequence of CodeNavServiceGetDumpsByIDsFuncCall objects
 // describing the invocations of this function.
-func (f *GitBlobResolverHoverFunc) History() []GitBlobResolverHoverFuncCall {
+func (f *CodeNavServiceGetDumpsByIDsFunc) History() []CodeNavServiceGetDumpsByIDsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverHoverFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetDumpsByIDsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverHoverFuncCall is an object that describes an invocation of
-// method Hover on an instance of MockGitBlobResolver.
-type GitBlobResolverHoverFuncCall struct {
+// CodeNavServiceGetDumpsByIDsFuncCall is an object that describes an
+// invocation of method GetDumpsByIDs on an instance of MockCodeNavService.
+type CodeNavServiceGetDumpsByIDsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 []int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceGetDumpsByIDsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceGetDumpsByIDsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceGetHoverFunc describes the behavior when the GetHover
+// method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceGetHoverFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)
+	history     []CodeNavServiceGetHoverFuncCall
+	mutex       sync.Mutex
+}
+
+// GetHover delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavService) GetHover(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState) (string, types.Range, bool, error) {
+	r0, r1, r2, r3 := m.GetHoverFunc.nextHook()(v0, v1, v2)
+	m.GetHoverFunc.appendCall(CodeNavServiceGetHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the GetHover method of
+// the parent MockCodeNavService instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavServiceGetHoverFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetHover method of the parent MockCodeNavService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetHoverFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceGetHoverFunc) SetDefaultReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceGetHoverFunc) PushReturn(r0 string, r1 types.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *CodeNavServiceGetHoverFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState) (string, types.Range, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceGetHoverFunc) appendCall(r0 CodeNavServiceGetHoverFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceGetHoverFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavServiceGetHoverFunc) History() []CodeNavServiceGetHoverFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceGetHoverFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceGetHoverFuncCall is an object that describes an invocation
+// of method GetHover on an instance of MockCodeNavService.
+type CodeNavServiceGetHoverFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared1.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -1314,46 +1584,47 @@ type GitBlobResolverHoverFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverHoverFuncCall) Args() []interface{} {
+func (c CodeNavServiceGetHoverFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverHoverFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// GitBlobResolverImplementationsFunc describes the behavior when the
-// Implementations method of the parent MockGitBlobResolver instance is
+// CodeNavServiceGetImplementationsFunc describes the behavior when the
+// GetImplementations method of the parent MockCodeNavService instance is
 // invoked.
-type GitBlobResolverImplementationsFunc struct {
-	defaultHook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	hooks       []func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	history     []GitBlobResolverImplementationsFuncCall
+type CodeNavServiceGetImplementationsFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error)
+	history     []CodeNavServiceGetImplementationsFuncCall
 	mutex       sync.Mutex
 }
 
-// Implementations delegates to the next hook function in the queue and
+// GetImplementations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Implementations(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
-	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ImplementationsFunc.appendCall(GitBlobResolverImplementationsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockCodeNavService) GetImplementations(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState, v3 shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error) {
+	r0, r1, r2 := m.GetImplementationsFunc.nextHook()(v0, v1, v2, v3)
+	m.GetImplementationsFunc.appendCall(CodeNavServiceGetImplementationsFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the Implementations
-// method of the parent MockGitBlobResolver instance is invoked and the hook
+// SetDefaultHook sets function that is called when the GetImplementations
+// method of the parent MockCodeNavService instance is invoked and the hook
 // queue is empty.
-func (f *GitBlobResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Implementations method of the parent MockGitBlobResolver instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *GitBlobResolverImplementationsFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// GetImplementations method of the parent MockCodeNavService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeNavServiceGetImplementationsFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1361,20 +1632,20 @@ func (f *GitBlobResolverImplementationsFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverImplementationsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetImplementationsFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 shared1.ImplementationsCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverImplementationsFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetImplementationsFunc) PushReturn(r0 []types.UploadLocation, r1 shared1.ImplementationsCursor, r2 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobResolverImplementationsFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetImplementationsFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ImplementationsCursor) ([]types.UploadLocation, shared1.ImplementationsCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1387,48 +1658,45 @@ func (f *GitBlobResolverImplementationsFunc) nextHook() func(context.Context, in
 	return hook
 }
 
-func (f *GitBlobResolverImplementationsFunc) appendCall(r0 GitBlobResolverImplementationsFuncCall) {
+func (f *CodeNavServiceGetImplementationsFunc) appendCall(r0 CodeNavServiceGetImplementationsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverImplementationsFuncCall
+// History returns a sequence of CodeNavServiceGetImplementationsFuncCall
 // objects describing the invocations of this function.
-func (f *GitBlobResolverImplementationsFunc) History() []GitBlobResolverImplementationsFuncCall {
+func (f *CodeNavServiceGetImplementationsFunc) History() []CodeNavServiceGetImplementationsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverImplementationsFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetImplementationsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverImplementationsFuncCall is an object that describes an
-// invocation of method Implementations on an instance of
-// MockGitBlobResolver.
-type GitBlobResolverImplementationsFuncCall struct {
+// CodeNavServiceGetImplementationsFuncCall is an object that describes an
+// invocation of method GetImplementations on an instance of
+// MockCodeNavService.
+type CodeNavServiceGetImplementationsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 shared1.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 shared1.ImplementationsCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 string
+	Result1 shared1.ImplementationsCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1436,45 +1704,45 @@ type GitBlobResolverImplementationsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverImplementationsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+func (c CodeNavServiceGetImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverImplementationsFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetImplementationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobResolverLSIFUploadsFunc describes the behavior when the
-// LSIFUploads method of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverLSIFUploadsFunc struct {
-	defaultHook func(context.Context) ([]types.Dump, error)
-	hooks       []func(context.Context) ([]types.Dump, error)
-	history     []GitBlobResolverLSIFUploadsFuncCall
+// CodeNavServiceGetRangesFunc describes the behavior when the GetRanges
+// method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceGetRangesFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
+	history     []CodeNavServiceGetRangesFuncCall
 	mutex       sync.Mutex
 }
 
-// LSIFUploads delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) LSIFUploads(v0 context.Context) ([]types.Dump, error) {
-	r0, r1 := m.LSIFUploadsFunc.nextHook()(v0)
-	m.LSIFUploadsFunc.appendCall(GitBlobResolverLSIFUploadsFuncCall{v0, r0, r1})
+// GetRanges delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeNavService) GetRanges(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState, v3 int, v4 int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
+	r0, r1 := m.GetRangesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.GetRangesFunc.appendCall(CodeNavServiceGetRangesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the LSIFUploads method
-// of the parent MockGitBlobResolver instance is invoked and the hook queue
-// is empty.
-func (f *GitBlobResolverLSIFUploadsFunc) SetDefaultHook(hook func(context.Context) ([]types.Dump, error)) {
+// SetDefaultHook sets function that is called when the GetRanges method of
+// the parent MockCodeNavService instance is invoked and the hook queue is
+// empty.
+func (f *CodeNavServiceGetRangesFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// LSIFUploads method of the parent MockGitBlobResolver instance invokes the
+// GetRanges method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitBlobResolverLSIFUploadsFunc) PushHook(hook func(context.Context) ([]types.Dump, error)) {
+func (f *CodeNavServiceGetRangesFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1482,20 +1750,20 @@ func (f *GitBlobResolverLSIFUploadsFunc) PushHook(hook func(context.Context) ([]
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverLSIFUploadsFunc) SetDefaultReturn(r0 []types.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]types.Dump, error) {
+func (f *CodeNavServiceGetRangesFunc) SetDefaultReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverLSIFUploadsFunc) PushReturn(r0 []types.Dump, r1 error) {
-	f.PushHook(func(context.Context) ([]types.Dump, error) {
+func (f *CodeNavServiceGetRangesFunc) PushReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobResolverLSIFUploadsFunc) nextHook() func(context.Context) ([]types.Dump, error) {
+func (f *CodeNavServiceGetRangesFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1508,140 +1776,41 @@ func (f *GitBlobResolverLSIFUploadsFunc) nextHook() func(context.Context) ([]typ
 	return hook
 }
 
-func (f *GitBlobResolverLSIFUploadsFunc) appendCall(r0 GitBlobResolverLSIFUploadsFuncCall) {
+func (f *CodeNavServiceGetRangesFunc) appendCall(r0 CodeNavServiceGetRangesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverLSIFUploadsFuncCall objects
+// History returns a sequence of CodeNavServiceGetRangesFuncCall objects
 // describing the invocations of this function.
-func (f *GitBlobResolverLSIFUploadsFunc) History() []GitBlobResolverLSIFUploadsFuncCall {
+func (f *CodeNavServiceGetRangesFunc) History() []CodeNavServiceGetRangesFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverLSIFUploadsFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetRangesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverLSIFUploadsFuncCall is an object that describes an
-// invocation of method LSIFUploads on an instance of MockGitBlobResolver.
-type GitBlobResolverLSIFUploadsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitBlobResolverLSIFUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitBlobResolverLSIFUploadsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitBlobResolverRangesFunc describes the behavior when the Ranges method
-// of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverRangesFunc struct {
-	defaultHook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
-	hooks       []func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)
-	history     []GitBlobResolverRangesFuncCall
-	mutex       sync.Mutex
-}
-
-// Ranges delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Ranges(v0 context.Context, v1 int, v2 int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
-	r0, r1 := m.RangesFunc.nextHook()(v0, v1, v2)
-	m.RangesFunc.appendCall(GitBlobResolverRangesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Ranges method of the
-// parent MockGitBlobResolver instance is invoked and the hook queue is
-// empty.
-func (f *GitBlobResolverRangesFunc) SetDefaultHook(hook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Ranges method of the parent MockGitBlobResolver instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GitBlobResolverRangesFunc) PushHook(hook func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitBlobResolverRangesFunc) SetDefaultReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverRangesFunc) PushReturn(r0 []shared1.AdjustedCodeIntelligenceRange, r1 error) {
-	f.PushHook(func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitBlobResolverRangesFunc) nextHook() func(context.Context, int, int) ([]shared1.AdjustedCodeIntelligenceRange, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitBlobResolverRangesFunc) appendCall(r0 GitBlobResolverRangesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitBlobResolverRangesFuncCall objects
-// describing the invocations of this function.
-func (f *GitBlobResolverRangesFunc) History() []GitBlobResolverRangesFuncCall {
-	f.mutex.Lock()
-	history := make([]GitBlobResolverRangesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitBlobResolverRangesFuncCall is an object that describes an invocation
-// of method Ranges on an instance of MockGitBlobResolver.
-type GitBlobResolverRangesFuncCall struct {
+// CodeNavServiceGetRangesFuncCall is an object that describes an invocation
+// of method GetRanges on an instance of MockCodeNavService.
+type CodeNavServiceGetRangesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 shared1.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 codenav.RequestState
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared1.AdjustedCodeIntelligenceRange
@@ -1652,45 +1821,46 @@ type GitBlobResolverRangesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverRangesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c CodeNavServiceGetRangesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverRangesFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetRangesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitBlobResolverReferencesFunc describes the behavior when the References
-// method of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverReferencesFunc struct {
-	defaultHook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	hooks       []func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)
-	history     []GitBlobResolverReferencesFuncCall
+// CodeNavServiceGetReferencesFunc describes the behavior when the
+// GetReferences method of the parent MockCodeNavService instance is
+// invoked.
+type CodeNavServiceGetReferencesFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error)
+	history     []CodeNavServiceGetReferencesFuncCall
 	mutex       sync.Mutex
 }
 
-// References delegates to the next hook function in the queue and stores
+// GetReferences delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitBlobResolver) References(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]types.UploadLocation, string, error) {
-	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReferencesFunc.appendCall(GitBlobResolverReferencesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockCodeNavService) GetReferences(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState, v3 shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error) {
+	r0, r1, r2 := m.GetReferencesFunc.nextHook()(v0, v1, v2, v3)
+	m.GetReferencesFunc.appendCall(CodeNavServiceGetReferencesFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the References method of
-// the parent MockGitBlobResolver instance is invoked and the hook queue is
-// empty.
-func (f *GitBlobResolverReferencesFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// SetDefaultHook sets function that is called when the GetReferences method
+// of the parent MockCodeNavService instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockGitBlobResolver instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitBlobResolverReferencesFunc) PushHook(hook func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error)) {
+// GetReferences method of the parent MockCodeNavService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetReferencesFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1698,20 +1868,20 @@ func (f *GitBlobResolverReferencesFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverReferencesFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetReferencesFunc) SetDefaultReturn(r0 []types.UploadLocation, r1 shared1.ReferencesCursor, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverReferencesFunc) PushReturn(r0 []types.UploadLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetReferencesFunc) PushReturn(r0 []types.UploadLocation, r1 shared1.ReferencesCursor, r2 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *GitBlobResolverReferencesFunc) nextHook() func(context.Context, int, int, int, string) ([]types.UploadLocation, string, error) {
+func (f *CodeNavServiceGetReferencesFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState, shared1.ReferencesCursor) ([]types.UploadLocation, shared1.ReferencesCursor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1724,47 +1894,44 @@ func (f *GitBlobResolverReferencesFunc) nextHook() func(context.Context, int, in
 	return hook
 }
 
-func (f *GitBlobResolverReferencesFunc) appendCall(r0 GitBlobResolverReferencesFuncCall) {
+func (f *CodeNavServiceGetReferencesFunc) appendCall(r0 CodeNavServiceGetReferencesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverReferencesFuncCall objects
+// History returns a sequence of CodeNavServiceGetReferencesFuncCall objects
 // describing the invocations of this function.
-func (f *GitBlobResolverReferencesFunc) History() []GitBlobResolverReferencesFuncCall {
+func (f *CodeNavServiceGetReferencesFunc) History() []CodeNavServiceGetReferencesFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverReferencesFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetReferencesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverReferencesFuncCall is an object that describes an
-// invocation of method References on an instance of MockGitBlobResolver.
-type GitBlobResolverReferencesFuncCall struct {
+// CodeNavServiceGetReferencesFuncCall is an object that describes an
+// invocation of method GetReferences on an instance of MockCodeNavService.
+type CodeNavServiceGetReferencesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 shared1.RequestArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 codenav.RequestState
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 int
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
+	Arg3 shared1.ReferencesCursor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.UploadLocation
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 string
+	Result1 shared1.ReferencesCursor
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error
@@ -1772,45 +1939,45 @@ type GitBlobResolverReferencesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+func (c CodeNavServiceGetReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverReferencesFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// GitBlobResolverStencilFunc describes the behavior when the Stencil method
-// of the parent MockGitBlobResolver instance is invoked.
-type GitBlobResolverStencilFunc struct {
-	defaultHook func(context.Context) ([]types.Range, error)
-	hooks       []func(context.Context) ([]types.Range, error)
-	history     []GitBlobResolverStencilFuncCall
+// CodeNavServiceGetStencilFunc describes the behavior when the GetStencil
+// method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceGetStencilFunc struct {
+	defaultHook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error)
+	hooks       []func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error)
+	history     []CodeNavServiceGetStencilFuncCall
 	mutex       sync.Mutex
 }
 
-// Stencil delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitBlobResolver) Stencil(v0 context.Context) ([]types.Range, error) {
-	r0, r1 := m.StencilFunc.nextHook()(v0)
-	m.StencilFunc.appendCall(GitBlobResolverStencilFuncCall{v0, r0, r1})
+// GetStencil delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetStencil(v0 context.Context, v1 shared1.RequestArgs, v2 codenav.RequestState) ([]types.Range, error) {
+	r0, r1 := m.GetStencilFunc.nextHook()(v0, v1, v2)
+	m.GetStencilFunc.appendCall(CodeNavServiceGetStencilFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the Stencil method of
-// the parent MockGitBlobResolver instance is invoked and the hook queue is
+// SetDefaultHook sets function that is called when the GetStencil method of
+// the parent MockCodeNavService instance is invoked and the hook queue is
 // empty.
-func (f *GitBlobResolverStencilFunc) SetDefaultHook(hook func(context.Context) ([]types.Range, error)) {
+func (f *CodeNavServiceGetStencilFunc) SetDefaultHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Stencil method of the parent MockGitBlobResolver instance invokes the
+// GetStencil method of the parent MockCodeNavService instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitBlobResolverStencilFunc) PushHook(hook func(context.Context) ([]types.Range, error)) {
+func (f *CodeNavServiceGetStencilFunc) PushHook(hook func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1818,20 +1985,20 @@ func (f *GitBlobResolverStencilFunc) PushHook(hook func(context.Context) ([]type
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitBlobResolverStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) SetDefaultReturn(r0 []types.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitBlobResolverStencilFunc) PushReturn(r0 []types.Range, r1 error) {
-	f.PushHook(func(context.Context) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) PushReturn(r0 []types.Range, r1 error) {
+	f.PushHook(func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitBlobResolverStencilFunc) nextHook() func(context.Context) ([]types.Range, error) {
+func (f *CodeNavServiceGetStencilFunc) nextHook() func(context.Context, shared1.RequestArgs, codenav.RequestState) ([]types.Range, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1844,29 +2011,35 @@ func (f *GitBlobResolverStencilFunc) nextHook() func(context.Context) ([]types.R
 	return hook
 }
 
-func (f *GitBlobResolverStencilFunc) appendCall(r0 GitBlobResolverStencilFuncCall) {
+func (f *CodeNavServiceGetStencilFunc) appendCall(r0 CodeNavServiceGetStencilFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitBlobResolverStencilFuncCall objects
+// History returns a sequence of CodeNavServiceGetStencilFuncCall objects
 // describing the invocations of this function.
-func (f *GitBlobResolverStencilFunc) History() []GitBlobResolverStencilFuncCall {
+func (f *CodeNavServiceGetStencilFunc) History() []CodeNavServiceGetStencilFuncCall {
 	f.mutex.Lock()
-	history := make([]GitBlobResolverStencilFuncCall, len(f.history))
+	history := make([]CodeNavServiceGetStencilFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitBlobResolverStencilFuncCall is an object that describes an invocation
-// of method Stencil on an instance of MockGitBlobResolver.
-type GitBlobResolverStencilFuncCall struct {
+// CodeNavServiceGetStencilFuncCall is an object that describes an
+// invocation of method GetStencil on an instance of MockCodeNavService.
+type CodeNavServiceGetStencilFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared1.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 codenav.RequestState
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.Range
@@ -1877,14 +2050,113 @@ type GitBlobResolverStencilFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitBlobResolverStencilFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+func (c CodeNavServiceGetStencilFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitBlobResolverStencilFuncCall) Results() []interface{} {
+func (c CodeNavServiceGetStencilFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeNavServiceGetUnsafeDBFunc describes the behavior when the GetUnsafeDB
+// method of the parent MockCodeNavService instance is invoked.
+type CodeNavServiceGetUnsafeDBFunc struct {
+	defaultHook func() database.DB
+	hooks       []func() database.DB
+	history     []CodeNavServiceGetUnsafeDBFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUnsafeDB delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeNavService) GetUnsafeDB() database.DB {
+	r0 := m.GetUnsafeDBFunc.nextHook()()
+	m.GetUnsafeDBFunc.appendCall(CodeNavServiceGetUnsafeDBFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetUnsafeDB method
+// of the parent MockCodeNavService instance is invoked and the hook queue
+// is empty.
+func (f *CodeNavServiceGetUnsafeDBFunc) SetDefaultHook(hook func() database.DB) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUnsafeDB method of the parent MockCodeNavService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeNavServiceGetUnsafeDBFunc) PushHook(hook func() database.DB) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeNavServiceGetUnsafeDBFunc) SetDefaultReturn(r0 database.DB) {
+	f.SetDefaultHook(func() database.DB {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeNavServiceGetUnsafeDBFunc) PushReturn(r0 database.DB) {
+	f.PushHook(func() database.DB {
+		return r0
+	})
+}
+
+func (f *CodeNavServiceGetUnsafeDBFunc) nextHook() func() database.DB {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeNavServiceGetUnsafeDBFunc) appendCall(r0 CodeNavServiceGetUnsafeDBFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeNavServiceGetUnsafeDBFuncCall objects
+// describing the invocations of this function.
+func (f *CodeNavServiceGetUnsafeDBFunc) History() []CodeNavServiceGetUnsafeDBFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeNavServiceGetUnsafeDBFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeNavServiceGetUnsafeDBFuncCall is an object that describes an
+// invocation of method GetUnsafeDB on an instance of MockCodeNavService.
+type CodeNavServiceGetUnsafeDBFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.DB
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeNavServiceGetUnsafeDBFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeNavServiceGetUnsafeDBFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // MockGitserverClient is a mock implementation of the GitserverClient

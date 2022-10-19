@@ -33,6 +33,8 @@ import {
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
 import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
+import { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
+import { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
@@ -103,12 +105,12 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+export interface OrgAreaRoute extends RouteDescriptor<OrgAreaRouteContext> {
     /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
 
-interface Props
+export interface OrgAreaProps
     extends RouteComponentProps<{ name: string }>,
         PlatformContextProps,
         SettingsCascadeProps,
@@ -120,6 +122,8 @@ interface Props
         BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -139,7 +143,7 @@ interface State extends BreadcrumbSetters {
 /**
  * Properties passed to all page components in the org area.
  */
-export interface OrgAreaPageProps
+export interface OrgAreaRouteContext
     extends ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
@@ -160,20 +164,23 @@ export interface OrgAreaPageProps
 
     isSourcegraphDotCom: boolean
 
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
+
     newMembersInviteEnabled: boolean
 }
 
 /**
  * An organization's public profile area.
  */
-export class OrgArea extends React.Component<Props> {
+export class OrgArea extends React.Component<OrgAreaProps> {
     public state: State
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<OrgAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: OrgAreaProps) {
         super(props)
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
@@ -270,7 +277,7 @@ export class OrgArea extends React.Component<Props> {
             )
         }
 
-        const context: OrgAreaPageProps = {
+        const context: OrgAreaRouteContext = {
             authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
@@ -288,6 +295,8 @@ export class OrgArea extends React.Component<Props> {
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
             newMembersInviteEnabled: this.state.newMembersInviteEnabled,
+            orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
+            orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

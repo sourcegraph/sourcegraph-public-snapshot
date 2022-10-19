@@ -34,7 +34,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
@@ -44,7 +44,7 @@ import { getPaginatedItems, OrgMemberNotification } from './utils'
 import styles from './OrgMembersListPage.module.scss'
 
 interface Props
-    extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
+    extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
         RouteComponentProps {
     onOrgGetStartedRefresh: () => void
 }

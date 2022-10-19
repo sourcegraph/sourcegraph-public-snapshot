@@ -8,7 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -52,13 +51,6 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	var repos []string
 	if args.Repos != nil {
 		repos = *args.Repos
-		// If we know the number of repos up front we can ensure that they don't exceed
-		// their limit before hitting the code host
-		maxAllowed := conf.UserReposMaxPerUser()
-		if (es.NamespaceUserID != 0 || es.NamespaceOrgID != 0) && len(repos) > maxAllowed {
-			err = errors.Errorf("Too many repositories, %d. Sourcegraph supports adding a maximum of %d repositories.", len(repos), maxAllowed)
-			return nil, err
-		}
 	}
 	err = ra.SetRepos(args.AllRepos, repos)
 	if err != nil {
