@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/sourcegraph/run"
 )
@@ -83,6 +84,14 @@ func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) e
 
 func (r *blankRepo) pushRemote(ctx context.Context, name string) error {
 	return r.inRepo(func() error {
-		return run.Bash(ctx, "git push", name).Run().Wait()
+		var err error
+		for i := 0; i < 3; i++ {
+			err = run.Bash(ctx, "git push", name).Run().Wait()
+			if err != nil && strings.Contains(err.Error(), "timeout") {
+				continue
+			}
+			break
+		}
+		return err
 	})
 }

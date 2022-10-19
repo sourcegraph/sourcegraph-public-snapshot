@@ -135,7 +135,7 @@ func main() {
 	for name := range names {
 		name := name
 		g.Go(func() {
-			err = r.pushRemote(ctx, name)
+			err := r.pushRemote(ctx, name)
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", name)
 				log.Fatal(err)
