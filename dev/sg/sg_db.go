@@ -58,7 +58,7 @@ sg db add-user -name=foo
 		Subcommands: []*cli.Command{
 			{
 				Name:   "delete-test-dbs",
-				Usage:  "Drops all databases that have the prefix `sourcegraph-test-`.",
+				Usage:  "Drops all databases that have the prefix `sourcegraph-test-`",
 				Action: deleteTestDBsExec,
 			},
 			{

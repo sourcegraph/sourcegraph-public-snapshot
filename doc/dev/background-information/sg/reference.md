@@ -500,7 +500,7 @@ $ sg db add-user -name=foo
 
 ### sg db delete-test-dbs
 
-Drops all databases that have the prefix `sourcegraph-test-`..
+Drops all databases that have the prefix `sourcegraph-test-`.
 
 
 Flags:
