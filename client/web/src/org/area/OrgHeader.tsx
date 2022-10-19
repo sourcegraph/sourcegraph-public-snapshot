@@ -16,9 +16,9 @@ import { useEventBus } from '../emitter'
 import { calculateLeftGetStartedSteps, showGetStartPage } from '../openBeta/GettingStarted'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaPageProps } from './OrgArea'
+import { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {
     isSourcegraphDotCom: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
