@@ -1,4 +1,4 @@
-import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
+import { forwardRef, HTMLAttributes, ReactNode, useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -19,7 +19,6 @@ import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../
 import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
-import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 import { InsightContext } from '../InsightContext'
 
 import {
@@ -34,28 +33,31 @@ import { parseBackendInsightResponse, insightPollingInterval } from './selectors
 
 import styles from './BackendInsight.module.scss'
 
-interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+interface BackendInsightProps extends TelemetryProps, Omit<HTMLAttributes<HTMLElement>, 'contextMenu'> {
     insight: BackendInsight
-    resizing?: boolean
+    contextMenu: ReactNode
+    isZeroYAxisMin: boolean
+    isResizing?: boolean
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { telemetryService, insight, resizing, children, ...otherProps } = props
+    const { insight, contextMenu, isZeroYAxisMin, isResizing, children, telemetryService, ...otherProps } = props
 
-    const { currentDashboard, dashboards } = useContext(InsightContext)
+    const { currentDashboard } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
 
     const seriesToggleState = useSeriesToggle()
+
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
+
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
@@ -191,18 +193,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
                         />
-                        <InsightContextMenu
-                            insight={insight}
-                            currentDashboard={currentDashboard}
-                            dashboards={dashboards}
-                            zeroYAxisMin={zeroYAxisMin}
-                            onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        />
+                        { contextMenu }
                     </>
                 )}
             </InsightCardHeader>
 
-            {resizing ? (
+            {isResizing ? (
                 <InsightCardBanner>Resizing</InsightCardBanner>
             ) : error ? (
                 <BackendInsightErrorAlert error={error} />
@@ -214,7 +210,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     seriesToggleState={seriesToggleState}
                     isInProgress={insightData.isInProgress}
                     isLocked={insight.isFrozen}
-                    isZeroYAxisMin={zeroYAxisMin}
+                    isZeroYAxisMin={isZeroYAxisMin}
                     onDatumClick={trackDatumClicks}
                 />
             )}

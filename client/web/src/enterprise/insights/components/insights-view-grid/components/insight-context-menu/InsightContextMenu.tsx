@@ -32,15 +32,15 @@ export interface InsightCardMenuProps {
     insight: Insight
     currentDashboard: InsightDashboard | null
     dashboards: InsightDashboard[]
-    zeroYAxisMin: boolean
-    onToggleZeroYAxisMin?: () => void
+    isZeroYAxisMin: boolean
+    onZeroYAxisMinChange: (state: boolean) => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
-    const { insight, currentDashboard, dashboards, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
+    const { insight, currentDashboard, dashboards, isZeroYAxisMin, onZeroYAxisMinChange } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -107,12 +107,12 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
                                     className={classNames('d-flex align-items-center justify-content-end', styles.item)}
-                                    onSelect={onToggleZeroYAxisMin}
-                                    aria-checked={zeroYAxisMin}
+                                    onSelect={() => onZeroYAxisMinChange(!isZeroYAxisMin)}
+                                    aria-checked={isZeroYAxisMin}
                                 >
                                     <Checkbox
                                         aria-hidden="true"
-                                        checked={zeroYAxisMin}
+                                        checked={isZeroYAxisMin}
                                         onChange={noop}
                                         tabIndex={-1}
                                         id="InsightContextMenuEditInput"

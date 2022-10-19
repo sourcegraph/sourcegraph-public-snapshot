@@ -22,9 +22,9 @@ const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
 
 interface DrillDownFiltersPopoverProps {
     isOpen: boolean
+    anchor: React.RefObject<HTMLElement>
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
-    anchor: React.RefObject<HTMLElement>
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
