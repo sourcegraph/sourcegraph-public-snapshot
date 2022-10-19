@@ -21,9 +21,6 @@ import (
 // package github.com/sourcegraph/sourcegraph/internal/repos) used for unit
 // testing.
 type MockStore struct {
-	// CountNamespacedReposFunc is an instance of a mock function object
-	// controlling the behavior of the method CountNamespacedRepos.
-	CountNamespacedReposFunc *StoreCountNamespacedReposFunc
 	// CreateExternalServiceRepoFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// CreateExternalServiceRepo.
@@ -93,11 +90,6 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
-		CountNamespacedReposFunc: &StoreCountNamespacedReposFunc{
-			defaultHook: func(context.Context, int32, int32) (r0 uint64, r1 error) {
-				return
-			},
-		},
 		CreateExternalServiceRepoFunc: &StoreCreateExternalServiceRepoFunc{
 			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) (r0 error) {
 				return
@@ -200,11 +192,6 @@ func NewMockStore() *MockStore {
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
-		CountNamespacedReposFunc: &StoreCountNamespacedReposFunc{
-			defaultHook: func(context.Context, int32, int32) (uint64, error) {
-				panic("unexpected invocation of MockStore.CountNamespacedRepos")
-			},
-		},
 		CreateExternalServiceRepoFunc: &StoreCreateExternalServiceRepoFunc{
 			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) error {
 				panic("unexpected invocation of MockStore.CreateExternalServiceRepo")
@@ -307,9 +294,6 @@ func NewStrictMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i Store) *MockStore {
 	return &MockStore{
-		CountNamespacedReposFunc: &StoreCountNamespacedReposFunc{
-			defaultHook: i.CountNamespacedRepos,
-		},
 		CreateExternalServiceRepoFunc: &StoreCreateExternalServiceRepoFunc{
 			defaultHook: i.CreateExternalServiceRepo,
 		},
@@ -368,117 +352,6 @@ func NewMockStoreFrom(i Store) *MockStore {
 			defaultHook: i.With,
 		},
 	}
-}
-
-// StoreCountNamespacedReposFunc describes the behavior when the
-// CountNamespacedRepos method of the parent MockStore instance is invoked.
-type StoreCountNamespacedReposFunc struct {
-	defaultHook func(context.Context, int32, int32) (uint64, error)
-	hooks       []func(context.Context, int32, int32) (uint64, error)
-	history     []StoreCountNamespacedReposFuncCall
-	mutex       sync.Mutex
-}
-
-// CountNamespacedRepos delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) CountNamespacedRepos(v0 context.Context, v1 int32, v2 int32) (uint64, error) {
-	r0, r1 := m.CountNamespacedReposFunc.nextHook()(v0, v1, v2)
-	m.CountNamespacedReposFunc.appendCall(StoreCountNamespacedReposFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the CountNamespacedRepos
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreCountNamespacedReposFunc) SetDefaultHook(hook func(context.Context, int32, int32) (uint64, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CountNamespacedRepos method of the parent MockStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *StoreCountNamespacedReposFunc) PushHook(hook func(context.Context, int32, int32) (uint64, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreCountNamespacedReposFunc) SetDefaultReturn(r0 uint64, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, int32) (uint64, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreCountNamespacedReposFunc) PushReturn(r0 uint64, r1 error) {
-	f.PushHook(func(context.Context, int32, int32) (uint64, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreCountNamespacedReposFunc) nextHook() func(context.Context, int32, int32) (uint64, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreCountNamespacedReposFunc) appendCall(r0 StoreCountNamespacedReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreCountNamespacedReposFuncCall objects
-// describing the invocations of this function.
-func (f *StoreCountNamespacedReposFunc) History() []StoreCountNamespacedReposFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreCountNamespacedReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreCountNamespacedReposFuncCall is an object that describes an
-// invocation of method CountNamespacedRepos on an instance of MockStore.
-type StoreCountNamespacedReposFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 uint64
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreCountNamespacedReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreCountNamespacedReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreCreateExternalServiceRepoFunc describes the behavior when the
