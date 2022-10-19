@@ -572,14 +572,15 @@ SELECT
 
 	OR
 
-	(
-		SELECT bool_and(NOT should_reindex)
+	EXISTS (
+		SELECT 1
 		FROM (
 			SELECT DISTINCT ON (root, indexer) should_reindex
 			FROM lsif_indexes
 			WHERE repository_id = %s AND commit = %s
 			ORDER BY root, indexer, queued_at DESC
 		) _
+		WHERE NOT should_reindex
 	)
 `
 
