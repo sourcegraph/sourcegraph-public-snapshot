@@ -36,14 +36,14 @@ type GitBlobLSIFDataResolver interface {
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
 type gitBlobLSIFDataResolverQueryResolver struct {
-	codeNavSvc              CodeNavService
-	autoindexingSvc         AutoIndexingService
-	uploadSvc               UploadsService
-	policiesSvc             PolicyService
-	gitBlobLSIFDataResolver GitBlobResolver
-	requestState            codenav.RequestState
-	locationResolver        *sharedresolvers.CachedLocationResolver
-	errTracer               *observation.ErrCollector
+	codeNavSvc      CodeNavService
+	autoindexingSvc AutoIndexingService
+	uploadSvc       UploadsService
+	policiesSvc     PolicyService
+
+	requestState     codenav.RequestState
+	locationResolver *sharedresolvers.CachedLocationResolver
+	errTracer        *observation.ErrCollector
 
 	operations *operations
 }
@@ -56,15 +56,12 @@ func NewGitBlobLSIFDataResolverQueryResolver(
 	autoindexSvc AutoIndexingService,
 	uploadSvc UploadsService,
 	policiesSvc PolicyService,
-	gitBlobResolver GitBlobResolver,
 	requestState codenav.RequestState,
 	errTracer *observation.ErrCollector,
 	operations *operations,
 ) GitBlobLSIFDataResolver {
 	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolverQueryResolver{
-		gitBlobLSIFDataResolver: gitBlobResolver,
-
 		codeNavSvc:       codeNavSvc,
 		autoindexingSvc:  autoindexSvc,
 		uploadSvc:        uploadSvc,
@@ -212,7 +209,7 @@ func (r *gitBlobLSIFDataResolverQueryResolver) References(ctx context.Context, a
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
 	var nextCursor string
-	cursor, err := decodeReferencesCursor(rawCursor)
+	cursor, err := decodeReferencesCursor(requestArgs.RawCursor)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -286,7 +283,7 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Implementations(ctx context.Conte
 
 	impls, implsCursor, err := r.codeNavSvc.GetImplementations(ctx, requestArgs, r.requestState, cursor)
 	if err != nil {
-		return nil, errors.Wrap(err, "svc.GetImplementations")
+		return nil, errors.Wrap(err, "codeNavSvc.GetImplementations")
 	}
 
 	if implsCursor.Phase != "done" {
@@ -306,10 +303,19 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Implementations(ctx context.Conte
 	return NewLocationConnectionResolver(impls, strPtr(nextCursor), r.locationResolver), nil
 }
 
+// Hover returns the hover text and range for the symbol at the given position.
 func (r *gitBlobLSIFDataResolverQueryResolver) Hover(ctx context.Context, args *LSIFQueryPositionArgs) (_ HoverResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "hover"))
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "hover"))
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(requestArgs))
+	defer endObservation()
 
-	text, rx, exists, err := r.gitBlobLSIFDataResolver.Hover(ctx, int(args.Line), int(args.Character))
+	// text, rx, exists, err := r.gitBlobLSIFDataResolver.Hover(ctx, int(args.Line), int(args.Character))
+	// if err != nil || !exists {
+	// 	return nil, err
+	// }
+
+	text, rx, exists, err := r.codeNavSvc.GetHover(ctx, requestArgs, r.requestState)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -317,13 +323,23 @@ func (r *gitBlobLSIFDataResolverQueryResolver) Hover(ctx context.Context, args *
 	return NewHoverResolver(text, sharedRangeTolspRange(rx)), nil
 }
 
+// LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
+// for answering code-intel queries.
 func (r *gitBlobLSIFDataResolverQueryResolver) LSIFUploads(ctx context.Context) (_ []sharedresolvers.LSIFUploadResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "lsifUploads"))
 
-	uploads, err := r.gitBlobLSIFDataResolver.LSIFUploads(ctx)
-	if err != nil {
-		return nil, err
+	// uploads, err := r.gitBlobLSIFDataResolver.LSIFUploads(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	cacheUploads := r.requestState.GetCacheUploads()
+	ids := make([]int, 0, len(cacheUploads))
+	for _, dump := range cacheUploads {
+		ids = append(ids, dump.ID)
 	}
+
+	uploads, err := r.codeNavSvc.GetDumpsByIDs(ctx, ids)
 
 	dbUploads := []types.Upload{}
 	for _, u := range uploads {
@@ -347,17 +363,26 @@ type LSIFDiagnosticsArgs struct {
 	ConnectionArgs
 }
 
+// Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolverQueryResolver) Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (_ DiagnosticConnectionResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "diagnostics"))
-
 	limit := derefInt32(args.First, DefaultDiagnosticsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
 
-	diagnostics, totalCount, err := r.gitBlobLSIFDataResolver.Diagnostics(ctx, limit)
+	// defer r.errTracer.Collect(&err, log.String("queryResolver.field", "diagnostics"))
+	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Limit: limit}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(requestArgs))
+	defer endObservation()
+
+	// diagnostics, totalCount, err := r.gitBlobLSIFDataResolver.Diagnostics(ctx, limit)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	diagnostics, totalCount, err := r.codeNavSvc.GetDiagnostics(ctx, requestArgs, r.requestState)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "codeNavSvc.GetDiagnostics")
 	}
 
 	return NewDiagnosticConnectionResolver(diagnostics, totalCount, r.locationResolver), nil

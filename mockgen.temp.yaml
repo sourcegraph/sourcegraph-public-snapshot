@@ -36,6 +36,7 @@
     - UploadsService
     - PolicyService
     - GitserverClient
+    - CodeNavService
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:

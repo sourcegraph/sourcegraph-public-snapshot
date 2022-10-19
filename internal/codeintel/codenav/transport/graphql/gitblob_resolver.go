@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -15,13 +16,13 @@ import (
 // specifics (auth, validation, marshaling, etc.). This resolver is wrapped by a symmetrics resolver
 // in this package's graphql subpackage, which is exposed directly by the API.
 type GitBlobResolver interface {
-	LSIFUploads(ctx context.Context) ([]types.Dump, error)
+	// LSIFUploads(ctx context.Context) ([]types.Dump, error)
 	// Ranges(ctx context.Context, startLine, endLine int) ([]shared.AdjustedCodeIntelligenceRange, error)
 	// Stencil(ctx context.Context) ([]types.Range, error)
-	Diagnostics(ctx context.Context, limit int) ([]shared.DiagnosticAtUpload, int, error)
-	Hover(ctx context.Context, line, character int) (string, types.Range, bool, error)
+	// Diagnostics(ctx context.Context, limit int) ([]shared.DiagnosticAtUpload, int, error)
+	// Hover(ctx context.Context, line, character int) (string, types.Range, bool, error)
 	// Definitions(ctx context.Context, line, character int) ([]types.UploadLocation, error)
-	// References(ctx context.Context, line, character, limit int, rawCursor string) ([]types.UploadLocation, string, error)
+	References(ctx context.Context, line, character, limit int, rawCursor string) ([]types.UploadLocation, string, error)
 	// Implementations(ctx context.Context, line, character, limit int, rawCursor string) ([]types.UploadLocation, string, error)
 }
 
@@ -68,33 +69,33 @@ func NewGitBlobResolver(svc CodeNavService, repositoryID int, commit, path strin
 // 	return def, nil
 // }
 
-// Diagnostics returns the diagnostics for documents with the given path prefix.
-func (r *gitBlobResolver) Diagnostics(ctx context.Context, limit int) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error) {
-	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Limit: limit}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(args))
-	defer endObservation()
+// // Diagnostics returns the diagnostics for documents with the given path prefix.
+// func (r *gitBlobResolver) Diagnostics(ctx context.Context, limit int) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error) {
+// 	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Limit: limit}
+// 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(args))
+// 	defer endObservation()
 
-	diag, totalCount, err := r.svc.GetDiagnostics(ctx, args, r.requestState)
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "svc.GetDiagnostics")
-	}
+// 	diag, totalCount, err := r.svc.GetDiagnostics(ctx, args, r.requestState)
+// 	if err != nil {
+// 		return nil, 0, errors.Wrap(err, "svc.GetDiagnostics")
+// 	}
 
-	return diag, totalCount, nil
-}
+// 	return diag, totalCount, nil
+// }
 
-// Hover returns the hover text and range for the symbol at the given position.
-func (r *gitBlobResolver) Hover(ctx context.Context, line, character int) (_ string, _ types.Range, _ bool, err error) {
-	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Line: line, Character: character}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(args))
-	defer endObservation()
+// // Hover returns the hover text and range for the symbol at the given position.
+// func (r *gitBlobResolver) Hover(ctx context.Context, line, character int) (_ string, _ types.Range, _ bool, err error) {
+// 	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Line: line, Character: character}
+// 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(args))
+// 	defer endObservation()
 
-	hover, rng, ok, err := r.svc.GetHover(ctx, args, r.requestState)
-	if err != nil {
-		return "", types.Range{}, false, err
-	}
+// 	hover, rng, ok, err := r.svc.GetHover(ctx, args, r.requestState)
+// 	if err != nil {
+// 		return "", types.Range{}, false, err
+// 	}
 
-	return hover, rng, ok, err
-}
+// 	return hover, rng, ok, err
+// }
 
 // // Implementations returns the list of source locations that define the symbol at the given position.
 // func (r *gitBlobResolver) Implementations(ctx context.Context, line, character int, limit int, rawCursor string) (_ []types.UploadLocation, nextCursor string, err error) {
@@ -123,19 +124,19 @@ func (r *gitBlobResolver) Hover(ctx context.Context, line, character int) (_ str
 // 	return impls, nextCursor, nil
 // }
 
-// LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
-// for answering code-intel queries.
-func (r *gitBlobResolver) LSIFUploads(ctx context.Context) (uploads []types.Dump, err error) {
-	cacheUploads := r.requestState.GetCacheUploads()
-	ids := make([]int, 0, len(cacheUploads))
-	for _, dump := range cacheUploads {
-		ids = append(ids, dump.ID)
-	}
+// // LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
+// // for answering code-intel queries.
+// func (r *gitBlobResolver) LSIFUploads(ctx context.Context) (uploads []types.Dump, err error) {
+// 	cacheUploads := r.requestState.GetCacheUploads()
+// 	ids := make([]int, 0, len(cacheUploads))
+// 	for _, dump := range cacheUploads {
+// 		ids = append(ids, dump.ID)
+// 	}
 
-	dumps, err := r.svc.GetDumpsByIDs(ctx, ids)
+// 	dumps, err := r.svc.GetDumpsByIDs(ctx, ids)
 
-	return dumps, err
-}
+// 	return dumps, err
+// }
 
 // // Ranges returns code intelligence for the ranges that fall within the given range of lines. These
 // // results are partial and do not include references outside the current file, or any location that
@@ -162,31 +163,31 @@ func (r *gitBlobResolver) LSIFUploads(ctx context.Context) (uploads []types.Dump
 // }
 
 // References returns the list of source locations that reference the symbol at the given position.
-// func (r *gitBlobResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []types.UploadLocation, nextCursor string, err error) {
-// 	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Line: line, Character: character, Limit: limit, RawCursor: rawCursor}
-// 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(args))
-// 	defer endObservation()
+func (r *gitBlobResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []types.UploadLocation, nextCursor string, err error) {
+	args := shared.RequestArgs{RepositoryID: r.repositoryID, Commit: r.commit, Path: r.path, Line: line, Character: character, Limit: limit, RawCursor: rawCursor}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(args))
+	defer endObservation()
 
-// 	// Decode cursor given from previous response or create a new one with default values.
-// 	// We use the cursor state track offsets with the result set and cache initial data that
-// 	// is used to resolve each page. This cursor will be modified in-place to become the
-// 	// cursor used to fetch the subsequent page of results in this result set.
-// 	cursor, err := decodeReferencesCursor(args.RawCursor)
-// 	if err != nil {
-// 		return nil, "", errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", args.RawCursor))
-// 	}
+	// Decode cursor given from previous response or create a new one with default values.
+	// We use the cursor state track offsets with the result set and cache initial data that
+	// is used to resolve each page. This cursor will be modified in-place to become the
+	// cursor used to fetch the subsequent page of results in this result set.
+	cursor, err := decodeReferencesCursor(args.RawCursor)
+	if err != nil {
+		return nil, "", errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", args.RawCursor))
+	}
 
-// 	refs, refCursor, err := r.svc.GetReferences(ctx, args, r.requestState, cursor)
-// 	if err != nil {
-// 		return nil, "", errors.Wrap(err, "svc.GetReferences")
-// 	}
+	refs, refCursor, err := r.svc.GetReferences(ctx, args, r.requestState, cursor)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "svc.GetReferences")
+	}
 
-// 	if refCursor.Phase != "done" {
-// 		nextCursor = encodeReferencesCursor(refCursor)
-// 	}
+	if refCursor.Phase != "done" {
+		nextCursor = encodeReferencesCursor(refCursor)
+	}
 
-// 	return refs, nextCursor, nil
-// }
+	return refs, nextCursor, nil
+}
 
 // // Stencil returns all ranges within a single document.
 // func (r *gitBlobResolver) Stencil(ctx context.Context) (adjustedRanges []types.Range, err error) {

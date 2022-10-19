@@ -31,7 +31,10 @@ type RequestState struct {
 func NewRequestState(
 	uploads []types.Dump,
 	authChecker authz.SubRepoPermissionChecker,
-	gitclient GitserverClient, repo *sgTypes.Repo, commit, path string,
+	gitclient GitserverClient,
+	repo *sgTypes.Repo,
+	commit string,
+	path string,
 	maxIndexes int,
 	hunkCacheSize int,
 ) RequestState {
