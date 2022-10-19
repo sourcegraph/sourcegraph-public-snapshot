@@ -90,7 +90,7 @@ func (r *blankRepo) pushRemote(ctx context.Context, name string) error {
 			if err != nil {
 				println(err.Error())
 			}
-			if err != nil && strings.Contains(err.Error(), "timeout") {
+			if err != nil && strings.Contains(err.Error(), "timed out") {
 				continue
 			}
 			break
