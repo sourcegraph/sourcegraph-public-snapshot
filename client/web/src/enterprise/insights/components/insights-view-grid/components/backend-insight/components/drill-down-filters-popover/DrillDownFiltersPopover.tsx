@@ -70,10 +70,9 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         }
     }
 
-    const handleCreateInsight = (values: FiltersCreationFormValues): void => {
+    const handleCreateInsight = async (values: FiltersCreationFormValues): Promise<void> => {
+        await onInsightCreate(values)
         setStep(DrillDownFiltersStep.Filters)
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        onInsightCreate(values)
     }
 
     return (
