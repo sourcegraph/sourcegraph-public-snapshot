@@ -8,7 +8,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
+import { GetInsightDataResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
 import {
     SeriesChartContent,
     SearchBasedInsight,
@@ -16,10 +16,10 @@ import {
     InsightExecutionType,
     InsightType,
 } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 
 import { BackendInsightView } from './BackendInsight'
+import { GET_INSIGHT_DATA } from './query'
 
 const defaultStory: Meta = {
     title: 'web/insights/BackendInsight',
@@ -164,7 +164,7 @@ const mockInsightAPIResponse = ({
         return [
             {
                 request: {
-                    query: GET_INSIGHT_VIEW_GQL,
+                    query: GET_INSIGHT_DATA,
                     variables: {
                         id: 'searchInsights.insight.mock_backend_insight_id',
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
@@ -185,7 +185,7 @@ const mockInsightAPIResponse = ({
     return [
         {
             request: {
-                query: GET_INSIGHT_VIEW_GQL,
+                query: GET_INSIGHT_DATA,
                 variables: {
                     id: 'searchInsights.insight.mock_backend_insight_id',
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
@@ -242,6 +242,11 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
     <BackendInsightView
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}
+        contextMenu={null}
+        isZeroYAxisMin={false}
+        isResizing={false}
+        onCreateInsight={async () => {}}
+        onUpdateInsight={async () => {}}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     />
 )
@@ -329,9 +334,9 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     dashboards: [],
 }
 
-const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {
+const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightDataResult> = {
     request: {
-        query: GET_INSIGHT_VIEW_GQL,
+        query: GET_INSIGHT_DATA,
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
@@ -598,9 +603,9 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
     },
 }
 
-const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> = {
+const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightDataResult> = {
     request: {
-        query: GET_INSIGHT_VIEW_GQL,
+        query: GET_INSIGHT_DATA,
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
@@ -867,9 +872,9 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
     },
 }
 
-const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightViewResult> = {
+const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightDataResult> = {
     request: {
-        query: GET_INSIGHT_VIEW_GQL,
+        query: GET_INSIGHT_DATA,
         variables: {
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
@@ -1221,6 +1226,11 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
             <BackendInsightView
                 style={{ width: 400, height: 400 }}
                 insight={COMPONENT_MIGRATION_INSIGHT_CONFIGURATION}
+                contextMenu={null}
+                isZeroYAxisMin={false}
+                isResizing={false}
+                onCreateInsight={async () => {}}
+                onUpdateInsight={async () => {}}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         </MockedTestProvider>
@@ -1229,6 +1239,11 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
             <BackendInsightView
                 style={{ width: 400, height: 400 }}
                 insight={DATA_FETCHING_INSIGHT_CONFIGURATION}
+                contextMenu={null}
+                isZeroYAxisMin={false}
+                isResizing={false}
+                onCreateInsight={async () => {}}
+                onUpdateInsight={async () => {}}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         </MockedTestProvider>
@@ -1237,6 +1252,11 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
             <BackendInsightView
                 style={{ width: 400, height: 400 }}
                 insight={TERRAFORM_INSIGHT_CONFIGURATION}
+                contextMenu={null}
+                isZeroYAxisMin={false}
+                isResizing={false}
+                onCreateInsight={async () => {}}
+                onUpdateInsight={async () => {}}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         </MockedTestProvider>
@@ -1281,6 +1301,11 @@ export const BackendInsightVitrine: Story = () => (
                 <BackendInsightView
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
+                    contextMenu={null}
+                    isZeroYAxisMin={false}
+                    isResizing={false}
+                    onCreateInsight={async () => {}}
+                    onUpdateInsight={async () => {}}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             </MockedTestProvider>
