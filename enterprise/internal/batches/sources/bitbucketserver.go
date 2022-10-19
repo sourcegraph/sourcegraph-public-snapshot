@@ -358,7 +358,6 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 	// If not, then we need to create a fork.
 	if fork == nil {
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
-
 			// hikelly := parent.Project.Key + "-" + parent.Slug
 			// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &hikelly,
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
