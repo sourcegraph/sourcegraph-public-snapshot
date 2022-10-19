@@ -6,8 +6,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../../components/WebStory'
 import { SeriesSortDirection, SeriesSortMode } from '../../../../graphql-operations'
 import { SeriesChartContent, InsightExecutionType, InsightType, SearchBasedInsight } from '../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
+import { GET_INSIGHT_DATA } from './components/backend-insight';
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
 const defaultStory: Meta = {
@@ -621,7 +621,7 @@ function generateSeries(insight: SearchBasedInsight) {
 function generateMocks(insights: SearchBasedInsight[]) {
     return insights.map(insight => ({
         request: {
-            query: GET_INSIGHT_VIEW_GQL,
+            query: GET_INSIGHT_DATA,
             variables: {
                 id: insight.id,
                 filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },

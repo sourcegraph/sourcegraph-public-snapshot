@@ -92,8 +92,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
                         insight={insight}
                         currentDashboard={currentDashboard}
                         dashboards={dashboards}
-                        zeroYAxisMin={zeroYAxisMin}
-                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        isZeroYAxisMin={zeroYAxisMin}
+                        onZeroYAxisMinChange={setZeroYAxisMin}
                     />
                 )}
             </InsightCardHeader>

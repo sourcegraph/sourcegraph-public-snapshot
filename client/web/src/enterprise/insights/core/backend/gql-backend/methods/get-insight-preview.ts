@@ -3,7 +3,7 @@ import { ApolloClient, gql } from '@apollo/client'
 import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
 import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from '../../../../constants'
 import { BackendInsightDatum, InsightPreviewSettings, SeriesChartContent } from '../../code-insights-backend-types'
-import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
+import { generateLinkURL } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
 
 const GET_INSIGHT_PREVIEW_GQL = gql`
@@ -66,7 +66,7 @@ export const getInsightsPreview = (
             }
 
             // Extend series with synthetic index based series id
-            const indexedSeries = series.slice(0, MAX_NUMBER_OF_SERIES).map<InsightDataSeriesData>((series, index) => ({
+            const indexedSeries = series.slice(0, MAX_NUMBER_OF_SERIES).map((series, index) => ({
                 seriesId: `${index}`,
                 ...series,
             }))
