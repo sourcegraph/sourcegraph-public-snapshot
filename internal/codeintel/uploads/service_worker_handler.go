@@ -15,7 +15,6 @@ import (
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -118,16 +117,6 @@ func (s *Service) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
-
-			// When inserting a new completed upload record, update the reference counts both to it from
-			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
-			// We always keep this value up to date - we also decrement reference counts of dependencies
-			// on upload deletion or when the set of uploads providing an existing package change.
-			updated, err := tx.UpdateUploadsReferenceCounts(ctx, []int{upload.ID}, shared.DependencyReferenceCountUpdateTypeAdd)
-			if err != nil {
-				return errors.Wrap(err, "store.UpdateReferenceCount")
-			}
-			trace.Log(otlog.Int("updatedReferencingUploads", updated))
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to
 			// sync/create referenced dependency repositories and queue auto-index records for the monikers
