@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect } from 'react'
+import React, { forwardRef, useContext, useEffect, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -9,6 +9,8 @@ import { Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
+import { InsightContextMenu } from './insight-context-menu/InsightContextMenu'
+import { InsightContext } from './InsightContext';
 
 export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: Insight
@@ -22,8 +24,11 @@ export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
     const { insight, resizing = false, telemetryService, ...otherProps } = props
 
-    const mergedReference = useMergeRefs([reference])
+    const { currentDashboard, dashboards } = useContext(InsightContext)
+
     const search = useSearchParameters()
+    const mergedReference = useMergeRefs([reference])
+    const [isZeroYAxisMin, setZeroYAxisMin] = useState(false)
 
     useEffect(() => {
         const insightIdToBeFocused = search.get('focused')
@@ -39,8 +44,18 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
             <BackendInsightView
                 ref={mergedReference}
                 insight={insight}
-                resizing={resizing}
+                isZeroYAxisMin={isZeroYAxisMin}
+                isResizing={resizing}
                 telemetryService={telemetryService}
+                contextMenu={
+                    <InsightContextMenu
+                        insight={insight}
+                        currentDashboard={currentDashboard}
+                        dashboards={dashboards}
+                        isZeroYAxisMin={isZeroYAxisMin}
+                        onZeroYAxisMinChange={setZeroYAxisMin}
+                    />
+                }
                 {...otherProps}
             />
         )
