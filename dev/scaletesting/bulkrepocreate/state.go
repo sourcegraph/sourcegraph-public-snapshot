@@ -116,12 +116,16 @@ func (s *state) saveRepo(r *repo) error {
 func (s *state) insert(names []string) error {
 	s.Lock()
 	defer s.Unlock()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
 	for _, name := range names {
-		if _, err := s.db.Exec(`INSERT INTO repos(name) VALUES (?)`, name); err != nil {
+		if _, err := tx.Exec(`INSERT INTO repos(name) VALUES (?)`, name); err != nil {
 			return err
 		}
 	}
-	return nil
+	return tx.Commit()
 }
 
 func (s *state) countCompletedRepos() (int, error) {
