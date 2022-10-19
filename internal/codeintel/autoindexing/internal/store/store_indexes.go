@@ -554,18 +554,61 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 		isQueuedQuery,
 		repositoryID, commit,
 		repositoryID, commit,
-		repositoryID, commit,
 	)))
 	return isQueued, err
 }
 
 const isQueuedQuery = `
 SELECT
-	NOT EXISTS (SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s AND should_reindex)
-	AND (
-		EXISTS (SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting'))
-		OR
-		EXISTS (SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s AND NOT should_reindex)
+	EXISTS (
+		SELECT 1
+		FROM lsif_uploads u
+		WHERE
+			repository_id = %s AND
+			commit = %s AND
+			state NOT IN ('deleting', 'deleted') AND
+			associated_index_id IS NULL
+	)
+
+	OR
+
+	(
+		SELECT bool_and(NOT should_reindex)
+		FROM (
+			SELECT DISTINCT ON (root, indexer) should_reindex
+			FROM lsif_indexes
+			WHERE repository_id = %s AND commit = %s
+			ORDER BY root, indexer, queued_at DESC
+		) _
+	)
+`
+
+// IsQueuedRootIndexer returns true if there is an index or an upload for the given (repository, commit, root, indexer).
+func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.String("root", root),
+		log.String("indexer", indexer),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(isQueuedRootIndexerQuery, repositoryID, commit, root, indexer)))
+	return isQueued, err
+}
+
+const isQueuedRootIndexerQuery = `
+SELECT
+	EXISTS (
+		SELECT 1
+		FROM lsif_indexes
+		WHERE
+			repository_id  = %s AND
+			commit         = %s AND
+			root           = %s AND
+			indexer        = %s AND
+			should_reindex = false
+		ORDER BY queued_at DESC
 	)
 `
 

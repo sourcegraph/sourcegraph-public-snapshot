@@ -46,8 +46,8 @@ export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeI
                     <CodeIntelUploadOrIndexRepository node={node} />
                 </H3>
                 {node.shouldReindex && (
-                    <Tooltip content="This index has been scheduled to be reindexed.">
-                        <div className={classNames(styles.tag, 'ml-1 rounded')}>(to be reindexed)</div>
+                    <Tooltip content="This index has been marked for reindexeding.">
+                        <div className={classNames(styles.tag, 'ml-1 rounded')}>(marked for reindexeding)</div>
                     </Tooltip>
                 )}
             </div>
