@@ -87,6 +87,9 @@ func (r *blankRepo) pushRemote(ctx context.Context, name string) error {
 		var err error
 		for i := 0; i < 3; i++ {
 			err = run.Bash(ctx, "git push", name).Run().Wait()
+			if err != nil {
+				println(err.Error())
+			}
 			if err != nil && strings.Contains(err.Error(), "timeout") {
 				continue
 			}
