@@ -29,7 +29,7 @@ type newBackfillHandler struct {
 	costAnalyzer  priority.QueryAnalyzer
 }
 
-// makeNewBackfillWorker Makes a new Worker, Resetter and store to handle the Queue of Backfill jobs that are in the state of "New"
+// makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
 func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	insightsDB := config.InsightsDB
 	backfillStore := newBackfillStore(insightsDB)
