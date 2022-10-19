@@ -679,6 +679,15 @@
       "group": "Code intelligence",
       "default": false
     },
+    "codeIntelAutoIndexing.indexerMap": {
+      "description": "Overrides the default Docker images used by auto-indexing.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "group": "Code intelligence",
+      "default": null
+    },
     "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
       "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
       "type": "integer",
