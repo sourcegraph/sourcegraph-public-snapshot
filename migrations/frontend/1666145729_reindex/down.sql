@@ -1,5 +1,3 @@
-ALTER TABLE lsif_indexes DROP COLUMN IF EXISTS should_reindex;
-
 DROP VIEW IF EXISTS lsif_indexes_with_repository_name;
 
 CREATE VIEW lsif_indexes_with_repository_name AS
@@ -26,3 +24,5 @@ CREATE VIEW lsif_indexes_with_repository_name AS
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
+
+ALTER TABLE lsif_indexes DROP COLUMN IF EXISTS should_reindex;
