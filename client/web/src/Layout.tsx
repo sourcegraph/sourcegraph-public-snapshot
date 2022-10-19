@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
@@ -37,7 +36,6 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { BlockInput } from './notebooks'
@@ -51,7 +49,6 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
-import { NotepadContainer } from './search/Notepad'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme, useThemeProps } from './theme'
@@ -63,6 +60,16 @@ import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
+
+const TabbedPanelContent = React.lazy(async () => ({
+    default: (await import('@sourcegraph/branded/src/components/panel/TabbedPanelContent')).TabbedPanelContent,
+}))
+const GlobalDebug = React.lazy(async () => ({
+    default: (await import('./global/GlobalDebug')).GlobalDebug,
+}))
+const NotepadContainer = React.lazy(async () => ({
+    default: (await import('./search/Notepad')).NotepadContainer,
+}))
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -276,7 +283,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            {props.extensionsController !== null ? (
+            {props.extensionsController !== null && window.context.enableLegacyExtensions ? (
                 <GlobalDebug {...props} extensionsController={props.extensionsController} />
             ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
