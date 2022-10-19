@@ -1221,8 +1221,8 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "backgroundJobs": {
-              "description": "Capture security events performed by the background jobs (adds significant noise).",
+            "internalTraffic": {
+              "description": "Capture security events performed by the internal traffic (adds significant noise).",
               "type": "boolean",
               "default": false
             },
@@ -1235,14 +1235,21 @@
               "description": "Capture gitserver access logs as part of the audit log.",
               "type": "boolean",
               "default": false
+            },
+            "severityLevel": {
+              "description": "Severity logging level for the audit log.",
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+              "default": "INFO"
             }
           },
-          "required": ["backgroundJobs", "graphQL", "gitserverAccess"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
           "examples": [
             {
-              "backgroundJobs": false,
+              "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false
+              "gitserverAccess": false,
+              "severityLevel": "INFO"
             }
           ]
         }

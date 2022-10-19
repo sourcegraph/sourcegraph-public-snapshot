@@ -188,7 +188,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 description: 'Not cloned',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that haven not been cloned yet.',
+                tooltip: 'The number of repositories that have not been cloned yet.',
             },
             {
                 value: data.repositoryStats.cloning,

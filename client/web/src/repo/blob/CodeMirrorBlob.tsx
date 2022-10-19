@@ -17,6 +17,7 @@ import {
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
@@ -65,9 +66,6 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
-    // Note that these only work out-of-the-box because the editor is
-    // *focusable* by setting `tab-index: 0`.
-    search,
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
@@ -101,6 +99,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         overrideBrowserSearchKeybinding,
         'data-testid': dataTestId,
     } = props
+
+    const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
@@ -196,6 +196,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
+            search({
+                // useFileSearch is not a dependency because the search
+                // extension manages its own state. This is just the initial
+                // value
+                overrideBrowserFindInPageShortcut: useFileSearch,
+                onOverrideBrowserFindInPageToggle: setUseFileSearch,
+            }),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
@@ -297,7 +304,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 className={`${className} overflow-hidden test-editor`}
                 data-editor="codemirror6"
             />
-            {overrideBrowserSearchKeybinding && (
+            {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
         </>

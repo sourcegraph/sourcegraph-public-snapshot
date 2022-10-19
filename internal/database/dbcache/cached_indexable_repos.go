@@ -105,8 +105,7 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context) ([]types.Minima
 
 	opts := database.ListIndexableReposOptions{
 		// Zoekt can only index a repo which has been cloned.
-		CloneStatus:    types.CloneStatusCloned,
-		IncludePrivate: true,
+		CloneStatus: types.CloneStatusCloned,
 	}
 	repos, err := s.store.ListIndexableRepos(ctx, opts)
 	if err != nil {

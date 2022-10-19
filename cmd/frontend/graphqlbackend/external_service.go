@@ -51,7 +51,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
@@ -358,3 +358,15 @@ func (r *externalServiceSyncJobResolver) FinishedAt() *gqlutil.DateTime {
 
 	return &gqlutil.DateTime{Time: r.job.FinishedAt}
 }
+
+func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
+
+func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
+
+func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
+
+func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
+
+func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
+
+func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
