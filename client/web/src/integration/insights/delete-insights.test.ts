@@ -44,7 +44,7 @@ describe('Code insights page', () => {
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' })],
                     },
                 }),
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',

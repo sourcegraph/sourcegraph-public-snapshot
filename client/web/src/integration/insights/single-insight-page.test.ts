@@ -50,7 +50,7 @@ describe('Code insights single insight page', () => {
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ id: '001', type: 'calculated' })],
                     },
                 }),
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
@@ -77,7 +77,7 @@ describe('Code insights single insight page', () => {
                         nodes: [createJITMigrationToGQLInsightMetadataFixture({ id: '001', type: 'calculated' })],
                     },
                 }),
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
@@ -104,7 +104,7 @@ describe('Code insights single insight page', () => {
             await driver.page.click('[aria-label="Sort by name with ascending order"]')
             await driver.page.click('input[aria-label="Number of data series"]', { clickCount: 3 })
             await driver.page.keyboard.type('2')
-        }, 'GetInsightView')
+        }, 'GetInsightData')
 
         assert.deepStrictEqual(variables.filters, {
             searchContexts: [''],
