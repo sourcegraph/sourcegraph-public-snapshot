@@ -1,4 +1,4 @@
-export type { DrillDownFiltersFormValues, DrillDownInsightCreationFormValues } from './drill-down-filters-panel'
+export type { DrillDownFiltersFormValues, FiltersCreationFormValues } from './drill-down-filters-panel'
 
 export {
     DrillDownInsightFilters,

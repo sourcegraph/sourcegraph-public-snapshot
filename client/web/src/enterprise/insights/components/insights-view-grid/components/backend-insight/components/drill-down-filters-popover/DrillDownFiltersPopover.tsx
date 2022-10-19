@@ -9,7 +9,7 @@ import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
-    DrillDownInsightCreationFormValues,
+    FiltersCreationFormValues,
     DrillDownFiltersFormValues,
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -27,7 +27,7 @@ interface DrillDownFiltersPopoverProps {
     originalFiltersValue: InsightFilters
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters) => void
-    onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
+    onInsightCreate: (values: FiltersCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
 }
 
@@ -70,7 +70,7 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         }
     }
 
-    const handleCreateInsight = (values: DrillDownInsightCreationFormValues): void => {
+    const handleCreateInsight = (values: FiltersCreationFormValues): void => {
         setStep(DrillDownFiltersStep.Filters)
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onInsightCreate(values)

@@ -7,19 +7,19 @@ import { LoaderButton } from '../../../../../../../../components/LoaderButton'
 import { getDefaultInputProps, useField, createRequiredValidator } from '../../../../../form'
 import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../form/hooks/useForm'
 
-export interface DrillDownInsightCreationFormValues {
+export interface FiltersCreationFormValues {
     insightName: string
 }
 
 const INSIGHT_NAME_VALIDATORS = createRequiredValidator('Insight name is a required field.')
 
-const DEFAULT_FORM_VALUES: DrillDownInsightCreationFormValues = {
+const DEFAULT_FORM_VALUES: FiltersCreationFormValues = {
     insightName: '',
 }
 
 interface DrillDownInsightCreationFormProps {
     className?: string
-    onCreateInsight: (values: DrillDownInsightCreationFormValues) => SubmissionResult
+    onCreateInsight: (values: FiltersCreationFormValues) => SubmissionResult
     onCancel: () => void
 }
 

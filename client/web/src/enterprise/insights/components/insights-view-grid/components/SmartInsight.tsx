@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useSearchParameters } from '@sourcegraph/wildcard'
 
-import { Insight, isBackendInsight } from '../../../core'
+import { CodeInsightsBackendContext, Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
@@ -25,6 +25,7 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
     const { insight, resizing = false, telemetryService, ...otherProps } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
+    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     const search = useSearchParameters()
     const mergedReference = useMergeRefs([reference])
@@ -39,14 +40,17 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
         }
     }, [insight.id, mergedReference, search])
 
+    const handleCreateInsight = (insight: Insight): Promise<unknown> =>
+        createInsight({ insight, dashboard: currentDashboard }).toPromise()
+
+    const handleUpdateInsight = (insight: Insight): Promise<unknown> =>
+        updateInsight({ insightId: insight.id, nextInsightData: insight }).toPromise()
+
     if (isBackendInsight(insight)) {
         return (
             <BackendInsightView
                 ref={mergedReference}
                 insight={insight}
-                isZeroYAxisMin={isZeroYAxisMin}
-                isResizing={resizing}
-                telemetryService={telemetryService}
                 contextMenu={
                     <InsightContextMenu
                         insight={insight}
@@ -56,6 +60,11 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
                         onZeroYAxisMinChange={setZeroYAxisMin}
                     />
                 }
+                isZeroYAxisMin={isZeroYAxisMin}
+                isResizing={resizing}
+                telemetryService={telemetryService}
+                onCreateInsight={handleCreateInsight}
+                onUpdateInsight={handleUpdateInsight}
                 {...otherProps}
             />
         )
