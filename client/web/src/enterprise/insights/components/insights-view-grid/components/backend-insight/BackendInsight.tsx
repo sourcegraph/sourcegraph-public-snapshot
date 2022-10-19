@@ -7,7 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { GetInsightDataResult, GetInsightDataVariables, } from '../../../../../../graphql-operations'
+import { GetInsightDataResult, GetInsightDataVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { BackendInsight, InsightFilters } from '../../../../core'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
@@ -80,7 +80,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
-            }
+            },
         }
     )
 
@@ -111,7 +111,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             seriesDisplayOptions: {
                 limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
                 sortOptions: filters.seriesDisplayOptions.sortOptions,
-            }
+            },
         })
 
         setIsFiltersOpen(false)
@@ -170,7 +170,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
                         />
-                        { contextMenu }
+                        {contextMenu}
                     </>
                 )}
             </InsightCardHeader>

@@ -1,4 +1,3 @@
-
 // UI components
 export { BackendInsightView } from './BackendInsight'
 

@@ -7,10 +7,10 @@ import { useSearchParameters } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext, Insight, isBackendInsight } from '../../../core'
 
-import { BackendInsightView } from './backend-insight/BackendInsight'
+import { BackendInsightView } from './backend-insight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
 import { InsightContextMenu } from './insight-context-menu/InsightContextMenu'
-import { InsightContext } from './InsightContext';
+import { InsightContext } from './InsightContext'
 
 export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: Insight
