@@ -35,13 +35,8 @@ import {
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import {
-    BackendInsightData,
-    ALL_INSIGHTS_DASHBOARD,
-    BackendInsight,
-    CodeInsightsBackendContext,
-    InsightFilters,
-} from '../../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
+import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
