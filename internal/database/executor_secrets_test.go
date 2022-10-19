@@ -3,7 +3,6 @@ package database
 import (
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -371,62 +370,6 @@ func TestExecutorSecrets_List(t *testing.T) {
 			assert.Equal(t, []*UserCredential{gitlabCred}, creds)
 		})
 	}
-}
-
-func TestExecutorSecrets_Invalid(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-	ctx := fx.internalCtx
-	key := fx.key
-
-	t.Run("marshal", func(t *testing.T) {
-		_, err := fx.db.Create(ctx, UserCredentialScope{}, &invalidAuth{})
-		assert.Error(t, err)
-	})
-
-	t.Run("unmarshal", func(t *testing.T) {
-		// We'll set up some cases here that just shouldn't happen at all, and
-		// make sure they bubble up with errors where we expect. Let's define a
-		// helper to make that easier.
-
-		insertRawCredential := func(t *testing.T, domain string, raw string) int64 {
-			kid := testEncryptionKeyID(key)
-			secret, err := key.Encrypt(ctx, []byte(raw))
-			require.NoError(t, err)
-
-			q := sqlf.Sprintf(
-				userCredentialsCreateQueryFmtstr,
-				domain,
-				fx.user.ID,
-				"type",
-				"id",
-				secret,
-				kid,
-				sqlf.Sprintf("id"),
-			)
-
-			var id int64
-			err = db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&id)
-			require.NoError(t, err)
-
-			return id
-		}
-
-		for name, id := range map[string]int64{
-			"invalid credential type": insertRawCredential(t, "invalid", `{"type":"InvalidType"}`),
-			"lying credential type":   insertRawCredential(t, "lying", `{"type":"BasicAuth","username":42}`),
-			"malformed JSON":          insertRawCredential(t, "malformed", "this is not valid JSON"),
-		} {
-			t.Run(name, func(t *testing.T) {
-				cred, err := fx.db.GetByID(ctx, id)
-				require.NoError(t, err)
-
-				_, err = cred.Authenticator(ctx)
-				assert.Error(t, err)
-			})
-		}
-	})
 }
 
 func TestExecutorSecretNotFoundError(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/log"
 
@@ -80,6 +81,9 @@ type ExecutorSecretStore interface {
 type ExecutorSecretsListOpts struct {
 	*LimitOffset
 
+	// Keys, if set limits the returned secrets to the list of provided keys.
+	Keys []string
+
 	// NamespaceUserID, when set, returns secrets accessible in the user namespace.
 	// These may include global secrets.
 	NamespaceUserID int32
@@ -97,12 +101,17 @@ func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, 
 	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
 
 	preds := []*sqlf.Query{authz}
+
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("(namespace_org_id = %s OR (%s))", opts.NamespaceOrgID, globalSecret))
 	} else if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("(namespace_user_id = %s OR (%s))", opts.NamespaceUserID, globalSecret))
 	} else {
 		preds = append(preds, globalSecret)
+	}
+
+	if len(opts.Keys) > 0 {
+		preds = append(preds, sqlf.Sprintf("key = ANY(%s)", pq.Array(opts.Keys)))
 	}
 
 	return sqlf.Join(preds, "\n AND "), nil

@@ -49,56 +49,36 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
 	}
 
+	// This should never happen. To get some easier debugging when a user sees strange
+	// behavior, we log some additional context.
+	if job.UserID != batchSpec.UserID {
+		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
+	}
+
+	// Next, we fetch all secrets that are requested for the execution.
 	// Use a user context here, so that only secrets are returned that the user may see at this point in time.
 	userCtx := actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
 	esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 	secrets, _, err := esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
 		NamespaceUserID: batchSpec.NamespaceUserID,
 		NamespaceOrgID:  batchSpec.NamespaceOrgID,
-	})
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-	globalSecrets, _, err := esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
-		NamespaceUserID: 0,
-		NamespaceOrgID:  0,
+		Keys:            requiredSecrets(batchSpec.Spec),
 	})
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
-	fmt.Printf("SECRETS:\n\n%+v\n\n%+v\n\n", secrets, globalSecrets)
-
-	seenKeys := map[string]struct{}{}
-	secretEnvVars := make([]string, len(secrets)+len(globalSecrets))
+	// And build the env vars from the secrets.
+	secretEnvVars := make([]string, len(secrets))
 	redactedEnvVars := make(map[string]string, len(secrets))
 	for i, secret := range secrets {
 		val, err := secret.EncryptedValue.Decrypt(ctx)
 		if err != nil {
 			return apiclient.Job{}, err
 		}
+		// TODO: Create audit log entry.
 		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
 		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
-		seenKeys[secret.Key] = struct{}{}
-	}
-	for i, secret := range globalSecrets {
-		if _, ok := seenKeys[secret.Key]; ok {
-			// Don't overwrite existing keys.
-			continue
-		}
-
-		val, err := secret.EncryptedValue.Decrypt(ctx)
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-		secretEnvVars[i+len(secrets)] = fmt.Sprintf("%s=%s", secret.Key, val)
-		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
-	}
-
-	// This should never happen. To get some easier debugging when a user sees strange
-	// behavior, we log some additional context.
-	if job.UserID != batchSpec.UserID {
-		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
@@ -221,11 +201,26 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Env:      secretEnvVars,
 			},
 		},
-		// TODO: Create a map of all secret values we pass down:
 		RedactedValues: redactedEnvVars,
 	}
 
 	fmt.Printf("Job payload!!!!:\n%+v\n\n", j)
 
 	return j, nil
+}
+
+// requiredSecrets inspects all steps for env vars used and compiles a deduplicated
+// list from those.
+func requiredSecrets(spec *batcheslib.BatchSpec) []string {
+	requiredSecretsMap := map[string]struct{}{}
+	requiredSecrets := []string{}
+	for _, step := range spec.Steps {
+		for _, v := range step.Env.OuterVars() {
+			if _, ok := requiredSecretsMap[v]; !ok {
+				requiredSecretsMap[v] = struct{}{}
+				requiredSecrets = append(requiredSecrets, v)
+			}
+		}
+	}
+	return requiredSecrets
 }
