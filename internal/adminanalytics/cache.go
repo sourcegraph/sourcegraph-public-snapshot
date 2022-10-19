@@ -110,7 +110,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 		for _, groupBy := range groupBys {
 			stores := []CacheAll{
 				&Search{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Users{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Users{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
 				&Notebooks{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
 				&CodeIntel{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
 				&Repos{DB: db, Cache: true},
