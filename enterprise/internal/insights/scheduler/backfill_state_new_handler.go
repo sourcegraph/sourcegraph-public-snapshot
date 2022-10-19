@@ -79,21 +79,17 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.New("invalid job received")
 	}
 	// setup transactions
-	queueTx, err := h.workerStore.Handle().Transact(ctx)
-	if err != nil {
-		return err
-	}
-	backfillTx, err := h.backfillStore.Transact(ctx)
+
+	tx, err := h.backfillStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		queueTx.Done(err)
-		backfillTx.Done(err)
+		tx.Done(err)
 	}()
 
 	// load backfill and series
-	backfill, err := backfillTx.loadBackfill(ctx, job.backfillId)
+	backfill, err := tx.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
@@ -104,7 +100,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 
 	// set backfill repo scope
 	repoIds := []int32{}
-	reposIterator, err := h.repoIterator.SeriesRepoIterator(ctx, series)
+	reposIterator, err := h.repoIterator.ForSeries(ctx, series)
 	if err != nil {
 		return errors.Wrap(err, "repoIterator.SeriesRepoIterator")
 	}
@@ -117,17 +113,17 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	}
 
 	//TODO: use query costing
-	backfill, err = backfill.SetScope(ctx, backfillTx, repoIds, 0)
+	backfill, err = backfill.SetScope(ctx, tx, repoIds, 0)
 	if err != nil {
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
 	// update series state
-	err = backfill.setState(ctx, backfillTx, BackfillStateProcessing)
+	err = backfill.setState(ctx, tx, BackfillStateProcessing)
 	if err != nil {
 		return errors.Wrap(err, "backfill.setState")
 	}
 
 	// enqueue backfill for next step in processing
-	return enqueueBackfill(ctx, queueTx, backfill)
+	return enqueueBackfill(ctx, tx.Handle(), backfill)
 }

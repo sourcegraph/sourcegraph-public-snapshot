@@ -12,10 +12,10 @@ type seriesRepoIterator struct {
 }
 
 type SeriesRepoIterator interface {
-	SeriesRepoIterator(ctx context.Context, series *types.InsightSeries) (RepoIterator, error)
+	ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterator, error)
 }
 
-func (s *seriesRepoIterator) SeriesRepoIterator(ctx context.Context, series *types.InsightSeries) (RepoIterator, error) {
+func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterator, error) {
 	switch len(series.Repositories) {
 	case 0:
 		return s.allRepoIterator, nil
