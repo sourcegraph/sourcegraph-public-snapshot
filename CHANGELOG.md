@@ -29,7 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Remove the older `log.gitserver.accessLogs` site config setting. The setting is succeeded by `log.auditLog.gitserverAccess`. [#43174](https://github.com/sourcegraph/sourcegraph/pull/43174)
 
 ## 4.1.0
 
