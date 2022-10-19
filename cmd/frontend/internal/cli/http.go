@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,10 +29,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -54,23 +51,6 @@ func newExternalHTTPHandler(
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
-
-	gh := webhooks.GitHubWebhook{
-		ExternalServices: db.ExternalServices(),
-	}
-
-	webhookhandlers.Init(db, &gh)
-
-	webhookMiddleware := webhooks.NewLogMiddleware(
-		db.WebhookLogs(keyring.Default().WebhookLogKey),
-	)
-
-	handlers.GitHubWebhook.Register(&gh)
-
-	ghSync := repos.GitHubWebhookHandler{}
-	ghSync.Register(&gh)
-
-	webhooks_handler := webhooks.WebhooksHandler(db, &gh)
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
@@ -97,8 +77,11 @@ func newExternalHTTPHandler(
 
 	githubAppSetupHandler := newGitHubAppSetupHandler()
 
+	// 🚨 SECURITY: This handler implements its own secret-based auth
+	webhookHandler := webhooks.NewHandler(db)
+
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db, logger, githubAppSetupHandler, webhookMiddleware.Logger(webhooks_handler))
+	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
@@ -117,6 +100,7 @@ func newExternalHTTPHandler(
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
+	sm.Handle("/webhooks/", secureHeadersMiddleware(webhookHandler, crossOriginPolicyNever))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"
 	// The asset handler should be wrapped into a middleware that enables cross-origin requests
