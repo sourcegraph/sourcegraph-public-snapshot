@@ -15,6 +15,7 @@ import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-crea
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
+import { CopyPathAction } from './CopyPathAction'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
@@ -52,18 +53,25 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
     const title = (
-        <RepoFileLink
-            repoName={result.repository}
-            repoURL={repoAtRevisionURL}
-            filePath={result.path}
-            fileURL={getFileMatchUrl(result)}
-            repoDisplayName={
-                repoDisplayName
-                    ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
-                    : undefined
-            }
-            className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
-        />
+        <span>
+            <RepoFileLink
+                repoName={result.repository}
+                repoURL={repoAtRevisionURL}
+                filePath={result.path}
+                fileURL={getFileMatchUrl(result)}
+                repoDisplayName={
+                    repoDisplayName
+                        ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
+                        : undefined
+                }
+                className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+            />
+            <CopyPathAction
+                filePath={result.path}
+                className={searchResultStyles.copyButton}
+                telemetryService={telemetryService}
+            />
+        </span>
     )
 
     const history = useHistory()
@@ -129,7 +137,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             onResultClicked={onSelect}
             repoName={result.repository}
             repoStars={result.repoStars}
-            className={containerClassName}
+            className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
         >
             <div className={styles.symbols}>
