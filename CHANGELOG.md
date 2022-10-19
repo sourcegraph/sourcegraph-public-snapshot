@@ -29,7 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Remove `LOG_ALL_GRAPHQL_REQUESTS` env var. The setting is succeeded by `log.auditLog.graphQL`. [#43181](https://github.com/sourcegraph/sourcegraph/pull/43181)
 
 ## 4.1.0
 
