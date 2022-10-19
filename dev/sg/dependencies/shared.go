@@ -341,7 +341,7 @@ func dependencyGcloud() *dependency {
 				}
 			}
 
-			if err := usershell.Command(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+			if err := usershell.Command(ctx, "gcloud auth application-default login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
 				return err
 			}
 
