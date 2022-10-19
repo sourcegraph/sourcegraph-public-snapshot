@@ -86,7 +86,7 @@ describe('Code insights dashboard', () => {
 
                 // Mock dashboard insights datasets (for both insights we will use one
                 // dataset)
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',

@@ -47,7 +47,7 @@ describe('Backend insight drill down filters', () => {
                 }),
 
                 // Calculated insight mock
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
@@ -155,7 +155,7 @@ describe('Backend insight drill down filters', () => {
                 }),
 
                 // Calculated insight mock
-                GetInsightView: () => ({
+                GetInsightData: () => ({
                     __typename: 'Query',
                     insightViews: {
                         __typename: 'InsightViewConnection',
