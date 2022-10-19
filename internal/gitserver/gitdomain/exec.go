@@ -38,6 +38,8 @@ var (
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
 		"testerror":   {},
+		"testecho":    {},
+		"testcat":     {},
 	}
 
 	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
