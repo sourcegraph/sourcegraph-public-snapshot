@@ -29,7 +29,7 @@ export class FuzzyRepos extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        return `type:repo count:10 ${query.replace('/', '.*/.*')}`
+        return `type:repo count:100 ${query.replace('/', '.*/.*')}`
     }
 
     /* override */ protected searchValues(): SearchValue[] {
