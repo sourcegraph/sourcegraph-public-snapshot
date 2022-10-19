@@ -11,7 +11,7 @@ export async function accessTokenSetting(secretStorage: vscode.SecretStorage): P
     return currentToken || ''
 }
 
-export async function removeAccessTokenSetting(): Promise<void> {
+export async function removeOldAccessTokenSetting(): Promise<void> {
     await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Global)
     await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Workspace)
     return

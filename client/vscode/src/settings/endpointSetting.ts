@@ -3,14 +3,13 @@ import * as vscode from 'vscode'
 import { readConfiguration } from './readConfiguration'
 
 export function endpointSetting(): string {
-    const url = readConfiguration().get<string>('url') || 'https://sourcegraph.com'
+    const url = vscode.workspace.getConfiguration().get<string>('sourcegraph.url') || 'https://sourcegraph.com'
     return removeEndingSlash(url)
 }
 
 export async function setEndpoint(newEndpoint: string | undefined): Promise<void> {
-    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : undefined
+    const newEndpointURL = newEndpoint ? removeEndingSlash(newEndpoint) : 'https://sourcegraph.com'
     await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Global)
-    await readConfiguration().update('url', newEndpointURL, vscode.ConfigurationTarget.Workspace)
 }
 
 export function endpointHostnameSetting(): string {
@@ -27,7 +26,7 @@ export function endpointProtocolSetting(): string {
 }
 
 export function endpointRequestHeadersSetting(): object {
-    return readConfiguration().get<object>('requestHeaders') || {}
+    return vscode.workspace.getConfiguration().get<object>('sourcegraph.requestHeaders') || {}
 }
 
 function removeEndingSlash(uri: string): string {

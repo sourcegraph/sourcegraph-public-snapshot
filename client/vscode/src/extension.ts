@@ -27,14 +27,12 @@ import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './setting
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, openSourcegraphLinks, registerWebviews, copySourcegraphLinks } from './webview/commands'
-import { processOldToken, scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const secretStorage = context.secrets
-    // Move token from user setting to secret storage
-    await processOldToken(secretStorage)
     // Register SourcegraphAuthProvider
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
@@ -43,10 +41,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             new SourcegraphAuthProvider(secretStorage)
         )
     )
-    const session = await vscode.authentication.getSession(endpointSetting(), [], { createIfNone: false })
-    const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = await secretStorage.get(scretTokenKey)
+    const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
+    const session = await vscode.authentication.getSession(endpointSetting(), [], createIfNone)
+    const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
@@ -74,19 +73,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
     async function login(newtoken: string, newuri: string): Promise<void> {
         try {
-            const newEndpoint = new URL(newuri)
-            const newTokenKey = newEndpoint.hostname
-            await secretStorage.store(newTokenKey, newtoken)
-            await setEndpoint(newEndpoint.href)
-            // stateMachine.emit({ type: 'sourcegraph_url_change' })
+            await secretStorage.store(scretTokenKey, newtoken)
+            await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: true })
+            await setEndpoint(newuri)
+            stateMachine.emit({ type: 'sourcegraph_url_change' })
         } catch (error) {
             console.error(error)
         }
     }
     async function logout(): Promise<void> {
         await secretStorage.delete(scretTokenKey)
-        await setEndpoint(undefined)
-        extensionCoreAPI.reloadWindow()
+        stateMachine.emit({ type: 'sourcegraph_url_change' })
     }
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),

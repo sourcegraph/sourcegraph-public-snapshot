@@ -49,14 +49,15 @@ export function observeAuthenticatedUser(secretStorage: vscode.SecretStorage): O
 
     function updateAuthenticatedUser(): void {
         requestGraphQLFromVSCode<CurrentAuthStateResult, CurrentAuthStateVariables>(currentAuthStateQuery, {})
-            .then(async authenticatedUserResult => {
-                if (!authenticatedUserResult.data) {
-                    await secretStorage.delete(scretTokenKey)
-                }
+            .then(authenticatedUserResult => {
                 authenticatedUsers.next(authenticatedUserResult.data ? authenticatedUserResult.data.currentUser : null)
+                if (!authenticatedUserResult.data) {
+                    throw new Error('Not an authenticated user')
+                }
             })
-            .catch(error => {
+            .catch(async error => {
                 console.error('core auth error', error)
+                await secretStorage.delete(scretTokenKey)
                 // TODO surface error?
                 authenticatedUsers.next(null)
             })

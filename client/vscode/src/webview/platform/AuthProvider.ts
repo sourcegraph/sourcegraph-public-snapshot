@@ -4,19 +4,19 @@ import {
     AuthenticationProvider,
     AuthenticationProviderAuthenticationSessionsChangeEvent,
     AuthenticationSession,
-    ConfigurationTarget,
     Disposable,
     Event,
     EventEmitter,
     SecretStorage,
+    workspace,
 } from 'vscode'
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 
+import { removeOldAccessTokenSetting } from '../../settings/accessTokenSetting'
 import { endpointRequestHeadersSetting, endpointSetting } from '../../settings/endpointSetting'
-import { readConfiguration } from '../../settings/readConfiguration'
 
-export const scretTokenKey = new URL(endpointSetting()).hostname
+export const scretTokenKey = 'SOURCEGRAPH_AUTH'
 
 class SourcegraphAuthSession implements AuthenticationSession {
     public readonly account = {
@@ -130,10 +130,9 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
 export async function processOldToken(secretStorage: SecretStorage): Promise<void> {
     // Process the token that lives in user configuration
     // Move them to secrets and then remove them by setting it as undefined
-    const oldToken = readConfiguration().get<string>('accessToken')
-    if (oldToken && oldToken !== undefined) {
+    const oldToken = workspace.getConfiguration().get<string>('sourcegraph.accessToken') || ''
+    if (oldToken) {
         await secretStorage.store(scretTokenKey, oldToken)
-        await readConfiguration().update('accessToken', undefined, ConfigurationTarget.Global)
-        await readConfiguration().update('accessToken', undefined, ConfigurationTarget.Workspace)
+        await removeOldAccessTokenSetting()
     }
 }
