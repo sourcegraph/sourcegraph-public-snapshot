@@ -1,6 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -12,7 +13,6 @@ import { ExternalAccount } from './ExternalAccount'
 import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 interface GitHubExternalData {
     name: string
@@ -72,7 +72,7 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            // map github fields
+                            // map GitHub fields
                             userName: githubExternalData.name,
                             userLogin: githubExternalData.login,
                             userUrl: githubExternalData.html_url,
@@ -94,6 +94,22 @@ const getNormalizedAccount = (
                         },
                     }
                 }
+                break
+            case 'SAML':
+            {
+                console.log("case: saml")
+                // const gitlabExternalData = accountExternalData as GitLabExternalData
+                // normalizedAccount = {
+                //     ...normalizedAccount,
+                //     external: {
+                //         id: account.id,
+                //         // map gitlab fields
+                //         userName: gitlabExternalData.name,
+                //         userLogin: gitlabExternalData.username,
+                //         userUrl: gitlabExternalData.web_url,
+                //     },
+                // }
+            }
                 break
         }
     }

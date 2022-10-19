@@ -30,8 +30,14 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const navigateToAuthProvider = useCallback((): void => {
         setIsLoading(true)
-        window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
-    }, [authProvider.authenticationURL])
+
+        if (authProvider.serviceType === 'saml') {
+            window.location.assign(`${authProvider.authenticationURL}`)
+        } else {
+            window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
+        }
+
+    }, [authProvider.serviceType, authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account
 
