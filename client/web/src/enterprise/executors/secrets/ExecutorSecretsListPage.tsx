@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -15,7 +15,11 @@ import {
 import { ExecutorSecretFields, ExecutorSecretScope, Scalars } from '../../../graphql-operations'
 
 import { AddSecretModal } from './AddSecretModal'
-import { useExecutorSecretsConnection, useGlobalExecutorSecretsConnection } from './backend'
+import {
+    useGlobalExecutorSecretsConnection,
+    useOrgExecutorSecretsConnection,
+    useUserExecutorSecretsConnection,
+} from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
@@ -38,10 +42,24 @@ export const UserExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<UserExecutorSecretsListPageProps>
 > = props => {
     const connectionLoader = useCallback(
-        (scope: ExecutorSecretScope) => useExecutorSecretsConnection(props.userID, scope),
-        []
+        (scope: ExecutorSecretScope) => useUserExecutorSecretsConnection(props.userID, scope),
+        [props.userID]
     )
     return <ExecutorSecretsListPage namespaceID={props.userID} connectionLoader={connectionLoader} {...props} />
+}
+
+export interface OrgExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
+    orgID: Scalars['ID']
+}
+
+export const OrgExecutorSecretsListPage: React.FunctionComponent<
+    React.PropsWithChildren<OrgExecutorSecretsListPageProps>
+> = props => {
+    const connectionLoader = useCallback(
+        (scope: ExecutorSecretScope) => useOrgExecutorSecretsConnection(props.orgID, scope),
+        [props.orgID]
+    )
+    return <ExecutorSecretsListPage namespaceID={props.orgID} connectionLoader={connectionLoader} {...props} />
 }
 
 interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
@@ -138,6 +156,9 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
     )
 }
 
+// When you add a new secret scope, this function will generate a compile error,
+// so that this is not forgotten. Add a new label/description tuple for the new
+// scope added here and TS will be happy.
 function executorSecretScopeContext(scope: ExecutorSecretScope): { label: string; description: string } {
     switch (scope) {
         case ExecutorSecretScope.BATCHES:

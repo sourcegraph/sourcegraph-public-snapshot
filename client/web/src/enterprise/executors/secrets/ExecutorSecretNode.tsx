@@ -60,12 +60,10 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         {node.namespace === null && (
                             <Badge
                                 variant="secondary"
-                                tooltip="Changesets on this code host will
-                            be created with a global token until a personal access token is added."
-                                aria-label="Changesets on this code host will
-                            be created with a global token until a personal access token is added."
+                                tooltip="This secret will be usable by all users of the Sourcegraph instance."
+                                aria-label="This secret will be usable by all users of the Sourcegraph instance."
                             >
-                                Global token
+                                Global secret
                             </Badge>
                         )}
                     </H3>
@@ -74,7 +72,7 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                             onClick={onClickUpdate}
                             variant="link"
                             aria-label={`Update secret value for ${node.key}`}
-                            // ref={buttonReference}
+                            ref={buttonReference}
                         >
                             Update
                         </Button>
@@ -83,7 +81,6 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                             onClick={onClickRemove}
                             variant="link"
                             aria-label={`Remove scret ${node.key}`}
-                            ref={buttonReference}
                         >
                             Remove
                         </Button>

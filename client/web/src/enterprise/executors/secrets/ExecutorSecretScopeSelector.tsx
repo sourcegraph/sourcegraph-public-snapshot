@@ -2,7 +2,7 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Text } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretScope } from '../../../graphql-operations'
 

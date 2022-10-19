@@ -17,6 +17,8 @@ import {
     CreateExecutorSecretVariables,
     UpdateExecutorSecretResult,
     UpdateExecutorSecretVariables,
+    OrgExecutorSecretsResult,
+    OrgExecutorSecretsVariables,
 } from '../../../graphql-operations'
 
 const EXECUTOR_SECRET_FIELDS = gql`
@@ -107,7 +109,7 @@ export const USER_EXECUTOR_SECRETS = gql`
     ${EXECUTOR_SECRET_CONNECTION_FIELDS}
 `
 
-export const useExecutorSecretsConnection = (
+export const useUserExecutorSecretsConnection = (
     user: Scalars['ID'],
     scope: ExecutorSecretScope
 ): UseConnectionResult<ExecutorSecretFields> =>
@@ -130,6 +132,50 @@ export const useExecutorSecretsConnection = (
             }
             if (node.__typename !== 'User') {
                 throw new Error(`Node is a ${node.__typename}, not a User`)
+            }
+
+            return node.executorSecrets
+        },
+    })
+
+export const ORG_EXECUTOR_SECRETS = gql`
+    query OrgExecutorSecrets($org: ID!, $scope: ExecutorSecretScope!, $first: Int, $after: String) {
+        node(id: $org) {
+            __typename
+            ... on Org {
+                executorSecrets(scope: $scope, first: $first, after: $after) {
+                    ...ExecutorSecretConnectionFields
+                }
+            }
+        }
+    }
+
+    ${EXECUTOR_SECRET_CONNECTION_FIELDS}
+`
+
+export const useOrgExecutorSecretsConnection = (
+    org: Scalars['ID'],
+    scope: ExecutorSecretScope
+): UseConnectionResult<ExecutorSecretFields> =>
+    useConnection<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
+        query: ORG_EXECUTOR_SECRETS,
+        variables: {
+            org,
+            scope,
+            after: null,
+            first: 15,
+        },
+        options: {
+            fetchPolicy: 'no-cache',
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
+            if (!node) {
+                throw new Error('Org not found')
+            }
+            if (node.__typename !== 'Org') {
+                throw new Error(`Node is a ${node.__typename}, not an Org`)
             }
 
             return node.executorSecrets
