@@ -2030,10 +2030,6 @@ type MockUploadService struct {
 	// BackfillCommittedAtBatchFunc is an instance of a mock function object
 	// controlling the behavior of the method BackfillCommittedAtBatch.
 	BackfillCommittedAtBatchFunc *UploadServiceBackfillCommittedAtBatchFunc
-	// BackfillReferenceCountBatchFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// BackfillReferenceCountBatch.
-	BackfillReferenceCountBatchFunc *UploadServiceBackfillReferenceCountBatchFunc
 	// DeleteLsifDataByUploadIdsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteLsifDataByUploadIds.
@@ -2099,11 +2095,6 @@ type MockUploadService struct {
 func NewMockUploadService() *MockUploadService {
 	return &MockUploadService{
 		BackfillCommittedAtBatchFunc: &UploadServiceBackfillCommittedAtBatchFunc{
-			defaultHook: func(context.Context, int) (r0 error) {
-				return
-			},
-		},
-		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
 			defaultHook: func(context.Context, int) (r0 error) {
 				return
 			},
@@ -2179,7 +2170,7 @@ func NewMockUploadService() *MockUploadService {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (r0 int, r1 error) {
+			defaultHook: func(context.Context, int) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -2203,11 +2194,6 @@ func NewStrictMockUploadService() *MockUploadService {
 		BackfillCommittedAtBatchFunc: &UploadServiceBackfillCommittedAtBatchFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockUploadService.BackfillCommittedAtBatch")
-			},
-		},
-		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
-			defaultHook: func(context.Context, int) error {
-				panic("unexpected invocation of MockUploadService.BackfillReferenceCountBatch")
 			},
 		},
 		DeleteLsifDataByUploadIdsFunc: &UploadServiceDeleteLsifDataByUploadIdsFunc{
@@ -2281,7 +2267,7 @@ func NewStrictMockUploadService() *MockUploadService {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
-			defaultHook: func(context.Context) (int, error) {
+			defaultHook: func(context.Context, int) (int, error) {
 				panic("unexpected invocation of MockUploadService.SoftDeleteExpiredUploads")
 			},
 		},
@@ -2305,9 +2291,6 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 	return &MockUploadService{
 		BackfillCommittedAtBatchFunc: &UploadServiceBackfillCommittedAtBatchFunc{
 			defaultHook: i.BackfillCommittedAtBatch,
-		},
-		BackfillReferenceCountBatchFunc: &UploadServiceBackfillReferenceCountBatchFunc{
-			defaultHook: i.BackfillReferenceCountBatch,
 		},
 		DeleteLsifDataByUploadIdsFunc: &UploadServiceDeleteLsifDataByUploadIdsFunc{
 			defaultHook: i.DeleteLsifDataByUploadIds,
@@ -2469,115 +2452,6 @@ func (c UploadServiceBackfillCommittedAtBatchFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceBackfillCommittedAtBatchFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// UploadServiceBackfillReferenceCountBatchFunc describes the behavior when
-// the BackfillReferenceCountBatch method of the parent MockUploadService
-// instance is invoked.
-type UploadServiceBackfillReferenceCountBatchFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []UploadServiceBackfillReferenceCountBatchFuncCall
-	mutex       sync.Mutex
-}
-
-// BackfillReferenceCountBatch delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockUploadService) BackfillReferenceCountBatch(v0 context.Context, v1 int) error {
-	r0 := m.BackfillReferenceCountBatchFunc.nextHook()(v0, v1)
-	m.BackfillReferenceCountBatchFunc.appendCall(UploadServiceBackfillReferenceCountBatchFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// BackfillReferenceCountBatch method of the parent MockUploadService
-// instance is invoked and the hook queue is empty.
-func (f *UploadServiceBackfillReferenceCountBatchFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BackfillReferenceCountBatch method of the parent MockUploadService
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UploadServiceBackfillReferenceCountBatchFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceBackfillReferenceCountBatchFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceBackfillReferenceCountBatchFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *UploadServiceBackfillReferenceCountBatchFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceBackfillReferenceCountBatchFunc) appendCall(r0 UploadServiceBackfillReferenceCountBatchFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// UploadServiceBackfillReferenceCountBatchFuncCall objects describing the
-// invocations of this function.
-func (f *UploadServiceBackfillReferenceCountBatchFunc) History() []UploadServiceBackfillReferenceCountBatchFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceBackfillReferenceCountBatchFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceBackfillReferenceCountBatchFuncCall is an object that
-// describes an invocation of method BackfillReferenceCountBatch on an
-// instance of MockUploadService.
-type UploadServiceBackfillReferenceCountBatchFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UploadServiceBackfillReferenceCountBatchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceBackfillReferenceCountBatchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -4169,24 +4043,24 @@ func (c UploadServiceSetRepositoriesForRetentionScanFuncCall) Results() []interf
 // SoftDeleteExpiredUploads method of the parent MockUploadService instance
 // is invoked.
 type UploadServiceSoftDeleteExpiredUploadsFunc struct {
-	defaultHook func(context.Context) (int, error)
-	hooks       []func(context.Context) (int, error)
+	defaultHook func(context.Context, int) (int, error)
+	hooks       []func(context.Context, int) (int, error)
 	history     []UploadServiceSoftDeleteExpiredUploadsFuncCall
 	mutex       sync.Mutex
 }
 
 // SoftDeleteExpiredUploads delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockUploadService) SoftDeleteExpiredUploads(v0 context.Context) (int, error) {
-	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0)
-	m.SoftDeleteExpiredUploadsFunc.appendCall(UploadServiceSoftDeleteExpiredUploadsFuncCall{v0, r0, r1})
+func (m *MockUploadService) SoftDeleteExpiredUploads(v0 context.Context, v1 int) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsFunc.nextHook()(v0, v1)
+	m.SoftDeleteExpiredUploadsFunc.appendCall(UploadServiceSoftDeleteExpiredUploadsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // SoftDeleteExpiredUploads method of the parent MockUploadService instance
 // is invoked and the hook queue is empty.
-func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -4195,7 +4069,7 @@ func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context) (int, error)) {
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.Context, int) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4204,19 +4078,19 @@ func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UploadServiceSoftDeleteExpiredUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context) (int, error) {
+	f.SetDefaultHook(func(context.Context, int) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UploadServiceSoftDeleteExpiredUploadsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context) (int, error) {
+	f.PushHook(func(context.Context, int) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context) (int, error) {
+func (f *UploadServiceSoftDeleteExpiredUploadsFunc) nextHook() func(context.Context, int) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4254,6 +4128,9 @@ type UploadServiceSoftDeleteExpiredUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -4265,7 +4142,7 @@ type UploadServiceSoftDeleteExpiredUploadsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

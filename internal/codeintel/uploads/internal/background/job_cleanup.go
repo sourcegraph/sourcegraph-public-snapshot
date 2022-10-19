@@ -193,8 +193,10 @@ func (b backgroundJob) handleAbandonedUpload(ctx context.Context, cfg janitorCon
 	return nil
 }
 
+const expiredUploadsBatchSize = 1000
+
 func (b backgroundJob) handleExpiredUploadDeleter(ctx context.Context) error {
-	count, err := b.uploadSvc.SoftDeleteExpiredUploads(ctx)
+	count, err := b.uploadSvc.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
