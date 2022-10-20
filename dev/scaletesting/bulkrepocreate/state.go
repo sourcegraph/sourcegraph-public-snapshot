@@ -49,6 +49,8 @@ type repo struct {
 	Created bool
 	Pushed  bool
 	GitURL  string
+
+	blank *blankRepo
 }
 
 func (s *state) load() ([]*repo, error) {

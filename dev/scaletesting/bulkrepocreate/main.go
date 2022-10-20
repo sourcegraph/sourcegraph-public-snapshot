@@ -109,6 +109,23 @@ func main() {
 		writeSuccess(out, "resuming jobs from %s", cfg.resume)
 	}
 
+	// assign blank repo clones to avoid clogging the remotes
+	blanks := []*blankRepo{blank}
+	clonesCount := int(cfg.count / 100)
+	if clonesCount < 1 {
+		clonesCount = 1
+	}
+	for i := 0; i < clonesCount; i++ {
+		clone, err := blank.clone(ctx, i)
+		if err != nil {
+			log.Fatal(err)
+		}
+		blanks = append(blanks, clone)
+	}
+	for i := 0; i < cfg.count; i++ {
+		repos[i].blank = blanks[i%clonesCount]
+	}
+
 	if _, _, err := gh.Organizations.Get(ctx, cfg.githubOrg); err != nil {
 		writeFailure(out, "organization does not exists")
 		log.Fatal(err)
@@ -154,16 +171,24 @@ func main() {
 	g.Wait()
 
 	done = 0
-	// Adding a remote will lock git configuration.
+	// Adding a remote will lock git configuration, so we shard
+	// them by blank repo duplicates.
+	g = group.New().WithMaxConcurrency(clonesCount)
 	for _, repo := range repos {
-		err = blank.addRemote(ctx, repo.Name, repo.GitURL)
-		if err != nil {
-			writeFailure(out, "Failed to add remote to repository %s", repo.Name)
-			log.Fatal(err)
-		}
-		done++
-		progress.SetValue(1, float64(done))
+		repo := repo
+		g.Go(func() {
+			repo.blank.Lock()
+			err = repo.blank.addRemote(ctx, repo.Name, repo.GitURL)
+			repo.blank.Unlock()
+			if err != nil {
+				writeFailure(out, "Failed to add remote to repository %s", repo.Name)
+				log.Fatal(err)
+			}
+			atomic.AddInt64(&done, 1)
+			progress.SetValue(1, float64(done))
+		})
 	}
+	g.Wait()
 
 	done = 0
 	g = group.New().WithMaxConcurrency(20)
@@ -178,7 +203,7 @@ func main() {
 			continue
 		}
 		g.Go(func() {
-			err := blank.pushRemote(ctx, repo.Name)
+			err := repo.blank.pushRemote(ctx, repo.Name)
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", repo.Name)
 				repo.Failed = err.Error()

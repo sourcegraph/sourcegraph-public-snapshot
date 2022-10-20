@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/run"
 )
 
 type blankRepo struct {
-	teardown func()
 	path     string
 	login    string
 	password string
+	sync.Mutex
 }
 
 func newBlankRepo(login string, password string) (*blankRepo, error) {
@@ -25,9 +28,6 @@ func newBlankRepo(login string, password string) (*blankRepo, error) {
 		login:    login,
 		password: password,
 		path:     path,
-		teardown: func() {
-			_ = os.RemoveAll(path)
-		},
 	}, nil
 }
 
@@ -46,6 +46,21 @@ func (r *blankRepo) inRepo(f func() error) error {
 	}
 
 	return f()
+}
+
+func (r *blankRepo) clone(ctx context.Context, num int) (*blankRepo, error) {
+	folder := fmt.Sprintf("%s_%d", filepath.Base(r.path), num)
+	err := run.Bash(ctx, "cp -R", r.path, folder).Run().Wait()
+	if err != nil {
+		return nil, err
+	}
+	other := *r
+	other.path = filepath.Join(filepath.Dir(r.path), folder)
+	return &other, nil
+}
+
+func (r *blankRepo) teardown() {
+	_ = os.RemoveAll(r.path)
 }
 
 func (r *blankRepo) init(ctx context.Context) error {
@@ -72,6 +87,8 @@ func (r *blankRepo) init(ctx context.Context) error {
 
 func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) error {
 	return r.inRepo(func() error {
+		r.Lock()
+		defer r.Unlock()
 		u, err := url.Parse(gitURL)
 		if err != nil {
 			return err
