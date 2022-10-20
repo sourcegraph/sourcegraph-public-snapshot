@@ -50,8 +50,12 @@ func TestWebhooksHandler(t *testing.T) {
 
 	require.NoError(t, err)
 
+	gh := GitHubWebhook{
+		DB: db,
+	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handler := NewHandler(db)
+		handler := NewHandler(db, &gh)
 
 		handler.ServeHTTP(w, r)
 	}))
@@ -98,7 +102,7 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
-	t.Run("correct GitHub secret returns not implemented", func(t *testing.T) {
+	t.Run("correct GitHub secret returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("githubsecret"))
@@ -109,12 +113,13 @@ func TestWebhooksHandler(t *testing.T) {
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("X-Github-Event", "member")
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("incorrect GitHub secret returns 400", func(t *testing.T) {
@@ -128,6 +133,7 @@ func TestWebhooksHandler(t *testing.T) {
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("X-Github-Event", "member")
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)

@@ -20,14 +20,14 @@ type WebhookHandlers struct {
 // WebhooksHandler is responsible for handling all incoming webhooks
 // and invoking the correct handlers depending on where the webhooks
 // come from.
-func NewHandler(db database.DB) http.Handler {
+func NewHandler(db database.DB, gh *GitHubWebhook) http.Handler {
 	base := mux.NewRouter().PathPrefix("/webhooks").Subrouter()
-	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(db))
+	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(db, gh))
 
 	return base
 }
 
-func webhookHandler(db database.DB) http.HandlerFunc {
+func webhookHandler(db database.DB, gh *GitHubWebhook) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {
@@ -55,12 +55,7 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
-			_, err := github.ValidatePayload(r, []byte(secret))
-			if err != nil {
-				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-				return
-			}
-			w.WriteHeader(http.StatusNotImplemented)
+			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, gh)
 		case extsvc.KindGitLab:
 			_, err := gitLabValidateSecret(r, secret)
 			if err != nil {
@@ -89,4 +84,14 @@ func gitLabValidateSecret(r *http.Request, secret string) ([]byte, error) {
 	defer r.Body.Close()
 
 	return body, nil
+}
+
+func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn string, secret string, gh *GitHubWebhook) {
+	payload, err := github.ValidatePayload(r, []byte(secret))
+	if err != nil {
+		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+		return
+	}
+
+	gh.HandleWebhook(w, r, urn, payload)
 }

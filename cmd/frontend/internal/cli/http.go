@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -77,8 +78,15 @@ func newExternalHTTPHandler(
 
 	githubAppSetupHandler := newGitHubAppSetupHandler()
 
+	gh := webhooks.GitHubWebhook{
+		DB: db,
+	}
+
+	webhookhandlers.Init(db, &gh)
+
+	handlers.GitHubWebhook.Register(&gh)
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	webhookHandler := webhooks.NewHandler(db)
+	webhookHandler := webhooks.NewHandler(db, &gh)
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)

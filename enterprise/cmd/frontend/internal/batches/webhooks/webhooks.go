@@ -32,8 +32,9 @@ type Webhook struct {
 }
 
 type PR struct {
-	ID             int64
-	RepoExternalID string
+	ID                int64
+	RepoExternalID    string
+	externalServiceID string
 }
 
 func (h Webhook) getRepoForPR(
@@ -42,12 +43,13 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
+	fmt.Println(pr)
 	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
 				ServiceType: h.ServiceType,
-				ServiceID:   externalServiceID,
+				ServiceID:   pr.externalServiceID,
 			},
 		},
 	})
@@ -97,7 +99,6 @@ type keyer interface {
 
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
-	externalServiceID string,
 	pr PR,
 	ev keyer,
 ) (err error) {
@@ -107,7 +108,7 @@ func (h Webhook) upsertChangesetEvent(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
+	r, err := h.getRepoForPR(ctx, tx, pr, pr.externalServiceID)
 	if err != nil {
 		log15.Warn("Webhook event could not be matched to repo", "err", err)
 		return nil
