@@ -21,9 +21,11 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
+import { exampleTripsAndTricks } from './LoggedOutHomepage.constants'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './SearchPage.module.scss'
 
@@ -78,12 +80,24 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
+                {props.isSourcegraphDotCom && props.authenticatedUser && (
+                    <TipsAndTricks
+                        title="Tips and Tricks"
+                        examples={exampleTripsAndTricks}
+                        moreLink={{
+                            label: 'More search features',
+                            href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                            trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
+                        }}
+                        {...props}
+                    />
+                )}
 
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
                 )}
 
-                {(!showEnterpriseHomePanels && !props.isSourcegraphDotCom) || (props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels) && (
+                {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
                     <QueryExamplesHomepage
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         telemetryService={props.telemetryService}
