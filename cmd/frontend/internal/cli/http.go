@@ -100,7 +100,7 @@ func newExternalHTTPHandler(
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
-	sm.Handle("/webhooks/", secureHeadersMiddleware(webhookHandler, crossOriginPolicyNever))
+	sm.Handle("/webhooks/", secureHeadersMiddleware(webhookHandler, crossOriginPolicyAPI))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"
 	// The asset handler should be wrapped into a middleware that enables cross-origin requests

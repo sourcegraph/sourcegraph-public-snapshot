@@ -47,33 +47,37 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 			return
 		}
 
-		secret, err := webhook.Secret.Decrypt(r.Context())
-		if err != nil {
-			http.Error(w, "Could not decrypt webhook secret.", http.StatusInternalServerError)
-			return
+		var secret string
+		if webhook.Secret != nil {
+			secret, err = webhook.Secret.Decrypt(r.Context())
+			if err != nil {
+				http.Error(w, "Could not decrypt webhook secret.", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
-			_, err := github.ValidatePayload(r, []byte(secret))
-			if err != nil {
-				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-				return
+			if secret != "" {
+				_, err := github.ValidatePayload(r, []byte(secret))
+				if err != nil {
+					http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+					return
+				}
 			}
 			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindGitLab:
-			_, err := gitlabValidatePayload(r, secret)
-			if err != nil {
-				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-				return
+			if secret != "" {
+				_, err := gitlabValidatePayload(r, secret)
+				if err != nil {
+					http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+					return
+				}
 			}
-			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindBitbucketServer:
 			// TODO: handle Bitbucket Server secret verification
-			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindBitbucketCloud:
 			// TODO: handle Bitbucket Cloud secret verification
-			w.WriteHeader(http.StatusNotImplemented)
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)

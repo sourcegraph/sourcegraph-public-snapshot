@@ -47,7 +47,15 @@ func TestWebhooksHandler(t *testing.T) {
 		u.ID,
 		types.NewUnencryptedSecret("githubsecret"),
 	)
+	require.NoError(t, err)
 
+	gitHubWHNoSecret, err := dbWebhooks.Create(
+		context.Background(),
+		extsvc.KindGitHub,
+		"http://github.com",
+		u.ID,
+		nil,
+	)
 	require.NoError(t, err)
 
 	srv := httptest.NewServer(NewHandler(db))
@@ -105,6 +113,21 @@ func TestWebhooksHandler(t *testing.T) {
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
+	})
+
+	t.Run("GitHub with no secret returns not implemented", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+
+		payload := []byte(`{"body": "text"}`)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)
