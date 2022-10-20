@@ -9,7 +9,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -20,9 +19,6 @@ import (
 // Run go test ./internal/extsvc/rubygems -update to update snapshots.
 func TestMain(m *testing.M) {
 	flag.Parse()
-	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-	}
 	os.Exit(m.Run())
 }
 
@@ -50,9 +46,12 @@ func TestGetPackageContents(t *testing.T) {
 
 	tmpDir, err := os.MkdirTemp("", "test-rubygems-")
 	require.Nil(t, err)
-	require.Nil(t, unpack.Tar(readCloser, tmpDir, unpack.Opts{}))
+	err = unpack.Tar(readCloser, tmpDir, unpack.Opts{})
+	require.Nil(t, err)
 	dataTgz, err := os.ReadFile(filepath.Join(tmpDir, "data.tar.gz"))
+	require.Nil(t, err)
 	dataFiles, err := unpack.ListTgzUnsorted(bytes.NewReader(dataTgz))
+	require.Nil(t, err)
 	sort.Strings(dataFiles)
 
 	require.Equal(t, dataFiles, []string{
