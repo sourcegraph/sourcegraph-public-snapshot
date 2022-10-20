@@ -13,7 +13,11 @@ import (
 )
 
 func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	switch node.Type() {
 	case "identifier":
@@ -388,7 +392,11 @@ func (squirrel *SquirrelService) getDefJava(ctx context.Context, node Node) (ret
 }
 
 func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object Node, field string) (ret *Node, err error) {
-	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	ty, err := squirrel.getTypeDefJava(ctx, object)
 	if err != nil {
@@ -401,7 +409,11 @@ func (squirrel *SquirrelService) getFieldJava(ctx context.Context, object Node, 
 }
 
 func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
-	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	switch ty2 := ty.(type) {
 	case ClassTypeJava:
@@ -464,7 +476,11 @@ func (squirrel *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJav
 }
 
 func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret TypeJava, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
+	cleanup, err := squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	onIdent := func() (TypeJava, error) {
 		found, err := squirrel.getDefJava(ctx, node)
@@ -581,7 +597,11 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 }
 
 func (squirrel *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	// Determine project root
 	root, err := getProjectRoot(program)
