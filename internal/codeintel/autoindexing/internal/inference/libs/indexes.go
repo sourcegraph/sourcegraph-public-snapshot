@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var IndexerMap = indexerMapAPI{}
+var Indexes = indexesAPI{}
 
-type indexerMapAPI struct{}
+type indexesAPI struct{}
 
 var defaultIndexers = map[string]string{
 	"clang":      "sourcegraph/lsif-clang",
@@ -47,7 +47,7 @@ func DefaultIndexerForLang(language string) (string, bool) {
 	return fmt.Sprintf("%s@sha256:%s", indexer, sha), true
 }
 
-func (api indexerMapAPI) LuaAPI() map[string]lua.LGFunction {
+func (api indexesAPI) LuaAPI() map[string]lua.LGFunction {
 	return map[string]lua.LGFunction{
 		"get": util.WrapLuaFunction(func(state *lua.LState) error {
 			language := state.CheckString(1)
