@@ -337,7 +337,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             <div className={styles.content}>
                 <div className={styles.header} data-testid="fuzzy-modal-header">
                     {tabs.isOnlyFilesEnabled() ? (
-                        <H3>Files</H3>
+                        <H3>Find files</H3>
                     ) : (
                         <Tabs
                             size="large"
