@@ -127,23 +127,23 @@ type AccessTokenStore interface {
 
 type accessTokenStore struct {
 	*basestore.Store
-	//logger logger.Logger TODO
+	logger log.Logger
 }
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
 
 // AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
-func AccessTokensWith(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
+func AccessTokensWith(other basestore.ShareableStore, logger log.Logger) AccessTokenStore {
+	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
 }
 
 func (s *accessTokenStore) With(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: s.Store.With(other)}
+	return &accessTokenStore{Store: s.Store.With(other), logger: s.logger}
 }
 
 func (s *accessTokenStore) Transact(ctx context.Context) (AccessTokenStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &accessTokenStore{Store: txBase}, err
+	return &accessTokenStore{Store: txBase, logger: s.logger}, err
 }
 
 func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
@@ -190,8 +190,6 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 
 	//TODO don't capture internal
 
-	logger := log.Scoped("no idea", "")
-
 	arg, err := json.Marshal(struct {
 		SubjectUserId int32    `json:"subject_user_id"`
 		CreatorUserId int32    `json:"creator_user_id"`
@@ -204,10 +202,10 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 		Note:          note,
 	})
 	if err != nil {
-		logger.Error("failed to marshall the access token argument")
+		s.logger.Error("failed to marshall the access token argument")
 	}
 
-	NewDBWith(logger, s).SecurityEventLogs().LogEvent(ctx, &SecurityEvent{
+	NewDBWith(s.logger, s).SecurityEventLogs().LogEvent(ctx, &SecurityEvent{
 		Name:            SecurityEventAccessTokenCreated,
 		URL:             "", // TODO need? - ask in the PR
 		UserID:          uint32(creatorUserID),
