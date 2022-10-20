@@ -90,7 +90,7 @@ func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (c
 			"--progress", "--prune", remoteURL.String(),
 			// Normal git refs
 			"+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*",
-			// GitHub pull requests
+			// GitHub pull requests test
 			"+refs/pull/*:refs/pull/*",
 			// GitLab merge requests
 			"+refs/merge-requests/*:refs/merge-requests/*",
