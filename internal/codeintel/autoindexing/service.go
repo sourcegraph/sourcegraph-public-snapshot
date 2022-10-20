@@ -484,19 +484,21 @@ func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositor
 		return nil, nil
 	}
 
+	indexesToInsert := indexes
 	if !force {
+		indexesToInsert = []types.Index{}
 		for _, index := range indexes {
 			isQueued, err := s.store.IsQueuedRootIndexer(ctx, repositoryID, commit, index.Root, index.Indexer)
 			if err != nil {
 				return nil, errors.Wrap(err, "dbstore.IsQueuedRootIndexer")
 			}
-			if isQueued {
-				return nil, nil
+			if !isQueued {
+				indexesToInsert = append(indexesToInsert, index)
 			}
 		}
 	}
 
-	return s.store.InsertIndexes(ctx, indexes)
+	return s.store.InsertIndexes(ctx, indexesToInsert)
 }
 
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
