@@ -480,6 +480,8 @@ func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwn
 		return nil, errors.New("repo has no sources")
 	}
 
+	forkSources := map[string]*types.SourceInfo{}
+
 	for urn, src := range repo.Sources {
 		if src != nil || src.CloneURL != "" {
 			forkURL := strings.Replace(
@@ -488,13 +490,14 @@ func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwn
 				strings.ToLower(forkNameAndOwner),
 				1,
 			)
-			forkRepo.Sources[urn] = &types.SourceInfo{
+			forkSources[urn] = &types.SourceInfo{
 				ID:       src.ID,
 				CloneURL: forkURL,
 			}
 		}
 	}
 
+	forkRepo.Sources = forkSources
 	forkRepo.Metadata = metadata
 
 	return &forkRepo, nil

@@ -612,11 +612,12 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 				return fork, nil
 			})
 
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
+			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
 			assert.Nil(t, err)
-			assert.NotNil(t, repo)
-			assert.Same(t, fork, repo.Metadata)
-			// TODO: assert repo.Sources has fork URLs
+			assert.NotNil(t, forkRepo)
+			assert.NotEqual(t, forkRepo, upstreamRepo)
+			assert.Equal(t, fork, forkRepo.Metadata)
+			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
 		})
 
 		t.Run("fork error", func(t *testing.T) {
@@ -656,11 +657,12 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 				return fork, nil
 			})
 
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
+			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
 			assert.Nil(t, err)
-			assert.NotNil(t, repo)
-			assert.Same(t, fork, repo.Metadata)
-			// TODO: assert repo.Sources has fork URLs
+			assert.NotNil(t, forkRepo)
+			assert.NotEqual(t, forkRepo, upstreamRepo)
+			assert.Equal(t, fork, forkRepo.Metadata)
+			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
 		})
 	})
 
