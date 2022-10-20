@@ -405,8 +405,8 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		// 1. /ping is used by health check services who most likely don't set this header
 		// at all.
 		//
-		// 2. /git may be used to run "git fetch" from another gitserver instance and the
-		// fetchCommand does not set this header yet.
+		// 2. /git may be used to run "git fetch" from another gitserver instance over
+		// HTTP and the fetchCommand does not set this header yet.
 		if strings.HasPrefix(r.URL.Path, "/ping") || strings.HasPrefix(r.URL.Path, "/git") {
 			next.ServeHTTP(w, r)
 			return
