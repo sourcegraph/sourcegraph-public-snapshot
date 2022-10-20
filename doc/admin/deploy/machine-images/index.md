@@ -10,7 +10,13 @@ Most importantly, everything we use to build and publish the images can be found
 
 Our deployment and release process is also documented in the [deployment docs](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/doc/development.md). 
 
-All Sourcegraph machine images are free to download, and we strongly encourage you to spin up a Sourcegraph AMI instance to experiment with.
+All Sourcegraph machine images are free to download, and we strongly encourage you to spin up a Sourcegraph AMI instance to experiment with. They are currently available in the following formats:
+
+<div class="getting-started">
+  <a class="btn btn-primary" href="aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-primary" href="azure"><span>Azure Images</span></a>
+  <a class="btn btn-primary" href="gce"><span>Google Compute Images</span></a>
+</div>
 
 ## Sourcegraph Machine Image Instance Overview
 

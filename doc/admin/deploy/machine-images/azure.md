@@ -1,3 +1,3 @@
 # Sourcegraph Azure Images
 
-Coming soon
+<span class="badge badge-warning">Coming soon</span>

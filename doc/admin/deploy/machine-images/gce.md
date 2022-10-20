@@ -14,6 +14,8 @@ Following these docs will provision the following resources:
 - A root EBS volume with 50GB of storage
 - An additional EBS volume for storing code and search indices
 
+> WARNING: Connection to the internet is required to pull Docker images at first launch.
+
 ---
 
 ## Deploy Sourcegraph
@@ -133,10 +135,13 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.0.
 
 ##### Step 1: Stop the current instance
 
+<img class="screenshot" src="./assets/gcp-edit.png"/>
+
 1. *Stop* your current Sourcegraph GCP Image instance from the [GCE Console](https://console.cloud.google.com/compute)
-2. Detach the local disk
+2. Nevigate to your instance console after your instance is stopped
+3. Detach the local disk
    - Click the **EDIT** button located on top of the page
-   - Scroll down to the **Storage** section in your instance console
+   - Scroll down to the **Local disks** section in your instance console
    - Remove the **Existing disk** under **Additional disks**
    - **SAVE** the changes
 
@@ -161,6 +166,8 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.0.
   ```
 
 You can terminate the stopped Sourcegraph Google Image instance once you have confirmed the new instance is up and running.
+
+> WARNING: You must follow the [multi-version upgrade procedure](https://docs.sourcegraph.com/admin/updates/kubernetes#multi-version-upgrade-procedure) if you are
 
 ## Downgrade
 

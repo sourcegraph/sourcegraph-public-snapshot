@@ -39,8 +39,15 @@ title: Get Started
     margin-top: .2em;
     margin-bottom: 1em;
   }
-  .btn {
+  .btn-icon {
+    font-weight: 500;
     text-align: center;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color);
+  }
+  .theme-dark .filter-light {
+    filter: invert(100%);
   }
 </style>
 
@@ -161,18 +168,18 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ## Community
 
-<div class="getting-started">
-  <a class="btn" href="https://about.sourcegraph.com/blog/">Blog</a>
-  <a class="btn" href="https://discord.gg/s2qDtYGnAE">Discord</a>
-  <a class="btn" href="https://twitter.com/sourcegraph">Twitter</a>
-  <a class="btn" href="https://handbook.sourcegraph.com/">Handbook</a>
+<div class="grid">
+  <a class="btn btn-icon" href="https://about.sourcegraph.com/blog/">
+      <img class="filter-light" src="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/solid/pen-fancy.svg" width="8%"> Blog
+  </a>
+  <a class="btn btn-icon" href="https://discord.gg/s2qDtYGnAE">
+    <img class="filter-light" src="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/brands/discord.svg" width="10%"> Discord
+  </a>
+  <a class="btn btn-icon" href="https://twitter.com/sourcegraph">
+    <img class="filter-light" src="https://raw.githubusercontent.com/FortAwesome/Font-Awesome/6.x/svgs/brands/twitter.svg" width="10%"> Twitter
+  </a>
+  <a class="btn btn-icon" href="https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide">File an issue</a>
+  <a class="btn btn-icon" href="https://about.sourcegraph.com/demo">Request a demo</a>
+  <a class="btn btn-icon" href="https://about.sourcegraph.com/contact/request-info/">Contact us</a>
 </div>
 
-
-## Support
-
-<div class="getting-started">
-  <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide">File an issue</a>
-  <a class="btn" href="https://about.sourcegraph.com/demo">Request a demo</a>
-  <a class="btn" href="https://about.sourcegraph.com/contact/request-info/">Contact us</a>
-</div>

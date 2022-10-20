@@ -14,6 +14,8 @@ Following these docs will provision the following resources:
 - A root EBS volume with 50GB of storage
 - An additional EBS volume with 500GB of storage for storing code and search indices
 
+> WARNING: Connection to the internet is required to pull Docker images at first launch.
+
 ---
 
 ## Deploy Sourcegraph
