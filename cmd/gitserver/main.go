@@ -536,7 +536,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		cli := rubygems.NewClient(urn, httpcli.ExternalDoer)
+		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
 		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
