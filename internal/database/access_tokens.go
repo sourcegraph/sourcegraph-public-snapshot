@@ -6,11 +6,13 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -125,6 +127,7 @@ type AccessTokenStore interface {
 
 type accessTokenStore struct {
 	*basestore.Store
+	//logger logger.Logger TODO
 }
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
@@ -184,6 +187,35 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
+
+	//TODO don't capture internal
+
+	logger := log.Scoped("no idea", "")
+
+	arg, err := json.Marshal(struct {
+		SubjectUserId int32    `json:"subject_user_id"`
+		CreatorUserId int32    `json:"creator_user_id"`
+		Scopes        []string `json:"scopes"`
+		Note          string   `json:"note"`
+	}{
+		SubjectUserId: subjectUserID,
+		CreatorUserId: creatorUserID,
+		Scopes:        scopes,
+		Note:          note,
+	})
+	if err != nil {
+		logger.Error("failed to marshall the access token argument")
+	}
+
+	NewDBWith(logger, s).SecurityEventLogs().LogEvent(ctx, &SecurityEvent{
+		Name:            SecurityEventAccessTokenCreated,
+		URL:             "", // TODO need? - ask in the PR
+		UserID:          uint32(creatorUserID),
+		AnonymousUserID: "",
+		Argument:        arg,
+		Source:          "BACKEND",
+		Timestamp:       time.Now(),
+	})
 	return id, token, nil
 }
 

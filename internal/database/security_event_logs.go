@@ -42,6 +42,8 @@ const (
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
+
+	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.

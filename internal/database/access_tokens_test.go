@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -38,7 +39,9 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	assertSecurityEventAccessTokenCreatedCount(t, db, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,6 +87,17 @@ func TestAccessTokens_Create(t *testing.T) {
 	if want := 0; len(ts) != want {
 		t.Errorf("got %d access tokens, want %d", len(ts), want)
 	}
+}
+
+func assertSecurityEventAccessTokenCreatedCount(t *testing.T, db DB, expectedCount int) {
+	t.Helper()
+
+	row := db.SecurityEventLogs().Handle().QueryRowContext(context.Background(), "SELECT count(name) FROM security_event_logs WHERE name = $1", SecurityEventAccessTokenCreated)
+	var count int
+	if err := row.Scan(&count); err != nil {
+		t.Fatal("couldn't read security events count")
+	}
+	assert.Equal(t, expectedCount, count)
 }
 
 func TestAccessTokens_List(t *testing.T) {
