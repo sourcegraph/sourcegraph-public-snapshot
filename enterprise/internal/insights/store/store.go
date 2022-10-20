@@ -643,9 +643,8 @@ UNION
 `
 
 const getInsightSeriesRecordingTimesStr = `
-SELECT recording_time FROM insight_series_recording_times
-WHERE %s
-ORDER BY recording_time ASC;
+SELECT date_trunc('seconds', recording_time) FROM insight_series_recording_times
+WHERE %s;
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

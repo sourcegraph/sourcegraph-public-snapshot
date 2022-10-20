@@ -132,9 +132,11 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 			autogold.Want("empty returns empty", []string{}),
 		},
 		{
-			[]store.SeriesPoint{{"seriesID", time.Now(), 12, nil}},
+			[]store.SeriesPoint{{"seriesID", testTime, 12, nil}},
 			[]time.Time{},
-			autogold.Want("empty recording times returns empty", []string{}),
+			autogold.Want("empty recording times returns existing point", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 12}`,
+			}),
 		},
 		{
 			[]store.SeriesPoint{

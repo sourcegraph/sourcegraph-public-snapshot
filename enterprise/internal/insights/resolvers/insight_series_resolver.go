@@ -474,7 +474,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
 	uniqueRecordingTimes := make(map[time.Time]struct{})
 	for _, rt := range recordingTimes {
-		uniqueRecordingTimes[rt.Truncate(time.Second*1)] = struct{}{}
+		uniqueRecordingTimes[rt] = struct{}{}
 	}
 	pointsMap := make(map[string]*store.SeriesPoint)
 	captureValues := make(map[string]struct{})
