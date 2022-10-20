@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Newly created Code Insights will now display all data points that have zero results. [#42801](https://github.com/sourcegraph/sourcegraph/pull/42801), [#43166](https://github.com/sourcegraph/sourcegraph/pull/43166)
 
 ### Removed
 
