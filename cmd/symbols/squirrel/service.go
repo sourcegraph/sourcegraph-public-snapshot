@@ -189,17 +189,9 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	msg := fmt.Sprintf("%s(%v) => %s", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.Faint).Sprint("..."))
 	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
 
-	fmt.Println("onCall", squirrel.depth, maxSquirrelDepth)
 	squirrel.depth += 1
 	if squirrel.depth > maxSquirrelDepth {
-		summary := squirrel.breadcrumbs
-		if len(squirrel.breadcrumbs) > 10 {
-			// Only show the first and last 5 breadcrumbs
-			summary = append(summary, squirrel.breadcrumbs[:5]...)
-			summary = append(summary, Breadcrumb{})
-			summary = append(summary, squirrel.breadcrumbs[len(squirrel.breadcrumbs)-5:]...)
-		}
-		panic(errors.Newf("max squirrel stack depth exceeded. Breadcrumbs for debugging:\n\n%s", summary.prettyString(squirrel.readFile)))
+		panic(errors.New("max squirrel stack depth exceeded"))
 	}
 
 	return func() {
