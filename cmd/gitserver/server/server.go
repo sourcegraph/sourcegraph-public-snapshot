@@ -415,7 +415,7 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		}
 
 		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
-			l.Error("headerXRequestedWithMiddleware check failed", log.String("path", r.URL.Path))
+			l.Error("header X-Requested-With is not set or is invalid", log.String("path", r.URL.Path))
 			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
 			return
 		}
