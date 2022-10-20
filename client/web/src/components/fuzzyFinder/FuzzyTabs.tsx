@@ -26,9 +26,6 @@ class Tab {
         public readonly shortcut?: JSX.Element,
         public readonly plaintextShortcut?: string
     ) {}
-    // public withFSM(fsm: FuzzyFSM): Tab {
-    //     return new Tab(this.title, this.isEnabled, this.shortcut, this.plaintextShortcut, fsm)
-    // }
 }
 
 const defaultTabs: Tabs = {
@@ -101,10 +98,14 @@ export interface FuzzyState {
     setQuery: Dispatch<SetStateAction<string>>
     repoRevision: FuzzyRepoRevision
     tabs: FuzzyTabs
+    /**
+     * fsmGeneration increases whenever `FuzzyTabs.fsms` have new underlying data
+     * meaning the query should be re-triggered.
+     */
+    fsmGeneration: number
     setScope: Dispatch<SetStateAction<FuzzyScope>>
     isScopeToggleDisabled: boolean
     scope: FuzzyScope
-    renderCount: number // hidden number to trigger re-render
     toggleScope: () => void
     onClickItem: () => void
 }
@@ -155,9 +156,6 @@ export class FuzzyTabs {
         }
         return result
     }
-    // public withTabs(newTabs: Partial<Tabs>): FuzzyTabs {
-    //     return new FuzzyTabs({ ...this.underlying, ...newTabs })
-    // }
     public all(): Tab[] {
         return Object.values(this.underlying).filter(tab => (tab as Tab).isEnabled)
     }
@@ -197,7 +195,7 @@ export function defaultFuzzyState(): FuzzyState {
         },
         repoRevision: { repositoryName: '', revision: '' },
         tabs: new FuzzyTabs(defaultTabs, []),
-        renderCount: 0,
+        fsmGeneration: 0,
         scope,
         isScopeToggleDisabled: false,
         setScope: newScope => {
@@ -230,22 +228,23 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         client: apolloClient,
     } = props
     let { repoName = '', commitID = '', rawRevision = '' } = useMemo(() => {
-        if (pathname !== '/') {
-            // TODO `parseBrowserRepoURL` should not be called on non-repoURL pages.
-            return parseBrowserRepoURL(pathname + search + hash)
+        if (!isRepositoryRelatedPage) {
+            return { repoName: '', commitID: '', rawRevision: '' }
         }
-
-        return { repoName: '', commitID: '', rawRevision: '' }
-    }, [pathname, search, hash])
+        return parseBrowserRepoURL(pathname + search + hash)
+    }, [isRepositoryRelatedPage, pathname, search, hash])
     let revision = rawRevision || commitID
     if (!isRepositoryRelatedPage) {
         repoName = ''
         revision = ''
     }
+
     const repoRevision: FuzzyRepoRevision = useMemo(() => ({ repositoryName: repoName, revision }), [
         repoName,
         revision,
     ])
+    const repoRevisionRef = useRef<FuzzyRepoRevision>(repoRevision)
+    repoRevisionRef.current = repoRevision
 
     const {
         fuzzyFinderAll,
@@ -260,25 +259,23 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
     const [query, setQuery] = useSessionStorage(`fuzzy-modal.query.${repoName}`, props.initialQuery || '')
     const queryRef = useRef(query)
     queryRef.current = query
+
     const [activeTab, setActiveTab] = useState<FuzzyTabKey>('all')
 
+    // Scope determines whether to search for results within the repository of everywhere.
     const [scope, setScope] = useState<FuzzyScope>('repository')
     const toggleScope = useCallback(() => setScope(old => (old === 'repository' ? 'everywhere' : 'repository')), [
         setScope,
     ])
     const isScopeToggleDisabled = activeTab === 'repos' || activeTab === 'actions' || !isRepositoryRelatedPage
-
     useEffect(() => {
         setScope(isScopeToggleDisabled ? 'everywhere' : 'repository')
     }, [isVisible, setScope, isScopeToggleDisabled])
 
-    const [renderCount, setRenderCount] = useState(0)
-    const triggerRender: () => void = useCallback(() => setRenderCount(old => old + 1), [setRenderCount])
-
-    // defaultTabs.actions.fsm = createActionsFSM(getAllFuzzyActions(props))
-
-    const repoRevisionRef = useRef<FuzzyRepoRevision>({ repositoryName: '', revision: '' })
-    repoRevisionRef.current = { repositoryName: repoName, revision }
+    const [fsmGeneration, setFsmGeneration] = useState(0)
+    const incrementFsmRenderGeneration: () => void = useCallback(() => setFsmGeneration(old => old + 1), [
+        setFsmGeneration,
+    ])
 
     const createURL = useCallback(
         (filename: string): string =>
@@ -289,6 +286,7 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
             }),
         [revision, repoName]
     )
+
     // Actions
     const actions = useMemo<FuzzyTabFSM>(() => {
         const fsm = createActionsFSM(getAllFuzzyActions({ themeState }))
@@ -297,54 +295,54 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
 
     // Repos
     const repos = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyRepos(apolloClient, triggerRender)
+        const fsm = new FuzzyRepos(apolloClient, incrementFsmRenderGeneration)
         return new FuzzyTabFSM(
             'repos',
             'everywhere',
             () => fsm.fuzzyFSM(),
             query => fsm.handleQuery(query)
         )
-    }, [apolloClient, triggerRender])
+    }, [apolloClient, incrementFsmRenderGeneration])
 
     // Symbols
     const localSymbols = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzySymbols(apolloClient, triggerRender, repoRevisionRef, false)
+        const fsm = new FuzzySymbols(apolloClient, incrementFsmRenderGeneration, repoRevisionRef, false)
         return new FuzzyTabFSM(
             'symbols',
             'repository',
             () => fsm.fuzzyFSM(),
             query => fsm.handleQuery(query)
         )
-    }, [apolloClient, triggerRender])
+    }, [apolloClient, incrementFsmRenderGeneration])
     const globalSymbols = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzySymbols(apolloClient, triggerRender, repoRevisionRef, true)
+        const fsm = new FuzzySymbols(apolloClient, incrementFsmRenderGeneration, repoRevisionRef, true)
         return new FuzzyTabFSM(
             'symbols',
             'everywhere',
             () => fsm.fuzzyFSM(),
             query => fsm.handleQuery(query)
         )
-    }, [apolloClient, triggerRender])
+    }, [apolloClient, incrementFsmRenderGeneration])
 
     // Files
     const localFiles = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyRepoFiles(apolloClient, createURL, triggerRender, repoRevisionRef.current)
+        const fsm = new FuzzyRepoFiles(apolloClient, createURL, incrementFsmRenderGeneration, repoRevisionRef.current)
         return new FuzzyTabFSM(
             'files',
             'repository',
             () => fsm.fuzzyFSM(),
             () => fsm.handleQuery()
         )
-    }, [apolloClient, triggerRender, createURL])
+    }, [apolloClient, incrementFsmRenderGeneration, createURL])
     const globalFiles = useMemo<FuzzyTabFSM>(() => {
-        const fsm = new FuzzyFiles(apolloClient, triggerRender, repoRevisionRef)
+        const fsm = new FuzzyFiles(apolloClient, incrementFsmRenderGeneration, repoRevisionRef)
         return new FuzzyTabFSM(
             'files',
             'everywhere',
             () => fsm.fuzzyFSM(),
             query => fsm.handleQuery(query)
         )
-    }, [apolloClient, triggerRender])
+    }, [apolloClient, incrementFsmRenderGeneration])
 
     const tabs = useMemo(() => {
         const tabs: FuzzyTabFSM[] = []
@@ -391,7 +389,7 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         activeTab,
         setActiveTab,
         repoRevision,
-        renderCount,
+        fsmGeneration,
         scope,
         toggleScope,
         setScope,

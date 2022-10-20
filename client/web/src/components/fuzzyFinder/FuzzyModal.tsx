@@ -65,7 +65,7 @@ function cleanupOldLocalStorage(): void {
 
 interface RenderProps {
     query: string
-    renderCount: number
+    fsmGeneration: number
     result: FuzzySearchResult
     resultCount: number
     isComplete: boolean
@@ -108,7 +108,7 @@ function fuzzySearch(
     scope: FuzzyScope,
     maxResults: number,
     tabs: FuzzyTabs,
-    renderCount: number
+    fsmGeneration: number
 ): RenderProps {
     const search = newFuzzySearch(query, activeTab, scope, tabs)
     const start = window.performance.now()
@@ -117,7 +117,7 @@ function fuzzySearch(
     return {
         result,
         query,
-        renderCount,
+        fsmGeneration,
         resultCount: Math.min(maxResults, result.links.length),
         isComplete: result.isComplete,
         totalFileCount: search.totalFileCount,
@@ -136,11 +136,12 @@ function renderFuzzyResults(
         return {
             ...props,
             jsxElement: (
-                // renderCount does not serve any purpose but to trigger
-                // re-renders when background data changes.  We use renderCount
-                // in this component just to ensure that updates to this state
-                // propagate all the way to the computation of QueryResult.
-                <Text data-render-count={props.renderCount} className={styles.results}>
+                // See original comment on FuzzyState.fsmGeneration for details
+                // why we include this arbitrary number here. It's an arbitrary
+                // decision to place the number here, as long as the number is
+                // recorded as a dependency to `renderFuzzyResults` then it
+                // should work OK.
+                <Text data-fsm-generation={props.fsmGeneration} className={styles.results}>
                     No matches for '{props.query}'
                 </Text>
             ),
@@ -183,7 +184,7 @@ function emptyResults(element: JSX.Element): QueryResult {
         query: '',
         result: { isComplete: true, links: [] },
         resultCount: 0,
-        renderCount: 0,
+        fsmGeneration: 0,
         isComplete: true,
         totalFileCount: 0,
         jsxElement: element,
@@ -200,7 +201,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         initialMaxResults,
         onClose,
         onClickItem,
-        renderCount,
+        fsmGeneration,
         query,
         setQuery,
         tabs,
@@ -231,8 +232,8 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     // depend on `focusIndex` so that we avoid re-running the fuzzy finder
     // whenever the user presses up/down to cycle through the results.
     const fuzzySearchResult = useMemo<RenderProps>(
-        () => fuzzySearch(query, activeTab, scope, maxResults, tabs, renderCount),
-        [renderCount, maxResults, query, activeTab, scope, tabs]
+        () => fuzzySearch(query, activeTab, scope, maxResults, tabs, fsmGeneration),
+        [fsmGeneration, maxResults, query, activeTab, scope, tabs]
     )
 
     // Stage 2: render results from the fuzzy matcher.
