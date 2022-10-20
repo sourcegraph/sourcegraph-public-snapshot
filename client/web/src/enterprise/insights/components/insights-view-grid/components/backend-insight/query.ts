@@ -7,17 +7,14 @@ import { gql } from '@apollo/client'
 export const GET_INSIGHT_DATA = gql`
     query GetInsightData($id: ID, $filters: InsightViewFiltersInput, $seriesDisplayOptions: SeriesDisplayOptionsInput) {
         insightViews(id: $id, filters: $filters, seriesDisplayOptions: $seriesDisplayOptions) {
-            nodes {
-                ...InsightDataNode
-            }
+            nodes { ...InsightDataNode }
         }
     }
 
     fragment InsightDataNode on InsightView {
         id
-        dataSeries {
-            ...InsightDataSeries
-        }
+        dataSeries { ...InsightDataSeries }
+        status { ...InsightDataSeriesStatus2 }
     }
 
     fragment InsightDataSeries on InsightsSeries {
@@ -27,9 +24,8 @@ export const GET_INSIGHT_DATA = gql`
             dateTime
             value
         }
-        status {
-            ...InsightDataSeriesStatus
-        }
+        status { ...InsightDataSeriesStatus }
+        status2 { ...InsightDataSeriesStatus2 }
     }
 
     fragment InsightDataSeriesStatus on InsightSeriesStatus {
@@ -37,5 +33,13 @@ export const GET_INSIGHT_DATA = gql`
         completedJobs
         pendingJobs
         failedJobs
+    }
+
+    fragment InsightDataSeriesStatus2 on InsightSeriesStatus2 {
+        progress
+        errors {
+            type
+            reason
+        }
     }
 `
