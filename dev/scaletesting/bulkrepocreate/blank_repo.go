@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-  "time"
+	"time"
 
 	"github.com/sourcegraph/run"
 )
@@ -89,22 +89,23 @@ func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) e
 
 func (r *blankRepo) pushRemote(ctx context.Context, name string, retry int) error {
 	var err error
-  for i := 0; i < retry; i++ {
-    err := r.doPushRemote(ctx, name)
-    switch {
-    case err == nil:
-      break
-    case strings.Contains(err.Error(), "timed out"):
-      continue
-    case strings.Contains(err.Error(), "killed"):
-      continue
-    }
-  }
-  return err
+outer:
+	for i := 0; i < retry; i++ {
+		err := r.doPushRemote(ctx, name)
+		switch {
+		case err == nil:
+			break outer
+		case strings.Contains(err.Error(), "timed out"):
+			continue
+		case strings.Contains(err.Error(), "killed"):
+			continue
+		}
+	}
+	return err
 }
 
-func (r *blankRepo) doPushRemote(ctx context.Context, name string) error { 
-    ctx, cancel := context.WithTimeout(ctx, 20 * time.Second)
-    defer cancel()
-		return run.Bash(ctx, "git push", name).Dir(r.path).Run().Wait()
+func (r *blankRepo) doPushRemote(ctx context.Context, name string) error {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	return run.Bash(ctx, "git push", name).Dir(r.path).Run().Wait()
 }
