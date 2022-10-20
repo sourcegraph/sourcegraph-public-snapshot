@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -224,7 +223,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: discovery.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -699,31 +698,4 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job
-}
-
-// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
-// using a map, and entries are never evicted because they are expected to be small and in general
-// unchanging.
-type cachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
-
-	mu    sync.Mutex
-	cache map[api.RepoName]*gitdomain.Commit
-}
-
-func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cache == nil {
-		c.cache = map[api.RepoName]*gitdomain.Commit{}
-	}
-	if cached, ok := c.cache[repoName]; ok {
-		return cached, nil
-	}
-	entry, err := c.impl(ctx, db, repoName)
-	if err != nil {
-		return nil, err
-	}
-	c.cache[repoName] = entry
-	return entry, nil
 }

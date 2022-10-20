@@ -144,6 +144,10 @@ func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, b
 	return basestore.NewWithHandle(handle).Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
 }
 
+func (s *Scheduler) With(other basestore.ShareableStore) *Scheduler {
+	return &Scheduler{backfillStore: s.backfillStore.With(other)}
+}
+
 func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {
 	tx, err := s.backfillStore.Transact(ctx)
 	if err != nil {
