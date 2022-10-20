@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import { isEmpty } from 'lodash'
@@ -12,10 +12,13 @@ export interface TooltipProps {
      * **Note:** If you are using a component, it **must** be able to receive and attach a ref (React.forwardRef).
      **/
     children: React.ReactElement
-    /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
-    content: string | null | undefined
+    /** The ReactNode that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
+    content: ReactNode
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
+    /** Controlled open state, if you pass it you have a full control over tooltip appearance. */
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
     /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `bottom`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
 }
@@ -59,6 +62,8 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     children,
     content,
     defaultOpen = false,
+    open,
+    onOpenChange,
     placement = 'bottom',
 }) => {
     let trigger: React.ReactElement
@@ -84,7 +89,7 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     return (
         // The small delayDuration helps prevent the tooltip from immediately closing when it gets triggered in the
         // exact spot the arrow is overlapping the content (allows time for the cursor to move more naturally)
-        <TooltipPrimitive.Root delayDuration={100} defaultOpen={defaultOpen}>
+        <TooltipPrimitive.Root delayDuration={100} defaultOpen={defaultOpen} open={open} onOpenChange={onOpenChange}>
             <TooltipPrimitive.Trigger asChild={true}>{trigger}</TooltipPrimitive.Trigger>
             {
                 // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
