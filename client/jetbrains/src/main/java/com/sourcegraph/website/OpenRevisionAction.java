@@ -33,41 +33,6 @@ public class OpenRevisionAction extends DumbAwareAction {
         return super.getActionUpdateThread();
     }
 
-    @NotNull
-    private Optional<RevisionContext> getHistoryRevisionContext(@NotNull AnActionEvent event) {
-        Project project = event.getProject();
-        VcsFileRevision revisionObject = event.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
-        VirtualFile file = event.getDataContext().getData(VcsDataKeys.VCS_VIRTUAL_FILE);
-
-        if (project == null || revisionObject == null || file == null) {
-            return Optional.empty();
-        }
-
-        String revision = revisionObject.getRevisionNumber().toString();
-        VirtualFile root = VcsUtil.getVcsRootFor(project, file);
-        if (root == null) {
-            return Optional.empty();
-        }
-        return Optional.of(new RevisionContext(project, revision, root));
-    }
-
-    @NotNull
-    private Optional<RevisionContext> getLogRevisionContext(@NotNull AnActionEvent event) {
-        VcsLog log = event.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
-        Project project = event.getProject();
-
-        if (project == null) {
-            return Optional.empty();
-        }
-        if (log == null || log.getSelectedCommits().isEmpty()) {
-            return Optional.empty();
-        }
-
-        String revision = log.getSelectedCommits().get(0).getHash().asString();
-        VirtualFile root = log.getSelectedCommits().get(0).getRoot();
-        return Optional.of(new RevisionContext(project, revision, root));
-    }
-
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         // This action handles events for both log and history views, so attempt to load from any possible option.
@@ -104,5 +69,40 @@ public class OpenRevisionAction extends DumbAwareAction {
     @Override
     public void update(@NotNull AnActionEvent event) {
         event.getPresentation().setEnabledAndVisible(true);
+    }
+
+    @NotNull
+    private Optional<RevisionContext> getHistoryRevisionContext(@NotNull AnActionEvent event) {
+        Project project = event.getProject();
+        VcsFileRevision revisionObject = event.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
+        VirtualFile file = event.getDataContext().getData(VcsDataKeys.VCS_VIRTUAL_FILE);
+
+        if (project == null || revisionObject == null || file == null) {
+            return Optional.empty();
+        }
+
+        String revision = revisionObject.getRevisionNumber().toString();
+        VirtualFile root = VcsUtil.getVcsRootFor(project, file);
+        if (root == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new RevisionContext(project, revision, root));
+    }
+
+    @NotNull
+    private Optional<RevisionContext> getLogRevisionContext(@NotNull AnActionEvent event) {
+        VcsLog log = event.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
+        Project project = event.getProject();
+
+        if (project == null) {
+            return Optional.empty();
+        }
+        if (log == null || log.getSelectedCommits().isEmpty()) {
+            return Optional.empty();
+        }
+
+        String revision = log.getSelectedCommits().get(0).getHash().asString();
+        VirtualFile root = log.getSelectedCommits().get(0).getRoot();
+        return Optional.of(new RevisionContext(project, revision, root));
     }
 }
