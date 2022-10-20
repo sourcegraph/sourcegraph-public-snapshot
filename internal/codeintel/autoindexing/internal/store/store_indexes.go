@@ -261,7 +261,6 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 }
 
 const reindexIndexesQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:ReindexIndexes
 UPDATE lsif_indexes u
 SET should_reindex = true
 FROM repo
@@ -480,7 +479,6 @@ func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
 }
 
 const reindexIndexByIDQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:ReindexIndexByID
 UPDATE lsif_indexes u
 SET should_reindex = true
 WHERE id = %s
