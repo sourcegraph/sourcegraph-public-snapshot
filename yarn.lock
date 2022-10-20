@@ -6097,6 +6097,8 @@ __metadata:
 "@sourcegraph/vscode@workspace:client/vscode":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/vscode@workspace:client/vscode"
+  dependencies:
+    vsce: ^2.7.0
   languageName: unknown
   linkType: soft
 

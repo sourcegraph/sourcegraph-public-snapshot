@@ -20,21 +20,19 @@ import { openSourcegraphUriCommand } from './file-system/commands'
 import { initializeSourcegraphFileSystem } from './file-system/initialize'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { Event } from './graphql-operations'
-import { accessTokenSetting } from './settings/accessTokenSetting'
-import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from './settings/endpointSetting'
+import { accessTokenSetting, processOldToken } from './settings/accessTokenSetting'
+import { endpointRequestHeadersSetting, endpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, openSourcegraphLinks, registerWebviews, copySourcegraphLinks } from './webview/commands'
-import { processOldToken, scretTokenKey, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
+import { scretTokenKey, SourcegraphAuthActions, SourcegraphAuthProvider } from './webview/platform/AuthProvider'
 /**
  * See CONTRIBUTING docs for the Architecture Diagram
  */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     const secretStorage = context.secrets
-    // Move token from user setting to secret storage
-    await processOldToken(secretStorage)
     // Register SourcegraphAuthProvider
     context.subscriptions.push(
         vscode.authentication.registerAuthenticationProvider(
@@ -43,10 +41,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             new SourcegraphAuthProvider(secretStorage)
         )
     )
-    const session = await vscode.authentication.getSession(endpointSetting(), [], { createIfNone: false })
-    const authenticatedUser = observeAuthenticatedUser(secretStorage)
+    await processOldToken(secretStorage)
     const initialInstanceURL = endpointSetting()
     const initialAccessToken = await secretStorage.get(scretTokenKey)
+    const createIfNone = initialAccessToken ? { createIfNone: true } : { createIfNone: false }
+    const session = await vscode.authentication.getSession(endpointSetting(), [], createIfNone)
+    const authenticatedUser = observeAuthenticatedUser(secretStorage)
     const localStorageService = new LocalStorageService(context.globalState)
     const stateMachine = createVSCEStateMachine({ localStorageService })
     invalidateContextOnSettingsChange({ context, stateMachine })
@@ -72,22 +72,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         sourcegraphURL: `${initialInstanceURL}/.api`,
         session,
     })
-    async function login(newtoken: string, newuri: string): Promise<void> {
-        try {
-            const newEndpoint = new URL(newuri)
-            const newTokenKey = newEndpoint.hostname
-            await secretStorage.store(newTokenKey, newtoken)
-            await setEndpoint(newEndpoint.href)
-            // stateMachine.emit({ type: 'sourcegraph_url_change' })
-        } catch (error) {
-            console.error(error)
-        }
-    }
-    async function logout(): Promise<void> {
-        await secretStorage.delete(scretTokenKey)
-        await setEndpoint(undefined)
-        extensionCoreAPI.reloadWindow()
-    }
+    const authActions = new SourcegraphAuthActions(secretStorage)
     const extensionCoreAPI: ExtensionCoreAPI = {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         observeState: () => proxySubscribable(stateMachine.observeState()),
@@ -103,8 +88,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         openLink: uri => openSourcegraphLinks(uri),
         copyLink: uri => copySourcegraphLinks(uri),
         getAccessToken: accessTokenSetting(context.secrets),
-        removeAccessToken: () => logout(),
-        setEndpointUri: (accessToken, uri) => login(accessToken, uri),
+        removeAccessToken: () => authActions.logout(),
+        setEndpointUri: (accessToken, uri) => authActions.login(accessToken, uri),
         reloadWindow: () => vscode.commands.executeCommand('workbench.action.reloadWindow'),
         focusSearchPanel,
         streamSearch,
@@ -134,8 +119,4 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
     // Watch for uninstall to log uninstall event
     watchUninstall(eventSourceType, localStorageService)
-
-    // Add Sourcegraph to workspace recommendations (disabled for now as it was reported to violate
-    // VS Code's UX guidelines for notifications: https://code.visualstudio.com/api/ux-guidelines/notifications)
-    // recommendSourcegraph(localStorageService).catch(() => {})
 }
