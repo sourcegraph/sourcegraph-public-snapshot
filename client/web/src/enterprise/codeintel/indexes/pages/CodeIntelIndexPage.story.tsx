@@ -385,6 +385,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt' | 'steps
         },
     },
     associatedUpload: null,
+    shouldReindex: false,
 }
 
 const now = () => new Date('2020-06-15T19:25:00+00:00')
