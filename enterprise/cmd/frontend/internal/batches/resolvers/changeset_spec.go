@@ -234,5 +234,5 @@ func (r *forkTargetResolver) PushUser() bool {
 }
 
 func (r *forkTargetResolver) Namespace() *string {
-	return r.changesetSpec.GetForkNamespace()
+	return r.changesetSpec.ForkNamespace
 }
