@@ -2,6 +2,8 @@ import { FunctionComponent, useEffect, useState } from 'react'
 
 import { ButtonLink, H2, H3, Text, Link } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../../tracking/eventLogger'
+
 import { Illustration } from './Illustration'
 
 import styles from './TrySourcegraphCloudSection.module.scss'
@@ -17,6 +19,12 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
     const [byline, setByline] = useState(bylines[0])
 
     useEffect(() => {
+        /**
+         * Base metric for when the section loads which we can use to count
+         * against impressions/views vs. clicks.
+         */
+        eventLogger.log('DisplayOfCloudCTA')
+
         const cycle = setInterval(() => {
             const newIndex = bylineIndex === bylines.length - 1 ? 0 : bylineIndex + 1
 
@@ -43,10 +51,11 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                         variant="secondary"
                         to="https://signup.sourcegraph.com"
                         className={styles.trialButton}
+                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                     >
                         Get free trial now
                     </ButtonLink>
-                    <Link to="https://docs.sourcegraph.com">
+                    <Link to="https://docs.sourcegraph.com" onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}>
                         <Text size="small">or try our self-hosted solution.</Text>
                     </Link>
                 </div>
