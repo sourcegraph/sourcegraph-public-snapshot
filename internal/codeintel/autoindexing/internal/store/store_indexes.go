@@ -599,18 +599,15 @@ func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commi
 }
 
 const isQueuedRootIndexerQuery = `
-SELECT
-	EXISTS (
-		SELECT 1
-		FROM lsif_indexes
-		WHERE
-			repository_id  = %s AND
-			commit         = %s AND
-			root           = %s AND
-			indexer        = %s AND
-			should_reindex = false
-		ORDER BY queued_at DESC
-	)
+SELECT NOT should_reindex
+FROM lsif_indexes
+WHERE
+	repository_id  = %s AND
+	commit         = %s AND
+	root           = %s AND
+	indexer        = %s AND
+ORDER BY queued_at DESC
+LIMIT 1
 `
 
 // QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
