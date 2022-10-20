@@ -12,12 +12,11 @@
 
 .legend-item {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     word-break: break-all;
 }
 
 .legend-mark {
-    align-self: baseline;
     width: 0.5rem;
     height: 0.5rem;
     flex-shrink: 0;
