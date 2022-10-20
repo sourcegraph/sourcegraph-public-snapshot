@@ -7,8 +7,8 @@ This guide will take you through how to install Sourcegraph with Docker Compose 
 <div class="cta-group">
   <a class="btn" href="../../deploy/docker-compose/aws">AWS</a>
   <a class="btn" href="../../deploy/machine-images/aws-ami">★ AWS AMIs</a>
-  <a class="btn" href="../../deploy/docker-compose/aws-oneclick">Azure</a>
-  <a class="btn" href="../../deploy/docker-compose/azure">DigitalOcean</a>
+  <a class="btn" href="../../deploy/docker-compose/azure">Azure</a>
+  <a class="btn" href="../../deploy/docker-compose/digitalocean">DigitalOcean</a>
   <a class="btn" href="../../deploy/docker-compose/google_cloud">Google Cloud</a>
   <a class="btn" href="../../deploy/machine-images/gce">★ Google GCE Images</a>
 </div>

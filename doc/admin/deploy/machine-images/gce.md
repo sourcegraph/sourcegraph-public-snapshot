@@ -1,13 +1,10 @@
-# Sourcegraph GCE Instances
-
 <style>
-img.doc-screenshot {
-    margin-top: 1em;
-    margin-bottom: 1em;
-    border: 2px solid var(--border-color);
-    border-radius: 2%;
-}
+  .screenshot {
+      min-width: 100%
+  }
 </style>
+
+# Sourcegraph GCE Instances
 
 Sourcegraph [Google Compute Engine (GCE) Images](https://cloud.google.com/compute/docs/images) allow you to quickly deploy a production-ready Sourcegraph instance tuned to your organization's scale in just a few clicks.
 
@@ -23,7 +20,7 @@ Following these docs will provision the following resources:
 
 #### Step 1: Upload the Sourcegraph instance image to your Google Cloud Storage
 
-<img class="doc-screenshot" src="./assets/gcp-bucket.png"/>
+<img class="screenshot" src="./assets/gcp-bucket.png"/>
 
 1. In the [instance size chart](#instance-size-chart) below, download the image (`tar.gz`) file that matches your deployment size
 2. Nevigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
@@ -32,7 +29,7 @@ Following these docs will provision the following resources:
    
 #### Step 2: Create a new custom image
 
-<img class="doc-screenshot" src="./assets/gcp-custom-image.png"/>
+<img class="screenshot" src="./assets/gcp-custom-image.png"/>
 
 1. Click **CREATE IMAGE** on top of the [GCE Images Console](https://console.cloud.google.com/compute/images)
    - Name: [Any]
@@ -44,7 +41,7 @@ Following these docs will provision the following resources:
 
 #### Step 3: Launch a new instance
 
-<img class="doc-screenshot" src="./assets/gcp-launch.png"/>
+<img class="screenshot" src="./assets/gcp-launch.png"/>
 
 1. Create a new VM instance from your [GCE Console](https://console.cloud.google.com/compute)
 2. Name the instance

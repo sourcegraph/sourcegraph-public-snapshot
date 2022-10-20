@@ -142,17 +142,17 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 ## Quickstart
 
 <div class="getting-started">
-  <a href="getting-started/index.md" class="btn" alt="Run through the Quickstart guide">
+  <a href="getting-started" class="btn" alt="Run through the Quickstart guide">
     <span>Sourcegraph 101</span>
     <br />
     Learn how to use Sourcegraph.
   </a>
-  <a href="getting-started/tour.md" class="btn" alt="Read the src reference">
+  <a href="getting-started/tour" class="btn" alt="Read the src reference">
     <span>Sourcegraph Tour</span>
     <br />
     Take a tour of Sourcegraph’s features using real-world examples and use cases.
   </a>
-  <a href="adopt/trial/index.md" class="btn" alt="Create a batch change">
+  <a href="adopt/trial" class="btn" alt="Create a batch change">
     <span>Sourcegraph Trial</span>
     <br />
     Learn more about starting a Sourcegraph trial at your company.
@@ -162,10 +162,10 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 ## Community
 
 <div class="getting-started">
-  <a class="btn btn-primary" href="https://about.sourcegraph.com/blog/">Blog</a>
-  <a class="btn btn-primary" href="https://discord.gg/s2qDtYGnAE">Discord</a>
-  <a class="btn btn-primary" href="https://twitter.com/sourcegraph">Twitter</a>
-  <a class="btn btn-primary" href="https://handbook.sourcegraph.com/">Handbook</a>
+  <a class="btn" href="https://about.sourcegraph.com/blog/">Blog</a>
+  <a class="btn" href="https://discord.gg/s2qDtYGnAE">Discord</a>
+  <a class="btn" href="https://twitter.com/sourcegraph">Twitter</a>
+  <a class="btn" href="https://handbook.sourcegraph.com/">Handbook</a>
 </div>
 
 
@@ -174,5 +174,5 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 <div class="getting-started">
   <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide">File an issue</a>
   <a class="btn" href="https://about.sourcegraph.com/demo">Request a demo</a>
-  <a class="btn" href="https://about.sourcegraph.com/contact/request-info/">Talk to a product specialist</a>
+  <a class="btn" href="https://about.sourcegraph.com/contact/request-info/">Contact us</a>
 </div>

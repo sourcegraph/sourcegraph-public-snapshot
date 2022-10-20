@@ -1,3 +1,7 @@
+---
+title: Deployment Overview
+---
+
 <style>
   .btn {
     text-align: center;
@@ -30,9 +34,9 @@ Sourcegraph provides a [resource estimator](resource_estimator.md) to help predi
 <span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
 
 <div class="getting-started">
-  <a class="btn" href="[quickstart](https://about.sourcegraph.com/blog/)">AWS AMIs</a>
-  <a class="btn" href="https://discord.gg/s2qDtYGnAE">Azure</a>
-  <a class="btn" href="https://twitter.com/sourcegraph">Google Compute Images</a>
+  <a class="btn" href="machine-images/aws-ami">AWS AMIs</a>
+  <a class="btn" href="machine-images/azure">Azure Images</a>
+  <a class="btn" href="machine-images/gce">Google Compute Images</a>
 </div>
 
 ### [Docker Compose](docker-compose/index.md)

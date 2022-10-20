@@ -1,12 +1,10 @@
-# Sourcegraph AWS AMI instances
-
 <style>
-img.doc-screenshot {
-    margin-top: 1em;
-    margin-bottom: 1em;
-    border: 1px solid lightgray;
-}
+  .screenshot {
+      min-width: 100%
+  }
 </style>
+
+# Sourcegraph AWS AMI instances
 
 Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned to your organization's scale in just a few clicks.
 
@@ -81,7 +79,7 @@ We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connecti
 
 #### Step 1: Request certificate
 
-![image](https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png)
+<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png">
 
 Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 
