@@ -10,21 +10,20 @@ import java.nio.charset.StandardCharsets;
 
 public class CommitViewUriBuilder {
     @NotNull
-    public URI build(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull RepoInfo repoInfo, @NotNull String productName, @NotNull String productVersion) {
+    public URI build(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull String remoteUrl, @NotNull String productName, @NotNull String productVersion) {
         if (Strings.isNullOrEmpty(sourcegraphBase)) {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");
         } else if (Strings.isNullOrEmpty(revisionNumber)) {
             throw new RuntimeException("Missing revision number for commit uri.");
-        } else if (repoInfo.remoteUrl.equals("")) {
+        } else if (remoteUrl.equals("")) {
             throw new RuntimeException("Missing remote URL for commit uri.");
         }
 
         // this is pretty hacky but to try to build the repo string we will just try to naively parse the git remote uri. Worst case scenario this 404s
-        String remoteURL = repoInfo.remoteUrl;
-        if (remoteURL.startsWith("git")) {
-            remoteURL = repoInfo.remoteUrl.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");
+        if (remoteUrl.startsWith("git")) {
+            remoteUrl = remoteUrl.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");
         }
-        URI remote = URI.create(remoteURL);
+        URI remote = URI.create(remoteUrl);
         String path = remote.getPath();
 
         String url = sourcegraphBase +

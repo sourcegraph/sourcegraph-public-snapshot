@@ -39,7 +39,7 @@ public abstract class FileActionBase extends DumbAwareAction {
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
             handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
         } else {
-            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
+            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
             if (repoInfo.remoteUrl.equals("")) {
                 return;
             }

@@ -37,7 +37,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
             String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
         } else {
-            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
+            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
             String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
             String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);

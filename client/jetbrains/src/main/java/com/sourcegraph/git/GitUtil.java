@@ -2,8 +2,11 @@ package com.sourcegraph.git;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,16 +18,19 @@ public class GitUtil {
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
     @NotNull
-    public static RepoInfo getRepoInfo(@NotNull String filePath, @NotNull Project project) {
+    public static RepoInfo getRepoInfo(@NotNull VirtualFile file, @NotNull Project project) {
         String relativePath = "";
         String remoteUrl = "";
         String branchName = "";
         try {
-            String directoryPath = filePath.substring(0, filePath.lastIndexOf("/"));
-            String repoRootPath = getRepoRootPath(directoryPath);
+            String repoRootPath = getRepoRootPath(project, file);
+            if (repoRootPath == null) {
+                return new RepoInfo("", "", "");
+            }
 
             // Determine file path, relative to repository root.
-            relativePath = filePath.substring(repoRootPath.length() + 1);
+            relativePath = file.getPath().length() > repoRootPath.length()
+                ? file.getPath().substring(repoRootPath.length() + 1) : "";
 
             // If the current branch doesn't exist on the remote, use the default branch.
             branchName = getCurrentBranchName(repoRootPath);
@@ -32,7 +38,7 @@ public class GitUtil {
                 branchName = ConfigUtil.getDefaultBranchName(project);
             }
 
-            remoteUrl = getConfiguredRemoteUrl(repoRootPath);
+            remoteUrl = getRemoteUrl(file, project);
             String r = ConfigUtil.getRemoteUrlReplacements(project);
             String[] replacements = r.trim().split("\\s*,\\s*");
             // Check if the entered values are pairs
@@ -44,6 +50,15 @@ public class GitUtil {
             err.printStackTrace();
         }
         return new RepoInfo(relativePath, remoteUrl, branchName);
+    }
+
+    @NotNull
+    public static String getRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
+        String repoRootPath = getRepoRootPath(project, file);
+        if (repoRootPath == null) {
+            throw new Exception("Could not determine repository root path");
+        }
+        return getConfiguredRemoteUrl(repoRootPath);
     }
 
     /**
@@ -79,9 +94,10 @@ public class GitUtil {
     /**
      * Returns the repository root directory for any path within a repository.
      */
-    @NotNull
-    private static String getRepoRootPath(@NotNull String path) throws IOException {
-        return exec("git rev-parse --show-toplevel", path).trim();
+    @Nullable
+    private static String getRepoRootPath(@NotNull Project project, @NotNull VirtualFile file) {
+        VirtualFile vcsRoot = VcsUtil.getVcsRootFor(project, file);
+        return vcsRoot != null ? vcsRoot.getPath() : null;
     }
 
     /**
