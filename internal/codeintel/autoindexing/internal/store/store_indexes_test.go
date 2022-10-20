@@ -653,6 +653,54 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 }
 
+func TestReindexIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index has been marked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("index missing")
+	} else if !index.ShouldReindex {
+		t.Fatal("index not marked for reindexing")
+	}
+}
+
+func TestReindexIndexByID(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index has been marked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("index missing")
+	} else if !index.ShouldReindex {
+		t.Fatal("index not marked for reindexing")
+	}
+}
+
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
