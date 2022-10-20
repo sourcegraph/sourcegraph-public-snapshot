@@ -377,6 +377,119 @@ UPDATE repo_permissions SET unrestricted = true
 	}
 }
 
+func TestRepoStore_nonSiteAdminCanViewOrgPrivateCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Add a single user who is NOT a site admin
+	alice, err := db.Users().Create(ctx,
+		NewUser{
+			Email:                 "alice@example.com",
+			Username:              "alice",
+			Password:              "alice",
+			EmailVerificationCode: "alice",
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.Users().SetIsSiteAdmin(ctx, alice.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set up two private repositories the user has access to both on the code host:
+	//  1. One is not added to the organization code host connection
+	//  2. One is added to the organization code host connection
+	internalCtx := actor.WithInternalActor(ctx)
+	privateRepo1 := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "private_repo_1",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "private_repo_1",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)
+	privateRepo2 := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "private_repo_2",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "private_repo_2",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)
+
+	// Create an organization and add alice as a member
+	org, err := db.Orgs().Create(ctx, "org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.OrgMembers().Create(ctx, org.ID, alice.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	extsvc := &types.ExternalService{
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "GITHUB #1",
+		Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		NamespaceOrgID: org.ID,
+	}
+	err = db.ExternalServices().Create(ctx, confGet, extsvc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, org_id, clone_url)
+VALUES (%s, %s, NULLIF(%s, 0), '')
+`, extsvc.ID, privateRepo2.ID, extsvc.NamespaceOrgID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q = sqlf.Sprintf(`
+INSERT INTO user_permissions (user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	(%s, 'read', 'repos', %s, NOW())
+`,
+		alice.ID, pq.Array([]int32{int32(privateRepo1.ID), int32(privateRepo2.ID)}),
+	)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	defer authz.SetProviders(true, nil)
+
+	// Alice should be able to see both her public and private repos
+	aliceCtx := actor.WithActor(ctx, &actor.Actor{UID: alice.ID})
+	repos, err := db.Repos().List(aliceCtx, ReposListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{privateRepo2}
+	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func createGitHubExternalService(t *testing.T, db DB, userID int32) *types.ExternalService {
 	now := time.Now()
 	svc := &types.ExternalService{
