@@ -179,7 +179,13 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
+var ErrEmptyExecutorSecret = errors.New("empty executor secret is not allowed")
+
 func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+	if len(value) == 0 {
+		return ErrEmptyExecutorSecret
+	}
+
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
 	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
@@ -216,6 +222,10 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+	if len(value) == 0 {
+		return ErrEmptyExecutorSecret
+	}
+
 	// SECURITY: check that the current user is authorized to update a secret in the given namespace.
 	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err

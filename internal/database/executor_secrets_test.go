@@ -185,6 +185,11 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 				t.Fatal("unexpected non-nil error")
 			}
 		})
+		t.Run("empty secret is forbidden", func(t *testing.T) {
+			if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
+				t.Fatal("unexpected non-nil error")
+			}
+		})
 		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
 			t.Fatal(err)
 		}
@@ -214,6 +219,12 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 
 			t.Run("non-admin user cannot update global secret", func(t *testing.T) {
 				if err := store.Update(userCtx, ExecutorSecretScopeBatches, secret, newSecretValue); err == nil {
+					t.Fatal("unexpected non-nil error")
+				}
+			})
+
+			t.Run("empty secret is forbidden", func(t *testing.T) {
+				if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
 					t.Fatal("unexpected non-nil error")
 				}
 			})
