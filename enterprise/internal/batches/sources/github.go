@@ -73,8 +73,8 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GithubSource) GitserverPushConfig(repo *types.Repo, isFork bool) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, isFork, s.au)
+func (s GithubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -297,21 +297,21 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 // the given namespace, ensuring that the fork exists and is a fork of the
 // target repo.
 func (s GithubSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	return getFork(ctx, targetRepo, s.client, &namespace)
+	return githubGetUserFork(ctx, targetRepo, s.client, &namespace)
 }
 
 // GetUserFork returns a repo pointing to a fork of the given repo in the
 // currently authenticated user's namespace.
 func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	// The implementation is separated here so we can mock the GitHub client.
-	return getFork(ctx, targetRepo, s.client, nil)
+	return githubGetUserFork(ctx, targetRepo, s.client, nil)
 }
 
 type githubClientFork interface {
 	Fork(context.Context, string, string, *string) (*github.Repository, error)
 }
 
-func getFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
+func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
 	targetMeta, ok := targetRepo.Metadata.(*github.Repository)
 	if !ok || targetMeta == nil {
 		return nil, errors.New("target repo is not a GitHub repo")

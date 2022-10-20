@@ -663,6 +663,7 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		org := "org"
 		remoteRepo := &github.Repository{NameWithOwner: "user/bar"}
+		urn := extsvc.URN(extsvc.KindGitHub, 1)
 
 		for name, tc := range map[string]struct {
 			targetRepo *types.Repo
@@ -674,6 +675,12 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 					Metadata: &github.Repository{
 						NameWithOwner: "foo/bar",
 					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://github.com/foo/bar",
+						},
+					},
 				},
 				namespace: nil,
 				client:    &mockGithubClientFork{fork: remoteRepo},
@@ -682,6 +689,12 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
 						NameWithOwner: "foo/bar",
+					},
+					Sources: map[string]*types.SourceInfo{
+						urn: {
+							ID:       urn,
+							CloneURL: "https://github.com/foo/bar",
+						},
 					},
 				},
 				namespace: &org,
@@ -699,6 +712,7 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 				assert.Equal(t, remoteRepo, fork.Metadata)
 			})
 		}
+		// TODO: assert repo.Sources has fork URLs
 	})
 }
 

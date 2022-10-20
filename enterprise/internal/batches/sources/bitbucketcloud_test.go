@@ -82,7 +82,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	pushConfig, err := s.GitserverPushConfig(repo, false)
+	pushConfig, err := s.GitserverPushConfig(repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@bitbucket.org/clone/link", pushConfig.RemoteURL)
@@ -572,7 +572,13 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 		FullName: "upstream/repo",
 		Slug:     "repo",
 	}
-	upstreamRepo := &types.Repo{Metadata: upstream}
+	urn := extsvc.URN(extsvc.KindBitbucketCloud, 1)
+	upstreamRepo := &types.Repo{Metadata: upstream, Sources: map[string]*types.SourceInfo{
+		urn: {
+			ID:       urn,
+			CloneURL: "https://bitbucket.org/upstream/repo",
+		},
+	}}
 
 	fork := &bitbucketcloud.Repo{
 		UUID:     "fork-uuid",
@@ -610,6 +616,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 			assert.Nil(t, err)
 			assert.NotNil(t, repo)
 			assert.Same(t, fork, repo.Metadata)
+			// TODO: assert repo.Sources has fork URLs
 		})
 
 		t.Run("fork error", func(t *testing.T) {
@@ -653,6 +660,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 			assert.Nil(t, err)
 			assert.NotNil(t, repo)
 			assert.Same(t, fork, repo.Metadata)
+			// TODO: assert repo.Sources has fork URLs
 		})
 	})
 

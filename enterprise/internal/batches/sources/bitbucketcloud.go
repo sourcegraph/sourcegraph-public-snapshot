@@ -56,8 +56,8 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s BitbucketCloudSource) GitserverPushConfig(repo *types.Repo, isFork bool) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, isFork, s.client.Authenticator())
+func (s BitbucketCloudSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.client.Authenticator())
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the

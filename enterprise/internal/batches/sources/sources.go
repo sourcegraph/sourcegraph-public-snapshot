@@ -13,10 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -161,7 +157,7 @@ func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory
 // GitserverPushConfig creates a push configuration given a repo and an
 // authenticator. This function is only public for testing purposes, and should
 // not be used otherwise.
-func GitserverPushConfig(repo *types.Repo, isFork bool, au auth.Authenticator) (*protocol.PushConfig, error) {
+func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -391,8 +387,8 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	return nil
 }
 
-// TODO: Rename back to extract?
-// getCloneURL returns a remote URL for the repo, preferring HTTPS over SSH.
+// getCloneURL returns a remote URL for the provided *types.Repo from its Sources,
+// preferring HTTPS over SSH.
 func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	cloneURLs := repo.CloneURLs()
 
@@ -414,61 +410,6 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	})
 
 	return parsedURLs[0], nil
-}
-
-// extractCloneURLsFromFork returns the remote URLs for the fork identified by the repo metadata.
-func extractCloneURLsFromFork(repo *types.Repo) (*[]string, error) {
-	switch repo.ExternalRepo.ServiceType {
-	case extsvc.TypeBitbucketServer:
-		if r, ok := repo.Metadata.(*bitbucketserver.Repo); ok {
-			return extractBitbucketServerCloneURLs(r), nil
-		}
-	case extsvc.TypeBitbucketCloud:
-		if r, ok := repo.Metadata.(*bitbucketcloud.Repo); ok {
-			return extractBitbucketCloudCloneURLs(r), nil
-		}
-	case extsvc.TypeGitHub:
-		if r, ok := repo.Metadata.(*github.Repository); ok {
-			return extractGithubCloneURLs(r), nil
-		}
-	case extsvc.TypeGitLab:
-		if r, ok := repo.Metadata.(*gitlab.Project); ok {
-			return extractGitlabCloneURL(r), nil
-		}
-	default:
-		return nil, errors.Errorf("unsupported external service type %q for repo %d", repo.ExternalRepo.ServiceType, repo.ID)
-	}
-	return nil, errors.Errorf("unknown repo.Metadata type %T for repo %d", repo.Metadata, repo.ID)
-}
-
-func extractBitbucketServerCloneURLs(repo *bitbucketserver.Repo) *[]string {
-	cloneURLs := make([]string, 0, len(repo.Links.Clone))
-	for _, link := range repo.Links.Clone {
-		if link.Href != "" {
-			cloneURLs = append(cloneURLs, link.Href)
-		}
-	}
-	return &cloneURLs
-}
-
-func extractBitbucketCloudCloneURLs(repo *bitbucketcloud.Repo) *[]string {
-	cloneURLs := make([]string, 0, len(repo.Links.Clone))
-	for _, link := range repo.Links.Clone {
-		if link.Href != "" {
-			cloneURLs = append(cloneURLs, link.Href)
-		}
-	}
-	return &cloneURLs
-}
-
-func extractGithubCloneURLs(repo *github.Repository) *[]string {
-	cloneURLs := []string{repo.URL}
-	return &cloneURLs
-}
-
-func extractGitlabCloneURL(repo *gitlab.Project) *[]string {
-	cloneURLs := []string{repo.HTTPURLToRepo, repo.SSHURLToRepo}
-	return &cloneURLs
 }
 
 var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")

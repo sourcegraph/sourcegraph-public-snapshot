@@ -79,8 +79,8 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(repo *types.Repo, isFork bool) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, isFork, s.au)
+func (s GitLabSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -568,7 +568,7 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 		return nil, errors.Wrap(err, "forking project")
 	}
 
-	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// Now we make a copy of the target repo, but with its sources and metadata updated ƒto
 	// point to the fork
 	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.PathWithNamespace, fork.PathWithNamespace)
 	if err != nil {

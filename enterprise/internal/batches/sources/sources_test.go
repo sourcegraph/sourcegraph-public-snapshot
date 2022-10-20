@@ -17,10 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -83,104 +80,7 @@ func TestGetCloneURL(t *testing.T) {
 				},
 			}
 
-			have, err := getCloneURL(repo, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if have.String() != tc.want {
-				t.Fatalf("invalid cloneURL returned, want=%q have=%q", tc.want, have)
-			}
-		})
-	}
-}
-
-func TestGetCloneURL_Forks(t *testing.T) {
-	tcs := []struct {
-		name      string
-		want      string
-		sourceURL string
-		metadata  any
-		svcType   string
-	}{
-		{
-			name:      "github",
-			want:      "https://github.com/forking-user/batch-changes-test-repo",
-			sourceURL: "https://github.com/sourcegraph-testing/batch-changes-test-repo",
-			metadata: &github.Repository{
-				URL: "https://github.com/forking-user/batch-changes-test-repo",
-			},
-			svcType: extsvc.TypeGitHub,
-		},
-		{
-			name:      "gitlab",
-			want:      "https://gitlab.sgdev.org/forking-user/batch-changes-test-repo.git",
-			sourceURL: "https://gitlab.sgdev.org/batch-changes-testing/batch-changes-test-repo.git",
-			metadata: &gitlab.Project{
-				ProjectCommon: gitlab.ProjectCommon{
-					HTTPURLToRepo: "https://gitlab.sgdev.org/forking-user/batch-changes-test-repo.git",
-					SSHURLToRepo:  "git@gitlab.sgdev.org:forking-user/batch-changes-test-repo.git",
-				},
-			},
-			svcType: extsvc.TypeGitLab,
-		},
-		{
-			name:      "bitbucket server",
-			want:      "https://bitbucket.sgdev.org/scm/~forking-user/batch-changes-test-repo.git",
-			sourceURL: "https://forking-user@bitbucket.sgdev.org/scm/bat/batch-changes-test-repo.git",
-			metadata: &bitbucketserver.Repo{
-				Links: bitbucketserver.RepoLinks{
-					Clone: []bitbucketserver.Link{
-						{
-							Href: "ssh://git@bitbucket.sgdev.org:7999/~forking-user/batch-changes-test-repo.git",
-							Name: "ssh",
-						},
-						{
-							Href: "https://bitbucket.sgdev.org/scm/~forking-user/batch-changes-test-repo.git",
-							Name: "https",
-						},
-					},
-				},
-			},
-			svcType: extsvc.TypeBitbucketServer,
-		},
-		{
-			name:      "bitbucket cloud",
-			want:      "https://forking-user@bitbucket.org/forking-user/batch-changes-test-repo.git",
-			sourceURL: "https://forking-user@bitbucket.org/sourcegraph-batch-changes/batch-changes-test-repo.git",
-			metadata: &bitbucketcloud.Repo{
-				Links: bitbucketcloud.RepoLinks{
-					Clone: []bitbucketcloud.Link{
-						{
-							Href: "https://forking-user@bitbucket.org/forking-user/batch-changes-test-repo.git",
-							Name: "https",
-						},
-						{
-							Href: "git@bitbucket.org:forking-user/batch-changes-test-repo.git",
-							Name: "ssh",
-						},
-					},
-				},
-			},
-			svcType: extsvc.TypeBitbucketCloud,
-		},
-	}
-	for i, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			sources := map[string]*types.SourceInfo{}
-			sources[strconv.Itoa(i)] = &types.SourceInfo{
-				ID:       strconv.Itoa(i),
-				CloneURL: tc.sourceURL,
-			}
-			repo := &types.Repo{
-				Name:    "batch-changes-test-repo",
-				Sources: sources,
-				ExternalRepo: api.ExternalRepoSpec{
-					ServiceType: tc.svcType,
-				},
-				Metadata: tc.metadata,
-			}
-
-			have, err := getCloneURL(repo, true)
+			have, err := getCloneURL(repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -411,7 +311,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(repo, false, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}
@@ -654,7 +554,7 @@ func TestGetRemoteRepo(t *testing.T) {
 				ForkNamespace: &forkNamespace,
 			})
 			assert.Nil(t, repo)
-			assert.ErrorIs(t, err, ErrChangesetSourceCannotFork)
+			assert.ErrorContains(t, err, ErrChangesetSourceCannotFork.Error())
 		})
 
 		t.Run("forkable changeset source", func(t *testing.T) {
@@ -680,7 +580,7 @@ func TestGetRemoteRepo(t *testing.T) {
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, repo)
-				assert.Same(t, want, err)
+				assert.Contains(t, err.Error(), want.Error())
 				mockassert.CalledOnce(t, css.GetUserForkFunc)
 			})
 		})

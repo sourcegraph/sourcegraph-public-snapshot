@@ -694,11 +694,18 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 	}
 
 	newBitbucketServerRepo := func(key, slug string, id int) *types.Repo {
+		urn := extsvc.URN(extsvc.KindBitbucketCloud, 1)
 		return &types.Repo{
 			Metadata: &bitbucketserver.Repo{
 				ID:      id,
 				Slug:    slug,
 				Project: &bitbucketserver.Project{Key: key},
+			},
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: "https://bitbucket.sgdev.org/" + key + "/" + slug,
+				},
 			},
 		}
 	}
@@ -800,6 +807,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		// TODO: assert fork.Sources has fork URLs
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
@@ -823,6 +831,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		// TODO: assert fork.Sources has fork URLs
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
