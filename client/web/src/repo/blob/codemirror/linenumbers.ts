@@ -19,6 +19,7 @@ import {
     gutterLineClass,
 } from '@codemirror/view'
 
+import { focusableLines } from './linefocus'
 import { isValidLineRange, preciseOffsetAtCoords } from './utils'
 
 /**
@@ -34,7 +35,7 @@ const MOUSE_MAIN_BUTTON = 0
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line', attributes: { tabIndex: '-1' } })
+const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
@@ -275,6 +276,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
     return [
         scrollIntoView,
         selectedLines.init(() => config.initialSelection),
+        focusableLines(config.initialSelection?.line),
         lineNumbers({
             domEventHandlers: {
                 mousedown(view, block, event) {
