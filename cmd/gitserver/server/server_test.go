@@ -142,9 +142,8 @@ func TestExecRequest(t *testing.T) {
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
 		{
-			Name: "Error",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
+			Name:         "Error",
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {"testerror"},
@@ -153,16 +152,14 @@ func TestExecRequest(t *testing.T) {
 			},
 		},
 		{
-			Name: "EmptyInput",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader("{}")),
+			Name:         "EmptyInput",
+			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
 		{
-			Name: "BadCommand",
-			Request: newRequest(
-				"POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			Name:         "BadCommand",
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
