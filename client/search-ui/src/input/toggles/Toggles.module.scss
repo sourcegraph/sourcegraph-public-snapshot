@@ -18,9 +18,12 @@
 
 .toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     border-radius: 4px;
-    border: 2px solid transparent;
+    width: 22px;
+    height: 22px;
 
     &:not(:last-child) {
         margin-right: 0.125rem;
