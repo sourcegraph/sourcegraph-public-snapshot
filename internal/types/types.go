@@ -1663,14 +1663,15 @@ type SearchContextRepositoryRevisions struct {
 
 type EncryptableSecret = encryption.Encryptable
 
-func NewEmptySecret() *EncryptableSecret {
-	return NewUnencryptedSecret("")
-}
-
+// NewUnencryptedSecret creates an EncryptableSecret that *may* be encrypted in
+// the future, but the current value has not yet been encrypted.
 func NewUnencryptedSecret(value string) *EncryptableSecret {
 	return encryption.NewUnencrypted(value)
 }
 
+// NewEncryptedSecret creates an EncryptableSecret that has come from an
+// encrypted source. In this case you need to provide the keyID and key in order
+// to be able to decrypt it.
 func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
