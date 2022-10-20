@@ -70,6 +70,8 @@ type InsightsSeries {
     """
     status: InsightSeriesStatus!
 
+    status2: InsightSeriesStatus2!
+
     """
     Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
     """
@@ -167,6 +169,20 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+}
+
+type InsightSeriesStatus2 {
+    progress: Int!
+    errors: [InsightSeriesError!]!
+}
+
+type InsightSeriesError {
+    reason: String!
+    type: InsightSeriesErrorType!
+}
+
+enum InsightSeriesErrorType {
+    Timeout
 }
 
 extend type Query {
@@ -923,6 +939,8 @@ type InsightView implements Node {
     The total number of series on this insight.
     """
     seriesCount: Int
+
+    status: InsightSeriesStatus2!
 }
 
 """
