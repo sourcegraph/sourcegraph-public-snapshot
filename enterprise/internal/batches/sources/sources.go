@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -166,7 +167,7 @@ func GitserverPushConfig(repo *types.Repo, isFork bool, au auth.Authenticator) (
 		return nil, ErrNoPushCredentials{}
 	}
 
-	cloneURL, err := getCloneURL(repo, isFork)
+	cloneURL, err := getCloneURL(repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting clone URL")
 	}
@@ -390,25 +391,17 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	return nil
 }
 
-// getCloneURL returns a remote URL for the repo, or the fork identified by its metadata,
-// preferring HTTPS over SSH.
-func getCloneURL(repo *types.Repo, isFork bool) (*vcs.URL, error) {
-	var cloneURLs *[]string
-	var err error
+// TODO: Rename back to extract?
+// getCloneURL returns a remote URL for the repo, preferring HTTPS over SSH.
+func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
+	cloneURLs := repo.CloneURLs()
 
-	if isFork {
-		cloneURLs, err = extractCloneURLsFromFork(repo)
-	} else {
-		urls := repo.CloneURLs()
-		cloneURLs = &urls
+	if len(cloneURLs) == 0 {
+		return nil, errors.New("no clone URLs found for repo")
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	parsedURLs := make([]*vcs.URL, 0, len(*cloneURLs))
-	for _, url := range *cloneURLs {
+	parsedURLs := make([]*vcs.URL, 0, len(cloneURLs))
+	for _, url := range cloneURLs {
 		parsedURL, err := vcs.ParseURL(url)
 		if err != nil {
 			return nil, err
@@ -503,17 +496,65 @@ func GetRemoteRepo(
 		return nil, ErrChangesetSourceCannotFork
 	}
 
+	var repo *types.Repo
+	var err error
+
 	if ch.ExternalForkNamespace != "" {
 		// If we're updating an existing changeset, we should push/modify the
 		// same fork, even if the user credential would now fork into a
 		// different namespace.
-		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+		repo, err = fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting namespace fork for external fork namespace")
+		}
+		return repo, nil
 	} else if namespace := spec.GetForkNamespace(); namespace != nil {
 		// If the changeset spec requires a specific fork namespace, then we
 		// should handle that here.
-		return fss.GetNamespaceFork(ctx, targetRepo, *namespace)
+		repo, err = fss.GetNamespaceFork(ctx, targetRepo, *namespace)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting namespace fork")
+		}
+		return repo, nil
 	}
 
 	// Otherwise, we're pushing to a user fork.
-	return fss.GetUserFork(ctx, targetRepo)
+	repo, err = fss.GetUserFork(ctx, targetRepo)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user fork")
+	}
+	return repo, nil
+}
+
+// CopyRepoAsFork takes a *types.Repo and returns a copy of it where each
+// *types.SourceInfo.CloneURL on its Sources has been updated from nameAndOwner to
+// forkNameAndOwner and its Metadata is updated to the provided metadata. This is useful
+// because a fork repo that is created by Batch Changes is not necessarily indexed by
+// Sourcegraph, but we still need to create a legitimate-seeming *types.Repo for it with
+// the right clone URLs, so that we know where to push commits and publish the changeset.
+func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwner string) (*types.Repo, error) {
+	forkRepo := *repo
+
+	if repo.Sources == nil || len(repo.Sources) == 0 {
+		return nil, errors.New("repo has no sources")
+	}
+
+	for urn, src := range repo.Sources {
+		if src != nil || src.CloneURL != "" {
+			forkURL := strings.Replace(
+				strings.ToLower(src.CloneURL),
+				strings.ToLower(nameAndOwner),
+				strings.ToLower(forkNameAndOwner),
+				1,
+			)
+			forkRepo.Sources[urn] = &types.SourceInfo{
+				ID:       src.ID,
+				CloneURL: forkURL,
+			}
+		}
+	}
+
+	forkRepo.Metadata = metadata
+
+	return &forkRepo, nil
 }

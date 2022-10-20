@@ -310,6 +310,8 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	return newestPR, nil
 }
 
+// GetUserFork returns a repo pointing to a fork of the given repo in the
+// currently authenticated user's namespace.
 func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
 
@@ -319,9 +321,12 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 		return nil, errors.Wrap(err, "getting username")
 	}
 
-	// See if we already have a fork. We have to prepend a tilde to the user
-	// name to make this a "user-centric URL" in Bitbucket Server parlance.
-	fork, err := s.getFork(ctx, parent, "~"+user)
+	// We have to prepend a tilde to the user name to make this a "user-centric URL" in
+	// Bitbucket Server parlance.
+	forkNamespace := "~" + user
+
+	// See if we already have a fork.
+	fork, err := s.getFork(ctx, parent, forkNamespace)
 	if err != nil && !bitbucketserver.IsNotFound(err) {
 		return nil, errors.Wrapf(err, "getting user fork for %q", user)
 	}
@@ -334,9 +339,12 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 		}
 	}
 
-	return createRemoteRepo(targetRepo, fork), nil
+	return s.copyRepoAsFork(targetRepo, fork, forkNamespace)
 }
 
+// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+// the given namespace, ensuring that the fork exists and is a fork of the
+// target repo.
 func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
 	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
 
@@ -356,18 +364,23 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 		}
 	}
 
-	return createRemoteRepo(targetRepo, fork), nil
+	return s.copyRepoAsFork(targetRepo, fork, namespace)
 }
 
-func createRemoteRepo(targetRepo *types.Repo, fork *bitbucketserver.Repo) *types.Repo {
-	// We have to make a legitimate seeming *types.Repo.
-	// bitbucketServerCloneURL() ultimately only looks at the
-	// bitbucketserver.Repo in the Metadata field, so we'll replace that with
-	// the fork's metadata, and all should be well.
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+func (s BitbucketServerSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
+	targetMeta := targetRepo.Metadata.(*bitbucketserver.Repo)
 
-	return &remoteRepo
+	targetNameAndNamespace := targetMeta.Project.Key + "/" + targetMeta.Slug
+	forkNameAndNamespace := forkNamespace + "/" + targetMeta.Slug
+
+	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetNameAndNamespace, forkNameAndNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
+
+	return forkRepo, nil
 }
 
 var (

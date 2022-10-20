@@ -297,27 +297,27 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 // the given namespace, ensuring that the fork exists and is a fork of the
 // target repo.
 func (s GithubSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	return githubGetUserFork(ctx, targetRepo, s.client, &namespace)
+	return getFork(ctx, targetRepo, s.client, &namespace)
 }
 
 // GetUserFork returns a repo pointing to a fork of the given repo in the
 // currently authenticated user's namespace.
 func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	// The implementation is separated here so we can mock the GitHub client.
-	return githubGetUserFork(ctx, targetRepo, s.client, nil)
+	return getFork(ctx, targetRepo, s.client, nil)
 }
 
 type githubClientFork interface {
 	Fork(context.Context, string, string, *string) (*github.Repository, error)
 }
 
-func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
-	meta, ok := targetRepo.Metadata.(*github.Repository)
-	if !ok || meta == nil {
+func getFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
+	targetMeta, ok := targetRepo.Metadata.(*github.Repository)
+	if !ok || targetMeta == nil {
 		return nil, errors.New("target repo is not a GitHub repo")
 	}
 
-	owner, name, err := github.SplitRepositoryNameWithOwner(meta.NameWithOwner)
+	owner, name, err := github.SplitRepositoryNameWithOwner(targetMeta.NameWithOwner)
 	if err != nil {
 		return nil, errors.New("parsing repo name")
 	}
@@ -327,10 +327,14 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.NameWithOwner, fork.NameWithOwner)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
 
-	return &remoteRepo, nil
+	return forkRepo, nil
 }
 
 func (GithubSource) IsPushResponseArchived(s string) bool {
