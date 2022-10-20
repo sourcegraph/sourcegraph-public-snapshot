@@ -86,6 +86,7 @@ type InsightStatusResolver interface {
 	CompletedJobs() int32
 	FailedJobs() int32
 	BackfillQueuedAt() *gqlutil.DateTime
+	IsLoadingData() (*bool, error)
 }
 
 type InsightsPointsArgs struct {
