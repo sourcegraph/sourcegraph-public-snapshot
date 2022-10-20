@@ -177,7 +177,7 @@ func main() {
 	done = 0
 	// Adding a remote will lock git configuration, so we shard
 	// them by blank repo duplicates.
-	g = group.New().WithMaxConcurrency(clonesCount)
+	g = group.New().WithMaxConcurrency(20)
 	for _, repo := range repos {
 		repo := repo
 		g.Go(func() {
