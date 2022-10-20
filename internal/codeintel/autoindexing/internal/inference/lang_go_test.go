@@ -3,11 +3,12 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestGoGenerator(t *testing.T) {
-	expectedIndexerImage := "sourcegraph/lsif-go@sha256:253c991fdd8b118afadcfbe6f7a6d03ca91c44fd2860dbe8a9fd69c93c6025f6"
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("go")
 
 	testGenerators(t,
 		generatorTestCase{

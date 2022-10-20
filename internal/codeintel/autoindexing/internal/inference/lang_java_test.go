@@ -3,11 +3,12 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestJavaGenerator(t *testing.T) {
-	expectedIndexerImage := "sourcegraph/scip-java@sha256:eb3996bdc8ab3a56600e7d647bc1ef72f3db8cfffc2026550095a0af7bb762bd"
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("java")
 
 	testGenerators(t,
 		generatorTestCase{

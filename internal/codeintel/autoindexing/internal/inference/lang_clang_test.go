@@ -3,11 +3,12 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestClangHinter(t *testing.T) {
-	expectedIndexerImage := "sourcegraph/lsif-clang@sha256:5ef2334ac9d58f1f947651812aa8d8ba0ed584913f2429cc9952cb25f94976d8"
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("clang")
 
 	testHinters(t,
 		hinterTestCase{
