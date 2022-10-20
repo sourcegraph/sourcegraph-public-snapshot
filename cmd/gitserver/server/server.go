@@ -495,6 +495,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
+	// This endpoint allows us to expose gitserver itself as a "git service"
+	// (ETOOMANYGITS!) that allows other services to run commands like "git fetch"
+	// directly against a gitserver replica and treat it as a git remote.
+	//
+	// Example use case for this is a repo migration from one replica to another during
+	// scaling events and the new destination gitserver replica can directly clone from
+	// the gitserver replica which hosts the repository currently.
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
 		conf.DefaultClient(),
