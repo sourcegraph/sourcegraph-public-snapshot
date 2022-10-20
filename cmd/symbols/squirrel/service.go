@@ -161,7 +161,7 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	}
 }
 
-const defaultMaxSquirrelDepth = 10_000
+const defaultMaxSquirrelDepth = 100
 
 var maxSquirrelDepth = func() int {
 	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
