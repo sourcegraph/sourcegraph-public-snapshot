@@ -22,16 +22,27 @@ type RequestState struct {
 	maximumIndexesPerMonikerSearch int
 
 	authChecker authz.SubRepoPermissionChecker
+
+	RepositoryID int
+	Commit       string
+	Path         string
 }
 
 func NewRequestState(
 	uploads []types.Dump,
 	authChecker authz.SubRepoPermissionChecker,
-	gitclient GitserverClient, repo *sgTypes.Repo, commit, path string,
+	gitclient GitserverClient,
+	repo *sgTypes.Repo,
+	commit string,
+	path string,
 	maxIndexes int,
 	hunkCacheSize int,
 ) RequestState {
-	r := &RequestState{}
+	r := &RequestState{
+		RepositoryID: int(repo.ID),
+		Commit:       commit,
+		Path:         path,
+	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
 	r.SetLocalGitTreeTranslator(gitclient, repo, commit, path, hunkCacheSize)

@@ -17,7 +17,7 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	svc                            Service
+	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
 	uploadSvc                      UploadsService
 	policiesSvc                    PolicyService
@@ -29,7 +29,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(svc Service, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) RootResolver {
+func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -70,7 +70,6 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDat
 	}
 
 	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
-	gbr := NewGitBlobResolver(r.svc, int(args.Repo.ID), string(args.Commit), args.Path, r.operations, reqState)
 
-	return NewGitBlobLSIFDataResolverQueryResolver(r.autoindexingSvc, r.uploadSvc, r.policiesSvc, gbr, errTracer), nil
+	return NewGitBlobLSIFDataResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
 }

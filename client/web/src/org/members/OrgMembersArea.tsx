@@ -10,7 +10,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 import { useEventBus } from '../emitter'
 
 import { OrgMembersListPage } from './OrgMembersListPage'
@@ -25,7 +25,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     />
 )
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
+interface Props extends OrgAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
     authenticatedUser: AuthenticatedUser
 }

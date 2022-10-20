@@ -12,6 +12,7 @@ import {
     updateQuery,
     InitialParametersSource,
     SearchPatternType,
+    SearchMode,
 } from '@sourcegraph/search'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -27,6 +28,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
+    searchMode: SearchMode.Precise,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
