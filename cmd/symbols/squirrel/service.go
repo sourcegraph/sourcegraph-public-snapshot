@@ -147,7 +147,6 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	case "starlark":
 		return squirrel.getDefStarlark(ctx, node)
 	case "python":
-		fmt.Println("choo choo! all aboard the recursion train!")
 		return squirrel.getDefPython(ctx, node)
 	// case "go":
 	// case "csharp":
