@@ -261,10 +261,17 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 }
 
 const reindexIndexesQuery = `
+WITH candidates AS (
+    SELECT u.id
+	FROM lsif_indexes u
+	JOIN repo ON repo.id = u.repository_id
+	WHERE %s
+    ORDER BY u.id
+    FOR UPDATE
+)
 UPDATE lsif_indexes u
 SET should_reindex = true
-FROM repo
-WHERE u.repository_id = repo.id AND %s
+WHERE u.id IN (SELECT id FROM candidates)
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
