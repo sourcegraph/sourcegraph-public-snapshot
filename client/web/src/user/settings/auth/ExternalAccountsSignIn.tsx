@@ -26,6 +26,21 @@ interface GitLabExternalData {
     web_url: string
 }
 
+interface SamlExternalData {
+    name: string
+    username: string
+    web_url: string
+    Assertions: assertion[]
+}
+
+interface assertion {
+    AttributeStatement: attributeStatement
+}
+
+interface attributeStatement {
+    Attributes: object
+}
+
 export interface NormalizedMinAccount {
     name: string
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
@@ -98,17 +113,34 @@ const getNormalizedAccount = (
                 break
             case 'SAML':
             {
-                // const gitlabExternalData = accountExternalData as GitLabExternalData
-                // normalizedAccount = {
-                //     ...normalizedAccount,
-                //     external: {
-                //         id: account.id,
-                //         // map gitlab fields
-                //         userName: gitlabExternalData.name,
-                //         userLogin: gitlabExternalData.username,
-                //         userUrl: gitlabExternalData.web_url,
-                //     },
-                // }
+                const samlExternalData = accountExternalData as SamlExternalData
+                const data = Object.values(samlExternalData.Assertions[0].AttributeStatement.Attributes)
+                let email = ''
+                let nickname = ''
+
+                for (let index = 0, length = data.length; index < length; index+= 1) {
+                    const item = data[index]
+                    if(data[index].Values && item.Name) {
+                        const key = item.Name.slice(Math.max(0, item.Name.lastIndexOf('/') + 1))
+                        if (key === 'emailaddress') {
+                            email = item.Values[0].Value
+                        }
+
+                        if (key === 'nickname') {
+                            nickname = item.Values[0].Value
+                        }
+                    }
+                }
+
+                normalizedAccount = {
+                    ...normalizedAccount,
+                    external: {
+                        id: account.id,
+                        userName: nickname,
+                        userLogin: email,
+                        userUrl: samlExternalData.web_url,
+                    },
+                }
             }
                 break
         }
