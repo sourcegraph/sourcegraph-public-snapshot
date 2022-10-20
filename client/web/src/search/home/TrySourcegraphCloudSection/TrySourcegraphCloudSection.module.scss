@@ -1,0 +1,85 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.wrapper {
+    --illustration-width: 156px;
+
+    background: linear-gradient(270deg, #270741 0%, #340957 100%);
+    box-shadow: 0 4px 16px rgba(46, 34, 119, 0.1);
+    border-radius: 5px;
+    display: flex;
+}
+
+.illustration {
+    display: none;
+    @media (--lg-breakpoint-up) {
+        display: block;
+    }
+}
+
+.alphaMask {
+    mask-type: alpha;
+}
+
+.content {
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    @media (--md-breakpoint-up) {
+        display: flex;
+        text-align: left;
+        align-items: center;
+    }
+    @media (--lg-breakpoint-up) {
+        width: calc(100% - var(--illustration-width));
+        padding: 0 50px 0 20px;
+    }
+}
+
+.tryCloud {
+    color: #339AF0;
+    font-size: 27px;
+    line-height: 31px;
+    margin-bottom: 2px;
+}
+
+.byline {
+    color: #fff;
+    font-size: 22px;
+}
+
+.signUp {
+    font-size: 19px;
+    margin-top: 19px;
+    margin-bottom: 0;
+}
+
+.links {
+    max-width: 250px;
+    width: 100%;
+    margin: 20px auto 0;
+    @media (--md-breakpoint-up) {
+        margin: 0 0 0 auto;
+    }
+
+    a:last-child {
+        display: block;
+        text-align: center;
+        margin-bottom: 0;
+        color: #fff;
+
+        p {
+            margin: 0;
+        }
+    }
+}
+
+.trialButton {
+    background: #fff;
+    color: #0B70DB;
+    width: 100%;
+    margin-bottom: 8px;
+    &:hover {
+        background: #0B70DB !important;
+        color: #fff !important;
+    }
+}
