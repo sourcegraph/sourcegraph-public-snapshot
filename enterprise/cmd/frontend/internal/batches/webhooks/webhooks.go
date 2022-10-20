@@ -32,9 +32,8 @@ type Webhook struct {
 }
 
 type PR struct {
-	ID                int64
-	RepoExternalID    string
-	externalServiceID string
+	ID             int64
+	RepoExternalID string
 }
 
 func (h Webhook) getRepoForPR(
@@ -49,7 +48,7 @@ func (h Webhook) getRepoForPR(
 			{
 				ID:          pr.RepoExternalID,
 				ServiceType: h.ServiceType,
-				ServiceID:   pr.externalServiceID,
+				ServiceID:   externalServiceID,
 			},
 		},
 	})
@@ -101,6 +100,7 @@ func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
 	pr PR,
 	ev keyer,
+	externalServiceID string,
 ) (err error) {
 	var tx *store.Store
 	if tx, err = h.Store.Transact(ctx); err != nil {
@@ -108,7 +108,7 @@ func (h Webhook) upsertChangesetEvent(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	r, err := h.getRepoForPR(ctx, tx, pr, pr.externalServiceID)
+	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
 	if err != nil {
 		log15.Warn("Webhook event could not be matched to repo", "err", err)
 		return nil

@@ -70,12 +70,18 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 		return nil
 	}
 
+	esID, err := h.getExternalServiceIDFromEvent(ctx, db, urn, payload)
+	if err != nil {
+		log15.Error("error while extracting external service ID from webhook event", "err", err)
+		return nil
+	}
+
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, pr, ev)
+		err := h.upsertChangesetEvent(ctx, pr, ev, esID)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
@@ -100,6 +106,99 @@ func getExternalServiceIDFromRepo(ctx context.Context, db database.DB, urn strin
 	return extsvc.NormalizeBaseURL(u).String(), nil
 }
 
+func (h *GitHubWebhook) getExternalServiceIDFromEvent(ctx context.Context, db database.DB, urn string, theirs any) (esID string, err error) {
+	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
+	switch e := theirs.(type) {
+	case *gh.IssueCommentEvent:
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.PullRequestEvent:
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+
+		if e.Number == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.PullRequestReviewEvent:
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.PullRequestReviewCommentEvent:
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.StatusEvent:
+		// A status event could potentially relate to more than one
+		// PR so we need to find them all
+		refs := make([]string, 0, len(e.Branches))
+		for _, branch := range e.Branches {
+			if name := branch.GetName(); name != "" {
+				refs = append(refs, name)
+			}
+		}
+
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.CheckSuiteEvent:
+		if e.CheckSuite == nil {
+			return
+		}
+
+		cs := e.GetCheckSuite()
+
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+
+	case *gh.CheckRunEvent:
+		if e.CheckRun == nil {
+			return
+		}
+
+		cr := e.GetCheckRun()
+
+		cs := cr.GetCheckSuite()
+		if cs == nil {
+			return
+		}
+
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+
+		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
+	}
+
+	return esID, err
+}
+
 func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn string, theirs any) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
@@ -110,13 +209,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		}
 		repoExternalID := repo.GetNodeID()
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
-		pr := PR{ID: int64(*e.Issue.Number), RepoExternalID: repoExternalID, externalServiceID: externalServiceID}
+		pr := PR{ID: int64(*e.Issue.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		return prs, h.issueComment(e)
 
@@ -131,13 +224,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 			return
 		}
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
-		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID, externalServiceID: externalServiceID}
+		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 
 		if e.Action == nil {
@@ -175,13 +262,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		}
 		repoExternalID := repo.GetNodeID()
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID, externalServiceID: externalServiceID}
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		ours = h.pullRequestReviewEvent(e)
 
@@ -192,13 +273,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		}
 		repoExternalID := repo.GetNodeID()
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID, externalServiceID: externalServiceID}
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		switch *e.Action {
 		case "created", "edited":
@@ -249,7 +324,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 				log15.Error("Error parsing external id", "err", err)
 				continue
 			}
-			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID, externalServiceID: externalServiceID})
+			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID})
 		}
 
 		ours = h.commitStatusEvent(e)
@@ -267,16 +342,10 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		}
 		repoID := repo.GetNodeID()
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
 		for _, pr := range cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID, externalServiceID: externalServiceID})
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkSuiteEvent(cs)
@@ -299,16 +368,10 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		}
 		repoID := repo.GetNodeID()
 
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
-
 		for _, pr := range cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID, externalServiceID: externalServiceID})
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
