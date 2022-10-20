@@ -3,17 +3,18 @@ import { EditorView, Decoration, PluginValue, ViewUpdate, ViewPlugin } from '@co
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { selectedLines } from './linenumbers'
+import { SelectedLineRange, selectedLines, setSelectedLines } from './linenumbers'
 
 class LineFocus implements PluginValue {
     private lastSelectedLine: number | null = null
     private lastFocusedLine: number
-    private keySubscription: Subscription
-    private focusSubscription: Subscription
+    private subscription: Subscription
 
-    constructor(private readonly view: EditorView, initialLine: number) {
+    constructor(private view: EditorView, initialLine: number, onSelection: (range: SelectedLineRange) => void) {
         this.lastFocusedLine = initialLine
-        this.keySubscription = fromEvent<KeyboardEvent>(view.dom, 'keydown')
+
+        // Listen to 'ArrowUp/Down' key events to focus the next/previous line.
+        this.subscription = fromEvent<KeyboardEvent>(view.dom, 'keydown')
             .pipe(filter(event => event.key === 'ArrowUp' || event.key === 'ArrowDown'))
             .subscribe(event => {
                 event.preventDefault()
@@ -26,29 +27,53 @@ class LineFocus implements PluginValue {
                 this.focusLine(nextLine)
             })
 
-        this.focusSubscription = fromEvent<FocusEvent>(view.dom, 'focusin').subscribe(event => {
-            const currentFocus = event.target as HTMLElement | null
+        // Listen to focus events within CodeMirror to keep the focused line in sync.
+        this.subscription.add(
+            fromEvent<FocusEvent>(view.dom, 'focusin').subscribe(event => {
+                const currentFocus = event.target as HTMLElement | null
 
-            if (currentFocus) {
-                const nearestLine = view.state.doc.lineAt(view.posAtDOM(currentFocus))
-                this.lastFocusedLine = nearestLine.number
-            }
-        })
+                if (currentFocus) {
+                    const nearestLine = view.state.doc.lineAt(view.posAtDOM(currentFocus))
+                    this.lastFocusedLine = nearestLine.number
+                }
+            })
+        )
+
+        // Listen to 'Enter' key events to allow the user to update the selected line.
+        this.subscription.add(
+            fromEvent<KeyboardEvent>(view.dom, 'keydown')
+                .pipe(filter(event => event.key === 'Enter'))
+                .subscribe(event => {
+                    const isLink = event.target instanceof HTMLAnchorElement
+                    if (!isLink && this.lastFocusedLine) {
+                        view.dispatch({
+                            effects: setSelectedLines.of({ line: this.lastFocusedLine }),
+                        })
+                        onSelection({ line: this.lastFocusedLine })
+                    }
+                })
+        )
     }
 
     public update(update: ViewUpdate): void {
         const currentSelectedLine = update.state.field(selectedLines)?.line
+
+        // If the selected line has changed, focus the new line.
         if (currentSelectedLine && this.lastSelectedLine !== currentSelectedLine) {
             this.lastSelectedLine = currentSelectedLine
-            this.focusLine(currentSelectedLine)
-        } else {
-            this.focusLine(this.lastFocusedLine)
+            return this.focusLine(currentSelectedLine)
+        }
+
+        // Otherwise, we need to ensure the last focused line remains in focus.
+        // We need to do this on every update, as any update could potentially cause us to lose focus.
+        // Note: We need to avoid triggering on `focusChanged` so we don't end up with a focus trap.
+        if (this.lastFocusedLine && !update.focusChanged) {
+            return this.focusLine(this.lastFocusedLine)
         }
     }
 
     public destroy(): void {
-        this.keySubscription.unsubscribe()
-        this.focusSubscription.unsubscribe()
+        this.subscription.unsubscribe()
     }
 
     private focusLine(lineNumber: number): void {
@@ -63,9 +88,14 @@ class LineFocus implements PluginValue {
     }
 }
 
+interface FocusableLinesConfig {
+    initialLine?: number
+    onSelection: (range: SelectedLineRange) => void
+}
+
 const focusableLineDecoration = Decoration.line({ attributes: { tabIndex: '-1' } })
 
-export function focusableLines(initialLine = 1): Extension {
+export function focusableLines({ initialLine = 1, onSelection }: FocusableLinesConfig): Extension {
     return [
         EditorView.decorations.compute([], state => {
             const to = state.doc.lines
@@ -78,6 +108,6 @@ export function focusableLines(initialLine = 1): Extension {
 
             return builder.finish()
         }),
-        ViewPlugin.define(view => new LineFocus(view, initialLine)),
+        ViewPlugin.define(view => new LineFocus(view, initialLine, onSelection)),
     ]
 }

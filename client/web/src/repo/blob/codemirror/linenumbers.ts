@@ -39,7 +39,7 @@ const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
-const setSelectedLines = StateEffect.define<SelectedLineRange>()
+export const setSelectedLines = StateEffect.define<SelectedLineRange>()
 const setEndLine = StateEffect.define<number>()
 
 /**
@@ -276,7 +276,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
     return [
         scrollIntoView,
         selectedLines.init(() => config.initialSelection),
-        focusableLines(config.initialSelection?.line),
+        focusableLines({ initialLine: config.initialSelection?.line, onSelection: config.onSelection }),
         lineNumbers({
             domEventHandlers: {
                 mousedown(view, block, event) {
