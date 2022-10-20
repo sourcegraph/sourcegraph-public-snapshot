@@ -3,6 +3,7 @@ package com.sourcegraph.website;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -29,11 +30,6 @@ public class OpenRevisionAction extends DumbAwareAction {
     private final Logger logger = Logger.getInstance(this.getClass());
 
     @Override
-    public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return super.getActionUpdateThread();
-    }
-
-    @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         // This action handles events for both log and history views, so attempt to load from any possible option.
         RevisionContext context = getHistoryRevisionContext(event).or(() -> getLogRevisionContext(event))
@@ -48,22 +44,33 @@ public class OpenRevisionAction extends DumbAwareAction {
 
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
-        String remoteUrl;
-        try {
-            remoteUrl = GitUtil.getRemoteUrl(context.getRepoRoot(), project);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
         CommitViewUriBuilder builder = new CommitViewUriBuilder();
-        URI uri;
-        try {
-            uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), remoteUrl, productName, productVersion);
-        } catch (IllegalArgumentException e) {
-            logger.warn("Unable to build commit view URI for url " + ConfigUtil.getSourcegraphUrl(project)
-                + ", revision " + context.getRevisionNumber() + ", product " + productName + ", version " + productVersion, e);
-            return;
-        }
-        BrowserOpener.openInBrowser(project, uri);
+
+        ApplicationManager.getApplication().executeOnPooledThread(
+            () -> {
+                String remoteUrl;
+                try {
+                    remoteUrl = GitUtil.getRemoteUrl(context.getRepoRoot(), project);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                URI uri;
+                try {
+                    uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), remoteUrl, productName, productVersion);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Unable to build commit view URI for url " + ConfigUtil.getSourcegraphUrl(project)
+                        + ", revision " + context.getRevisionNumber() + ", product " + productName + ", version " + productVersion, e);
+                    return;
+                }
+                BrowserOpener.openInBrowser(project, uri);
+            }
+        );
+    }
+
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
     }
 
     @Override

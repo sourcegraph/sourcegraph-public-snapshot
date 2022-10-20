@@ -1,5 +1,7 @@
 package com.sourcegraph.git;
 
+import com.intellij.dvcs.repo.Repository;
+import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -54,23 +56,7 @@ public class GitUtil {
 
     @NotNull
     public static String getRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
-        String repoRootPath = getRepoRootPath(project, file);
-        if (repoRootPath == null) {
-            throw new Exception("Could not determine repository root path");
-        }
-        return getConfiguredRemoteUrl(repoRootPath);
-    }
-
-    /**
-     * E.g. "origin" -> "git@github.com:foo/bar"
-     */
-    @NotNull
-    private static String getRemoteUrl(@NotNull String repoDirectoryPath, @NotNull String remoteName) throws Exception {
-        String result = exec("git remote get-url " + remoteName, repoDirectoryPath).trim();
-        if (result.isEmpty()) {
-            throw new Exception("There is no such remote: \"" + remoteName + "\".");
-        }
-        return result;
+        return getConfiguredRemoteUrl(file, project);
     }
 
     /**
@@ -79,16 +65,22 @@ public class GitUtil {
      * An exception is thrown if neither exists.
      */
     @NotNull
-    private static String getConfiguredRemoteUrl(@NotNull String repoDirectoryPath) throws Exception {
-        try {
-            return getRemoteUrl(repoDirectoryPath, "sourcegraph");
-        } catch (Exception e) {
-            try {
-                return getRemoteUrl(repoDirectoryPath, "origin");
-            } catch (Exception e2) {
-                throw new Exception("No configured git remote for \"sourcegraph\" or \"origin\".");
-            }
+    private static String getConfiguredRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
+        Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+        if (repository == null) {
+            //String currentBranchName = repository.getCurrentBranchName();
+            throw new Exception("No repository found.");
         }
+
+        String result = exec("git remote get-url " + "sourcegraph", repository.getRoot().getPath()).trim();
+        if (result.isEmpty()) {
+            result = exec("git remote get-url " + "origin", repository.getRoot().getPath()).trim();
+        }
+        if (result.isEmpty()) {
+            throw new Exception("No configured git remote for \"sourcegraph\" or \"origin\".");
+        }
+
+        return result;
     }
 
     /**

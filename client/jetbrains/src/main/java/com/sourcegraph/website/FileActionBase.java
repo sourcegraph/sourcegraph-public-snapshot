@@ -2,6 +2,7 @@ package com.sourcegraph.website;
 
 import com.google.common.base.Strings;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -19,9 +20,9 @@ public abstract class FileActionBase extends DumbAwareAction {
     abstract protected void handleFileUri(@NotNull Project project, @NotNull String uri);
 
     @Override
-    public void actionPerformed(@NotNull AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         // Get project, editor, document, file, and position information.
-        final Project project = e.getProject();
+        final Project project = event.getProject();
         if (project == null) {
             return;
         }
@@ -34,17 +35,23 @@ public abstract class FileActionBase extends DumbAwareAction {
         if (currentFile == null) {
             return;
         }
+        LogicalPosition selectionStartPosition = getSelectionStartPosition(editor);
+        LogicalPosition selectionEndPosition = getSelectionEndPosition(editor);
 
         if (currentFile instanceof SourcegraphVirtualFile) {
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
-            handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+            handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), selectionStartPosition, selectionEndPosition));
         } else {
-            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
-            if (repoInfo.remoteUrl.equals("")) {
-                return;
-            }
+            ApplicationManager.getApplication().executeOnPooledThread(
+                () -> {
+                    RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
+                    if (repoInfo.remoteUrl.equals("")) {
+                        return;
+                    }
 
-            handleFileUri(project, URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+                    handleFileUri(project, URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, selectionStartPosition, selectionEndPosition));
+                }
+            );
         }
     }
 
