@@ -1634,13 +1634,17 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		}),
 	)
 
-	readBody := func(result *http.Response) string {
+	assertBody := func(result *http.Response, want string) {
 		b, err := ioutil.ReadAll(result.Body)
 		if err != nil {
 			t.Fatalf("failed to read body: %v", err)
 		}
 
-		return string(b)
+		data := string(b)
+
+		if data != want {
+			t.Fatalf(`Expected body to contain %q, but found %q`, want, data)
+		}
 	}
 
 	failureExpectation := "header X-Requested-With is not set or is invalid\n"
@@ -1658,10 +1662,7 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
 		}
 
-		data := readBody(result)
-		if result.StatusCode != http.StatusBadRequest {
-			t.Fatalf(`Expected body to contain %q, but found %q`, failureExpectation, data)
-		}
+		assertBody(result, failureExpectation)
 
 	})
 
@@ -1675,10 +1676,11 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		data := readBody(result)
-		if data != failureExpectation {
-			t.Fatalf(`Expected body to contain %q, but found %q`, failureExpectation, data)
+		if result.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
 		}
+
+		assertBody(result, failureExpectation)
 	})
 
 	t.Run("x-requested-with correct value", func(t *testing.T) {
@@ -1695,10 +1697,7 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
 		}
 
-		data := readBody(result)
-		if data != "success" {
-			t.Fatalf(`Expected body to contain "success", but found %q`, data)
-		}
+		assertBody(result, "success")
 	})
 
 	t.Run("check skippped for /ping", func(t *testing.T) {
