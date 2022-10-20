@@ -1681,9 +1681,18 @@ type Webhook struct {
 	// The primary key, used for sorting and pagination
 	ID int32
 	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID            uuid.UUID
-	CodeHostKind    string
-	CodeHostURN     string
+	UUID         uuid.UUID
+	CodeHostKind string
+	CodeHostURN  string
+	// Secret can be in one of three states:
+	//
+	// 1. nil, no secret provided.
+	// 2. Provided but not encrypted.
+	// 3. Provided and encrypted.
+	//
+	// For 2 and 3 you interact with it in the same way and just assume that it IS
+	// encrypted. All the methods on EncryptableSecret will just pass around the raw
+	// value and encryption / decryption methods are noops.
 	Secret          *EncryptableSecret
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

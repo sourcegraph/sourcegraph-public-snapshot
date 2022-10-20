@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 
@@ -94,7 +95,7 @@ func TestWebhookCreate(t *testing.T) {
 		// secret in the DB should be null
 		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 		var rawSecret string
-		err = row.Scan(&rawSecret)
+		err = row.Scan(&dbutil.NullString{S: &rawSecret})
 		assert.NoError(t, err)
 		assert.Zero(t, rawSecret)
 	})
@@ -245,9 +246,7 @@ func TestWebhookUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error updating webhook: %s", err)
 		}
-		decryptedSecret, err := updated.Secret.Decrypt(ctx)
-		assert.NoError(t, err)
-		assert.Zero(t, decryptedSecret)
+		assert.Nil(t, updated.Secret)
 	})
 
 	t.Run("updating webhook that doesn't exist", func(t *testing.T) {
