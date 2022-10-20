@@ -398,19 +398,30 @@ func shortGitCommandSlow(args []string) time.Duration {
 // 🚨 SECURITY: headerXRequestedWithMiddleware will ensure that the X-Requested-With
 // header contains the correct value. See "What does X-Requested-With do, anyway?" in
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
-func headerXRequestedWithMiddleware(handler http.HandlerFunc) http.HandlerFunc {
+func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Do not apply the middleware to /ping and /git endpoints.
+		//
+		// 1. /ping is used by health check services who most likely don't set this header
+		// at all.
+		//
+		// 2. /git may be used to run "git fetch" from another gitserver instance and the
+		// fetchCommand does not set this header yet.
+		if strings.HasPrefix(r.URL.Path, "/ping") || strings.HasPrefix(r.URL.Path, "/git") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
 			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
 			return
 		}
 
-		handler(w, r)
+		next.ServeHTTP(w, r)
 	})
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
-// TODO: Add security doc
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
@@ -458,40 +469,38 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
 		conf.DefaultClient(),
-		headerXRequestedWithMiddleware(s.handleArchive),
+		s.handleArchive,
 	)))
 	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
 		conf.DefaultClient(),
-		headerXRequestedWithMiddleware(s.handleExec),
+		s.handleExec,
 	)))
-	mux.HandleFunc("/search", trace.WithRouteName("search", headerXRequestedWithMiddleware(s.handleSearch)))
-	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", headerXRequestedWithMiddleware(s.handleBatchLog)))
+	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
+	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
 	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
 		conf.DefaultClient(),
-		headerXRequestedWithMiddleware(s.handleP4Exec),
+		s.handleP4Exec,
 	)))
-	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", headerXRequestedWithMiddleware(s.handleListGitolite)))
-	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", headerXRequestedWithMiddleware(s.handleIsRepoCloneable)))
-	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", headerXRequestedWithMiddleware(s.handleReposStats)))
-	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", headerXRequestedWithMiddleware(s.handleRepoCloneProgress)))
-	mux.HandleFunc("/delete", trace.WithRouteName("delete", headerXRequestedWithMiddleware(s.handleRepoDelete)))
-	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", headerXRequestedWithMiddleware(s.handleRepoUpdate)))
-	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", headerXRequestedWithMiddleware(s.handleRepoClone)))
-	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", headerXRequestedWithMiddleware(s.handleCreateCommitFromPatch)))
-	mux.HandleFunc("/ping", trace.WithRouteName("ping", headerXRequestedWithMiddleware(func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
+	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
+	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
+	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
+	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
+	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
+	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
+	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
+	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})))
+	}))
 
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
 		conf.DefaultClient(),
-		headerXRequestedWithMiddleware(
-			func(rw http.ResponseWriter, r *http.Request) {
-				http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-			},
-		),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+		},
 	)))
 
 	// Migration to hexagonal architecture starting here:
@@ -516,12 +525,11 @@ func (s *Server) Handler() http.Handler {
 		accesslog.HTTPMiddleware(
 			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
 			conf.DefaultClient(),
-			headerXRequestedWithMiddleware(
-				handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
-			),
+			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
 		)))
 
-	return mux
+	// 🚨 SECURITY: This must be wrapped in headerXRequestedWithMiddleware.
+	return headerXRequestedWithMiddleware(mux)
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
