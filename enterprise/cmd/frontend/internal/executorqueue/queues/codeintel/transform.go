@@ -22,14 +22,14 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 	// Create a transformer over the commands that will be invoked inside of a docker container.
 	// This replaces string literals such as `$VM_MEM` with the actual resource capacity of the
 	// VM that will run this job.
-	injectResourceCapacitiess := makeResourceCapacityInjector(resourceMetadata)
+	injectResourceCapacities := makeResourceCapacityInjector(resourceMetadata)
 
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
 	for i, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Key:      fmt.Sprintf("pre-index.%d", i),
 			Image:    dockerStep.Image,
-			Commands: injectResourceCapacitiess(dockerStep.Commands),
+			Commands: injectResourceCapacities(dockerStep.Commands),
 			Dir:      dockerStep.Root,
 			Env:      nil,
 		})
@@ -42,7 +42,7 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 			// Ensure we do string replacement BEFORE shellquoting, otherwise we'll end up
 			// escaping the `$` at the beginning of our replacement tokens, but not replace
 			// the escape.
-			Commands: append(injectResourceCapacitiess(index.LocalSteps), shellquote.Join(injectResourceCapacitiess(index.IndexerArgs)...)),
+			Commands: append(injectResourceCapacities(index.LocalSteps), shellquote.Join(injectResourceCapacities(index.IndexerArgs)...)),
 			Dir:      index.Root,
 			Env:      nil,
 		})
