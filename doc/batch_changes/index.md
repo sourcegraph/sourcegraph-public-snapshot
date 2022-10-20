@@ -47,6 +47,7 @@ Create a batch change by specifying a search query to get a list of repositories
 
 ## Getting started
 
+//to-do
 <div class="getting-started">
   <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
    <span>New to Batch Changes?</span>
