@@ -31,7 +31,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
     <h2
       class="h2"
     >
-      Product subscription 
+      Product subscription sn1
     </h2>
     <div
       class="mb-3"
@@ -63,7 +63,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             </th>
             <td
               class="w-100"
-            />
+            >
+              sn1
+            </td>
           </tr>
           <tr>
             <th
