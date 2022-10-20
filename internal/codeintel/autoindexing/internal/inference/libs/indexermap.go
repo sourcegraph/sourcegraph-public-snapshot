@@ -24,7 +24,7 @@ var defaultIndexers = map[string]string{
 	"typescript": "sourcegraph/scip-typescript",
 }
 
-var shas = map[string]string{
+var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/lsif-clang":      "5ef2334ac9d58f1f947651812aa8d8ba0ed584913f2429cc9952cb25f94976d8",
 	"sourcegraph/lsif-go":         "253c991fdd8b118afadcfbe6f7a6d03ca91c44fd2860dbe8a9fd69c93c6025f6",
 	"sourcegraph/lsif-rust":       "83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
@@ -39,7 +39,7 @@ func DefaultIndexerForLang(language string) (string, bool) {
 		return "", false
 	}
 
-	sha, ok := shas[indexer]
+	sha, ok := defaultIndexerSHAs[indexer]
 	if !ok {
 		panic(fmt.Sprintf("no SHA set for indexer %q", indexer))
 	}
