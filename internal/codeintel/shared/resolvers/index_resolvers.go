@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type LSIFIndexResolver interface {
@@ -72,9 +73,11 @@ func (r *indexResolver) Failure() *string           { return r.index.FailureMess
 func (r *indexResolver) StartedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.index.StartedAt)
 }
+
 func (r *indexResolver) FinishedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.index.FinishedAt)
 }
+
 func (r *indexResolver) Steps() IndexStepsResolver {
 	return NewIndexStepsResolver(r.autoindexingSvc, r.index)
 }
@@ -83,7 +86,7 @@ func (r *indexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
 func (r *indexResolver) Tags(ctx context.Context) (tagsNames []string, err error) {
 	tags, err := r.autoindexingSvc.GetListTags(ctx, api.RepoName(r.index.RepositoryName), r.index.Commit)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("unable to return list of tags in the repository.")
 	}
 	for _, tag := range tags {
 		tagsNames = append(tagsNames, tag.Name)
