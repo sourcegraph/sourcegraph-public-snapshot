@@ -253,6 +253,7 @@ func TestWebhookUpdate(t *testing.T) {
 		var rawSecret string
 		var rawEncryptionKey string
 		err = row.Scan(&dbutil.NullString{S: &rawSecret}, &dbutil.NullString{S: &rawEncryptionKey})
+		assert.NoError(t, err)
 		assert.Empty(t, rawSecret)
 		assert.Empty(t, rawEncryptionKey)
 	})
