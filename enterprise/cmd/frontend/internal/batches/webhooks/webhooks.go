@@ -42,7 +42,6 @@ func (h Webhook) getRepoForPR(
 	pr PR,
 	externalServiceID string,
 ) (*types.Repo, error) {
-	fmt.Println(pr)
 	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
@@ -98,9 +97,9 @@ type keyer interface {
 
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
+	externalServiceID string,
 	pr PR,
 	ev keyer,
-	externalServiceID string,
 ) (err error) {
 	var tx *store.Store
 	if tx, err = h.Store.Transact(ctx); err != nil {

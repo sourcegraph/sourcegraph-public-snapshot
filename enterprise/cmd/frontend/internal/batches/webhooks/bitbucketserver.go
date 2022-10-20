@@ -59,7 +59,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, pr, ev, externalServiceID)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}

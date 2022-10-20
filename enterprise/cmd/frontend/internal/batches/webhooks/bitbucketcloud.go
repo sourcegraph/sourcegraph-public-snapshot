@@ -61,7 +61,7 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	var m error
 	for _, pr := range prs {
-		err := h.upsertChangesetEvent(ctx, pr, ev, externalServiceID)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}

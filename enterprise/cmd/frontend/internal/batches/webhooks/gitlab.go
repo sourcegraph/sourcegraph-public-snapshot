@@ -203,7 +203,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		eventCommon := e.ToEventCommon()
 		event := e.ToEvent()
 		pr := gitlabToPR(&eventCommon.Project, eventCommon.MergeRequest)
-		if err := h.upsertChangesetEvent(ctx, pr, event, esID); err != nil {
+		if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  errors.Wrap(err, "upserting changeset event"),
@@ -262,7 +262,7 @@ func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, ev
 	}
 
 	pr := gitlabToPR(&event.Project, event.MergeRequest)
-	if err := h.upsertChangesetEvent(ctx, pr, &event.Pipeline, esID); err != nil {
+	if err := h.upsertChangesetEvent(ctx, esID, pr, &event.Pipeline); err != nil {
 		return errors.Wrap(err, "upserting changeset event")
 	}
 	return nil

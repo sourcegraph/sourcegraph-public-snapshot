@@ -81,7 +81,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, pr, ev, esID)
+		err := h.upsertChangesetEvent(ctx, esID, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
