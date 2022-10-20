@@ -56,16 +56,6 @@ public class GitUtil {
 
     @NotNull
     public static String getRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
-        return getConfiguredRemoteUrl(file, project);
-    }
-
-    /**
-     * Returns the URL of the "sourcegraph" remote. E.g. "git@github.com:foo/bar"
-     * Falls back to the "origin" remote.
-     * An exception is thrown if neither exists.
-     */
-    @NotNull
-    private static String getConfiguredRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
         Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
         if (repository == null) {
             //String currentBranchName = repository.getCurrentBranchName();
