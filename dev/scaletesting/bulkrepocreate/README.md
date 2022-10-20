@@ -17,6 +17,7 @@ Flags:
 - Generation parameters:
   - `count`: Number of repositories to create (default: `100`).
   - `prefix`: Prefix to use when naming the repos, i.e using `foobar` as prefix will create repos named `foobar0000001`, `foobar0000002`, ... (default: `repo`)
+  - `retry`: Number of times to retry pushind (can be tedious at high concurrency)
 - Resuming work: 
   - `resume`: sqlite database name to create or resume from (default `state.db`)
 

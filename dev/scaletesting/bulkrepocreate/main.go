@@ -24,6 +24,7 @@ type config struct {
 	count  int
 	prefix string
 	resume string
+	retry  int
 }
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 	flag.StringVar(&cfg.githubUser, "github.login", "", "(required) GitHub organization for the destination GHE instance to add the repos")
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) GitHub organization for the destination GHE instance to add the repos")
 	flag.IntVar(&cfg.count, "count", 100, "Amount of blank repos to create")
+	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.prefix, "prefix", "repo", "Prefix to use when naming the repo, ex '[prefix]000042'")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
 
@@ -111,8 +113,8 @@ func main() {
 	}
 
 	// assign blank repo clones to avoid clogging the remotes
-	blanks := []*blankRepo{blank}
-	clonesCount := int(cfg.count / 100)
+	blanks := []*blankRepo{}
+	clonesCount := int(cfg.count / 1)
 	if clonesCount < 1 {
 		clonesCount = 1
 	}
@@ -203,7 +205,7 @@ func main() {
 			continue
 		}
 		g.Go(func() {
-			err := repo.blank.pushRemote(ctx, repo.Name)
+			err := repo.blank.pushRemote(ctx, repo.Name, cfg.retry)
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", repo.Name)
 				repo.Failed = err.Error()
