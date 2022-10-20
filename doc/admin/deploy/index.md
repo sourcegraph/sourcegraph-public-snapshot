@@ -18,7 +18,7 @@ In general:
 
 - For most customers, we recommend Sourcegraph Cloud, managed entirely by Sourcegraph.
 - For customers who want to self-host, we recommend one of the single-node deployment options.
-- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by [emails](mailto:sales@sourcegraph.com) if you pursue this option.
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by emails (sales@sourcegraph.com) if you pursue this option.
 - If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
 ## Deployment types

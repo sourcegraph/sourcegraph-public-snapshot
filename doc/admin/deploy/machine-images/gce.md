@@ -48,7 +48,7 @@ Following these docs will provision the following resources:
 1. Create a new VM instance from your [GCE Console](https://console.cloud.google.com/compute)
 2. Name the instance
 3. Select a **machine type** (see [instance size chart](#instance-size-chart))
-4. Under the **Boot disk** section, click **CHANGE**
+4. Under the **Boot disk** section, click **CHANGE** and nevigate to the **CUSTOM IMAGES** tab
    - Image: Select the Sourcegraph image created in the previous step
    - Boot disk type: SSD persistent disk
 5. Under the **Firewall** section
@@ -140,8 +140,7 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.0.
 1. *Stop* your current Sourcegraph GCP Image instance from the [GCE Console](https://console.cloud.google.com/compute)
 2. Nevigate to your instance console after your instance is stopped
 3. Detach the local disk
-   - Click the **EDIT** button located on top of the page
-   - Scroll down to the **Local disks** section in your instance console
+   - Click the **EDIT** button located on top of the page in your instance console
    - Remove the **Existing disk** under **Additional disks**
    - **SAVE** the changes
 
