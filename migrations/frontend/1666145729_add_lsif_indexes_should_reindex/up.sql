@@ -1,4 +1,4 @@
-ALTER TABLE lsif_indexes ADD COLUMN should_reindex boolean NOT NULL DEFAULT false;
+ALTER TABLE lsif_indexes ADD COLUMN IF NOT EXISTS should_reindex boolean NOT NULL DEFAULT false;
 
 DROP VIEW IF EXISTS lsif_indexes_with_repository_name;
 
