@@ -50,11 +50,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	require.NoError(t, err)
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handler := NewHandler(db)
-
-		handler.ServeHTTP(w, r)
-	}))
+	srv := httptest.NewServer(NewHandler(db))
 
 	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)

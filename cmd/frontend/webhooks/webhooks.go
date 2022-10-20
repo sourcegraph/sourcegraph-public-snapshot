@@ -62,21 +62,25 @@ func webhookHandler(db database.DB) http.HandlerFunc {
 			}
 			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindGitLab:
-			_, err := gitLabValidateSecret(r, secret)
+			_, err := gitlabValidatePayload(r, secret)
 			if err != nil {
-				http.Error(w, "Could not validate secret.", http.StatusBadRequest)
+				http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
 				return
 			}
 			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindBitbucketServer:
-			fallthrough
+			// TODO: handle Bitbucket Server secret verification
+			w.WriteHeader(http.StatusNotImplemented)
 		case extsvc.KindBitbucketCloud:
+			// TODO: handle Bitbucket Cloud secret verification
 			w.WriteHeader(http.StatusNotImplemented)
 		}
+
+		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
 	}
 }
 
-func gitLabValidateSecret(r *http.Request, secret string) ([]byte, error) {
+func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	glSecret := r.Header.Get("X-Gitlab-Token")
 	if glSecret != secret {
 		return nil, errors.New("secrets don't match!")
