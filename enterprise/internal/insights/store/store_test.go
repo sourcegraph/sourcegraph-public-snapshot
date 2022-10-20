@@ -304,22 +304,16 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("len(points)", int(4)).Equal(t, len(points))
-	if diff := cmp.Diff(4, len(points)); diff != "" {
-		t.Errorf("len(points): %v", diff)
+	stringify := func(points []SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		sort.Strings(s)
+		return s
 	}
-	if diff := cmp.Diff(want[0], points[0]); diff != "" {
-		t.Errorf("points[0].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[1], points[1]); diff != "" {
-		t.Errorf("points[1].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[2], points[2]); diff != "" {
-		t.Errorf("points[2].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[3], points[3]); diff != "" {
-		t.Errorf("points[3].String(): %v", diff)
-	}
+	// Points are not sorted in the sql call but should be by the caller.
+	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
 }
 
 func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {

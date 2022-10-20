@@ -102,8 +102,7 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 		for _, point := range points {
 			s = append(s, point.String())
 		}
-		// Sort for determinism. In practice, we'll always return a list ordered by time and then by capture.
-		// The capture value order is non-deterministic overall but remains the same per time.
+		// Sort for determinism.
 		sort.Strings(s)
 		return s
 	}
