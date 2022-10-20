@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -113,12 +114,16 @@ func (args *webhookArgs) toWebhookListOptions() (database.WebhookListOptions, er
 }
 
 type webhookConnectionResolver struct {
-	db  database.DB
-	opt database.WebhookListOptions
+	db       database.DB
+	opt      database.WebhookListOptions
+	once     sync.Once
+	webhooks []*types.Webhook
+	next     int32
+	err      error
 }
 
 func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolver, error) {
-	webhooks, err := r.compute(ctx)
+	webhooks, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -134,19 +139,6 @@ func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolv
 	return resolvers, nil
 }
 
-func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
-	copied := database.WebhookListOptions{
-		Kind:   opts.Kind,
-		Cursor: opts.Cursor,
-	}
-	limitOffset := database.LimitOffset{
-		Limit:  opts.Limit,
-		Offset: opts.Offset,
-	}
-	copied.LimitOffset = &limitOffset
-	return copied
-}
-
 func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.db.Webhooks(keyring.Default().WebhookLogKey).Count(ctx, r.opt)
 	if err != nil {
@@ -155,30 +147,33 @@ func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, erro
 	return int32(count), nil
 }
 
-func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webhook, error) {
-	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
-	return webhooks, err
+func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webhook, int32, error) {
+	r.once.Do(func() {
+		if r.opt.LimitOffset != nil {
+			r.opt.Limit++
+		}
+		r.webhooks, r.err = r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
+		if r.opt.Limit != 0 && len(r.webhooks) == r.opt.Limit {
+			r.next = r.webhooks[len(r.webhooks)-1].ID
+			r.webhooks = r.webhooks[:len(r.webhooks)-1]
+		}
+	})
+	return r.webhooks, r.next, r.err
 }
 
 func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	opt := copyOpts(r.opt)
-	// Need to fetch one more entry than requested in order to create the next page cursor
-	if r.opt.LimitOffset != nil {
-		opt.Limit++
-	}
-	webhooks, err := r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opt)
+	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(webhooks) == 0 || r.opt.LimitOffset == nil || len(webhooks) <= r.opt.Limit || r.opt.Cursor == nil {
+	if next == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	value := webhooks[len(webhooks)-1].ID
 	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
 		&types.Cursor{
 			Column:    r.opt.Cursor.Column,
-			Value:     fmt.Sprintf("%d", value),
+			Value:     fmt.Sprintf("%d", next),
 			Direction: r.opt.Cursor.Direction,
 		},
 	)), nil
