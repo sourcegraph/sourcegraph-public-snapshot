@@ -57,11 +57,12 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 // it's registered to handle in GitHubWebhook.Register
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, urn string, payload any) error {
 	var m error
-	type webhookPayload struct {
-		repository gh.Repository
+	externalServiceID, err := getExternalServiceIDFromEvent(ctx, db, urn, payload)
+	if err != nil {
+		return err
 	}
 
-	prs, ev := h.convertEvent(ctx, db, urn, payload)
+	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
 
 	if ev == nil {
 		// We don't recognize this event type, we don't need to do any more work.
@@ -70,18 +71,12 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 		return nil
 	}
 
-	esID, err := h.getExternalServiceIDFromEvent(ctx, db, urn, payload)
-	if err != nil {
-		log15.Error("error while extracting external service ID from webhook event", "err", err)
-		return nil
-	}
-
 	for _, pr := range prs {
 		if pr == (PR{}) {
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, esID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
@@ -106,7 +101,7 @@ func getExternalServiceIDFromRepo(ctx context.Context, db database.DB, urn strin
 	return extsvc.NormalizeBaseURL(u).String(), nil
 }
 
-func (h *GitHubWebhook) getExternalServiceIDFromEvent(ctx context.Context, db database.DB, urn string, theirs any) (esID string, err error) {
+func getExternalServiceIDFromEvent(ctx context.Context, db database.DB, urn string, theirs any) (esID string, err error) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -199,7 +194,7 @@ func (h *GitHubWebhook) getExternalServiceIDFromEvent(ctx context.Context, db da
 	return esID, err
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn string, theirs any) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs any) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -223,7 +218,6 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 		if e.Number == nil {
 			return
 		}
-
 		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 
@@ -299,12 +293,6 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, urn st
 			return
 		}
 		repoExternalID := repo.GetNodeID()
-
-		externalServiceID, err := getExternalServiceIDFromRepo(ctx, db, urn, repo)
-		if err != nil {
-			log15.Error("Some error msg", "err", err)
-			return nil, nil
-		}
 
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
