@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -2820,4 +2821,89 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
 		}, nil
 	})
+}
+
+func TestLFSSmudge(t *testing.T) {
+	// TODO enforce on CI once CI has git-lfs
+	if _, err := exec.LookPath("git-lfs"); err != nil {
+		t.Skip("git-lfs not installed")
+	}
+
+	ctx := context.Background()
+	ClientMocks.LocalGitserver = true
+	t.Cleanup(func() {
+		ResetClientMocks()
+	})
+
+	files := map[string]string{
+		"in-lfs.txt":       "I am in LFS\n",
+		"in-git-small.txt": "I am small and in git\n",
+		"in-git-large.txt": strings.Repeat("I am large and in git\n", 10),
+	}
+
+	var gitCmds []string
+	for path, content := range files {
+		gitCmds = append(gitCmds, fmt.Sprintf(`echo -n -e %q > %s`, content, path))
+	}
+	gitCmds = append(gitCmds,
+		`git lfs install --local`,
+		`git lfs track in-lfs.txt`,
+		`git add .`,
+		`git commit -m "lfs"`,
+	)
+
+	// We ensure we test against a bare repo because a lot of LFS stuff only
+	// seems to work under the assumption of a working copy.
+	repo := MakeBareGitRepository(t, gitCmds...)
+
+	c := NewClient(database.NewMockDB())
+	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that LFSSmudge always returns the file contents
+	for path, content := range files {
+		r, err := c.LFSSmudge(ctx, repo, head, path, nil)
+		if err != nil {
+			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
+		}
+		b, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatalf("failed to read output of lfs-smudge on %q: %v", path, err)
+		}
+		if err := r.Close(); err != nil {
+			t.Fatalf("failed to close reader for lfs-smudge on %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Make sure we correctly added contents to git instead of LFS
+	for path, content := range files {
+		if path == "in-lfs.txt" {
+			continue
+		}
+		b, err := c.ReadFile(ctx, repo, head, path, nil)
+		if err != nil {
+			t.Fatalf("failed to read file %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Check that we have a pointer for LFS in git.
+	want := `version https://git-lfs.github.com/spec/v1
+oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
+size 12
+`
+	b, err := c.ReadFile(ctx, repo, head, "in-lfs.txt", nil)
+	if err != nil {
+		t.Fatalf("failed to read file in-lfs.txt: %v", err)
+	}
+	if d := cmp.Diff(want, string(b)); d != "" {
+		t.Fatalf("unexpected LFS pointer (-want, +got):\n%s", d)
+	}
 }
