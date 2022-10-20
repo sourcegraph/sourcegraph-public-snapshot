@@ -100,6 +100,41 @@ func assertSecurityEventAccessTokenCreatedCount(t *testing.T, db DB, expectedCou
 	assert.Equal(t, expectedCount, count)
 }
 
+func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	subject, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	creator, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+	_, _, err = db.AccessTokens().CreateInternal(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

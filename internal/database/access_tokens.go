@@ -188,32 +188,35 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 		return 0, "", err
 	}
 
-	//TODO don't capture internal
+	// only log access tokens created by users
+	if !internal {
+		arg, err := json.Marshal(struct {
+			SubjectUserId int32    `json:"subject_user_id"`
+			CreatorUserId int32    `json:"creator_user_id"`
+			Scopes        []string `json:"scopes"`
+			Note          string   `json:"note"`
+		}{
+			SubjectUserId: subjectUserID,
+			CreatorUserId: creatorUserID,
+			Scopes:        scopes,
+			Note:          note,
+		})
+		if err != nil {
+			s.logger.Error("failed to marshall the access token argument")
+		}
 
-	arg, err := json.Marshal(struct {
-		SubjectUserId int32    `json:"subject_user_id"`
-		CreatorUserId int32    `json:"creator_user_id"`
-		Scopes        []string `json:"scopes"`
-		Note          string   `json:"note"`
-	}{
-		SubjectUserId: subjectUserID,
-		CreatorUserId: creatorUserID,
-		Scopes:        scopes,
-		Note:          note,
-	})
-	if err != nil {
-		s.logger.Error("failed to marshall the access token argument")
+		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
+		securityEventStore.LogEvent(ctx, &SecurityEvent{
+			Name:            SecurityEventAccessTokenCreated,
+			URL:             "", // TODO need? - ask in the PR
+			UserID:          uint32(creatorUserID),
+			AnonymousUserID: "",
+			Argument:        arg,
+			Source:          "BACKEND",
+			Timestamp:       time.Now(),
+		})
 	}
 
-	NewDBWith(s.logger, s).SecurityEventLogs().LogEvent(ctx, &SecurityEvent{
-		Name:            SecurityEventAccessTokenCreated,
-		URL:             "", // TODO need? - ask in the PR
-		UserID:          uint32(creatorUserID),
-		AnonymousUserID: "",
-		Argument:        arg,
-		Source:          "BACKEND",
-		Timestamp:       time.Now(),
-	})
 	return id, token, nil
 }
 
