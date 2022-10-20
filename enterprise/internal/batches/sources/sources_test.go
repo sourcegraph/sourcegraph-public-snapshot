@@ -80,7 +80,7 @@ func TestExtractCloneURL(t *testing.T) {
 				},
 			}
 
-			have, err := extractCloneURL(repo)
+			have, err := getCloneURL(repo, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -311,7 +311,7 @@ func TestGitserverPushConfig(t *testing.T) {
 				},
 			}
 
-			havePushConfig, haveErr := GitserverPushConfig(repo, tt.authenticator)
+			havePushConfig, haveErr := GitserverPushConfig(repo, false, tt.authenticator)
 			if haveErr != tt.wantErr {
 				t.Fatalf("invalid error returned, want=%v have=%v", tt.wantErr, haveErr)
 			}

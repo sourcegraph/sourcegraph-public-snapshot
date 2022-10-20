@@ -168,8 +168,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
-	// au is nil if we want to use the global credentials stored in the external
-	// service configuration.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
 		return err
@@ -185,10 +183,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(remoteRepo)
+	pushConf, err := css.GitserverPushConfig(remoteRepo, e.spec.IsFork())
 	if err != nil {
 		return err
 	}
+
 	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 	if err != nil {
 		return err
