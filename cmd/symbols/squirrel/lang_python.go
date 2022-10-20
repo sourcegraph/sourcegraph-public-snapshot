@@ -12,6 +12,11 @@ import (
 )
 
 func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Node, err error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
 
 	switch node.Type() {
@@ -290,6 +295,11 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 }
 
 func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node, field string) (ret *Node, err error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
 
 	ty, err := squirrel.getTypeDefPython(ctx, object)
@@ -303,6 +313,11 @@ func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node
 }
 
 func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, field string) (ret *Node, err error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
@@ -395,6 +410,11 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeP
 }
 
 func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypePython, err error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	defer squirrel.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))()
 
 	onIdent := func() (TypePython, error) {
@@ -468,6 +488,11 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 }
 
 func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
 	findModuleOrPkg := func(moduleOrPkg *sitter.Node) *Node {
@@ -645,6 +670,11 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 }
 
 func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (TypePython, error) {
+	if err := maxGetDefStackDepthReached(ctx); err != nil {
+		return nil, err
+	}
+	ctx = incGetDefStackDepth(ctx)
+
 	if def.Node.Type() == "module" {
 		return (TypePython)(ModuleTypePython{module: def}), nil
 	}
