@@ -4259,37 +4259,6 @@ Generated query for warning alert: `min((max(rate(src_repoupdater_source_repos_t
 
 <br />
 
-## repo-updater: user_added_repos
-
-<p class="subtitle">total number of user added repos</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
-
-**Next steps**
-
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_user_added_repos"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((max(src_repoupdater_user_repos_total)) >= 720000)`
-
-</details>
-
-<br />
-
 ## repo-updater: purge_failed
 
 <p class="subtitle">repositories purge failed</p>
@@ -4331,7 +4300,7 @@ Generated query for warning alert: `max((max(rate(src_repoupdater_purge_failed[1
 
 **Next steps**
 
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Check repo-updater logs.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-auto-fetch).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4755,37 +4724,6 @@ Generated query for critical alert: `max((max by(type) (ceil(rate(src_repoupdate
 <summary>Technical details</summary>
 
 Generated query for critical alert: `max((max(src_repoupdater_external_services_total)) >= 20000)`
-
-</details>
-
-<br />
-
-## repo-updater: src_repoupdater_user_external_services_total
-
-<p class="subtitle">the total number of user added external services</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 20000+ the total number of user added external services for 1h0m0s
-
-**Next steps**
-
-- Check for spikes in external services, could be abuse
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-user-external-services-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_user_external_services_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_repoupdater_user_external_services_total)) >= 20000)`
 
 </details>
 

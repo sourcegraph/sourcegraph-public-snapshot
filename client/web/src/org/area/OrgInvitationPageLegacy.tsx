@@ -25,9 +25,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaPageProps } from './OrgArea'
+import { OrgAreaRouteContext } from './OrgArea'
 
-interface Props extends OrgAreaPageProps {
+interface Props extends OrgAreaRouteContext {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */

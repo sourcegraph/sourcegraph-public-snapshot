@@ -12972,6 +12972,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_referenced_scan_at",
+          "Index": 31,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The last time this upload was known to be referenced by another (possibly expired) index."
+        },
+        {
           "Name": "last_retention_scan_at",
           "Index": 25,
           "TypeName": "timestamp with time zone",

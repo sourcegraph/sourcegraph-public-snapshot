@@ -49,6 +49,9 @@ type GitCommand interface {
 	// EnsureRevision returns ensureRevision parameter of the command
 	EnsureRevision() string
 
+	// SetStdin will write b to stdin when running the command.
+	SetStdin(b []byte)
+
 	// String returns string representation of the command (in fact prints args parameter of the command)
 	String() string
 
@@ -63,8 +66,7 @@ type GitCommand interface {
 // This struct uses composition with exec.RemoteGitCommand which already provides all necessary means to run commands against
 // local system.
 type LocalGitCommand struct {
-	Logger  log.Logger
-	command *exec.Cmd
+	Logger log.Logger
 
 	// ReposDir is needed in order to LocalGitCommand be used like RemoteGitCommand (providing only repo name without its full path)
 	// Unlike RemoteGitCommand, which is run against server who knows the directory where repos are located, LocalGitCommand is
@@ -73,16 +75,16 @@ type LocalGitCommand struct {
 	repo           api.RepoName
 	ensureRevision string
 	args           []string
+	stdin          []byte
 	exitStatus     int
 }
 
 func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 	args := append([]string{git}, arg...)
 	return &LocalGitCommand{
-		command: exec.Command(git, arg...), // no need for including "git" in args here
-		repo:    repo,
-		args:    args,
-		Logger:  log.Scoped("local", "local git command logger"),
+		repo:   repo,
+		args:   args,
+		Logger: log.Scoped("local", "local git command logger"),
 	}
 }
 
@@ -93,12 +95,12 @@ func (l *LocalGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, er
 		l.Logger.Error(NoReposDirErrorMsg)
 		return nil, nil, errors.New(NoReposDirErrorMsg)
 	}
-	// cmd is a version of the command in LocalGitCommand with given context
 	cmd := exec.CommandContext(ctx, git, l.Args()[1:]...) // stripping "git" itself
 	var stderrBuf bytes.Buffer
 	var stdoutBuf bytes.Buffer
 	cmd.Stdout = &stdoutBuf
 	cmd.Stderr = &stderrBuf
+	cmd.Stdin = bytes.NewReader(l.stdin)
 
 	dir := protocol.NormalizeRepo(l.Repo())
 	repoPath := filepath.Join(l.ReposDir, filepath.FromSlash(string(dir)))
@@ -149,6 +151,8 @@ func (l *LocalGitCommand) SetEnsureRevision(r string) { l.ensureRevision = r }
 
 func (l *LocalGitCommand) EnsureRevision() string { return l.ensureRevision }
 
+func (l *LocalGitCommand) SetStdin(b []byte) { l.stdin = b }
+
 func (l *LocalGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
 	output, err := l.CombinedOutput(ctx)
 	return io.NopCloser(bytes.NewReader(output)), err
@@ -161,6 +165,7 @@ type RemoteGitCommand struct {
 	repo           api.RepoName // the repository to execute the command in
 	ensureRevision string
 	args           []string
+	stdin          []byte
 	noTimeout      bool
 	exitStatus     int
 	execFn         func(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
@@ -219,6 +224,8 @@ func (c *RemoteGitCommand) ExitStatus() int { return c.exitStatus }
 func (c *RemoteGitCommand) SetEnsureRevision(r string) { c.ensureRevision = r }
 
 func (c *RemoteGitCommand) EnsureRevision() string { return c.ensureRevision }
+
+func (c *RemoteGitCommand) SetStdin(b []byte) { c.stdin = b }
 
 func (c *RemoteGitCommand) String() string { return fmt.Sprintf("%q", c.args) }
 

@@ -44,8 +44,7 @@ type operations struct {
 	getDumpsByIDs                      *observation.Operation
 
 	// References
-	referencesForUpload         *observation.Operation
-	backfillReferenceCountBatch *observation.Operation
+	referencesForUpload *observation.Operation
 
 	// Audit Logs
 	getAuditLogsForUpload *observation.Operation
@@ -108,8 +107,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
 
 		// References
-		referencesForUpload:         op("ReferencesForUpload"),
-		backfillReferenceCountBatch: op("BackfillReferenceCountBatch"),
+		referencesForUpload: op("ReferencesForUpload"),
 
 		// Audit Logs
 		getAuditLogsForUpload: op("GetAuditLogsForUpload"),

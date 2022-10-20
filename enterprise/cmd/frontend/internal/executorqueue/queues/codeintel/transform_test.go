@@ -23,10 +23,14 @@ func TestTransformRecord(t *testing.T) {
 				Root:     "web",
 			},
 		},
-		Root:        "web",
-		Indexer:     "lsif-node",
-		IndexerArgs: []string{"-p", "."},
-		Outfile:     "",
+		Root:    "web",
+		Indexer: "lsif-node",
+		IndexerArgs: []string{
+			"-p", ".",
+			// Verify args are properly shell quoted.
+			"-author", "Test User",
+		},
+		Outfile: "",
 	}
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
 	t.Cleanup(func() {
@@ -53,7 +57,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			{
 				Image:    "lsif-node",
-				Commands: []string{"-p ."},
+				Commands: []string{"-p . -author 'Test User'"},
 				Dir:      "web",
 			},
 		},

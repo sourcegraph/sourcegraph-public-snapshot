@@ -44,7 +44,7 @@ Our AWS AMIs are all based on the HVM method, which provides us with the ability
 1. Link the persistent volume pod storage to our data disk
 1. Link the K3s's embedded database to our data disk
 1. Install K3s on root volume
-1. Correct permission of the K3s kube config file located in /etc/rancher/k3s/k3s.yaml
+1. Correct permission of the K3s kube config file located in `/etc/rancher/k3s/k3s.yaml`
 1. Install Helm on root volume
 1. Download Sourcegraph Helm Charts on root volume
 1. Deploy Sourcegraph using the local Helm Charts
@@ -60,11 +60,11 @@ Each AWS AMI comes with two Amazon EBS volumes, one is for root, and the other o
 - The root volume contains all the files inside the sourcegraph/deploy repository that are used to build that image and deploy the Sourcegraph instance that lives inside that specific image
   - File path to the deployment repo sourcegraph/deploy: `/home/ec2-user/deploy/`
   - A local copy of the helm charts that were used to create the AMI: `/home/ec2-user/deploy/install/sourcegraph-charts.tar`
-  - Version number of the AMI Instance: /mnt/data/.sourcegraph-version
-  - Create a copy of the kube config file from /etc/rancher/k3s/k3s.yaml allows you to manage the k3s cluster from outside the cluster
+  - Version number of the AMI Instance: `/mnt/data/.sourcegraph-version`
+  - Create a copy of the kube config file from `/etc/rancher/k3s/k3s.yaml` allows you to manage the k3s cluster from outside the cluster
 - The data volume is where all your Sourcegraph data will be stored after the instance has been launched. The K3s embedded SQLite database is also mounted onto that volume to make back-up, upgrade, and recovery of the volumes easier.
-  - Data of your cluster are stored in the mounted path: /mnt/data
-  - Version number of the deployment on disk: /mnt/data/.sourcegraph-version
+  - Data of your cluster are stored in the mounted path: `/mnt/data`
+  - Version number of the deployment on disk: `/mnt/data/.sourcegraph-version`
 
 Sourcegraph does not have access to your cluster and data.
 
@@ -74,13 +74,13 @@ Sourcegraph does not have access to your cluster and data.
 
 - K3s exposes the kubelet API to the Kubernetes control plane node through a websocket tunnel in order to eliminate the need to expose extra ports on the worker nodes.
 - No ingress requirements which allow cluster owners to restrict inbound traffic to only traffic within their network
-- Built-in certificate rotation with the expiration date of 12 months (docs)[https://docs.k3s.io/advanced]
+- Built-in certificate rotation with the expiration date of 12 months [docs](https://docs.k3s.io/advanced)
 - Enable custom certificates through [etcdctl](https://docs.k3s.io/advanced#using-etcdctl) as recommended by K3s.
 - Ability to launch an AMI instance on EC2 with custom encryption [docs](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html#AMI-encryption-launch).
 
 Please refer to the official [CIS hardening guide](https://docs.k3s.io/security/hardening-guide) by K3s for more details and general tips on how to improve security of your cluster.
 
-> NOTE: See [Sourcegraph Vulnerability Management Policy](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements) to learn more about our vulnerability and patching policy as well as the current[vulnerability service level agreements](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements). 
+> NOTE: See [Sourcegraph Vulnerability Management Policy](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements) to learn more about our vulnerability and patching policy as well as the current [vulnerability service level agreements](https://handbook.sourcegraph.com/departments/engineering/dev/policies/vulnerability-management-policy/#vulnerability-service-level-agreements). 
 
 ## Additional resources
 

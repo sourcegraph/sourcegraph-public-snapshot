@@ -31,7 +31,7 @@ type UploadService interface {
 
 	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
@@ -46,9 +46,6 @@ type UploadService interface {
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
 	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
-
-	// References
-	BackfillReferenceCountBatch(ctx context.Context, batchSize int) error
 
 	// Audit logs
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
