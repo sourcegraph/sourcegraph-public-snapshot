@@ -93,7 +93,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 				return reqContext, nil
 			}
 
-			backfiller := NewBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister)
+			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister)
 			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
 			tc.want.Equal(t, got)
 		})
@@ -112,7 +112,7 @@ func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoN
 	return f.recentCommits(ctx, repoName, target)
 }
 
-func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) gitCommitClient {
+func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) GitCommitClient {
 	return &fakeCommitClient{
 		firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) { return first, nil },
 		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
@@ -183,7 +183,7 @@ func TestMakeSearchJobs(t *testing.T) {
 	}
 
 	testCases := []struct {
-		commitClient gitCommitClient
+		commitClient GitCommitClient
 		backfillReq  *BackfillRequest
 		workers      int
 		cancled      bool
