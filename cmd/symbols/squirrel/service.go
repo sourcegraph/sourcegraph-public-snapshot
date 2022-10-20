@@ -3,7 +3,9 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -159,6 +161,22 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	}
 }
 
+const defaultMaxSquirrelDepth = 10_000
+
+var maxSquirrelDepth = func() int {
+	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
+	if maxDepth == "" {
+		return defaultMaxSquirrelDepth
+	}
+
+	v, err := strconv.Atoi(maxDepth)
+	if err != nil {
+		panic(fmt.Sprintf("invalid value for SRC_SQUIRREL_MAX_STACK_DEPTH: %s", err))
+	}
+
+	return v
+}()
+
 func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
@@ -171,7 +189,19 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	msg := fmt.Sprintf("%s(%v) => %s", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.Faint).Sprint("..."))
 	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
 
+	fmt.Println("onCall", squirrel.depth, maxSquirrelDepth)
 	squirrel.depth += 1
+	if squirrel.depth > maxSquirrelDepth {
+		summary := squirrel.breadcrumbs
+		if len(squirrel.breadcrumbs) > 10 {
+			// Only show the first and last 5 breadcrumbs
+			summary = append(summary, squirrel.breadcrumbs[:5]...)
+			summary = append(summary, Breadcrumb{})
+			summary = append(summary, squirrel.breadcrumbs[len(squirrel.breadcrumbs)-5:]...)
+		}
+		panic(errors.Newf("max squirrel stack depth exceeded. Breadcrumbs for debugging:\n\n%s", summary.prettyString(squirrel.readFile)))
+	}
+
 	return func() {
 		squirrel.depth -= 1
 
