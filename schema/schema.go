@@ -536,6 +536,7 @@ type EncryptionKeys struct {
 	CacheSize int `json:"cacheSize,omitempty"`
 	// EnableCache description: enable LRU cache for decryption APIs
 	EnableCache            bool           `json:"enableCache,omitempty"`
+	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
