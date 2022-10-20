@@ -84,6 +84,7 @@ func main() {
 		writeFailure(out, "Failed to create folder for repository")
 		log.Fatal(err)
 	}
+	defer blank.teardown()
 	err = blank.init(ctx)
 	if err != nil {
 		writeFailure(out, "Failed to initialize blank repository")
@@ -120,6 +121,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer clone.teardown()
 		blanks = append(blanks, clone)
 	}
 	for i := 0; i < cfg.count; i++ {
@@ -177,9 +179,7 @@ func main() {
 	for _, repo := range repos {
 		repo := repo
 		g.Go(func() {
-			repo.blank.Lock()
 			err = repo.blank.addRemote(ctx, repo.Name, repo.GitURL)
-			repo.blank.Unlock()
 			if err != nil {
 				writeFailure(out, "Failed to add remote to repository %s", repo.Name)
 				log.Fatal(err)
@@ -234,7 +234,6 @@ func main() {
 	}
 
 	writeSuccess(out, "Successfully added %d repositories on $GHE/%s (%d failures)", completed, cfg.githubOrg, all-completed)
-	defer blank.teardown()
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
