@@ -80,6 +80,28 @@ func TestExecRequest(t *testing.T) {
 			},
 		},
 		{
+			Name:         "echo",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testecho", "hi"]}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "hi",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Stderr":      {""},
+			},
+		},
+		{
+			Name:         "stdin",
+			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcat"], "stdin": "aGk="}`)),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "hi",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Stderr":      {""},
+			},
+		},
+		{
 			Name:         "NonexistingRepo",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
@@ -166,6 +188,23 @@ func TestExecRequest(t *testing.T) {
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")
+		case "testecho", "testcat":
+			// We do an actual exec in this case to test that code path.
+			exe := strings.TrimPrefix(cmd.Args[1], "test")
+			lp, err := exec.LookPath(exe)
+			if err != nil {
+				return -1, err
+			}
+			cmd.Path = lp
+			cmd.Args = cmd.Args[1:]
+			cmd.Args[0] = exe
+			cmd.Dir = "" // the test doesn't setup the dir
+
+			// We run the real codepath cause we can in this case.
+			m := runCommandMock
+			runCommandMock = nil
+			defer func() { runCommandMock = m }()
+			return runCommand(ctx, cmd)
 		}
 		return 0, nil
 	}

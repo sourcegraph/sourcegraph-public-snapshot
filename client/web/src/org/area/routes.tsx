@@ -26,7 +26,14 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/settings',
-        render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
+        render: props => (
+            <OrgSettingsArea
+                {...props}
+                routes={props.orgSettingsAreaRoutes}
+                sideBarItems={props.orgSettingsSideBarItems}
+                isLightTheme={props.isLightTheme}
+            />
+        ),
     },
     ...namespaceAreaRoutes,
 

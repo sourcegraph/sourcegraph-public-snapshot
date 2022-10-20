@@ -7,7 +7,8 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components'
-import { CodeInsightsBackendContext, CreationInsightInput, ALL_INSIGHTS_DASHBOARD } from '../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
+import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
 import { getTrackingTypeByInsightType } from '../../../../pings'
 

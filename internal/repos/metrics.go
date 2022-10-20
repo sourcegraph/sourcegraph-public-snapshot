@@ -127,55 +127,6 @@ WHERE deleted_at IS NULL
 	})
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_external_services_total",
-		Help: "The total number of external services added by users",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(*) FROM external_services
-WHERE namespace_user_id IS NOT NULL
-AND deleted_at IS NULL
-`)
-		if err != nil {
-			logger.Error("Failed to get total user external services", log.Error(err))
-			return 0
-		}
-		return count
-	})
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_repos_total",
-		Help: "The total number of repositories added by users",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(*)
-FROM external_service_repos
-WHERE user_id IS NOT NULL
-`)
-		if err != nil {
-			logger.Error("Failed to get total user repositories", log.Error(err))
-			return 0
-		}
-		return count
-	})
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_user_with_external_services_total",
-		Help: "The total number of users who have added external services",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(DISTINCT(namespace_user_id)) AS total
-FROM external_services
-WHERE namespace_user_id IS NOT NULL
-AND deleted_at IS NULL
-`)
-		if err != nil {
-			logger.Error("Failed to get total users with external services", log.Error(err))
-			return 0
-		}
-		return count
-	})
-
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_queued_sync_jobs_total",
 		Help: "The total number of queued sync jobs",
 	}, func() float64 {
@@ -237,11 +188,6 @@ AND last_sync_at IS NOT NULL
 -- than our max backoff time.
 AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id = es.id AND finished_at IS NULL)
 `
-	if sourcegraphDotCom {
-		// We don't want to include user added external services on sourcegraph.com as we
-		// have no control over how they're configured
-		backoffQuery = backoffQuery + " AND namespace_user_id IS NULL"
-	}
 
 	promauto.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_repoupdater_max_sync_backoff",

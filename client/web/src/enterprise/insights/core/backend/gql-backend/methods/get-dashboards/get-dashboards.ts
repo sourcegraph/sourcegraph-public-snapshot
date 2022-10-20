@@ -10,7 +10,7 @@ import {
     InsightsDashboardNode,
     InsightsDashboardsResult,
 } from '../../../../../../../graphql-operations'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
 import {
     InsightDashboard,
     InsightsDashboardOwner,

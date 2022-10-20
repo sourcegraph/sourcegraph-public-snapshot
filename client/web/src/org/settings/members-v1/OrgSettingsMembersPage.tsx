@@ -22,7 +22,7 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { userURL } from '../../../user'
-import { OrgAreaPageProps } from '../../area/OrgArea'
+import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { removeUserFromOrganization } from '../../backend'
 
 import { InviteForm } from './InviteForm'
@@ -151,7 +151,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private remove = (): void => this.removes.next()
 }
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {
     history: H.History
 }
 

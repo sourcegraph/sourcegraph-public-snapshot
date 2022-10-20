@@ -44,11 +44,6 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// CountNamespacedRepos counts the total number of repos that have been added by
-	// user or organization owned external services. If userID is specified, only
-	// repos owned by that user are counted. If orgID is specified, only repos owned
-	// by that organization are counted.
-	CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error)
 	// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo
 	// not in the given ids that is owned by the given external service. We run one
 	// query per repo rather than one batch query in order to reduce the chances of
@@ -221,45 +216,6 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	ctx = trace.CopyContext(ctx, txctx)
 	return tr, ctx
 }
-
-func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
-	logger := trace.Logger(ctx, s.Logger).With(
-		log.Int("userID", int(userID)),
-		log.Int("orgID", int(orgID)),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
-		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
-
-		if err != nil {
-			logger.Error("store.count-namespaced-repos", log.Uint64("count", count), log.Error(err))
-		}
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	var q *sqlf.Query
-	if userID > 0 {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND user_id = %d", userID)
-	} else if orgID > 0 {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND org_id = %d", orgID)
-	} else {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr)
-	}
-
-	err = s.QueryRow(ctx, q).Scan(&count)
-	return count, err
-}
-
-const countTotalNamespacedReposQueryFmtstr = `
-SELECT COUNT(DISTINCT(repo_id))
-FROM external_service_repos
-WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")

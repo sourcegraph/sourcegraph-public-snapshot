@@ -168,8 +168,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
                         suggestionSources={suggestionSources}
-                        defaultSuggestionsShowWhenEmpty={false}
-                        showSuggestionsOnFocus={true}
+                        defaultSuggestionsShowWhenEmpty={!showSearchHistory}
+                        showSuggestionsOnFocus={showSearchHistory}
                     />
                 </div>
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />

@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -119,6 +120,13 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	// Check if we have an actor, if not, ensure that we use our internal actor since
+	// this is an internal request.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() && !a.IsInternal() {
+		ctx = actor.WithInternalActor(ctx)
+	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
