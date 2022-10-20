@@ -446,3 +446,124 @@ export const testDataRealMatches: MatchItem[] = [
         endLine: 175,
     },
 ]
+
+// Real match data from searching a file for `if ... {...} patternType:structural`.
+export const testDataRealMultilineMatches: MatchItem[] = [
+    {
+        highlightRanges: [
+            {
+                startLine: 50,
+                startCharacter: 1,
+                endLine: 52,
+                endCharacter: 2,
+            },
+        ],
+        content: '\tif err != nil {\n\t\touterMsg = err.Error()\n\t}',
+        startLine: 50,
+        endLine: 52,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 60,
+                startCharacter: 19,
+                endLine: 65,
+                endCharacter: 1,
+            },
+        ],
+        content: '// Contains checks if the given error contains an error with the\n// message msg. If err is not a wrapped error, this will always return\n// false unless the error itself happens to match this msg.\nfunc Contains(err error, msg string) bool {\n\treturn len(GetAll(err, msg)) > 0\n}',
+        startLine: 60,
+        endLine: 65,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 67,
+                startCharacter: 23,
+                endLine: 72,
+                endCharacter: 1,
+            },
+        ],
+        content: '// ContainsType checks if the given error contains an error with\n// the same concrete type as v. If err is not a wrapped error, this will\n// check the err itself.\nfunc ContainsType(err error, v interface{}) bool {\n\treturn len(GetAllType(err, v)) > 0\n}',
+        startLine: 67,
+        endLine: 72,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 77,
+                startCharacter: 1,
+                endLine: 79,
+                endCharacter: 2,
+            },
+        ],
+        content: '\tif len(es) > 0 {\n\t\treturn es[len(es)-1]\n\t}',
+        startLine: 77,
+        endLine: 79,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 87,
+                startCharacter: 1,
+                endLine: 89,
+                endCharacter: 2,
+            },
+        ],
+        content: '\tif len(es) > 0 {\n\t\treturn es[len(es)-1]\n\t}',
+        startLine: 87,
+        endLine: 89,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 101,
+                startCharacter: 2,
+                endLine: 103,
+                endCharacter: 3,
+            },
+        ],
+        content: '\t\tif err.Error() == msg {\n\t\t\tresult = append(result, err)\n\t\t}',
+        startLine: 101,
+        endLine: 103,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 116,
+                startCharacter: 1,
+                endLine: 118,
+                endCharacter: 2,
+            },
+        ],
+        content: '\tif v != nil {\n\t\tsearch = reflect.TypeOf(v).String()\n\t}',
+        startLine: 116,
+        endLine: 118,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 121,
+                startCharacter: 2,
+                endLine: 123,
+                endCharacter: 3,
+            },
+        ],
+        content: '\t\tif err != nil {\n\t\t\tneedle = reflect.TypeOf(err).String()\n\t\t}',
+        startLine: 121,
+        endLine: 123,
+    },
+    {
+        highlightRanges: [
+            {
+                startLine: 125,
+                startCharacter: 2,
+                endLine: 127,
+                endCharacter: 3,
+            },
+        ],
+        content: '\t\tif needle == search {\n\t\t\tresult = append(result, err)\n\t\t}',
+        startLine: 125,
+        endLine: 127,
+    },
+]

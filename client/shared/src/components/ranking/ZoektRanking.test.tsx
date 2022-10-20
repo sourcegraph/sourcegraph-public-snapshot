@@ -1,9 +1,9 @@
-import { testDataRealMatches } from './PerFileResultRankingTestHelpers'
+import { testDataRealMatches, testDataRealMultilineMatches } from './PerFileResultRankingTestHelpers'
 import { ZoektRanking } from './ZoektRanking'
 
 describe('ZoektRanking', () => {
     const ranking = new ZoektRanking(5)
-    test('collapsedResults', () => {
+    test('collapsedResults, single-line matches only', () => {
         expect(ranking.collapsedResults(testDataRealMatches, 1).grouped).toMatchInlineSnapshot(`
             Array [
               Object {
@@ -179,7 +179,101 @@ describe('ZoektRanking', () => {
             ]
         `)
     })
-    test('expandedResults', () => {
+
+    test('collapsed results, multiline matches only', () => {
+        expect(ranking.collapsedResults(testDataRealMultilineMatches, 1).grouped).toMatchInlineSnapshot(`
+            Array [
+              Object {
+                "endLine": 54,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 52,
+                    "startCharacter": 1,
+                    "startLine": 50,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 51,
+                },
+                "startLine": 49,
+              },
+              Object {
+                "endLine": 74,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 1,
+                    "endLine": 65,
+                    "startCharacter": 19,
+                    "startLine": 60,
+                  },
+                  Object {
+                    "endCharacter": 1,
+                    "endLine": 72,
+                    "startCharacter": 23,
+                    "startLine": 67,
+                  },
+                ],
+                "position": Object {
+                  "character": 20,
+                  "line": 61,
+                },
+                "startLine": 59,
+              },
+              Object {
+                "endLine": 81,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 79,
+                    "startCharacter": 1,
+                    "startLine": 77,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 78,
+                },
+                "startLine": 76,
+              },
+              Object {
+                "endLine": 91,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 89,
+                    "startCharacter": 1,
+                    "startLine": 87,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 88,
+                },
+                "startLine": 86,
+              },
+              Object {
+                "endLine": 105,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 3,
+                    "endLine": 103,
+                    "startCharacter": 2,
+                    "startLine": 101,
+                  },
+                ],
+                "position": Object {
+                  "character": 3,
+                  "line": 102,
+                },
+                "startLine": 100,
+              },
+            ]
+        `)
+    })
+
+    test('expandedResults, single-line matches only', () => {
         // reverse the data to demonstrate that zoekt-ranking does not sort the
         // results by line number, it preserves the original sort from the
         // server.
@@ -255,6 +349,90 @@ describe('ZoektRanking', () => {
                   "line": 165,
                 },
                 "startLine": 163,
+              },
+            ]
+        `)
+    })
+
+    test('expanded matches, multiline matches only', () => {
+        const multilineDataReversed = [...testDataRealMultilineMatches].reverse().slice(0, 6)
+        expect(ranking.expandedResults(multilineDataReversed, 1).grouped).toMatchInlineSnapshot(`
+            Array [
+              Object {
+                "endLine": 129,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 118,
+                    "startCharacter": 1,
+                    "startLine": 116,
+                  },
+                  Object {
+                    "endCharacter": 3,
+                    "endLine": 123,
+                    "startCharacter": 2,
+                    "startLine": 121,
+                  },
+                  Object {
+                    "endCharacter": 3,
+                    "endLine": 127,
+                    "startCharacter": 2,
+                    "startLine": 125,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 117,
+                },
+                "startLine": 115,
+              },
+              Object {
+                "endLine": 105,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 3,
+                    "endLine": 103,
+                    "startCharacter": 2,
+                    "startLine": 101,
+                  },
+                ],
+                "position": Object {
+                  "character": 3,
+                  "line": 102,
+                },
+                "startLine": 100,
+              },
+              Object {
+                "endLine": 91,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 89,
+                    "startCharacter": 1,
+                    "startLine": 87,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 88,
+                },
+                "startLine": 86,
+              },
+              Object {
+                "endLine": 81,
+                "matches": Array [
+                  Object {
+                    "endCharacter": 2,
+                    "endLine": 79,
+                    "startCharacter": 1,
+                    "startLine": 77,
+                  },
+                ],
+                "position": Object {
+                  "character": 2,
+                  "line": 78,
+                },
+                "startLine": 76,
               },
             ]
         `)
