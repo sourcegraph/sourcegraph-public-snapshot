@@ -12,7 +12,12 @@ import (
 )
 
 func (squirrel *SquirrelService) getDefStarlark(ctx context.Context, node Node) (ret *Node, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
+
 	switch node.Type() {
 	case "identifier":
 		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node)))
