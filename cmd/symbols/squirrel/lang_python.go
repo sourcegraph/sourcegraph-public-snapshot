@@ -9,6 +9,7 @@ import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Node, err error) {
@@ -292,7 +293,7 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node, field string) (ret *Node, err error) {
 	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
 
-	ty, err := squirrel.getTypeDefPython(ctx, object)
+	ty, err := squirrel.getTypeDefPython(ctx, object, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -394,7 +395,11 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeP
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypePython, err error) {
+func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node, level int) (ret TypePython, err error) {
+	if level > 10000 {
+		return nil, errors.New("getTypeDefPython: max recursion level exceeded")
+	}
+
 	defer squirrel.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))()
 
 	onIdent := func() (TypePython, error) {
@@ -411,7 +416,7 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 	switch node.Type() {
 	case "type":
 		for _, child := range children(node.Node) {
-			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
+			return squirrel.getTypeDefPython(ctx, swapNode(node, child), level+1)
 		}
 		return nil, nil
 	case "identifier":
@@ -425,7 +430,7 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 		if attribute == nil {
 			return nil, nil
 		}
-		objectType, err := squirrel.getTypeDefPython(ctx, swapNode(node, object))
+		objectType, err := squirrel.getTypeDefPython(ctx, swapNode(node, object), level+1)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +450,7 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 		if fn == nil {
 			return nil, nil
 		}
-		ty, err := squirrel.getTypeDefPython(ctx, swapNode(node, fn))
+		ty, err := squirrel.getTypeDefPython(ctx, swapNode(node, fn), level+1)
 		if err != nil {
 			return nil, err
 		}
@@ -682,7 +687,7 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		if ty == nil {
 			return nil, nil
 		}
-		return squirrel.getTypeDefPython(ctx, swapNode(def, ty))
+		return squirrel.getTypeDefPython(ctx, swapNode(def, ty), 0)
 	case "class_definition":
 		return (TypePython)(ClassTypePython{def: swapNode(def, parent)}), nil
 	case "function_definition":
@@ -693,7 +698,7 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 				noad: swapNode(def, parent),
 			}), nil
 		}
-		retTy, err := squirrel.getTypeDefPython(ctx, swapNode(def, retTyNode))
+		retTy, err := squirrel.getTypeDefPython(ctx, swapNode(def, retTyNode), 0)
 		if err != nil {
 			return nil, err
 		}
@@ -708,9 +713,9 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 			if right == nil {
 				return nil, nil
 			}
-			return squirrel.getTypeDefPython(ctx, swapNode(def, right))
+			return squirrel.getTypeDefPython(ctx, swapNode(def, right), 0)
 		}
-		return squirrel.getTypeDefPython(ctx, swapNode(def, ty))
+		return squirrel.getTypeDefPython(ctx, swapNode(def, ty), 0)
 	default:
 		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil, nil
