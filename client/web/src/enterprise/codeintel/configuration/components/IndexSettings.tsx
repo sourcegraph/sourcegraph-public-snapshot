@@ -72,7 +72,9 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                             constrained policy targeting an explicit set of repositories to enable this policy.{' '}
                             <Link
                                 className={styles.autoindexingLink}
-                                to="/help/code_intelligence/how-to/enable_auto_indexing#configure-auto-indexing-policies"
+                                to="/help/code_navigation/how-to/enable_auto_indexing#configure-auto-indexing-policies"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
                                 See autoindexing docs.
                             </Link>
