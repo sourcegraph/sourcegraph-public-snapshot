@@ -357,7 +357,7 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
-	u.should_reindex,
+	u.should_reindex
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
