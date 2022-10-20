@@ -32,6 +32,7 @@ type UploadService interface {
 	// Uploads
 	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
 	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
+	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
