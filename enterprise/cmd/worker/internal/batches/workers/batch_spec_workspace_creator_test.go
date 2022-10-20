@@ -247,6 +247,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches: workspace.FileMatches,
 			},
 			workspace.Path,
+			[]string{},
 			workspace.OnlyFetchWorkspace,
 			batchSpec.Spec.Steps,
 			result.StepIndex,
