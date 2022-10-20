@@ -77,5 +77,5 @@ export const BackendInsightErrorAlert: React.FunctionComponent<
     props.error instanceof InsightInProcessError ? (
         <Alert variant="info">{props.error.message}</Alert>
     ) : (
-        <ErrorAlert error={props.error} />
+        <ErrorAlert error={props.error} className={styles.errorAlert}/>
     )
