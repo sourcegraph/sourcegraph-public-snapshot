@@ -400,6 +400,8 @@ func shortGitCommandSlow(args []string) time.Duration {
 // https://github.com/sourcegraph/sourcegraph/pull/27931.
 func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
+
 		// Do not apply the middleware to /ping and /git endpoints.
 		//
 		// 1. /ping is used by health check services who most likely don't set this header
@@ -413,6 +415,7 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 		}
 
 		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
+			l.Error("headerXRequestedWithMiddleware check failed", log.String("path", r.URL.Path))
 			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
 			return
 		}
