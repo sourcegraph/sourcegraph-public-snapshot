@@ -56,7 +56,7 @@ func webhookHandler(db database.DB, gh *GitHubWebhook) http.HandlerFunc {
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
 			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, gh)
-            return
+			return
 		case extsvc.KindGitLab:
 			_, err := gitLabValidateSecret(r, secret)
 			if err != nil {
