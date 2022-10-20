@@ -407,7 +407,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	end = time.Now()
 	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
 
-	recordingsData, err := r.timeSeriesStore.GetInsightSeriesRecordingTimes(ctx, definition.ID, opts.From, opts.To)
+	recordingsData, err := r.timeSeriesStore.GetInsightSeriesRecordingTimes(ctx, definition.InsightSeriesID, opts.From, opts.To)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}
@@ -416,9 +416,6 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 		//recordingsData.RecordingTimes = append(recordingsData.RecordingTimes, definition.LastSnapshotAt)
 		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
 	}
-	fmt.Println("augmentedPoints", augmentedPoints)
-	fmt.Println("points", points)
-	fmt.Println("recordingsData")
 	if len(augmentedPoints) > 0 {
 		points = augmentedPoints
 	}
@@ -565,4 +562,44 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
+}
+
+func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
+	pointsMap := make(map[string]*store.SeriesPoint)
+	captureValues := make(map[string]struct{})
+	var seriesID string
+	for _, point := range points {
+		point := point
+		seriesID = point.SeriesID // this works for now as this is per-series.
+		capture := ""
+		if point.Capture != nil {
+			capture = *point.Capture
+		}
+		captureValues[capture] = struct{}{}
+		pointTime := point.Time.Truncate(time.Hour * 24)
+		pointsMap[pointTime.String()+capture] = &point
+	}
+	// We have to pivot on potential capture values as well.
+	augmentedPoints := []store.SeriesPoint{}
+	for _, recordingTime := range recordingTimes {
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[recordingTime.Truncate(time.Hour*24).String()+captureValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if captureValue != "" {
+					capture = &captureValue
+				}
+				augmentedPoints = append(augmentedPoints, store.SeriesPoint{
+					SeriesID: seriesID,
+					Time:     recordingTime,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+
+	return augmentedPoints
 }
