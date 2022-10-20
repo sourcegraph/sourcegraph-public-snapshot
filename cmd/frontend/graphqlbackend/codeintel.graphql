@@ -124,6 +124,32 @@ extend type Mutation {
     ): EmptyResponse
 
     """
+    Reindexes an LSIF index.
+    """
+    reindexLSIFIndex(id: ID!): EmptyResponse
+
+    """
+    Reindexes LSIF indexes by filter criteria.
+    """
+    reindexLSIFIndexes(
+        """
+        An (optional) search query that filters the state, repository name,
+        commit, root, and indexer properties.
+        """
+        query: String
+
+        """
+        The upload state.
+        """
+        state: LSIFIndexState
+
+        """
+        The repository.
+        """
+        repository: ID
+    ): EmptyResponse
+
+    """
     Request support for a particular language.
     """
     requestLanguageSupport(language: String!): EmptyResponse
@@ -1370,6 +1396,11 @@ type LSIFIndex implements Node {
     The LSIF upload created as part of this indexing job.
     """
     associatedUpload: LSIFUpload
+
+    """
+    Whether or not this index has been marked for reindexing.
+    """
+    shouldReindex: Boolean!
 }
 
 """
