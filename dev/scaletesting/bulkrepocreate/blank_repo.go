@@ -89,15 +89,11 @@ func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) e
 
 func (r *blankRepo) pushRemote(ctx context.Context, name string, retry int) error {
 	var err error
-outer:
 	for i := 0; i < retry; i++ {
 		err := r.doPushRemote(ctx, name)
-		switch {
-		case err == nil:
-			break outer
-		case strings.Contains(err.Error(), "timed out"):
-			continue
-		case strings.Contains(err.Error(), "killed"):
+		if err == nil {
+			break
+		} else {
 			continue
 		}
 	}

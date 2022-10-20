@@ -197,6 +197,8 @@ func main() {
 	for _, repo := range repos {
 		repo := repo
 		if !repo.Created {
+			atomic.AddInt64(&done, 1)
+			progress.SetValue(2, float64(done))
 			continue
 		}
 		if repo.Pushed {
