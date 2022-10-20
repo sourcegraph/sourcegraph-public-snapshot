@@ -125,12 +125,15 @@ func itermSource(absPath string, line int, msg string) string {
 }
 
 func (bs *Breadcrumbs) prettyPrint(readFile ReadFileFunc) {
+	fmt.Println(" ")
+	fmt.Println(bracket(bs.prettyString(readFile)))
+	fmt.Println(" ")
+}
+
+func (bs *Breadcrumbs) prettyString(readFile ReadFileFunc) string {
 	sb := &strings.Builder{}
 	bs.pretty(sb, readFile)
-
-	fmt.Println(" ")
-	fmt.Println(bracket(sb.String()))
-	fmt.Println(" ")
+	return sb.String()
 }
 
 // Returns breadcrumbs that have one of the given messages.
