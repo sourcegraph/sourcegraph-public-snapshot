@@ -2086,6 +2086,10 @@ type SiteConfiguration struct {
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
+	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
+	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
+	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsSrcCLIImageTag string `json:"executors.srcCLIImageTag,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`

@@ -1135,6 +1135,16 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "executors.srcCLIImage": {
+      "description": "The image to use for src-cli in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/src-cli"
+    },
+    "executors.srcCLIImageTag": {
+      "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
