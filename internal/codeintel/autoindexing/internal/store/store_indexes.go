@@ -581,15 +581,17 @@ SELECT
 	-- and none of them are marked for reindexing. If we have one or more rows and
 	-- ALL of them are not marked for re-indexing, we'll block additional indexing
 	-- attempts.
-	SELECT COALESCE(bool_and(NOT should_reindex), false)
-	FROM (
-		-- For each distinct (root, indexer) pair, use the most recently queued
-		-- index as the authoritative attempt.
-		SELECT DISTINCT ON (root, indexer) should_reindex
-		FROM lsif_indexes
-		WHERE repository_id = %s AND commit = %s
-		ORDER BY root, indexer, queued_at DESC
-	) _
+	(
+		SELECT COALESCE(bool_and(NOT should_reindex), false)
+		FROM (
+			-- For each distinct (root, indexer) pair, use the most recently queued
+			-- index as the authoritative attempt.
+			SELECT DISTINCT ON (root, indexer) should_reindex
+			FROM lsif_indexes
+			WHERE repository_id = %s AND commit = %s
+			ORDER BY root, indexer, queued_at DESC
+		) _
+	)
 `
 
 // IsQueuedRootIndexer returns true if there is an index or an upload for the given (repository, commit, root, indexer).
