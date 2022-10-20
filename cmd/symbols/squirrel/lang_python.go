@@ -405,6 +405,9 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 		if found == nil {
 			return nil, nil
 		}
+		if isRecursiveDefinitionPython(node, *found) {
+			return nil, nil
+		}
 		return squirrel.defToTypePython(ctx, *found)
 	}
 
@@ -788,4 +791,28 @@ func lazyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
 			return String("<nil>")
 		}
 	}
+}
+
+func isRecursiveDefinitionPython(node Node, def Node) bool {
+	if node.RepoCommitPath != def.RepoCommitPath {
+		return false
+	}
+	if def.Type() != "identifier" {
+		return false
+	}
+	if def.Parent() == nil {
+		return false
+	}
+	if def.Parent().Type() != "assignment" {
+		return false
+	}
+	assignment := def.Parent()
+	nodeAncestor := node.Parent()
+	for nodeAncestor != nil {
+		if nodeId(nodeAncestor) == nodeId(assignment) {
+			return true
+		}
+		nodeAncestor = nodeAncestor.Parent()
+	}
+	return false
 }
