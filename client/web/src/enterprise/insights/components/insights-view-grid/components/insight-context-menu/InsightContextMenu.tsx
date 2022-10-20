@@ -71,7 +71,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <MenuButton
                             data-testid="InsightContextMenuButton"
-                            className={classNames('p-1 ml-1 d-inline-flex', styles.button)}
+                            className={classNames('p-1 d-inline-flex', styles.button)}
                             aria-label="Insight options"
                             outline={true}
                         >

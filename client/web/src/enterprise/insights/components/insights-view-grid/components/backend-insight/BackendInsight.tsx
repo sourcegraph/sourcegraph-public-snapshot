@@ -20,9 +20,10 @@ import {
     FiltersCreationFormValues,
     BackendInsightChart,
     parseSeriesLimit,
+    BackendInsightTimoutIcon,
 } from './components'
 import { GET_INSIGHT_DATA } from './query'
-import { parseBackendInsightResponse, insightPollingInterval } from './selectors'
+import { parseBackendInsightResponse, insightPollingInterval, isEntireInsightErrored } from './selectors'
 
 import styles from './BackendInsight.module.scss'
 
@@ -160,6 +161,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             >
                 {isVisible && (
                     <>
+                        {insightData && isEntireInsightErrored(insightData) && <BackendInsightTimoutIcon />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}
@@ -185,6 +187,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 <BackendInsightChart
                     data={insightData.data}
                     seriesToggleState={seriesToggleState}
+                    showSeriesErrors={isEntireInsightErrored(insightData)}
                     isInProgress={insightData.isInProgress}
                     isLocked={insight.isFrozen}
                     isZeroYAxisMin={isZeroYAxisMin}

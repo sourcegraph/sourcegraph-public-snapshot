@@ -2,7 +2,6 @@ import { formatISO } from 'date-fns'
 import { escapeRegExp, groupBy } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Series } from '@sourcegraph/wildcard'
 
 import {
     GetInsightDataResult,
@@ -21,13 +20,33 @@ import {
     SearchBasedInsightSeries,
 } from '../../../../core'
 
-import { InsightContentType, BackendInsightDTO, CategoricalChartContent } from './types'
+import {
+    InsightContentType,
+    BackendInsightDTO,
+    CategoricalChartContent,
+    BackendInsightSeries,
+} from './types'
 
 const ALL_REPOS_POLL_INTERVAL = 30000
 const SOME_REPOS_POLL_INTERVAL = 2000
 
 export function insightPollingInterval(insight: BackendInsight): number {
     return insight.repositories.length > 0 ? SOME_REPOS_POLL_INTERVAL : ALL_REPOS_POLL_INTERVAL
+}
+
+export function isEntireInsightErrored (dto: BackendInsightDTO): boolean {
+    if (dto.data.type === InsightContentType.Series) {
+        return dto.data.series.every(series => series.status.errors.length > 0)
+    }
+
+    // Since in categorical insights there is no term such as series
+    // if we've got even one error this means that the whole insight is
+    // errored
+    if (dto.data.type === InsightContentType.Categorical) {
+        return dto.status.errors.length > 0
+    }
+
+    return false
 }
 
 /**
@@ -44,7 +63,7 @@ export const parseBackendInsightResponse = (
         return null
     }
 
-    const { dataSeries } = getInsightData(response)
+    const { dataSeries, status } = getInsightData(response)
     const isInProgress = dataSeries.some(series => {
         const {
             status: { pendingJobs, backfillQueuedAt },
@@ -58,6 +77,7 @@ export const parseBackendInsightResponse = (
             // insights have problem with generated data series status info
             // see https://github.com/sourcegraph/sourcegraph/issues/38893
             isInProgress: isInProgress || dataSeries.some(series => !series.label),
+            status,
             data: {
                 type: InsightContentType.Categorical,
                 content: createComputeCategoricalChart(insight, dataSeries),
@@ -67,6 +87,7 @@ export const parseBackendInsightResponse = (
 
     return {
         isInProgress,
+        status,
         data: {
             type: InsightContentType.Series,
             series: createLineChartContent(insight, dataSeries),
@@ -80,12 +101,6 @@ function getInsightData(insightData: GetInsightDataResult): InsightDataNode {
     return insightData.insightViews.nodes[0]
 }
 
-interface BackendInsightDatum {
-    dateTime: Date
-    value: number
-    link?: string
-}
-
 /**
  * Generates line chart content for visx chart. Note that this function relies on the fact that
  * all series are indexed.
@@ -93,14 +108,15 @@ interface BackendInsightDatum {
 function createLineChartContent(
     insight: BackendInsight,
     seriesData: InsightDataSeries[]
-): Series<BackendInsightDatum>[] {
+): BackendInsightSeries[] {
     const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
     const seriesDefinitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id, definition])
     )
 
-    return seriesData.map<Series<BackendInsightDatum>>(line => ({
+    return seriesData.map<BackendInsightSeries>(line => ({
         id: line.seriesId,
+        status: line.status2,
         data: line.points.map((point, index) => ({
             dateTime: new Date(point.dateTime),
             value: point.value,
@@ -184,16 +200,7 @@ export function generateLinkURL(input: GenerateLinkInput): string {
     return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`
 }
 
-interface CategoricalDatum {
-    name: string
-    fill: string
-    value: number
-}
-
-function createComputeCategoricalChart(
-    insight: ComputeInsight,
-    seriesData: InsightDataSeries[]
-): CategoricalChartContent<CategoricalDatum> {
+function createComputeCategoricalChart(insight: ComputeInsight, seriesData: InsightDataSeries[]): CategoricalChartContent {
     const seriesGroups = groupBy(
         seriesData.filter(series => series.label && series.points.length),
         series => series.label
