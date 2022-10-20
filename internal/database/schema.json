@@ -8562,12 +8562,22 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "executor_secrets_unique_key_namespace",
+          "Name": "executor_secrets_unique_key_namespace_org",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace ON executor_secrets USING btree (key, namespace_user_id, namespace_org_id, scope)",
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "executor_secrets_unique_key_namespace_user",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

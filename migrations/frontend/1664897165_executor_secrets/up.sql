@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS executor_secrets (
 COMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';
 
 -- Enforce uniqueness of the key in a given namespace.
-CREATE UNIQUE INDEX executor_secrets_unique_key_namespace ON executor_secrets (key, namespace_user_id, namespace_org_id, scope);
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL;
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL;
 -- Enforce uniqueness of the key in the global namespace. NULL is a fun type :)
 CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets(key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL;
 
