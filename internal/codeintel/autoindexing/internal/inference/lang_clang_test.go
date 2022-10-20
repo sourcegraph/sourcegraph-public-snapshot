@@ -7,6 +7,8 @@ import (
 )
 
 func TestClangHinter(t *testing.T) {
+	expectedIndexerImage := "sourcegraph/lsif-clang@sha256:5ef2334ac9d58f1f947651812aa8d8ba0ed584913f2429cc9952cb25f94976d8"
+
 	testHinters(t,
 		hinterTestCase{
 			description: "basic hints",
@@ -19,17 +21,17 @@ func TestClangHinter(t *testing.T) {
 			expected: []config.IndexJobHint{
 				{
 					Root:           "",
-					Indexer:        "sourcegraph/lsif-clang",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
 					Root:           "dir",
-					Indexer:        "sourcegraph/lsif-clang",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
 					Root:           "other",
-					Indexer:        "sourcegraph/lsif-clang",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceLanguageSupport,
 				},
 			},

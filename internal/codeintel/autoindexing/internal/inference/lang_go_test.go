@@ -7,6 +7,8 @@ import (
 )
 
 func TestGoGenerator(t *testing.T) {
+	expectedIndexerImage := "sourcegraph/lsif-go@sha256:253c991fdd8b118afadcfbe6f7a6d03ca91c44fd2860dbe8a9fd69c93c6025f6"
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "go modules",
@@ -19,13 +21,13 @@ func TestGoGenerator(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "foo/bar",
-							Image:    "sourcegraph/lsif-go:latest",
+							Image:    expectedIndexerImage,
 							Commands: []string{"go mod download"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/bar",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-go", "--no-animation"},
 					Outfile:     "",
 				},
@@ -33,13 +35,13 @@ func TestGoGenerator(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "foo/baz",
-							Image:    "sourcegraph/lsif-go:latest",
+							Image:    expectedIndexerImage,
 							Commands: []string{"go mod download"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/baz",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-go", "--no-animation"},
 					Outfile:     "",
 				},
@@ -57,7 +59,7 @@ func TestGoGenerator(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
 					Outfile:     "",
 				},

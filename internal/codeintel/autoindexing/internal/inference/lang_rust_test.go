@@ -7,6 +7,8 @@ import (
 )
 
 func TestRustGenerator(t *testing.T) {
+	expectedIndexerImage := "sourcegraph/lsif-rust@sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1"
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "rust-analyzer",
@@ -19,7 +21,7 @@ func TestRustGenerator(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-rust",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-rust", "index"},
 					Outfile:     "dump.lsif",
 				},

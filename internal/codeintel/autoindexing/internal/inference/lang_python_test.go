@@ -7,6 +7,8 @@ import (
 )
 
 func TestPythonGenerator(t *testing.T) {
+	expectedIndexerImage := "sourcegraph/scip-python@sha256:5049c4598d03af542bde5e1254a17fa6d1eb794c1bdd14d0162fb39c604581b4"
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "python package",
@@ -23,13 +25,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
@@ -65,13 +67,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
@@ -89,13 +91,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "src",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
@@ -138,13 +140,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
@@ -162,13 +164,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "src",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
@@ -184,13 +186,13 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 					Steps: []config.DockerStep{
 						{
 							Root:     "",
-							Image:    "sourcegraph/scip-python:autoindex",
+							Image:    expectedIndexerImage,
 							Commands: []string{"pip install . || true"},
 						},
 					},
 					LocalSteps: nil,
 					Root:       "nested/lib",
-					Indexer:    "sourcegraph/scip-python:autoindex",
+					Indexer:    expectedIndexerImage,
 					IndexerArgs: []string{
 						"scip-python",
 						"index",
