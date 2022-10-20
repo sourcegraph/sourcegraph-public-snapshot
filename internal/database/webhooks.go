@@ -247,6 +247,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 		encryptedSecret string
 		keyID           string
 	)
+
 	if newWebhook.Secret != nil {
 		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
 		if err != nil || (encryptedSecret == "" && keyID == "") {
@@ -258,7 +259,11 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.CodeHostURN,
+		dbutil.NullStringColumn(encryptedSecret),
+		dbutil.NullStringColumn(keyID),
+		dbutil.NullInt32Column(actorUID),
+		newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
