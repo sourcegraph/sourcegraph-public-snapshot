@@ -3,6 +3,7 @@ package usagestats
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -37,7 +38,8 @@ type Repositories struct {
 func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
 	var total Repositories
 
-	stats, err := gitserver.NewClient(db).ReposStats(ctx)
+	// Since this hits gitserver, we should use an internal actor.
+	stats, err := gitserver.NewClient(db).ReposStats(actor.WithInternalActor(ctx))
 	if err != nil {
 		return nil, err
 	}

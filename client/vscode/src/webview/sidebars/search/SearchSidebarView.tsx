@@ -9,6 +9,7 @@ import create from 'zustand'
 import {
     InitialParametersSource,
     QueryUpdate,
+    SearchMode,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStore,
@@ -54,6 +55,7 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                     searchCaseSensitivity: false,
                     searchPatternType: SearchPatternType.standard,
                     searchQueryFromURL: '',
+                    searchMode: SearchMode.Precise,
 
                     setQueryState: queryStateUpdate => {
                         const currentSearchQueryState = get()

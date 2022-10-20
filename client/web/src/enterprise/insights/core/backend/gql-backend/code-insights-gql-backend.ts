@@ -16,7 +16,7 @@ import {
 
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
 import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {

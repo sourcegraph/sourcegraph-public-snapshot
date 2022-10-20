@@ -1,7 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -55,7 +55,8 @@ const getNormalizedAccount = (
     const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
 
-    const { icon, title: name } = defaultExternalAccounts[kind] ??  { icon: AlertCircleIcon, title: kind }
+    // get external service icon and name as they will match external account
+    const { icon, title: name } = defaultExternalAccounts[kind] || { icon: AccountCircleIcon, title: kind }
 
     let normalizedAccount: NormalizedMinAccount = {
         icon,
@@ -97,7 +98,6 @@ const getNormalizedAccount = (
                 break
             case 'SAML':
             {
-                console.log("case: saml")
                 // const gitlabExternalData = accountExternalData as GitLabExternalData
                 // normalizedAccount = {
                 //     ...normalizedAccount,

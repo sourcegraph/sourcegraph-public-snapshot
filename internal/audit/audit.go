@@ -20,7 +20,8 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	act := actor.FromContext(ctx)
 
 	// internal actors add a lot of noise to the audit log
-	if act.Internal && !IsEnabled(conf.SiteConfig(), InternalTraffic) {
+	siteConfig := conf.SiteConfig()
+	if act.Internal && !IsEnabled(siteConfig, InternalTraffic) {
 		return
 	}
 
@@ -37,8 +38,9 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
+	loggerFunc := getLoggerFuncWithSeverity(logger, siteConfig)
 	// message string looks like: #{record.Action} (sampling immunity token: #{auditId})
-	logger.Info(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
+	loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
 }
 
 func actorId(act *actor.Actor) string {
@@ -85,18 +87,41 @@ const (
 // IsEnabled returns the value of the respective setting from the site config (if set).
 // Otherwise, it returns the default value for the setting.
 func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
-	if logCg := cfg.Log; logCg != nil {
-		if auditCfg := logCg.AuditLog; auditCfg != nil {
-			switch setting {
-			case GitserverAccess:
-				return auditCfg.GitserverAccess
-			case InternalTraffic:
-				return auditCfg.InternalTraffic
-			case GraphQL:
-				return auditCfg.GraphQL
-			}
+	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
+		switch setting {
+		case GitserverAccess:
+			return auditCfg.GitserverAccess
+		case InternalTraffic:
+			return auditCfg.InternalTraffic
+		case GraphQL:
+			return auditCfg.GraphQL
 		}
 	}
 	// all settings now currently default to 'false', but that's a coincidence, not intention
 	return false
+}
+
+// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.), a the severity is configurable.
+func getLoggerFuncWithSeverity(logger log.Logger, cfg schema.SiteConfiguration) func(string, ...log.Field) {
+	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
+		switch auditCfg.SeverityLevel {
+		case "DEBUG":
+			return logger.Debug
+		case "INFO":
+			return logger.Info
+		case "WARN":
+			return logger.Warn
+		case "ERROR":
+			return logger.Error
+		}
+	}
+	// default to INFO
+	return logger.Info
+}
+
+func getAuditCfg(cfg schema.SiteConfiguration) *schema.AuditLog {
+	if logCg := cfg.Log; logCg != nil {
+		return logCg.AuditLog
+	}
+	return nil
 }

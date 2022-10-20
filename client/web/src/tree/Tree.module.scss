@@ -32,8 +32,8 @@
     display: flex;
     color: inherit;
     align-items: center;
-    padding-top: var(--row-vertical-spacing);
-    padding-bottom: var(--row-vertical-spacing);
+    margin-top: var(--row-vertical-spacing);
+    margin-bottom: var(--row-vertical-spacing);
     cursor: pointer;
 }
 
@@ -42,7 +42,7 @@
 }
 
 .tree-row-contents-text {
-    display: flex;
+    display: block;
     align-items: center;
     justify-content: space-between;
 }
@@ -72,6 +72,7 @@
 
     &-contents,
     &-label {
+        width: 100%;
         &:hover {
             text-decoration: none;
         }

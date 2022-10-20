@@ -12,7 +12,11 @@ import (
 )
 
 func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Node, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(node, String(node.Type()), lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	switch node.Type() {
 	case "identifier":
@@ -31,7 +35,10 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 			switch cur.Type() {
 
 			case "module":
-				found := squirrel.findNodeInScopePython(swapNode(node, cur), ident)
+				found, err := squirrel.findNodeInScopePython(swapNode(node, cur), ident)
+				if err != nil {
+					return nil, err
+				}
 				if found != nil {
 					return found, nil
 				}
@@ -165,7 +172,10 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 					squirrel.breadcrumb(swapNode(node, cur), "getDefPython: expected function_definition to have a block body")
 					continue
 				}
-				found := squirrel.findNodeInScopePython(swapNode(node, body), ident)
+				found, err := squirrel.findNodeInScopePython(swapNode(node, body), ident)
+				if err != nil {
+					return nil, err
+				}
 				if found != nil {
 					return found, nil
 				}
@@ -187,8 +197,12 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 	}
 }
 
-func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *Node) {
-	defer squirrel.onCall(block, &Tuple{String(block.Type()), String(ident)}, lazyNodeStringer(&ret))()
+func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *Node, err error) {
+	cleanup, err := squirrel.onCall(block, &Tuple{String(block.Type()), String(ident)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	for i := 0; i < int(block.NamedChildCount()); i++ {
 		child := block.NamedChild(i)
@@ -197,24 +211,25 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 		case "function_definition":
 			name := child.ChildByFieldName("name")
 			if name != nil && name.Type() == "identifier" && name.Content(block.Contents) == ident {
-				return swapNodePtr(block, name)
+				return swapNodePtr(block, name), nil
 			}
 			continue
 		case "class_definition":
 			name := child.ChildByFieldName("name")
 			if name != nil && name.Type() == "identifier" && name.Content(block.Contents) == ident {
-				return swapNodePtr(block, name)
+				return swapNodePtr(block, name), nil
 			}
 			continue
 		case "expression_statement":
 			query := `(expression_statement (assignment left: (identifier) @ident))`
 			captures, err := allCaptures(query, swapNode(block, child))
 			if err != nil {
-				return nil
+				// TODO: Should we ignore this error or not?
+				return nil, nil
 			}
 			for _, capture := range captures {
 				if capture.Content(capture.Contents) == ident {
-					return swapNodePtr(block, capture.Node)
+					return swapNodePtr(block, capture.Node), nil
 				}
 			}
 			continue
@@ -222,11 +237,14 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 			var found *Node
 			next := child.ChildByFieldName("consequence")
 			if next == nil {
-				return nil
+				return nil, nil
 			}
-			found = squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			found, err = squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			if err != nil {
+				return nil, err
+			}
 			if found != nil {
-				return found
+				return found, nil
 			}
 			elseClause := child.ChildByFieldName("alternative")
 			if elseClause == nil {
@@ -234,11 +252,14 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 			}
 			next = elseClause.ChildByFieldName("body")
 			if next == nil {
-				return nil
+				return nil, nil
 			}
-			found = squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			found, err = squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			if err != nil {
+				return nil, err
+			}
 			if found != nil {
-				return found
+				return found, nil
 			}
 			continue
 		case "while_statement":
@@ -246,21 +267,27 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 		case "for_statement":
 			next := child.ChildByFieldName("body")
 			if next == nil {
-				return nil
+				return nil, nil
 			}
-			found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			found, err := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			if err != nil {
+				return nil, err
+			}
 			if found != nil {
-				return found
+				return found, nil
 			}
 			continue
 		case "try_statement":
 			next := child.ChildByFieldName("body")
 			if next == nil {
-				return nil
+				return nil, nil
 			}
-			found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			found, err := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+			if err != nil {
+				return nil, err
+			}
 			if found != nil {
-				return found
+				return found, nil
 			}
 			for j := 0; j < int(child.NamedChildCount()); j++ {
 				tryChild := child.NamedChild(j)
@@ -270,11 +297,14 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 						if exceptChild.Type() == "block" {
 							next := exceptChild
 							if next == nil {
-								return nil
+								return nil, nil
 							}
-							found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+							found, err := squirrel.findNodeInScopePython(swapNode(block, next), ident)
+							if err != nil {
+								return nil, err
+							}
 							if found != nil {
-								return found
+								return found, nil
 							}
 						}
 					}
@@ -286,11 +316,15 @@ func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string)
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node, field string) (ret *Node, err error) {
-	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	ty, err := squirrel.getTypeDefPython(ctx, object)
 	if err != nil {
@@ -303,11 +337,15 @@ func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node
 }
 
 func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, field string) (ret *Node, err error) {
-	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	switch ty2 := ty.(type) {
 	case ModuleTypePython:
-		return squirrel.findNodeInScopePython(ty2.module, field), nil
+		return squirrel.findNodeInScopePython(ty2.module, field)
 	case ClassTypePython:
 		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
@@ -395,7 +433,11 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeP
 }
 
 func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypePython, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))()
+	cleanup, err := squirrel.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	onIdent := func() (TypePython, error) {
 		found, err := squirrel.getDefPython(ctx, node)
@@ -468,7 +510,11 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 }
 
 func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
+	cleanup, err := squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))
+	if err != nil {
+		return nil, err
+	}
+	defer cleanup()
 
 	findModuleOrPkg := func(moduleOrPkg *sitter.Node) *Node {
 		if moduleOrPkg == nil {
@@ -520,12 +566,12 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 		return result
 	}
 
-	findModuleIdent := func(module *sitter.Node, ident2 string) *Node {
+	findModuleIdent := func(module *sitter.Node, ident2 string) (*Node, error) {
 		foundModule := findModuleOrPkg(module)
 		if foundModule != nil {
 			return squirrel.findNodeInScopePython(*foundModule, ident2)
 		}
-		return nil
+		return nil, nil
 	}
 
 	query := `[
@@ -585,7 +631,10 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 
 			// Check if it's a wildcard import
 			if stmt.Child(i).Type() == "wildcard_import" {
-				found := findModuleIdent(moduleName, ident)
+				found, err := findModuleIdent(moduleName, ident)
+				if err != nil {
+					return nil, err
+				}
 				if found != nil {
 					return found, nil
 				}
@@ -609,7 +658,10 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 					if childIdent.Content(program.Contents) != ident {
 						continue
 					}
-					found := findModuleIdent(moduleName, ident)
+					found, err := findModuleIdent(moduleName, ident)
+					if err != nil {
+						return nil, err
+					}
 					if found != nil {
 						return found, nil
 					}
@@ -632,7 +684,10 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 					if nameIdent == nil || nameIdent.Type() != "identifier" {
 						continue
 					}
-					found := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
+					found, err := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
+					if err != nil {
+						return nil, err
+					}
 					if found != nil {
 						return found, nil
 					}

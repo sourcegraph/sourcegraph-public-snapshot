@@ -26,7 +26,7 @@ func TestResolver_Insights(t *testing.T) {
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	resolver := newWithClock(insightsDB, postgres, clock)
 
-	insightsConnection, err := resolver.Insights(ctx, nil)
+	insightsConnection, err := resolver.InsightViews(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

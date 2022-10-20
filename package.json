@@ -26,7 +26,7 @@
     "watch-web": "yarn workspace @sourcegraph/web run watch",
     "generate": "gulp generate",
     "watch-generate": "gulp watchGenerate",
-    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook \"/out/.*test.js\"",
+    "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook \"/out/.*test.js\" \"/out/.*test.d.ts\"",
     "_test-integration": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json mocha --parallel=${CI:-\"false\"} --retries=1 --jobs=2",
     "test-integration": "yarn _test-integration \"./client/web/src/integration/**/*.test.ts\"",
     "test-integration:debug": "BROWSER=chrome KEEP_BROWSER=true DEVTOOLS=true DISABLE_APP_ASSETS_MOCKING=true WINDOW_WIDTH=1920 WINDOW_HEIGHT=1080 yarn _test-integration --retries=0 --jobs=1",

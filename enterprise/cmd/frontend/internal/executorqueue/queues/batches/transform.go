@@ -164,6 +164,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		SparseCheckout: sparseCheckout,
 		CliSteps: []apiclient.CliStep{
 			{
+				Key:      "batch-exec",
 				Commands: commands,
 				Dir:      ".",
 				Env:      []string{},
