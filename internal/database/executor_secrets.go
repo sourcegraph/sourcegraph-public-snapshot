@@ -244,7 +244,7 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 
 	q := sqlf.Sprintf(
 		executorSecretUpdateQueryFmtstr,
-		[]byte(encryptedValue),
+		encryptedValue,
 		keyID,
 		secret.UpdatedAt,
 		secret.ID,
