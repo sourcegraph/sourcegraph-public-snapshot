@@ -72,7 +72,7 @@ export const IndexingSettings: FunctionComponent<React.PropsWithChildren<Indexin
                             constrained policy targeting an explicit set of repositories to enable this policy.{' '}
                             <Link
                                 className={styles.autoindexingLink}
-                                to="https://docs.sourcegraph.com/code_intelligence/how-to/enable_auto_indexing#configure-auto-indexing-policies"
+                                to="/help/code_intelligence/how-to/enable_auto_indexing#configure-auto-indexing-policies"
                             >
                                 See autoindexing docs.
                             </Link>
