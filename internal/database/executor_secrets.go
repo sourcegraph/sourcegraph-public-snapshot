@@ -579,6 +579,13 @@ func executorSecretsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 const executorSecretsAuthzQueryCondsFmtstr = `
 (
 	(
+		-- the secret is a global secret
+		executor_secrets.namespace_user_id IS NULL
+		AND
+		executor_secrets.namespace_org_id IS NULL
+	)
+	OR
+	(
 		-- user is the same as the actor
 		executor_secrets.namespace_user_id = %s
 	)

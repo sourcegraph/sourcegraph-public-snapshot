@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -374,6 +376,199 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 			if !errors.As(err, esnfe) {
 				t.Fatal("invalid error returned, expected not found")
 			}
+		})
+	})
+}
+
+func TestExecutorSecrets_GetListCount(t *testing.T) {
+	internalCtx := actor.WithInternalActor(context.Background())
+	logger := logtest.NoOp(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(internalCtx, NewUser{Username: "johndoe"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(internalCtx, user.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	otherUser, err := db.Users().Create(internalCtx, NewUser{Username: "alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(internalCtx, otherUser.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	org, err := db.Orgs().Create(internalCtx, "the-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.OrgMembers().Create(internalCtx, org.ID, user.ID); err != nil {
+		t.Fatal(err)
+	}
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	otherUserCtx := actor.WithActor(context.Background(), actor.FromUser(otherUser.ID))
+	store := db.ExecutorSecrets(&encryption.NoopKey{})
+
+	// We create a bunch of secrets to test overrides:
+	// GH_TOKEN User:NULL Org:NULL
+	// NPM_TOKEN User:NULL Org:NULL
+	// GH_TOKEN User:Set Org:NULL
+	// SG_TOKEN User:Set Org:NULL
+	// NPM_TOKEN User:NULL Org:Set
+	// DOCKER_TOKEN User:NULL Org:Set
+	// Expected results:
+	// Global: GH_TOKEN, NPM_TOKEN
+	// User: GH_TOKEN (user-owned), NPM_TOKEN, SG_TOKEN (user-owned)
+	// Org: GH_TOKEN, NPM_TOKEN (org-owned), DOCKER_TOKEN (org-owned)
+
+	secretVal := "sosecret"
+	createSecret := func(secret *ExecutorSecret) *ExecutorSecret {
+		secret.CreatorID = user.ID
+		if err := store.Create(internalCtx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+			t.Fatal(err)
+		}
+		return secret
+	}
+	globalGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN"})
+	globalNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN"})
+	userGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN", NamespaceUserID: user.ID})
+	userSGToken := createSecret(&ExecutorSecret{Key: "SG_TOKEN", NamespaceUserID: user.ID})
+	orgNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN", NamespaceOrgID: org.ID})
+	orgDockerToken := createSecret(&ExecutorSecret{Key: "DOCKER_TOKEN", NamespaceOrgID: org.ID})
+
+	t.Run("GetByID", func(t *testing.T) {
+		t.Run("global secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, globalGHToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(globalGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("user secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, userGHToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(userGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+
+			t.Run("accessing other users secret", func(t *testing.T) {
+				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, userGHToken.ID); err == nil {
+					t.Fatal("unexpected non nil error")
+				}
+			})
+		})
+		t.Run("org secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, orgNPMToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(orgNPMToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+
+			t.Run("accessing org secret as non-member", func(t *testing.T) {
+				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, orgNPMToken.ID); err == nil {
+					t.Fatal("unexpected non nil error")
+				}
+			})
+		})
+	})
+
+	t.Run("ListCount", func(t *testing.T) {
+		t.Run("global secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("user secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken, userSGToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+
+			t.Run("by Keys", func(t *testing.T) {
+				opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID, Keys: []string{userGHToken.Key, globalNPMToken.Key}}
+				secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, len(secrets); have != want {
+					t.Fatalf("invalid count returned: %d", have)
+				}
+				if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("accessing other users secrets", func(t *testing.T) {
+				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Only returns global tokens.
+				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+		})
+		t.Run("org secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{NamespaceOrgID: org.ID}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{orgDockerToken, globalGHToken, orgNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+
+			t.Run("accessing org secrets as non-member", func(t *testing.T) {
+				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Only returns global tokens.
+				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
+			})
 		})
 	})
 }
