@@ -60,6 +60,7 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
 
 		req, err := http.NewRequest("POST", requestURL, nil)
+		require.NoError(t, err)
 		req.Header.Add("X-GitLab-Token", "somesecret")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
