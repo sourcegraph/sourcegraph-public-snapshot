@@ -111,6 +111,29 @@ func Tgz(r io.Reader, dir string, opt Opts) error {
 	return Tar(gzr, dir, opt)
 }
 
+// ListTgzUnsorted lists the contents of an .tar.gz archive without unpacking
+// the contents anywhere. Equivalent tarballs may return different slices
+// since the output is not sorted.
+func ListTgzUnsorted(r io.Reader) ([]string, error) {
+	gzipReader, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	tarReader := tar.NewReader(gzipReader)
+	files := []string{}
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return files, err
+		}
+		files = append(files, header.Name)
+	}
+	return files, nil
+}
+
 // Tar unpacks the contents of the specified tarball under dir.
 //
 // File permissions in the tarball are not respected; all files are marked read-write.

@@ -96,6 +96,7 @@ type ExecRequest struct {
 
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
+	Stdin          []byte      `json:"stdin,omitempty"`
 	Opt            *RemoteOpts `json:"opt"`
 	NoTimeout      bool        `json:"noTimeout"`
 }

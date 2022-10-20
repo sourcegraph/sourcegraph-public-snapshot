@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -306,8 +305,7 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 
 func (c *client) fetchAndUpdate(logger log.Logger) error {
 	var (
-		// We may make a cross service call here, so we need to add an internal actor.
-		ctx       = actor.WithInternalActor(context.Background())
+		ctx       = context.Background()
 		newConfig conftypes.RawUnified
 		err       error
 	)

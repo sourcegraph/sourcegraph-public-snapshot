@@ -193,13 +193,25 @@ func (b backgroundJob) handleAbandonedUpload(ctx context.Context, cfg janitorCon
 	return nil
 }
 
+const expiredUploadsBatchSize = 1000
+const expiredUploadsMaxTraversal = 100
+
 func (b backgroundJob) handleExpiredUploadDeleter(ctx context.Context) error {
-	count, err := b.uploadSvc.SoftDeleteExpiredUploads(ctx)
+	count, err := b.uploadSvc.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
 	if count > 0 {
 		b.logger.Info("Deleted expired codeintel uploads", log.Int("count", count))
+		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(count))
+	}
+
+	count, err = b.uploadSvc.SoftDeleteExpiredUploadsViaTraversal(ctx, expiredUploadsMaxTraversal)
+	if err != nil {
+		return errors.Wrap(err, "SoftDeleteExpiredUploadsViaTraversal")
+	}
+	if count > 0 {
+		b.logger.Info("Deleted expired codeintel uploads via traversal", log.Int("count", count))
 		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 

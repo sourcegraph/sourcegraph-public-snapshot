@@ -11,9 +11,9 @@ import {
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
+import { MAX_NUMBER_OF_SERIES } from '../../../../constants'
 import { ComputeInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
-import { MAX_NUMBER_OF_SERIES } from '../methods/get-backend-insight-data/deserializators'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still

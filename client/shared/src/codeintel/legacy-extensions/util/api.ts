@@ -57,8 +57,13 @@ export interface RepoMeta {
 }
 
 export class API {
-    /** Small never-evict map from repo names to their meta. */
-    private cachedMetas = new Map<string, RepoMeta>()
+    /**
+     * Small never-evict map from repo names to a promise of their meta.
+     *
+     * We store a promise so that we can cache two requests to the same repo
+     * before the request resolves
+     */
+    private cachedMetaRequests = new Map<string, Promise<RepoMeta>>()
 
     /**
      * Retrieves the name and fork/archive status of a repository. This method
@@ -67,49 +72,55 @@ export class API {
      * @param name The repository's name.
      */
     public async resolveRepo(name: string): Promise<RepoMeta> {
-        const cachedMeta = this.cachedMetas.get(name)
-        if (cachedMeta !== undefined) {
-            return cachedMeta
+        const cachedMetaRequest = this.cachedMetaRequests.get(name)
+        if (cachedMetaRequest !== undefined) {
+            return cachedMetaRequest
         }
 
-        const queryWithFork = gql`
-            query LegacyResolveRepo($name: String!) {
-                repository(name: $name) {
-                    id
-                    name
-                    isFork
-                    isArchived
+        const metaRequest = (async (name: string): Promise<RepoMeta> => {
+            const queryWithFork = gql`
+                query LegacyResolveRepo($name: String!) {
+                    repository(name: $name) {
+                        id
+                        name
+                        isFork
+                        isArchived
+                    }
+                }
+            `
+
+            const queryWithoutFork = gql`
+                query LegacyResolveRepo2($name: String!) {
+                    repository(name: $name) {
+                        name
+                    }
+                }
+            `
+
+            interface Response {
+                repository: {
+                    id: string
+                    name: string
+                    isFork?: boolean
+                    isArchived?: boolean
                 }
             }
-        `
 
-        const queryWithoutFork = gql`
-            query LegacyResolveRepo2($name: String!) {
-                repository(name: $name) {
-                    name
-                }
+            const data = await queryGraphQL<Response>((await this.hasForkField()) ? queryWithFork : queryWithoutFork, {
+                name,
+            })
+
+            // Assume repo is not a fork/archived for older instances
+            return {
+                isFork: false,
+                isArchived: false,
+                ...data.repository,
+                id: graphqlIdToRepoId(data.repository.id),
             }
-        `
+        })(name)
+        this.cachedMetaRequests.set(name, metaRequest)
 
-        interface Response {
-            repository: {
-                id: string
-                name: string
-                isFork?: boolean
-                isArchived?: boolean
-            }
-        }
-
-        const data = await queryGraphQL<Response>((await this.hasForkField()) ? queryWithFork : queryWithoutFork, {
-            name,
-        })
-
-        // Assume repo is not a fork/archived for older instances
-        const meta = { isFork: false, isArchived: false, ...data.repository, id: graphqlIdToRepoId(data.repository.id) }
-
-        this.cachedMetas.set(name, meta)
-
-        return meta
+        return metaRequest
     }
 
     /**

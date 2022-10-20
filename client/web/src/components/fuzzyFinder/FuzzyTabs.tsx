@@ -198,10 +198,14 @@ export function useFuzzyState(props: FuzzyTabsProps, onClickItem: () => void): F
         isRepositoryRelatedPage,
         client: apolloClient,
     } = props
-    let { repoName = '', commitID = '', rawRevision = '' } = useMemo(
-        () => parseBrowserRepoURL(pathname + search + hash),
-        [pathname, search, hash]
-    )
+    let { repoName = '', commitID = '', rawRevision = '' } = useMemo(() => {
+        if (pathname !== '/') {
+            // TODO `parseBrowserRepoURL` should not be called on non-repoURL pages.
+            return parseBrowserRepoURL(pathname + search + hash)
+        }
+
+        return { repoName: '', commitID: '', rawRevision: '' }
+    }, [pathname, search, hash])
     let revision = rawRevision || commitID
     if (!isRepositoryRelatedPage) {
         repoName = ''

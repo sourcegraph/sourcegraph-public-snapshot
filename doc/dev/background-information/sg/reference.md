@@ -479,6 +479,9 @@ Flags:
 Interact with local Sourcegraph databases for development.
 
 ```sh
+# Delete test databases
+$ sg db delete-test-dbs
+
 # Reset the Sourcegraph 'frontend' database
 $ sg db reset-pg
 
@@ -494,6 +497,15 @@ $ sg db reset-redis
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -name=foo
 ```
+
+### sg db delete-test-dbs
+
+Drops all databases that have the prefix `sourcegraph-test-`.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg db reset-pg
 

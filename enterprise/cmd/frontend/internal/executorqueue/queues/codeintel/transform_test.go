@@ -23,10 +23,14 @@ func TestTransformRecord(t *testing.T) {
 				Root:     "web",
 			},
 		},
-		Root:        "web",
-		Indexer:     "lsif-node",
-		IndexerArgs: []string{"-p", "."},
-		Outfile:     "",
+		Root:    "web",
+		Indexer: "lsif-node",
+		IndexerArgs: []string{
+			"-p", ".",
+			// Verify args are properly shell quoted.
+			"-author", "Test User",
+		},
+		Outfile: "",
 	}
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
 	t.Cleanup(func() {
@@ -47,18 +51,21 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "indexer",
 				Image:    "lsif-node",
-				Commands: []string{"-p ."},
+				Commands: []string{"-p . -author 'Test User'"},
 				Dir:      "web",
 			},
 		},
 		CliSteps: []apiclient.CliStep{
 			{
+				Key: "upload",
 				Commands: []string{
 					"lsif", "upload",
 					"-no-progress",
@@ -127,11 +134,13 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "pre-index.1",
 				Image:    "lsif-node",
 				Commands: []string{"-p", "."},
 				Dir:      "web",
@@ -139,6 +148,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		},
 		CliSteps: []apiclient.CliStep{
 			{
+				Key: "upload",
 				Commands: []string{
 					"lsif", "upload",
 					"-no-progress",

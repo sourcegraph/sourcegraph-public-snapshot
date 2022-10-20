@@ -2,7 +2,7 @@ import { ApolloClient } from '@apollo/client'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
 import { InsightDashboard } from '../../../../types'
 
 import { getDashboards } from './get-dashboards'

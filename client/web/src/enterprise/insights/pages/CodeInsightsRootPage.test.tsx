@@ -13,11 +13,11 @@ import sinon from 'sinon'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
+import { ALL_INSIGHTS_DASHBOARD } from '../constants';
 import {
     CodeInsightsBackend,
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
-    ALL_INSIGHTS_DASHBOARD,
 } from '../core'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'

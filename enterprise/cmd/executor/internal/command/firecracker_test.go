@@ -16,7 +16,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	actual := formatFirecrackerCommand(
 		CommandSpec{
 			Command: []string{"ls", "-a"},
-			Dir:     "subdir",
+			Dir:     "sub dir",
 			Env: []string{
 				`TEST=true`,
 				`CONTAINS_WHITESPACE=yes it does`,
@@ -30,7 +30,7 @@ func TestFormatFirecrackerCommandRaw(t *testing.T) {
 	expected := command{
 		Command: []string{
 			"ignite", "exec", "deadbeef", "--",
-			`cd /work/subdir && TEST=true CONTAINS_WHITESPACE="yes it does" ls -a`,
+			`cd '/work/sub dir' && TEST=true CONTAINS_WHITESPACE='yes it does' ls -a`,
 		},
 	}
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
@@ -43,7 +43,7 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 		CommandSpec{
 			Image:      "alpine:latest",
 			ScriptPath: "myscript.sh",
-			Dir:        "subdir",
+			Dir:        "sub dir",
 			Env: []string{
 				`TEST=true`,
 				`CONTAINS_WHITESPACE=yes it does`,
@@ -67,15 +67,16 @@ func TestFormatFirecrackerCommandDockerScript(t *testing.T) {
 				"--cpus", "4",
 				"--memory", "20G",
 				"-v", "/work:/data",
-				"-w", "/data/subdir",
+				"-w", "'/data/sub dir'",
 				"-e", "TEST=true",
-				"-e", `'CONTAINS_WHITESPACE="yes it does"'`,
+				"-e", `'CONTAINS_WHITESPACE=yes it does'`,
 				"--entrypoint /bin/sh",
 				"alpine:latest",
 				"/data/.sourcegraph-executor/myscript.sh",
 			}, " "),
 		},
 	}
+
 	if diff := cmp.Diff(expected, actual, commandComparer); diff != "" {
 		t.Errorf("unexpected command (-want +got):\n%s", diff)
 	}

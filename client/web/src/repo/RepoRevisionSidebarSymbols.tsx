@@ -145,13 +145,13 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             const { node } = dataOrThrowErrors(result)
 
             if (!node) {
-                throw new Error(`Node ${repoID} not found`)
+                return { nodes: [] }
             }
             if (node.__typename !== 'Repository') {
-                throw new Error(`Node is a ${node.__typename}, not a Repository`)
+                return { nodes: [] }
             }
             if (!node.commit?.symbols?.nodes) {
-                throw new Error('Could not resolve commit symbols for repository')
+                return { nodes: [] }
             }
 
             return node.commit.symbols

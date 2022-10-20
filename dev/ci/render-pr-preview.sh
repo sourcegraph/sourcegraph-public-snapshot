@@ -185,7 +185,7 @@ if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]
 
     pr_description=$(printf '%s\n\n' "${pr_description}" \
       "## App preview:" \
-      "- [Web](${pr_preview_url})" \
+      "- [Web](${pr_preview_url}/search)" \
       "Check out the [client app preview documentation](https://docs.sourcegraph.com/dev/how-to/client_pr_previews) to learn more." |
       jq -Rs .)
 
