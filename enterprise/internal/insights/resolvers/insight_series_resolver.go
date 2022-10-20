@@ -315,14 +315,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	if err != nil {
 		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
 	}
-	var augmentedPoints []store.SeriesPoint
-	if len(recordingsData.RecordingTimes) > 0 {
-		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
-	}
-	//
-	if len(augmentedPoints) > 0 {
-		points = augmentedPoints
-	}
+	points = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
 	sort.Slice(points, func(i, j int) bool {
 		return points[i].Time.Before(points[j].Time)
 	})
