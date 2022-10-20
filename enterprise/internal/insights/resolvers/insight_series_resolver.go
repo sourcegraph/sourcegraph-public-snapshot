@@ -319,6 +319,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	if len(recordingsData.RecordingTimes) > 0 {
 		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
 	}
+	//
 	if len(augmentedPoints) > 0 {
 		points = augmentedPoints
 	}
@@ -473,7 +474,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes []time.Time) []store.SeriesPoint {
 	uniqueRecordingTimes := make(map[time.Time]struct{})
 	for _, rt := range recordingTimes {
-		uniqueRecordingTimes[rt] = struct{}{}
+		uniqueRecordingTimes[rt.Truncate(time.Second*1)] = struct{}{}
 	}
 	pointsMap := make(map[string]*store.SeriesPoint)
 	captureValues := make(map[string]struct{})
@@ -486,7 +487,7 @@ func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes [
 			capture = *point.Capture
 		}
 		captureValues[capture] = struct{}{}
-		pointTime := point.Time.Truncate(time.Hour * 24)
+		pointTime := point.Time
 		uniqueRecordingTimes[pointTime] = struct{}{}
 		pointsMap[pointTime.String()+capture] = &point
 	}
@@ -495,7 +496,7 @@ func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes [
 	for recordingTime := range uniqueRecordingTimes {
 		for captureValue := range captureValues {
 			captureValue := captureValue
-			if point, ok := pointsMap[recordingTime.Truncate(time.Hour*24).String()+captureValue]; ok {
+			if point, ok := pointsMap[recordingTime.String()+captureValue]; ok {
 				augmentedPoints = append(augmentedPoints, *point)
 			} else {
 				var capture *string
