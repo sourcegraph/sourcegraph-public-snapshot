@@ -193,7 +193,7 @@ func main() {
 	g.Wait()
 
 	done = 0
-	g = group.New().WithMaxConcurrency(20)
+	g = group.New().WithMaxConcurrency(30)
 	for _, repo := range repos {
 		repo := repo
 		if !repo.Created {

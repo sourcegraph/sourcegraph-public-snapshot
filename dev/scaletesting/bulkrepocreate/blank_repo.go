@@ -92,8 +92,6 @@ func (r *blankRepo) pushRemote(ctx context.Context, name string, retry int) erro
 		err := r.doPushRemote(ctx, name)
 		if err == nil {
 			break
-		} else {
-			continue
 		}
 	}
 	return err
