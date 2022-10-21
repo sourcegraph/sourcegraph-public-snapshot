@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type pidFile struct {
+type PidFile struct {
 	Args    []string `json:"args"`
 	Pid     int      `json:"pid"`
 	LogFile string   `json:"logfile"`
@@ -37,7 +37,7 @@ func PidExistsWithArgs(args []string) (int, bool, error) {
 		}
 		defer f.Close()
 
-		var content pidFile
+		var content PidFile
 		if err := json.NewDecoder(f).Decode(&content); err != nil {
 			return 0, false, errors.Wrapf(err, "could not check pidfile %q", match)
 		}
@@ -111,7 +111,7 @@ func writePid(logfile string) error {
 	pidFileName := fmt.Sprintf("sg.pid.%d.json", os.Getpid())
 	pidFilePath := filepath.Join(homeDir, ".sourcegraph", pidFileName)
 
-	content := pidFile{
+	content := PidFile{
 		Args:    os.Args[1:],
 		Pid:     os.Getpid(),
 		LogFile: logfile,
@@ -152,13 +152,12 @@ func createLogFile() (*logFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	path := filepath.Join(homeDir, ".sourcegraph", "logs", f.Name())
 	closer := func() {
 		f.Close()
-		_ = os.Remove(path)
+		_ = os.Remove(f.Name())
 	}
 
 	// TODO clean
 	interrupt.Register(func() { os.Remove(f.Name()) })
-	return &logFile{w: f, closer: closer, path: path}, nil
+	return &logFile{w: f, closer: closer, path: f.Name()}, nil
 }
