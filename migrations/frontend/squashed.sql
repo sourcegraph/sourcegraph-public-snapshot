@@ -4539,6 +4539,8 @@ CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_
 
 CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_code);
 
+CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status);
+
 CREATE INDEX zoekt_repos_repo_id ON zoekt_repos USING btree (repo_id);
 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();

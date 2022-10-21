@@ -3235,6 +3235,7 @@ Webhooks registered in Sourcegraph instance.
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "zoekt_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "zoekt_repos_index_status" btree (index_status)
     "zoekt_repos_repo_id" btree (repo_id)
 
 ```
