@@ -143,6 +143,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 sectionId={SectionID.REPOSITORIES}
                 header="Repositories"
                 showSearch={true}
+                searchLabel="Find repositories"
                 minItems={1}
                 noResultText={getRepoFilterNoResultText}
             >
@@ -161,6 +162,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                     sectionId={SectionID.REVISIONS}
                     header="Revisions"
                     showSearch={true}
+                    searchLabel="Find revisions"
                     clearSearchOnChange={repoName}
                 >
                     {getRevisions({ repoName, onFilterClick: onSearchSubmit })}
@@ -171,6 +173,7 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 sectionId={SectionID.SEARCH_REFERENCE}
                 header="Search reference"
                 showSearch={true}
+                searchLabel="Find filters"
                 // search reference should always preserve the filter
                 // (false is just an arbitrary but static value)
                 clearSearchOnChange={false}

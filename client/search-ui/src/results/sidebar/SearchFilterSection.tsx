@@ -16,6 +16,7 @@ export interface SearchFilterSectionProps {
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
     showSearch?: boolean // Search only works if children are FilterLink
+    searchLabel?: string // Accessible label for the search box
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
 
@@ -59,6 +60,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         children = [],
         className,
         showSearch = false,
+        searchLabel = '',
         forcedRender = true,
         onToggle,
         startCollapsed,
@@ -166,7 +168,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                             <Input
                                 type="search"
                                 placeholder="Find..."
-                                aria-label="Find filters"
+                                aria-label={searchLabel || 'Find filters'}
                                 value={filter}
                                 onChange={event => setFilter(event.currentTarget.value)}
                                 data-testid="sidebar-section-search-box"
