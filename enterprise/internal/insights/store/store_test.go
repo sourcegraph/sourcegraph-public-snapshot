@@ -459,14 +459,34 @@ func TestDeleteSnapshots(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
+	insightStore := NewInsightStore(insightsDB)
 	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
-
 	seriesID := "one"
+
+	series := types.InsightSeries{
+		SeriesID:           seriesID,
+		Query:              "query-1",
+		OldestHistoricalAt: current.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     current.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: current,
+		LastSnapshotAt:     current,
+		NextSnapshotAfter:  current,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	series, err := insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if series.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
 	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
@@ -483,7 +503,11 @@ func TestDeleteSnapshots(t *testing.T) {
 			PersistMode: RecordMode,
 		},
 	}
-	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+	recordingTimes := types.InsightSeriesRecordingTimes{
+		InsightSeriesID: 1,
+		RecordingTimes:  []types.Recording{{current, true}, {current.Add(time.Hour), false}},
+	}
+	if err := store.RecordSeriesPointsAndRecordingTimes(ctx, records, recordingTimes); err != nil {
 		t.Fatal(err)
 	}
 
@@ -497,7 +521,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected count of series points prior to deleting snapshots (want/got): %v", diff)
 	}
-	err = store.DeleteSnapshots(ctx, &types.InsightSeries{SeriesID: seriesID})
+	err = store.DeleteSnapshots(ctx, &series)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -512,6 +536,13 @@ func TestDeleteSnapshots(t *testing.T) {
 		t.Errorf("unexpected count of series points after deleting snapshots (want/got): %v", diff)
 	}
 	autogold.Equal(t, points, autogold.ExportedOnly())
+
+	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRecordingTimes := types.InsightSeriesRecordingTimes{1, []types.Recording{{RecordingTime: current.Add(time.Hour)}}}
+	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
 func TestValues(t *testing.T) {
@@ -681,15 +712,23 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		t.Errorf("expected second series to have id 2")
 	}
 
+	makeRecordings := func(times []time.Time, snapshot bool) []types.Recording {
+		recordings := make([]types.Recording, 0, len(times))
+		for _, t := range times {
+			recordings = append(recordings, types.Recording{Snapshot: snapshot, RecordingTime: t})
+		}
+		return recordings
+	}
+
 	series1Times := []time.Time{now, now.AddDate(0, 1, 0)}
 	series2Times := []time.Time{now, now.AddDate(0, 1, 1), now.AddDate(0, -1, 1)}
 	series1 := types.InsightSeriesRecordingTimes{
 		1,
-		series1Times,
+		makeRecordings(series1Times, false),
 	}
 	series2 := types.InsightSeriesRecordingTimes{
 		2,
-		series2Times,
+		makeRecordings(series2Times, false),
 	}
 
 	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
@@ -724,12 +763,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{1, []time.Time{now}},
+			insert: &types.InsightSeriesRecordingTimes{1, makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
 			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{2, []time.Time{now.Local()}},
+			insert: &types.InsightSeriesRecordingTimes{2, makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
 			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
 		},
@@ -761,7 +800,11 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			tc.want.Equal(t, stringifyTimes(got.RecordingTimes))
+			recordingTimes := []time.Time{}
+			for _, recording := range got.RecordingTimes {
+				recordingTimes = append(recordingTimes, recording.RecordingTime)
+			}
+			tc.want.Equal(t, stringifyTimes(recordingTimes))
 		})
 	}
 }
