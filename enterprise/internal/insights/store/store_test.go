@@ -309,10 +309,8 @@ func TestRecordSeriesPoints(t *testing.T) {
 		for _, point := range points {
 			s = append(s, point.String())
 		}
-		sort.Strings(s)
 		return s
 	}
-	// Points are not sorted in the sql call but should be by the caller.
 	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
 }
 

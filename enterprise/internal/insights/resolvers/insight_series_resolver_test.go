@@ -106,7 +106,6 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 		sort.Strings(s)
 		return s
 	}
-
 	testTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	generateTimes := func(n int) []time.Time {
@@ -116,9 +115,15 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 		}
 		return times
 	}
-
 	capture := func(s string) *string {
 		return &s
+	}
+	makeRecordingTimes := func(times []time.Time) []types.RecordingTime {
+		recordingTimes := make([]types.RecordingTime, len(times))
+		for i, t := range times {
+			recordingTimes[i] = types.RecordingTime{Timestamp: t}
+		}
+		return recordingTimes
 	}
 
 	testCases := []struct {
@@ -134,9 +139,7 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 		{
 			[]store.SeriesPoint{{"seriesID", testTime, 12, nil}},
 			[]time.Time{},
-			autogold.Want("empty recording times returns existing point", []string{
-				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 12}`,
-			}),
+			autogold.Want("empty recording times returns empty", []string{}),
 		},
 		{
 			[]store.SeriesPoint{
@@ -180,7 +183,7 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := augmentPointsForRecordingTimes(tc.points, tc.recordingTimes)
+			got := augmentPointsForRecordingTimes(tc.points, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
 	}
