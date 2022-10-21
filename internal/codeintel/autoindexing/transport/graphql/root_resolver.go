@@ -275,7 +275,6 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFReposito
 
 	// Create a new indexConnectionResolver here as we only want to index records in
 	// the same graphQL request, not across different request.
-	// indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
 	indexConnectionResolver := sharedresolvers.NewIndexesResolver(r.autoindexSvc, opts)
 
 	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexConnectionResolver, prefetcher, traceErrs), nil
