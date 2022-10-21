@@ -52,10 +52,17 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                         to="https://signup.sourcegraph.com"
                         className={styles.trialButton}
                         onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        target="_blank"
+                        rel="noopener"
                     >
                         Get free trial now
                     </ButtonLink>
-                    <Link to="https://docs.sourcegraph.com" onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}>
+                    <Link
+                        to="https://docs.sourcegraph.com"
+                        onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
+                        target="_blank"
+                        rel="noopener"
+                    >
                         <Text size="small">or try our self-hosted solution.</Text>
                     </Link>
                 </div>
