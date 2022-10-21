@@ -226,7 +226,8 @@ ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
 CREATE TABLE insight_series_recording_times (
     insight_series_id integer,
-    recording_time timestamp with time zone
+    recording_time timestamp with time zone,
+    snapshot boolean
 );
 
 CREATE TABLE insight_view (
