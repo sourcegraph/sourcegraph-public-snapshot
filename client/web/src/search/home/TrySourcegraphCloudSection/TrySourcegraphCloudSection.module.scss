@@ -7,6 +7,14 @@
     box-shadow: 0 4px 16px rgba(46, 34, 119, 0.1);
     border-radius: 5px;
     display: flex;
+    &:hover {
+        text-decoration: none;
+
+        .trialButton {
+            background: #A305E1;
+            color: #fff;
+        }
+    }
 }
 
 .illustration {
@@ -48,28 +56,18 @@
 }
 
 .signUp {
+    color: #fff;
     font-size: 19px;
     margin-top: 19px;
     margin-bottom: 0;
 }
 
-.links {
-    max-width: 250px;
+.buttonContainer {
+    max-width: 260px;
     width: 100%;
     margin: 20px auto 0;
     @media (--md-breakpoint-up) {
         margin: 0 0 0 auto;
-    }
-
-    a:last-child {
-        display: block;
-        text-align: center;
-        margin-bottom: 0;
-        color: #fff;
-
-        p {
-            margin: 0;
-        }
     }
 }
 
@@ -78,8 +76,17 @@
     color: #A305E1;
     width: 100%;
     margin-bottom: 8px;
+    margin-left: auto;
     &:hover {
         background: #A305E1 !important;
         color: #fff !important;
+    }
+}
+
+.selfHostedCopy {
+    margin-top: 8px;
+
+    a {
+        margin-left: 3px;
     }
 }

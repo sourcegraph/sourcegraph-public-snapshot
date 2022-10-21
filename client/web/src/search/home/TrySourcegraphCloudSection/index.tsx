@@ -1,6 +1,6 @@
 import { FunctionComponent, useEffect, useState } from 'react'
 
-import { ButtonLink, H2, H3, Text, Link } from '@sourcegraph/wildcard'
+import { Button, H2, H3, Text, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -36,37 +36,45 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
     })
 
     return (
-        <div className={styles.wrapper}>
-            <Illustration className={styles.illustration} />
+        <div>
+            <Link
+                to="https://signup.sourcegraph.com/"
+                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                className={styles.wrapper}
+            >
+                <Illustration className={styles.illustration} />
 
-            <div className={styles.content}>
-                <div>
-                    <H2 className={styles.tryCloud}>Try Sourcegraph Cloud.</H2>
-                    <H3 className={styles.byline}>{byline}</H3>
-                    <Text className={styles.signUp}>Sign up for a 30-day trial for your team.</Text>
-                </div>
+                <div className={styles.content}>
+                    <div>
+                        <H2 className={styles.tryCloud}>Try Sourcegraph Cloud.</H2>
+                        <H3 className={styles.byline}>{byline}</H3>
+                        <Text className={styles.signUp}>Sign up for a 30-day trial for your team.</Text>
+                    </div>
 
-                <div className={styles.links}>
-                    <ButtonLink
-                        variant="secondary"
-                        to="https://signup.sourcegraph.com/"
-                        className={styles.trialButton}
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Get free trial now
-                    </ButtonLink>
-                    <a
-                        href="https://docs.sourcegraph.com"
-                        onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Text size="small">or try our self-hosted solution.</Text>
-                    </a>
+                    <div className={styles.buttonContainer}>
+                        <Button
+                            variant="secondary"
+                            className={styles.trialButton}
+                        >
+                            Get free trial now
+                        </Button>
+                    </div>
                 </div>
-            </div>
+            </Link>
+            
+            <Text size="small" className={styles.selfHostedCopy}>
+                Want to deploy yourself?
+                
+                {/* eslint-disable-next-line react/forbid-elements */}
+                <a
+                    href="https://docs.sourcegraph.com"
+                    onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Try our self-hosted solution.
+                </a>
+            </Text>
         </div>
     )
 }
