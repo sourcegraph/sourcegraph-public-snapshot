@@ -544,29 +544,38 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	return c.Changeset.SetMetadata(updated)
 }
 
+// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+// the given namespace, ensuring that the fork exists and is a fork of the
+// target repo.
 func (s *GitLabSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
 	return s.getFork(ctx, targetRepo, &namespace)
 }
 
+// GetUserFork returns a repo pointing to a fork of the given repo in the
+// currently authenticated user's namespace.
 func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	return s.getFork(ctx, targetRepo, nil)
 }
 
 func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, namespace *string) (*types.Repo, error) {
-	project, ok := targetRepo.Metadata.(*gitlab.Project)
+	targetMeta, ok := targetRepo.Metadata.(*gitlab.Project)
 	if !ok {
 		return nil, errors.New("target repo is not a GitLab project")
 	}
 
-	fork, err := s.client.ForkProject(ctx, project, namespace)
+	fork, err := s.client.ForkProject(ctx, targetMeta, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking project")
 	}
 
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+	// Now we make a copy of the target repo, but with its sources and metadata updated ƒto
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.PathWithNamespace, fork.PathWithNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
 
-	return &remoteRepo, nil
+	return forkRepo, nil
 }
 
 func (*GitLabSource) IsPushResponseArchived(s string) bool {
