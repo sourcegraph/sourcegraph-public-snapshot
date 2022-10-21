@@ -26,7 +26,6 @@ import {
     Link,
     Tabs,
     Tab,
-    LoadingSpinner,
     Select,
     H3,
 } from '@sourcegraph/wildcard'
@@ -361,7 +360,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
-                <div className={styles.divider}></div>
+                <div className={styles.divider} />
                 <Input
                     id="fuzzy-modal-input"
                     autoComplete="off"
@@ -396,9 +395,9 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         </span>
                     )}
                 </div>
-                <div className={classNames(styles.divider, 'mb-0')}></div>
+                <div className={classNames(styles.divider, 'mb-0')} />
                 {queryResult.jsxElement}
-                <div className={styles.divider}></div>
+                <div className={styles.divider} />
                 <div className={styles.footer}>
                     <SearchQueryLink {...props} />
                     <span className={styles.rightAligned}>
