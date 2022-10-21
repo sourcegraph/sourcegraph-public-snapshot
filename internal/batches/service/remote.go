@@ -275,9 +275,9 @@ query BatchSpecWorkspaceResolution($batchSpec: ID!) {
             workspaceResolution {
                 failureMessage
                 state
-				workspaces {
-					totalCount
-				}
+                workspaces {
+                    totalCount
+                }
             }
         }
     }
