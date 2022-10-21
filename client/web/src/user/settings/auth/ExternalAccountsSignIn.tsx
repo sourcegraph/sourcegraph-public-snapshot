@@ -141,7 +141,7 @@ const getNormalizedAccount = (
                         id: account.id,
                         userName: nickname,
                         userLogin: nickname,
-                        userUrl: null,
+                        userUrl: null
                     },
                 }
             }
