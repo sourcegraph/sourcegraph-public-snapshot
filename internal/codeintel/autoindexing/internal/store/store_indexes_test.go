@@ -736,7 +736,48 @@ func TestIsQueued(t *testing.T) {
 				t.Fatalf("unexpected error checking if commit is queued: %s", err)
 			}
 			if queued != testCase.expected {
-				t.Errorf("unexpected state. repo=%v commit %v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.expected, queued)
+				t.Errorf("unexpected state. repo=%v commit=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.expected, queued)
+			}
+		})
+	}
+}
+
+func TestIsQueuedRootIndexer(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	now := time.Now()
+	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
+	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, types.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, types.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
+
+	testCases := []struct {
+		repositoryID int
+		commit       string
+		root         string
+		indexer      string
+		expected     bool
+	}{
+		{1, makeCommit(1), "/foo", "i1", true},
+		{1, makeCommit(1), "/bar", "i1", false}, // no index for root
+		{2, makeCommit(2), "/foo", "i1", false}, // reindex (live)
+		{3, makeCommit(3), "/foo", "i1", true},  // reindex (done)
+	}
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("repositoryId=%d commit=%s", testCase.repositoryID, testCase.commit)
+
+		t.Run(name, func(t *testing.T) {
+			queued, err := store.IsQueuedRootIndexer(context.Background(), testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer)
+			if err != nil {
+				t.Fatalf("unexpected error checking if commit/root/indexer is queued: %s", err)
+			}
+			if queued != testCase.expected {
+				t.Errorf("unexpected state. repo=%v commit=%v root=%v indexer=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer, testCase.expected, queued)
 			}
 		})
 	}
