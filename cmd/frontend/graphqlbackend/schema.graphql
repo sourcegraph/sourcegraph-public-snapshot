@@ -2643,7 +2643,7 @@ type ExternalServiceSyncJob implements Node {
 }
 
 """
-A specific kind of external account.
+The different kinds of external account that can be connected to a Sourcegraph user.
 """
 enum ExternalAccountKind {
     GITHUB

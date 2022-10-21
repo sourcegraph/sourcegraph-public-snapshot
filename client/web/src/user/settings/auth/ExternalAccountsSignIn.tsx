@@ -54,8 +54,8 @@ export interface NormalizedMinAccount {
     external?: {
         id: string
         userName: string
-        userLogin: string | null
-        userUrl: string | null
+        userLogin?: string
+        userUrl?: string
     }
 }
 
@@ -120,14 +120,13 @@ const getNormalizedAccount = (
                 {
                     const samlExternalData = accountExternalData as SamlExternalData
                     const data = samlExternalData.Assertions[0].AttributeStatement.Attributes
-                    let nickname = ''
+                    let userName = ''
 
-                    for (let index = 0, length = data.length; index < length; index += 1) {
-                        const item = data[index]
-                        if (data[index].Values && item.Name) {
-                            const key = item.Name.slice(Math.max(0, item.Name.lastIndexOf('/') + 1))
+                    for (const item of data) {
+                        if (item.Values && item.Name) {
+                            const key = item.Name.split('/').pop()
                             if (key === 'nickname') {
-                                nickname = item.Values[0].Value
+                                userName = item.Values[0].Value
                             }
                         }
                     }
@@ -136,9 +135,8 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: nickname,
-                            userLogin: null,
-                            userUrl: null,
+                            userName,
+                            userLogin: userName,
                         },
                     }
                 }

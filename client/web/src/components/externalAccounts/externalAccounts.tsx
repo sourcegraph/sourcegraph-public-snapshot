@@ -6,7 +6,7 @@ import GitLabIcon from 'mdi-react/GitlabIcon';
 
 import { ExternalAccountKind } from '@sourcegraph/shared/src/graphql-operations';
 
-export interface AddExternalAccountOptions {
+export interface ExternalAccount {
     kind: ExternalAccountKind
 
     /**
@@ -20,25 +20,25 @@ export interface AddExternalAccountOptions {
     icon: React.ComponentType<{ className?: string }>
 }
 
-const GITHUB_DOTCOM: AddExternalAccountOptions = {
+const GITHUB_DOTCOM: ExternalAccount = {
     kind: ExternalAccountKind.GITHUB,
     title: 'GitHub',
     icon: GithubIcon,
 }
 
-const GITLAB_DOTCOM: AddExternalAccountOptions = {
+const GITLAB_DOTCOM: ExternalAccount = {
     kind: ExternalAccountKind.GITLAB,
     title: 'GitLab',
     icon: GitLabIcon,
 }
 
-const SAML: AddExternalAccountOptions = {
+const SAML: ExternalAccount = {
     kind: ExternalAccountKind.SAML,
     title: 'SAML',
     icon: AccountCircleIcon,
 }
 
-export const defaultExternalAccounts: Record<ExternalAccountKind, AddExternalAccountOptions> = {
+export const defaultExternalAccounts: Record<ExternalAccountKind, ExternalAccount> = {
     [ExternalAccountKind.GITHUB]: GITHUB_DOTCOM,
     [ExternalAccountKind.GITLAB]: GITLAB_DOTCOM,
     [ExternalAccountKind.SAML]: SAML,
