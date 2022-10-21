@@ -80,7 +80,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
-                {props.isSourcegraphDotCom && props.authenticatedUser && (
+                {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
                     <TipsAndTricks
                         title="Tips and Tricks"
                         examples={exampleTripsAndTricks}
