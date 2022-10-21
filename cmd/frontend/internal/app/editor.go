@@ -200,8 +200,8 @@ func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
 // parseEditorRequest parses an editor request from the search query values.
 func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 	v := &editorRequest{
-		db:                db,
-		logger:            log.Scoped("editor", "requests from editors."),
+		db:     db,
+		logger: log.Scoped("editor", "requests from editors."),
 	}
 
 	if search := q.Get("search"); search != "" {
