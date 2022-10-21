@@ -18,7 +18,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trig_zoekt_repos_insert on repo;
+DROP TRIGGER IF EXISTS trig_create_zoekt_repo_on_repo_insert on repo;
 
 CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert
 AFTER INSERT
