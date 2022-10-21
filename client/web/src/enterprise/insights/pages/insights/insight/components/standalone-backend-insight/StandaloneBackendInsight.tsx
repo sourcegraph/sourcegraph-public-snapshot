@@ -28,7 +28,6 @@ import {
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
 import { BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
-import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
@@ -75,20 +74,15 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
                 },
-            },
-            onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
-                if (!parsedData.isFetchingHistoricalData) {
-                    stopPolling()
-                }
-            },
-            onError: () => {
-                stopPolling()
-            },
+            }
         }
     )
 
     const insightData = parseBackendInsightResponse({ ...insight, filters }, data)
+
+    if (insightData && !insightData.isInProgress || error) {
+        stopPolling()
+    }
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
