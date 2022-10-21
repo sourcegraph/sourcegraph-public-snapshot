@@ -59,7 +59,7 @@ developers to explore code by
 Code navigation is made up of multiple features that build on top of each other:
 
 - [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search.
-- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation. We currently have precise support the languages below, check out our [indexers page](references/indexers) for a detailed breakdown of each indexer's status.
+- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide precise code navigation features and accurate cross-repository navigation. We currently have precise support the languages below. See the [indexers page](references/indexers) for a detailed breakdown of each indexer's status.
 <table>
    <thead>
       <tr>
