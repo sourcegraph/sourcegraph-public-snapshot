@@ -63,9 +63,6 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                             (
                                 <>
                                     {account.external.userName}
-                                    (
-                                        @{account.external.userLogin}
-                                    )
                                 </>
                             ) : (
                                 'Not connected'
