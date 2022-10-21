@@ -10,7 +10,7 @@ Related pages: [Testing Go code](testing_go_code.md) | [Error handling in Go](go
 
 ## Pointers
 
-Prefer use of value types over pointer types unless there is a complelling reason to use a pointer. For example:
+Prefer use of value types over pointer types unless there is a compelling reason to use a pointer. For example:
 
 - The semantics of the value require some form of **runtime object identity** where two similar or equivalent value types should not compare equal if they do not point to the same object address.
 - The semantics of the value require mutation of the object in-place. If possible, try to limit the section of code where in-place mutation is performed (i.e., pass a value type as an explicit pointer to a function that mutates it).
