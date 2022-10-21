@@ -13,9 +13,9 @@ Our deployment and release process is also documented in the [deployment docs](h
 All Sourcegraph machine images are free to download, and we strongly encourage you to spin up a Sourcegraph AMI instance to experiment with. They are currently available in the following formats:
 
 <div class="getting-started">
-  <a class="btn btn-primary" href="aws-ami"><span>AWS AMIs</span></a>
-  <a class="btn btn-primary" href="azure"><span>Azure Images</span></a>
-  <a class="btn btn-primary" href="gce"><span>Google Compute Images</span></a>
+  <a class="btn btn-primary text-center" href="aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-primary text-center" href="azure"><span>Azure Images</span></a>
+  <a class="btn btn-primary text-center" href="gce"><span>Google Compute Images</span></a>
 </div>
 
 ## Sourcegraph Machine Image Instance Overview
@@ -86,7 +86,7 @@ Sourcegraph does not have access to your cluster and data.
 
 #### Network and Security
 
-![ami-diagram](https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png)
+<img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png" alt="ami-diagram"/>
 
 - K3s exposes the kubelet API to the Kubernetes control plane node through a websocket tunnel in order to eliminate the need to expose extra ports on the worker nodes.
 - No ingress requirements which allow cluster owners to restrict inbound traffic to only traffic within their network

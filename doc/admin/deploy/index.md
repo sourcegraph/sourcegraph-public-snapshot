@@ -2,12 +2,6 @@
 title: Deployment Overview
 ---
 
-<style>
-  .btn {
-    text-align: center;
-  }
-</style>
-
 # Deployment Overview
 
 Sourcegraph supports different deployment methods for different purposes. Each deployment type requires different levels of investment and technical understanding. What works best for you and your team depends on the needs and desired outcomes for your business.
@@ -29,14 +23,16 @@ Each of the deployment types listed below provides a different level of capabili
 
 Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
 
-### [Machine Images](machine-images/index.md)
+### [Machine Images](machine-images/index.md) 
 
 <span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
 
+Currently available in the following hosts:
+
 <div class="getting-started">
-  <a class="btn" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
-  <a class="btn" href="machine-images/azure"><span>Azure Images</span></a>
-  <a class="btn" href="machine-images/gce"><span>Google Compute Images</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/azure"><span>Azure Images</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
 </div>
 
 ### [Docker Compose](docker-compose/index.md)
@@ -48,10 +44,10 @@ Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute 
 Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
 
 <div class="getting-started">
-  <a class="btn" href="./docker-compose/aws"><span>AWS</span></a>
-  <a class="btn" href="./docker-compose/azure"><span>Azure</span></a>
-  <a class="btn" href="./docker-compose/digitalocean"><span>DigitalOcean</span></a>
-  <a class="btn" href="./docker-compose/google_cloud"><span>Google Cloud</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/aws"><span>AWS</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/azure"><span>Azure</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/digitalocean"><span>DigitalOcean</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/google_cloud"><span>Google Cloud</span></a>
 </div>
 
 ### [Kubernetes](kubernetes/index.md) or [Kubernetes with Helm](kubernetes/helm.md)

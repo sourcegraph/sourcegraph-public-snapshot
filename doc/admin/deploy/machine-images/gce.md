@@ -83,18 +83,18 @@ $ sudo su sourcegraph
 
 ## Instance size chart
 
-Select a deployment image according to the number of users and repositories you have using this table. 
+Select a deployment image and machine type according to the number of users and repositories you have using this table.
 
-If you fall between two sizes, choose the larger of the two. For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
+If you fall between two sizes, choose the larger of the two. For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
 
 |                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
 |------------------|------------|-------------|-------------|-------------|-------------|
-| **Users**        | 500        | 1,000       | 5,000       | 10,000      | 20,000      |
-| **Repositories** | 5,000      | 10,000      | 50,000      | 100,000     | 250,000     |
+| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
+| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
 | **Series**       | N2         | N2          | N2          | N2          | N2          |
 | **Recommended**  | standard-8 | standard-16 | standard-32 | standard-48 | standard-96 |
 | **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-64 |
-| **Latest Download Links**   | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [click here](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
+| **Lastest Version Links**   | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
 
 File Size: ~<2GB
 

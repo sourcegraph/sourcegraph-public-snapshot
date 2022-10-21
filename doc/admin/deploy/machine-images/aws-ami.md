@@ -14,8 +14,6 @@ Following these docs will provision the following resources:
 - A root EBS volume with 50GB of storage
 - An additional EBS volume with 500GB of storage for storing code and search indices
 
-> WARNING: Connection to the internet is required to pull Docker images at first launch.
-
 ---
 
 ## Deploy Sourcegraph
@@ -46,14 +44,14 @@ To configure SSL, and lock down the instance from the public internet, see the [
 
 ### Instance size chart
 
-Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
+Select an AMI according and instance type to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
 
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
 
-|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
-| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
-| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
-| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
+|                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
+|------------------|------------|-------------|-------------|-------------|-------------|
+| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
+| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
 | **Recommended Type**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
 | **Minimum Type**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
 | **AMIs List** | [size-XS AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XS) | [size-S AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-S) | [size-M AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-M) | [size-L AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-L) | [size-XL AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XL) |
