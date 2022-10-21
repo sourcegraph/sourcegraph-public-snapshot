@@ -49,22 +49,22 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                 <div className={styles.links}>
                     <ButtonLink
                         variant="secondary"
-                        to="https://signup.sourcegraph.com"
+                        to="https://signup.sourcegraph.com/"
                         className={styles.trialButton}
                         onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                     >
                         Get free trial now
                     </ButtonLink>
-                    <Link
-                        to="https://docs.sourcegraph.com"
+                    <a
+                        href="https://docs.sourcegraph.com"
                         onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
                         target="_blank"
-                        rel="noopener"
+                        rel="noopener noreferrer"
                     >
                         <Text size="small">or try our self-hosted solution.</Text>
-                    </Link>
+                    </a>
                 </div>
             </div>
         </div>
