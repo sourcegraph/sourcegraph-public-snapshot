@@ -15,7 +15,7 @@ func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To stri
 		return "", err
 	}
 
-	if err := txemail.Send(ctx, txemail.Message{
+	if err := txemail.Send(ctx, "test_email", txemail.Message{
 		To:       []string{args.To},
 		Template: emailTemplateTest,
 		Data:     struct{}{},
