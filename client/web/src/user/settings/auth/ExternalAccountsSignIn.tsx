@@ -29,7 +29,6 @@ interface GitLabExternalData {
 interface SamlExternalData {
     name: string
     username: string
-    web_url: string
     Assertions: assertion[]
 }
 
@@ -58,7 +57,7 @@ export interface NormalizedMinAccount {
         id: string
         userName: string
         userLogin: string
-        userUrl: string
+        userUrl: string | null
     }
 }
 
@@ -122,21 +121,14 @@ const getNormalizedAccount = (
                 break
             case 'SAML':
             {
-
-                console.log("ext data", accountExternalData)
                 const samlExternalData = accountExternalData as SamlExternalData
                 const data = samlExternalData.Assertions[0].AttributeStatement.Attributes
-                let email = ''
                 let nickname = ''
 
                 for (let index = 0, length = data.length; index < length; index+= 1) {
                     const item = data[index]
                     if(data[index].Values && item.Name) {
                         const key = item.Name.slice(Math.max(0, item.Name.lastIndexOf('/') + 1))
-                        if (key === 'emailaddress') {
-                            email = item.Values[0].Value
-                        }
-
                         if (key === 'nickname') {
                             nickname = item.Values[0].Value
                         }
@@ -148,8 +140,8 @@ const getNormalizedAccount = (
                     external: {
                         id: account.id,
                         userName: nickname,
-                        userLogin: email,
-                        userUrl: samlExternalData.web_url,
+                        userLogin: nickname,
+                        userUrl: null,
                     },
                 }
             }
