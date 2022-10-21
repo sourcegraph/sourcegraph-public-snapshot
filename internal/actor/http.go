@@ -126,6 +126,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
 			}
 			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
+			logger.Warn("request received without actor", log.String("path", req.URL.Path), log.String("remote", req.RemoteAddr))
 
 		// Request associated with authenticated user - add user actor to context
 		default:
