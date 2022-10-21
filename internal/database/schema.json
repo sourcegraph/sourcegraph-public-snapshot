@@ -20363,7 +20363,15 @@
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "zoekt_repos_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     }
   ],

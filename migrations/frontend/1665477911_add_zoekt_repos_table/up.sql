@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS zoekt_repos (
-    repo_id integer NOT NULL PRIMARY KEY,
+    repo_id integer NOT NULL PRIMARY KEY REFERENCES repo(id) ON DELETE CASCADE,
     branches jsonb DEFAULT '[]'::jsonb NOT NULL,
 
     index_status text DEFAULT 'not_indexed'::text NOT NULL,
