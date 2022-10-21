@@ -29,7 +29,7 @@ type Registerer interface {
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler.
 // Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
-type WebhookHandler func(ctx context.Context, db database.DB, urn string, event any) error
+type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN string, event any) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
@@ -85,7 +85,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.HandleWebhook(w, r, extsvc.NormalizeBaseURL(url).String(), body)
 }
 
-func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, urn string, requestBody []byte) {
+func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN string, requestBody []byte) {
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -100,7 +100,7 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, ur
 	}
 
 	// match event handlers
-	err = h.Dispatch(ctx, eventType, urn, e)
+	err = h.Dispatch(ctx, eventType, codeHostURN, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -110,7 +110,7 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, ur
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, urn string, e any) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN string, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -118,7 +118,7 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, urn stri
 		// capture the handler variable within this loop
 		handler := handler
 		g.Go(func() error {
-			return handler(ctx, h.DB, urn, e)
+			return handler(ctx, h.DB, codeHostURN, e)
 		})
 	}
 	return g.Wait()
