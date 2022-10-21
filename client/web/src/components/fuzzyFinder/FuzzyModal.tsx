@@ -26,7 +26,6 @@ import {
     Link,
     Tabs,
     Tab,
-    LoadingSpinner,
     Select,
     H3,
 } from '@sourcegraph/wildcard'
@@ -157,7 +156,7 @@ function renderFuzzyResults(
                     key={file.url || file.text}
                     role="option"
                     aria-selected={fileIndex === focusIndex}
-                    className={classNames('p-1', fileIndex === focusIndex && styles.focused)}
+                    className={classNames(fileIndex === focusIndex && styles.focused)}
                 >
                     <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
                 </li>
@@ -345,19 +344,23 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                             index={tabs.activeIndex(activeTab)}
                             onFocus={() => focusFuzzyInput()}
                             onChange={index => setActiveTab(tabs.focusTab(index))}
+                            className={styles.tabList}
                         >
                             {tabs.entries().map(([key, tab]) => (
                                 <Tab key={key} className={styles.tab}>
                                     {tab.title}
-                                    {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
+                                    <span className={styles.shortcut}>
+                                        {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
+                                    </span>
                                 </Tab>
                             ))}
                         </Tabs>
                     )}
-                    <Button variant="icon" onClick={() => onClose()} aria-label="Close">
-                        <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiClose} />
+                    <Button variant="icon" onClick={() => onClose()} aria-label="Close" className={styles.closeButton}>
+                        <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
+                <div className={styles.divider} />
                 <Input
                     id="fuzzy-modal-input"
                     autoComplete="off"
@@ -392,8 +395,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         </span>
                     )}
                 </div>
+                <div className={classNames(styles.divider, 'mb-0')} />
                 {queryResult.jsxElement}
-                <div className={classNames(styles.summary, styles.bottomSummary)}>
+                <div className={styles.divider} />
+                <div className={styles.footer}>
                     <SearchQueryLink {...props} />
                     <span className={styles.rightAligned}>
                         <ArrowKeyExplanation />
@@ -409,10 +414,10 @@ function plural(what: string, count: number, isComplete: boolean): string {
 }
 
 const ArrowKeyExplanation: React.FunctionComponent = () => (
-    <i className="text-muted">
+    <span className={styles.keyboardExplanation}>
         Press <kbd>↑</kbd>
         <kbd>↓</kbd> to navigate through results
-    </i>
+    </span>
 )
 
 interface ScopeSelectProps {
@@ -461,10 +466,10 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
         }}
     >
         <option value="everywhere">
-            <ToggleShortcut activeTab={activeTab} /> Search everywhere
+            <ToggleShortcut activeTab={activeTab} /> Searching everywhere
         </option>
         <option value="repository">
-            <ToggleShortcut activeTab={activeTab} /> Search in this repository
+            <ToggleShortcut activeTab={activeTab} /> Searching in this repository
         </option>
     </Select>
 )
@@ -537,14 +542,12 @@ const FuzzyResultsSummary: React.FunctionComponent<React.PropsWithChildren<Fuzzy
         }
     }
     return (
-        <>
-            <span data-testid="fuzzy-modal-summary" className={styles.resultCount}>
-                {plural('result', queryResult.resultCount, queryResult.isComplete)} out of{' '}
-                {plural('total', queryResult.totalFileCount, true)}
-                <ProgressBar value={indexedFiles} max={totalFiles} />
-                {downloadingTabs.length > 0 && <LoadingSpinner />}
-            </span>
-        </>
+        <span data-testid="fuzzy-modal-summary" className={styles.resultCount}>
+            {plural('result', queryResult.resultCount, queryResult.isComplete)} out of{' '}
+            {plural('total', queryResult.totalFileCount, true)}
+            <ProgressBar value={indexedFiles} max={totalFiles} />
+            {/* downloadingTabs.length > 0 && <LoadingSpinner /> */}
+        </span>
     )
 }
 
