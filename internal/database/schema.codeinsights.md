@@ -217,6 +217,7 @@ Referenced by:
 -------------------+--------------------------+-----------+----------+---------
  insight_series_id | integer                  |           |          | 
  recording_time    | timestamp with time zone |           |          | 
+ snapshot          | boolean                  |           |          | 
 Indexes:
     "insight_series_recording_time_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
 Foreign-key constraints:

@@ -202,7 +202,12 @@ type SeriesSortOptions struct {
 
 type InsightSeriesRecordingTimes struct {
 	InsightSeriesID int // references insight_series(id)
-	RecordingTimes  []time.Time
+	RecordingTimes  []RecordingTime
+}
+
+type RecordingTime struct {
+	Timestamp time.Time
+	Snapshot  bool
 }
 
 type SearchAggregationMode string

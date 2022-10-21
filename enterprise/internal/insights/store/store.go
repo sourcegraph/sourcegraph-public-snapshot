@@ -451,11 +451,19 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
 	}
+	err = s.Exec(ctx, sqlf.Sprintf(deleteSnapshotRecordingTimeSql, series.ID))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete snapshot recording time for series_id %d", series.ID)
+	}
 	return nil
 }
 
 const deleteSnapshotsSql = `
 DELETE FROM %s WHERE series_id = %s;
+`
+
+const deleteSnapshotRecordingTimeSql = `
+DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snapshot = true;
 `
 
 type PersistMode string
@@ -552,15 +560,17 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 		return nil
 	}
 
-	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time")
+	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
 
 	for _, series := range seriesRecordingTimes {
 		id := series.InsightSeriesID
-		for _, recordTime := range series.RecordingTimes {
+		for _, record := range series.RecordingTimes {
 			if err := inserter.Insert(
 				ctx,
-				id,               // insight_series_id
-				recordTime.UTC(), // recording_time
+				id,                     // insight_series_id
+				record.Timestamp.UTC(), // recording_time
+				record.Snapshot,        // snapshot
+
 			); err != nil {
 				return errors.Wrap(err, "Insert")
 			}
@@ -587,7 +597,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
-	recordingTimes := []time.Time{}
+	recordingTimes := []types.RecordingTime{}
 	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
@@ -597,7 +607,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 			return err
 		}
 
-		recordingTimes = append(recordingTimes, recordingTime)
+		recordingTimes = append(recordingTimes, types.RecordingTime{Timestamp: recordingTime})
 		return nil
 	})
 	if err != nil {

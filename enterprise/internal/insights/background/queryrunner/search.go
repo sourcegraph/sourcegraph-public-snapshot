@@ -224,17 +224,16 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 	seriesRecordingTimes := types.InsightSeriesRecordingTimes{
 		InsightSeriesID: series.ID,
 	}
+	snapshot := false
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
 			return errors.Wrap(err, "DeleteSnapshots")
 		}
-	} else {
-		// We don't save the last snapshot time in insight_series_recording_times because of the added complexity it
-		// represents, and the ease of accessing the value of the last snapshot point when fetching series data.
-		seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, recordTime)
+		snapshot = true
 	}
+	seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, types.RecordingTime{recordTime, snapshot})
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
 	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
