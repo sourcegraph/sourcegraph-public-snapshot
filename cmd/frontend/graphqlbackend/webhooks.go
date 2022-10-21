@@ -113,6 +113,14 @@ func (args *webhookArgs) toWebhookListOptions() (database.WebhookListOptions, er
 	return opt, nil
 }
 
+type WebhookConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*webhookResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+var _ WebhookConnectionResolver = &webhookConnectionResolver{}
+
 type webhookConnectionResolver struct {
 	db       database.DB
 	opt      database.WebhookListOptions
