@@ -29,6 +29,7 @@ type LSIFIndexResolver interface {
 	Steps() IndexStepsResolver
 	PlaceInQueue() *int32
 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
+	ShouldReindex(ctx context.Context) bool
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
 
@@ -116,6 +117,10 @@ func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ LSIFUploadResol
 	}
 
 	return NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, upload, r.prefetcher, r.traceErrs), nil
+}
+
+func (r *indexResolver) ShouldReindex(ctx context.Context) bool {
+	return r.index.ShouldReindex
 }
 
 func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolver, err error) {

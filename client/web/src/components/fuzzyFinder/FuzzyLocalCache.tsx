@@ -11,6 +11,7 @@ export interface PersistableQueryResult {
     text: string
     url?: string
     symbolKind?: SymbolKind
+    stars?: number
 }
 
 export interface FuzzyLocalCache {

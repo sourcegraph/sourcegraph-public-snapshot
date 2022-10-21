@@ -2,7 +2,7 @@ import { ApolloClient } from '@apollo/client'
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { CodeHostIcon } from '@sourcegraph/search-ui'
+import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -17,6 +17,7 @@ export const FUZZY_REPOS_QUERY = gql`
             results {
                 repositories {
                     name
+                    stars
                 }
             }
         }
@@ -33,11 +34,23 @@ export class FuzzyRepos extends FuzzyQuery {
     }
 
     /* override */ protected searchValues(): SearchValue[] {
-        return [...this.queryResults.values()].map(({ text, url }) => ({
-            text,
-            url,
-            icon: <CodeHostIcon repoName={text} /> || undefined,
-        }))
+        return [...this.queryResults.values()].map(({ text, url, stars }) => {
+            const formattedRepositoryStarCount = formatRepositoryStarCount(stars)
+
+            return {
+                text,
+                url,
+                icon: <CodeHostIcon repoName={text} /> || undefined,
+                textSuffix:
+                    stars && stars > 0 && formattedRepositoryStarCount ? (
+                        <span>
+                            <SearchResultStar aria-label={`${stars} stars`} />
+                            <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
+                        </span>
+                    ) : undefined,
+                ranking: stars,
+            }
+        })
     }
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {
         const client = this.client || (await getWebGraphQLClient())
@@ -46,16 +59,17 @@ export class FuzzyRepos extends FuzzyQuery {
             variables: { query },
         })
         const repositories = response.data?.search?.results?.repositories || []
-        // const repositories = await Promise.resolve([{ name: 'a' }])
-        return repositories?.map(({ name }) => ({
+        const queryResults: PersistableQueryResult[] = repositories?.map(({ name, stars }) => ({
             text: name,
             url: `/${name}`,
+            stars,
         }))
+        return queryResults
     }
 
     private async staleResults(values: PersistableQueryResult[]): Promise<PersistableQueryResult[]> {
         const actualRepos = await this.handleRawQueryPromise(`type:repo (${values.map(({ text }) => text).join('|')})`)
         const isActualRepoName = new Set([...actualRepos.map(({ text }) => text)])
-        return values.filter(({ text }) => !isActualRepoName.has(text))
+        return values.filter(({ text, stars }) => !isActualRepoName.has(text) || stars === undefined)
     }
 }

@@ -196,8 +196,9 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 				indexer_args,
 				outfile,
 				execution_logs,
-				local_steps
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				local_steps,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -217,6 +218,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 			index.Outfile,
 			pq.Array(index.ExecutionLogs),
 			pq.Array(index.LocalSteps),
+			index.ShouldReindex,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

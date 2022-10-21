@@ -2517,6 +2517,7 @@ CREATE TABLE lsif_indexes (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2569,6 +2570,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

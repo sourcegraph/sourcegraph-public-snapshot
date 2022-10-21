@@ -19,6 +19,7 @@ export enum SearchIconKind {
 
 export interface SearchValue {
     text: string
+    ranking?: number
     url?: string
     icon?: JSX.Element
     onClick?: () => void

@@ -43,7 +43,7 @@ func Init(
 
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
-	enterpriseServices.BatchChangesResolver = resolvers.New(bstore)
+	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
 	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
 	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
 	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
