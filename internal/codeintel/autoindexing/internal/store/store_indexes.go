@@ -615,7 +615,7 @@ WHERE
 	repository_id  = %s AND
 	commit         = %s AND
 	root           = %s AND
-	indexer        = %s AND
+	indexer        = %s
 ORDER BY queued_at DESC
 LIMIT 1
 `
