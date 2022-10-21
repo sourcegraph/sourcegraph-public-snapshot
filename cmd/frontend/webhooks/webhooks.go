@@ -99,20 +99,21 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 }
 
 func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn string, secret string, gh *GitHubWebhook) {
-	var payload []byte
-	var err error
-	if secret != "" {
-		payload, err = github.ValidatePayload(r, []byte(secret))
-		if err != nil {
-			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-			return
-		}
-	} else {
-		payload, err = io.ReadAll(r.Body)
+	if secret == "" {
+		payload, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 			return
 		}
+
+		gh.HandleWebhook(w, r, urn, payload)
+		return
+	}
+
+	payload, err := github.ValidatePayload(r, []byte(secret))
+	if err != nil {
+		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+		return
 	}
 
 	gh.HandleWebhook(w, r, urn, payload)
