@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import {
     mdiCheckCircle,
@@ -22,7 +22,6 @@ import {
     Icon,
     H3,
     H4,
-    Text,
     Tooltip,
     Tab,
     TabPanel,
@@ -35,6 +34,7 @@ import {
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
+import { retrieveFileContent } from './backend'
 
 import { BatchSpec } from './BatchSpec'
 
@@ -183,8 +183,24 @@ interface BatchSpecWorkspaceFileRendererProps {
     }
 }
 
-const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspaceFileRendererProps> = props => {
+const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspaceFileRendererProps> = ({ specId, file }) => {
     const [isLoading, setIsLoading] = useState<boolean>(true)
+    const [content, setContent] = useState<string>('')
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        retrieveFileContent(specId, file.id, controller)
+            .then(fileContent => setContent(fileContent))
+            .catch((error: Error) => {
+                console.log('error occurred while retrieving content', error.message)
+            })
+            .finally(() => setIsLoading(false))
+
+        return () => {
+            controller.abort()
+        }
+    }, [specId, file.id])
 
     if (isLoading) {
         return (
@@ -196,11 +212,7 @@ const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspace
 
     return (
         <Code className={styles.fileContainer}>
-            <>
-                <Text>I am a god</Text>
-                <Text>I am a god</Text>
-                <Text>I am a god</Text>
-            </>
+            {content}
         </Code>
     )
 }

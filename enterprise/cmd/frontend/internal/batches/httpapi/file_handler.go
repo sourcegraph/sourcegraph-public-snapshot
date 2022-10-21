@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -23,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const batchSpecIDKind = "BatchSpec"
 
 // FileHandler handles retrieving and uploading of files.
 type FileHandler struct {
@@ -137,15 +140,29 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	}
 }
 
+func unmarshalGraphqlID(id graphql.ID) (umarshalledID string, err error) {
+	err = relay.UnmarshalSpec(id, &umarshalledID)
+	return
+}
+
 func getPathParts(r *http.Request) (string, string, error) {
-	batchSpecRandID := mux.Vars(r)["spec"]
-	if batchSpecRandID == "" {
+	fmt.Println("about to get path parts")
+	rawBatchSpecRandID := mux.Vars(r)["spec"]
+	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
+	batchSpecRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecRandID))
+	if err != nil {
+		return "", "", err
+	}
 
-	batchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
-	if batchSpecWorkspaceFileRandID == "" {
+	rawBatchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
+	if rawBatchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
+	}
+	batchSpecWorkspaceFileRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecWorkspaceFileRandID))
+	if err != nil {
+		return "", "", err
 	}
 
 	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil

@@ -154,15 +154,21 @@ const BATCH_SPEC_LIST_CONNECTION_FIELDS = gql`
 
 const fileRetrieverBaseURL = '/.api/files/batch-changes'
 
-export const retrieveFile = async (batchSpecId: string, fileId: string): Promise<string> => {
+export const retrieveFileContent = async (batchSpecId: string, fileId: string, controller: AbortController): Promise<string> => {
     const url = `${fileRetrieverBaseURL}/${batchSpecId}/${fileId}`
     const response = await fetch(url, {
+        signal: controller.signal,
         method: 'GET',
         headers: new Headers({
             ...window.context.xhrHeaders,
-            // Authorization: `token ${fileId}`
         }),
     })
 
-    return response.text()
+    const data = await response.text()
+
+    if (!response.ok) {
+        return Promise.reject(new Error(data))
+    }
+
+    return data
 }
