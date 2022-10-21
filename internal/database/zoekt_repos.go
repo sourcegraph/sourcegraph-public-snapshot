@@ -34,12 +34,12 @@ type ZoektReposStore interface {
 
 var _ ZoektReposStore = (*zoektReposStore)(nil)
 
-// zoektReposStore is responsible for data stored in the gitserver_repos table.
+// zoektReposStore is responsible for data stored in the zoekt_repos table.
 type zoektReposStore struct {
 	*basestore.Store
 }
 
-// ZoektRepossWith instantiates and returns a new zoektReposStore using
+// ZoektReposWith instantiates and returns a new zoektReposStore using
 // the other store handle.
 func ZoektReposWith(other basestore.ShareableStore) ZoektReposStore {
 	return &zoektReposStore{Store: basestore.NewWithHandle(other.Handle())}
@@ -107,7 +107,7 @@ AND
 ;
 `
 
-func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) (err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return err
