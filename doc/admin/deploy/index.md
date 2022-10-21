@@ -23,7 +23,7 @@ In general:
 
 ## Deployment types
 
-To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable it. In short, you **cannot** change your deployment type of a running instance.
+To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable. In short, you **cannot** change your deployment type of a running instance.
 
 Each of the deployment types listed below provides a different level of capability. As mentioned previously, you shall pick a deployment type based on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 
