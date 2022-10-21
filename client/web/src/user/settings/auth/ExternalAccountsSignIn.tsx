@@ -136,7 +136,7 @@ const getNormalizedAccount = (
                         external: {
                             id: account.id,
                             userName,
-                            userLogin: userName,
+                            userLogin: userName
                         },
                     }
                 }

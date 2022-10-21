@@ -57,24 +57,16 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
-                    {authProvider.serviceType === 'saml' && (
-                        <>{account.external ? <>{account.external.userName}</> : 'Not connected'}</>
-                    )}
-
-                    {authProvider.serviceType !== 'saml' && (
+                    {account.external?.userUrl ? (
                         <>
-                            {account.external ? (
-                                <>
-                                    {account.external.userName}(
-                                    <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                        @{account.external.userLogin}
-                                    </Link>
-                                    )
-                                </>
-                            ) : (
-                                'Not connected'
-                            )}
+                            {account.external.userName}(
+                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                                @{account.external.userLogin}
+                            </Link>
+                            )
                         </>
+                    ) : (
+                        'Not connected'
                     )}
                 </div>
             </div>
