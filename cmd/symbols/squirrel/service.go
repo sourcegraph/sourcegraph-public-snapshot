@@ -153,9 +153,12 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	// case "python":
 	// case "javascript":
 	// case "typescript":
-	// case "cpp":
+	case "cpp":
+		fmt.Println("BOOM!!")
+		return squirrel.getDefCpp(ctx, node)
 	// case "ruby":
 	default:
+		fmt.Println("UNKNOWN " + node.LangSpec.name)
 		// Language not implemented yet
 		return nil, nil
 	}
