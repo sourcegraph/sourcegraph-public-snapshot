@@ -42,7 +42,7 @@ func optionalCollection() (_ []string, exists bool, _ error) {
 }
 ```
 
-The `(value, ok)` return type return is also idiomatic for non-collection types to distinguish when `value` can be used meaningfully by the caller. When `ok` is false, `value` will be the zero-value of its type and should not be used by the caller. In most cases, this should be preferred over returning a ponter type where `nil` means _no value_.
+The `(value, ok)` return type return is also idiomatic for non-collection types to distinguish when `value` can be used meaningfully by the caller. When `ok` is false, `value` will be the zero-value of its type and should not be used by the caller. In most cases, this should be preferred over returning a pointer type where `nil` means _no value_.
 
 ## Panics
 
