@@ -2509,11 +2509,11 @@ func TestHardDeleteSeries(t *testing.T) {
 	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: 1,
-			RecordingTimes:  []types.Recording{{RecordingTime: now}},
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
 		},
 		{
 			InsightSeriesID: 2,
-			RecordingTimes:  []types.Recording{{RecordingTime: now}},
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
 		},
 	})
 	if err != nil {

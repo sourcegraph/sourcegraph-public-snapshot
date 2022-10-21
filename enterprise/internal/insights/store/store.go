@@ -564,9 +564,9 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 		for _, record := range series.RecordingTimes {
 			if err := inserter.Insert(
 				ctx,
-				id,                         // insight_series_id
-				record.RecordingTime.UTC(), // recording_time
-				record.Snapshot,            // snapshot
+				id,                     // insight_series_id
+				record.Timestamp.UTC(), // recording_time
+				record.Snapshot,        // snapshot
 
 			); err != nil {
 				return errors.Wrap(err, "Insert")
@@ -594,7 +594,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
-	recordingTimes := []types.Recording{}
+	recordingTimes := []types.RecordingTime{}
 	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
 		var recordingTime time.Time
 		err = sc.Scan(
@@ -604,7 +604,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 			return err
 		}
 
-		recordingTimes = append(recordingTimes, types.Recording{RecordingTime: recordingTime})
+		recordingTimes = append(recordingTimes, types.RecordingTime{Timestamp: recordingTime})
 		return nil
 	})
 	if err != nil {

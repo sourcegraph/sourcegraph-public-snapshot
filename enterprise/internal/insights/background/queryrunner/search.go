@@ -233,7 +233,7 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 		}
 		snapshot = true
 	}
-	seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, types.Recording{snapshot, recordTime})
+	seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, types.RecordingTime{recordTime, snapshot})
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
 	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.

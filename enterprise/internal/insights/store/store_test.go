@@ -505,7 +505,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	}
 	recordingTimes := types.InsightSeriesRecordingTimes{
 		InsightSeriesID: 1,
-		RecordingTimes:  []types.Recording{{current, true}, {current.Add(time.Hour), false}},
+		RecordingTimes:  []types.RecordingTime{{current, true}, {current.Add(time.Hour), false}},
 	}
 	if err := store.RecordSeriesPointsAndRecordingTimes(ctx, records, recordingTimes); err != nil {
 		t.Fatal(err)
@@ -541,7 +541,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRecordingTimes := types.InsightSeriesRecordingTimes{1, []types.Recording{{RecordingTime: current.Add(time.Hour)}}}
+	wantRecordingTimes := types.InsightSeriesRecordingTimes{1, []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
 	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
@@ -712,10 +712,10 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		t.Errorf("expected second series to have id 2")
 	}
 
-	makeRecordings := func(times []time.Time, snapshot bool) []types.Recording {
-		recordings := make([]types.Recording, 0, len(times))
+	makeRecordings := func(times []time.Time, snapshot bool) []types.RecordingTime {
+		recordings := make([]types.RecordingTime, 0, len(times))
 		for _, t := range times {
-			recordings = append(recordings, types.Recording{Snapshot: snapshot, RecordingTime: t})
+			recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: t})
 		}
 		return recordings
 	}
@@ -802,7 +802,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			}
 			recordingTimes := []time.Time{}
 			for _, recording := range got.RecordingTimes {
-				recordingTimes = append(recordingTimes, recording.RecordingTime)
+				recordingTimes = append(recordingTimes, recording.Timestamp)
 			}
 			tc.want.Equal(t, stringifyTimes(recordingTimes))
 		})

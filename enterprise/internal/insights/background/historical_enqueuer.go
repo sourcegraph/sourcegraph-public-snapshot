@@ -757,10 +757,10 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	return entry, nil
 }
 
-func makeRecordings(times []time.Time, snapshot bool) []itypes.Recording {
-	recordings := make([]itypes.Recording, 0, len(times))
+func makeRecordings(times []time.Time, snapshot bool) []itypes.RecordingTime {
+	recordings := make([]itypes.RecordingTime, 0, len(times))
 	for _, t := range times {
-		recordings = append(recordings, itypes.Recording{Snapshot: snapshot, RecordingTime: t})
+		recordings = append(recordings, itypes.RecordingTime{Snapshot: snapshot, Timestamp: t})
 	}
 	return recordings
 }
