@@ -72,19 +72,34 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                 </div>
             </div>
             <div className="align-self-center">
-                {account.external ? (
-                    <Button className="text-danger px-0" onClick={toggleRemoveAccountModal} variant="link">
-                        Remove
-                    </Button>
-                ) : (
-                    <LoaderButton
-                        loading={isLoading}
-                        label="Add"
-                        display="block"
-                        onClick={navigateToAuthProvider}
-                        variant="success"
-                    />
-                )}
+                {(authProvider.displayName === 'SAML') &&
+                    !account.external && (
+                        <LoaderButton
+                            loading={isLoading}
+                            label="Add"
+                            display="block"
+                            onClick={navigateToAuthProvider}
+                            variant="success"
+                        />
+                    )
+                }
+
+                {(authProvider.displayName !== 'SAML') && <>
+                    {account.external ? (
+                        <Button className="text-danger px-0" onClick={toggleRemoveAccountModal} variant="link">
+                            Remove
+                        </Button>
+                    ) : (
+                        <LoaderButton
+                            loading={isLoading}
+                            label="Add"
+                            display="block"
+                            onClick={navigateToAuthProvider}
+                            variant="success"
+                        />
+                    )}
+                </>}
+
             </div>
         </div>
     )

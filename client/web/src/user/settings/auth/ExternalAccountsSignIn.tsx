@@ -38,7 +38,16 @@ interface assertion {
 }
 
 interface attributeStatement {
-    Attributes: object
+    Attributes: attribute[]
+}
+
+interface attribute {
+    Name: string
+    Values: value[]
+}
+
+interface value {
+    Value: string
 }
 
 export interface NormalizedMinAccount {
@@ -113,8 +122,10 @@ const getNormalizedAccount = (
                 break
             case 'SAML':
             {
+
+                console.log("ext data", accountExternalData)
                 const samlExternalData = accountExternalData as SamlExternalData
-                const data = Object.values(samlExternalData.Assertions[0].AttributeStatement.Attributes)
+                const data = samlExternalData.Assertions[0].AttributeStatement.Attributes
                 let email = ''
                 let nickname = ''
 
