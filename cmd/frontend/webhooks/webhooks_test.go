@@ -47,18 +47,22 @@ func TestWebhooksHandler(t *testing.T) {
 		u.ID,
 		types.NewUnencryptedSecret("githubsecret"),
 	)
-
 	require.NoError(t, err)
 
+	gitHubWHNoSecret, err := dbWebhooks.Create(
+		context.Background(),
+		extsvc.KindGitHub,
+		"http://github.com",
+		u.ID,
+		nil,
+	)
+
+	require.NoError(t, err)
 	gh := GitHubWebhook{
 		DB: db,
 	}
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handler := NewHandler(db, &gh)
-
-		handler.ServeHTTP(w, r)
-	}))
+	srv := httptest.NewServer(NewHandler(logger, db, &gh))
 
 	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
@@ -115,6 +119,22 @@ func TestWebhooksHandler(t *testing.T) {
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
 		req.Header.Set("X-Github-Event", "member")
 		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("GitHub with no secret returns 200", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+
+		payload := []byte(`{"body": "text"}`)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Github-Event", "member")
 
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
