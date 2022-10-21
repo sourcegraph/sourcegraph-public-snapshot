@@ -112,12 +112,9 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
         local_steps = { typescript_nmusl_command }
       end
 
-      local args = {
-        "env",
-        "NODE_OPTIONS=--max-old-space-size=$VM_MEM_MB",
-        "scip-typescript",
-        "index",
-      }
+      table.insert(local_steps, '[ "$VM_MEM_MB" != "" ] && export NODE_OPTIONS=--max-old-space-size=$VM_MEM_MB')
+
+      local args = { "scip-typescript", "index" }
       if should_infer_config then
         table.insert(args, "--infer-tsconfig")
       end
