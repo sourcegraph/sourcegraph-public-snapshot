@@ -70,11 +70,11 @@ If you are unable to use Helm to deploy, but still want to use Kubernetes, follo
 
 Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-For more information, follow the install and configuration docs for your specific deployment type.
+For more information, follow the installation and configuration docs for your specific deployment type.
 
 ## Configuration
 
-Configuration at the deployment level focuses on ensuring your Sourcegraph runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
+Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
 
 In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
 

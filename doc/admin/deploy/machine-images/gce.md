@@ -25,7 +25,7 @@ Following these docs will provision the following resources:
 <img class="screenshot" src="./assets/gcp-bucket.png"/>
 
 1. In the [instance size chart](#instance-size-chart) below, download the image (`tar.gz`) file that matches your deployment size
-2. Nevigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
+2. Navigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
 3. **Upload** the `tar.gz` file to a bucket (create one if needed)
 4. Copy the **URL**
    
@@ -48,7 +48,7 @@ Following these docs will provision the following resources:
 1. Create a new VM instance from your [GCE Console](https://console.cloud.google.com/compute)
 2. Name the instance
 3. Select a **machine type** (see [instance size chart](#instance-size-chart))
-4. Under the **Boot disk** section, click **CHANGE** and nevigate to the **CUSTOM IMAGES** tab
+4. Under the **Boot disk** section, click **CHANGE** and navigate to the **CUSTOM IMAGES** tab
    - Image: Select the Sourcegraph image created in the previous step
    - Boot disk type: SSD persistent disk
 5. Under the **Firewall** section
@@ -73,7 +73,7 @@ To SSH into the instance as user `sourcegraph`, add the username in front of you
 # sourcegraph is the username
 $ gcloud compute ssh sourcegraph@your-instance-name --zone=us-central1-a
 ```
-Your can also switch user in the terminal with the command below:
+Your can also switch users in the terminal with the command below:
 
 ```bash
 $ sudo su sourcegraph
@@ -138,7 +138,7 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.0.
 <img class="screenshot" src="./assets/gcp-edit.png"/>
 
 1. *Stop* your current Sourcegraph GCP Image instance from the [GCE Console](https://console.cloud.google.com/compute)
-2. Nevigate to your instance console after your instance is stopped
+2. Navigate to your instance console after your instance is stopped
 3. Detach the local disk
    - Click the **EDIT** button located on top of the page in your instance console
    - Remove the **Existing disk** under **Additional disks**
