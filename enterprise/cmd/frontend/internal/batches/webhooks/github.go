@@ -3,7 +3,6 @@ package webhooks
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
@@ -55,14 +54,10 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, urn string, payload any) error {
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN string, payload any) error {
 	var m error
-	externalServiceID, err := getExternalServiceIDFromEvent(ctx, db, urn, payload)
-	if err != nil {
-		return err
-	}
 
-	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
+	prs, ev := h.convertEvent(ctx, codeHostURN, payload)
 
 	if ev == nil {
 		// We don't recognize this event type, we don't need to do any more work.
@@ -76,7 +71,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
@@ -84,117 +79,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	return m
 }
 
-func getExternalServiceIDFromRepo(ctx context.Context, db database.DB, urn string, repo *gh.Repository) (string, error) {
-	if repo.FullName == nil {
-		return "", errors.New("invalid github repository, no full_name")
-	}
-
-	sgRepo, err := db.Repos().GetByName(ctx, api.RepoName(fmt.Sprintf("%s/%s", urn, *repo.FullName)))
-	if err != nil {
-		return "", err
-	}
-	u, err := url.Parse(sgRepo.ExternalRepo.ServiceID)
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to parse service ID")
-	}
-
-	return extsvc.NormalizeBaseURL(u).String(), nil
-}
-
-func getExternalServiceIDFromEvent(ctx context.Context, db database.DB, urn string, theirs any) (esID string, err error) {
-	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
-	switch e := theirs.(type) {
-	case *gh.IssueCommentEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.PullRequestEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		if e.Number == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.PullRequestReviewEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.PullRequestReviewCommentEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.StatusEvent:
-		// A status event could potentially relate to more than one
-		// PR so we need to find them all
-		refs := make([]string, 0, len(e.Branches))
-		for _, branch := range e.Branches {
-			if name := branch.GetName(); name != "" {
-				refs = append(refs, name)
-			}
-		}
-
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.CheckSuiteEvent:
-		if e.CheckSuite == nil {
-			return
-		}
-
-		cs := e.GetCheckSuite()
-
-		repo := cs.GetRepository()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-
-	case *gh.CheckRunEvent:
-		if e.CheckRun == nil {
-			return
-		}
-
-		cr := e.GetCheckRun()
-
-		cs := cr.GetCheckSuite()
-		if cs == nil {
-			return
-		}
-
-		repo := cs.GetRepository()
-		if repo == nil {
-			return
-		}
-
-		esID, err = getExternalServiceIDFromRepo(ctx, db, urn, repo)
-	}
-
-	return esID, err
-}
-
-func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs any) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN string, theirs any) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -296,7 +181,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
-			ServiceID:   externalServiceID,
+			ServiceID:   codeHostURN,
 			ServiceType: extsvc.TypeGitHub,
 		}
 

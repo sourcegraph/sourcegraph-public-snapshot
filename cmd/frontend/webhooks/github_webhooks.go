@@ -77,12 +77,12 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	url, err := url.Parse(config.Url)
 	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		log15.Error("Could not parse code host URL from config", "error", err)
+		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
 		return
 	}
 
-	h.HandleWebhook(w, r, url.Host, body)
+	h.HandleWebhook(w, r, extsvc.NormalizeBaseURL(url).String(), body)
 }
 
 func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, urn string, requestBody []byte) {
