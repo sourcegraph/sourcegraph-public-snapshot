@@ -46,7 +46,7 @@ def f(x):
     #                                v py.f.g ref
     _ = y + l1 + l2 + l3 + l4 + l5 + g()
 
-    #                     vvv recursive.foo ref,nodef,solo
+    #                     vvv recursive.foo ref,nodef
     recursive = recursive.foo
 
 

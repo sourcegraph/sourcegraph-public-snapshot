@@ -144,6 +144,7 @@ func TestNonLocalDefinition(t *testing.T) {
 				if gotSymbolInfo != nil {
 					t.Fatalf("unexpected definition for %s", ref.symbol)
 				}
+				testCount += 1
 				continue
 			}
 
