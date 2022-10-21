@@ -3,7 +3,6 @@ import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { CodeHostIcon, formatRepositoryStarCount, SearchResultStar } from '@sourcegraph/search-ui'
-import { Text } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
