@@ -14,7 +14,7 @@ Prefer use of value types over pointer types unless there is a compelling reason
 
 - The semantics of the value require some form of **runtime object identity** where two similar or equivalent value types should not compare equal if they do not point to the same object address.
 - The semantics of the value require mutation of the object in-place. If possible, try to limit the section of code where in-place mutation is performed (i.e., pass a value type as an explicit pointer to a function that mutates it).
-- A field of a struct does not **belong** to the enclosing struct, and both values have idependent construction, lifetimes, or usage. This also applies when the values are mutually referential (recursive value types cannot be represented).
+- A field of a struct does not **belong** to the enclosing struct, and both values have independent construction, lifetimes, or usage. This also applies when the values are mutually referential (recursive value types cannot be represented).
 
 Avoid reaching for pointer types for performance reasons without first benchmarking. Doing so may actually decrease performance of the application as a whole, as the addition of pointers can cause escape analysis to force heap-allocation of short-lived objects. This increases the number of allocations as well as pressure on the garbage collector. The use of larger value types can be a performance issue in loops, where non-pointer changes are effective. For example:
 
