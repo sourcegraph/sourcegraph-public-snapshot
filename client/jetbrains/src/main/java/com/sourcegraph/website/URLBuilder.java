@@ -1,11 +1,13 @@
 package com.sourcegraph.website;
 
+import com.google.common.base.Strings;
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -37,6 +39,33 @@ public class URLBuilder {
         }
 
         return url;
+    }
+
+    @NotNull
+    public static String buildCommitUrl(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull String remoteUrl,
+                                        @NotNull String productName, @NotNull String productVersion) {
+        if (Strings.isNullOrEmpty(sourcegraphBase)) {
+            throw new RuntimeException("Missing sourcegraph URI for commit uri.");
+        } else if (Strings.isNullOrEmpty(revisionNumber)) {
+            throw new RuntimeException("Missing revision number for commit uri.");
+        } else if (remoteUrl.equals("")) {
+            throw new RuntimeException("Missing remote URL for commit uri.");
+        }
+
+        // this is pretty hacky but to try to build the repo string we will just try to naively parse the git remote uri. Worst case scenario this 404s
+        if (remoteUrl.startsWith("git")) {
+            remoteUrl = remoteUrl.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");
+        }
+
+        URI remote = URI.create(remoteUrl);
+
+        return sourcegraphBase +
+            String.format("/%s%s", remote.getHost(), remote.getPath()) +
+            String.format("/-/commit/%s", revisionNumber) +
+            String.format("?editor=%s", URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)) +
+            String.format("&version=v%s", URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)) +
+            String.format("&utm_product_name=%s", URLEncoder.encode(productName, StandardCharsets.UTF_8)) +
+            String.format("&utm_product_version=%s", URLEncoder.encode(productVersion, StandardCharsets.UTF_8));
     }
 
     @NotNull

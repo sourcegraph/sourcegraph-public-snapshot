@@ -15,12 +15,10 @@ import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.git.CommitViewUriBuilder;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RevisionContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.net.URI;
 import java.util.Optional;
 
 /**
@@ -44,26 +42,25 @@ public class OpenRevisionAction extends DumbAwareAction {
 
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
-        CommitViewUriBuilder builder = new CommitViewUriBuilder();
 
         ApplicationManager.getApplication().executeOnPooledThread(
             () -> {
                 String remoteUrl;
                 try {
-                    remoteUrl = GitUtil.getRemoteUrl(context.getRepoRoot(), project);
+                    remoteUrl = GitUtil.getRemoteRepoUrl(context.getRepoRoot(), project);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
 
-                URI uri;
+                String url;
                 try {
-                    uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), remoteUrl, productName, productVersion);
+                    url = URLBuilder.buildCommitUrl(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), remoteUrl, productName, productVersion);
                 } catch (IllegalArgumentException e) {
                     logger.warn("Unable to build commit view URI for url " + ConfigUtil.getSourcegraphUrl(project)
                         + ", revision " + context.getRevisionNumber() + ", product " + productName + ", version " + productVersion, e);
                     return;
                 }
-                BrowserOpener.openInBrowser(project, uri);
+                BrowserOpener.openInBrowser(project, url);
             }
         );
     }

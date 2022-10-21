@@ -7,6 +7,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.config.ConfigUtil;
+import git4idea.repo.GitRemote;
+import git4idea.repo.GitRepository;
+import git4idea.repo.GitRepositoryManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +17,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GitUtil {
     // repoInfo returns the Sourcegraph repository URI, and the file path
@@ -40,7 +45,7 @@ public class GitUtil {
                 branchName = ConfigUtil.getDefaultBranchName(project);
             }
 
-            remoteUrl = getRemoteUrl(file, project);
+            remoteUrl = getRemoteRepoUrl(file, project);
             String r = ConfigUtil.getRemoteUrlReplacements(project);
             String[] replacements = r.trim().split("\\s*,\\s*");
             // Check if the entered values are pairs
@@ -55,22 +60,39 @@ public class GitUtil {
     }
 
     @NotNull
-    public static String getRemoteUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
-        Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
-        if (repository == null) {
-            //String currentBranchName = repository.getCurrentBranchName();
-            throw new Exception("No repository found.");
+    public static String getRemoteRepoUrl(@NotNull VirtualFile file, @NotNull Project project) throws Exception {
+        String branchUrl = getRemoteUrl(file, project, "sourcegraph");
+        if (branchUrl == null) {
+            branchUrl = getRemoteUrl(file, project, "origin");
         }
-
-        String result = exec("git remote get-url " + "sourcegraph", repository.getRoot().getPath()).trim();
-        if (result.isEmpty()) {
-            result = exec("git remote get-url " + "origin", repository.getRoot().getPath()).trim();
-        }
-        if (result.isEmpty()) {
+        if (branchUrl == null) {
             throw new Exception("No configured git remote for \"sourcegraph\" or \"origin\".");
         }
+        return branchUrl;
+    }
 
-        return result;
+    @Nullable
+    private static String getRemoteUrl(@NotNull VirtualFile file, @NotNull Project project, @NotNull String remoteName) throws UnsupportedOperationException {
+        Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+        if (repository == null) {
+            return null;
+        }
+
+        if (repository.getVcs().getName().equals("Git")) {
+            GitRepository gitRepository = GitRepositoryManager.getInstance(project).getRepositoryForRoot(repository.getRoot());
+            if (gitRepository == null) {
+                return null;
+            }
+
+            List<GitRemote> matchingRemotes = gitRepository.getRemotes().stream().filter(x -> x.getName().equals(remoteName)).collect(Collectors.toList());
+            try {
+                return matchingRemotes.get(0).getFirstUrl();
+            } catch (IndexOutOfBoundsException e) {
+                return null;
+            }
+        }
+
+        throw new UnsupportedOperationException("Unsupported VCS: " + repository.getVcs().getName());
     }
 
     /**
