@@ -254,7 +254,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				},
 				Action: &action,
 			}); err != nil {
-				t.Errorf("expected nil error, got %e", err)
+				t.Errorf("unexpected non-nil error: %v", err)
 			}
 		})
 	}
