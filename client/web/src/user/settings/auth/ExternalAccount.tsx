@@ -43,7 +43,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     return (
         <div className="d-flex align-items-start">
-            {isRemoveAccountModalOpen && account.external && authProvider.displayName !== 'SAML' && (
+            {isRemoveAccountModalOpen && account.external && (
                 <RemoveExternalAccountModal
                     id={account.external.id}
                     name={account.name}
@@ -58,22 +58,40 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
-                    {account.external && authProvider.displayName !== 'SAML' ? (
-                        <>
-                            {account.external.userName} (
-                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                @{account.external.userLogin}
-                            </Link>
-                            )
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
+                    {(authProvider.displayName === 'SAML') && <>
+                        {account.external ?
+                            (
+                                <>
+                                    {account.external.userName}
+                                    (
+                                        @{account.external.userLogin}
+                                    )
+                                </>
+                            ) : (
+                                'Not connected'
+                            )}
+                    </>}
+
+
+                    {(authProvider.displayName !== 'SAML') && <>
+                        {account.external ? (
+                            <>
+                                {account.external.userName}
+                                    (
+                                    <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                                        @{account.external.userLogin}
+                                    </Link>
+                                )
+                            </>
+                        ) : (
+                            'Not connected'
+                        )}
+                    </>}
                 </div>
             </div>
             <div className="align-self-center">
-                {(authProvider.displayName === 'SAML') &&
-                    !account.external && (
+                {(authProvider.displayName === 'SAML') && <>
+                    {!account.external && (
                         <LoaderButton
                             loading={isLoading}
                             label="Add"
@@ -81,8 +99,8 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                             onClick={navigateToAuthProvider}
                             variant="success"
                         />
-                    )
-                }
+                    )}
+                </>}
 
                 {(authProvider.displayName !== 'SAML') && <>
                     {account.external ? (
