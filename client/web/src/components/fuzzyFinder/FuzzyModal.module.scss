@@ -22,16 +22,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 1rem 0;
+    padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin-bottom: -1px;
     z-index: 1;
 }
 
 .divider {
-    width: 100%;
+    width: 100%; // stylelint-disable-next-line declaration-property-unit-allowed-list
     height: 1px;
     background-color: var(--border-color);
-    margin: 0 0 .5rem 0;
+    margin-bottom: 0.5rem;
     z-index: 0;
 
     &.mb-0 {
@@ -42,11 +42,11 @@
 .shortcut {
     color: var(--text-muted);
     font-weight: normal;
-    margin-left: 2px;
+    margin-left: 0.125rem;
 }
 
 .input {
-    margin: 0.25rem 1rem 0.5rem;
+    margin: 0.25rem 1rem 0.5rem 1rem;
     box-shadow: var(--search-input-shadow);
 }
 
@@ -55,6 +55,10 @@
     flex: 1;
     padding: .25rem 0;
     margin-bottom: 0;
+    // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
+    & p {
+        padding: 1rem;
+    }
 
     li {
         padding: .325rem 1rem;
@@ -66,7 +70,7 @@
             max-height: initial;
 
             span:first-of-type {
-                margin-right: 4px;
+                margin-right: 0.25rem;
             }
 
             &:hover {
@@ -93,7 +97,7 @@
     padding: 0 1rem 0.75rem;
 }
 
-.keyboardExplanation {
+.keyboard-explanation {
     color: var(--text-muted);
     font-size: 0.75rem;
 }
@@ -125,8 +129,8 @@
 }
 
 .close-button {
-    width: 24px;
-    height: 24px;
+    width: 1.5rem;
+    height: 1.5rem;
     margin-top: -.5rem;
     align-items: center;
     justify-content: center;
