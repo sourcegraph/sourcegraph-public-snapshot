@@ -41,8 +41,8 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(store *store.Store) graphqlbackend.BatchChangesResolver {
-	return &Resolver{store: store}
+func New(store *store.Store, gitserverClient gitserver.Client) graphqlbackend.BatchChangesResolver {
+	return &Resolver{store: store, gitserverClient: gitserverClient}
 }
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for

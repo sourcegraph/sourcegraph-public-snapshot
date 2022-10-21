@@ -1,4 +1,5 @@
 import { ApolloClient } from '@apollo/client'
+import { groupBy } from 'lodash'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -34,7 +35,7 @@ export const getDashboards = (apolloClient: ApolloClient<unknown>, id?: string):
 
             return [
                 ALL_INSIGHTS_DASHBOARD,
-                ...insightsDashboards.nodes.map(
+                ...makeDashboardTitleUnuque(insightsDashboards.nodes).map(
                     (dashboard): InsightDashboard => ({
                         id: dashboard.id,
                         type: InsightsDashboardType.Custom,
@@ -46,7 +47,22 @@ export const getDashboards = (apolloClient: ApolloClient<unknown>, id?: string):
         })
     )
 
-export function deserializeDashboardsOwners(
+function makeDashboardTitleUnuque(dashboards: InsightsDashboardNode[]): InsightsDashboardNode[] {
+    const groupedByTitle = groupBy(dashboards, dashboard => dashboard.title)
+
+    return Object.keys(groupedByTitle).flatMap(title => {
+        if (groupedByTitle[title].length === 1) {
+            return groupedByTitle[title]
+        }
+
+        return groupedByTitle[title].map((dashboard, index) => ({
+            ...dashboard,
+            title: `${dashboard.title} (${index + 1})`,
+        }))
+    })
+}
+
+function deserializeDashboardsOwners(
     dashboardNode: InsightsDashboardNode,
     userNode: InsightsDashboardCurrentUser | null
 ): InsightsDashboardOwner[] {

@@ -420,8 +420,8 @@ steps:
 
 ## [`steps.mount`](#steps-mount)
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>mount</code> is an experimental feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+<aside class="note">
+<span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
 </aside>
 
 > NOTE: This feature is currently only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.

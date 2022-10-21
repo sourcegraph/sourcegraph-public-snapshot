@@ -75,7 +75,13 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates]))
 
         const isComplete = candidates.length < parameters.maxResults
-        candidates.sort((a, b) => b.score - a.score)
+        candidates.sort((a, b) => {
+            const byScore = b.score - a.score
+            if (byScore < 1 && a.ranking && b.ranking) {
+                return b.ranking - a.ranking
+            }
+            return byScore
+        })
         candidates.slice(0, parameters.maxResults)
 
         const links: HighlightedLinkProps[] = candidates.map(candidate => {

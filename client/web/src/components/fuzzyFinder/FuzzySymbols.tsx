@@ -48,7 +48,7 @@ export class FuzzySymbols extends FuzzyQuery {
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
-        private readonly isGlobalSymbolsRef: React.MutableRefObject<boolean>
+        private readonly isGlobalSymbols: boolean
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -56,7 +56,7 @@ export class FuzzySymbols extends FuzzyQuery {
 
     /* override */ protected searchValues(): SearchValue[] {
         const repositoryName = this.repoRevision.current.repositoryName
-        const repositoryFilter = repositoryName && !this.isGlobalSymbolsRef.current ? '/' + repositoryName : ''
+        const repositoryFilter = repositoryName && !this.isGlobalSymbols ? '/' + repositoryName : ''
         let values = [...this.queryResults.values()]
         if (repositoryFilter) {
             values = values.filter(({ url }) => url?.startsWith(repositoryFilter))
@@ -71,10 +71,8 @@ export class FuzzySymbols extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        const repoFilter = this.isGlobalSymbolsRef.current
-            ? ''
-            : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
-        return `${repoFilter}type:symbol count:10 ${query}`
+        const repoFilter = this.isGlobalSymbols ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
+        return `${repoFilter}type:symbol count:100 ${query}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {

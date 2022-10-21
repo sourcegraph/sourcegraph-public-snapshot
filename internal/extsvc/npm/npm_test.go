@@ -1,12 +1,9 @@
 package npm
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -152,19 +150,8 @@ func TestFetchSources(t *testing.T) {
 	readSeekCloser, err := client.FetchTarball(ctx, dep)
 	require.Nil(t, err)
 	defer readSeekCloser.Close()
-	gzipReader, err := gzip.NewReader(readSeekCloser)
+	tarFiles, err := unpack.ListTgzUnsorted(readSeekCloser)
 	require.Nil(t, err)
-	defer gzipReader.Close()
-	tarReader := tar.NewReader(gzipReader)
-	tarFiles := []string{}
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		require.Nil(t, err)
-		tarFiles = append(tarFiles, header.Name)
-	}
 	sort.Strings(tarFiles)
 	require.Equal(t, tarFiles, []string{
 		"package/.travis.yml",

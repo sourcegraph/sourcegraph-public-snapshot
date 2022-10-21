@@ -98,7 +98,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 		t.Skip("skipping DB test since -short specified")
 	}
 
-	config, err := getDSN()
+	config, err := GetDSN()
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
@@ -145,7 +145,7 @@ func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.
 // current package. New databases can then do a cheap copy of the migrated schema
 // rather than running the full migration every time.
 func initTemplateDB(logger log.Logger, t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
-	config, err := getDSN()
+	config, err := GetDSN()
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}

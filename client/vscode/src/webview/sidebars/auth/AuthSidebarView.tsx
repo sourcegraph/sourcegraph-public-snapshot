@@ -42,6 +42,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const [hostname, setHostname] = useState(instanceHostname)
     const [accessToken, setAccessToken] = useState<string | undefined>('initial')
     const [endpointUrl, setEndpointUrl] = useState(instanceURL)
+    const sourcegraphDotCom = 'https://www.sourcegraph.com'
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         if (hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com') {
@@ -90,6 +91,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         setEndpointUrl(event.target.value)
     }, [])
 
+    const onInstanceTypeChange = useCallback(() => {
+        setUsePrivateInstance(!usePrivateInstance)
+        if (!usePrivateInstance) {
+            setEndpointUrl(sourcegraphDotCom)
+        }
+    }, [usePrivateInstance])
+
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
         if (state !== 'validating' && accessToken) {
@@ -111,9 +119,10 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     .toPromise()
                 currentAuthStateResult
                     .then(async ({ data }) => {
-                        await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
                         if (data?.currentUser) {
+                            await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
                             setState('success')
+                            return
                         }
                         setState('failure')
                         return
@@ -270,7 +279,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </Alert>
             )}
             <Text className="my-0">
-                <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
+                <VSCodeLink onClick={() => onInstanceTypeChange()}>
                     {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
                 </VSCodeLink>
             </Text>

@@ -25,19 +25,20 @@ type operations struct {
 	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
-	getUploads                        *observation.Operation
-	getUploadByID                     *observation.Operation
-	getUploadsByIDs                   *observation.Operation
-	getVisibleUploadsMatchingMonikers *observation.Operation
-	getUploadDocumentsForPath         *observation.Operation
-	updateUploadsVisibleToCommits     *observation.Operation
-	deleteUploadByID                  *observation.Operation
-	inferClosestUploads               *observation.Operation
-	deleteUploadsWithoutRepository    *observation.Operation
-	deleteUploadsStuckUploading       *observation.Operation
-	softDeleteExpiredUploads          *observation.Operation
-	hardDeleteUploadsByIDs            *observation.Operation
-	deleteLsifDataByUploadIds         *observation.Operation
+	getUploads                           *observation.Operation
+	getUploadByID                        *observation.Operation
+	getUploadsByIDs                      *observation.Operation
+	getVisibleUploadsMatchingMonikers    *observation.Operation
+	getUploadDocumentsForPath            *observation.Operation
+	updateUploadsVisibleToCommits        *observation.Operation
+	deleteUploadByID                     *observation.Operation
+	inferClosestUploads                  *observation.Operation
+	deleteUploadsWithoutRepository       *observation.Operation
+	deleteUploadsStuckUploading          *observation.Operation
+	softDeleteExpiredUploads             *observation.Operation
+	softDeleteExpiredUploadsViaTraversal *observation.Operation
+	hardDeleteUploadsByIDs               *observation.Operation
+	deleteLsifDataByUploadIds            *observation.Operation
 
 	// Dumps
 	getDumpsWithDefinitionsForMonikers *observation.Operation
@@ -88,19 +89,20 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
-		getUploads:                        op("GetUploads"),
-		getUploadByID:                     op("GetUploadByID"),
-		getUploadsByIDs:                   op("GetUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
-		getUploadDocumentsForPath:         op("GetUploadDocumentsForPath"),
-		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
-		deleteUploadByID:                  op("DeleteUploadByID"),
-		inferClosestUploads:               op("InferClosestUploads"),
-		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
-		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
-		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
-		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
-		deleteLsifDataByUploadIds:         op("DeleteLsifDataByUploadIds"),
+		getUploads:                           op("GetUploads"),
+		getUploadByID:                        op("GetUploadByID"),
+		getUploadsByIDs:                      op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers:    op("GetVisibleUploadsMatchingMonikers"),
+		getUploadDocumentsForPath:            op("GetUploadDocumentsForPath"),
+		updateUploadsVisibleToCommits:        op("UpdateUploadsVisibleToCommits"),
+		deleteUploadByID:                     op("DeleteUploadByID"),
+		inferClosestUploads:                  op("InferClosestUploads"),
+		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
+		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
+		softDeleteExpiredUploads:             op("SoftDeleteExpiredUploads"),
+		softDeleteExpiredUploadsViaTraversal: op("SoftDeleteExpiredUploadsViaTraversal"),
+		hardDeleteUploadsByIDs:               op("HardDeleteUploadsByIDs"),
+		deleteLsifDataByUploadIds:            op("DeleteLsifDataByUploadIds"),
 
 		// Dumps
 		getDumpsWithDefinitionsForMonikers: op("GetDumpsWithDefinitionsForMonikers"),

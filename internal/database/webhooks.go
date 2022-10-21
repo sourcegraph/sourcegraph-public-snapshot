@@ -81,8 +81,8 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
 		kind,
 		urn,
-		encryptedSecret,
-		keyID,
+		dbutil.NullStringColumn(encryptedSecret),
+		dbutil.NullStringColumn(keyID),
 		dbutil.NullInt32Column(actorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
@@ -247,9 +247,10 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 		encryptedSecret string
 		keyID           string
 	)
+
 	if newWebhook.Secret != nil {
 		encryptedSecret, keyID, err = newWebhook.Secret.Encrypt(ctx, s.key)
-		if err != nil || (encryptedSecret == "" && keyID == "") {
+		if err != nil {
 			return nil, errors.Wrap(err, "encrypting secret")
 		}
 		if encryptedSecret == "" && keyID == "" {
@@ -258,7 +259,11 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.CodeHostURN,
+		dbutil.NullStringColumn(encryptedSecret),
+		dbutil.NullStringColumn(keyID),
+		dbutil.NullInt32Column(actorUID),
+		newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -339,17 +344,25 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&hook.UUID,
 		&hook.CodeHostKind,
 		&hook.CodeHostURN,
-		&rawSecret,
+		&dbutil.NullString{S: &rawSecret},
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
-		&keyID,
+		&dbutil.NullString{S: &keyID},
 		&dbutil.NullInt32{N: &hook.CreatedByUserID},
 		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
 	); err != nil {
 		return nil, err
 	}
 
-	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
+	if keyID == "" && rawSecret != "" {
+		// We have an unencrypted secret
+		hook.Secret = types.NewUnencryptedSecret(rawSecret)
+	} else if keyID != "" && rawSecret != "" {
+		// We have an encrypted secret
+		hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
+	}
+	// If both keyID and rawSecret are empty then we didn't set a secret and we leave
+	// hook.Secret as nil
 
 	return &hook, nil
 }

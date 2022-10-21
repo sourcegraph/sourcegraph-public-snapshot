@@ -6,7 +6,7 @@ local pattern = require "sg.autoindex.patterns"
 local shared = require "sg.autoindex.shared"
 local util = require "sg.autoindex.util"
 
-local indexer = "sourcegraph/scip-typescript:autoindex"
+local indexer = require("sg.indexes").get "typescript"
 local typescript_nmusl_command =
   "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 

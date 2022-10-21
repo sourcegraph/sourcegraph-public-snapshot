@@ -4,7 +4,7 @@ local pattern = require "sg.autoindex.patterns"
 
 local shared = require "sg.autoindex.shared"
 
-local indexer = "sourcegraph/lsif-go:latest"
+local indexer = require("sg.indexes").get "go"
 
 local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
   pattern.new_path_segment "vendor",

@@ -49,7 +49,7 @@ func TestPermissionLevels(t *testing.T) {
 	key := et.TestKey{}
 
 	bstore := store.New(db, &observation.TestContext, key)
-	sr := New(bstore)
+	sr := New(bstore, gitserver.NewMockClient())
 	s, err := newSchema(db, sr)
 	if err != nil {
 		t.Fatal(err)
