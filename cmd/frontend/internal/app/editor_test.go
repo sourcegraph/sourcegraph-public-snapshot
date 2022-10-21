@@ -279,7 +279,12 @@ func TestEditorRedirect(t *testing.T) {
 		},
 		{
 			name:         "empty request",
-			wantParseErr: "could not determine request type, missing ?search or ?remote_url",
+			wantParseErr: "could not determine query string",
+		},
+		{
+			name:            "unknown request",
+			q:               url.Values{},
+			wantRedirectErr: "could not determine request type, missing ?search or ?remote_url",
 		},
 		{
 			name: "editor and version is optional",
