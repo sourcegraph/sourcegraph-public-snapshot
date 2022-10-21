@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -259,10 +260,10 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
 		if len(opt.IndexedIDs) > 0 {
-			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-				IDs: opt.IndexedIDs,
-			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			opts := database.ReposListOptions{IDs: opt.IndexedIDs}
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), opts, add)
 			if err != nil {
 				return err
 			}
@@ -330,5 +331,26 @@ func serveRank[T []float64 | map[string][]float64](
 	}
 
 	_, _ = w.Write(b)
+	return nil
+}
+
+func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
+	var body struct {
+		RepoID   uint32
+		Branches []zoekt.RepositoryBranch
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return err
+	}
+
+	log.Scoped("searchIndexerServer", "").Info("updating index status", log.Uint32("repo", body.RepoID))
+	indexed := map[uint32]*zoekt.MinimalRepoListEntry{body.RepoID: {Branches: body.Branches}}
+
+	if err := h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), indexed); err != nil {
+		return err
+	}
+
+	w.WriteHeader(http.StatusOK)
 	return nil
 }
