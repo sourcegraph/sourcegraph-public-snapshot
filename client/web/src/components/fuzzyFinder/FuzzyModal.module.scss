@@ -72,6 +72,9 @@
             span:first-of-type {
                 margin-right: 0.25rem;
             }
+            span:global(.fuzzy-repos-star) {
+                margin-left: 0.25rem;
+            }
 
             &:hover {
                 text-decoration: none;
