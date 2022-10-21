@@ -66,14 +66,14 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                 Want to deploy yourself?
                 
                 {/* eslint-disable-next-line react/forbid-elements */}
-                <a
-                    href="https://docs.sourcegraph.com"
+                <Link
+                    to="/help"
                     onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     Try our self-hosted solution.
-                </a>
+                </Link>
             </Text>
         </div>
     )
