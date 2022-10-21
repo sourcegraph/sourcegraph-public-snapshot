@@ -92,7 +92,7 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
-func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
+func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs endpoint.MapLike, event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
 	// a result, we still want to return a match for the file even if it
 	// has no matched ranges left.
@@ -151,7 +151,7 @@ func matchesAny(val string, matchers []*regexp.Regexp) bool {
 	return false
 }
 
-func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
+func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs endpoint.MapLike, cm *result.CommitMatch) result.Match {
 	// Skip any commit matches -- we only handle diff matches
 	if cm.DiffPreview == nil {
 		return nil

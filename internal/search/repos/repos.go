@@ -52,7 +52,7 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
-func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher endpoint.MapLike, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
 		logger:    logger,
 		db:        db,
@@ -67,7 +67,7 @@ type Resolver struct {
 	db        database.DB
 	gitserver gitserver.Client
 	zoekt     zoekt.Streamer
-	searcher  *endpoint.Map
+	searcher  endpoint.MapLike
 }
 
 func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {

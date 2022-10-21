@@ -1,6 +1,9 @@
 package conftypes
 
-import "reflect"
+import (
+	"reflect"
+	"time"
+)
 
 // ServiceConnections represents configuration about how the deployment
 // internally connects to services. These are settings that need to be
@@ -24,6 +27,10 @@ type ServiceConnections struct {
 	// code insights database.
 	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
 	CodeInsightsDSN string `json:"codeInsightsPostgresDSN"`
+
+	Searchers    []string      `json:"searchers"`
+	Zoekts       []string      `json:"zoekts"`
+	ZoektListTTL time.Duration `json:"zoektListTTL"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

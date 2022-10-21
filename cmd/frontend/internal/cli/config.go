@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/searchenv"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -503,15 +504,30 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		}
 	})
 
-	addrs, err := gitservers.Endpoints()
+	gitAddrs, err := gitservers.Endpoints()
 	if err != nil {
 		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
 
+	searcherMap := searchenv.SearcherURLs()
+	searcherAddrs, err := searcherMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
+	}
+
+	zoektMap := searchenv.IndexedEndpoints()
+	zoektAddrs, err := zoektMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
+	}
+
 	return conftypes.ServiceConnections{
-		GitServers:           addrs,
+		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
+		Searchers:            searcherAddrs,
+		Zoekts:               zoektAddrs,
+		ZoektListTTL:         searchenv.IndexedListTTL,
 	}
 }

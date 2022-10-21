@@ -28,7 +28,7 @@ type Observer struct {
 	Logger   log.Logger
 	Db       database.DB
 	Zoekt    zoekt.Streamer
-	Searcher *endpoint.Map
+	Searcher endpoint.MapLike
 
 	// Inputs are used to generate alert messages based on the query.
 	*search.Inputs

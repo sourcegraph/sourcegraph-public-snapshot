@@ -11,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type MapLike interface {
+	Endpoints() ([]string, error)
+	Get(key string) (string, error)
+	GetN(key string, n int) ([]string, error)
+}
+
 // Map is a consistent hash map to URLs. It uses the kubernetes API to watch
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.

@@ -32,7 +32,7 @@ var (
 // Search searches repo@commit with p.
 func Search(
 	ctx context.Context,
-	searcherURLs *endpoint.Map,
+	searcherURLs endpoint.MapLike,
 	repo api.RepoName,
 	repoID api.RepoID,
 	branch string,
