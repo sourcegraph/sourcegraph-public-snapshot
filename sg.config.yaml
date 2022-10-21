@@ -421,9 +421,10 @@ commands:
     install: |
       mkdir -p .bin
       export GOBIN="${PWD}/.bin"
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-archive-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-git-index
-      go install github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver
+      cd ../zoekt
+      go install ./cmd/zoekt-archive-index
+      go install ./cmd/zoekt-git-index
+      go install ./cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -447,7 +448,9 @@ commands:
   zoekt-web-template: &zoekt_webserver_template
     install: |
       mkdir -p .bin
-      env GOBIN="${PWD}/.bin" go install github.com/sourcegraph/zoekt/cmd/zoekt-webserver
+      export GOBIN="${PWD}/.bin"
+      cd ../zoekt
+      go install ./cmd/zoekt-webserver
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: true
