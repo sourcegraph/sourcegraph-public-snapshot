@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -53,9 +54,20 @@ func newExternalHTTPHandler(
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
 
+	gh := webhooks.GitHubWebhook{
+		DB: db,
+	}
+
+	webhookhandlers.Init(db, &gh)
+
+	handlers.GitHubWebhook.Register(&gh)
+
+	ghSync := repos.GitHubWebhookHandler{}
+	ghSync.Register(&gh)
+
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	apiHandler := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers, &gh)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		apiHandler = hooks.PostAuthMiddleware(apiHandler)
@@ -78,13 +90,6 @@ func newExternalHTTPHandler(
 
 	githubAppSetupHandler := newGitHubAppSetupHandler()
 
-	gh := webhooks.GitHubWebhook{
-		DB: db,
-	}
-
-	webhookhandlers.Init(db, &gh)
-
-	handlers.GitHubWebhook.Register(&gh)
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &gh)
 
