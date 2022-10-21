@@ -26,7 +26,8 @@ func (c *batchChangesCodeHostResolver) Credential() graphqlbackend.BatchChangesC
 }
 
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
-	return c.codeHost.RequiresSSH
+	return true
+	// return c.codeHost.RequiresSSH
 }
 
 func (c *batchChangesCodeHostResolver) RequiresUsername() bool {

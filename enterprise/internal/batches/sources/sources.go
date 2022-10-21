@@ -177,6 +177,7 @@ func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.Pus
 		return &protocol.PushConfig{
 			RemoteURL:  cloneURL.String(),
 			PrivateKey: privateKey,
+			PublicKey:  sshA.SSHPublicKey(),
 			Passphrase: passphrase,
 		}, nil
 	}
@@ -401,8 +402,9 @@ func extractCloneURL(repo *types.Repo) (*vcs.URL, error) {
 		cloneURLs = append(cloneURLs, parsedURL)
 	}
 
+	// Prioritize SSH instead.
 	sort.SliceStable(cloneURLs, func(i, j int) bool {
-		return !cloneURLs[i].IsSSH()
+		return cloneURLs[i].IsSSH()
 	})
 
 	return cloneURLs[0], nil

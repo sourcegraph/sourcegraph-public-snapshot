@@ -291,6 +291,7 @@ type PushConfig struct {
 	// this value is used as the content of the private key. Needs to be
 	// set in conjunction with a passphrase.
 	PrivateKey string
+	PublicKey  string
 
 	// Passphrase is the passphrase to decrypt the private key. It is required
 	// when passing PrivateKey.

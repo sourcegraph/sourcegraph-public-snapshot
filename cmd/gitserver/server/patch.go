@@ -166,6 +166,26 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
+	if req.Push != nil && req.Push.PublicKey != "" {
+		// Configure signing
+		cmd = exec.CommandContext(ctx, "git", "config", "--local", "gpg.format", "ssh")
+		cmd.Dir = tmpRepoDir
+		cmd.Env = append(os.Environ(), tmpGitPathEnv)
+
+		if _, err := run(cmd, "configure gpg format"); err != nil {
+			return http.StatusInternalServerError, resp
+		}
+
+		cmd = exec.CommandContext(ctx, "git", "config", "--local", "user.signingKey", strings.TrimRight(req.Push.PublicKey, "\n"))
+		cmd.Dir = tmpRepoDir
+		cmd.Env = append(os.Environ(), tmpGitPathEnv)
+
+		if _, err := run(cmd, "configure signing key"); err != nil {
+			return http.StatusInternalServerError, resp
+		}
+	}
+	// end
+
 	cmd = exec.CommandContext(ctx, "git", "reset", "-q", string(req.BaseCommit))
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
@@ -209,11 +229,35 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", message)
+	commitArgs := []string{"commit", "-m", message}
+	var sshAgentEnvVar string
+	if req.Push != nil && req.Push.PublicKey != "" {
+		commitArgs = append(commitArgs, "-S")
+		// If the protocol is SSH and a private key was given, we want to
+		// use it for communication with the code host.
+		// We set up an agent here, which sets up a socket that can be provided to
+		// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
+		// it in the background.
+		// This is used to pass the private key to be used when pushing to the remote,
+		// without the need to store it on the disk.
+		agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+		if err != nil {
+			resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
+			return http.StatusInternalServerError, resp
+		}
+		go agent.Listen()
+		// Make sure we shut this down once we're done.
+		defer agent.Close()
+
+		sshAgentEnvVar = fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket())
+	}
+
+	cmd = exec.CommandContext(ctx, "git", commitArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
 		altObjectsEnv,
+		sshAgentEnvVar,
 		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerName),
 		fmt.Sprintf("GIT_COMMITTER_EMAIL=%s", committerEmail),
 		fmt.Sprintf("GIT_AUTHOR_NAME=%s", authorName),
@@ -270,31 +314,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.Push != nil {
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
-
-		// If the protocol is SSH and a private key was given, we want to
-		// use it for communication with the code host.
-		if remoteURL.IsSSH() && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
-			// We set up an agent here, which sets up a socket that can be provided to
-			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
-			// it in the background.
-			// This is used to pass the private key to be used when pushing to the remote,
-			// without the need to store it on the disk.
-			agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
-			if err != nil {
-				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
-				return http.StatusInternalServerError, resp
-			}
-			go agent.Listen()
-			// Make sure we shut this down once we're done.
-			defer agent.Close()
-
-			cmd.Env = append(
-				os.Environ(),
-				[]string{
-					fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
-				}...,
-			)
-		}
+		cmd.Env = append(os.Environ(), sshAgentEnvVar)
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
 			logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
