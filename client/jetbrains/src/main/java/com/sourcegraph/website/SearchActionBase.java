@@ -1,6 +1,7 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -13,8 +14,8 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.git.GitUtil;
-import com.sourcegraph.git.RepoInfo;
+import com.sourcegraph.repo.RepoUtil;
+import com.sourcegraph.repo.RepoInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,19 +32,24 @@ public abstract class SearchActionBase extends DumbAwareAction {
         VirtualFile currentFile = FileDocumentManager.getInstance().getFile(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument());
         assert currentFile != null; // selectedText != null, so this can't be null.
 
-        String url;
         if (currentFile instanceof SourcegraphVirtualFile) {
+            String url;
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
             String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
+            BrowserOpener.openInBrowser(project, url);
         } else {
-            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
-            String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
-            String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
-            url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
+            ApplicationManager.getApplication().executeOnPooledThread(
+                () -> {
+                    String url;
+                    RepoInfo repoInfo = RepoUtil.getRepoInfo(currentFile, project);
+                    String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
+                    String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
+                    url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
+                    BrowserOpener.openInBrowser(project, url);
+                }
+            );
         }
-
-        BrowserOpener.openInBrowser(project, url);
     }
 
     enum Scope {

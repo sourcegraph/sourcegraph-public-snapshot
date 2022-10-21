@@ -11,8 +11,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.git.GitUtil;
-import com.sourcegraph.git.RepoInfo;
+import com.sourcegraph.repo.RepoUtil;
+import com.sourcegraph.repo.RepoInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,7 +44,7 @@ public abstract class FileActionBase extends DumbAwareAction {
         } else {
             ApplicationManager.getApplication().executeOnPooledThread(
                 () -> {
-                    RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile, project);
+                    RepoInfo repoInfo = RepoUtil.getRepoInfo(currentFile, project);
                     if (repoInfo.remoteUrl.equals("")) {
                         return;
                     }

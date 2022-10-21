@@ -1,4 +1,4 @@
-package com.sourcegraph.git;
+package com.sourcegraph.repo;
 
 import org.jetbrains.annotations.NotNull;
 
