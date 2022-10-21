@@ -16,6 +16,7 @@ In short:
 
 - DO use a pointer if the object has identity.
 - DO use a pointer if the object is meant to be mutated.
+- DO use a pointer if `nil` can be a valid object state.
 - DO use a pointer on a field if it's not intrinsic to the identity of the parent.
 - DO use a pointer for method receivers if the struct _as a whole_ has non-value semantics.
 - DO NOT use a pointer on collection types.
@@ -25,6 +26,7 @@ In more detail:
 
 - The semantics of the value require some form of **runtime object identity** where two similar or equivalent value types should not compare equal if they do not point to the same object address, or if non-reference use of the value would alter the intended semantics (e.g., a struct embedding a `sync.Mutex`).
 - The semantics of the value require mutation of the object in-place. If possible, try to limit the section of code where in-place mutation is performed (i.e., pass a value type as an explicit pointer to a function that mutates it).
+- If `nil` is a valid representation of a particular variable, then a pointer type can be appropriate. Conversely, a pointer type is not appropriate if uses of the variable assume non-`nil` values by convention.
 - A field of a struct does not **belong** to the enclosing struct, and both values have independent construction, lifetimes, or usage. This also applies when the values are mutually referential (recursive value types cannot be represented).
 - Structs that maintain their onw internal state should uniformly use a pointer-type receiver. Changing the set of methods for which value and reference receiver semantics apply _on the same struct_ can be a source of confusion. Structs meant to be used as simple value objects that maintain no internal state can be treated as an exception.
 
