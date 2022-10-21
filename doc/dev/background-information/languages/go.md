@@ -10,7 +10,7 @@ Related pages: [Testing Go code](testing_go_code.md) | [Error handling in Go](go
 
 ## Pointers
 
-Prefer use of value types over pointer types unless there is a compelling reason to use a pointer.
+**Prefer use of value types over pointer types unless there is a compelling reason to use a pointer.**
 
 In short:
 
