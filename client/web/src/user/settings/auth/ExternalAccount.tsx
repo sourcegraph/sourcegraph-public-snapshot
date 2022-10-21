@@ -57,11 +57,11 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
-                    {authProvider.displayName === 'SAML' && (
+                    {authProvider.serviceType === 'saml' && (
                         <>{account.external ? <>{account.external.userName}</> : 'Not connected'}</>
                     )}
 
-                    {authProvider.displayName !== 'SAML' && (
+                    {authProvider.serviceType !== 'saml' && (
                         <>
                             {account.external ? (
                                 <>
