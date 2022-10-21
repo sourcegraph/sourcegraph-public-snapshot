@@ -114,39 +114,40 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 	}, nil
 }
 
-const defaultNumCPUs = 4
 const defaultMemory = "12G"
 const defaultDiskSpace = "20G"
 
 func makeResourceCapacityInjector(resourceMetadata handler.ResourceMetadata) func([]string) []string {
+	replacements := []string{}
+	addBytesValuesReplacement := func(value, defaultValue, prefix string) {
+		if value == "" {
+			value = defaultValue
+		}
+
+		var gb, mb, human string
+		if parsed, _ := datasize.ParseString(value); parsed.Bytes() != 0 {
+			gb = strconv.Itoa(int(parsed.GBytes()))
+			mb = strconv.Itoa(int(parsed.MBytes()))
+			human = parsed.HumanReadable()
+		}
+
+		replacements = append(
+			replacements,
+			fmt.Sprintf("$%s_GB", prefix), gb,
+			fmt.Sprintf("$%s_MB", prefix), mb,
+			// N.B.: Ensure substring of longer keys come later
+			fmt.Sprintf("$%s", prefix), human,
+		)
+	}
+
 	cpus := resourceMetadata.NumCPUs
-	if cpus == 0 {
-		cpus = defaultNumCPUs
+	if cpus != 0 {
+		replacements = append(replacements, "$VM_CPUS", strconv.Itoa(cpus))
 	}
+	addBytesValuesReplacement(resourceMetadata.Memory, defaultMemory, "VM_MEM")
+	addBytesValuesReplacement(resourceMetadata.DiskSpace, defaultDiskSpace, "VM_DISK")
 
-	memory := resourceMetadata.Memory
-	if memory == "" {
-		memory = defaultMemory
-	}
-	parsedMemory, _ := datasize.ParseString(memory)
-
-	diskspace := resourceMetadata.DiskSpace
-	if diskspace == "" {
-		diskspace = defaultDiskSpace
-	}
-	parsedDiskSpace, _ := datasize.ParseString(diskspace)
-
-	replacer := strings.NewReplacer(
-		"$VM_CPUS", strconv.Itoa(cpus),
-		"$VM_MEM_GB", strconv.Itoa(int(parsedMemory.GBytes())),
-		"$VM_DISK_GB", strconv.Itoa(int(parsedDiskSpace.GBytes())),
-		"$VM_MEM_MB", strconv.Itoa(int(parsedMemory.MBytes())),
-		"$VM_DISK_MB", strconv.Itoa(int(parsedDiskSpace.MBytes())),
-
-		// N.B.: Ensure substring of longer keys come later
-		"$VM_MEM", parsedMemory.HumanReadable(),
-		"$VM_DISK", parsedDiskSpace.HumanReadable(),
-	)
+	replacer := strings.NewReplacer(replacements...)
 
 	return func(vs []string) []string {
 		for i, v := range vs {
