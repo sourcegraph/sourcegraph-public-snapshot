@@ -32,17 +32,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gh, err := NewGithubCodeHost(ctx, &cfg.From)
-	if err != nil {
-		log.Fatal(err)
-	}
-	gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
+	bt := NewBitbucketCodeHost(ctx, &cfg.From)
+	_, err = bt.ListRepos(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	runner := NewRunner(gh, gl)
-	if err := runner.Run(ctx); err != nil {
-		log.Fatal(err)
-	}
+	// log.Printf("Repos: %d", len(repos))
+	// for _, r := range repos {
+	// 	fmt.Printf("%s %s", r.name, r.url)
+	// }
+
+	// gh, err := NewGithubCodeHost(ctx, &cfg.From)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// runner := NewRunner(gh, gl)
+	// if err := runner.Run(ctx); err != nil {
+	// 	log.Fatal(err)
+	// }
 }
