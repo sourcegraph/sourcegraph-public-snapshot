@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/fatih/color"
@@ -58,6 +59,12 @@ func TestNonLocalDefinition(t *testing.T) {
 			repoCommitPath := types.RepoCommitPath{Repo: repoDir.Name(), Commit: "abc", Path: rel}
 
 			annotations = append(annotations, collectAnnotations(repoCommitPath, string(contents))...)
+			if strings.HasSuffix(path, ".cc") ||
+				strings.HasSuffix(path, ".h") ||
+				strings.HasSuffix(path, "Sample.java") {
+				t.Logf("path %v\n", path)
+				t.Logf("annotations %v\n", annotations)
+			}
 
 			symbols, err := tempSquirrel.getSymbols(context.Background(), repoCommitPath)
 			fatalIfErrorLabel(t, err, "getSymbols")

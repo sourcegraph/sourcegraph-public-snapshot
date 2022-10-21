@@ -263,6 +263,8 @@ const f = (p1?: number, p2 = 3, ...p3) => {
 `}, {
 		path: "test.cpp",
 		contents: `
+using std::cout;
+using std::endl;
 //         vv f.p1 def
 //         vv f.p1 ref
 //                 vv f.p2 def
@@ -283,7 +285,11 @@ void f(int p1, int p2 = 3, int& p3, int* p4)
 
 	//       v f.i def
 	//       v f.i ref
-    for (int i = 0; ; ) { }
+    for (int i = 0; ; ) {
+	//        v f.y ref
+	//             v f.y ref
+	  cout << i << y << endl;
+	}
 
 	//       v f.j def
 	//       v f.j ref
@@ -338,44 +344,46 @@ end
 	}
 
 	for _, test := range tests {
-		path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}
-		want := collectAnnotations(path, test.contents)
-		payload := getLocalCodeIntel(t, path, test.contents)
-		got := []annotation{}
-		for _, symbol := range payload.Symbols {
-			got = append(got, annotation{
-				repoCommitPathPoint: types.RepoCommitPathPoint{
-					RepoCommitPath: path,
-					Point: types.Point{
-						Row:    symbol.Def.Row,
-						Column: symbol.Def.Column,
-					},
-				},
-				symbol: "(unused)",
-				tags:   []string{"def"},
-			})
-
-			for _, ref := range symbol.Refs {
+		t.Run(test.path, func(t *testing.T) {
+			path := types.RepoCommitPath{Repo: "foo", Commit: "bar", Path: test.path}
+			want := collectAnnotations(path, test.contents)
+			payload := getLocalCodeIntel(t, path, test.contents)
+			got := []annotation{}
+			for _, symbol := range payload.Symbols {
 				got = append(got, annotation{
 					repoCommitPathPoint: types.RepoCommitPathPoint{
 						RepoCommitPath: path,
 						Point: types.Point{
-							Row:    ref.Row,
-							Column: ref.Column,
+							Row:    symbol.Def.Row,
+							Column: symbol.Def.Column,
 						},
 					},
 					symbol: "(unused)",
-					tags:   []string{"ref"},
+					tags:   []string{"def"},
 				})
+
+				for _, ref := range symbol.Refs {
+					got = append(got, annotation{
+						repoCommitPathPoint: types.RepoCommitPathPoint{
+							RepoCommitPath: path,
+							Point: types.Point{
+								Row:    ref.Row,
+								Column: ref.Column,
+							},
+						},
+						symbol: "(unused)",
+						tags:   []string{"ref"},
+					})
+				}
 			}
-		}
 
-		sortAnnotations(want)
-		sortAnnotations(got)
+			sortAnnotations(want)
+			sortAnnotations(got)
 
-		if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
-			t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
-		}
+			if diff := cmp.Diff(want, got, compareAnnotations); diff != "" {
+				t.Fatalf("unexpected annotations (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 

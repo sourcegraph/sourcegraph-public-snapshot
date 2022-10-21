@@ -53,6 +53,7 @@ func (squirrel *SquirrelService) Close() {
 
 // symbolInfo finds the symbol at the given point in a file.
 func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+	fmt.Printf("symbolInfo %v\n", point.Point)
 	// First, find the definition.
 	var def *types.RepoCommitPathMaybeRange
 	{
@@ -155,6 +156,8 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	// case "typescript":
 	case "cpp":
 		fmt.Println("BOOM!!")
+		fmt.Printf("path %v\n", node.RepoCommitPath)
+		fmt.Printf("point %v\n", node.StartPoint())
 		return squirrel.getDefCpp(ctx, node)
 	// case "ruby":
 	default:

@@ -245,6 +245,7 @@ var langToLangSpec = map[string]LangSpec{
 (catch_clause)        @scope ; catch (e) ...
 (lambda_expression)   @scope ; [](auto x) { ... }
 (function_definition) @scope ; void f() { ... }
+(function_declarator) @scope ; void f() { ... }
 
 (declaration                    declarator: (identifier) @definition)                        ; int x;
 (init_declarator                declarator: (identifier) @definition)                        ; int x = 5;
