@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS zoekt_repos (
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS zoekt_repos_repo_id ON zoekt_repos USING btree (repo_id);
 CREATE INDEX IF NOT EXISTS zoekt_repos_index_status ON zoekt_repos USING btree (index_status);
 
 CREATE OR REPLACE FUNCTION func_insert_zoekt_repo() RETURNS TRIGGER AS $$

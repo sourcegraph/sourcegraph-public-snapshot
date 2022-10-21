@@ -20361,16 +20361,6 @@
           "IndexDefinition": "CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "zoekt_repos_repo_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX zoekt_repos_repo_id ON zoekt_repos USING btree (repo_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
