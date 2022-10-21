@@ -1,12 +1,10 @@
-# Sourcegraph AWS AMI instances
-
 <style>
-img.doc-screenshot {
-    margin-top: 1em;
-    margin-bottom: 1em;
-    border: 1px solid lightgray;
-}
+  .screenshot {
+      min-width: 100%
+  }
 </style>
+
+# Sourcegraph AWS AMI instances
 
 Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned to your organization's scale in just a few clicks.
 
@@ -46,14 +44,14 @@ To configure SSL, and lock down the instance from the public internet, see the [
 
 ### Instance size chart
 
-Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
+Select an AMI according and instance type to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
 
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
 
-|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
-| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
-| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
-| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
+|                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
+|------------------|------------|-------------|-------------|-------------|-------------|
+| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
+| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
 | **Recommended Type**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
 | **Minimum Type**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
 | **AMIs List** | [size-XS AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XS) | [size-S AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-S) | [size-M AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-M) | [size-L AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-L) | [size-XL AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XL) |
@@ -81,7 +79,7 @@ We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connecti
 
 #### Step 1: Request certificate
 
-![image](https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png)
+<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png">
 
 Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 

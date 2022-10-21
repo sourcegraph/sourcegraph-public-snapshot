@@ -4,12 +4,12 @@ Setting up Docker applications with [multiple containers](https://www.docker.com
 
 This guide will take you through how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. You can also follow one of the available *cloud-specific guides* listed below to prepare and install Sourcegraph on a supported cloud environment:
 
-- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
-  - [Launch a Sourcegraph AMI Instance](../../deploy/machine-images/aws-ami.md)
-  - [Launch a Sourcegraph Instance with AWS One-Click](../../deploy/docker-compose/aws-oneclick.md)
-- [Deploy Sourcegraph with Docker Compose on Azure](../../deploy/docker-compose/azure.md)
-- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
-- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="aws">AWS</a>
+  <a class="btn btn-secondary text-center" href="azure">Azure</a>
+  <a class="btn btn-secondary text-center" href="digitalocean">DigitalOcean</a>
+  <a class="btn btn-secondary text-center" href="google_cloud">Google Cloud</a>
+</div>
 
 ## Prerequisites
 

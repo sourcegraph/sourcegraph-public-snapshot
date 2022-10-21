@@ -1,16 +1,39 @@
+---
+title: Deployment Overview
+---
+
 # Deployment Overview
 
-Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business.
+Sourcegraph supports different deployment methods for different purposes. Each deployment type requires different levels of investment and technical understanding. What works best for you and your team depends on the needs and desired outcomes for your business.
 
 If you aren't currently working with our Customer Engineering team, this overview will provide a high-level view of what's available and needed depending on the deployment type you choose.
 
-Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+In general:
 
-If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
+- For most customers, we recommend Sourcegraph Cloud, managed entirely by Sourcegraph.
+- For customers who want to self-host, we recommend one of the single-node deployment options.
+- For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by emails (sales@sourcegraph.com) if you pursue this option.
+- If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
 ## Deployment types
 
-Each of the deployment types listed below provides a different level of capability. As mentioned previously, base your deployment type on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
+To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable. In short, you **cannot** change your deployment type of a running instance.
+
+Each of the deployment types listed below provides a different level of capability. As mentioned previously, you shall pick a deployment type based on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
+
+Sourcegraph provides a [resource estimator](resource_estimator.md) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+
+### [Machine Images](machine-images/index.md) 
+
+<span class="badge badge-note">RECOMMENDED</span> Customized machine images allow you to spin up a preconfigured and customized Sourcegraph instance with just a few clicks, all in less than 10 minutes!
+
+Currently available in the following hosts:
+
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="machine-images/aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/azure"><span>Azure Images</span></a>
+  <a class="btn btn-secondary text-center" href="machine-images/gce"><span>Google Compute Images</span></a>
+</div>
 
 ### [Docker Compose](docker-compose/index.md)
 
@@ -20,7 +43,14 @@ Docker Compose is used for single-host instances such as AWS EC2 or GCP Compute 
 
 Docker Compose scales to fit the needs of the majority of customers. Refer to the [resource estimator](resource_estimator.md) to find the appropriate instance for you.
 
-### Kubernetes [with Helm](kubernetes/helm.md) or [ without Helm](kubernetes/index.md)
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="./docker-compose/aws"><span>AWS</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/azure"><span>Azure</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/digitalocean"><span>DigitalOcean</span></a>
+  <a class="btn btn-secondary text-center" href="./docker-compose/google_cloud"><span>Google Cloud</span></a>
+</div>
+
+### [Kubernetes](kubernetes/index.md) or [Kubernetes with Helm](kubernetes/helm.md)
 
 Kubernetes is recommended for non-standard deployments where Docker Compose is not a viable option.
 
@@ -30,13 +60,33 @@ Helm provides a simple mechanism for deployment customizations, as well as a muc
 
 If you are unable to use Helm to deploy, but still want to use Kubernetes, follow our [Kubernetes deployment documentation](kubernetes/index.md). This path will require advanced knowledge of Kubernetes. For teams without the ability to support this, please speak to your Sourcegraph contact about using Docker Compose instead.
 
+---
+
 ## Reference repositories
 
 Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-Before starting, you will need to decide your deployment type, including if you would like to use Kubernetes with Helm (vs. a more manual customization path). In the case of Kubernetes once you choose Helm (or not), it **can't be changed afterwards**.
+For more information, follow the installation and configuration docs for your specific deployment type.
 
-For more information, follow the install and configuration docs for your specific deployment type: [Docker Compose](docker-compose/index.md), [Kubernetes with Helm](kubernetes/helm.md), or [Kubernetes without Helm](kubernetes/index.md).
+## Configuration
+
+Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
+
+In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
+
+## Operation
+
+In general, operation activities for your Sourcegraph deployment will consist of storage management, database access, database migrations, and backup and restore. Details are provided with the instructions for each deployment type.
+
+## Monitoring
+
+Sourcegraph provides a number of options to monitor the health and usage of your deployment. While high-level guidance is provided as part of your deployment type, you can also review our [Observability docs](../observability/index.md) for more detailed instruction.
+
+## Upgrades
+
+A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
+
+Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
 
 ## External services
 
@@ -68,23 +118,3 @@ See the following guides to use an external or managed version of each service t
 - Amazon Web Services: [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/), [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/), and [S3](https://aws.amazon.com/s3/) for storing user uploads.
 - Google Cloud: [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/), [Cloud Memorystore](https://cloud.google.com/memorystore/), and [Cloud Storage](https://cloud.google.com/storage) for storing user uploads.
 - Digital Ocean: [Digital Ocean Managed Databases](https://www.digitalocean.com/products/managed-databases/) for [Postgres](https://www.digitalocean.com/products/managed-databases-postgresql/), [Redis](https://www.digitalocean.com/products/managed-databases-redis/), and [Spaces](https://www.digitalocean.com/products/spaces/) for storing user uploads.
-
-## Configuration
-
-Configuration at the deployment level focuses on ensuring your Sourcegraph runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
-
-In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
-
-## Operation
-
-In general, operation activities for your Sourcegraph deployment will consist of storage management, database access, database migrations, and backup and restore. Details are provided with the instructions for each deployment type.
-
-## Monitoring
-
-Sourcegraph provides a number of options to monitor the health and usage of your deployment. While high-level guidance is provided as part of your deployment type, you can also review our [Observability docs](../observability/index.md) for more detailed instruction.
-
-## Upgrades
-
-A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
-
-Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
