@@ -186,7 +186,7 @@ func run(logger log.Logger) error {
 		},
 
 		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-			// As this is an internal service all, we need an internal actor
+			// As this is an internal service call, we need an internal actor
 			ctx = actor.WithInternalActor(ctx)
 			return git.DiffSymbols(ctx, repo, commitA, commitB)
 		},
