@@ -30,7 +30,9 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
     const isVisibleRef = useRef(isVisible)
     isVisibleRef.current = isVisible
     const state = useFuzzyState(props, () => setIsVisible(false))
-    const { tabs, activeTab, setActiveTab, repoRevision, toggleGlobalFiles, toggleGlobalSymbols } = state
+    const { tabs, activeTab, setActiveTab, repoRevision, isScopeToggleDisabled, toggleScope } = state
+    const isScopeToggleDisabledRef = useRef(isScopeToggleDisabled)
+    isScopeToggleDisabledRef.current = isScopeToggleDisabled
 
     // We need useRef to access the latest state inside `openFuzzyFinder` below.
     // The keyboard shortcut does not pick up changes to the callback even if we
@@ -52,14 +54,12 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
             if (!isVisible) {
                 setIsVisible(true)
             }
-            if (isVisible && tab === activeTab) {
+            if (!isScopeToggleDisabledRef.current && isVisible && tab === activeTab) {
                 switch (tab) {
                     case 'files':
-                        toggleGlobalFiles()
-                        break
                     case 'symbols':
-                        toggleGlobalSymbols()
-                        break
+                    case 'all':
+                        toggleScope()
                 }
             } else {
                 const newTab = tabsRef.current.focusNamedTab(tab)
@@ -68,7 +68,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 }
             }
         },
-        [setActiveTab, setIsVisible, toggleGlobalFiles, toggleGlobalSymbols]
+        [setActiveTab, setIsVisible, toggleScope]
     )
 
     const shortcuts = useFuzzyShortcuts(props.settingsCascade.final)
@@ -85,7 +85,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
 
     // Disable the fuzzy finder if only the 'files' tab is enabled and we're not
     // in a repository-related page.
-    if (tabs.isOnlyFilesEnabled() && !fuzzyIsActive(activeTab, repoRevision, 'files')) {
+    if (tabs.isOnlyFilesEnabled() && !fuzzyIsActive(activeTab, 'files')) {
         return null
     }
 

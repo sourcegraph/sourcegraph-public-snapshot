@@ -9,8 +9,9 @@ import { SymbolKind } from '../../graphql-operations'
  */
 export interface PersistableQueryResult {
     text: string
-    url: string
+    url?: string
     symbolKind?: SymbolKind
+    stars?: number
 }
 
 export interface FuzzyLocalCache {

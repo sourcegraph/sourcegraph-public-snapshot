@@ -2374,6 +2374,7 @@ CREATE TABLE lsif_uploads (
     cancel boolean DEFAULT false NOT NULL,
     uncompressed_size bigint,
     last_referenced_scan_at timestamp with time zone,
+    last_traversal_scan_at timestamp with time zone,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2404,6 +2405,8 @@ COMMENT ON COLUMN lsif_uploads.reference_count IS 'The number of references to t
 COMMENT ON COLUMN lsif_uploads.indexer_version IS 'The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.';
 
 COMMENT ON COLUMN lsif_uploads.last_referenced_scan_at IS 'The last time this upload was known to be referenced by another (possibly expired) index.';
+
+COMMENT ON COLUMN lsif_uploads.last_traversal_scan_at IS 'The last time this upload was known to be reachable by a non-expired index.';
 
 CREATE VIEW lsif_dumps AS
  SELECT u.id,
@@ -2514,6 +2517,7 @@ CREATE TABLE lsif_indexes (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2566,6 +2570,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

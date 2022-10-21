@@ -25,6 +25,8 @@ type RootResolver interface {
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
 	DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
+	ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	ReindexLSIFIndexes(ctx context.Context, args *ReindexLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
@@ -137,6 +139,55 @@ func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIn
 	return &sharedresolvers.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence index data
+func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("indexID", string(args.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.autoindexSvc.ReindexIndexByID(ctx, int(indexID)); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *ReindexLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexLsifIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	opts, err := makeReindexIndexesOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.autoindexSvc.ReindexIndexes(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexByID
 func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error) {
 	if !autoIndexingEnabled() {
@@ -178,6 +229,12 @@ type LSIFRepositoryIndexesQueryArgs struct {
 }
 
 type DeleteLSIFIndexesArgs struct {
+	Query      *string
+	State      *string
+	Repository *graphql.ID
+}
+
+type ReindexLSIFIndexesArgs struct {
 	Query      *string
 	State      *string
 	Repository *graphql.ID

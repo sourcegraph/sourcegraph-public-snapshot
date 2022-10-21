@@ -2081,6 +2081,10 @@ type MockUploadService struct {
 	// SoftDeleteExpiredUploadsFunc is an instance of a mock function object
 	// controlling the behavior of the method SoftDeleteExpiredUploads.
 	SoftDeleteExpiredUploadsFunc *UploadServiceSoftDeleteExpiredUploadsFunc
+	// SoftDeleteExpiredUploadsViaTraversalFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// SoftDeleteExpiredUploadsViaTraversal.
+	SoftDeleteExpiredUploadsViaTraversalFunc *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc
 	// UpdateAllDirtyCommitGraphsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// UpdateAllDirtyCommitGraphs.
@@ -2170,6 +2174,11 @@ func NewMockUploadService() *MockUploadService {
 			},
 		},
 		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context, int) (r0 int, r1 error) {
+				return
+			},
+		},
+		SoftDeleteExpiredUploadsViaTraversalFunc: &UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc{
 			defaultHook: func(context.Context, int) (r0 int, r1 error) {
 				return
 			},
@@ -2271,6 +2280,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.SoftDeleteExpiredUploads")
 			},
 		},
+		SoftDeleteExpiredUploadsViaTraversalFunc: &UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc{
+			defaultHook: func(context.Context, int) (int, error) {
+				panic("unexpected invocation of MockUploadService.SoftDeleteExpiredUploadsViaTraversal")
+			},
+		},
 		UpdateAllDirtyCommitGraphsFunc: &UploadServiceUpdateAllDirtyCommitGraphsFunc{
 			defaultHook: func(context.Context, time.Duration, time.Duration) error {
 				panic("unexpected invocation of MockUploadService.UpdateAllDirtyCommitGraphs")
@@ -2336,6 +2350,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		SoftDeleteExpiredUploadsFunc: &UploadServiceSoftDeleteExpiredUploadsFunc{
 			defaultHook: i.SoftDeleteExpiredUploads,
+		},
+		SoftDeleteExpiredUploadsViaTraversalFunc: &UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc{
+			defaultHook: i.SoftDeleteExpiredUploadsViaTraversal,
 		},
 		UpdateAllDirtyCommitGraphsFunc: &UploadServiceUpdateAllDirtyCommitGraphsFunc{
 			defaultHook: i.UpdateAllDirtyCommitGraphs,
@@ -4148,6 +4165,119 @@ func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceSoftDeleteExpiredUploadsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc describes the
+// behavior when the SoftDeleteExpiredUploadsViaTraversal method of the
+// parent MockUploadService instance is invoked.
+type UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc struct {
+	defaultHook func(context.Context, int) (int, error)
+	hooks       []func(context.Context, int) (int, error)
+	history     []UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall
+	mutex       sync.Mutex
+}
+
+// SoftDeleteExpiredUploadsViaTraversal delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockUploadService) SoftDeleteExpiredUploadsViaTraversal(v0 context.Context, v1 int) (int, error) {
+	r0, r1 := m.SoftDeleteExpiredUploadsViaTraversalFunc.nextHook()(v0, v1)
+	m.SoftDeleteExpiredUploadsViaTraversalFunc.appendCall(UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SoftDeleteExpiredUploadsViaTraversal method of the parent
+// MockUploadService instance is invoked and the hook queue is empty.
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SoftDeleteExpiredUploadsViaTraversal method of the parent
+// MockUploadService instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) PushHook(hook func(context.Context, int) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) nextHook() func(context.Context, int) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) appendCall(r0 UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall objects
+// describing the invocations of this function.
+func (f *UploadServiceSoftDeleteExpiredUploadsViaTraversalFunc) History() []UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall is an object
+// that describes an invocation of method
+// SoftDeleteExpiredUploadsViaTraversal on an instance of MockUploadService.
+type UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceSoftDeleteExpiredUploadsViaTraversalFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

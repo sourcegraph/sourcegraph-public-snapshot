@@ -5,9 +5,11 @@ import { FuzzyFSM } from './FuzzyFsm'
 import { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'
 
 export abstract class FuzzyQuery {
+    private isStaleResultsDeleted = false
     protected queries: Map<string, Promise<PersistableQueryResult[]>> = new Map()
     protected doneQueries: Set<string> = new Set()
     protected queryResults: Map<string, PersistableQueryResult> = new Map()
+
     constructor(private readonly onNamesChanged: () => void, private readonly cache: FuzzyLocalCache) {
         this.addQuery('FuzzyQuery.fromCache()-constructor', this.cache.initialValues())
     }
@@ -28,45 +30,49 @@ export abstract class FuzzyQuery {
     private removeQueryResults(toRemove: PersistableQueryResult[]): void {
         const oldSize = this.queryResults.size
         for (const result of toRemove) {
-            this.queryResults.delete(result.url)
+            this.queryResults.delete(result.url || result.text)
         }
         const didChange = this.queryResults.size < oldSize
         if (didChange) {
-            this.cache.cacheValues([...this.queryResults.values()])
+            const newValues = [...this.queryResults.values()]
+            this.cache.cacheValues(newValues)
             this.onNamesChanged()
         }
     }
     private addQueryResults(results: PersistableQueryResult[]): void {
         const oldSize = this.queryResults.size
         for (const result of results) {
-            this.queryResults.set(result.url, result)
+            this.queryResults.set(result.url || result.text, result)
         }
         const didChangeSize = this.queryResults.size > oldSize
         if (didChangeSize) {
             this.cache.cacheValues([...this.queryResults.values()])
+            this.onNamesChanged()
         }
     }
     public isDoneDownloading(): boolean {
         return this.queries.size === 0
     }
+    public isDownloading(): boolean {
+        return this.queries.size > 0
+    }
     public hasQuery(query: string): boolean {
         return this.queries.has(query) || this.doneQueries.has(query)
     }
-    public fuzzySearch(): FuzzySearch {
+    protected fuzzySearch(): FuzzySearch {
         return new CaseInsensitiveFuzzySearch(this.searchValues(), undefined)
     }
 
-    public fuzzyFSM(query: string): FuzzyFSM {
-        this.handleQuery(query)
-        if (this.queries.size === 0) {
+    public fuzzyFSM(): FuzzyFSM {
+        if (this.isDownloading()) {
             return {
-                key: 'ready',
-                fuzzy: this.fuzzySearch(),
+                key: 'downloading',
+                downloading: this.indexingFSM(),
             }
         }
         return {
-            key: 'indexing',
-            indexing: this.indexingFSM(),
+            key: 'ready',
+            fuzzy: this.fuzzySearch(),
         }
     }
 
@@ -100,6 +106,14 @@ export abstract class FuzzyQuery {
             return
         }
         this.addQuery(actualQuery, this.handleRawQueryPromise(actualQuery))
+
+        if (!this.isStaleResultsDeleted) {
+            this.isStaleResultsDeleted = true
+            this.removeStaleResults().then(
+                () => {},
+                () => {}
+            )
+        }
     }
 
     public addQuery(query: string, promise: Promise<PersistableQueryResult[]>): void {

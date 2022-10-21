@@ -444,6 +444,13 @@ func (s *Service) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (
 	return s.store.SoftDeleteExpiredUploads(ctx, batchSize)
 }
 
+func (s *Service) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error) {
+	ctx, _, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SoftDeleteExpiredUploadsViaTraversal(ctx, maxTraversal)
+}
+
 // BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
 // this value set. This method is used to backfill old upload records prior to this value being reliably set
 // during processing.

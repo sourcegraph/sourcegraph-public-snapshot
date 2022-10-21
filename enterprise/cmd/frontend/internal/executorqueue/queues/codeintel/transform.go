@@ -18,8 +18,9 @@ const schemeExecutorToken = "token-executor"
 
 func transformRecord(index types.Index, accessToken string) (apiclient.Job, error) {
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
-	for _, dockerStep := range index.DockerSteps {
+	for i, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+			Key:      fmt.Sprintf("pre-index.%d", i),
 			Image:    dockerStep.Image,
 			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Root,
@@ -29,6 +30,7 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+			Key:      "indexer",
 			Image:    index.Indexer,
 			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
 			Dir:      index.Root,
@@ -39,6 +41,7 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 	frontendURL := conf.ExecutorsFrontendURL()
 	authorizationHeader := makeAuthHeaderValue(accessToken)
 	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
+	srcCliImage := fmt.Sprintf("%s:%s", conf.ExecutorsSrcCLIImage(), conf.ExecutorsSrcCLIImageTag())
 
 	root := index.Root
 	if root == "" {
@@ -56,6 +59,30 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 		fetchTags = true
 	}
 
+	dockerSteps = append(dockerSteps, apiclient.DockerStep{
+		Key:   "upload",
+		Image: srcCliImage,
+		Commands: []string{
+			shellquote.Join(
+				"src",
+				"lsif",
+				"upload",
+				"-no-progress",
+				"-repo", index.RepositoryName,
+				"-commit", index.Commit,
+				"-root", root,
+				"-upload-route", uploadRoute,
+				"-file", outfile,
+				"-associated-index-id", strconv.Itoa(index.ID),
+			),
+		},
+		Dir: index.Root,
+		Env: []string{
+			fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
+			fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
+		},
+	})
+
 	return apiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
@@ -63,25 +90,6 @@ func transformRecord(index types.Index, accessToken string) (apiclient.Job, erro
 		ShallowClone:   true,
 		FetchTags:      fetchTags,
 		DockerSteps:    dockerSteps,
-		CliSteps: []apiclient.CliStep{
-			{
-				Commands: []string{
-					"lsif", "upload",
-					"-no-progress",
-					"-repo", index.RepositoryName,
-					"-commit", index.Commit,
-					"-root", root,
-					"-upload-route", uploadRoute,
-					"-file", outfile,
-					"-associated-index-id", strconv.Itoa(index.ID),
-				},
-				Dir: index.Root,
-				Env: []string{
-					fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
-					fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
-				},
-			},
-		},
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch leak of authorization header.
 			authorizationHeader: redactedAuthorizationHeader,

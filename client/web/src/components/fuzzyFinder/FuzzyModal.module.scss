@@ -6,6 +6,7 @@
     // It can be removed after addressing the following issue:
     // https://github.com/sourcegraph/sourcegraph/issues/42217
     width: 80vw !important;
+    background-color: var(--body-bg);
 }
 
 .content {
@@ -18,7 +19,6 @@
 .header {
     display: flex;
     justify-content: space-between;
-    padding-bottom: 0.25rem;
     margin-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
 }
@@ -33,6 +33,7 @@
     text-align: left;
     list-style-type: none;
     padding: unset;
+    margin-bottom: 0;
 }
 
 .focused {
@@ -40,6 +41,9 @@
     background-color: var(--color-bg-2);
 }
 
+.bottom-summary {
+    border-top: 1px solid var(--border-color-2);
+}
 .summary {
     display: flex;
     margin-bottom: 0.5rem;
@@ -48,6 +52,9 @@
         flex-direction: column;
         gap: 0.5rem;
     }
+}
+.summary > * {
+    flex: 1;
 }
 
 .search-query {
@@ -67,16 +74,21 @@
     align-self: center;
 }
 
-.tab:hover {
-    cursor: pointer;
-}
 .tab {
-    flex: 2 1 auto;
-    padding-top: 0.5rem;
+    gap: 4px;
+}
+.right-aligned {
+    text-align: right;
 }
 .tab-centered-text {
     text-align: center;
 }
 .active-tab {
     background-color: var(--color-bg-2);
+}
+
+.fuzzy-scope-selector {
+    width: fit-content;
+    margin-left: auto;
+    margin-bottom: 0;
 }

@@ -34,7 +34,7 @@ func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RubyPackagesScheme,
-		src:        &rubyPackagesSource{client: rubygems.NewClient(svc.URN(), cli)},
+		src:        &rubyPackagesSource{client: rubygems.NewClient(svc.URN(), c.Repository, cli)},
 	}, nil
 }
 
