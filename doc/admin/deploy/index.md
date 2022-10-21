@@ -17,7 +17,7 @@ In general:
 
 ## Deployment types
 
-To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable it. In short, you **cannot** change your deployment type of a running instance.
+To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable. In short, you **cannot** change your deployment type of a running instance.
 
 Each of the deployment types listed below provides a different level of capability. As mentioned previously, you shall pick a deployment type based on the needs of your business. However, you should also consider the technical expertise available for your deployment. The sections below provide more detailed recommendations for each deployment type.
 
@@ -66,11 +66,11 @@ If you are unable to use Helm to deploy, but still want to use Kubernetes, follo
 
 Sourcegraph provides reference repositories with branches corresponding to the version of Sourcegraph you wish to deploy. The reference repository contains everything you need to spin up and configure your instance depending on your deployment type, which also assists in your upgrade process going forward.
 
-For more information, follow the install and configuration docs for your specific deployment type.
+For more information, follow the installation and configuration docs for your specific deployment type.
 
 ## Configuration
 
-Configuration at the deployment level focuses on ensuring your Sourcegraph runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
+Configuration at the deployment level focuses on ensuring your Sourcegraph deployment runs optimally, based on the size of your repositories and the number of users. Configuration options will vary based on the type of deployment you choose. Consult the specific configuration deployment sections for additional information.
 
 In addition you can review our [Configuration docs](../config/index.md) for overall Sourcegraph configuration.
 
