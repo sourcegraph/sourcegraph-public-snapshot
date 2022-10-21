@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
+import { mdiInformation, mdiAlert, mdiSync, mdiMagnifyScan, mdiCheckboxMarkedCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -174,14 +174,23 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Cloning repositories...'
             icon = CloudSyncIconRefresh
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
+            codeHostMessage = 'Indexing repositories...'
+            icon = CloudSyncIconRefresh
         } else {
             codeHostMessage = 'Repositories up to date'
             icon = CloudCheckIconRefresh
         }
 
+        const iconProps = { as: icon }
+
         return (
             <Tooltip content={isOpen ? undefined : codeHostMessage}>
-                <Icon as={icon} size="md" {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })} />
+                <Icon
+                    {...iconProps}
+                    size="md"
+                    {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })}
+                />
             </Tooltip>
         )
     }, [data, isOpen])
@@ -216,6 +225,22 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 message={status.message}
                                 title="Cloning repositories"
                                 messageHint="Not all repositories available for search yet."
+                                linkTo="/site-admin/repositories"
+                                linkText="View repositories"
+                                linkOnClick={toggleIsOpen}
+                                entryType="progress"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'IndexingProgress') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="indexing-progress"
+                                message={`Indexing repositories. ${status.indexed} out of ${
+                                    status.indexed + status.notIndexed
+                                } indexed.`}
+                                title="Indexing repositories"
+                                messageHint="Indexing repositories speeds up search."
                                 linkTo="/site-admin/repositories"
                                 linkText="View repositories"
                                 linkOnClick={toggleIsOpen}
