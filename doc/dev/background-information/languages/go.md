@@ -8,6 +8,42 @@ and [Effective Go](http://golang.org/doc/effective_go.html).
 
 Related pages: [Testing Go code](testing_go_code.md) | [Error handling in Go](go_errors.md) | [Exposing Services](../exposing-services.md)
 
+## Pointers
+
+Prefer use of value types over pointer types unless there is a complelling reason to use a pointer. For example:
+
+- The semantics of the value require some form of **runtime object identity** where two similar or equivalent value types should not compare equal if they do not point to the same object address.
+- The semantics of the value require mutation of the object in-place. If possible, try to limit the section of code where in-place mutation is performed (i.e., pass a value type as an explicit pointer to a function that mutates it).
+- A field of a struct does not **belong** to the enclosing struct, and both values have idependent construction, lifetimes, or usage. This also applies when the values are mutually referential (recursive value types cannot be represented).
+
+Avoid reaching for pointer types for performance reasons without first benchmarking. Doing so may actually decrease performance of the application as a whole, as the addition of pointers can cause escape analysis to force heap-allocation of short-lived objects. This increases the number of allocations as well as pressure on the garbage collector. The use of larger value types can be a performance issue in loops, where non-pointer changes are effective. For example:
+
+```go
+for i, v := range s {
+  // v is copied from s on every iteration
+  // ...
+}
+```
+
+Instead, do (as suggested by `go vet`):
+
+```go
+for i := range s {
+  v := s[i] // no copy occurs
+  // ...
+}
+```
+
+Avoid pointers to collection types such as slices and maps unless the value has specific semantics that aren't ergonomically expressible in an alternative way. To differentiate empty and missing collections, consider pairing the collection with a boolean value over using a pointer:
+
+```go
+func optionalCollection() (_ []string, exists bool, _ error) {
+  // ...
+}
+```
+
+The `(value, ok)` return type return is also idiomatic for non-collection types to distinguish when `value` can be used meaningfully by the caller. When `ok` is false, `value` will be the zero-value of its type and should not be used by the caller. In most cases, this should be preferred over returning a ponter type where `nil` means _no value_.
+
 ## Panics
 
 Panics are used for code paths that should never be reached.
