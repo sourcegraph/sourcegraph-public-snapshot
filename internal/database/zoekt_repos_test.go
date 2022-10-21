@@ -248,7 +248,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 
 // 21 Oct 2022 - MacBook Pro M1 Max
 //
-// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmarkZoektRepos ./internal/database                                                                                                                                                                                                          -1-
+// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmarkZoektRepos ./internal/database
 // goos: darwin
 // goarch: arm64
 // pkg: github.com/sourcegraph/sourcegraph/internal/database
