@@ -793,6 +793,9 @@ func lazyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
 	}
 }
 
+// isRecursiveDefinitionPython detects cases like `x = x.foo` that would cause infinite recursion when
+// attempting to determine the type of `x`. This is known to happen in the wild, but it's not clear (to
+// me) what the proper type should be or how to find it, so it's simply unsupported.
 func isRecursiveDefinitionPython(node Node, def Node) bool {
 	if node.RepoCommitPath != def.RepoCommitPath {
 		return false
