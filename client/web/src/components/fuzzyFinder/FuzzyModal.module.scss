@@ -7,6 +7,7 @@
     // https://github.com/sourcegraph/sourcegraph/issues/42217
     width: 80vw !important;
     background-color: var(--body-bg);
+    padding: 0;
 }
 
 .content {
@@ -14,13 +15,25 @@
     align-items: stretch;
     flex-direction: column;
     height: 100%;
+    padding: 0 1rem;
 }
 
 .header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    gap: 0.5rem;
+    padding: 0.75rem 0 0 0;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.5rem 0;
+}
+
+.shortcut {
+    color: var(--text-muted);
 }
 
 .input {
@@ -42,8 +55,13 @@
 }
 
 .bottom-summary {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.5rem 0 0.75rem 0;
     border-top: 1px solid var(--border-color-2);
 }
+
 .summary {
     display: flex;
     margin-bottom: 0.5rem;
@@ -77,6 +95,7 @@
 .tab {
     gap: 4px;
 }
+
 .right-aligned {
     text-align: right;
 }

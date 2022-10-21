@@ -349,7 +349,9 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                             {tabs.entries().map(([key, tab]) => (
                                 <Tab key={key} className={styles.tab}>
                                     {tab.title}
-                                    {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
+                                    <span className={styles.shortcut}>
+                                        {tab?.plaintextShortcut && ' ' + tab.plaintextShortcut}
+                                    </span>
                                 </Tab>
                             ))}
                         </Tabs>
@@ -358,6 +360,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
+                <div className={styles.divider}></div>
                 <Input
                     id="fuzzy-modal-input"
                     autoComplete="off"
@@ -393,7 +396,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     )}
                 </div>
                 {queryResult.jsxElement}
-                <div className={classNames(styles.summary, styles.bottomSummary)}>
+                <div className={styles.bottomSummary}>
                     <SearchQueryLink {...props} />
                     <span className={styles.rightAligned}>
                         <ArrowKeyExplanation />
