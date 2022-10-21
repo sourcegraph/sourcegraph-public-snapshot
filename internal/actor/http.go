@@ -120,8 +120,8 @@ func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
 
 		// Request not associated with an authenticated user
 		case "", headerValueNoActor:
-			// Even though the current user is authenticated, we may still have
-			// an anonymous UID to propagate.
+			// Even though the current user is not authenticated, we may still have an
+			// anonymous UID to propagate.
 			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
 				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
 			}
