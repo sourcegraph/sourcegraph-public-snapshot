@@ -36,7 +36,6 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         } else {
             window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
         }
-
     }, [authProvider.serviceType, authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account
@@ -58,32 +57,25 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
-                    {(authProvider.displayName === 'SAML') && <>
-                        {account.external ?
-                            (
+                    {authProvider.displayName === 'SAML' && (
+                        <>{account.external ? <>{account.external.userName}</> : 'Not connected'}</>
+                    )}
+
+                    {authProvider.displayName !== 'SAML' && (
+                        <>
+                            {account.external ? (
                                 <>
-                                    {account.external.userName}
+                                    {account.external.userName}(
+                                    <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                                        @{account.external.userLogin}
+                                    </Link>
+                                    )
                                 </>
                             ) : (
                                 'Not connected'
                             )}
-                    </>}
-
-
-                    {(authProvider.displayName !== 'SAML') && <>
-                        {account.external ? (
-                            <>
-                                {account.external.userName}
-                                    (
-                                    <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                        @{account.external.userLogin}
-                                    </Link>
-                                )
-                            </>
-                        ) : (
-                            'Not connected'
-                        )}
-                    </>}
+                        </>
+                    )}
                 </div>
             </div>
             <div className="align-self-center">

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import AlertIcon from 'mdi-react/AlertIcon';
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon';
 import GithubIcon from 'mdi-react/GithubIcon';
 import GitLabIcon from 'mdi-react/GitlabIcon';
 
@@ -35,7 +35,7 @@ const GITLAB_DOTCOM: AddExternalAccountOptions = {
 const SAML: AddExternalAccountOptions = {
     kind: ExternalAccountKind.SAML,
     title: 'SAML',
-    icon: AlertIcon,
+    icon: AccountCircleIcon,
 }
 
 export const defaultExternalAccounts: Record<ExternalAccountKind, AddExternalAccountOptions> = {

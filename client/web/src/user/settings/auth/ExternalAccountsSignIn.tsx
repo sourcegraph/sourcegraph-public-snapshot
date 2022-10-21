@@ -1,7 +1,6 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -27,7 +26,6 @@ interface GitLabExternalData {
 }
 
 interface SamlExternalData {
-    name: string
     username: string
     Assertions: assertion[]
 }
@@ -56,7 +54,7 @@ export interface NormalizedMinAccount {
     external?: {
         id: string
         userName: string
-        userLogin: string
+        userLogin: string | null
         userUrl: string | null
     }
 }
@@ -78,8 +76,7 @@ const getNormalizedAccount = (
     const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
 
-    // get external service icon and name as they will match external account
-    const { icon, title: name } = defaultExternalAccounts[kind] || { icon: AccountCircleIcon, title: kind }
+    const { icon, title: name } = defaultExternalAccounts[kind]
 
     let normalizedAccount: NormalizedMinAccount = {
         icon,
@@ -120,31 +117,31 @@ const getNormalizedAccount = (
                 }
                 break
             case 'SAML':
-            {
-                const samlExternalData = accountExternalData as SamlExternalData
-                const data = samlExternalData.Assertions[0].AttributeStatement.Attributes
-                let nickname = ''
+                {
+                    const samlExternalData = accountExternalData as SamlExternalData
+                    const data = samlExternalData.Assertions[0].AttributeStatement.Attributes
+                    let nickname = ''
 
-                for (let index = 0, length = data.length; index < length; index+= 1) {
-                    const item = data[index]
-                    if(data[index].Values && item.Name) {
-                        const key = item.Name.slice(Math.max(0, item.Name.lastIndexOf('/') + 1))
-                        if (key === 'nickname') {
-                            nickname = item.Values[0].Value
+                    for (let index = 0, length = data.length; index < length; index += 1) {
+                        const item = data[index]
+                        if (data[index].Values && item.Name) {
+                            const key = item.Name.slice(Math.max(0, item.Name.lastIndexOf('/') + 1))
+                            if (key === 'nickname') {
+                                nickname = item.Values[0].Value
+                            }
                         }
                     }
-                }
 
-                normalizedAccount = {
-                    ...normalizedAccount,
-                    external: {
-                        id: account.id,
-                        userName: nickname,
-                        userLogin: nickname,
-                        userUrl: null
-                    },
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            userName: nickname,
+                            userLogin: null,
+                            userUrl: null,
+                        },
+                    }
                 }
-            }
                 break
         }
     }
