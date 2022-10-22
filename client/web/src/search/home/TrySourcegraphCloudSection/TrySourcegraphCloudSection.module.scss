@@ -10,9 +10,9 @@
     &:hover {
         text-decoration: none;
 
-        .trialButton {
+        .trial-button {
             background: #A305E1;
-            color: #fff;
+            color: #ffffff;
         }
     }
 }
@@ -24,14 +24,10 @@
     }
 }
 
-.alphaMask {
-    mask-type: alpha;
-}
-
 .content {
     width: 100%;
     text-align: center;
-    padding: 20px;
+    padding: 1.25rem;
     @media (--md-breakpoint-up) {
         display: flex;
         text-align: left;
@@ -39,23 +35,23 @@
     }
     @media (--lg-breakpoint-up) {
         width: calc(100% - var(--illustration-width));
-        padding: 0 50px 0 20px;
+        padding: 0 3.125rem 0 1.25rem;
     }
 }
 
-.tryCloud {
+.try-cloud {
     color: #D0BFFF;
-    font-size: 27px;
+    font-size: 1.688rem;
     line-height: 31px;
-    margin-bottom: 2px;
+    margin-bottom: 0.125rem;
 }
 
 .bylines {
-    color: #fff;
-    font-size: 22px;
+    color: #ffffff;
+    font-size: 1.375rem;
     overflow: hidden;
     @media (--sm-breakpoint-up) {
-        height: 26px;
+        height: 1.625rem;
     }
     
     span {
@@ -73,39 +69,39 @@
     }
 }
 
-.signUp {
-    color: #fff;
-    font-size: 19px;
-    margin-top: 19px;
+.sign-up {
+    color: #ffffff;
+    font-size: 1.188rem;
+    margin-top: 1.188rem;
     margin-bottom: 0;
 }
 
-.buttonContainer {
+.button-container {
     max-width: 260px;
     width: 100%;
-    margin: 20px auto 0;
+    margin: 1.25rem auto 0;
     @media (--md-breakpoint-up) {
         margin: 0 0 0 auto;
     }
 }
 
-.trialButton {
-    background: #fff;
+.trial-button {
+    background: #ffffff;
     color: #A305E1;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
     margin-left: auto;
     &:hover {
         background: #A305E1 !important;
-        color: #fff !important;
+        color: #ffffff !important;
     }
 }
 
-.selfHostedCopy {
-    margin-top: 8px;
+.self-hosted-copy {
+    margin-top: 0.5rem;
 
     a {
-        margin-left: 3px;
+        margin-left: 0.188rem;
     }
 }
 

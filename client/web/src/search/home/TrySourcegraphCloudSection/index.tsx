@@ -22,7 +22,11 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                 onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                 className={styles.wrapper}
             >
-                <img src="https://storage.googleapis.com/sourcegraph-assets/search/homepage/illustration.svg" alt="abstract triangles" />
+                <img
+                    src="https://storage.googleapis.com/sourcegraph-assets/search/homepage/illustration.svg"
+                    alt="abstract triangles"
+                    className={styles.illustration}
+                />
 
                 <div className={styles.content}>
                     <div>
