@@ -2,7 +2,6 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 2;
     overflow: hidden;
 
     --tail-width: 24px;
@@ -16,7 +15,6 @@
 
     &--size-lg {
         --tail-width: 36px;
-    }
 
     /*
      Shift tail in order to compensate border width of the popover content element
