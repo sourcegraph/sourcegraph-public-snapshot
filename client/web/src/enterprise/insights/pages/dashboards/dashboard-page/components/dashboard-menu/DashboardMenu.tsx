@@ -52,7 +52,6 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 >
                     <Icon
                         svgPath={mdiDotsVertical}
-                        inline={false}
                         height={16}
                         width={16}
                         aria-label="dashboard options"
@@ -60,7 +59,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                 </MenuButton>
             </Tooltip>
 
-            <MenuList className={styles.menuList} position={Position.bottomEnd}>
+            <MenuList className={styles.menuList} position={Position.bottomStart}>
                 {menuPermissions.configure.display && (
                     <Tooltip content={menuPermissions.configure.tooltip} placement="right">
                         <MenuItem
