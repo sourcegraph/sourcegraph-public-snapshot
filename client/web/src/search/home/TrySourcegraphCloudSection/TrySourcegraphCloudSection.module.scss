@@ -50,9 +50,27 @@
     margin-bottom: 2px;
 }
 
-.byline {
+.bylines {
     color: #fff;
     font-size: 22px;
+    overflow: hidden;
+    @media (--sm-breakpoint-up) {
+        height: 26px;
+    }
+    
+    span {
+        display: block;
+        @media (--sm-breakpoint-up) {
+            animation: spin_words 7s infinite 1s;
+        }
+
+        &:not(:first-child) {
+            display: none;
+            @media (--sm-breakpoint-up) {
+                display: block;
+            }
+        }
+    }
 }
 
 .signUp {
@@ -88,5 +106,32 @@
 
     a {
         margin-left: 3px;
+    }
+}
+
+@keyframes spin_words{
+    10%{
+        transform: translateY(-112%);
+    }
+    25%{
+        transform: translateY(-100%);
+    }
+    35%{
+        transform: translateY(-212%);
+    }
+    50%{
+        transform: translateY(-200%);
+    }
+    60%{
+        transform: translateY(-312%);
+    }
+    75%{
+        transform: translateY(-300%);
+    }
+    85%{
+        transform: translateY(-412%);
+    }
+    100%{
+        transform: translateY(-400%);
     }
 }

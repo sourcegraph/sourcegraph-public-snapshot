@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from 'react'
+import { FunctionComponent, useEffect } from 'react'
 
 import { Button, H2, H3, Text, Link } from '@sourcegraph/wildcard'
 
@@ -9,31 +9,13 @@ import { Illustration } from './Illustration'
 import styles from './TrySourcegraphCloudSection.module.scss'
 
 export const TrySourcegraphCloudSection: FunctionComponent = () => {
-    const bylines: string[] = [
-        'Understand and search.',
-        'Navigate your codebase.',
-        'Automate large-scale code changes.',
-        'Get insights.',
-    ]
-    const [bylineIndex, setBylineIndex] = useState(0)
-    const [byline, setByline] = useState(bylines[0])
-
     useEffect(() => {
         /**
          * Base metric for when the section loads which we can use to count
          * against impressions/views vs. clicks.
          */
         eventLogger.log('DisplayOfCloudCTA')
-
-        const cycle = setInterval(() => {
-            const newIndex = bylineIndex === bylines.length - 1 ? 0 : bylineIndex + 1
-
-            setByline(bylines[newIndex])
-            setBylineIndex(newIndex)
-        }, 3500)
-
-        return () => clearInterval(cycle)
-    })
+    }, [])
 
     return (
         <div>
@@ -47,7 +29,13 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                 <div className={styles.content}>
                     <div>
                         <H2 className={styles.tryCloud}>Try Sourcegraph Cloud.</H2>
-                        <H3 className={styles.byline}>{byline}</H3>
+                        <H3 className={styles.bylines}>
+                            <span>Understand and search.</span>
+                            <span>Navigate your codebase.</span>
+                            <span>Automate large-scale code changes.</span>
+                            <span>Get insights.</span>
+                            <span>Understand and search.</span>
+                        </H3>
                         <Text className={styles.signUp}>Sign up for a 30-day trial for your team.</Text>
                     </div>
 
@@ -64,8 +52,6 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
             
             <Text size="small" className={styles.selfHostedCopy}>
                 Want to deploy yourself?
-                
-                {/* eslint-disable-next-line react/forbid-elements */}
                 <Link
                     to="/help"
                     onClick={() => eventLogger.log('ClickedOnSelfHostedCTA')}
