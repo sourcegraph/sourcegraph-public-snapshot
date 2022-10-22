@@ -5328,37 +5328,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@reach/listbox@npm:^0.16.2":
-  version: 0.16.2
-  resolution: "@reach/listbox@npm:0.16.2"
-  dependencies:
-    "@reach/auto-id": 0.16.0
-    "@reach/descendants": 0.16.1
-    "@reach/machine": 0.16.0
-    "@reach/popover": 0.16.2
-    "@reach/utils": 0.16.0
-    prop-types: ^15.7.2
-  peerDependencies:
-    react: ^16.8.0 || 17.x
-    react-dom: ^16.8.0 || 17.x
-  checksum: 695d155d6b09656f6a8a1b71d89e8db76c5d5e2e6c38c342f6f99abb41ab050558fec7325843dabaa9eb1770748a51038c5a2e98bdd54fef27babaaffaa1bcf9
-  languageName: node
-  linkType: hard
-
-"@reach/machine@npm:0.16.0":
-  version: 0.16.0
-  resolution: "@reach/machine@npm:0.16.0"
-  dependencies:
-    "@reach/utils": 0.16.0
-    "@xstate/fsm": 1.4.0
-    tslib: ^2.3.0
-  peerDependencies:
-    react: ^16.8.0 || 17.x
-    react-dom: ^16.8.0 || 17.x
-  checksum: 9df37f4ddcb7f7e44080a9948209e08e56223cc8fd33203f6064ccf1c89981dbdaef8b43b7b62f306c29fb9c08f6cf6798c4f702c18bdb02571f56eabe1ba979
-  languageName: node
-  linkType: hard
-
 "@reach/menu-button@npm:^0.16.2":
   version: 0.16.2
   resolution: "@reach/menu-button@npm:0.16.2"
@@ -10143,13 +10112,6 @@ __metadata:
   dependencies:
     tslib: ^2.1.0
   checksum: 5e8f66a65a8b09ab4935df093925e7585cdfbda114f7322f8814722a2849d5c6234fb3c15cf141b35a6075f792ef18e842c33525a8f209114e355777dc334b62
-  languageName: node
-  linkType: hard
-
-"@xstate/fsm@npm:1.4.0":
-  version: 1.4.0
-  resolution: "@xstate/fsm@npm:1.4.0"
-  checksum: 518080d3ddec480b582d5569ebb7e1ad14e4ca6b3fd070b5426930082e79dcfe7fd36b382a2d703ce85c957534867339fcea5ee60b38227cef29fa48f91d166f
   languageName: node
   linkType: hard
 
@@ -29278,7 +29240,6 @@ pvutils@latest:
     "@reach/accordion": ^0.16.1
     "@reach/combobox": ^0.16.5
     "@reach/dialog": ^0.16.2
-    "@reach/listbox": ^0.16.2
     "@reach/menu-button": ^0.16.2
     "@reach/tabs": ^0.16.4
     "@reach/visually-hidden": ^0.16.0

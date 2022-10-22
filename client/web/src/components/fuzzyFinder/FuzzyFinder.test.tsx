@@ -17,7 +17,7 @@ describe('FuzzyModal', () => {
             </MockedProvider>
         )
         await waitForNextApolloResponse()
-        expect(result.getByTestId('fuzzy-modal-summary')).toHaveTextContent('12 results - 14 totals')
+        expect(result.getByTestId('fuzzy-modal-summary')).toHaveTextContent('12 results out of 14 totals')
         expect(result.getByTestId('fuzzy-modal-header')).toHaveTextContent('Find files')
     })
 })

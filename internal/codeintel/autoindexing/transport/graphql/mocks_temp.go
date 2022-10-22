@@ -76,6 +76,12 @@ type MockAutoIndexingService struct {
 	// QueueIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method QueueIndexes.
 	QueueIndexesFunc *AutoIndexingServiceQueueIndexesFunc
+	// ReindexIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexIndexByID.
+	ReindexIndexByIDFunc *AutoIndexingServiceReindexIndexByIDFunc
+	// ReindexIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method ReindexIndexes.
+	ReindexIndexesFunc *AutoIndexingServiceReindexIndexesFunc
 	// SetInferenceScriptFunc is an instance of a mock function object
 	// controlling the behavior of the method SetInferenceScript.
 	SetInferenceScriptFunc *AutoIndexingServiceSetInferenceScriptFunc
@@ -171,6 +177,16 @@ func NewMockAutoIndexingService() *MockAutoIndexingService {
 		},
 		QueueIndexesFunc: &AutoIndexingServiceQueueIndexesFunc{
 			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []types.Index, r1 error) {
+				return
+			},
+		},
+		ReindexIndexByIDFunc: &AutoIndexingServiceReindexIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		ReindexIndexesFunc: &AutoIndexingServiceReindexIndexesFunc{
+			defaultHook: func(context.Context, shared.ReindexIndexesOptions) (r0 error) {
 				return
 			},
 		},
@@ -277,6 +293,16 @@ func NewStrictMockAutoIndexingService() *MockAutoIndexingService {
 				panic("unexpected invocation of MockAutoIndexingService.QueueIndexes")
 			},
 		},
+		ReindexIndexByIDFunc: &AutoIndexingServiceReindexIndexByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockAutoIndexingService.ReindexIndexByID")
+			},
+		},
+		ReindexIndexesFunc: &AutoIndexingServiceReindexIndexesFunc{
+			defaultHook: func(context.Context, shared.ReindexIndexesOptions) error {
+				panic("unexpected invocation of MockAutoIndexingService.ReindexIndexes")
+			},
+		},
 		SetInferenceScriptFunc: &AutoIndexingServiceSetInferenceScriptFunc{
 			defaultHook: func(context.Context, string) error {
 				panic("unexpected invocation of MockAutoIndexingService.SetInferenceScript")
@@ -347,6 +373,12 @@ func NewMockAutoIndexingServiceFrom(i AutoIndexingService) *MockAutoIndexingServ
 		},
 		QueueIndexesFunc: &AutoIndexingServiceQueueIndexesFunc{
 			defaultHook: i.QueueIndexes,
+		},
+		ReindexIndexByIDFunc: &AutoIndexingServiceReindexIndexByIDFunc{
+			defaultHook: i.ReindexIndexByID,
+		},
+		ReindexIndexesFunc: &AutoIndexingServiceReindexIndexesFunc{
+			defaultHook: i.ReindexIndexes,
 		},
 		SetInferenceScriptFunc: &AutoIndexingServiceSetInferenceScriptFunc{
 			defaultHook: i.SetInferenceScript,
@@ -2182,6 +2214,222 @@ func (c AutoIndexingServiceQueueIndexesFuncCall) Args() []interface{} {
 // invocation.
 func (c AutoIndexingServiceQueueIndexesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// AutoIndexingServiceReindexIndexByIDFunc describes the behavior when the
+// ReindexIndexByID method of the parent MockAutoIndexingService instance is
+// invoked.
+type AutoIndexingServiceReindexIndexByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []AutoIndexingServiceReindexIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) ReindexIndexByID(v0 context.Context, v1 int) error {
+	r0 := m.ReindexIndexByIDFunc.nextHook()(v0, v1)
+	m.ReindexIndexByIDFunc.appendCall(AutoIndexingServiceReindexIndexByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexIndexByID
+// method of the parent MockAutoIndexingService instance is invoked and the
+// hook queue is empty.
+func (f *AutoIndexingServiceReindexIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexIndexByID method of the parent MockAutoIndexingService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AutoIndexingServiceReindexIndexByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceReindexIndexByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceReindexIndexByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *AutoIndexingServiceReindexIndexByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceReindexIndexByIDFunc) appendCall(r0 AutoIndexingServiceReindexIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AutoIndexingServiceReindexIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *AutoIndexingServiceReindexIndexByIDFunc) History() []AutoIndexingServiceReindexIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceReindexIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceReindexIndexByIDFuncCall is an object that describes
+// an invocation of method ReindexIndexByID on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceReindexIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceReindexIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceReindexIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AutoIndexingServiceReindexIndexesFunc describes the behavior when the
+// ReindexIndexes method of the parent MockAutoIndexingService instance is
+// invoked.
+type AutoIndexingServiceReindexIndexesFunc struct {
+	defaultHook func(context.Context, shared.ReindexIndexesOptions) error
+	hooks       []func(context.Context, shared.ReindexIndexesOptions) error
+	history     []AutoIndexingServiceReindexIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// ReindexIndexes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAutoIndexingService) ReindexIndexes(v0 context.Context, v1 shared.ReindexIndexesOptions) error {
+	r0 := m.ReindexIndexesFunc.nextHook()(v0, v1)
+	m.ReindexIndexesFunc.appendCall(AutoIndexingServiceReindexIndexesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReindexIndexes
+// method of the parent MockAutoIndexingService instance is invoked and the
+// hook queue is empty.
+func (f *AutoIndexingServiceReindexIndexesFunc) SetDefaultHook(hook func(context.Context, shared.ReindexIndexesOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReindexIndexes method of the parent MockAutoIndexingService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AutoIndexingServiceReindexIndexesFunc) PushHook(hook func(context.Context, shared.ReindexIndexesOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AutoIndexingServiceReindexIndexesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, shared.ReindexIndexesOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AutoIndexingServiceReindexIndexesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, shared.ReindexIndexesOptions) error {
+		return r0
+	})
+}
+
+func (f *AutoIndexingServiceReindexIndexesFunc) nextHook() func(context.Context, shared.ReindexIndexesOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AutoIndexingServiceReindexIndexesFunc) appendCall(r0 AutoIndexingServiceReindexIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AutoIndexingServiceReindexIndexesFuncCall
+// objects describing the invocations of this function.
+func (f *AutoIndexingServiceReindexIndexesFunc) History() []AutoIndexingServiceReindexIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]AutoIndexingServiceReindexIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AutoIndexingServiceReindexIndexesFuncCall is an object that describes an
+// invocation of method ReindexIndexes on an instance of
+// MockAutoIndexingService.
+type AutoIndexingServiceReindexIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.ReindexIndexesOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AutoIndexingServiceReindexIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AutoIndexingServiceReindexIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // AutoIndexingServiceSetInferenceScriptFunc describes the behavior when the

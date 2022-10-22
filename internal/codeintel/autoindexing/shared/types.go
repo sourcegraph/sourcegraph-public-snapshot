@@ -36,3 +36,9 @@ type DeleteIndexesOptions struct {
 	Term         string
 	RepositoryID int
 }
+
+type ReindexIndexesOptions struct {
+	State        string
+	Term         string
+	RepositoryID int
+}
