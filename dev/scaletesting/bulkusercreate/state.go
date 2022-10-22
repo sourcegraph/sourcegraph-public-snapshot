@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"sync"
 )
 
@@ -69,21 +70,21 @@ func (s *state) load() ([]*user, error) {
 	return users, nil
 }
 
-//func generateNames(prefix string, count int) []string {
-//	names := make([]string, count)
-//	for i := 0; i < count; i++ {
-//		names[i] = fmt.Sprintf("%s%09d", prefix, i)
-//	}
-//	return names
-//}
+func generateNames(count int) []string {
+	names := make([]string, count)
+	for i := 0; i < count; i++ {
+		names[i] = fmt.Sprintf("user-%09d", i)
+	}
+	return names
+}
 
-//func (s *state) generate(cfg config) ([]*repo, error) {
-//	names := generateNames(cfg.prefix, cfg.count)
-//	if err := s.insert(names); err != nil {
-//		return nil, err
-//	}
-//	return s.load()
-//}
+func (s *state) generate(cfg config) ([]*user, error) {
+	names := generateNames(cfg.count)
+	if err := s.insert(names); err != nil {
+		return nil, err
+	}
+	return s.load()
+}
 
 var saveUserStmt = `UPDATE users SET
 login = ?,
@@ -109,15 +110,15 @@ func (s *state) saveUser(u *user) error {
 	return nil
 }
 
-func (s *state) insert(users []*user) error {
+func (s *state) insert(logins []string) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, u := range users {
-		if _, err := tx.Exec(`INSERT INTO users(login, email) VALUES (?, ?)`, u.Login, u.Email); err != nil {
+	for _, login := range logins {
+		if _, err := tx.Exec(`INSERT INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
 			return err
 		}
 	}

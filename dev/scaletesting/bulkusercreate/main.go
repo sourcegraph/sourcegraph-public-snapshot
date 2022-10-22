@@ -80,6 +80,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var users []*user
+	if users, err = state.load(); err != nil {
+		log.Fatal(err)
+	}
+
+	if len(users) == 0 {
+
+	}
+	gh.Admin.
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
