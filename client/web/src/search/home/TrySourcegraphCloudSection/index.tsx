@@ -4,8 +4,6 @@ import { Button, H2, H3, Text, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { Illustration } from './Illustration'
-
 import styles from './TrySourcegraphCloudSection.module.scss'
 
 export const TrySourcegraphCloudSection: FunctionComponent = () => {
@@ -24,7 +22,7 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                 onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                 className={styles.wrapper}
             >
-                <Illustration className={styles.illustration} />
+                <img src="https://storage.googleapis.com/sourcegraph-assets/search/homepage/illustration.svg" alt="abstract triangles" />
 
                 <div className={styles.content}>
                     <div>
