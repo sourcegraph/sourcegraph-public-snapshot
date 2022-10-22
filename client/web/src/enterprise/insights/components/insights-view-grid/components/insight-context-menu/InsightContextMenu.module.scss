@@ -1,7 +1,8 @@
 .button {
     cursor: pointer;
 
-    &:hover, &[aria-expanded='true'] {
+    &:hover,
+    &[aria-expanded='true'] {
         background-color: var(--color-bg-2) !important;
     }
 }

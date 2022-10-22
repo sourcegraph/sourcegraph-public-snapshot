@@ -3,15 +3,7 @@ import { FC, RefObject, useRef, useState } from 'react'
 import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import {
-    Button,
-    Icon,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Position,
-    createRectangle,
-} from '@sourcegraph/wildcard'
+import { Button, Icon, Popover, PopoverContent, PopoverTrigger, Position, createRectangle } from '@sourcegraph/wildcard'
 
 import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'

@@ -2,7 +2,8 @@
     padding: 0.25rem;
     fill: var(--icon-color);
 
-    &:hover, &[aria-expanded='true'] {
+    &:hover,
+    &[aria-expanded='true'] {
         background-color: var(--color-bg-2) !important;
     }
 }

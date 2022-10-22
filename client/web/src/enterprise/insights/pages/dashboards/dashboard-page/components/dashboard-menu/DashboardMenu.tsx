@@ -50,12 +50,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                     outline={true}
                     className={classNames(className, styles.triggerButton)}
                 >
-                    <Icon
-                        svgPath={mdiDotsVertical}
-                        height={16}
-                        width={16}
-                        aria-label="dashboard options"
-                    />
+                    <Icon svgPath={mdiDotsVertical} height={16} width={16} aria-label="dashboard options" />
                 </MenuButton>
             </Tooltip>
 
