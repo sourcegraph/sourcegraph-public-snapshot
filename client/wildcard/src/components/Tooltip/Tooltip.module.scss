@@ -19,10 +19,13 @@
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
     user-select: text;
     word-wrap: break-word;
+    border: none;
+    min-width: 0;
 }
 
 .tooltip-arrow {
-    fill: var(--tooltip-bg);
+    --tail-background: var(--tooltip-bg);
+    --tail-border: none;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
