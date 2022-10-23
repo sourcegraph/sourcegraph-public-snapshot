@@ -80,7 +80,7 @@ type WorkerOptions struct {
 
 	// CancelInterval is the interval between checking for jobs that are to be canceled. If not set,
 	// the worker will not check for canceled jobs.
-	CancelInterval time.Duration
+	// CancelInterval time.Duration
 
 	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
 	MaximumRuntimePerJob time.Duration
@@ -149,7 +149,7 @@ func (w *Worker) Start() {
 			}
 
 			ids := w.runningIDSet.Slice()
-			knownIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
 			if err != nil {
 				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
 					log.Ints("ids", ids),
@@ -167,37 +167,45 @@ func (w *Worker) Start() {
 					w.runningIDSet.Remove(id)
 				}
 			}
+
+			if len(canceledIDs) > 0 {
+				w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceledIDs))
+			}
+
+			for _, id := range canceledIDs {
+				w.runningIDSet.Cancel(id)
+			}
 		}
 	}()
 
-	if w.options.CancelInterval > 0 {
-		// Create a background routine that periodically checks for jobs that are to be canceled.
-		go func() {
-			for {
-				select {
-				case <-w.finished:
-					// All jobs finished.
-					return
-				case <-w.cancelClock.After(w.options.CancelInterval):
-				}
+	// if w.options.CancelInterval > 0 {
+	// 	// Create a background routine that periodically checks for jobs that are to be canceled.
+	// 	go func() {
+	// 		for {
+	// 			select {
+	// 			case <-w.finished:
+	// 				// All jobs finished.
+	// 				return
+	// 			case <-w.cancelClock.After(w.options.CancelInterval):
+	// 			}
 
-				knownIDs := w.runningIDSet.Slice()
-				canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
-				if err != nil {
-					w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
-					continue
-				}
+	// 			knownIDs := w.runningIDSet.Slice()
+	// 			canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
+	// 			if err != nil {
+	// 				w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
+	// 				continue
+	// 			}
 
-				if len(canceled) > 0 {
-					w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
-				}
+	// 			if len(canceled) > 0 {
+	// 				w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
+	// 			}
 
-				for _, id := range canceled {
-					w.runningIDSet.Cancel(id)
-				}
-			}
-		}()
-	}
+	// 			for _, id := range canceled {
+	// 				w.runningIDSet.Cancel(id)
+	// 			}
+	// 		}
+	// 	}()
+	// }
 
 	var shutdownChan <-chan time.Time
 	if w.options.MaxActiveTime > 0 {

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -108,7 +109,7 @@ type Store interface {
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
 	// Heartbeat marks the given record as currently being processed.
-	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error)
+	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -147,7 +148,7 @@ type Store interface {
 
 	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
 	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
-	CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
+	// CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -641,30 +642,36 @@ func (s *store) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Quer
 	return updateStatements
 }
 
-func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs []int, err error) {
+func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error) {
 	ctx, _, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
-		return []int{}, nil
-	}
-
-	sqlIDs := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		sqlIDs = append(sqlIDs, sqlf.Sprintf("%s", id))
+		return []int{}, []int{}, nil
 	}
 
 	quotedTableName := quote(s.options.TableName)
 
 	conds := []*sqlf.Query{
-		s.formatQuery("{id} IN (%s)", sqlf.Join(sqlIDs, ",")),
+		s.formatQuery("{id} = ANY (%s)", pq.Array(ids)),
 		s.formatQuery("{state} = 'processing'"),
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
+	scanner := basestore.NewMapScanner(func(scanner dbutil.Scanner) (id int, cancel bool, err error) {
+		err = scanner.Scan(&id, &cancel)
+		return
+	})
+	jobMap, err := scanner(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	for id, cancel := range jobMap {
+		knownIDs = append(knownIDs, id)
+		if cancel {
+			cancelIDs = append(cancelIDs, id)
+		}
 	}
 
 	if len(knownIDs) != len(ids) {
@@ -691,7 +698,7 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 		}
 	}
 
-	return knownIDs, nil
+	return knownIDs, cancelIDs, nil
 }
 
 const updateCandidateQuery = `
@@ -712,10 +719,10 @@ SET
 	{last_heartbeat_at} = %s
 WHERE
 	{id} IN (SELECT {id} FROM alive_candidates)
-RETURNING {id}
+RETURNING {id}, {cancel}
 `
 
-func (s *store) CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error) {
+func (s *store) CanceledJobs2(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error) {
 	ctx, _, endObservation := s.operations.canceledJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

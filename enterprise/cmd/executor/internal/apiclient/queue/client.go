@@ -188,21 +188,21 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", queueName), executor.CanceledJobsRequest{
-		KnownJobIDs:  knownIDs,
-		ExecutorName: c.options.ExecutorName,
-	})
-	if err != nil {
-		return nil, err
-	}
+// func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
+// 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", queueName), executor.CanceledJobsRequest{
+// 		KnownJobIDs:  knownIDs,
+// 		ExecutorName: c.options.ExecutorName,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
-		return nil, err
-	}
+// 	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
+// 		return nil, err
+// 	}
 
-	return canceledIDs, nil
-}
+// 	return canceledIDs, nil
+// }
 
 func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
@@ -215,7 +215,7 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),
 		otlog.String("jobIDs", intsToString(jobIDs)),
@@ -243,14 +243,15 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		PrometheusMetrics: metrics,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &knownIDs); err != nil {
-		return nil, err
+	var resp executor.HeartbeatResponse
+	if _, err := c.client.DoAndDecode(ctx, req, &resp); err != nil {
+		return nil, nil, err
 	}
 
-	return knownIDs, nil
+	return resp.KnownIDs, resp.CancelIDs, nil
 }
 
 func intsToString(ints []int) string {

@@ -278,7 +278,12 @@ type HeartbeatRequest struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-type CanceledJobsRequest struct {
-	KnownJobIDs  []int  `json:"knownJobIds"`
-	ExecutorName string `json:"executorName"`
+type HeartbeatResponse struct {
+	KnownIDs  []int `json:"knownIds"`
+	CancelIDs []int `json:"cancelIds"`
 }
+
+// type CanceledJobsRequest struct {
+// 	KnownJobIDs  []int  `json:"knownJobIds"`
+// 	ExecutorName string `json:"executorName"`
+// }
