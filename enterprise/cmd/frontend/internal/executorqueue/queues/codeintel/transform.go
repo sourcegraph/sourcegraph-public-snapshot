@@ -19,32 +19,26 @@ const uploadRoute = "/.executors/lsif/upload"
 const schemeExecutorToken = "token-executor"
 
 func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
-	// Create a transformer over the commands that will be invoked inside of a docker container.
-	// This replaces string literals such as `$VM_MEM` with the actual resource capacity of the
-	// VM that will run this job.
-	injectResourceCapacities := makeResourceCapacityInjector(resourceMetadata)
+	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
 	for i, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
 			Key:      fmt.Sprintf("pre-index.%d", i),
 			Image:    dockerStep.Image,
-			Commands: injectResourceCapacities(dockerStep.Commands),
+			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Root,
-			Env:      nil,
+			Env:      resourceEnvironment,
 		})
 	}
 
 	if index.Indexer != "" {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
-			Key:   "indexer",
-			Image: index.Indexer,
-			// Ensure we do string replacement BEFORE shellquoting, otherwise we'll end up
-			// escaping the `$` at the beginning of our replacement tokens, but not replace
-			// the escape.
-			Commands: append(injectResourceCapacities(index.LocalSteps), shellquote.Join(injectResourceCapacities(index.IndexerArgs)...)),
+			Key:      "indexer",
+			Image:    index.Indexer,
+			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
 			Dir:      index.Root,
-			Env:      nil,
+			Env:      resourceEnvironment,
 		})
 	}
 
@@ -117,45 +111,30 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 const defaultMemory = "12G"
 const defaultDiskSpace = "20G"
 
-func makeResourceCapacityInjector(resourceMetadata handler.ResourceMetadata) func([]string) []string {
-	replacements := []string{}
-	addBytesValuesReplacement := func(value, defaultValue, prefix string) {
+func makeResourceEnvironment(resourceMetadata handler.ResourceMetadata) []string {
+	env := []string{}
+	addBytesValuesVariables := func(value, defaultValue, prefix string) {
 		if value == "" {
 			value = defaultValue
 		}
 
-		var gb, mb, human string
 		if parsed, _ := datasize.ParseString(value); parsed.Bytes() != 0 {
-			gb = strconv.Itoa(int(parsed.GBytes()))
-			mb = strconv.Itoa(int(parsed.MBytes()))
-			human = parsed.HumanReadable()
+			env = append(
+				env,
+				fmt.Sprintf("%s=%s", prefix, parsed.HumanReadable()),
+				fmt.Sprintf("%s_GB=%d", prefix, int(parsed.GBytes())),
+				fmt.Sprintf("%s_MB=%d", prefix, int(parsed.MBytes())),
+			)
 		}
-
-		replacements = append(
-			replacements,
-			fmt.Sprintf("$%s_GB", prefix), gb,
-			fmt.Sprintf("$%s_MB", prefix), mb,
-			// N.B.: Ensure substring of longer keys come later
-			fmt.Sprintf("$%s", prefix), human,
-		)
 	}
 
-	cpus := resourceMetadata.NumCPUs
-	if cpus != 0 {
-		replacements = append(replacements, "$VM_CPUS", strconv.Itoa(cpus))
+	if cpus := resourceMetadata.NumCPUs; cpus != 0 {
+		env = append(env, fmt.Sprintf("VM_CPUS=%d", cpus))
 	}
-	addBytesValuesReplacement(resourceMetadata.Memory, defaultMemory, "VM_MEM")
-	addBytesValuesReplacement(resourceMetadata.DiskSpace, defaultDiskSpace, "VM_DISK")
+	addBytesValuesVariables(resourceMetadata.Memory, defaultMemory, "VM_MEM")
+	addBytesValuesVariables(resourceMetadata.DiskSpace, defaultDiskSpace, "VM_DISK")
 
-	replacer := strings.NewReplacer(replacements...)
-
-	return func(vs []string) []string {
-		for i, v := range vs {
-			vs[i] = replacer.Replace(v)
-		}
-
-		return vs
-	}
+	return env
 }
 
 func makeAuthHeaderValue(token string) string {

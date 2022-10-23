@@ -60,12 +60,20 @@ func TestTransformRecord(t *testing.T) {
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
+				Env: []string{
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:      "indexer",
 				Image:    "lsif-node",
 				Commands: []string{"index -p . -author 'Test User'"},
 				Dir:      "web",
+				Env: []string{
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:   "upload",
@@ -88,6 +96,7 @@ func TestTransformRecord(t *testing.T) {
 				},
 				Dir: "web",
 				Env: []string{
+					// src-cli-specific variables
 					"SRC_ENDPOINT=https://test.io",
 					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 				},
@@ -148,12 +157,20 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
+				Env: []string{
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:      "pre-index.1",
 				Image:    "lsif-node",
 				Commands: []string{"index", "-p", "."},
 				Dir:      "web",
+				Env: []string{
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:   "upload",
@@ -176,6 +193,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 				},
 				Dir: "",
 				Env: []string{
+					// src-cli-specific variables
 					"SRC_ENDPOINT=https://test.io",
 					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 				},
@@ -191,7 +209,7 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	}
 }
 
-func TestTransformRecordWithResourceReplacement(t *testing.T) {
+func TestTransformRecordWithNonDefaultResources(t *testing.T) {
 	index := types.Index{
 		ID:             42,
 		Commit:         "deadbeef",
@@ -199,13 +217,13 @@ func TestTransformRecordWithResourceReplacement(t *testing.T) {
 		DockerSteps: []types.DockerStep{
 			{
 				Image:    "alpine",
-				Commands: []string{"env", "CUSTOM_MAX_MEM=$VM_MEM_GB", "yarn", "install"},
+				Commands: []string{"yarn", "install"},
 				Root:     "web",
 			},
 		},
 		Root:        "web",
 		Indexer:     "lsif-node",
-		IndexerArgs: []string{"env", "MAX_DISK=$VM_DISK_MB", "DEBUG=$VM_DISK", "index"},
+		IndexerArgs: []string{"index", "-p", "."},
 		Outfile:     "",
 	}
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
@@ -232,14 +250,26 @@ func TestTransformRecordWithResourceReplacement(t *testing.T) {
 			{
 				Key:      "pre-index.0",
 				Image:    "alpine",
-				Commands: []string{"env", "CUSTOM_MAX_MEM=3072", "yarn", "install"},
+				Commands: []string{"yarn", "install"},
 				Dir:      "web",
+				Env: []string{
+					// Explicitly supplied resource variables
+					"VM_CPUS=3", "VM_MEM=3.0 TB", "VM_MEM_GB=3072", "VM_MEM_MB=3145728",
+					// Default resource variables
+					"VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:      "indexer",
 				Image:    "lsif-node",
-				Commands: []string{"env MAX_DISK=20480 'DEBUG=20.0 GB' index"},
+				Commands: []string{"index -p ."},
 				Dir:      "web",
+				Env: []string{
+					// Explicitly supplied resource variables
+					"VM_CPUS=3", "VM_MEM=3.0 TB", "VM_MEM_GB=3072", "VM_MEM_MB=3145728",
+					// Default resource variables
+					"VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
+				},
 			},
 			{
 				Key:   "upload",
@@ -262,6 +292,7 @@ func TestTransformRecordWithResourceReplacement(t *testing.T) {
 				},
 				Dir: "web",
 				Env: []string{
+					// src-cli-specific variables
 					"SRC_ENDPOINT=https://test.io",
 					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 				},
@@ -277,16 +308,22 @@ func TestTransformRecordWithResourceReplacement(t *testing.T) {
 	}
 }
 
-func TestTransformRecordWithResourceReplacementUnbounded(t *testing.T) {
+func TestTransformRecordWithUnboundedResources(t *testing.T) {
 	index := types.Index{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		DockerSteps:    nil,
-		Root:           "web",
-		Indexer:        "lsif-node",
-		IndexerArgs:    []string{"bash", "-c", `[ "$VM_DISK_MB" = "" ] && index`},
-		Outfile:        "",
+		DockerSteps: []types.DockerStep{
+			{
+				Image:    "alpine",
+				Commands: []string{"yarn", "install"},
+				Root:     "web",
+			},
+		},
+		Root:        "web",
+		Indexer:     "lsif-node",
+		IndexerArgs: []string{"index", "-p", "."},
+		Outfile:     "",
 	}
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
 	t.Cleanup(func() {
@@ -310,10 +347,28 @@ func TestTransformRecordWithResourceReplacementUnbounded(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
+				Image:    "alpine",
+				Commands: []string{"yarn", "install"},
+				Dir:      "web",
+				Env: []string{
+					// Explicitly supplied resource variables (note: no disk)
+					"VM_CPUS=3",
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288",
+				},
+			},
+			{
 				Key:      "indexer",
 				Image:    "lsif-node",
-				Commands: []string{`bash -c '[ "" = "" ] && index'`},
+				Commands: []string{"index -p ."},
 				Dir:      "web",
+				Env: []string{
+					// Explicitly supplied resource variables (note: no disk)
+					"VM_CPUS=3",
+					// Default resource variables
+					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288",
+				},
 			},
 			{
 				Key:   "upload",
@@ -336,6 +391,7 @@ func TestTransformRecordWithResourceReplacementUnbounded(t *testing.T) {
 				},
 				Dir: "web",
 				Env: []string{
+					// src-cli-specific variables
 					"SRC_ENDPOINT=https://test.io",
 					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 				},
