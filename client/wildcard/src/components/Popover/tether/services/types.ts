@@ -24,7 +24,7 @@ export interface Tether {
      * during position calculation that takes into account layout data (constraints,
      * viewport space, paddings, etc)
      */
-    position?: Position
+    position?: Position | `${Position}`
 
     /**
      * Position flipping strategy. With active flipping tooltip tries to find other

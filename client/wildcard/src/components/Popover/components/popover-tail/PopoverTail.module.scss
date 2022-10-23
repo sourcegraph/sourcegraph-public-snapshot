@@ -4,7 +4,9 @@
     left: 0;
     overflow: hidden;
 
-    --tail-width: 24px;
+    --tail-width: 18px;
+    --tail-background: var(--dropdown-bg);
+    --tail-border: 1px solid var(--dropdown-border-color);
 
     width: var(--tail-width);
     height: calc(var(--tail-width) / 2);
@@ -67,7 +69,7 @@
         height: 70%;
         transform: translate(0%, -70%) rotate(45deg);
 
-        background-color: var(--dropdown-bg);
-        border: 1px solid var(--dropdown-border-color);
+        background-color: var(--tail-background);
+        border: var(--tail-border);
     }
 }

@@ -11,19 +11,7 @@ import {
 import { noop } from 'lodash'
 
 import { PopoverContext } from './contexts/internal-context'
-
-export enum PopoverOpenEventReason {
-    TriggerClick = 'TriggerClick',
-    TriggerFocus = 'TriggerFocus',
-    TriggerBlur = 'TriggerBlur',
-    ClickOutside = 'ClickOutside',
-    Esc = 'Esc',
-}
-
-export interface PopoverOpenEvent {
-    isOpen: boolean
-    reason: PopoverOpenEventReason
-}
+import { PopoverOpenEvent } from './types'
 
 type PopoverControlledProps =
     | { isOpen?: undefined; onOpenChange?: never }
