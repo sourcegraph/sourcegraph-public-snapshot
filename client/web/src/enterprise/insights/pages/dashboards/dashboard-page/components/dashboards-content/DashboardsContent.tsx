@@ -97,7 +97,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
-                    value={currentDashboard?.id}
+                    dashboard={currentDashboard}
                     dashboards={dashboards}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
                     onSelect={handleDashboardSelect}

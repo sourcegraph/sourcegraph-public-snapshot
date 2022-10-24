@@ -62,11 +62,6 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
-      },
-      {
-        "command": "sourcegraph.auth",
-        "category": "Sourcegraph",
-        "title": "Log in to Sourcegraph"
       }
     ],
     "authentication": [
@@ -232,7 +227,6 @@
     "package": "yarn run -T ts-node ./scripts/package.ts",
     "prebuild": "yarn build-inline-extensions",
     "prewatch": "yarn build-inline-extensions",
-    "vscode:prepublish": "yarn build-inline-extensions && yarn build",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "task:gulp": "yarn run -T cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
@@ -252,5 +246,8 @@
     "release:minor": "VSCE_RELEASE_TYPE=minor yarn run -T ts-node ./scripts/release.ts",
     "release:patch": "VSCE_RELEASE_TYPE=patch yarn run -T ts-node ./scripts/release.ts",
     "release:pre": "VSCE_RELEASE_TYPE=prerelease yarn run -T ts-node ./scripts/release.ts"
+  },
+  "devDependencies": {
+    "vsce": "^2.7.0"
   }
 }

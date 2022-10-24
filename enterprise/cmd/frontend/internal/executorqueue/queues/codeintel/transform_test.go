@@ -1,6 +1,8 @@
 package codeintel
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -8,6 +10,7 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,27 +54,35 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "indexer",
 				Image:    "lsif-node",
 				Commands: []string{"-p . -author 'Test User'"},
 				Dir:      "web",
 			},
-		},
-		CliSteps: []apiclient.CliStep{
 			{
+				Key:   "upload",
+				Image: fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
 				Commands: []string{
-					"lsif", "upload",
-					"-no-progress",
-					"-repo", "linux",
-					"-commit", "deadbeef",
-					"-root", "web",
-					"-upload-route", "/.executors/lsif/upload",
-					"-file", "dump.lsif",
-					"-associated-index-id", "42",
+					strings.Join(
+						[]string{
+							"src",
+							"lsif", "upload",
+							"-no-progress",
+							"-repo", "linux",
+							"-commit", "deadbeef",
+							"-root", "web",
+							"-upload-route", "/.executors/lsif/upload",
+							"-file", "dump.lsif",
+							"-associated-index-id", "42",
+						},
+						" ",
+					),
 				},
 				Dir: "web",
 				Env: []string{
@@ -131,27 +142,35 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 		VirtualMachineFiles: nil,
 		DockerSteps: []apiclient.DockerStep{
 			{
+				Key:      "pre-index.0",
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
 				Dir:      "web",
 			},
 			{
+				Key:      "pre-index.1",
 				Image:    "lsif-node",
 				Commands: []string{"-p", "."},
 				Dir:      "web",
 			},
-		},
-		CliSteps: []apiclient.CliStep{
 			{
+				Key:   "upload",
+				Image: fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
 				Commands: []string{
-					"lsif", "upload",
-					"-no-progress",
-					"-repo", "linux",
-					"-commit", "deadbeef",
-					"-root", ".",
-					"-upload-route", "/.executors/lsif/upload",
-					"-file", "other/path/lsif.dump",
-					"-associated-index-id", "42",
+					strings.Join(
+						[]string{
+							"src",
+							"lsif", "upload",
+							"-no-progress",
+							"-repo", "linux",
+							"-commit", "deadbeef",
+							"-root", ".",
+							"-upload-route", "/.executors/lsif/upload",
+							"-file", "other/path/lsif.dump",
+							"-associated-index-id", "42",
+						},
+						" ",
+					),
 				},
 				Dir: "",
 				Env: []string{

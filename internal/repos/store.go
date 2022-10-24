@@ -294,7 +294,7 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	err = s.Exec(ctx, sqlf.Sprintf(deleteExternalServiceRepoQuery, svc.ID, id))
@@ -452,7 +452,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "CreateExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.ID, &r.CreatedAt); err != nil {
@@ -623,7 +623,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
-		defer func() { _ = s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {

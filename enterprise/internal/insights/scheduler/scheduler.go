@@ -2,16 +2,14 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/log"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -103,9 +101,10 @@ type BackgroundJobMonitor struct {
 }
 
 type JobMonitorConfig struct {
-	InsightsDB edb.InsightsDB
-	RepoStore  database.RepoStore
-	ObsContext *observation.Context
+	InsightsDB     edb.InsightsDB
+	RepoStore      database.RepoStore
+	BackfillRunner pipeline.Backfiller
+	ObsContext     *observation.Context
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
@@ -124,86 +123,6 @@ func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 		s.newBackfillWorker,
 		s.newBackfillResetter,
 	}
-}
-
-func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
-	db := config.InsightsDB
-	backfillStore := newBackfillStore(db)
-
-	name := "backfill_in_progress_worker"
-
-	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
-		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "insights_background_jobs",
-		ViewName:          "insights_jobs_backfill_in_progress",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
-	}, config.ObsContext)
-
-	task := inProgressHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
-	}
-
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
-	})
-
-	resetter := dbworker.NewResetter(log.Scoped("BackfillInProgressResetter", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
-		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
-	})
-
-	return worker, resetter, workerStore
-}
-
-type inProgressHandler struct {
-	workerStore   dbworkerstore.Store
-	backfillStore *BackfillStore
-}
-
-var _ workerutil.Handler = &inProgressHandler{}
-
-func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("inProgressHandler called", log.Int("recordId", record.RecordID()))
-
-	job := record.(*BaseJob)
-
-	backfill, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
-	if err != nil {
-		return errors.Wrap(err, "loadBackfill")
-	}
-
-	itr, err := backfill.repoIterator(ctx, h.backfillStore)
-	if err != nil {
-		return errors.Wrap(err, "repoIterator")
-	}
-
-	for true {
-		repoId, more, finish := itr.NextWithFinish()
-		if !more {
-			break
-		}
-
-		// todo do backfilling work
-		logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
-
-		err = finish(ctx, h.backfillStore.Store, nil)
-		if err != nil {
-			return err
-		}
-	}
-
-	// todo handle errors down here after the main loop https://github.com/sourcegraph/sourcegraph/issues/42724
-
-	return nil
 }
 
 type SeriesReader interface {
