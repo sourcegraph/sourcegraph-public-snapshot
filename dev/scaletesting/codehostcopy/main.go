@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"cuelang.org/go/cue/errors"
-	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
 
@@ -65,22 +64,6 @@ var app = &cli.App{
 			},
 		},
 	},
-}
-
-func bitbucketTest(ctx context.Context, logger log.Logger, cfg *Config) {
-	c, err := NewBitbucketCodeHost(ctx, logger, &cfg.From)
-	if err != nil {
-		return
-	}
-
-	repos, err := c.ListRepos(ctx)
-	if err != nil {
-		logger.Error("list failed", log.Error(err))
-	}
-
-	for _, r := range repos {
-		fmt.Printf("repo %+v", r)
-	}
 }
 
 func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
