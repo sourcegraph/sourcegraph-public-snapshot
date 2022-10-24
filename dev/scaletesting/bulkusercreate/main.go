@@ -298,10 +298,30 @@ func main() {
 				progress.SetValue(0, float64(teamsDone))
 				return
 			}
+
+			// get 50 random users to be member of this team (as per https://sourcegraph.slack.com/archives/C03GMM0F2BA/p1665658367720609)
 			randomTeamMemberLogins, tErr := state.getRandomUsers(50)
 			if tErr != nil {
 				log.Fatal(tErr)
 			}
+
+			// users need to be member of the team's parent org to join the team
+			userState := "active"
+			userRole := "member"
+			for _, randomMember := range randomTeamMemberLogins {
+				// this should be idempotent
+				_, _, tErr = gh.Organizations.EditOrgMembership(ctx, randomMember, t.Org, &github.Membership{
+					State:        &userState,
+					Role:         &userRole,
+					Organization: &github.Organization{Login: &t.Org},
+					User:         &github.User{Login: &randomMember},
+				})
+
+				if tErr != nil {
+					log.Fatal(tErr)
+				}
+			}
+
 			_, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{
 				Name:        currentTeam.Name,
 				Maintainers: randomTeamMemberLogins,

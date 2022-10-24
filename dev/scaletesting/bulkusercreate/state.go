@@ -34,7 +34,8 @@ var createTeamTableStmt = `CREATE TABLE IF NOT EXISTS teams (
   name STRING PRIMARY KEY,
   org STRING,
   failed STRING DEFAULT "",
-  created BOOLEAN DEFAULT FALSE
+  created BOOLEAN DEFAULT FALSE,
+  hasMembers BOOLEAN DEFAULT FALSE
 )`
 
 func newState(path string) (*state, error) {
@@ -68,10 +69,11 @@ type user struct {
 }
 
 type team struct {
-	Name    string
-	Org     string
-	Failed  string
-	Created bool
+	Name       string
+	Org        string
+	Failed     string
+	Created    bool
+	HasMembers bool
 }
 
 type org struct {
@@ -126,7 +128,7 @@ func (s *state) getRandomUsers(limit int) ([]string, error) {
 func (s *state) loadTeams() ([]*team, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT name, org, failed, created FROM teams`)
+	rows, err := s.db.Query(`SELECT name, org, failed, created, hasMembers FROM teams`)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +137,7 @@ func (s *state) loadTeams() ([]*team, error) {
 	var teams []*team
 	for rows.Next() {
 		var t team
-		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created)
+		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created, &t.HasMembers)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +229,8 @@ func (s *state) saveUser(u *user) error {
 
 var saveTeamStmt = `UPDATE teams SET
 failed = ?,
-created = ?
+created = ?,
+hasMembers = ?,
 WHERE name = ?`
 
 func (s *state) saveTeam(t *team) error {
@@ -238,6 +241,7 @@ func (s *state) saveTeam(t *team) error {
 		saveTeamStmt,
 		t.Failed,
 		t.Created,
+		t.HasMembers,
 		t.Name)
 
 	if err != nil {
@@ -338,7 +342,7 @@ func (s *state) countCompletedTeams() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams WHERE created = TRUE AND failed == ""`)
+	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams WHERE created = TRUE AND hasMembers = true AND failed == ""`)
 	var count int
 	err := row.Scan(&count)
 	return count, err
