@@ -1031,8 +1031,8 @@ func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.
 	if len(series.Repositories) > 0 && !deprecateJustInTime {
 		return nil
 	}
-	backfillScheulder = backfillScheulder.With(tx)
-	_, err := backfillScheulder.InitialBackfill(ctx, series)
+	backfillScheduler = backfillScheduler.With(tx)
+	_, err := backfillScheduler.InitialBackfill(ctx, series)
 	if err != nil {
 		return errors.Wrap(err, "scheduler.InitialBackfill")
 	}
