@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type contextKey struct{}
@@ -111,7 +110,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 	handler := &accessLogger{
 		logger:     logger,
 		next:       next,
-		logEnabled: atomic.NewBool(shouldLog(watcher.SiteConfig())),
+		logEnabled: atomic.NewBool(audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)),
 	}
 	if handler.logEnabled.Load() {
 		logger.Info(accessLoggingEnabledMessage)
@@ -119,7 +118,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 
 	// Allow live toggling of access logging
 	watcher.Watch(func() {
-		newShouldLog := shouldLog(watcher.SiteConfig())
+		newShouldLog := audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)
 		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
 		if changed {
 			if newShouldLog {
@@ -131,14 +130,4 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 	})
 
 	return handler.ServeHTTP
-}
-
-func shouldLog(c schema.SiteConfiguration) bool {
-	if c.Log == nil {
-		return false
-	}
-	if c.Log.GitserverAccessLogs { // legacy setting
-		return true
-	}
-	return audit.IsEnabled(c, audit.GitserverAccess)
 }

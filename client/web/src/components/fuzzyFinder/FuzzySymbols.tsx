@@ -66,7 +66,7 @@ export class FuzzySymbols extends FuzzyQuery {
         return values.map(({ text, url, symbolKind }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            icon: symbolKind ? <SymbolTag kind={symbolKind} /> : undefined,
+            icon: symbolKind ? <SymbolTag className="fuzzy-repos-result-icon" kind={symbolKind} /> : undefined,
         }))
     }
 

@@ -36,11 +36,12 @@ export class FuzzyRepos extends FuzzyQuery {
     /* override */ protected searchValues(): SearchValue[] {
         return [...this.queryResults.values()].map(({ text, url, stars }) => {
             const formattedRepositoryStarCount = formatRepositoryStarCount(stars)
+            const icon = <CodeHostIcon repoName={text} />
 
             return {
                 text,
                 url,
-                icon: <CodeHostIcon repoName={text} /> || undefined,
+                icon: icon ? <span className="fuzzy-repos-result-icon">{icon}</span> : undefined,
                 textSuffix:
                     stars && stars > 0 && formattedRepositoryStarCount ? (
                         <span className="fuzzy-repos-star">

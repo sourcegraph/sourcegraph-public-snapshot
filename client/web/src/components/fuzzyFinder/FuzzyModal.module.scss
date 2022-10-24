@@ -69,7 +69,7 @@
         a {
             max-height: initial;
 
-            span:first-of-type {
+            span:global(.fuzzy-repos-result-icon) {
                 margin-right: 0.25rem;
             }
             span:global(.fuzzy-repos-star) {

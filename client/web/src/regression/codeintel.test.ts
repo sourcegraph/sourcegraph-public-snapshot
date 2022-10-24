@@ -10,7 +10,7 @@ import { ExternalServiceKind } from '../graphql-operations'
 
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
@@ -54,7 +54,7 @@ describe('Code graph regression test suite', () => {
         outerResourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,
