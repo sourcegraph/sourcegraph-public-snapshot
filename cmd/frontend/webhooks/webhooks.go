@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type WebhookHandlers struct {
@@ -98,7 +99,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	return body, nil
 }
 
-func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn string, secret string, gh *GitHubWebhook) {
+func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn types.CodeHostURN, secret string, gh *GitHubWebhook) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {

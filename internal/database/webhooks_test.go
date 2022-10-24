@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -38,7 +39,7 @@ func TestWebhookCreate(t *testing.T) {
 			}
 
 			kind := extsvc.KindGitHub
-			urn := "https://github.com"
+			urn := "https://github.com/"
 			encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
 			created, err := store.Create(ctx, kind, urn, 0, encryptedSecret)
@@ -48,7 +49,7 @@ func TestWebhookCreate(t *testing.T) {
 			assert.NotZero(t, created.ID)
 			assert.NotZero(t, created.UUID)
 			assert.Equal(t, kind, created.CodeHostKind)
-			assert.Equal(t, urn, created.CodeHostURN)
+			assert.Equal(t, urn, created.CodeHostURN.String())
 			assert.Equal(t, int32(0), created.CreatedByUserID)
 			assert.NotZero(t, created.CreatedAt)
 			assert.NotZero(t, created.UpdatedAt)
@@ -77,7 +78,7 @@ func TestWebhookCreate(t *testing.T) {
 		store := db.Webhooks(et.ByteaTestKey{})
 
 		kind := extsvc.KindGitHub
-		urn := "https://github.com"
+		urn := "https://github.com/"
 
 		created, err := store.Create(ctx, kind, urn, 0, nil)
 		assert.NoError(t, err)
@@ -87,7 +88,7 @@ func TestWebhookCreate(t *testing.T) {
 		assert.NotZero(t, created.UUID)
 		assert.NoError(t, err)
 		assert.Equal(t, kind, created.CodeHostKind)
-		assert.Equal(t, urn, created.CodeHostURN)
+		assert.Equal(t, urn, created.CodeHostURN.String())
 		assert.Equal(t, int32(0), created.CreatedByUserID)
 		assert.NotZero(t, created.CreatedAt)
 		assert.NotZero(t, created.UpdatedAt)
@@ -187,7 +188,8 @@ func TestWebhookUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	const newCodeHostURN = "https://new.github.com"
+	newCodeHostURN, err := types.ParseCodeHostURN("https://new.github.com")
+	require.NoError(t, err)
 	const updatedSecret = "my new secret"
 
 	t.Run("updating w/ unencrypted secret", func(t *testing.T) {
@@ -203,7 +205,7 @@ func TestWebhookUpdate(t *testing.T) {
 		assert.Equal(t, created.ID, updated.ID)
 		assert.Equal(t, created.UUID, updated.UUID)
 		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
-		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
+		assert.Equal(t, newCodeHostURN.String(), updated.CodeHostURN.String())
 		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
 		assert.NotZero(t, created.UpdatedAt)
 		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
@@ -222,7 +224,7 @@ func TestWebhookUpdate(t *testing.T) {
 		assert.Equal(t, created.ID, updated.ID)
 		assert.Equal(t, created.UUID, updated.UUID)
 		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
-		assert.Equal(t, newCodeHostURN, updated.CodeHostURN)
+		assert.Equal(t, newCodeHostURN.String(), updated.CodeHostURN.String())
 		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
 		assert.NotZero(t, created.UpdatedAt)
 		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
@@ -365,7 +367,7 @@ func TestGetByID(t *testing.T) {
 	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
 	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
 	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
-	assert.Equal(t, webhook.CodeHostURN, createdWebhook.CodeHostURN)
+	assert.Equal(t, webhook.CodeHostURN.String(), createdWebhook.CodeHostURN.String())
 	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
 	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
 }
@@ -395,7 +397,7 @@ func TestGetByUUID(t *testing.T) {
 	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
 	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
 	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
-	assert.Equal(t, webhook.CodeHostURN, createdWebhook.CodeHostURN)
+	assert.Equal(t, webhook.CodeHostURN.String(), createdWebhook.CodeHostURN.String())
 	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
 	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
 }
