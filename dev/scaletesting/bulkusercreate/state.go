@@ -87,10 +87,8 @@ func (s *state) generate(cfg config) ([]*user, error) {
 }
 
 var saveUserStmt = `UPDATE users SET
-login = ?,
-email = ?,
 failed = ?,
-created = ?,
+created = ?
 WHERE login = ?`
 
 func (s *state) saveUser(u *user) error {
@@ -99,10 +97,9 @@ func (s *state) saveUser(u *user) error {
 
 	_, err := s.db.Exec(
 		saveUserStmt,
-		u.Login,
-		u.Email,
 		u.Failed,
-		u.Created)
+		u.Created,
+		u.Login)
 
 	if err != nil {
 		return err
