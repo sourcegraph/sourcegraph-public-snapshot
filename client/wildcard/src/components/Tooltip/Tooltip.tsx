@@ -1,6 +1,5 @@
 import React, { FC, forwardRef, ReactElement, useEffect, useRef, useState } from 'react'
 
-import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useDebounce } from '../../hooks'
@@ -168,7 +167,7 @@ const TooltipTarget = forwardRef<any, TooltipTargetProps>((props, forwardedRef) 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (children.props?.disabled) {
         trigger = (
-            <span className={classNames(styles.tooltipWrapper, children.props?.className)}>
+            <span className={styles.tooltipWrapper}>
                 <div className={styles.tooltipTriggerContainer}>
                     {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
                     <div className={styles.tooltipTriggerDisabledOverlay} tabIndex={0} />
