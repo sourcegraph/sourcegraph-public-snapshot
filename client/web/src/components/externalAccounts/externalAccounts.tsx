@@ -4,7 +4,9 @@ import AccountCircleIcon from 'mdi-react/AccountCircleIcon';
 import GithubIcon from 'mdi-react/GithubIcon';
 import GitLabIcon from 'mdi-react/GitlabIcon';
 
-import { ExternalAccountKind } from '@sourcegraph/shared/src/graphql-operations';
+import {AuthProvider} from '../../jscontext';
+
+export type ExternalAccountKind = Exclude<AuthProvider['serviceType'], 'http-header' | 'builtin'>
 
 export interface ExternalAccount {
     kind: ExternalAccountKind
@@ -20,27 +22,33 @@ export interface ExternalAccount {
     icon: React.ComponentType<{ className?: string }>
 }
 
-const GITHUB_DOTCOM: ExternalAccount = {
-    kind: ExternalAccountKind.GITHUB,
+const GITHUB: ExternalAccount = {
+    kind: 'github',
     title: 'GitHub',
     icon: GithubIcon,
 }
 
-const GITLAB_DOTCOM: ExternalAccount = {
-    kind: ExternalAccountKind.GITLAB,
+const GITLAB: ExternalAccount = {
+    kind: 'gitlab',
     title: 'GitLab',
     icon: GitLabIcon,
 }
 
+const OPENID_CONNECT: ExternalAccount = {
+    kind: 'openidconnect',
+    title: 'OpenID Connect',
+    icon: AccountCircleIcon,
+}
+
 const SAML: ExternalAccount = {
-    kind: ExternalAccountKind.SAML,
+    kind: 'saml',
     title: 'SAML',
     icon: AccountCircleIcon,
 }
 
 export const defaultExternalAccounts: Record<ExternalAccountKind, ExternalAccount> = {
-    [ExternalAccountKind.GITHUB]: GITHUB_DOTCOM,
-    [ExternalAccountKind.GITLAB]: GITLAB_DOTCOM,
-    [ExternalAccountKind.SAML]: SAML,
+    ['github']: GITHUB,
+    ['gitlab']: GITLAB,
+    ['saml']: SAML,
+    ['openidconnect']:OPENID_CONNECT,
 }
-
