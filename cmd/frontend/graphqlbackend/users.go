@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -92,9 +93,19 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins can list users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only site admins can list users and only org members can
+	// list other org members.
+	if r.opt.OrgId == nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *r.opt.OrgId); err != nil {
+			if err == auth.ErrNotAnOrgMember {
+				return nil, errors.New("must be a member of this organization to view members")
+			}
+			return nil, err
+		}
 	}
 
 	var users []*types.User
@@ -122,9 +133,19 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins can count users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return 0, err
+	// 🚨 SECURITY: Only site admins can count users and only org members can
+	// count other org members.
+	if r.opt.OrgId == nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return 0, err
+		}
+	} else {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *r.opt.OrgId); err != nil {
+			if err == auth.ErrNotAnOrgMember {
+				return 0, errors.New("must be a member of this organization to view members")
+			}
+			return 0, err
+		}
 	}
 
 	var count int
@@ -138,34 +159,43 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	count, err := r.TotalCount(ctx)
+	var users []*types.User
+	var err error
+	if r.useCache() {
+		users, _, err = r.compute(ctx)
+	} else {
+		users, err = r.db.Users().List(ctx, &r.opt)
+	}
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && int(count) > r.opt.Limit), nil
+
+	after := r.opt.LimitOffset.Offset + len(users)
+
+	// We would have had all results when no limit set
+	if r.opt.LimitOffset == nil {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	// We got less results than limit, means we've had all results
+	if after < r.opt.Limit {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	// In case the number of results happens to be the same as the limit,
+	// we need another query to get accurate total count with same cursor
+	// to determine if there are more results than the limit we set.
+	totalCount, err := r.TotalCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if int(totalCount) > after {
+		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 func (r *userConnectionResolver) useCache() bool {
 	return r.activePeriod != nil && *r.activePeriod != "ALL_TIME"
-}
-
-// staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
-// list of users that is computed statically.
-type staticUserConnectionResolver struct {
-	db    database.DB
-	users []*types.User
-}
-
-func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
-	resolvers := make([]*UserResolver, len(r.users))
-	for i, user := range r.users {
-		resolvers[i] = NewUserResolver(r.db, user)
-	}
-	return resolvers
-}
-
-func (r *staticUserConnectionResolver) TotalCount() int32 { return int32(len(r.users)) }
-
-func (r *staticUserConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false) // not paginated
 }
