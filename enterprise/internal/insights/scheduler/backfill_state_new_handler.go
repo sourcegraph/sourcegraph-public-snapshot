@@ -51,7 +51,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), //TODO add in a real all repos iterator
+		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), // TODO add in a real all repos iterator
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
@@ -84,9 +84,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	if err != nil {
 		return err
 	}
-	defer func() {
-		tx.Done(err)
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	// load backfill and series
 	backfill, err := tx.loadBackfill(ctx, job.backfillId)
@@ -112,7 +110,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.Wrap(err, "reposIterator.ForEach")
 	}
 
-	//TODO: use query costing
+	// TODO: use query costing
 	backfill, err = backfill.SetScope(ctx, tx, repoIds, 0)
 	if err != nil {
 		return errors.Wrap(err, "backfill.SetScope")
@@ -125,5 +123,16 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	}
 
 	// enqueue backfill for next step in processing
-	return enqueueBackfill(ctx, tx.Handle(), backfill)
+	err = enqueueBackfill(ctx, tx.Handle(), backfill)
+	if err != nil {
+		return errors.Wrap(err, "backfill.enqueueBackfill")
+	}
+	// We have to manually manipulate the queue record here to ensure that the new job is written in the same tx
+	// that this job is marked complete. This is how we will ensure there is no desync if the mark complete operation
+	// fails after we've already queued up a new job.
+	_, err = h.workerStore.MarkComplete(ctx, record.RecordID(), dbworkerstore.MarkFinalOptions{})
+	if err != nil {
+		return errors.Wrap(err, "backfill.MarkComplete")
+	}
+	return err
 }
