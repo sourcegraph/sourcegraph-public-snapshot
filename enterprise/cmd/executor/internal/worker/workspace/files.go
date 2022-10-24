@@ -85,17 +85,15 @@ type workspaceFile struct {
 var ScriptPreamble = `
 # Only on the first run, check if we can upgrade to bash.
 if [ -z "$1" ]; then
-  bash_path=$(which bash)
+  bash_path=$(command -p -v bash)
   set -e
   # Check if bash is present. If so, use bash. Otherwise just keep running with sh.
   if [ -n "$bash_path" ]; then
-    "${bash_path}" "$0" "skip-check"
-    exit
+    exec "${bash_path}" "$0" skip-check
   else
     # If not in the path but still exists at /bin/bash, we can use that.
     if [ -f "/bin/bash" ]; then
-      /bin/bash "$0" "skip-check"
-      exit
+      exec /bin/bash "$0" skip-check
     fi
   fi
 fi
