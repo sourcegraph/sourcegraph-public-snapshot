@@ -157,19 +157,32 @@ func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, erro
 
 func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webhook, int32, error) {
 	r.once.Do(func() {
+		opts := copyOpts(r.opt)
 		if r.opt.LimitOffset != nil {
-			r.opt.Limit++
+			opts.Limit++
 		}
-		r.webhooks, r.err = r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
-		if r.opt.LimitOffset != nil && r.opt.Limit != 0 && len(r.webhooks) == r.opt.Limit {
+		r.webhooks, r.err = r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opts)
+		if r.opt.LimitOffset != nil && len(r.webhooks) == opts.Limit {
 			r.next = r.webhooks[len(r.webhooks)-1].ID
 			r.webhooks = r.webhooks[:len(r.webhooks)-1]
 		}
-		if r.opt.LimitOffset != nil {
-			r.opt.Limit--
-		}
 	})
 	return r.webhooks, r.next, r.err
+}
+
+func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
+	copied := database.WebhookListOptions{
+		Kind:   opts.Kind,
+		Cursor: opts.Cursor,
+	}
+	if opts.LimitOffset != nil {
+		limitOffset := database.LimitOffset{
+			Limit:  opts.Limit,
+			Offset: opts.Offset,
+		}
+		copied.LimitOffset = &limitOffset
+	}
+	return copied
 }
 
 func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
