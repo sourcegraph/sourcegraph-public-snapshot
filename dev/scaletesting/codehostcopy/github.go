@@ -55,8 +55,8 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 		u.User = url.UserPassword(g.def.Username, g.def.Password)
 		u.Scheme = "https"
 		res = append(res, &Repo{
-			name: repo.GetName(),
-			url:  u.String(),
+			Name:       repo.GetName(),
+			FromGitURL: u.String(),
 		})
 	}
 
