@@ -43,7 +43,7 @@ func main() {
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) password of the GitHub user to authenticate with")
 	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create")
 	flag.IntVar(&cfg.orgCount, "org.count", 10, "Amount of orgs to create")
-	flag.StringVar(&cfg.orgAdmin, "org,admin", "", "Login of admin of orgs")
+	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "Login of admin of orgs")
 
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create' or 'delete' users")
@@ -153,6 +153,7 @@ func main() {
 	progress := out.Progress(bars, nil)
 	var usersDone int64
 	var orgsDone int64
+	var teamsDone int64
 
 	g := group.New().WithMaxConcurrency(1000)
 	for _, u := range users {
@@ -269,6 +270,58 @@ func main() {
 			}
 			atomic.AddInt64(&orgsDone, 1)
 			progress.SetValue(0, float64(orgsDone))
+		})
+	}
+
+	for _, t := range teams {
+		currentTeam := t
+		g.Go(func() {
+			if currentTeam.Created && currentTeam.Failed == "" {
+				atomic.AddInt64(&teamsDone, 1)
+				progress.SetValue(0, float64(teamsDone))
+				return
+			}
+			existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+			if tErr != nil && resp.StatusCode != 404 {
+				writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, tErr)
+				return
+			}
+			tErr = nil
+			if existingTeam != nil {
+				currentTeam.Created = true
+				currentTeam.Failed = ""
+				if tErr = state.saveTeam(currentTeam); tErr != nil {
+					log.Fatal(tErr)
+				}
+				writeInfo(out, "team with name %s already exists", currentTeam.Name)
+				atomic.AddInt64(&teamsDone, 1)
+				progress.SetValue(0, float64(teamsDone))
+				return
+			}
+			randomTeamMemberLogins, tErr := state.getRandomUsers(50)
+			if tErr != nil {
+				log.Fatal(tErr)
+			}
+			_, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{
+				Name:        currentTeam.Name,
+				Maintainers: randomTeamMemberLogins,
+			})
+
+			if tErr != nil {
+				writeFailure(out, "Failed to create team with name %s, reason: %s", currentTeam.Name, tErr)
+				currentTeam.Failed = tErr.Error()
+				if tErr = state.saveTeam(currentTeam); tErr != nil {
+					log.Fatal(tErr)
+				}
+				return
+			}
+			currentTeam.Created = true
+			currentTeam.Failed = ""
+			if tErr = state.saveTeam(currentTeam); tErr != nil {
+				log.Fatal(tErr)
+			}
+			atomic.AddInt64(&teamsDone, 1)
+			progress.SetValue(0, float64(teamsDone))
 		})
 	}
 	g.Wait()

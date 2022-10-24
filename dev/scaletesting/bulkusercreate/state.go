@@ -16,16 +16,16 @@ type state struct {
 	db *sql.DB
 }
 
-var createUserTableStmt = `CREATE TABLE IF NOT EXISTS orgs (
+var createUserTableStmt = `CREATE TABLE IF NOT EXISTS users (
   login STRING PRIMARY KEY,
-  adminLogin STRING,
+  email STRING,
   failed STRING DEFAULT "",
   created BOOLEAN DEFAULT FALSE
 )`
 
-var createOrgTableStmt = `CREATE TABLE IF NOT EXISTS users (
+var createOrgTableStmt = `CREATE TABLE IF NOT EXISTS orgs (
   login STRING PRIMARY KEY,
-  email STRING,
+  adminLogin STRING,
   failed STRING DEFAULT "",
   created BOOLEAN DEFAULT FALSE
 )`
@@ -102,6 +102,27 @@ func (s *state) loadUsers() ([]*user, error) {
 	return users, nil
 }
 
+func (s *state) getRandomUsers(limit int) ([]string, error) {
+	s.Lock()
+	defer s.Unlock()
+	rows, err := s.db.Query(fmt.Sprintf("SELECT login FROM users ORDER BY RANDOM() LIMIT %d", limit))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var userLogins []string
+	for rows.Next() {
+		var uLogin string
+		err = rows.Scan(&uLogin)
+		if err != nil {
+			return nil, err
+		}
+		userLogins = append(userLogins, uLogin)
+	}
+	return userLogins, nil
+}
+
 func (s *state) loadTeams() ([]*team, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -126,7 +147,7 @@ func (s *state) loadTeams() ([]*team, error) {
 func (s *state) loadOrgs() ([]*org, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT login, admin, failed, created FROM orgs`)
+	rows, err := s.db.Query(`SELECT login, adminLogin, failed, created FROM orgs`)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +338,7 @@ func (s *state) countCompletedTeams() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(login) FROM teams WHERE created = TRUE AND failed == ""`)
+	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams WHERE created = TRUE AND failed == ""`)
 	var count int
 	err := row.Scan(&count)
 	return count, err
@@ -327,7 +348,7 @@ func (s *state) countAllTeams() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(login) FROM teams`)
+	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams`)
 	var count int
 	err := row.Scan(&count)
 	return count, err
