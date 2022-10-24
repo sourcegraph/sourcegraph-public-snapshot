@@ -808,6 +808,8 @@ type UsersListOptions struct {
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
+	// HasBeenActive filters out users that have never had an eventlog entry if true.
+	HasBeenActive bool
 
 	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
 
@@ -871,6 +873,13 @@ const listUsersInactiveCond = `
 ))
 `
 
+const listUsersHasBeenActiveCond = `
+(EXISTS (
+	SELECT 1 FROM event_logs
+	WHERE event_logs.user_id = u.id
+))
+`
+
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
@@ -896,6 +905,10 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 
 	if !opt.InactiveSince.IsZero() {
 		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
+	}
+
+	if opt.HasBeenActive {
+		conds = append(conds, sqlf.Sprintf(listUsersHasBeenActiveCond))
 	}
 
 	// NOTE: This is a hack which should be replaced when we have proper user types.

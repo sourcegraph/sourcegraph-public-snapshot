@@ -163,3 +163,117 @@ func TestUsers_InactiveSince(t *testing.T) {
 		},
 	})
 }
+
+func TestUsers_HasBeenActive(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	schema := mustParseGraphQLSchema(t, db)
+
+	now := time.Now()
+	daysAgo := func(days int) time.Time {
+		return now.Add(-time.Duration(days) * 24 * time.Hour)
+	}
+
+	var users = []struct {
+		user        database.NewUser
+		lastEventAt time.Time
+	}{
+		{user: database.NewUser{Username: "user-1", Password: "user-1"}, lastEventAt: daysAgo(1)},
+		{user: database.NewUser{Username: "user-2", Password: "user-2"}},
+	}
+
+	for _, newUser := range users {
+		u, err := db.Users().Create(ctx, newUser.user)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !newUser.lastEventAt.IsZero() {
+			event := &database.Event{
+				UserID:    uint32(u.ID),
+				Timestamp: newUser.lastEventAt,
+				Name:      "testevent",
+				Source:    "test",
+			}
+			if err := db.EventLogs().Insert(ctx, event); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	ctx = actor.WithInternalActor(ctx)
+
+	// TODO: Fix the query
+	query := `
+		query InactiveUsers($since: DateTime) {
+			users(hasBeenActive: $since) {
+				nodes { username }
+				totalCount
+			}
+		}
+	`
+
+	// fix the assertions
+	RunTests(t, []*Test{
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(4).Format(time.RFC3339Nano)},
+			ExpectedResult: `
+			{"users": { "nodes": [], "totalCount": 0 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano)},
+			ExpectedResult: `
+			{"users": { "nodes": [{ "username": "user-4" }], "totalCount": 1 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(2).Format(time.RFC3339Nano)},
+			ExpectedResult: `
+			{"users": { "nodes": [{ "username": "user-3" }, { "username": "user-4" }], "totalCount": 2 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(1).Format(time.RFC3339Nano)},
+			ExpectedResult: `
+			{"users": { "nodes": [
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" }
+			], "totalCount": 3 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(0).Format(time.RFC3339Nano)},
+			ExpectedResult: `
+			{"users": { "nodes": [
+				{ "username": "user-1" },
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" }
+			], "totalCount": 4 }}
+			`,
+		},
+	})
+}
