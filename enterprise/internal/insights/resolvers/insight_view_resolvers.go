@@ -1027,7 +1027,7 @@ func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *stor
 	return nil
 }
 
-func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, backfillScheulder *scheduler.Scheduler) error {
+func v2HistoricFill(ctx context.Context, deprecateJustInTime bool, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
 	if len(series.Repositories) > 0 && !deprecateJustInTime {
 		return nil
 	}
