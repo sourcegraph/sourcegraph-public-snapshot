@@ -1,7 +1,7 @@
 local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
 
-local indexer = "sourcegraph/lsif-rust"
+local indexer = require("sg.indexes").get "rust"
 local outfile = "dump.lsif"
 
 return recognizer.new_path_recognizer {

@@ -234,5 +234,9 @@ func (r *forkTargetResolver) PushUser() bool {
 }
 
 func (r *forkTargetResolver) Namespace() *string {
-	return r.changesetSpec.GetForkNamespace()
+	// We don't use `changesetSpec.GetForkNamespace()` here because it returns `nil` if
+	// the namespace matches the user default namespace. This is a perfectly reasonable
+	// thing to do for the way we use the method internally, but for resolving this field
+	// on the GraphQL scehma, we want to return the namespace regardless of what it is.
+	return r.changesetSpec.ForkNamespace
 }

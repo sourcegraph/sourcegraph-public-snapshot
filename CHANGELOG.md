@@ -17,7 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Creating access tokens is now tracked in the security events. [#43226](https://github.com/sourcegraph/sourcegraph/pull/43226)
+- Added `codeIntelAutoIndexing.indexerMap` to site-config that allows users to update the indexers used when inferring precise code intelligence auto-indexing jobs (without having to overwrite the entire inference scripts). For example, `"codeIntelAutoIndexing.indexerMap": {"go": "my.registry/sourcegraph/lsif-go"}` will casue Go projects to use the specified container (in a alternative Docker registry). [#43199](https://github.com/sourcegraph/sourcegraph/pull/43199)
 
 ### Changed
 
@@ -26,10 +27,11 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Newly created Code Insights will now display all data points that have zero results. [#42801](https://github.com/sourcegraph/sourcegraph/pull/42801), [#43166](https://github.com/sourcegraph/sourcegraph/pull/43166)
+- Fixed a bug where path matches on files in the root directory of a repository were not highlighted. [#43275](https://github.com/sourcegraph/sourcegraph/pull/43275)
 
 ### Removed
 
--
+- Remove `LOG_ALL_GRAPHQL_REQUESTS` env var. The setting is succeeded by `log.auditLog.graphQL`. [#43181](https://github.com/sourcegraph/sourcegraph/pull/43181)
 
 ## 4.1.0
 

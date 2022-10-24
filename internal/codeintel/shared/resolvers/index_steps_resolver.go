@@ -69,6 +69,12 @@ func (r *indexStepsResolver) Index() IndexStepResolver {
 }
 
 func (r *indexStepsResolver) Upload() ExecutionLogEntryResolver {
+	if entry, ok := r.findExecutionLogEntry("step.docker.upload"); ok {
+		return NewExecutionLogEntryResolver(r.svc, entry)
+	}
+
+	// This is here for backwards compatibility for records that were created before
+	// src became a docker step.
 	if entry, ok := r.findExecutionLogEntry("step.src.upload"); ok {
 		return NewExecutionLogEntryResolver(r.svc, entry)
 	}

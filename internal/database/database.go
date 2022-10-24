@@ -100,7 +100,7 @@ func (d *db) Done(err error) error {
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokensWith(d.Store)
+	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {

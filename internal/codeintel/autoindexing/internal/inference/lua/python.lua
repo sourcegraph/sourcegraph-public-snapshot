@@ -1,7 +1,7 @@
 local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
 
-local indexer = "sourcegraph/scip-python:autoindex"
+local indexer = require("sg.indexes").get "python"
 local outfile = "index.scip"
 
 -- TODO: This could probably be part of the provided libs once we have that.

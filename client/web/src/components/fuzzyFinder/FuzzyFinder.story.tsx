@@ -25,3 +25,13 @@ export const ReadyStory: Story = () => (
         <FuzzyWrapper url="/github.com/sourcegraph/sourcegraph@main" experimentalFeatures={{}} initialQuery="clientb" />
     </MockedTestProvider>
 )
+
+export const TabsStory: Story = () => (
+    <MockedTestProvider mocks={[FUZZY_FILES_MOCK]}>
+        <FuzzyWrapper
+            url="/github.com/sourcegraph/sourcegraph@main"
+            experimentalFeatures={{ fuzzyFinderAll: true }}
+            initialQuery="clientb"
+        />
+    </MockedTestProvider>
+)

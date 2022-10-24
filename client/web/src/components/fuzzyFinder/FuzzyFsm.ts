@@ -35,6 +35,7 @@ export interface Empty {
 }
 export interface Downloading {
     key: 'downloading'
+    downloading?: SearchIndexing
 }
 export interface Indexing {
     key: 'indexing'

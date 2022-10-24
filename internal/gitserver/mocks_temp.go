@@ -104,6 +104,9 @@ type MockClient struct {
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ClientIsRepoCloneableFunc
+	// LFSSmudgeFunc is an instance of a mock function object controlling
+	// the behavior of the method LFSSmudge.
+	LFSSmudgeFunc *ClientLFSSmudgeFunc
 	// ListBranchesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListBranches.
 	ListBranchesFunc *ClientListBranchesFunc
@@ -315,6 +318,11 @@ func NewMockClient() *MockClient {
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 error) {
+				return
+			},
+		},
+		LFSSmudgeFunc: &ClientLFSSmudgeFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -585,6 +593,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.IsRepoCloneable")
 			},
 		},
+		LFSSmudgeFunc: &ClientLFSSmudgeFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockClient.LFSSmudge")
+			},
+		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
 				panic("unexpected invocation of MockClient.ListBranches")
@@ -799,6 +812,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
+		},
+		LFSSmudgeFunc: &ClientLFSSmudgeFunc{
+			defaultHook: i.LFSSmudge,
 		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: i.ListBranches,
@@ -3795,6 +3811,122 @@ func (c ClientIsRepoCloneableFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientIsRepoCloneableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ClientLFSSmudgeFunc describes the behavior when the LFSSmudge method of
+// the parent MockClient instance is invoked.
+type ClientLFSSmudgeFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+	history     []ClientLFSSmudgeFuncCall
+	mutex       sync.Mutex
+}
+
+// LFSSmudge delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) LFSSmudge(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 string, v4 authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+	r0, r1 := m.LFSSmudgeFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.LFSSmudgeFunc.appendCall(ClientLFSSmudgeFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LFSSmudge method of
+// the parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientLFSSmudgeFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LFSSmudge method of the parent MockClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientLFSSmudgeFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientLFSSmudgeFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientLFSSmudgeFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientLFSSmudgeFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, string, authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientLFSSmudgeFunc) appendCall(r0 ClientLFSSmudgeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientLFSSmudgeFuncCall objects describing
+// the invocations of this function.
+func (f *ClientLFSSmudgeFunc) History() []ClientLFSSmudgeFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientLFSSmudgeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientLFSSmudgeFuncCall is an object that describes an invocation of
+// method LFSSmudge on an instance of MockClient.
+type ClientLFSSmudgeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 authz.SubRepoPermissionChecker
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 io.ReadCloser
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientLFSSmudgeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientLFSSmudgeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientListBranchesFunc describes the behavior when the ListBranches

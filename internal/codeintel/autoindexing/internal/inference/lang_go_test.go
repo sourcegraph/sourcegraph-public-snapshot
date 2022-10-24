@@ -3,10 +3,13 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestGoGenerator(t *testing.T) {
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("go")
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "go modules",
@@ -19,13 +22,13 @@ func TestGoGenerator(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "foo/bar",
-							Image:    "sourcegraph/lsif-go:latest",
+							Image:    expectedIndexerImage,
 							Commands: []string{"go mod download"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/bar",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-go", "--no-animation"},
 					Outfile:     "",
 				},
@@ -33,13 +36,13 @@ func TestGoGenerator(t *testing.T) {
 					Steps: []config.DockerStep{
 						{
 							Root:     "foo/baz",
-							Image:    "sourcegraph/lsif-go:latest",
+							Image:    expectedIndexerImage,
 							Commands: []string{"go mod download"},
 						},
 					},
 					LocalSteps:  nil,
 					Root:        "foo/baz",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-go", "--no-animation"},
 					Outfile:     "",
 				},
@@ -57,7 +60,7 @@ func TestGoGenerator(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-go:latest",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"GO111MODULE=off", "lsif-go", "--no-animation"},
 					Outfile:     "",
 				},
