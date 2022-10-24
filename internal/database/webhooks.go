@@ -224,7 +224,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.CodeHostURN.String(), encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -295,11 +295,12 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		rawSecret string
 	)
 
+	var urnString string
 	if err := sc.Scan(
 		&hook.ID,
 		&hook.UUID,
 		&hook.CodeHostKind,
-		&hook.CodeHostURN,
+		&urnString,
 		&rawSecret,
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
@@ -311,6 +312,11 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	}
 
 	hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
+	codeHostURN, err := types.ParseCodeHostURN(urnString)
+	if err != nil {
+		return nil, err
+	}
+	hook.CodeHostURN = codeHostURN
 
 	return &hook, nil
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,7 +55,7 @@ func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN string, payload any) error {
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN types.CodeHostURN, payload any) error {
 	var m error
 
 	prs, ev := h.convertEvent(ctx, codeHostURN, payload)
@@ -79,7 +80,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	return m
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN string, theirs any) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN types.CodeHostURN, theirs any) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -181,7 +182,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN string, th
 
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
-			ServiceID:   codeHostURN,
+			ServiceID:   codeHostURN.String(),
 			ServiceType: extsvc.TypeGitHub,
 		}
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"reflect"
 	"sort"
 	"strings"
@@ -1683,10 +1684,37 @@ type Webhook struct {
 	// UUID is the ID we display externally and will appear in the webhook URL
 	UUID            uuid.UUID
 	CodeHostKind    string
-	CodeHostURN     string
+	CodeHostURN     CodeHostURN
 	Secret          *EncryptableSecret
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	CreatedByUserID int32
 	UpdatedByUserID int32
+}
+
+// CodeHostURN is an identifier for a unique code host in the form
+// of its host URL.
+type CodeHostURN struct {
+	url *url.URL
+}
+
+// ParseCodeHostURN takes a code host URL string, normalizes it,
+// and returns a CodeHostURN. If the string is required, use the
+// .String() method on the CodeHostURN.
+func ParseCodeHostURN(urnString string) (CodeHostURN, error) {
+	url, err := url.Parse(urnString)
+	if err != nil {
+		return CodeHostURN{}, err
+	}
+
+	return CodeHostURN{url: extsvc.NormalizeBaseURL(url)}, nil
+}
+
+// String returns the stored, noramlized code host URN as a string.
+func (c CodeHostURN) String() string {
+	if c.url != nil {
+		return c.url.String()
+	}
+
+	return ""
 }
