@@ -124,7 +124,6 @@ func mainErr(ctx context.Context) (err error) {
 
 			g.Go(func(ctx context.Context) error {
 				defer close(done)
-
 				return moveToGCS(ctx, bucket, serializableProgress.id)
 			})
 		}
@@ -340,11 +339,6 @@ type uploadMeta struct {
 	id   int
 	repo string
 	root string
-}
-
-type pathMeta struct {
-	uploadMeta uploadMeta
-	path       string
 }
 
 type countAndPath struct {
