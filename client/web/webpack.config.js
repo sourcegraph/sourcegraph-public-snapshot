@@ -46,6 +46,7 @@ const {
   WEBPACK_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
+  WEBPACK_DEVELOPMENT_DEVTOOL,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
   VERSION,
@@ -143,7 +144,7 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : 'eval-cheap-module-source-map',
+  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),

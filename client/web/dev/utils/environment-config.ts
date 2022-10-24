@@ -35,10 +35,12 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
     // The name used to generate Statoscope JSON stats and HTML report in the `/ui/assets` folder.
     WEBPACK_STATS_NAME: process.env.WEBPACK_STATS_NAME,
-    // Allow overriding default Webpack naming behavior for debugging
+    // Allow overriding default Webpack naming behavior for debugging.
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
-
+    // Enables the plugin that write Webpack stats to disk.
     WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
+    // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
+    WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
 
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,

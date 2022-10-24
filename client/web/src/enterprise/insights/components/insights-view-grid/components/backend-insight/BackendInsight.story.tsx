@@ -243,7 +243,6 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}
         telemetryService={NOOP_TELEMETRY_SERVICE}
-        innerRef={() => {}}
     />
 )
 
@@ -1223,7 +1222,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={COMPONENT_MIGRATION_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
 
@@ -1232,7 +1230,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={DATA_FETCHING_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
 
@@ -1241,7 +1238,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={TERRAFORM_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
     </div>
@@ -1286,7 +1282,6 @@ export const BackendInsightVitrine: Story = () => (
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    innerRef={() => {}}
                 />
             </MockedTestProvider>
         </article>

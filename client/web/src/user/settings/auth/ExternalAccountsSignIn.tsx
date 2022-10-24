@@ -1,6 +1,7 @@
 import React from 'react'
 
 import classNames from 'classnames'
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
 import { AuthProvider } from 'src/jscontext'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -54,7 +55,7 @@ const getNormalizedAccount = (
     const accountExternalData = account?.accountData
 
     // get external service icon and name as they will match external account
-    const { icon, title: name } = defaultExternalServices[kind]
+    const { icon, title: name } = defaultExternalServices[kind] || { icon: AccountCircleIcon, title: kind }
 
     let normalizedAccount: NormalizedMinAccount = {
         icon,

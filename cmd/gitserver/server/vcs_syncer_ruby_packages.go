@@ -4,20 +4,17 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,18 +26,14 @@ func NewRubyPackagesSyncer(
 	client *rubygems.Client,
 ) VCSSyncer {
 
-	repositoryURL := connection.Repository
-	if repositoryURL == "" {
-		repositoryURL = "https://rubygems.org/"
-	}
 	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RubyPackagesSyncer", "sync Ruby packages"),
 		typ:         "ruby_packages",
 		scheme:      dependencies.RubyPackagesScheme,
-		placeholder: reposource.NewRubyVersionedPackage("shopify_api", "12.0.0"),
+		placeholder: reposource.NewRubyVersionedPackage("sourcegraph/placeholder", "0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &rubyDependencySource{repositoryURL: repositoryURL, client: client},
+		source:      &rubyDependencySource{client: client},
 	}
 }
 
@@ -66,22 +59,20 @@ func (rubyDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (rep
 }
 
 func (s *rubyDependencySource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	packageURL := fmt.Sprintf("%s/gems/%s-%s.gem", strings.TrimSuffix(s.repositoryURL, "/"), dep.PackageSyntax(), dep.PackageVersion())
-
-	pkg, err := s.client.Get(ctx, packageURL)
+	pkgContents, packageURL, err := s.client.GetPackageContents(ctx, dep)
 	if err != nil {
 		return errors.Wrapf(err, "error downloading RubyGem with URL '%s'", packageURL)
 	}
+	defer pkgContents.Close()
 
-	if err = unpackRubyPackage(packageURL, pkg, dir); err != nil {
+	if err = unpackRubyPackage(packageURL, pkgContents, dir); err != nil {
 		return errors.Wrapf(err, "failed to unzip ruby module from URL %s", packageURL)
 	}
 
 	return nil
 }
 
-func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
-	r := bytes.NewReader(pkg)
+func unpackRubyPackage(packageURL string, pkg io.Reader, workDir string) error {
 	opts := unpack.Opts{
 		SkipInvalid:    true,
 		SkipDuplicates: true,
@@ -96,7 +87,7 @@ func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := unpack.Tar(r, tmpDir, opts); err != nil {
+	if err := unpack.Tar(pkg, tmpDir, opts); err != nil {
 		return errors.Wrapf(err, "failed to tar downloaded bytes from URL %s", packageURL)
 	}
 
@@ -112,7 +103,7 @@ func unpackRubyPackage(packageURL string, pkg []byte, workDir string) error {
 	if err != nil {
 		return err
 	}
-	metadataBytes, err := ioutil.ReadAll(metadataReader)
+	metadataBytes, err := io.ReadAll(metadataReader)
 	if err != nil {
 		return err
 	}

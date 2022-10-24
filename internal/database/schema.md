@@ -139,6 +139,7 @@ Foreign-key constraints:
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
+    "batch_spec_resolution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
@@ -1359,6 +1360,7 @@ Referenced by:
  cancel            | boolean                  |           | not null | false
 Indexes:
     "gitserver_relocator_jobs_pkey" PRIMARY KEY, btree (id)
+    "gitserver_relocator_jobs_state" btree (state)
 
 ```
 
@@ -1620,6 +1622,7 @@ A lookup table to get all the repository patterns by repository id that apply to
  cancel                | boolean                  |           | not null | false
 Indexes:
     "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
+    "lsif_dependency_indexing_jobs_state" btree (state)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1664,6 +1667,7 @@ Indexes:
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
+    "lsif_dependency_syncing_jobs_state" btree (state)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1744,6 +1748,7 @@ Stores the configuration used for code intel index jobs for a repository.
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
+ should_reindex         | boolean                  |           | not null | false
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1928,38 +1933,40 @@ Stores the retention policy of code intellience data for a repository.
 
 # Table "public.lsif_uploads"
 ```
-         Column         |           Type           | Collation | Nullable |                Default                 
-------------------------+--------------------------+-----------+----------+----------------------------------------
- id                     | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
- commit                 | text                     |           | not null | 
- root                   | text                     |           | not null | ''::text
- uploaded_at            | timestamp with time zone |           | not null | now()
- state                  | text                     |           | not null | 'queued'::text
- failure_message        | text                     |           |          | 
- started_at             | timestamp with time zone |           |          | 
- finished_at            | timestamp with time zone |           |          | 
- repository_id          | integer                  |           | not null | 
- indexer                | text                     |           | not null | 
- num_parts              | integer                  |           | not null | 
- uploaded_parts         | integer[]                |           | not null | 
- process_after          | timestamp with time zone |           |          | 
- num_resets             | integer                  |           | not null | 0
- upload_size            | bigint                   |           |          | 
- num_failures           | integer                  |           | not null | 0
- associated_index_id    | bigint                   |           |          | 
- committed_at           | timestamp with time zone |           |          | 
- commit_last_checked_at | timestamp with time zone |           |          | 
- worker_hostname        | text                     |           | not null | ''::text
- last_heartbeat_at      | timestamp with time zone |           |          | 
- execution_logs         | json[]                   |           |          | 
- num_references         | integer                  |           |          | 
- expired                | boolean                  |           | not null | false
- last_retention_scan_at | timestamp with time zone |           |          | 
- reference_count        | integer                  |           |          | 
- indexer_version        | text                     |           |          | 
- queued_at              | timestamp with time zone |           |          | 
- cancel                 | boolean                  |           | not null | false
- uncompressed_size      | bigint                   |           |          | 
+         Column          |           Type           | Collation | Nullable |                Default                 
+-------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                      | integer                  |           | not null | nextval('lsif_dumps_id_seq'::regclass)
+ commit                  | text                     |           | not null | 
+ root                    | text                     |           | not null | ''::text
+ uploaded_at             | timestamp with time zone |           | not null | now()
+ state                   | text                     |           | not null | 'queued'::text
+ failure_message         | text                     |           |          | 
+ started_at              | timestamp with time zone |           |          | 
+ finished_at             | timestamp with time zone |           |          | 
+ repository_id           | integer                  |           | not null | 
+ indexer                 | text                     |           | not null | 
+ num_parts               | integer                  |           | not null | 
+ uploaded_parts          | integer[]                |           | not null | 
+ process_after           | timestamp with time zone |           |          | 
+ num_resets              | integer                  |           | not null | 0
+ upload_size             | bigint                   |           |          | 
+ num_failures            | integer                  |           | not null | 0
+ associated_index_id     | bigint                   |           |          | 
+ committed_at            | timestamp with time zone |           |          | 
+ commit_last_checked_at  | timestamp with time zone |           |          | 
+ worker_hostname         | text                     |           | not null | ''::text
+ last_heartbeat_at       | timestamp with time zone |           |          | 
+ execution_logs          | json[]                   |           |          | 
+ num_references          | integer                  |           |          | 
+ expired                 | boolean                  |           | not null | false
+ last_retention_scan_at  | timestamp with time zone |           |          | 
+ reference_count         | integer                  |           |          | 
+ indexer_version         | text                     |           |          | 
+ queued_at               | timestamp with time zone |           |          | 
+ cancel                  | boolean                  |           | not null | false
+ uncompressed_size       | bigint                   |           |          | 
+ last_referenced_scan_at | timestamp with time zone |           |          | 
+ last_traversal_scan_at  | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1996,7 +2003,11 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **indexer_version**: The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.
 
+**last_referenced_scan_at**: The last time this upload was known to be referenced by another (possibly expired) index.
+
 **last_retention_scan_at**: The last time this upload was checked against data retention policies.
+
+**last_traversal_scan_at**: The last time this upload was known to be reachable by a non-expired index.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
@@ -3083,6 +3094,7 @@ Triggers:
  extsvc_id         | integer                  |           |          | 
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
+    "webhook_build_jobs_state" btree (state)
 
 ```
 
@@ -3348,6 +3360,7 @@ Webhooks registered in Sourcegraph instance.
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

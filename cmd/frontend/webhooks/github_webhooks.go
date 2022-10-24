@@ -2,8 +2,10 @@ package webhooks
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 
@@ -25,14 +27,15 @@ type Registerer interface {
 
 // WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
 // permissible based on the event type(s) the handler was registered against. If you register a handler
-// for many event types, you should do a type switch within your handler
-type WebhookHandler func(ctx context.Context, extSvc *types.ExternalService, event any) error
+// for many event types, you should do a type switch within your handler.
+// Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
+type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN string, event any) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
 // passed in the X-Github-Event header
 type GitHubWebhook struct {
-	ExternalServices database.ExternalServiceStore
+	DB database.DB
 
 	mu       sync.RWMutex
 	handlers map[string][]WebhookHandler
@@ -45,6 +48,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	// get external service and validate webhook payload signature
 	extSvc, err := h.getExternalService(r, body)
@@ -56,13 +60,39 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	SetExternalServiceID(r.Context(), extSvc.ID)
 
+	rawConfig, err := extSvc.Config.Decrypt(r.Context())
+	if err != nil {
+		log15.Error("Could not decode external service config", "error", err)
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
+	}
+
+	config := &schema.GitHubConnection{}
+	err = json.Unmarshal([]byte(rawConfig), config)
+	if err != nil {
+		log15.Error("Could not decode external service config", "error", err)
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
+	}
+
+	url, err := url.Parse(config.Url)
+	if err != nil {
+		log15.Error("Could not parse code host URL from config", "error", err)
+		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
+		return
+	}
+
+	h.HandleWebhook(w, r, extsvc.NormalizeBaseURL(url).String(), body)
+}
+
+func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN string, requestBody []byte) {
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
 	// parse event
 	eventType := gh.WebHookType(r)
-	e, err := gh.ParseWebHook(eventType, body)
+	e, err := gh.ParseWebHook(eventType, requestBody)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -70,7 +100,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// match event handlers
-	err = h.Dispatch(ctx, eventType, extSvc, e)
+	err = h.Dispatch(ctx, eventType, codeHostURN, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -80,7 +110,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *types.ExternalService, e any) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN string, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
@@ -88,7 +118,7 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, extSvc *
 		// capture the handler variable within this loop
 		handler := handler
 		g.Go(func() error {
-			return handler(ctx, extSvc, e)
+			return handler(ctx, h.DB, codeHostURN, e)
 		})
 	}
 	return g.Wait()
@@ -125,7 +155,7 @@ func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types
 	if err != nil {
 		return nil, err
 	}
-	e, err := h.ExternalServices.GetByID(r.Context(), externalServiceID)
+	e, err := h.DB.ExternalServices().GetByID(r.Context(), externalServiceID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +184,7 @@ func (h *GitHubWebhook) findAndValidateExternalService(ctx context.Context, sig 
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return an error to the client.
 	args := database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}}
-	es, err := h.ExternalServices.List(ctx, args)
+	es, err := h.DB.ExternalServices().List(ctx, args)
 	if err != nil {
 		return nil, err
 	}

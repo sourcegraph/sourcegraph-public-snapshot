@@ -27,12 +27,12 @@ func newBackfillStoreWithClock(edb edb.InsightsDB, clock glock.Clock) *BackfillS
 }
 
 func (s *BackfillStore) With(other basestore.ShareableStore) *BackfillStore {
-	return &BackfillStore{Store: s.Store.With(other)}
+	return &BackfillStore{Store: s.Store.With(other), clock: s.clock}
 }
 
 func (s *BackfillStore) Transact(ctx context.Context) (*BackfillStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &BackfillStore{Store: txBase}, err
+	return &BackfillStore{Store: txBase, clock: s.clock}, err
 }
 
 type SeriesBackfill struct {
