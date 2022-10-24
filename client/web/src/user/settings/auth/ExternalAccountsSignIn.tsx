@@ -4,13 +4,11 @@ import classNames from 'classnames'
 import {AuthProvider} from 'src/jscontext'
 
 import {ErrorLike} from '@sourcegraph/common'
-import {ExternalAccountKind} from '@sourcegraph/shared/src/graphql-operations'
 
-import {defaultExternalAccounts} from '../../../components/externalAccounts/externalAccounts'
+import {defaultExternalAccounts, ExternalAccountKind} from '../../../components/externalAccounts/externalAccounts'
 
 import {ExternalAccount} from './ExternalAccount'
 import {AccountByServiceID, UserExternalAccount} from './UserSettingsSecurityPage'
-
 import styles from './ExternalAccountsSignIn.module.scss'
 
 interface GitHubExternalData {
@@ -65,7 +63,7 @@ const getNormalizedAccount = (
     authProvider: AuthProvider
 ): NormalizedMinAccount => {
     // kind and type match except for the casing
-    const kind = authProvider.serviceType.toLocaleUpperCase() as ExternalAccountKind
+    const kind = authProvider.serviceType as ExternalAccountKind
 
     const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
@@ -80,7 +78,7 @@ const getNormalizedAccount = (
     // if external account exists - add user specific data to normalizedAccount
     if (account && accountExternalData) {
         switch (kind) {
-            case 'GITHUB': {
+            case 'github': {
                 const githubExternalData = accountExternalData as GitHubExternalData
                 normalizedAccount = {
                     ...normalizedAccount,
@@ -94,7 +92,7 @@ const getNormalizedAccount = (
                 }
             }
                 break
-            case 'GITLAB': {
+            case 'gitlab': {
                 const gitlabExternalData = accountExternalData as GitLabExternalData
                 normalizedAccount = {
                     ...normalizedAccount,
@@ -108,24 +106,25 @@ const getNormalizedAccount = (
                 }
             }
                 break
-            case 'SAML': {
-                // “Values”[“http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] > Values[0] > “Value”: string
+            case 'saml': {
+                // The data stored in user_external_account has this structure: “Values”[“<attribute names for email or username>"] > Values[0] > “Value”: string
                 let email = ''
                 let username = ''
 
                 const samlExternalData = accountExternalData as SamlExternalData
                 if (samlExternalData.Values) {
-                    // const entries = samlExternalData.Values.entries()
                     const entries = Object.entries(samlExternalData.Values)
                     for (const [name, att] of entries) {
+                        if (usernameAttrs.has(name)) {
+                            username = att.Values.length > 0 && att.Values[0].Value || ''
+
+                            break
+                        }
+
                         if (emailAttrs.has(name)) {
                             email = att.Values.find((val: AttributeValue) =>
                                 val.Value.includes('@')
                             )?.Value || ''
-                        }
-
-                        if (usernameAttrs.has(name)) {
-                            username = att.Values.length > 0 && att.Values[0].Value || ''
                         }
                     }
                 }
