@@ -169,6 +169,7 @@ func NewInternalHandler(
 	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
 		db:              db,
+		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
 		gitserverClient: gsClient,
 		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
 		RepoStore:       db.Repos(),

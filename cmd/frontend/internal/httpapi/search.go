@@ -51,7 +51,8 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
 type searchIndexerServer struct {
-	db database.DB
+	db     database.DB
+	logger log.Logger
 
 	gitserverClient gitserver.Client
 	// ListIndexable returns the repositories to index.
@@ -344,13 +345,9 @@ func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *
 		return err
 	}
 
-	log.Scoped("searchIndexerServer", "").Info("updating index status", log.Uint32("repo", body.RepoID))
-	indexed := map[uint32]*zoekt.MinimalRepoListEntry{body.RepoID: {Branches: body.Branches}}
+	h.logger.Info("updating index status", log.Uint32("repo", body.RepoID))
 
-	if err := h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), indexed); err != nil {
-		return err
-	}
-
-	w.WriteHeader(http.StatusOK)
-	return nil
+	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), map[uint32]*zoekt.MinimalRepoListEntry{
+		body.RepoID: {Branches: body.Branches},
+	})
 }
