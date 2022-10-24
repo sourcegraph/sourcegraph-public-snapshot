@@ -112,7 +112,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
             class="anchorLink"
             href="/sign-in"
           >
-            Log in
+            Sign in
           </a>
         </div>
       </div>
