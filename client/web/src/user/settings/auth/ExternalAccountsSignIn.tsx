@@ -57,7 +57,8 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', ' ...'])
+const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'emailaddress', '"http://schemas.xmlsoap.org/claims/EmailAddress'])
+const usernameAttrs = new Set(['nickname', 'login', 'username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
 
 const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
@@ -110,6 +111,7 @@ const getNormalizedAccount = (
             case 'SAML': {
                 // “Values”[“http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] > Values[0] > “Value”: string
                 let email = ''
+                let username = ''
 
                 const samlExternalData = accountExternalData as SamlExternalData
                 if (samlExternalData.Values) {
@@ -121,6 +123,10 @@ const getNormalizedAccount = (
                                 val.Value.includes('@')
                             )?.Value || ''
                         }
+
+                        if (usernameAttrs.has(name)) {
+                            username = att.Values.length > 0 && att.Values[0].Value || ''
+                        }
                     }
                 }
 
@@ -128,7 +134,7 @@ const getNormalizedAccount = (
                     ...normalizedAccount,
                     external: {
                         id: account.id,
-                        userName: email,
+                        userName: username || email,
                     },
                 }
             }
