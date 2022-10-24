@@ -14,8 +14,8 @@ import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
 import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
-import { SelfHostInstructions } from './SelfHostInstructions'
 import { TipsAndTricks } from './TipsAndTricks'
+import { TrySourcegraphCloudSection } from './TrySourcegraphCloudSection'
 
 import styles from './LoggedOutHomepage.module.scss'
 
@@ -62,6 +62,10 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                 </div>
             </div>
 
+            <div className={styles.trySourcegraphCloudSection}>
+                <TrySourcegraphCloudSection />
+            </div>
+
             <div className={styles.heroSection}>
                 <HeroSection {...props} />
             </div>
@@ -96,10 +100,6 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                         </div>
                     ))}
                 </div>
-            </div>
-
-            <div className={styles.selfHostSection}>
-                <SelfHostInstructions {...props} />
             </div>
 
             <div className={styles.customerSection}>
