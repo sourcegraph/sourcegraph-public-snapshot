@@ -3,24 +3,26 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy/bitbucket"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BitbucketCodeHost struct {
+	log log.Logger
 	def *CodeHostDefinition
 	c   *bitbucket.Client
 }
 
-func NewBitbucketCodeHost(ctx context.Context, def *CodeHostDefinition) *BitbucketCodeHost {
+func NewBitbucketCodeHost(ctx context.Context, log log.Logger, def *CodeHostDefinition) *BitbucketCodeHost {
 	u, _ := url.Parse(def.URL)
 	c := bitbucket.NewClient(def.Username, def.Password, u)
 
 	return &BitbucketCodeHost{
+		log: log.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
 		def: def,
 		c:   c,
 	}
@@ -40,20 +42,25 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 }
 
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
-	repos := bt.c.ListRepos(ctx)
+	repos, err := bt.c.ListRepos(ctx)
+	if err != nil {
+		bt.log.Error("failed to list repos", log.Error(err))
+	}
+
+	bt.log.Info("fetched list of repos", log.Int("repos", len(repos)))
 
 	results := make([]*Repo, 0, len(repos))
-	for i, r := range repos {
+	for _, r := range repos {
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
-			log.Printf("WARN: %d: %+v", i, r)
+			bt.log.Warn("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
 			continue
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
 		results = append(results, &Repo{
-			name: fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
-			url:  cloneUrl.String(),
+			Name:       fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
+			FromGitURL: cloneUrl.String(),
 		})
 	}
 
@@ -63,7 +70,7 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	parts := strings.Split(name, "::")
 	if len(parts) != 2 {
-		return nil, errors.New("invalid name format - expected <project key>::<clone url>")
+		return nil, errors.New("invalid name format - expected <project key>::<repo name>")
 	}
 	key := parts[0]
 	repoName := parts[1]
@@ -78,7 +85,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 				if err != nil {
 					return nil, err
 				}
-				log.Printf("created project: %+v", p)
+				bt.log.Info("created project", log.String("project", p.Key))
 			}
 		} else {
 			return nil, err
@@ -89,7 +96,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("created repo %q in project with key %q", repo.Project.Key, repo.Name)
+	bt.log.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
 	return getCloneUrl(repo)
 
 }

@@ -9,9 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -20,6 +18,11 @@ import (
 
 type cache struct {
 	Dir string
+}
+
+type GetResult[T any] struct {
+	Result T
+	Err    error
 }
 
 type APIError struct {
@@ -63,7 +66,7 @@ func (c *Client) url(fragment string) string {
 	return fmt.Sprintf("%s%s", c.apiURL.String(), fragment)
 }
 
-func (c *Client) GetPaged(ctx context.Context, url string, start int) (*PagedResp, error) {
+func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedResp, error) {
 	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, c.FetchLimit)
 	log.Printf("GET %s\n", url)
 
@@ -71,10 +74,10 @@ func (c *Client) GetPaged(ctx context.Context, url string, start int) (*PagedRes
 	req.SetBasicAuth(c.username, c.password)
 
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -94,16 +97,14 @@ func (c *Client) GetPaged(ctx context.Context, url string, start int) (*PagedRes
 }
 
 func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
-	log.Printf("GET %s\n", url)
-
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	req.SetBasicAuth(c.username, c.password)
 
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
@@ -125,10 +126,11 @@ func (c *Client) Post(ctx context.Context, url string, data []byte) ([]byte, err
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode >= 300 {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return nil, &APIError{
@@ -140,48 +142,32 @@ func (c *Client) Post(ctx context.Context, url string, data []byte) ([]byte, err
 	return ioutil.ReadAll(resp.Body)
 }
 
-func WithRetry(ctx context.Context, getFn getFunc, retries int) (*PagedResp, error) {
-	for i := 0; i < retries; i++ {
-		r, err := getFn(ctx)
-		if err != nil {
-			log.Println(err)
-			log.Println("get request failed - waiting 15 seconds before retry")
-			time.Sleep(15 * time.Second)
-		} else {
-			return r, nil
-		}
-	}
-
-	return nil, errors.New("retries exhausted")
-}
-func GetAll[T any](ctx context.Context, c *Client, url string) []T {
+func getAll[T any](ctx context.Context, c *Client, url string) []GetResult[T] {
 	start := 0
 	count := 0
-	items := make([]T, 0)
+	items := make([]GetResult[T], 0)
 	for {
 		ctx := ctx
-		r, err := WithRetry(ctx, func(ctx context.Context) (*PagedResp, error) { return c.GetPaged(ctx, url, start) }, 5)
+		resp, err := c.getPaged(ctx, url, start)
 		if err != nil {
-			log.Printf("failed to get '%s': %v", url, err)
-			log.Printf("continuing...")
+			// record the error and move on
+			var value GetResult[T]
+			value.Err = err
+			items = append(items, value)
 			continue
 		}
 
-		count += r.Size
-		for _, v := range r.Values {
-			var tmp T
-			err := json.Unmarshal(v, &tmp)
-			if err != nil {
-				log.Printf("failed to unmarshall item: %v", err)
-				log.Println("continuing...")
-			}
-			items = append(items, tmp)
+		count += resp.Size
+		for _, v := range resp.Values {
+			var value GetResult[T]
+			value.Err = json.Unmarshal(v, &value.Result)
+			items = append(items, value)
 		}
 
-		if r.IsLastPage {
+		if resp.IsLastPage {
 			break
 		}
-		start = r.NextPageStart
+		start = resp.NextPageStart
 	}
 	return items
 }
@@ -250,13 +236,10 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 		return nil, err
 	}
 
-	log.Printf("project: %s", string(rawProjectData))
 	respData, err := c.Post(ctx, url, rawProjectData)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println(string(respData))
 
 	var result Project
 	err = json.Unmarshal(respData, &result)
@@ -267,65 +250,63 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 	return &result, err
 }
 
-func (c *Client) ListProjects(ctx context.Context) []*Project {
-	cacheFilename := "cache.projects.json"
-	projects, err := Load[[]*Project](cacheFilename)
-	if err != nil {
-		url := c.url("/rest/api/latest/projects")
-		projects = GetAll[*Project](ctx, c, url)
-		Save(cacheFilename, projects)
-	}
-	return projects
+func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
+	var err error
+	url := c.url("/rest/api/latest/projects")
+	all := getAll[*Project](ctx, c, url)
+
+	results, err := extractResults(all)
+	return results, err
 }
 
-func (c *Client) Groups(ctx context.Context) []map[string]json.RawMessage {
-	url := c.url("/rest/api/latest/admin/groups")
-	return GetAll[map[string]json.RawMessage](ctx, c, url)
-}
-func (c *Client) ListRepos(ctx context.Context) []*Repo {
-	projects := c.ListProjects(ctx)
+func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
+	projects, err := c.ListProjects(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return c.ListReposForProjects(ctx, projects)
 }
 
-func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) []*Repo {
-	g := group.NewWithResults[[]*Repo]().WithMaxConcurrency(10)
+func extractResults[T any](items []GetResult[T]) ([]T, error) {
+	var err error
+	results := make([]T, 0)
+	for _, r := range items {
+		if r.Err != nil {
+			err = errors.Append(err, r.Err)
+		} else {
+			results = append(results, r.Result)
+		}
+	}
+
+	return results, err
+}
+
+func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) ([]*Repo, error) {
+	g := group.NewWithResults[GetResult[[]*Repo]]().WithMaxConcurrency(10)
 	repos := make([]*Repo, 0)
 	for _, p := range projects {
-		g.Go(func() []*Repo {
+
+		g.Go(func() GetResult[[]*Repo] {
 			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
-			return GetAll[*Repo](ctx, c, url)
+			all := getAll[*Repo](ctx, c, url)
+			results, error := extractResults(all)
+			return GetResult[[]*Repo]{
+				Result: results,
+				Err:    error,
+			}
+
 		})
 	}
 	results := g.Wait()
+	var err error
 	for _, r := range results {
-		repos = append(repos, r...)
+		if r.Err != nil {
+			err = errors.Append(err, r.Err)
+		} else {
+			repos = append(repos, r.Result...)
+		}
 
 	}
-	return repos
-}
 
-func Save(dst string, v any) error {
-	f, err := os.Create(dst)
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-
-	return json.NewEncoder(f).Encode(&v)
-}
-
-func Load[T any](src string) (T, error) {
-	f, err := os.Open(src)
-	defer f.Close()
-	var result T
-	if err != nil {
-		return result, err
-	}
-
-	err = json.NewDecoder(f).Decode(&result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, err
+	return repos, err
 }
