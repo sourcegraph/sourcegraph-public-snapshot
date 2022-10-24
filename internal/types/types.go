@@ -1705,7 +1705,7 @@ type Webhook struct {
 // CodeHostURN is an identifier for a unique code host in the form
 // of its host URL.
 type CodeHostURN struct {
-	url *url.URL
+	urlString string
 }
 
 // ParseCodeHostURN takes a code host URL string, normalizes it,
@@ -1717,14 +1717,10 @@ func ParseCodeHostURN(urnString string) (CodeHostURN, error) {
 		return CodeHostURN{}, err
 	}
 
-	return CodeHostURN{url: extsvc.NormalizeBaseURL(url)}, nil
+	return CodeHostURN{urlString: extsvc.NormalizeBaseURL(url).String()}, nil
 }
 
 // String returns the stored, noramlized code host URN as a string.
 func (c CodeHostURN) String() string {
-	if c.url != nil {
-		return c.url.String()
-	}
-
-	return ""
+	return c.urlString
 }
