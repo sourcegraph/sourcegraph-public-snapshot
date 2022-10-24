@@ -34,8 +34,8 @@ import {
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
-import { retrieveFileContent } from './backend'
 
+import { retrieveFileContent } from './backend'
 import { BatchSpec } from './BatchSpec'
 
 import styles from './BatchSpecNode.module.scss'
