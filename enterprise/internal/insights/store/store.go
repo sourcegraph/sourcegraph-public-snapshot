@@ -167,8 +167,6 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	if err != nil {
 		return nil, errors.Wrap(err, "augmentSeriesPoints")
 	}
-	fmt.Println("augmentedPoints", augmentedPoints)
-	fmt.Println("points", points)
 	if len(augmentedPoints) > 0 {
 		points = augmentedPoints
 	}
@@ -275,8 +273,6 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	if err != nil {
 		return nil, errors.Wrap(err, "augmentSeriesPoints")
 	}
-	fmt.Println("augmentedPoints", augmentedPoints)
-	fmt.Println("points", points)
 	if len(augmentedPoints) > 0 {
 		points = augmentedPoints
 	}
@@ -576,8 +572,6 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			repoNameID = &repoNameIDValue
 		}
 
-		fmt.Println("point.Time", pt.Point.Time, "point.Time.UTC", pt.Point.Time.UTC())
-
 		if err := inserter.Insert(
 			ctx,
 			pt.SeriesID,         // series_id
@@ -609,7 +603,6 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	for _, series := range seriesRecordingTimes {
 		id := series.InsightSeriesID
 		for _, record := range series.RecordingTimes {
-			fmt.Println("record.Timestamp", record.Timestamp, "record.Timestamp.UTC", record.Timestamp.UTC())
 			if err := inserter.Insert(
 				ctx,
 				id,                     // insight_series_id
