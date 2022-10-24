@@ -9,6 +9,7 @@ import {defaultExternalAccounts, ExternalAccountKind} from '../../../components/
 
 import {ExternalAccount} from './ExternalAccount'
 import {AccountByServiceID, UserExternalAccount} from './UserSettingsSecurityPage'
+
 import styles from './ExternalAccountsSignIn.module.scss'
 
 interface GitHubExternalData {
@@ -120,7 +121,6 @@ const getNormalizedAccount = (
 
                             break
                         }
-
                         if (emailAttrs.has(name)) {
                             email = att.Values.find((val: AttributeValue) =>
                                 val.Value.includes('@')
@@ -128,7 +128,6 @@ const getNormalizedAccount = (
                         }
                     }
                 }
-
                 normalizedAccount = {
                     ...normalizedAccount,
                     external: {
