@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -33,22 +34,58 @@ func (apiErr *APIError) Error() string {
 
 // Client is a bitbucket Client for the Bitbucket Server REST API v1.0
 type Client struct {
-	username string
-	password string
-	apiURL   *url.URL
+	setAuth SetAuthFunc
+	apiURL  *url.URL
+	http    http.Client
 	// FetchLimit The amount of records to request per page
 	FetchLimit int
 }
 
+type ClientOpt func(client *Client)
+type SetAuthFunc func(req *http.Request)
+
+func setBasicAuth(username, password string) SetAuthFunc {
+	return func(req *http.Request) {
+		req.SetBasicAuth(username, password)
+	}
+}
+
+func setTokenAuth(token string) SetAuthFunc {
+	return func(req *http.Request) {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+}
+
+func WithTimeout(n time.Duration) ClientOpt {
+	return func(client *Client) {
+		client.http.Timeout = n
+	}
+}
+
 // NewClient creates a Client with the username, password and url. The url is the base url which should have the following form
 // http://host:port. The client will append /rest/api/latest to the base url. By default the FetchLimit is set to 150
-func NewClient(username, password string, url *url.URL) *Client {
-	return &Client{
-		username:   username,
-		password:   password,
-		apiURL:     url,
-		FetchLimit: 150,
+func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
+	client := &Client{
+		apiURL:  url,
+		setAuth: setBasicAuth(username, password),
 	}
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
+}
+
+func NewTokenClient(token string, url *url.URL, opts ...ClientOpt) *Client {
+	client := &Client{
+		apiURL:  url,
+		setAuth: setTokenAuth(token),
+	}
+	for _, opt := range opts {
+		opt(client)
+	}
+
+	return client
 }
 
 func (c *Client) url(fragment string) string {
@@ -61,7 +98,7 @@ func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedRes
 	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, c.FetchLimit)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	req.SetBasicAuth(c.username, c.password)
+	c.setAuth(req)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -88,7 +125,7 @@ func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedRes
 
 func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	req.SetBasicAuth(c.username, c.password)
+	c.setAuth(req)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -109,7 +146,7 @@ func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
 
 func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(data))
-	req.SetBasicAuth(c.username, c.password)
+	c.setAuth(req)
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 

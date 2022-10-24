@@ -5,27 +5,39 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy/bitbucket"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BitbucketCodeHost struct {
-	log log.Logger
-	def *CodeHostDefinition
-	c   *bitbucket.Client
+	logger log.Logger
+	def    *CodeHostDefinition
+	c      *bitbucket.Client
 }
 
-func NewBitbucketCodeHost(ctx context.Context, log log.Logger, def *CodeHostDefinition) *BitbucketCodeHost {
-	u, _ := url.Parse(def.URL)
-	c := bitbucket.NewClient(def.Username, def.Password, u)
+func NewBitbucketCodeHost(ctx context.Context, log log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
+	u, err := url.Parse(def.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	var c *bitbucket.Client
+	if def.Token != "" {
+		c = bitbucket.NewTokenClient(def.Token, u, bitbucket.WithTimeout(15*time.Second))
+
+	} else {
+		c = bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second))
+	}
 
 	return &BitbucketCodeHost{
-		log: log.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
-		def: def,
-		c:   c,
-	}
+		logger: log.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
+		def:    def,
+		c:      c,
+	}, nil
 }
 
 func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
@@ -42,18 +54,19 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 }
 
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
+	bt.logger.Info("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
 	if err != nil {
-		bt.log.Error("failed to list repos", log.Error(err))
+		bt.logger.Error("failed to list repos", log.Error(err))
 	}
 
-	bt.log.Info("fetched list of repos", log.Int("repos", len(repos)))
+	bt.logger.Info("fetched list of repos", log.Int("repos", len(repos)))
 
 	results := make([]*Repo, 0, len(repos))
 	for _, r := range repos {
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
-			bt.log.Warn("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
+			bt.logger.Warn("failed to get clone url", log.String("repo", r.Name), log.String("project", r.Project.Key), log.Error(err))
 			continue
 		}
 
@@ -85,7 +98,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 				if err != nil {
 					return nil, err
 				}
-				bt.log.Info("created project", log.String("project", p.Key))
+				bt.logger.Info("created project", log.String("project", p.Key))
 			}
 		} else {
 			return nil, err
@@ -96,7 +109,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	if err != nil {
 		return nil, err
 	}
-	bt.log.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
+	bt.logger.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
 	return getCloneUrl(repo)
 
 }
