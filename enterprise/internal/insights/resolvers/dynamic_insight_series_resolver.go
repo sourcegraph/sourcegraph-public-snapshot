@@ -65,6 +65,13 @@ func (e emptyInsightStatusResolver) FailedJobs() int32 {
 	return 0
 }
 
+func (e emptyInsightStatusResolver) IsLoadingData() (*bool, error) {
+	// beacuse this resolver is created when dynamic data exists
+	// it means it's not loading data.
+	loading := false
+	return &loading, nil
+}
+
 func (e emptyInsightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	current := time.Now().AddDate(-1, 0, 0)
 	return gqlutil.DateTimeOrNil(&current)

@@ -95,6 +95,10 @@ func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
 func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
 }
+func (i insightStatusResolver) IsLoadingData() (*bool, error) {
+	loading := i.backfillQueuedAt == nil || i.pendingJobs > 0
+	return &loading, nil
+}
 
 func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
 	return &insightStatusResolver{
