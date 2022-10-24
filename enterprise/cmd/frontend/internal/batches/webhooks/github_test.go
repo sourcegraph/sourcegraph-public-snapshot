@@ -185,7 +185,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							ExternalServices: esStore,
+							DB: db,
 						}
 						hook.Register(&handler)
 
@@ -247,7 +247,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			n := 10156
 			action := "this is a bad action"
 
-			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+			if err := hook.handleGitHubWebhook(ctx, db, "github.com", &gh.PullRequestEvent{
 				Number: &n,
 				Repo: &gh.Repository{
 					NodeID: &githubRepo.ExternalRepo.ID,

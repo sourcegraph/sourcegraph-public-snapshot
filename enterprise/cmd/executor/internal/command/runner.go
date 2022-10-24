@@ -87,6 +87,7 @@ type ResourceOptions struct {
 	// MaxIngressBandwidth configures the maximum permissible ingress bytes per second
 	// per job. Only available in Firecracker.
 	MaxIngressBandwidth int
+
 	// MaxEgressBandwidth configures the maximum permissible egress bytes per second
 	// per job. Only available in Firecracker.
 	MaxEgressBandwidth int

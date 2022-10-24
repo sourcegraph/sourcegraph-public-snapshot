@@ -24,8 +24,9 @@ import (
 // for actual API usage.
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
+	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 }
 
 var _ Interface = &Store{}
@@ -447,11 +448,19 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
 	}
+	err = s.Exec(ctx, sqlf.Sprintf(deleteSnapshotRecordingTimeSql, series.ID))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete snapshot recording time for series_id %d", series.ID)
+	}
 	return nil
 }
 
 const deleteSnapshotsSql = `
 DELETE FROM %s WHERE series_id = %s;
+`
+
+const deleteSnapshotRecordingTimeSql = `
+DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snapshot = true;
 `
 
 type PersistMode string
@@ -540,7 +549,91 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			return errors.Wrap(err, "Flush")
 		}
 	}
+	return nil
+}
 
+func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+	if len(seriesRecordingTimes) == 0 {
+		return nil
+	}
+
+	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
+
+	for _, series := range seriesRecordingTimes {
+		id := series.InsightSeriesID
+		for _, record := range series.RecordingTimes {
+			if err := inserter.Insert(
+				ctx,
+				id,                     // insight_series_id
+				record.Timestamp.UTC(), // recording_time
+				record.Snapshot,        // snapshot
+
+			); err != nil {
+				return errors.Wrap(err, "Insert")
+			}
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "Flush")
+	}
+	return nil
+}
+
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+	series.InsightSeriesID = id
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("insight_series_id = %s", id),
+	}
+	if from != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
+	}
+	if to != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
+	}
+	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
+
+	recordingTimes := []types.RecordingTime{}
+	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
+		var recordingTime time.Time
+		err = sc.Scan(
+			&recordingTime,
+		)
+		if err != nil {
+			return err
+		}
+
+		recordingTimes = append(recordingTimes, types.RecordingTime{Timestamp: recordingTime})
+		return nil
+	})
+	if err != nil {
+		return series, err
+	}
+	series.RecordingTimes = recordingTimes
+
+	return series, nil
+}
+
+// RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
+// functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
+func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(pts) > 0 {
+		if err := tx.RecordSeriesPoints(ctx, pts); err != nil {
+			return err
+		}
+	}
+	if len(recordingTimes.RecordingTimes) > 0 {
+		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -554,6 +647,12 @@ WITH e AS(
 SELECT * FROM e
 UNION
 	SELECT id FROM repo_names WHERE name = %s;
+`
+
+const getInsightSeriesRecordingTimesStr = `
+SELECT recording_time FROM insight_series_recording_times
+WHERE %s
+ORDER BY recording_time ASC;
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
