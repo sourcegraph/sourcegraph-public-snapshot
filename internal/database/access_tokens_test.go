@@ -41,10 +41,10 @@ func TestAccessTokens_Create(t *testing.T) {
 
 	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
-	assertSecurityEventAccessTokenCreatedCount(t, db, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertSecurityEventAccessTokenCreatedCount(t, db, 1)
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
@@ -128,11 +128,11 @@ func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 
 	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
 	_, _, err = db.AccessTokens().CreateInternal(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
-	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
-
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+
 }
 
 func TestAccessTokens_List(t *testing.T) {

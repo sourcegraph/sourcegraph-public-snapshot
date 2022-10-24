@@ -207,13 +207,11 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 
 		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
 		securityEventStore.LogEvent(ctx, &SecurityEvent{
-			Name:            SecurityEventAccessTokenCreated,
-			URL:             "", // TODO need? - ask in the PR
-			UserID:          uint32(creatorUserID),
-			AnonymousUserID: "",
-			Argument:        arg,
-			Source:          "BACKEND",
-			Timestamp:       time.Now(),
+			Name:      SecurityEventAccessTokenCreated,
+			UserID:    uint32(creatorUserID),
+			Argument:  arg,
+			Source:    "BACKEND",
+			Timestamp: time.Now(),
 		})
 	}
 
