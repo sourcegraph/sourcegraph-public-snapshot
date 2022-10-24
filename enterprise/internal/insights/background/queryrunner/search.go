@@ -214,20 +214,26 @@ func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	}
 }
 
-func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs, recordTime time.Time) (err error) {
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
+	seriesRecordingTimes := types.InsightSeriesRecordingTimes{
+		InsightSeriesID: series.ID,
+	}
+	snapshot := false
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
+			return errors.Wrap(err, "DeleteSnapshots")
 		}
+		snapshot = true
 	}
+	seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, types.RecordingTime{recordTime, snapshot})
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
 	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
@@ -236,8 +242,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, ser
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
 	}
 
-	if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	if recordErr := tx.RecordSeriesPointsAndRecordingTimes(ctx, filteredRecordings, seriesRecordingTimes); recordErr != nil {
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsAndRecordingTimes"))
 	}
 	return err
 }

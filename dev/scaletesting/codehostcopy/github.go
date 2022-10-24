@@ -18,7 +18,13 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 		&oauth2.Token{AccessToken: def.Token},
 	))
 
-	gh, err := github.NewEnterpriseClient(def.URL, def.URL, tc)
+	baseURL, err := url.Parse(def.URL)
+	if err != nil {
+		return nil, err
+	}
+	baseURL.Path = "/api/v3"
+
+	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
 	if err != nil {
 		return nil, err
 	}

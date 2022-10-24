@@ -224,6 +224,12 @@ CREATE SEQUENCE insight_series_id_seq
 
 ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
+CREATE TABLE insight_series_recording_times (
+    insight_series_id integer,
+    recording_time timestamp with time zone,
+    snapshot boolean
+);
+
 CREATE TABLE insight_view (
     id integer NOT NULL,
     title text,
@@ -551,6 +557,9 @@ ALTER TABLE ONLY insight_series_backfill
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY insight_series_recording_times
+    ADD CONSTRAINT insight_series_recording_time_insight_series_id_recording_t_key UNIQUE (insight_series_id, recording_time);
+
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_pk PRIMARY KEY (id);
 
@@ -656,6 +665,9 @@ ALTER TABLE ONLY insight_dirty_queries
 
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY insight_series_recording_times
+    ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;

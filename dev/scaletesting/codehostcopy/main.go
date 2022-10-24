@@ -2,17 +2,22 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"net/url"
 	"os"
 	"time"
 
 	"cuelang.org/go/cue/errors"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/urfave/cli/v2"
 )
+
+//go:embed config.example.cue
+var exampleConfig string
 
 type CodeHostSource interface {
 	ListRepos(ctx context.Context) ([]*Repo, error)
@@ -42,8 +47,9 @@ var app = &cli.App{
 			Value: "codehostcopy.db",
 		},
 		&cli.StringFlag{
-			Name:  "config",
-			Usage: "Path to the config file defining what to copy",
+			Name:     "config",
+			Usage:    "Path to the config file defining what to copy",
+			Required: true,
 		},
 	},
 	Action: func(cmd *cli.Context) error {
@@ -51,9 +57,10 @@ var app = &cli.App{
 	},
 	Commands: []*cli.Command{
 		{
-			Name:        "new",
+			Name:        "example",
 			Description: "Create a new config file to start from",
 			Action: func(ctx *cli.Context) error {
+				fmt.Printf("%s", exampleConfig)
 				return nil
 			},
 		},
@@ -113,4 +120,5 @@ func main() {
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))
 	}
+
 }
