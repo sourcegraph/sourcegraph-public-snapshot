@@ -32,3 +32,11 @@ func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []types.Fr
 	})
 	return frames
 }
+
+func GetRecordingTimesFromFrames(frames []types.Frame) []time.Time {
+	recordingTimes := make([]time.Time, 0, len(frames))
+	for _, frame := range frames {
+		recordingTimes = append(recordingTimes, frame.From)
+	}
+	return recordingTimes
+}

@@ -468,11 +468,12 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	insightTx, err := r.insightStore.Transact(ctx)
-	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
+	dashboardTx := r.dashboardStore.With(insightTx)
+	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(insightTx))
 
 	var dashboardIds []int
 	if args.Input.Dashboards != nil {
@@ -509,7 +510,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
@@ -598,9 +599,10 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
+	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			_, err = createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
@@ -609,11 +611,10 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			if err != nil {
 				return nil, errors.Wrap(err, "RemoveViewSeries")
 			}
-			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			_, err = createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
-
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
 				Label:  emptyIfNil(series.Options.Label),
 				Stroke: emptyIfNil(series.Options.LineColor),
@@ -628,11 +629,11 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	insightTx, err := r.insightStore.Transact(ctx)
-	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
+	dashboardTx := r.dashboardStore.With(insightTx)
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var dashboardIds []int

@@ -9,12 +9,16 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestGet(t *testing.T) {
@@ -2455,5 +2459,100 @@ func TestIncrementBackfillAttempts(t *testing.T) {
 
 		})
 	}
+}
 
+func TestHardDeleteSeries(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	clock := timeutil.Now
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	permStore := NewInsightPermissionStore(postgres)
+	insightStore := NewInsightStore(insightsdb)
+	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+
+	series := types.InsightSeries{
+		SeriesID:           "series1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	got, err := insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
+	series.SeriesID = "series2" // copy to make a new one
+	got, err = insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 2 {
+		t.Errorf("expected second series to have id 2")
+	}
+
+	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
+		{
+			InsightSeriesID: 1,
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
+		},
+		{
+			InsightSeriesID: 2,
+			RecordingTimes:  []types.RecordingTime{{Timestamp: now}},
+		},
+	})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err = insightStore.HardDeleteSeries(ctx, "series1"); err != nil {
+		t.Fatal(err)
+	}
+
+	getInsightSeries := func(ctx context.Context, timeseriesStore *Store, seriesId string) bool {
+		q := sqlf.Sprintf("select count(*) from insight_series where series_id = %s;", seriesId)
+		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val == 1
+	}
+
+	getTimesCountforSeries := func(ctx context.Context, timeseriesStore *Store, seriesId int) int {
+		q := sqlf.Sprintf("select count(*) from insight_series_recording_times where insight_series_id = %s;", seriesId)
+		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return val
+	}
+
+	if getInsightSeries(ctx, timeseriesStore, "series1") {
+		t.Errorf("expected series1 to be deleted")
+	}
+	if getTimesCountforSeries(ctx, timeseriesStore, 1) != 0 {
+		t.Errorf("expected 0 recording times to remain for series1")
+	}
+
+	if !getInsightSeries(ctx, timeseriesStore, "series2") {
+		t.Errorf("expected series2 to be there")
+	}
+	if getTimesCountforSeries(ctx, timeseriesStore, 2) != 1 {
+		t.Errorf("expected 1 recording times to remain for series2")
+	}
 }
