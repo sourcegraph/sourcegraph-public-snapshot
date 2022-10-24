@@ -19,7 +19,7 @@ type BitbucketCodeHost struct {
 	c      *bitbucket.Client
 }
 
-func NewBitbucketCodeHost(ctx context.Context, log log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
+func NewBitbucketCodeHost(ctx context.Context, logger log.Logger, def *CodeHostDefinition) (*BitbucketCodeHost, error) {
 	u, err := url.Parse(def.URL)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func NewBitbucketCodeHost(ctx context.Context, log log.Logger, def *CodeHostDefi
 	}
 
 	return &BitbucketCodeHost{
-		logger: log.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
+		logger: logger.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
 		def:    def,
 		c:      c,
 	}, nil
@@ -91,6 +91,9 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	_, err := bt.c.GetProjectByKey(ctx, key)
 	if err != nil {
 		var apiErr *bitbucket.APIError
+		// if the error is an api error, log it and continue
+		// otherwise something severe is wrong and we must quit
+		// early
 		if errors.As(err, &apiErr) {
 			// if the project was 'not found' create it
 			if apiErr.StatusCode == 404 {
@@ -104,7 +107,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 			return nil, err
 		}
 	}
-	//project already exists so lets just return the url to use
+	// project already exists so lets just return the url to use
 	repo, err := bt.c.CreateRepo(ctx, &bitbucket.Project{Key: key}, repoName)
 	if err != nil {
 		return nil, err

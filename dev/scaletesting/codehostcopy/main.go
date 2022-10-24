@@ -61,13 +61,11 @@ var app = &cli.App{
 }
 
 func bitbucketTest(ctx context.Context, logger log.Logger, cfg *Config) {
-	logger.Info("creating bitbucket codehost")
 	c, err := NewBitbucketCodeHost(ctx, logger, &cfg.From)
 	if err != nil {
 		return
 	}
 
-	logger.Info("listing repos")
 	repos, err := c.ListRepos(ctx)
 	if err != nil {
 		logger.Error("list failed", log.Error(err))
@@ -88,10 +86,6 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 		logger.Fatal("failed to load config", log.Error(err))
 	}
 
-	logger.Info("config loaded")
-
-	bitbucketTest(ctx, logger, cfg)
-	return nil
 	s, err := newState(state)
 	if err != nil {
 		logger.Fatal("failed to init state", log.Error(err))
@@ -115,7 +109,6 @@ func main() {
 	})
 	defer cb.Sync()
 	logger := log.Scoped("main", "")
-	logger.Info("starting up")
 
 	if err := app.RunContext(context.Background(), os.Args); err != nil {
 		logger.Fatal("failed to run", log.Error(err))

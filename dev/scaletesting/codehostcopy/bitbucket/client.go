@@ -21,6 +21,7 @@ type getResult[T any] struct {
 	Err    error
 }
 
+// APIError represents
 type APIError struct {
 	StatusCode int
 	Message    string
@@ -62,12 +63,13 @@ func WithTimeout(n time.Duration) ClientOpt {
 	}
 }
 
-// NewClient creates a Client with the username, password and url. The url is the base url which should have the following form
-// http://host:port. The client will append /rest/api/latest to the base url. By default the FetchLimit is set to 150
+// NewBasicAuthClient creates a Client that uses Basic Authentication. By default the FetchLimit is set to 150.
+// To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method.
 func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:  url,
-		setAuth: setBasicAuth(username, password),
+		apiURL:     url,
+		setAuth:    setBasicAuth(username, password),
+		FetchLimit: 150,
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -76,10 +78,13 @@ func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientO
 	return client
 }
 
+// NewTokenClient creates a Client that uses Token based authentication. By default the FetchLimit is set to 150.
+// To set the Timout, use WithTimeout and pass it as a ClientOpt to this method.
 func NewTokenClient(token string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
-		apiURL:  url,
-		setAuth: setTokenAuth(token),
+		apiURL:     url,
+		setAuth:    setTokenAuth(token),
+		FetchLimit: 150,
 	}
 	for _, opt := range opts {
 		opt(client)
@@ -170,19 +175,24 @@ func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, err
 // getAll continuously calls getPaged by adjusting the start query parameter based on the previous
 // paged response. A GetResult is returned which contains the results as well as any errors that were
 // encountered.
-func getAll[T any](ctx context.Context, c *Client, url string) []getResult[T] {
+func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], error) {
 	start := 0
 	count := 0
 	items := make([]getResult[T], 0)
+	var apiErr *APIError
 	for {
 		ctx := ctx
 		resp, err := c.getPaged(ctx, url, start)
-		if err != nil {
+		// If the error is a APIError we store the error and continue, otherwise
+		// something severe is wrong and we stop and exit early
+		if err != nil && errors.As(err, &apiErr) {
 			// record the error and move on
 			var value getResult[T]
 			value.Err = err
 			items = append(items, value)
 			continue
+		} else if err != nil {
+			return nil, err
 		}
 
 		count += resp.Size
@@ -197,7 +207,7 @@ func getAll[T any](ctx context.Context, c *Client, url string) []getResult[T] {
 		}
 		start = resp.NextPageStart
 	}
-	return items
+	return items, nil
 }
 
 func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, error) {
@@ -211,7 +221,7 @@ func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, err
 	var p Project
 	err = json.Unmarshal(respData, &p)
 	if err != nil {
-		return &p, errors.Wrapf(err, "failed to unmarshall project witht key: %s", key)
+		return &p, errors.Wrapf(err, "failed to unmarshall project with key: %s", key)
 	}
 
 	return &p, nil
@@ -281,7 +291,10 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 	var err error
 	url := c.url("/rest/api/latest/projects")
-	all := getAll[*Project](ctx, c, url)
+	all, err := getAll[*Project](ctx, c, url)
+	if err != nil {
+		return nil, err
+	}
 
 	results, err := extractResults(all)
 	return results, err
@@ -316,7 +329,12 @@ func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) 
 
 		g.Go(func() getResult[[]*Repo] {
 			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
-			all := getAll[*Repo](ctx, c, url)
+			all, err := getAll[*Repo](ctx, c, url)
+			if err != nil {
+				return getResult[[]*Repo]{
+					Err: err,
+				}
+			}
 			results, error := extractResults(all)
 			return getResult[[]*Repo]{
 				Result: results,
@@ -330,7 +348,7 @@ func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) 
 	for _, r := range results {
 		if r.Err != nil {
 			err = errors.Append(err, r.Err)
-		} else {
+		} else if r.Result != nil {
 			repos = append(repos, r.Result...)
 		}
 
