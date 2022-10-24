@@ -70,7 +70,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 
 	handler := repos.GitHubWebhookHandler{}
 	router := &webhooks.GitHubWebhook{
-		ExternalServices: esStore,
+		DB: db,
 	}
 	handler.Register(router)
 
