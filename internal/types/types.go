@@ -1704,6 +1704,9 @@ type Webhook struct {
 
 // CodeHostURN is an identifier for a unique code host in the form
 // of its host URL.
+// To create a new CodeHostURN, use NewCodeHostURN.
+// e.g. NewCodeHostURN("https://github.com")
+// To use the string value again, use codeHostURN.String()
 type CodeHostURN struct {
 	urlString string
 }
