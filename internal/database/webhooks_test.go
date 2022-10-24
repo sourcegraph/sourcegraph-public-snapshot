@@ -284,25 +284,34 @@ func createWebhookWithActorUID(ctx context.Context, t *testing.T, actorUID int32
 	return created
 }
 
+func TestWebhookCount(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.Webhooks(et.ByteaTestKey{})
+	ctx := context.Background()
+
+	totalWebhooks, totalGitlabHooks := createTestWebhooks(ctx, t, store)
+
+	t.Run("basic, no opts", func(t *testing.T) {
+		count, err := store.Count(ctx, WebhookListOptions{})
+		assert.NoError(t, err)
+		assert.Equal(t, totalWebhooks, count)
+	})
+
+	t.Run("with filtering by kind", func(t *testing.T) {
+		count, err := store.Count(ctx, WebhookListOptions{Kind: extsvc.KindGitLab})
+		assert.NoError(t, err)
+		assert.Equal(t, totalGitlabHooks, count)
+	})
+}
+
 func TestWebhookList(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(et.ByteaTestKey{})
 	ctx := context.Background()
 
-	encryptedSecret := types.NewUnencryptedSecret(testSecret)
-	numGitlabHooks := 0
-	totalWebhooks := 10
-	for i := 1; i <= totalWebhooks; i++ {
-		var err error
-		if i%3 == 0 {
-			numGitlabHooks++
-			_, err = store.Create(ctx, extsvc.KindGitLab, fmt.Sprintf("http://instance-%d.github.com", i), 0, encryptedSecret)
-		} else {
-			_, err = store.Create(ctx, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.gitlab.com", i), 0, encryptedSecret)
-		}
-		assert.NoError(t, err)
-	}
+	totalWebhooks, numGitlabHooks := createTestWebhooks(ctx, t, store)
 
 	t.Run("basic, no opts", func(t *testing.T) {
 		allWebhooks, err := store.List(ctx, WebhookListOptions{})
@@ -334,6 +343,56 @@ func TestWebhookList(t *testing.T) {
 			assert.Equal(t, wh.CodeHostKind, extsvc.KindGitHub)
 		}
 	})
+
+	t.Run("with cursor", func(t *testing.T) {
+		t.Run("with invalid direction", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "id",
+				Direction: "foo",
+				Value:     "2",
+			}
+			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor direction: "foo"`)
+		})
+		t.Run("with invalid column", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "uuid",
+				Direction: "next",
+				Value:     "2",
+			}
+			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor: "uuid" "2"`)
+		})
+		t.Run("valid", func(t *testing.T) {
+			cursor := types.Cursor{
+				Column:    "id",
+				Direction: "next",
+				Value:     "4",
+			}
+			webhooks, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
+			assert.NoError(t, err)
+			assert.Len(t, webhooks, 7)
+			assert.Equal(t, webhooks[0].ID, int32(4))
+		})
+	})
+}
+
+func createTestWebhooks(ctx context.Context, t *testing.T, store WebhookStore) (int, int) {
+	t.Helper()
+	encryptedSecret := types.NewUnencryptedSecret(testSecret)
+	numGitlabHooks := 0
+	totalWebhooks := 10
+	for i := 1; i <= totalWebhooks; i++ {
+		var err error
+		if i%3 == 0 {
+			numGitlabHooks++
+			_, err = store.Create(ctx, extsvc.KindGitLab, fmt.Sprintf("http://instance-%d.github.com", i), 0, encryptedSecret)
+		} else {
+			_, err = store.Create(ctx, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.gitlab.com", i), 0, encryptedSecret)
+		}
+		assert.NoError(t, err)
+	}
+	return totalWebhooks, numGitlabHooks
 }
 
 func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {

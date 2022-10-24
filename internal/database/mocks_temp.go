@@ -49783,6 +49783,9 @@ func (c WebhookLogStoreListFuncCall) Results() []interface{} {
 // (from the package github.com/sourcegraph/sourcegraph/internal/database)
 // used for unit testing.
 type MockWebhookStore struct {
+	// CountFunc is an instance of a mock function object controlling the
+	// behavior of the method Count.
+	CountFunc *WebhookStoreCountFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *WebhookStoreCreateFunc
@@ -49810,6 +49813,11 @@ type MockWebhookStore struct {
 // methods return zero values for all results, unless overwritten.
 func NewMockWebhookStore() *MockWebhookStore {
 	return &MockWebhookStore{
+		CountFunc: &WebhookStoreCountFunc{
+			defaultHook: func(context.Context, WebhookListOptions) (r0 int, r1 error) {
+				return
+			},
+		},
 		CreateFunc: &WebhookStoreCreateFunc{
 			defaultHook: func(context.Context, string, string, int32, *encryption.Encryptable) (r0 *types.Webhook, r1 error) {
 				return
@@ -49852,6 +49860,11 @@ func NewMockWebhookStore() *MockWebhookStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockWebhookStore() *MockWebhookStore {
 	return &MockWebhookStore{
+		CountFunc: &WebhookStoreCountFunc{
+			defaultHook: func(context.Context, WebhookListOptions) (int, error) {
+				panic("unexpected invocation of MockWebhookStore.Count")
+			},
+		},
 		CreateFunc: &WebhookStoreCreateFunc{
 			defaultHook: func(context.Context, string, string, int32, *encryption.Encryptable) (*types.Webhook, error) {
 				panic("unexpected invocation of MockWebhookStore.Create")
@@ -49895,6 +49908,9 @@ func NewStrictMockWebhookStore() *MockWebhookStore {
 // overwritten.
 func NewMockWebhookStoreFrom(i WebhookStore) *MockWebhookStore {
 	return &MockWebhookStore{
+		CountFunc: &WebhookStoreCountFunc{
+			defaultHook: i.Count,
+		},
 		CreateFunc: &WebhookStoreCreateFunc{
 			defaultHook: i.Create,
 		},
@@ -49917,6 +49933,113 @@ func NewMockWebhookStoreFrom(i WebhookStore) *MockWebhookStore {
 			defaultHook: i.Update,
 		},
 	}
+}
+
+// WebhookStoreCountFunc describes the behavior when the Count method of the
+// parent MockWebhookStore instance is invoked.
+type WebhookStoreCountFunc struct {
+	defaultHook func(context.Context, WebhookListOptions) (int, error)
+	hooks       []func(context.Context, WebhookListOptions) (int, error)
+	history     []WebhookStoreCountFuncCall
+	mutex       sync.Mutex
+}
+
+// Count delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockWebhookStore) Count(v0 context.Context, v1 WebhookListOptions) (int, error) {
+	r0, r1 := m.CountFunc.nextHook()(v0, v1)
+	m.CountFunc.appendCall(WebhookStoreCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Count method of the
+// parent MockWebhookStore instance is invoked and the hook queue is empty.
+func (f *WebhookStoreCountFunc) SetDefaultHook(hook func(context.Context, WebhookListOptions) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Count method of the parent MockWebhookStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *WebhookStoreCountFunc) PushHook(hook func(context.Context, WebhookListOptions) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WebhookStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, WebhookListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WebhookStoreCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, WebhookListOptions) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *WebhookStoreCountFunc) nextHook() func(context.Context, WebhookListOptions) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WebhookStoreCountFunc) appendCall(r0 WebhookStoreCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WebhookStoreCountFuncCall objects
+// describing the invocations of this function.
+func (f *WebhookStoreCountFunc) History() []WebhookStoreCountFuncCall {
+	f.mutex.Lock()
+	history := make([]WebhookStoreCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WebhookStoreCountFuncCall is an object that describes an invocation of
+// method Count on an instance of MockWebhookStore.
+type WebhookStoreCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 WebhookListOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WebhookStoreCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WebhookStoreCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // WebhookStoreCreateFunc describes the behavior when the Create method of
