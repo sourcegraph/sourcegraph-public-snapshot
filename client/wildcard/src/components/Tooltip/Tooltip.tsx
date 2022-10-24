@@ -130,6 +130,7 @@ export const Tooltip: FC<TooltipProps> = props => {
             {content && target && (
                 <>
                     <PopoverContent
+                        role="tooltip"
                         ref={popoverContentRef}
                         isOpen={isOpen}
                         target={target}
