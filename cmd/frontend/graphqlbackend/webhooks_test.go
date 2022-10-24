@@ -147,7 +147,6 @@ func TestListWebhooks(t *testing.T) {
 			},
 		},
 		{
-			Focus:   true,
 			Label:   "specify cursor",
 			Context: ctx,
 			Schema:  schema,

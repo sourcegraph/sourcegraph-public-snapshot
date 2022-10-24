@@ -161,9 +161,12 @@ func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webho
 			r.opt.Limit++
 		}
 		r.webhooks, r.err = r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, r.opt)
-		if r.opt.Limit != 0 && len(r.webhooks) == r.opt.Limit {
+		if r.opt.LimitOffset != nil && r.opt.Limit != 0 && len(r.webhooks) == r.opt.Limit {
 			r.next = r.webhooks[len(r.webhooks)-1].ID
 			r.webhooks = r.webhooks[:len(r.webhooks)-1]
+		}
+		if r.opt.LimitOffset != nil {
+			r.opt.Limit--
 		}
 	})
 	return r.webhooks, r.next, r.err
