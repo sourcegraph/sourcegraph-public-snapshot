@@ -40,6 +40,7 @@ type InsightViewSeries struct {
 	SeriesLimit                   *int32
 	GroupBy                       *string
 	BackfillAttempts              int32
+	SupportsAugmentation          bool
 }
 
 type Insight struct {
@@ -105,6 +106,7 @@ type InsightSeries struct {
 	GenerationMethod           GenerationMethod
 	GroupBy                    *string
 	BackfillAttempts           int32
+	SupportsAugmentation       bool
 }
 
 type IntervalUnit string
