@@ -5,7 +5,7 @@
 .markdown-body pre.chroma { font-size: 0.75em; }
 </style>
 
-<aside class="experimental">
+<aside class="beta">
 <p>
 <span class="badge badge-beta">beta</span>This feature is in beta and might change in the future.</p>
 
