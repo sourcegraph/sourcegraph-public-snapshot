@@ -107,6 +107,9 @@ func TestListWebhooks(t *testing.T) {
 						}
 					}
 			`,
+			Variables: map[string]any{
+				"first": 2,
+			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
@@ -116,9 +119,6 @@ func TestListWebhooks(t *testing.T) {
 					"totalCount":2,
 					"pageInfo":{"hasNextPage":true, "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9"}
 				}}`,
-			Variables: map[string]any{
-				"first": 2,
-			},
 		},
 		{
 			Label:   "specify kind",
@@ -132,6 +132,9 @@ func TestListWebhooks(t *testing.T) {
 						}
 					}
 			`,
+			Variables: map[string]any{
+				"kind": extsvc.KindGitHub,
+			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
@@ -142,9 +145,6 @@ func TestListWebhooks(t *testing.T) {
 					"totalCount":3,
 					"pageInfo":{"hasNextPage":false}
 				}}`,
-			Variables: map[string]any{
-				"kind": extsvc.KindGitHub,
-			},
 		},
 		{
 			Label:   "specify cursor",
@@ -158,6 +158,10 @@ func TestListWebhooks(t *testing.T) {
 						}
 					}
 			`,
+			Variables: map[string]any{
+				"first": 2,
+				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
+			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
@@ -167,10 +171,6 @@ func TestListWebhooks(t *testing.T) {
 					"totalCount":2,
 					"pageInfo":{"hasNextPage":false}
 				}}`,
-			Variables: map[string]any{
-				"first": 2,
-				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
-			},
 		},
 	})
 }
@@ -190,23 +190,24 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
 
+	buildQuery := func(first int, after string) string {
+		var args []string
+		if first != 0 {
+			args = append(args, fmt.Sprintf("first: %d", first))
+		}
+		if after != "" {
+			args = append(args, fmt.Sprintf("after: %q", after))
+		}
+
+		return fmt.Sprintf(`{ webhooks(%s) { nodes { id } pageInfo { endCursor } } }`, strings.Join(args, ", "))
+	}
+
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks[0:2], nil)
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					webhooks(first: 1) {
-						nodes {
-							id
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
+				Query:  buildQuery(1, ""),
 				ExpectedResult: `
 				{
 					"webhooks": {
@@ -226,22 +227,10 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	t.Run("Second page", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks[1:], nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					webhooks(first: 1, after: "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9") {
-						nodes {
-							id
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
+			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [{
@@ -253,29 +242,16 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					webhooks(first: 3) {
-						nodes {
-							id
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(3, ""),
+			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [{
@@ -291,29 +267,16 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("With no webhooks present", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					webhooks(first: 1) {
-						nodes {
-							id
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, ""),
+			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [],
@@ -323,35 +286,21 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          buildQuery(1, "invalid-cursor-value"),
+			ExpectedResult: "null",
+			ExpectedErrors: []*errors.QueryError{
 				{
-					webhooks(first: 1, after: "invalid-cursor-value") {
-						nodes {
-							id
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Path:          []any{"webhooks"},
-						Message:       `cannot unmarshal webhook cursor type: ""`,
-						ResolverError: errors.Errorf(`cannot unmarshal webhook cursor type: ""`),
-					},
+					Path:          []any{"webhooks"},
+					Message:       `cannot unmarshal webhook cursor type: ""`,
+					ResolverError: errors.Errorf(`cannot unmarshal webhook cursor type: ""`),
 				},
 			},
 		})
