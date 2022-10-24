@@ -453,7 +453,6 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
         isCustomStyle={true}
         id="fuzzy-scope"
         value={scope}
-        onFocus={() => focusFuzzyInput()}
         selectSize="sm"
         className={styles.fuzzyScopeSelector}
         disabled={isScopeToggleDisabled}
@@ -462,6 +461,7 @@ const ScopeSelect: React.FunctionComponent<ScopeSelectProps> = ({
                 case 'everywhere':
                 case 'repository':
                     setScope(value.target.value)
+                    focusFuzzyInput()
             }
         }}
     >
