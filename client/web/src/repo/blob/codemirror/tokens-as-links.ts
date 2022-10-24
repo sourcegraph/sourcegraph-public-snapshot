@@ -1,15 +1,47 @@
 import { Facet, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView } from '@codemirror/view'
+import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
 
 import { logger } from '@sourcegraph/common'
 import { UIRange } from '@sourcegraph/shared/src/util/url'
-import { updateFocusedLine } from './linefocus'
+
+import { SelectedLineRange, selectedLines } from './linenumbers'
 
 interface TokenLink {
     range: UIRange
     url: string
 }
+
+/**
+ * View plugin responsible for focusing a selected line when necessary.
+ */
+const focusSelectedLine = ViewPlugin.fromClass(
+    class implements PluginValue {
+        private lastSelectedLines: SelectedLineRange | null = null
+        constructor(private readonly view: EditorView) {}
+
+        public update(update: ViewUpdate): void {
+            const currentSelectedLines = update.state.field(selectedLines)
+            if (this.lastSelectedLines !== currentSelectedLines) {
+                this.lastSelectedLines = currentSelectedLines
+                this.focusLine(currentSelectedLines)
+            }
+        }
+
+        public focusLine(selection: SelectedLineRange): void {
+            if (selection) {
+                const line = this.view.state.doc.line(selection.line)
+
+                if (line) {
+                    window.requestAnimationFrame(() => {
+                        const element = this.view.domAtPos(line.from).node as HTMLElement
+                        element.focus()
+                    })
+                }
+            }
+        }
+    }
+)
 
 /**
  * Given a set of ranges, returns a decoration set that adds a link to each range.
@@ -49,6 +81,7 @@ interface TokensAsLinksFacet {
 export const tokensAsLinks = Facet.define<TokensAsLinksFacet, TokensAsLinksFacet>({
     combine: source => source[0],
     enables: facet => [
+        focusSelectedLine,
         EditorView.decorations.compute([facet], state => {
             const { links } = state.facet(facet)
             let decorations: DecorationSet | null = null

@@ -198,6 +198,7 @@ $theme-colors: (
     --diff-add-bg: #eeffec;
     --diff-remove-bg: #ffecec;
     --code-selection-bg: var(--gray-03);
+    --code-focus-bg: #{rgba($blue, 0.1)};
     --sourcegraph-logo-text-color: #000000;
     --marketing-gradient: linear-gradient(90.64deg, #e4d3fc 3.11%, #d7f0fd 83.64%);
     --marketing-gradient-25: linear-gradient(

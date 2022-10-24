@@ -1,10 +1,7 @@
-import { Extension, Line, RangeSetBuilder } from '@codemirror/state'
-import { EditorView, Decoration, PluginValue, ViewUpdate, ViewPlugin } from '@codemirror/view'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { fromEvent, Subscription } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { Extension, RangeSetBuilder } from '@codemirror/state'
+import { EditorView, Decoration } from '@codemirror/view'
 
-import { SelectedLineRange, selectedLines, setSelectedLines } from './linenumbers'
+import { SelectedLineRange, setSelectedLines } from './linenumbers'
 
 interface FocusableLinesConfig {
     initialLine?: number
@@ -12,8 +9,6 @@ interface FocusableLinesConfig {
 }
 
 const focusableLineDecoration = Decoration.line({ attributes: { tabIndex: '-1' } })
-
-export const [focusedLine, updateFocusedLine] = createUpdateableField<number | null>(null)
 
 export function focusableLines({ initialLine, onSelection }: FocusableLinesConfig): Extension {
     let focusedLineNumber: number = initialLine ?? 1
@@ -30,7 +25,6 @@ export function focusableLines({ initialLine, onSelection }: FocusableLinesConfi
 
             return builder.finish()
         }),
-        // focusedLine.init(() => initialLine ?? null),
         EditorView.domEventHandlers({
             keydown(event: KeyboardEvent, view: EditorView) {
                 if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
@@ -45,31 +39,32 @@ export function focusableLines({ initialLine, onSelection }: FocusableLinesConfi
                     const nextLine = view.state.doc.line(nextLineNumber)
                     const nextLineElement = view.domAtPos(nextLine.from).node as HTMLElement | null
 
-                    focusedLineNumber = nextLineNumber
-                    view.requestMeasure({
-                        read(view) {
-                            return view.domAtPos(nextLine.from).node as HTMLElement | null
-                        },
-                        write(measure) {
-                            if (measure) {
-                                measure.focus()
-                            }
-                        },
-                    })
+                    if (nextLineElement) {
+                        focusedLineNumber = nextLineNumber
+                        window.requestAnimationFrame(() => {
+                            nextLineElement.focus()
+                        })
+                    }
                 }
 
                 if (event.key === 'Enter') {
                     const isLink = event.target instanceof HTMLAnchorElement
-                    const currentLine = view.state.field(focusedLine)
-                    if (!isLink && currentLine) {
+                    if (!isLink && focusedLineNumber) {
                         view.dispatch({
-                            effects: setSelectedLines.of({ line: currentLine }),
+                            effects: setSelectedLines.of({ line: focusedLineNumber }),
                         })
-                        onSelection({ line: currentLine })
+                        onSelection({ line: focusedLineNumber })
                     }
                 }
             },
+            focusin(event: FocusEvent, view: EditorView) {
+                const currentFocus = event.target as HTMLElement | null
+
+                if (currentFocus) {
+                    const nearestLine = view.state.doc.lineAt(view.posAtDOM(currentFocus))
+                    focusedLineNumber = nearestLine.number
+                }
+            },
         }),
-        // ViewPlugin.define(view => new LineFocusManager(view)),
     ]
 }

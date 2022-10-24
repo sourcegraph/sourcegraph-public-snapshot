@@ -58,7 +58,7 @@ const staticExtensions: Extension = [
         },
         '.cm-line:focus': {
             boxShadow: 'none',
-            backgroundColor: 'green',
+            backgroundColor: 'var(--code-focus-bg)',
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
