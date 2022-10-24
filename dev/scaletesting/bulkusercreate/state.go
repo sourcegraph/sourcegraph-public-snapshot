@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -15,9 +16,23 @@ type state struct {
 	db *sql.DB
 }
 
-var createTableStmt = `CREATE TABLE IF NOT EXISTS users (
+var createUserTableStmt = `CREATE TABLE IF NOT EXISTS orgs (
+  login STRING PRIMARY KEY,
+  adminLogin STRING,
+  failed STRING DEFAULT "",
+  created BOOLEAN DEFAULT FALSE
+)`
+
+var createOrgTableStmt = `CREATE TABLE IF NOT EXISTS users (
   login STRING PRIMARY KEY,
   email STRING,
+  failed STRING DEFAULT "",
+  created BOOLEAN DEFAULT FALSE
+)`
+
+var createTeamTableStmt = `CREATE TABLE IF NOT EXISTS teams (
+  name STRING PRIMARY KEY,
+  org STRING,
   failed STRING DEFAULT "",
   created BOOLEAN DEFAULT FALSE
 )`
@@ -27,13 +42,16 @@ func newState(path string) (*state, error) {
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare(createTableStmt)
-	if err != nil {
-		return nil, err
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		return nil, err
+
+	for _, statement := range []string{createUserTableStmt, createOrgTableStmt, createTeamTableStmt} {
+		stmt, err := db.Prepare(statement)
+		if err != nil {
+			return nil, err
+		}
+		_, err = stmt.Exec()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &state{
@@ -49,7 +67,21 @@ type user struct {
 	Created bool
 }
 
-func (s *state) load() ([]*user, error) {
+type team struct {
+	Name    string
+	Org     string
+	Failed  string
+	Created bool
+}
+
+type org struct {
+	Login   string
+	Admin   string
+	Failed  string
+	Created bool
+}
+
+func (s *state) loadUsers() ([]*user, error) {
 	s.Lock()
 	defer s.Unlock()
 	rows, err := s.db.Query(`SELECT login, email, failed, created FROM users`)
@@ -61,7 +93,7 @@ func (s *state) load() ([]*user, error) {
 	var users []*user
 	for rows.Next() {
 		var u user
-		err := rows.Scan(&u.Login, &u.Email, &u.Failed, &u.Created)
+		err = rows.Scan(&u.Login, &u.Email, &u.Failed, &u.Created)
 		if err != nil {
 			return nil, err
 		}
@@ -70,20 +102,85 @@ func (s *state) load() ([]*user, error) {
 	return users, nil
 }
 
-func generateNames(count int) []string {
+func (s *state) loadTeams() ([]*team, error) {
+	s.Lock()
+	defer s.Unlock()
+	rows, err := s.db.Query(`SELECT name, org, failed, created FROM teams`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teams []*team
+	for rows.Next() {
+		var t team
+		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created)
+		if err != nil {
+			return nil, err
+		}
+		teams = append(teams, &t)
+	}
+	return teams, nil
+}
+
+func (s *state) loadOrgs() ([]*org, error) {
+	s.Lock()
+	defer s.Unlock()
+	rows, err := s.db.Query(`SELECT login, admin, failed, created FROM orgs`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orgs []*org
+	for rows.Next() {
+		var o org
+		err = rows.Scan(&o.Login, &o.Admin, &o.Failed, &o.Created)
+		if err != nil {
+			return nil, err
+		}
+		orgs = append(orgs, &o)
+	}
+	return orgs, nil
+}
+
+func generateNames(prefix string, count int) []string {
 	names := make([]string, count)
 	for i := 0; i < count; i++ {
-		names[i] = fmt.Sprintf("user-%09d", i)
+		names[i] = fmt.Sprintf("%s-%09d", prefix, i)
 	}
 	return names
 }
 
-func (s *state) generate(cfg config) ([]*user, error) {
-	names := generateNames(cfg.count)
-	if err := s.insert(names); err != nil {
+func (s *state) generateUsers(cfg config) ([]*user, error) {
+	names := generateNames("user", cfg.userCount)
+	if err := s.insertUsers(names); err != nil {
 		return nil, err
 	}
-	return s.load()
+	return s.loadUsers()
+}
+
+func (s *state) generateTeams(cfg config) ([]*team, error) {
+	names := generateNames("team", cfg.teamCount)
+	orgs, err := s.loadOrgs()
+	if err != nil {
+		return nil, err
+	}
+	if len(orgs) == 0 {
+		log.Fatal("Organisations must be generated before teams")
+	}
+	if err = s.insertTeams(names, orgs); err != nil {
+		return nil, err
+	}
+	return s.loadTeams()
+}
+
+func (s *state) generateOrgs(cfg config) ([]*org, error) {
+	names := generateNames("org", cfg.orgCount)
+	if err := s.insertOrgs(names, cfg.orgAdmin); err != nil {
+		return nil, err
+	}
+	return s.loadOrgs()
 }
 
 var saveUserStmt = `UPDATE users SET
@@ -107,7 +204,49 @@ func (s *state) saveUser(u *user) error {
 	return nil
 }
 
-func (s *state) insert(logins []string) error {
+var saveTeamStmt = `UPDATE teams SET
+failed = ?,
+created = ?
+WHERE name = ?`
+
+func (s *state) saveTeam(t *team) error {
+	s.Lock()
+	defer s.Unlock()
+
+	_, err := s.db.Exec(
+		saveTeamStmt,
+		t.Failed,
+		t.Created,
+		t.Name)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+var saveOrgStmt = `UPDATE orgs SET
+failed = ?,
+created = ?
+WHERE login = ?`
+
+func (s *state) saveOrg(o *org) error {
+	s.Lock()
+	defer s.Unlock()
+
+	_, err := s.db.Exec(
+		saveOrgStmt,
+		o.Failed,
+		o.Created,
+		o.Login)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *state) insertUsers(logins []string) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
@@ -115,7 +254,39 @@ func (s *state) insert(logins []string) error {
 		return err
 	}
 	for _, login := range logins {
-		if _, err := tx.Exec(`INSERT INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
+		if _, err = tx.Exec(`INSERT INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *state) insertTeams(names []string, orgs []*org) error {
+	s.Lock()
+	defer s.Unlock()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	for i, name := range names {
+		// distribute teams evenly over orgs
+		org := orgs[i%len(orgs)]
+		if _, err = tx.Exec(`INSERT INTO teams(name, org) VALUES (?, ?)`, name, org.Login); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *state) insertOrgs(logins []string, admin string) error {
+	s.Lock()
+	defer s.Unlock()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, login := range logins {
+		if _, err = tx.Exec(`INSERT INTO orgs(login, adminLogin) VALUES (?, ?)`, login, admin); err != nil {
 			return err
 		}
 	}
@@ -137,6 +308,46 @@ func (s *state) countAllUsers() (int, error) {
 	defer s.Unlock()
 
 	row := s.db.QueryRow(`SELECT COUNT(login) FROM users`)
+	var count int
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (s *state) countCompletedTeams() (int, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	row := s.db.QueryRow(`SELECT COUNT(login) FROM teams WHERE created = TRUE AND failed == ""`)
+	var count int
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (s *state) countAllTeams() (int, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	row := s.db.QueryRow(`SELECT COUNT(login) FROM teams`)
+	var count int
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (s *state) countCompletedOrgs() (int, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	row := s.db.QueryRow(`SELECT COUNT(login) FROM orgs WHERE created = TRUE AND failed == ""`)
+	var count int
+	err := row.Scan(&count)
+	return count, err
+}
+
+func (s *state) countAllOrgs() (int, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	row := s.db.QueryRow(`SELECT COUNT(login) FROM orgs`)
 	var count int
 	err := row.Scan(&count)
 	return count, err

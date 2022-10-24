@@ -23,10 +23,13 @@ type config struct {
 	githubUser     string
 	githubPassword string
 
-	count  int
-	action string
-	resume string
-	retry  int
+	userCount int
+	teamCount int
+	orgCount  int
+	orgAdmin  string
+	action    string
+	resume    string
+	retry     int
 }
 
 var emailDomain = "scaletesting.sourcegraph.com"
@@ -38,7 +41,10 @@ func main() {
 	flag.StringVar(&cfg.githubURL, "github.url", "", "(required) GitHub base URL for the destination GHE instance")
 	flag.StringVar(&cfg.githubUser, "github.login", "", "(required) GitHub user to authenticate with")
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) password of the GitHub user to authenticate with")
-	flag.IntVar(&cfg.count, "count", 100, "Amount of users to create")
+	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create")
+	flag.IntVar(&cfg.orgCount, "org.count", 10, "Amount of orgs to create")
+	flag.StringVar(&cfg.orgAdmin, "org,admin", "", "Login of admin of orgs")
+
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create' or 'delete' users")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
@@ -80,75 +86,118 @@ func main() {
 		flag.Usage()
 		os.Exit(-1)
 	}
+	if cfg.orgAdmin == "" {
+		writeFailure(out, "-org.admin must be provided")
+		flag.Usage()
+		os.Exit(-1)
+	}
+
+	// ratio from https://github.com/sourcegraph/sourcegraph/issues/43052
+	cfg.teamCount = (cfg.userCount / 3) * 2
 
 	state, err := newState(cfg.resume)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// load or generate users
 	var users []*user
-	if users, err = state.load(); err != nil {
+	if users, err = state.loadUsers(); err != nil {
 		log.Fatal(err)
 	}
 
 	if len(users) == 0 {
-		if users, err = state.generate(cfg); err != nil {
+		if users, err = state.generateUsers(cfg); err != nil {
 			log.Fatal(err)
 		}
-		writeSuccess(out, "generated jobs in %s", cfg.resume)
+		writeSuccess(out, "generated user jobs in %s", cfg.resume)
 	} else {
-		writeSuccess(out, "resuming jobs from %s", cfg.resume)
+		writeSuccess(out, "resuming user jobs from %s", cfg.resume)
+	}
+
+	// load or generate orgs
+	var orgs []*org
+	if orgs, err = state.loadOrgs(); err != nil {
+		log.Fatal(err)
+	}
+
+	if len(orgs) == 0 {
+		if orgs, err = state.generateOrgs(cfg); err != nil {
+			log.Fatal(err)
+		}
+		writeSuccess(out, "generated org jobs in %s", cfg.resume)
+	} else {
+		writeSuccess(out, "resuming org jobs from %s", cfg.resume)
+	}
+
+	// load or generate teams
+	var teams []*team
+	if teams, err = state.loadTeams(); err != nil {
+		log.Fatal(err)
+	}
+
+	if len(teams) == 0 {
+		if teams, err = state.generateTeams(cfg); err != nil {
+			log.Fatal(err)
+		}
+		writeSuccess(out, "generated team jobs in %s", cfg.resume)
+	} else {
+		writeSuccess(out, "resuming team jobs from %s", cfg.resume)
 	}
 
 	bars := []output.ProgressBar{
-		{Label: "Creating users", Max: float64(cfg.count)},
+		{Label: "Creating users", Max: float64(cfg.userCount)},
+		{Label: "Creating orgs", Max: float64(cfg.orgCount)},
+		{Label: "Creating teams", Max: float64(cfg.teamCount)},
 	}
 	progress := out.Progress(bars, nil)
-	var done int64
+	var usersDone int64
+	var orgsDone int64
+
 	g := group.New().WithMaxConcurrency(1000)
 	for _, u := range users {
 		currentUser := u
 		if cfg.action == "create" {
 			g.Go(func() {
 				if currentUser.Created && currentUser.Failed == "" {
-					atomic.AddInt64(&done, 1)
-					progress.SetValue(0, float64(done))
+					atomic.AddInt64(&usersDone, 1)
+					progress.SetValue(0, float64(usersDone))
 					return
 				}
-				existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
-				if grErr != nil && resp.StatusCode != 404 {
-					writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
+				existingUser, resp, uErr := gh.Users.Get(ctx, currentUser.Login)
+				if uErr != nil && resp.StatusCode != 404 {
+					writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, uErr)
 					return
 				}
-				grErr = nil
+				uErr = nil
 				if existingUser != nil {
 					currentUser.Created = true
 					currentUser.Failed = ""
-					if grErr = state.saveUser(currentUser); grErr != nil {
-						log.Fatal(grErr)
+					if uErr = state.saveUser(currentUser); uErr != nil {
+						log.Fatal(uErr)
 					}
 					writeInfo(out, "user with login %s already exists", currentUser.Login)
-					atomic.AddInt64(&done, 1)
-					progress.SetValue(0, float64(done))
+					atomic.AddInt64(&usersDone, 1)
+					progress.SetValue(0, float64(usersDone))
 					return
 				}
-				_, _, grErr = gh.Admin.CreateUser(ctx, currentUser.Login, currentUser.Email)
+				_, _, uErr = gh.Admin.CreateUser(ctx, currentUser.Login, currentUser.Email)
 
-				if grErr != nil {
-					writeFailure(out, "Failed to create user with login %s, reason: %s", currentUser.Login, grErr)
-					currentUser.Failed = grErr.Error()
-					if grErr = state.saveUser(currentUser); grErr != nil {
-						log.Fatal(grErr)
+				if uErr != nil {
+					writeFailure(out, "Failed to create user with login %s, reason: %s", currentUser.Login, uErr)
+					currentUser.Failed = uErr.Error()
+					if uErr = state.saveUser(currentUser); uErr != nil {
+						log.Fatal(uErr)
 					}
 					return
 				}
 				currentUser.Created = true
 				currentUser.Failed = ""
-				if grErr = state.saveUser(currentUser); grErr != nil {
-					log.Fatal(grErr)
+				if uErr = state.saveUser(currentUser); uErr != nil {
+					log.Fatal(uErr)
 				}
-				atomic.AddInt64(&done, 1)
-				progress.SetValue(0, float64(done))
+				atomic.AddInt64(&usersDone, 1)
+				progress.SetValue(0, float64(usersDone))
 			})
 		} else if cfg.action == "delete" {
 			g.Go(func() {
@@ -177,21 +226,84 @@ func main() {
 			})
 		}
 	}
+
+	for _, o := range orgs {
+		currentOrg := o
+		g.Go(func() {
+			if currentOrg.Created && currentOrg.Failed == "" {
+				atomic.AddInt64(&orgsDone, 1)
+				progress.SetValue(0, float64(orgsDone))
+				return
+			}
+			existingOrg, resp, oErr := gh.Organizations.Get(ctx, currentOrg.Login)
+			if oErr != nil && resp.StatusCode != 404 {
+				writeFailure(out, "Failed to get org %s, reason: %s", currentOrg.Login, oErr)
+				return
+			}
+			oErr = nil
+			if existingOrg != nil {
+				currentOrg.Created = true
+				currentOrg.Failed = ""
+				if oErr = state.saveOrg(currentOrg); oErr != nil {
+					log.Fatal(oErr)
+				}
+				writeInfo(out, "org with login %s already exists", currentOrg.Login)
+				atomic.AddInt64(&orgsDone, 1)
+				progress.SetValue(0, float64(orgsDone))
+				return
+			}
+			_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &currentOrg.Login}, cfg.orgAdmin)
+
+			if oErr != nil {
+				writeFailure(out, "Failed to create org with login %s, reason: %s", currentOrg.Login, oErr)
+				currentOrg.Failed = oErr.Error()
+				if oErr = state.saveOrg(currentOrg); oErr != nil {
+					log.Fatal(oErr)
+				}
+				return
+			}
+			currentOrg.Created = true
+			currentOrg.Failed = ""
+			if oErr = state.saveOrg(currentOrg); oErr != nil {
+				log.Fatal(oErr)
+			}
+			atomic.AddInt64(&orgsDone, 1)
+			progress.SetValue(0, float64(orgsDone))
+		})
+	}
 	g.Wait()
 
-	all, err := state.countAllUsers()
+	allUsers, err := state.countAllUsers()
 	if err != nil {
 		log.Fatal(err)
 	}
-	completed, err := state.countCompletedUsers()
+	completedUsers, err := state.countCompletedUsers()
+	if err != nil {
+		log.Fatal(err)
+	}
+	allOrgs, err := state.countAllOrgs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	completedOrgs, err := state.countCompletedOrgs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	allTeams, err := state.countAllTeams()
+	if err != nil {
+		log.Fatal(err)
+	}
+	completedTeams, err := state.countCompletedTeams()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	if cfg.action == "create" {
-		writeSuccess(out, "Successfully added %d users (%d failures)", completed, all-completed)
+		writeSuccess(out, "Successfully added %d users (%d failures)", completedUsers, allUsers-completedUsers)
+		writeSuccess(out, "Successfully added %d orgs (%d failures)", completedOrgs, allOrgs-completedOrgs)
+		writeSuccess(out, "Successfully added %d teams (%d failures)", completedTeams, allTeams-completedTeams)
 	} else if cfg.action == "delete" {
-		writeSuccess(out, "Successfully deleted %d users (%d failures)", all-completed, completed)
+		writeSuccess(out, "Successfully deleted %d users (%d failures)", allUsers-completedUsers, completedUsers)
 	}
 }
 
