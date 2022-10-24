@@ -115,6 +115,9 @@ type SeriesPointsOpts struct {
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
 
+	// Whether to augment the series points data with zero values.
+	SupportsAugmentation bool
+
 	// Limit is the number of data points to query, if non-zero.
 	Limit int
 }
@@ -682,7 +685,7 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 }
 
 func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
-	if opts.ID == nil || opts.SeriesID == nil {
+	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
 		return []SeriesPoint{}, nil
 	}
 	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
@@ -691,22 +694,19 @@ func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, 
 	}
 	var augmentedPoints []SeriesPoint
 	if len(recordingsData.RecordingTimes) > 0 {
-		augmentedPoints = augmentPointsForRecordingTimes(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
-	}
-	// Safeguard against augmentation skimming down series points e.g. we have an insight that has been stamped for
-	// recording and timestamp twice. We augment the data but now it's at 2 data points instead of 12.
-	// todo(leo): we might want the alternative of just creating a union of (recordingTimes, seriesPoints.RecordTime)
-	if len(augmentedPoints) > len(pointsMap)*len(captureValues) {
-		return []SeriesPoint{}, nil
+		augmentedPoints = coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
 	}
 	return augmentedPoints, nil
 }
 
-func augmentPointsForRecordingTimes(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
+func coalesceZeroValues(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
 	augmentedPoints := []SeriesPoint{}
 	for _, recordingTime := range recordingTimes {
 		timestamp := recordingTime.Timestamp
-		// We have to pivot on potential capture values as well.
+		// We have to pivot on potential capture values as well. This is because for capture group data we need to know
+		// which capture group values to attach zero data to. Take points [{oct 20, "a"}, {oct 24 "a"}, {oct 24 "b"}]
+		// and recording times [oct 20, oct 24]. Without the capture value data we would not be able to know we have a
+		// missing {oct 20, "b"} entry.
 		for captureValue := range captureValues {
 			captureValue := captureValue
 			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {

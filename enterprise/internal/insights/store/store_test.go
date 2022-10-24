@@ -801,7 +801,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	}
 }
 
-func Test_augmentPointsForRecordingTimes(t *testing.T) {
+func Test_coalesceZeroValues(t *testing.T) {
 	stringify := func(points []SeriesPoint) []string {
 		s := []string{}
 		for _, point := range points {
@@ -896,7 +896,7 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := augmentPointsForRecordingTimes("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
+			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
 	}

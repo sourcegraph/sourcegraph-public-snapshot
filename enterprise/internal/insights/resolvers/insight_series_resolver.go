@@ -241,6 +241,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
 	opts.ID = &definition.InsightSeriesID
+	opts.SupportsAugmentation = definition.SupportsAugmentation
 
 	// Default to last 12 points of data
 	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
