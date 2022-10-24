@@ -125,7 +125,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "open file no selection",
@@ -137,7 +137,7 @@ func TestEditorRedirect(t *testing.T) {
 				"revision":   []string{"0ad12f"},
 				"file":       []string{"mux.go"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L1%3A1=", // L1:1 is expected (but could be nicer by omitting it)
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L1",
 		},
 		{
 			name: "open file in repository (Phabricator mirrored)",
@@ -151,7 +151,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "open file (generic code host with repositoryPathPattern)",
@@ -165,7 +165,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "open file (generic code host without repositoryPathPattern)",
@@ -179,7 +179,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "open file (generic git host with slash prefix in path)",
@@ -193,7 +193,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "open file (generic git host without slash prefix in path)",
@@ -207,7 +207,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
 			name: "search",
@@ -300,7 +300,7 @@ func TestEditorRedirect(t *testing.T) {
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11=",
+			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 	}
 	errStr := func(e error) string {
