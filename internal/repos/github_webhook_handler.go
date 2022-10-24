@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,7 +23,7 @@ func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
 	router.Register(g.handleGitHubWebhook, "push")
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ *types.ExternalService, payload any) error {
+func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ string, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)

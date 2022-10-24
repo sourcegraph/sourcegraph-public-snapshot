@@ -375,6 +375,12 @@ const pinManager = ViewPlugin.fromClass(
 )
 
 /**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/buttons#value
+ */
+const MOUSE_NO_BUTTON = 0
+
+/**
  * Listens to mousemove events, determines whether the position under the mouse
  * cursor is eligible (whether a "word" is under the mouse cursor), fetches
  * hover information as necessary and updates {@link hovercardState}.
@@ -400,6 +406,13 @@ const hoverManager = ViewPlugin.fromClass(
                             )
                         ) {
                             return false
+                        }
+
+                        // We have to forward any move events that also have a
+                        // button pressed. User is probably selecting text and
+                        // hovercards should be hidden.
+                        if (event.buttons !== MOUSE_NO_BUTTON) {
+                            return true
                         }
 
                         // Ignore events inside the current hover range. Without this
@@ -429,6 +442,7 @@ const hoverManager = ViewPlugin.fromClass(
                                 x: number
                                 y: number
                                 target: EventTarget | null
+                                buttons: number
                                 direction?: 'towards' | 'away' | undefined
                             },
                             next
@@ -448,19 +462,24 @@ const hoverManager = ViewPlugin.fromClass(
                                 previous,
                                 next
                             )
-                            return { x: next.x, y: next.y, target: next.target, direction }
+                            return { x: next.x, y: next.y, buttons: next.buttons, target: next.target, direction }
                         }
                     ),
 
                     // Determine the precise location of the word under the cursor.
                     switchMap(position => {
-                        // Hide any hovercard when the mouse is over an element
-                        // that is not part of the content. This seems necessary
-                        // to make hovercards not appear and hide open
-                        // hovercards when the mouse moves over the editor's
-                        // search panel.
-                        if (!position.target || !this.view.contentDOM.contains(position.target as Node)) {
-                            return of({ hovercard: null, position })
+                        // Hide any hovercard when
+                        // - the mouse is over an element that is not part of
+                        //   the content. This seems necessary to make hovercards
+                        //   not appear and hide open hovercards when the mouse
+                        //   moves over the editor's search panel.
+                        // - the user starts to select text
+                        if (
+                            position.buttons !== MOUSE_NO_BUTTON ||
+                            !position.target ||
+                            !this.view.contentDOM.contains(position.target as Node)
+                        ) {
+                            return of('HIDE' as const)
                         }
                         return of(preciseWordAtCoords(this.view, position)).pipe(
                             tokenRangeToHovercard(this.view),
@@ -468,13 +487,20 @@ const hoverManager = ViewPlugin.fromClass(
                         )
                     })
                 )
-                .subscribe(({ hovercard, position }) => {
+                .subscribe(next => {
+                    if (next === 'HIDE') {
+                        this.view.dispatch({
+                            effects: setHoverHovercard.of(null),
+                        })
+                        return
+                    }
+
                     // We only change the hovercard when
                     // a) There is a new hovercord at the position (hovercard !== null)
                     // b) there is no hovercard and the mouse is moving away from the hovercard
-                    if (hovercard || position.direction !== 'towards') {
+                    if (next.hovercard || next.position.direction !== 'towards') {
                         this.view.dispatch({
-                            effects: setHoverHovercard.of(hovercard),
+                            effects: setHoverHovercard.of(next.hovercard),
                         })
                     }
                 })

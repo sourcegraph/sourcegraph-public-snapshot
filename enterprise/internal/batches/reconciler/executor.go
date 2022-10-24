@@ -168,8 +168,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
-	// au is nil if we want to use the global credentials stored in the external
-	// service configuration.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
 		return err

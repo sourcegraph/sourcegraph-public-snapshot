@@ -112,7 +112,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	if len(indexedIDs) == 0 {
-		http.Error(w, "atleast one repoID required", http.StatusBadRequest)
+		http.Error(w, "at least one repoID required", http.StatusBadRequest)
 		return nil
 	}
 

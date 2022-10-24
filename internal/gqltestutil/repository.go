@@ -270,3 +270,19 @@ mutation AddRepoKVP($repo: ID!, $key: String!, $value: String) {
 	var resp map[string]interface{}
 	return c.GraphQL("", query, variables, &resp)
 }
+
+func (c *Client) SetFeatureFlag(name string, value bool) error {
+	const query = `
+mutation SetFeatureFlag($name: String!, $value: Boolean!) {
+	createFeatureFlag(name: $name, value: $value) {
+		__typename
+	}
+}
+`
+	variables := map[string]any{
+		"name":  name,
+		"value": value,
+	}
+	var resp map[string]interface{}
+	return c.GraphQL("", query, variables, &resp)
+}

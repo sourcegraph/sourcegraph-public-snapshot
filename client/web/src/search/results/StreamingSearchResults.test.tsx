@@ -8,7 +8,7 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -117,6 +117,7 @@ describe('StreamingSearchResults', () => {
             version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
             trace: undefined,
             chunkMatches: true,
         })

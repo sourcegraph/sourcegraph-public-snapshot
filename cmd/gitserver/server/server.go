@@ -1586,6 +1586,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
+				ev.AddField("stdin_size", len(req.Stdin))
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
@@ -1708,6 +1709,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	dir.Set(cmd)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
+	cmd.Stdin = bytes.NewReader(req.Stdin)
 
 	exitStatus, execErr = runCommand(ctx, cmd)
 

@@ -5,13 +5,14 @@ import classNames from 'classnames'
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, H2 } from '@sourcegraph/wildcard'
 
 import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
 export interface QueryExamplesHomepageProps extends TelemetryProps {
+    selectedSearchContextSpec?: string
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
 }
@@ -35,6 +36,7 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 }
 
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+    selectedSearchContextSpec,
     telemetryService,
     queryState,
     setQueryState,
@@ -42,7 +44,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
 
-    const queryExampleSectionsColumns = useQueryExamples()
+    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global')
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {
@@ -140,8 +142,8 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
     onQueryExampleClick,
 }) => (
     <div className={styles.queryExamplesSection}>
-        <div className={styles.queryExamplesSectionTitle}>{title}</div>
-        <div className={styles.queryExamplesItems}>
+        <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
+        <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
                 .map(({ id, query, helperText }) => (
@@ -153,7 +155,7 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
                         onClick={onQueryExampleClick}
                     />
                 ))}
-        </div>
+        </ul>
         {footer}
     </div>
 )
@@ -176,7 +178,7 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
     className,
     onClick,
 }) => (
-    <span className={classNames('d-flex align-items-center', className)}>
+    <li className={classNames('d-flex align-items-center', className)}>
         <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
@@ -185,5 +187,5 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
                 <small>{helperText}</small>
             </span>
         )}
-    </span>
+    </li>
 )

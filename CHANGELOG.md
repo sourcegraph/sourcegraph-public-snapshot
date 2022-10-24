@@ -17,6 +17,26 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Creating access tokens is now tracked in the security events. [#43226](https://github.com/sourcegraph/sourcegraph/pull/43226)
+- Added `codeIntelAutoIndexing.indexerMap` to site-config that allows users to update the indexers used when inferring precise code intelligence auto-indexing jobs (without having to overwrite the entire inference scripts). For example, `"codeIntelAutoIndexing.indexerMap": {"go": "my.registry/sourcegraph/lsif-go"}` will casue Go projects to use the specified container (in a alternative Docker registry). [#43199](https://github.com/sourcegraph/sourcegraph/pull/43199)
+
+### Changed
+
+-
+
+### Fixed
+
+- Fixed a bug where path matches on files in the root directory of a repository were not highlighted. [#43275](https://github.com/sourcegraph/sourcegraph/pull/43275)
+
+### Removed
+
+- Remove the older `log.gitserver.accessLogs` site config setting. The setting is succeeded by `log.auditLog.gitserverAccess`. [#43174](https://github.com/sourcegraph/sourcegraph/pull/43174)
+- Remove `LOG_ALL_GRAPHQL_REQUESTS` env var. The setting is succeeded by `log.auditLog.graphQL`. [#43181](https://github.com/sourcegraph/sourcegraph/pull/43181)
+
+## 4.1.0
+
+### Added
+
 - Outdated executors now show a warning from the admin page. [#40916](https://github.com/sourcegraph/sourcegraph/pull/40916)
 - Added support for better Slack link previews for private instances. Link previews are currently feature-flagged, and site admins can turn them on by creating the `enable-link-previews` feature flag on the `/site-admin/feature-flags` page. [#41843](https://github.com/sourcegraph/sourcegraph/pull/41843)
 - Added a new button in the repository settings, under "Mirroring", to delete a repository from disk and reclone it. [#42177](https://github.com/sourcegraph/sourcegraph/pull/42177)
@@ -40,7 +60,7 @@ All notable changes to Sourcegraph are documented in this file.
 - WIP changesets in Gitlab >= 14.0 are now prefixed with `Draft:` instead of `WIP:` to accomodate for the [breaking change in Gitlab 14.0](https://docs.gitlab.com/ee/update/removals.html#wip-merge-requests-renamed-draft-merge-requests). [#42024](https://github.com/sourcegraph/sourcegraph/pull/42024)
 - When updating the site configuration, the provided Last ID is now used to prevent race conditions when simultaneous config updates occur. [#42691](https://github.com/sourcegraph/sourcegraph/pull/42691)
 - When multiple auth providers of the same external service type is set up, there are now separate entries in the user's Account Security settings. [#42865](https://github.com/sourcegraph/sourcegraph/pull/42865)
-- Fixed a bug with GitHub code hosts that did not label archived repos correctly when using the "public" repositoryQuery keyword.
+- Fixed a bug with GitHub code hosts that did not label archived repos correctly when using the "public" repositoryQuery keyword. [#41461](https://github.com/sourcegraph/sourcegraph/pull/41461)
 - Fixed a bug that would display the blank batch spec that a batch change is initialized with in the batch specs executions tab. [#42914](https://github.com/sourcegraph/sourcegraph/pull/42914)
 
 ### Removed

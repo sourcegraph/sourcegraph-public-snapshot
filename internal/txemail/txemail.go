@@ -19,17 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Message describes an email message to be sent.
-type Message struct {
-	FromName   string   // email "From" address proper name
-	To         []string // email "To" recipients
-	ReplyTo    *string  // optional "ReplyTo" address
-	MessageID  *string  // optional "Message-ID" header
-	References []string // optional "References" header list
-
-	Template txtypes.Templates // unparsed subject/body templates
-	Data     any               // template data
-}
+// Message describes an email message to be sent, aliased in this package for convenience.
+type Message = txtypes.Message
 
 var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_email_send",

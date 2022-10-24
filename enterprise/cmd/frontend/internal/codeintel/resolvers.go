@@ -88,6 +88,14 @@ func (r *Resolver) DeleteLSIFIndexes(ctx context.Context, args *autoindexinggrap
 	return r.autoIndexingRootResolver.DeleteLSIFIndexes(ctx, args)
 }
 
+func (r *Resolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.autoIndexingRootResolver.ReindexLSIFIndex(ctx, args)
+}
+
+func (r *Resolver) ReindexLSIFIndexes(ctx context.Context, args *autoindexinggraphql.ReindexLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	return r.autoIndexingRootResolver.ReindexLSIFIndexes(ctx, args)
+}
+
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ uploadsgraphql.CodeIntelligenceCommitGraphResolver, err error) {
 	return r.uploadsRootResolver.CommitGraph(ctx, id)
 }
