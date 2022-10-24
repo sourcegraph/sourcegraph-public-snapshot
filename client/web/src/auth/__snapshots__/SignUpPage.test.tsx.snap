@@ -38,18 +38,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           class="featureList"
         >
           <li>
-            <div
-              class="d-flex align-items-center"
-            >
-              <span
-                class="badge info productStatusBadge text-uppercase mr-1"
-                data-state="closed"
-                status="beta"
-              >
-                beta
-              </span>
-               Search across all your public and private repositories
-            </div>
+            Search across all your public repositories
           </li>
           <li>
             Monitor code for changes

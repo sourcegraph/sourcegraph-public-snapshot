@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge, Link, Icon, H2 } from '@sourcegraph/wildcard'
+import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
@@ -167,12 +167,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
-                        <li>
-                            <div className="d-flex align-items-center">
-                                <ProductStatusBadge status="beta" className="text-uppercase mr-1" /> Search across all
-                                your public and private repositories
-                            </div>
-                        </li>
+                        <li>Search across all your public repositories</li>
                         <li>Monitor code for changes</li>
                         <li>Navigate through code with IDE like go to references and definition hovers</li>
                         <li>Integrate data, tooling, and code in a single location </li>
