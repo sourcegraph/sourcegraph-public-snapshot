@@ -44,7 +44,7 @@ import { ResourceDestructor } from './TestResourceManager'
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
  */
-export async function ensureLoggedInOrCreateTestUser(
+export async function ensureSignedInOrCreateTestUser(
     driver: Driver,
     gqlClient: GraphQLClient,
     {
