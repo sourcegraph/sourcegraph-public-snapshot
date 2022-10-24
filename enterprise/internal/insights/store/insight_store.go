@@ -1030,8 +1030,8 @@ const createInsightSeriesSql = `
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method, group_by, needs_migration)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+							just_in_time, generation_method, group_by, needs_migration, supports_augmentation)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, true)
 RETURNING id;`
 
 const getInsightByViewSql = `
