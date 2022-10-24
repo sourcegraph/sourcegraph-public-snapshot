@@ -131,7 +131,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
+	wantZoektRepos := map[api.RepoID]*ZoektRepo{
 		repos[0].ID: {
 			RepoID:      repos[0].ID,
 			IndexStatus: "indexed",
@@ -150,7 +150,20 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 				{Name: "v15.3.1", Version: "b4rf00"},
 			},
 		},
-	})
+	}
+	assertZoektRepos(t, ctx, s, wantZoektRepos)
+
+	// Now we update the indexing status of a repository that doesn't exist and
+	// check that the index status in unchanged:
+	indexed = map[uint32]*zoekt.MinimalRepoListEntry{
+		9999: {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}},
+	}
+	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Should still be the same
+	assertZoektRepos(t, ctx, s, wantZoektRepos)
 }
 
 func assertZoektRepoStatistics(t *testing.T, ctx context.Context, s *zoektReposStore, wantZoektStats ZoektRepoStatistics) {
