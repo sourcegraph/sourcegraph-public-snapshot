@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -72,8 +73,8 @@ var _ workerutil.Handler = &inProgressHandler{}
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	logger.Info("inProgressHandler called", log.Int("recordId", record.RecordID()))
 
+	ctx = actor.WithInternalActor(ctx)
 	job := record.(*BaseJob)
-
 	backfillJob, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
