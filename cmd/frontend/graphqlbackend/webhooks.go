@@ -136,10 +136,7 @@ func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolv
 		return nil, err
 	}
 	resolvers := make([]*webhookResolver, 0, len(webhooks))
-	for i, wh := range webhooks {
-		if r.opt.LimitOffset != nil && i == r.opt.Limit {
-			break
-		}
+	for _, wh := range webhooks {
 		resolvers = append(resolvers, &webhookResolver{
 			hook: wh,
 		})
@@ -162,7 +159,7 @@ func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webho
 			opts.Limit++
 		}
 		r.webhooks, r.err = r.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opts)
-		if r.opt.LimitOffset != nil && len(r.webhooks) == opts.Limit {
+		if r.opt.LimitOffset != nil && opts.Limit != 0 && len(r.webhooks) == opts.Limit {
 			r.next = r.webhooks[len(r.webhooks)-1].ID
 			r.webhooks = r.webhooks[:len(r.webhooks)-1]
 		}
