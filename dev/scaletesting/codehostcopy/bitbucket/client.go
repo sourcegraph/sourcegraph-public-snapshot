@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,11 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-type cache struct {
-	Dir string
-}
-
-type GetResult[T any] struct {
+type getResult[T any] struct {
 	Result T
 	Err    error
 }
@@ -45,8 +40,6 @@ type Client struct {
 	FetchLimit int
 }
 
-type getFunc func(context.Context) (*PagedResp, error)
-
 // NewClient creates a Client with the username, password and url. The url is the base url which should have the following form
 // http://host:port. The client will append /rest/api/latest to the base url. By default the FetchLimit is set to 150
 func NewClient(username, password string, url *url.URL) *Client {
@@ -58,17 +51,14 @@ func NewClient(username, password string, url *url.URL) *Client {
 	}
 }
 
-func (c *Client) Domain() string {
-	return c.apiURL.Hostname()
-}
-
 func (c *Client) url(fragment string) string {
 	return fmt.Sprintf("%s%s", c.apiURL.String(), fragment)
 }
 
+// getPaged issues a get request against a url that returns a paged response. The response is marshalled into
+// a PagedResponse and returned. Otherwise an APIError is returned
 func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedResp, error) {
 	url = fmt.Sprintf("%s?start=%d&limit=%d", url, start, c.FetchLimit)
-	log.Printf("GET %s\n", url)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	req.SetBasicAuth(c.username, c.password)
@@ -96,7 +86,7 @@ func (c *Client) getPaged(ctx context.Context, url string, start int) (*PagedRes
 	return &pageResp, nil
 }
 
-func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
+func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	req.SetBasicAuth(c.username, c.password)
 
@@ -117,9 +107,7 @@ func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (c *Client) Post(ctx context.Context, url string, data []byte) ([]byte, error) {
-	log.Printf("POST %s\n", url)
-
+func (c *Client) post(ctx context.Context, url string, data []byte) ([]byte, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(data))
 	req.SetBasicAuth(c.username, c.password)
 	req.Header.Add("Accept", "application/json")
@@ -142,16 +130,19 @@ func (c *Client) Post(ctx context.Context, url string, data []byte) ([]byte, err
 	return ioutil.ReadAll(resp.Body)
 }
 
-func getAll[T any](ctx context.Context, c *Client, url string) []GetResult[T] {
+// getAll continuously calls getPaged by adjusting the start query parameter based on the previous
+// paged response. A GetResult is returned which contains the results as well as any errors that were
+// encountered.
+func getAll[T any](ctx context.Context, c *Client, url string) []getResult[T] {
 	start := 0
 	count := 0
-	items := make([]GetResult[T], 0)
+	items := make([]getResult[T], 0)
 	for {
 		ctx := ctx
 		resp, err := c.getPaged(ctx, url, start)
 		if err != nil {
 			// record the error and move on
-			var value GetResult[T]
+			var value getResult[T]
 			value.Err = err
 			items = append(items, value)
 			continue
@@ -159,7 +150,7 @@ func getAll[T any](ctx context.Context, c *Client, url string) []GetResult[T] {
 
 		count += resp.Size
 		for _, v := range resp.Values {
-			var value GetResult[T]
+			var value getResult[T]
 			value.Err = json.Unmarshal(v, &value.Result)
 			items = append(items, value)
 		}
@@ -175,7 +166,7 @@ func getAll[T any](ctx context.Context, c *Client, url string) []GetResult[T] {
 func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, error) {
 	key = strings.ToUpper(key)
 	u := c.url(fmt.Sprintf("/rest/api/latest/projects/%s", key))
-	respData, err := c.Get(ctx, u)
+	respData, err := c.get(ctx, u)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +187,7 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 		Name  string         `json:"name"`
 		ScmId string         `json:"scmId"`
 		Slug  string         `json:"slug"`
-		links map[string]any `json:"links"`
+		Links map[string]any `json:"links"`
 	}{
 		Name:  repoName,
 		ScmId: "git",
@@ -206,7 +197,7 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 		return nil, err
 	}
 
-	respData, err := c.Post(ctx, url, rawRepoData)
+	respData, err := c.post(ctx, url, rawRepoData)
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +227,7 @@ func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error
 		return nil, err
 	}
 
-	respData, err := c.Post(ctx, url, rawProjectData)
+	respData, err := c.post(ctx, url, rawProjectData)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +258,7 @@ func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
 	return c.ListReposForProjects(ctx, projects)
 }
 
-func extractResults[T any](items []GetResult[T]) ([]T, error) {
+func extractResults[T any](items []getResult[T]) ([]T, error) {
 	var err error
 	results := make([]T, 0)
 	for _, r := range items {
@@ -282,15 +273,15 @@ func extractResults[T any](items []GetResult[T]) ([]T, error) {
 }
 
 func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) ([]*Repo, error) {
-	g := group.NewWithResults[GetResult[[]*Repo]]().WithMaxConcurrency(10)
+	g := group.NewWithResults[getResult[[]*Repo]]().WithMaxConcurrency(10)
 	repos := make([]*Repo, 0)
 	for _, p := range projects {
 
-		g.Go(func() GetResult[[]*Repo] {
+		g.Go(func() getResult[[]*Repo] {
 			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
 			all := getAll[*Repo](ctx, c, url)
 			results, error := extractResults(all)
-			return GetResult[[]*Repo]{
+			return getResult[[]*Repo]{
 				Result: results,
 				Err:    error,
 			}
