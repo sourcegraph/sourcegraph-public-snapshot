@@ -171,7 +171,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
         </Text>
         <Container className="mb-3">
             <video
-                className="w-100 h-auto shadow percy-hide"
+                className="w-100 h-auto shadow percy-hide chromatic-ignore"
                 width={1280}
                 height={720}
                 autoPlay={false}
