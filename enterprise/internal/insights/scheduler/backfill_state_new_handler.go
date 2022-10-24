@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
