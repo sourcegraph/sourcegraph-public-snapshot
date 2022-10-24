@@ -284,14 +284,14 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
     steps: [
         {
             id: 'InstallOrSignUp',
-            label: 'Register for a free account',
+            label: 'Get free trial',
             tooltip:
-                'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
+                'Try Sourcegraph Cloud to unlock all features. Search private code, navigate your codebase, automate large-scale changes, and track code pattern insights.',
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
                 value:
-                    'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+                    'https://signup.sourcegraph.com?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
             },
             // This is done to mimic user creating an account, and signed in there is a different tour
             completeAfterEvents: ['non-existing-event'],
