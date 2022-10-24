@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync/atomic"
 
 	"github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
@@ -99,12 +100,19 @@ func main() {
 		writeSuccess(out, "resuming jobs from %s", cfg.resume)
 	}
 
-	g := group.New().WithMaxConcurrency(100)
+	bars := []output.ProgressBar{
+		{Label: "Creating users", Max: float64(cfg.count)},
+	}
+	progress := out.Progress(bars, nil)
+	var done int64
+	g := group.New().WithMaxConcurrency(1000)
 	for _, u := range users {
 		currentUser := u
 		if cfg.action == "create" {
 			g.Go(func() {
 				if currentUser.Created && currentUser.Failed == "" {
+					atomic.AddInt64(&done, 1)
+					progress.SetValue(0, float64(done))
 					return
 				}
 				existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
@@ -120,6 +128,8 @@ func main() {
 						log.Fatal(grErr)
 					}
 					writeInfo(out, "user with login %s already exists", currentUser.Login)
+					atomic.AddInt64(&done, 1)
+					progress.SetValue(0, float64(done))
 					return
 				}
 				_, _, grErr = gh.Admin.CreateUser(ctx, currentUser.Login, currentUser.Email)
@@ -137,12 +147,11 @@ func main() {
 				if grErr = state.saveUser(currentUser); grErr != nil {
 					log.Fatal(grErr)
 				}
+				atomic.AddInt64(&done, 1)
+				progress.SetValue(0, float64(done))
 			})
 		} else if cfg.action == "delete" {
 			g.Go(func() {
-				if !currentUser.Created {
-					return
-				}
 				existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
 				if grErr != nil && resp.StatusCode != 404 {
 					writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
