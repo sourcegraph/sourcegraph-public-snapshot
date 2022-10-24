@@ -145,11 +145,11 @@ const getNormalizedAccount = (
 }
 
 export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-                                                                                                    accounts,
-                                                                                                    authProviders,
-                                                                                                    onDidRemove,
-                                                                                                    onDidError,
-                                                                                                }) => (
+    accounts,
+    authProviders,
+    onDidRemove,
+    onDidError,
+}) => (
     <>
         {authProviders && (
             <ul className="list-group">
