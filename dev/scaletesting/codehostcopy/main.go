@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
-	"flag"
 	"net/url"
+	"os"
+	"time"
 
 	"cuelang.org/go/cue/errors"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/urfave/cli/v2"
 )
 
 type CodeHostSource interface {
@@ -27,25 +30,37 @@ type Repo struct {
 	Pushed     bool
 }
 
-type Flags struct {
-	resume string
-	config string
+var app = &cli.App{
+	Usage:       "Copy organizations across code hosts",
+	Description: "https://handbook.sourcegraph.com/departments/engineering/dev/tools/scaletesting/",
+	Compiled:    time.Now(),
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "state",
+			Usage: "Path to the file storing state, to resume work from",
+			Value: "codehostcopy.db",
+		},
+		&cli.StringFlag{
+			Name:  "config",
+			Usage: "Path to the config file defining what to copy",
+		},
+	},
+	Action: func(cmd *cli.Context) error {
+		return doRun(cmd.Context, log.Scoped("runner", ""), cmd.String("state"), cmd.String("config"))
+	},
+	Commands: []*cli.Command{
+		{
+			Name:        "new",
+			Description: "Create a new config file to start from",
+			Action: func(ctx *cli.Context) error {
+				return nil
+			},
+		},
+	},
 }
 
-func main() {
-	var flags Flags
-	flag.StringVar(&flags.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
-	flag.StringVar(&flags.config, "config", "", "TODO")
-	flag.Parse()
-
-	cb := log.Init(log.Resource{
-		Name: "codehostcopy",
-	})
-	defer cb.Sync()
-	logger := log.Scoped("main", "")
-
-	ctx := context.Background()
-	cfg, err := loadConfig(flags.config)
+func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
+	cfg, err := loadConfig(config)
 	if err != nil {
 		var cueErr errors.Error
 		if errors.As(err, &cueErr) {
@@ -54,7 +69,7 @@ func main() {
 		logger.Fatal("failed to load config", log.Error(err))
 	}
 
-	state, err := newState(flags.resume)
+	s, err := newState(state)
 	if err != nil {
 		logger.Fatal("failed to init state", log.Error(err))
 	}
@@ -67,8 +82,19 @@ func main() {
 		logger.Fatal("failed to init GitLab code host", log.Error(err))
 	}
 
-	runner := NewRunner(logger, state, gh, gl)
-	if err := runner.Run(ctx, 20); err != nil {
-		logger.Fatal("failed runnerr", log.Error(err))
+	runner := NewRunner(logger, s, gh, gl)
+	return runner.Run(ctx, 20)
+}
+
+func main() {
+	cb := log.Init(log.Resource{
+		Name: "codehostcopy",
+	})
+	defer cb.Sync()
+	logger := log.Scoped("main", "")
+
+	if err := app.RunContext(context.Background(), os.Args); err != nil {
+		logger.Fatal("failed to run", log.Error(err))
 	}
+
 }
