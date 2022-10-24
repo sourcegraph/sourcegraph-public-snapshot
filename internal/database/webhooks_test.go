@@ -188,7 +188,7 @@ func TestWebhookUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	newCodeHostURN, err := types.ParseCodeHostURN("https://new.github.com")
+	newCodeHostURN, err := types.NewCodeHostURN("https://new.github.com")
 	require.NoError(t, err)
 	const updatedSecret = "my new secret"
 

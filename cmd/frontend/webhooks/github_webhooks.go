@@ -74,7 +74,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	codeHostURN, err := types.ParseCodeHostURN(config.Url)
+	codeHostURN, err := types.NewCodeHostURN(config.Url)
 	if err != nil {
 		log15.Error("Could not parse code host URL from config", "error", err)
 		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)

@@ -247,7 +247,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			// unexpected input.
 			n := 10156
 			action := "this is a bad action"
-			u, err := types.ParseCodeHostURN("github.com")
+			u, err := types.NewCodeHostURN("github.com")
 			require.NoError(t, err)
 			if err := hook.handleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
 				Number: &n,

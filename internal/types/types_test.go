@@ -24,7 +24,7 @@ func TestExternalServiceFields(t *testing.T) {
 func TestCodeHostURN(t *testing.T) {
 	t.Run("normalize URL", func(t *testing.T) {
 		const url = "https://github.com"
-		urn, err := ParseCodeHostURN(url)
+		urn, err := NewCodeHostURN(url)
 		require.NoError(t, err)
 
 		assert.Equal(t, "https://github.com/", urn.String())

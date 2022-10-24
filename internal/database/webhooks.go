@@ -361,7 +361,7 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	// If both keyID and rawSecret are empty then we didn't set a secret and we leave
 	// hook.Secret as nil
 
-	codeHostURN, err := types.ParseCodeHostURN(urnString)
+	codeHostURN, err := types.NewCodeHostURN(urnString)
 	if err != nil {
 		return nil, err
 	}

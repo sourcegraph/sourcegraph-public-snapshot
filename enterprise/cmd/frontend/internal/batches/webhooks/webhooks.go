@@ -81,7 +81,7 @@ func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService
 		return types.CodeHostURN{}, errors.New("could not determine service id")
 	}
 
-	return types.ParseCodeHostURN(serviceID)
+	return types.NewCodeHostURN(serviceID)
 }
 
 type keyer interface {

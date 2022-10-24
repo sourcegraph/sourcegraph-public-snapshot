@@ -1708,10 +1708,10 @@ type CodeHostURN struct {
 	urlString string
 }
 
-// ParseCodeHostURN takes a code host URL string, normalizes it,
+// NewCodeHostURN takes a code host URL string, normalizes it,
 // and returns a CodeHostURN. If the string is required, use the
 // .String() method on the CodeHostURN.
-func ParseCodeHostURN(urnString string) (CodeHostURN, error) {
+func NewCodeHostURN(urnString string) (CodeHostURN, error) {
 	url, err := url.Parse(urnString)
 	if err != nil {
 		return CodeHostURN{}, err
