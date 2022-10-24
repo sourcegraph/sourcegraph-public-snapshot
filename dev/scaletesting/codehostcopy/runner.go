@@ -85,19 +85,19 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 				toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
 				if err != nil {
 					repo.Failed = err.Error()
-					return err
+					r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
 				} else {
 					repo.ToGitURL = toGitURL.String()
 					repo.Created = true
 				}
-				if r.state.saveRepo(repo); err != nil {
+				if err := r.state.saveRepo(repo); err != nil {
 					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
 					return err
 				}
 			}
 
 			// Push the repo on destination.
-			if !repo.Pushed {
+			if !repo.Pushed && repo.Created {
 				err := pushRepo(ctx, repo)
 				if err != nil {
 					repo.Failed = err.Error()
@@ -105,7 +105,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 				} else {
 					repo.Pushed = true
 				}
-				if r.state.saveRepo(repo); err != nil {
+				if err := r.state.saveRepo(repo); err != nil {
 					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
 					return err
 				}

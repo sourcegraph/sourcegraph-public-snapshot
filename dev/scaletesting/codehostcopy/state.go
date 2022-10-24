@@ -70,8 +70,9 @@ var saveRepoStmt = `UPDATE repos SET
 failed = ?, 
 created = ?,
 pushed = ?,
-from_git_url = ?
+from_git_url = ?,
 to_git_url = ?
+
 WHERE name = ?`
 
 func (s *state) saveRepo(r *Repo) error {
