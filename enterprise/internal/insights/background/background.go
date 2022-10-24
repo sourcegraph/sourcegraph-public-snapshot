@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -84,6 +86,16 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 				RepoStore:      mainAppDB.Repos(),
 				BackfillRunner: backfillRunner,
 				ObsContext:     observationContext,
+				AllRepoIterator: discovery.NewAllReposIterator(dbcache.NewIndexableReposLister(observationContext.Logger, mainAppDB.Repos()),
+					mainAppDB.Repos(),
+					time.Now,
+					envvar.SourcegraphDotComMode(),
+					15*time.Minute,
+					&prometheus.CounterOpts{
+						Namespace: "src",
+						Name:      "insight_backfill_new_index_repositories_analyzed",
+						Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
+					}),
 			}
 			monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
 			routines = append(routines, monitor.Routines()...)

@@ -6,15 +6,12 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -50,22 +47,11 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		StalledMaxAge:     time.Second * 30,
 	}, config.ObsContext)
 
-	allReposIterator := discovery.NewAllReposIterator(dbcache.NewIndexableReposLister(config.ObsContext.Logger, config.RepoStore),
-		config.RepoStore,
-		time.Now,
-		envvar.SourcegraphDotComMode(),
-		15*time.Minute,
-		&prometheus.CounterOpts{
-			Namespace: "src",
-			Name:      "insight_backfill_new_index_repositories_analyzed",
-			Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
-		})
-
 	task := newBackfillHandler{
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(allReposIterator, config.RepoStore),
+		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
