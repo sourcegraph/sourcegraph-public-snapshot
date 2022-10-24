@@ -327,7 +327,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         size="sm"
                                         as={Link}
                                     >
-                                        Log in
+                                        Sign in
                                     </Button>
                                     <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
                                         Get free trial
