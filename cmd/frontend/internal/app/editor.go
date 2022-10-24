@@ -179,11 +179,16 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
-		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
+		q.Add(fmt.Sprintf("L%d", of.startRow+1), "")
 	} else {
 		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
 	}
-	u.RawQuery = q.Encode()
+	// Since the line information is added as the key as a query parameter with
+	// an empty value, the URL encoding will add an = sign followed by an empty
+	// string.
+	//
+	// Since we don't want the equal sign as it provides no value, we remove it.
+	u.RawQuery = strings.TrimSuffix(q.Encode(), "=")
 	return u.String(), nil
 }
 
