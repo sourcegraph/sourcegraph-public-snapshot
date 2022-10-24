@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -81,6 +81,10 @@ export interface DefinitionResponse {
 export const fetchDefinitionsFromRanges = memoizeObservable(
     (options: FetchDefinitionsFromRangesOptions): Observable<DefinitionResponse[] | null> => {
         const { repoName, revision, filePath, ranges } = options
+
+        if (ranges.length < 1) {
+            return of(null)
+        }
 
         const result = requestGraphQL<FetchDefinitionsResult, FetchDefinitionsVariables>(
             `
