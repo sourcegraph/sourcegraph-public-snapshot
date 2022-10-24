@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"cuelang.org/go/cue/errors"
+	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/urfave/cli/v2"
 )
 
 //go:embed config.example.cue
