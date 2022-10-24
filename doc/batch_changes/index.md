@@ -92,7 +92,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Using file mounts with server-side execution](how-tos/server_side_file_mounts.md)
 - Batch changes in monorepos <span class="badge badge-experimental">Experimental</span>
   - [Creating changesets per project in monorepos](how-tos/creating_changesets_per_project_in_monorepos.md)
-  - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
+  - <span class="badge badge-beta">Beta</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
 
 ## Tutorials
 
