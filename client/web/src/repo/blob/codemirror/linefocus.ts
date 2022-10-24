@@ -1,92 +1,10 @@
-import { Extension, RangeSetBuilder } from '@codemirror/state'
+import { Extension, Line, RangeSetBuilder } from '@codemirror/state'
 import { EditorView, Decoration, PluginValue, ViewUpdate, ViewPlugin } from '@codemirror/view'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { SelectedLineRange, selectedLines, setSelectedLines } from './linenumbers'
-
-class LineFocus implements PluginValue {
-    private lastSelectedLine: number | null = null
-    private lastFocusedLine: number
-    private subscription: Subscription
-
-    constructor(private view: EditorView, initialLine: number, onSelection: (range: SelectedLineRange) => void) {
-        this.lastFocusedLine = initialLine
-
-        // Listen to 'ArrowUp/Down' key events to focus the next/previous line.
-        this.subscription = fromEvent<KeyboardEvent>(view.dom, 'keydown')
-            .pipe(filter(event => event.key === 'ArrowUp' || event.key === 'ArrowDown'))
-            .subscribe(event => {
-                event.preventDefault()
-
-                const nextLine =
-                    event.key === 'ArrowUp'
-                        ? Math.max(1, this.lastFocusedLine - 1)
-                        : Math.min(this.lastFocusedLine + 1, view.state.doc.lines)
-
-                this.focusLine(nextLine)
-            })
-
-        // Listen to focus events within CodeMirror to keep the focused line in sync.
-        this.subscription.add(
-            fromEvent<FocusEvent>(view.dom, 'focusin').subscribe(event => {
-                const currentFocus = event.target as HTMLElement | null
-
-                if (currentFocus) {
-                    const nearestLine = view.state.doc.lineAt(view.posAtDOM(currentFocus))
-                    this.lastFocusedLine = nearestLine.number
-                }
-            })
-        )
-
-        // Listen to 'Enter' key events to allow the user to update the selected line.
-        this.subscription.add(
-            fromEvent<KeyboardEvent>(view.dom, 'keydown')
-                .pipe(filter(event => event.key === 'Enter'))
-                .subscribe(event => {
-                    const isLink = event.target instanceof HTMLAnchorElement
-                    if (!isLink && this.lastFocusedLine) {
-                        view.dispatch({
-                            effects: setSelectedLines.of({ line: this.lastFocusedLine }),
-                        })
-                        onSelection({ line: this.lastFocusedLine })
-                    }
-                })
-        )
-    }
-
-    public update(update: ViewUpdate): void {
-        const currentSelectedLine = update.state.field(selectedLines)?.line
-
-        // If the selected line has changed, focus the new line.
-        if (currentSelectedLine && this.lastSelectedLine !== currentSelectedLine) {
-            this.lastSelectedLine = currentSelectedLine
-            return this.focusLine(currentSelectedLine)
-        }
-
-        // Otherwise, we need to ensure the last focused line remains in focus.
-        // We need to do this on every update, as any update could potentially cause us to lose focus.
-        // Note: We need to avoid triggering on `focusChanged` so we don't end up with a focus trap.
-        if (this.lastFocusedLine && !update.focusChanged) {
-            return this.focusLine(this.lastFocusedLine)
-        }
-    }
-
-    public destroy(): void {
-        this.subscription.unsubscribe()
-    }
-
-    private focusLine(lineNumber: number): void {
-        const nextLine = this.view.state.doc.line(lineNumber)
-        const nextLineElement = this.view.domAtPos(nextLine.from).node as HTMLElement | null
-        if (nextLineElement) {
-            this.lastFocusedLine = lineNumber
-            window.requestAnimationFrame(() => {
-                nextLineElement.focus()
-            })
-        }
-    }
-}
 
 interface FocusableLinesConfig {
     initialLine?: number
@@ -95,7 +13,11 @@ interface FocusableLinesConfig {
 
 const focusableLineDecoration = Decoration.line({ attributes: { tabIndex: '-1' } })
 
-export function focusableLines({ initialLine = 1, onSelection }: FocusableLinesConfig): Extension {
+export const [focusedLine, updateFocusedLine] = createUpdateableField<number | null>(null)
+
+export function focusableLines({ initialLine, onSelection }: FocusableLinesConfig): Extension {
+    let focusedLineNumber: number = initialLine ?? 1
+
     return [
         EditorView.decorations.compute([], state => {
             const to = state.doc.lines
@@ -108,6 +30,46 @@ export function focusableLines({ initialLine = 1, onSelection }: FocusableLinesC
 
             return builder.finish()
         }),
-        ViewPlugin.define(view => new LineFocus(view, initialLine, onSelection)),
+        // focusedLine.init(() => initialLine ?? null),
+        EditorView.domEventHandlers({
+            keydown(event: KeyboardEvent, view: EditorView) {
+                if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    event.preventDefault()
+
+                    const prevLine = focusedLineNumber
+                    const nextLineNumber =
+                        event.key === 'ArrowUp'
+                            ? Math.max(1, prevLine - 1)
+                            : Math.min(prevLine + 1, view.state.doc.lines)
+
+                    const nextLine = view.state.doc.line(nextLineNumber)
+                    const nextLineElement = view.domAtPos(nextLine.from).node as HTMLElement | null
+
+                    focusedLineNumber = nextLineNumber
+                    view.requestMeasure({
+                        read(view) {
+                            return view.domAtPos(nextLine.from).node as HTMLElement | null
+                        },
+                        write(measure) {
+                            if (measure) {
+                                measure.focus()
+                            }
+                        },
+                    })
+                }
+
+                if (event.key === 'Enter') {
+                    const isLink = event.target instanceof HTMLAnchorElement
+                    const currentLine = view.state.field(focusedLine)
+                    if (!isLink && currentLine) {
+                        view.dispatch({
+                            effects: setSelectedLines.of({ line: currentLine }),
+                        })
+                        onSelection({ line: currentLine })
+                    }
+                }
+            },
+        }),
+        // ViewPlugin.define(view => new LineFocusManager(view)),
     ]
 }

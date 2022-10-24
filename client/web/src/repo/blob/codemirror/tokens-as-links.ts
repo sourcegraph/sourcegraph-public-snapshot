@@ -4,6 +4,7 @@ import { History } from 'history'
 
 import { logger } from '@sourcegraph/common'
 import { UIRange } from '@sourcegraph/shared/src/util/url'
+import { updateFocusedLine } from './linefocus'
 
 interface TokenLink {
     range: UIRange
