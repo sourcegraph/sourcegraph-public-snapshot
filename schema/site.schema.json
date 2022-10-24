@@ -1230,11 +1230,6 @@
             }
           }
         },
-        "gitserver.accessLogs": {
-          "description": "DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.",
-          "type": "boolean",
-          "default": false
-        },
         "auditLog": {
           "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
           "type": "object",
