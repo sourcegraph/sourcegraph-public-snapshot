@@ -240,6 +240,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
+	opts.ID = &definition.InsightSeriesID
 
 	// Default to last 12 points of data
 	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
@@ -314,17 +315,17 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	end = time.Now()
 	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
 
-	recordingsData, err := r.timeSeriesStore.GetInsightSeriesRecordingTimes(ctx, definition.InsightSeriesID, opts.From, opts.To)
-	if err != nil {
-		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
-	}
-	var augmentedPoints []store.SeriesPoint
-	if len(recordingsData.RecordingTimes) > 0 {
-		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
-	}
-	if len(augmentedPoints) > 0 {
-		points = augmentedPoints
-	}
+	//recordingsData, err := r.timeSeriesStore.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	//}
+	//var augmentedPoints []store.SeriesPoint
+	//if len(recordingsData.RecordingTimes) > 0 {
+	//	augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
+	//}
+	//if len(augmentedPoints) > 0 {
+	//	points = augmentedPoints
+	//}
 
 	return points, err
 }
@@ -469,44 +470,4 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
-}
-
-func augmentPointsForRecordingTimes(points []store.SeriesPoint, recordingTimes []types.RecordingTime) []store.SeriesPoint {
-	pointsMap := make(map[string]*store.SeriesPoint)
-	captureValues := make(map[string]struct{})
-	var seriesID string
-	for _, point := range points {
-		point := point
-		seriesID = point.SeriesID // this works for now as this is per-series.
-		capture := ""
-		if point.Capture != nil {
-			capture = *point.Capture
-		}
-		captureValues[capture] = struct{}{}
-		pointTime := point.Time
-		pointsMap[pointTime.String()+capture] = &point
-	}
-	// We have to pivot on potential capture values as well.
-	augmentedPoints := []store.SeriesPoint{}
-	for _, recordingTime := range recordingTimes {
-		timestamp := recordingTime.Timestamp
-		for captureValue := range captureValues {
-			captureValue := captureValue
-			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
-				augmentedPoints = append(augmentedPoints, *point)
-			} else {
-				var capture *string
-				if captureValue != "" {
-					capture = &captureValue
-				}
-				augmentedPoints = append(augmentedPoints, store.SeriesPoint{
-					SeriesID: seriesID,
-					Time:     timestamp,
-					Value:    0,
-					Capture:  capture,
-				})
-			}
-		}
-	}
-	return augmentedPoints
 }

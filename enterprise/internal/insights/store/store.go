@@ -98,6 +98,8 @@ func (s *SeriesPoint) String() string {
 type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
+	// ID is the unique integer series ID to query, if non-nil.
+	ID *int
 
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
@@ -152,6 +154,25 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		points = append(points, point)
 		return nil
 	})
+
+	if opts.ID == nil {
+		return points, err
+	}
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []SeriesPoint
+	if len(recordingsData.RecordingTimes) > 1 {
+		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
+	}
+	fmt.Println("recordingsData", recordingsData)
+	fmt.Println("augmentedPoints", augmentedPoints)
+	fmt.Println("points", points)
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
 	return points, err
 }
 
@@ -239,6 +260,22 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 			})
 		}
 	}
+
+	if opts.ID == nil {
+		return points, err
+	}
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []SeriesPoint
+	if len(recordingsData.RecordingTimes) > 1 {
+		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
+	}
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
 	return points, err
 }
 
@@ -534,6 +571,8 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			repoNameID = &repoNameIDValue
 		}
 
+		fmt.Println("point.Time", pt.Point.Time, "point.Time.UTC", pt.Point.Time.UTC())
+
 		if err := inserter.Insert(
 			ctx,
 			pt.SeriesID,         // series_id
@@ -560,12 +599,12 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	if len(seriesRecordingTimes) == 0 {
 		return nil
 	}
-
 	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
 
 	for _, series := range seriesRecordingTimes {
 		id := series.InsightSeriesID
 		for _, record := range series.RecordingTimes {
+			fmt.Println("record.Timestamp", record.Timestamp, "record.Timestamp.UTC", record.Timestamp.UTC())
 			if err := inserter.Insert(
 				ctx,
 				id,                     // insight_series_id
@@ -684,4 +723,44 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 		}
 	}
 	return rows.Err()
+}
+
+func augmentPointsForRecordingTimes(points []SeriesPoint, recordingTimes []types.RecordingTime) []SeriesPoint {
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
+	var seriesID string
+	for _, point := range points {
+		point := point
+		seriesID = point.SeriesID // this works for now as this is per-series.
+		capture := ""
+		if point.Capture != nil {
+			capture = *point.Capture
+		}
+		captureValues[capture] = struct{}{}
+		pointTime := point.Time
+		pointsMap[pointTime.String()+capture] = &point
+	}
+	// We have to pivot on potential capture values as well.
+	augmentedPoints := []SeriesPoint{}
+	for _, recordingTime := range recordingTimes {
+		timestamp := recordingTime.Timestamp
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if captureValue != "" {
+					capture = &captureValue
+				}
+				augmentedPoints = append(augmentedPoints, SeriesPoint{
+					SeriesID: seriesID,
+					Time:     timestamp,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+	return augmentedPoints
 }
