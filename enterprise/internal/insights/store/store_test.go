@@ -832,38 +832,45 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 	}
 
 	testCases := []struct {
-		points         []SeriesPoint
+		points         map[string]*SeriesPoint
 		recordingTimes []time.Time
+		captureValues  map[string]struct{}
 		want           autogold.Value
 	}{
 		{
 			nil,
 			nil,
+			nil,
 			autogold.Want("empty returns empty", []string{}),
 		},
 		{
-			[]SeriesPoint{{"seriesID", testTime, 12, nil}},
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 12, nil},
+			},
 			[]time.Time{},
+			map[string]struct{}{"": {}},
 			autogold.Want("empty recording times returns empty", []string{}),
 		},
 		{
-			[]SeriesPoint{
-				{"1", testTime, 1, nil},
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 1, nil},
 			},
 			generateTimes(2),
+			map[string]struct{}{"": {}},
 			autogold.Want("augment one data point", []string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
 			}),
 		},
 		{
-			[]SeriesPoint{
-				{"1", testTime, 1, capture("one")},
-				{"1", testTime, 2, capture("two")},
-				{"1", testTime, 3, capture("three")},
-				{"1", testTime.AddDate(0, 0, 1), 1, capture("one")},
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTCone":   {"1", testTime, 1, capture("one")},
+				"2020-01-01 00:00:00 +0000 UTCtwo":   {"1", testTime, 2, capture("two")},
+				"2020-01-01 00:00:00 +0000 UTCthree": {"1", testTime, 3, capture("three")},
+				"2020-01-02 00:00:00 +0000 UTCone":   {"1", testTime.AddDate(0, 0, 1), 1, capture("one")},
 			},
 			generateTimes(2),
+			map[string]struct{}{"one": {}, "two": {}, "three": {}},
 			autogold.Want("augment capture data points", []string{
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
@@ -874,11 +881,12 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 			}),
 		},
 		{
-			[]SeriesPoint{
-				{"1", testTime, 11, nil},
-				{"1", testTime.AddDate(0, 0, 1), 22, nil},
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"1", testTime, 11, nil},
+				"2020-01-02 00:00:00 +0000 UTC": {"1", testTime.AddDate(0, 0, 1), 22, nil},
 			},
 			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
+			map[string]struct{}{"": {}},
 			autogold.Want("augment data point in the past", []string{
 				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
 				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
@@ -888,7 +896,7 @@ func Test_augmentPointsForRecordingTimes(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := augmentPointsForRecordingTimes(tc.points, makeRecordingTimes(tc.recordingTimes))
+			got := augmentPointsForRecordingTimes("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
 			tc.want.Equal(t, stringify(got))
 		})
 	}

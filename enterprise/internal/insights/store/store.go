@@ -140,6 +140,8 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	opts.Excluded = append(opts.Excluded, denylist...)
 
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
 	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
@@ -152,21 +154,19 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			return err
 		}
 		points = append(points, point)
+		capture := ""
+		if point.Capture != nil {
+			capture = *point.Capture
+		}
+		captureValues[capture] = struct{}{}
+		pointsMap[point.Time.String()+capture] = &point
 		return nil
 	})
 
-	if opts.ID == nil {
-		return points, err
-	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
 	}
-	var augmentedPoints []SeriesPoint
-	if len(recordingsData.RecordingTimes) > 1 {
-		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
-	}
-	fmt.Println("recordingsData", recordingsData)
 	fmt.Println("augmentedPoints", augmentedPoints)
 	fmt.Println("points", points)
 	if len(augmentedPoints) > 0 {
@@ -250,28 +250,33 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		return nil
 	})
 
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
+
 	for _, pointTime := range mapping {
 		for _, point := range pointTime {
-			points = append(points, SeriesPoint{
+			pt := SeriesPoint{
 				SeriesID: *opts.SeriesID,
 				Time:     point.Time,
 				Value:    point.Value,
 				Capture:  point.Capture,
-			})
+			}
+			points = append(points, pt)
+			capture := ""
+			if point.Capture != nil {
+				capture = *point.Capture
+			}
+			captureValues[capture] = struct{}{}
+			pointsMap[point.Time.String()+capture] = &pt
 		}
 	}
 
-	if opts.ID == nil {
-		return points, err
-	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
 	}
-	var augmentedPoints []SeriesPoint
-	if len(recordingsData.RecordingTimes) > 1 {
-		augmentedPoints = augmentPointsForRecordingTimes(points, recordingsData.RecordingTimes)
-	}
+	fmt.Println("augmentedPoints", augmentedPoints)
+	fmt.Println("points", points)
 	if len(augmentedPoints) > 0 {
 		points = augmentedPoints
 	}
@@ -680,6 +685,53 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 	return nil
 }
 
+func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
+	if opts.ID == nil || opts.SeriesID == nil {
+		return []SeriesPoint{}, nil
+	}
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []SeriesPoint
+	if len(recordingsData.RecordingTimes) > 0 {
+		augmentedPoints = augmentPointsForRecordingTimes(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
+	}
+	// Safeguard against augmentation skimming down series points e.g. we have an insight that has been stamped for
+	// recording and timestamp twice. We augment the data but now it's at 2 data points instead of 12.
+	// todo(leo): we might want the alternative of just creating a union of (recordingTimes, seriesPoints.RecordTime)
+	if len(augmentedPoints) > len(pointsMap)*len(captureValues) {
+		return []SeriesPoint{}, nil
+	}
+	return augmentedPoints, nil
+}
+
+func augmentPointsForRecordingTimes(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
+	augmentedPoints := []SeriesPoint{}
+	for _, recordingTime := range recordingTimes {
+		timestamp := recordingTime.Timestamp
+		// We have to pivot on potential capture values as well.
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if captureValue != "" {
+					capture = &captureValue
+				}
+				augmentedPoints = append(augmentedPoints, SeriesPoint{
+					SeriesID: seriesID,
+					Time:     timestamp,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+	return augmentedPoints
+}
+
 const upsertRepoNameFmtStr = `
 WITH e AS(
 	INSERT INTO repo_names(name)
@@ -723,44 +775,4 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 		}
 	}
 	return rows.Err()
-}
-
-func augmentPointsForRecordingTimes(points []SeriesPoint, recordingTimes []types.RecordingTime) []SeriesPoint {
-	pointsMap := make(map[string]*SeriesPoint)
-	captureValues := make(map[string]struct{})
-	var seriesID string
-	for _, point := range points {
-		point := point
-		seriesID = point.SeriesID // this works for now as this is per-series.
-		capture := ""
-		if point.Capture != nil {
-			capture = *point.Capture
-		}
-		captureValues[capture] = struct{}{}
-		pointTime := point.Time
-		pointsMap[pointTime.String()+capture] = &point
-	}
-	// We have to pivot on potential capture values as well.
-	augmentedPoints := []SeriesPoint{}
-	for _, recordingTime := range recordingTimes {
-		timestamp := recordingTime.Timestamp
-		for captureValue := range captureValues {
-			captureValue := captureValue
-			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
-				augmentedPoints = append(augmentedPoints, *point)
-			} else {
-				var capture *string
-				if captureValue != "" {
-					capture = &captureValue
-				}
-				augmentedPoints = append(augmentedPoints, SeriesPoint{
-					SeriesID: seriesID,
-					Time:     timestamp,
-					Value:    0,
-					Capture:  capture,
-				})
-			}
-		}
-	}
-	return augmentedPoints
 }
