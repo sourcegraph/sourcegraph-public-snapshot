@@ -151,7 +151,7 @@ func gitPushWithRetry(ctx context.Context, dir string, retry int) error {
 	for i := 0; i < retry; i++ {
 		err = run.Bash(ctx, "git push destination").Dir(dir).Run().Wait()
 		if err != nil {
-			if strings.Contains("timed out", err.Error()) {
+			if strings.Contains(err.Error(), "timed out") {
 				continue
 			}
 			return err
