@@ -48,14 +48,36 @@ function sortHunkMatches(hunk: Hunk): void {
     })
 }
 
-// function sortHunks(hunks: Hunk[]): Hunk[] {
-//     hunks.sort((a, b) => {
-//        if (a.startLine < b.startLine) {
-//            return -1
-//        }
-//        if (a.startLine === b.)
-//     })
-// }
+function mergeHunks(hunks: Hunk[], context: number) : void {
+    const hunksSortedByLineNumber = hunks.slice().sort((a, b) => {
+        if (a.startLine < b.startLine) {
+            return -1
+        }
+        if (a.startLine === b.startLine) {
+            return 0
+        }
+        return 1
+    })
+
+    for (let index = 0; index < hunksSortedByLineNumber.length - 1; index++) {
+        const current = hunksSortedByLineNumber[index]
+        const next = hunksSortedByLineNumber[index + 1]
+
+        if (next.startLine - current.startLine <= context) {
+            const originalHunkIndex = hunks.indexOf(current)
+            const nextHunkIndex = hunks.indexOf(next)
+
+            if (originalHunkIndex > -1 && nextHunkIndex > -1) {
+                const originalHunk = hunks[originalHunkIndex]
+                for (const match of next.matches) {
+                    addHunkItem(originalHunk, match)
+                }
+                hunks.splice(nextHunkIndex, 1)
+                index++
+            }
+        }
+    }
+}
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
     // Return true if item and group have overlapping or adjacent context
@@ -66,49 +88,23 @@ function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): bool
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
     let hunks: Hunk[] = []
     for (const match of matches) {
-        console.log('match', match)
         let isMergedWithExistingGroup = false
         for (const existingGroup of hunks) {
-            console.log('existingGroup', existingGroup)
             if (isMatchWithinGroup(existingGroup, match, context)) {
-                console.log('true')
                 addHunkItem(existingGroup, match)
                 isMergedWithExistingGroup = true
                 break
             }
-            console.log('false')
         }
         if (!isMergedWithExistingGroup) {
             const hunk = newHunk()
             addHunkItem(hunk, match)
-            console.log('newGroup', hunk)
             hunks.push(hunk)
         }
     }
 
-    // merge hunks with overlapping or adjacent line ranges
-    let hunksSortedByLineNumber = hunks.slice()
-    hunksSortedByLineNumber.sort((a, b) => {
-        if (a.startLine < b.startLine) {
-            return -1
-        }
-        if (a.startLine === b.startLine) {
-            return 0
-        }
-        return 1
-    })
-    for (let index = 0; index < hunksSortedByLineNumber.length - 1; index++) {
-        let current = hunksSortedByLineNumber[index]
-        let next = hunksSortedByLineNumber[index + 1]
-
-        if (next.startLine - current.startLine <= context) {
-
-        }
-    }
-    for (const hunk of hunks) {
-        sortHunkMatches(hunk)
-    }
-
+    // Merge hunks with overlapping or adjacent line ranges
+    mergeHunks(hunks, context)
 
     const groups: MatchGroup[] = []
     const visibleMatches: MatchItem[] = []
