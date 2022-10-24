@@ -162,6 +162,9 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		pointsMap[point.Time.String()+capture] = &point
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
 	if err != nil {
@@ -171,7 +174,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 		points = augmentedPoints
 	}
 
-	return points, err
+	return points, nil
 }
 
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
