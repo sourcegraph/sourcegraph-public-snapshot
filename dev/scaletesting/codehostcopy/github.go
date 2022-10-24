@@ -5,8 +5,9 @@ import (
 	"net/url"
 
 	"github.com/google/go-github/github"
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 )
 
 type GithubCodeHost struct {
