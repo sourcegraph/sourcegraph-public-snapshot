@@ -14,7 +14,13 @@ type GitLabCodeHost struct {
 }
 
 func NewGitLabCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
-	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(def.URL))
+	baseURL, err := url.Parse(def.URL)
+	if err != nil {
+		return nil, err
+	}
+	baseURL.Path = "/api/v4"
+
+	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(baseURL.String()))
 	if err != nil {
 		return nil, err
 	}
