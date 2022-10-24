@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-// ExecutorSecret represents a row in the `executor_secret_access_logs` table.
+// ExecutorSecretAccessLog represents a row in the `executor_secret_access_logs` table.
 type ExecutorSecretAccessLog struct {
 	ID               int64
 	ExecutorSecretID int64
