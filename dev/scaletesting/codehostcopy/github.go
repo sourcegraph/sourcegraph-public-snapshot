@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/google/go-github/github"
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"golang.org/x/oauth2"
 )
 
@@ -34,7 +35,7 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 	}, nil
 }
 
-func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	opts := github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{},
 	}
@@ -52,7 +53,7 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 		opts.ListOptions.Page = resp.NextPage
 	}
 
-	res := make([]*Repo, 0, len(repos))
+	res := make([]*store.Repo, 0, len(repos))
 	for _, repo := range repos {
 		u, err := url.Parse(repo.GetGitURL())
 		if err != nil {
@@ -60,9 +61,9 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 		}
 		u.User = url.UserPassword(g.def.Username, g.def.Password)
 		u.Scheme = "https"
-		res = append(res, &Repo{
-			Name:       repo.GetName(),
-			FromGitURL: u.String(),
+		res = append(res, &store.Repo{
+			Name:   repo.GetName(),
+			GitURL: u.String(),
 		})
 	}
 
