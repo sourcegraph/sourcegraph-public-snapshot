@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 
@@ -94,7 +95,7 @@ func TestWebhookCreate(t *testing.T) {
 		// secret in the DB should be null
 		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
 		var rawSecret string
-		err = row.Scan(&rawSecret)
+		err = row.Scan(&dbutil.NullString{S: &rawSecret})
 		assert.NoError(t, err)
 		assert.Zero(t, rawSecret)
 	})
@@ -143,21 +144,39 @@ func TestWebhookDelete(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(nil)
 
-	// Test that delete with wrong ID returns an error
+	// Test that delete with wrong UUID returns an error
 	nonExistentUUID := uuid.New()
-	err := store.Delete(ctx, nonExistentUUID)
+	err := store.Delete(ctx, DeleteWebhookOpts{UUID: nonExistentUUID})
 	if !errors.HasType(err, &WebhookNotFoundError{}) {
 		t.Fatalf("want WebhookNotFoundError, got: %s", err)
 	}
 	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID %s not found", nonExistentUUID))
 
-	// Test that delete with right ID deletes the webhook
-	createdWebhook, err := store.Create(ctx, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
-	assert.NoError(t, err)
-	err = store.Delete(ctx, createdWebhook.UUID)
+	// Test that delete with wrong ID returns an error
+	nonExistentID := int32(123)
+	err = store.Delete(ctx, DeleteWebhookOpts{ID: nonExistentID})
+	if !errors.HasType(err, &WebhookNotFoundError{}) {
+		t.Fatalf("want WebhookNotFoundError, got: %s", err)
+	}
+	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with ID %d not found", nonExistentID))
+
+	// Test that delete with empty options returns an error
+	err = store.Delete(ctx, DeleteWebhookOpts{})
+	assert.EqualError(t, err, "not enough conditions to build query to delete webhook")
+
+	// Creating something to be deleted
+	createdWebhook1 := createWebhook(ctx, t, store)
+	createdWebhook2 := createWebhook(ctx, t, store)
+
+	// Test that delete with right UUID deletes the webhook
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: createdWebhook1.UUID})
 	assert.NoError(t, err)
 
-	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE uuid=$1)", createdWebhook.UUID))
+	// Test that delete with both ID and UUID deletes the webhook by ID
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: uuid.New(), ID: createdWebhook2.ID})
+	assert.NoError(t, err)
+
+	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE id IN ($1, $2))", createdWebhook1.ID, createdWebhook2.ID))
 	assert.NoError(t, err)
 	assert.False(t, exists)
 }
@@ -227,9 +246,16 @@ func TestWebhookUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error updating webhook: %s", err)
 		}
-		decryptedSecret, err := updated.Secret.Decrypt(ctx)
+		assert.Nil(t, updated.Secret)
+
+		// Also assert that the values in the DB are nil
+		row := db.QueryRowContext(ctx, "SELECT secret, encryption_key_id FROM webhooks where id = $1", updated.ID)
+		var rawSecret string
+		var rawEncryptionKey string
+		err = row.Scan(&dbutil.NullString{S: &rawSecret}, &dbutil.NullString{S: &rawEncryptionKey})
 		assert.NoError(t, err)
-		assert.Zero(t, decryptedSecret)
+		assert.Empty(t, rawSecret)
+		assert.Empty(t, rawEncryptionKey)
 	})
 
 	t.Run("updating webhook that doesn't exist", func(t *testing.T) {

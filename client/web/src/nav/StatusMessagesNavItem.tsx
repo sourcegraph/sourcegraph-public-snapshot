@@ -154,8 +154,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
     const { data, error } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
-        pollInterval:
-            props.disablePolling !== undefined && !props.disablePolling ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
+        pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })
 
     const icon: JSX.Element | null = useMemo(() => {

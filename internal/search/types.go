@@ -331,11 +331,6 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// CodeOwnershipFilters when true will add the code ownership post-search
-	// filter and allow users to search by code owners using the has.owner
-	// predicate.
-	CodeOwnershipFilters bool `json:"code-ownership"`
-
 	// When true lucky search runs by default. Adding for A/B testing in
 	// 08/2022. To be removed at latest by 12/2022.
 	AbLuckySearch bool `json:"ab-lucky-search"`

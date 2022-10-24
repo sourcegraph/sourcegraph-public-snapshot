@@ -9,6 +9,7 @@ import (
 )
 
 type Extensions struct {
+	Ctx       context.Context
 	DateRange string
 	Grouping  string
 	DB        database.DB
@@ -17,6 +18,9 @@ type Extensions struct {
 
 func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(
+		e.Ctx,
+		e.DB,
+		e.Cache,
 		e.DateRange,
 		e.Grouping,
 		[]string{"IDESearchSubmitted", "VSCESearchSubmitted"},
@@ -38,6 +42,9 @@ func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {
 
 func (e *Extensions) Vscode() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(
+		e.Ctx,
+		e.DB,
+		e.Cache,
 		e.DateRange,
 		e.Grouping,
 		[]string{"IDESearchSubmitted", "VSCESearchSubmitted"},
@@ -60,6 +67,9 @@ func (e *Extensions) Vscode() (*AnalyticsFetcher, error) {
 
 func (e *Extensions) Browser() (*AnalyticsFetcher, error) {
 	nodesQuery, summaryQuery, err := makeEventLogsQueries(
+		e.Ctx,
+		e.DB,
+		e.Cache,
 		e.DateRange,
 		e.Grouping,
 		[]string{"goToDefinition.preloaded", "goToDefinition", "findReferences"},

@@ -3,10 +3,13 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestRustGenerator(t *testing.T) {
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("rust")
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "rust-analyzer",
@@ -19,7 +22,7 @@ func TestRustGenerator(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/lsif-rust",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"lsif-rust", "index"},
 					Outfile:     "dump.lsif",
 				},

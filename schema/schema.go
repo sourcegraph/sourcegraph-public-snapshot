@@ -68,12 +68,14 @@ type ApiRatelimit struct {
 
 // AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 type AuditLog struct {
-	// BackgroundJobs description: Capture security events performed by the background jobs (adds significant noise).
-	BackgroundJobs bool `json:"backgroundJobs"`
 	// GitserverAccess description: Capture gitserver access logs as part of the audit log.
 	GitserverAccess bool `json:"gitserverAccess"`
 	// GraphQL description: Capture GraphQL requests and responses as part of the audit log.
 	GraphQL bool `json:"graphQL"`
+	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
+	InternalTraffic bool `json:"internalTraffic"`
+	// SeverityLevel description: Severity logging level for the audit log.
+	SeverityLevel string `json:"severityLevel,omitempty"`
 }
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
@@ -1746,6 +1748,8 @@ type Settings struct {
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
+	// CodeIntelBlobKeyboardNavigation description: Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available
+	CodeIntelBlobKeyboardNavigation string `json:"codeIntel.blobKeyboardNavigation,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
 	// CodeIntelDisableSearchBased description: Never fall back to search-based code intelligence.
@@ -2044,6 +2048,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies *bool `json:"codeIntelAutoIndexing.allowGlobalPolicies,omitempty"`
 	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto-indexing feature. Currently experimental.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
+	// CodeIntelAutoIndexingIndexerMap description: Overrides the default Docker images used by auto-indexing.
+	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
 	// CodeIntelLockfileIndexingEnabled description: DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.
@@ -2080,6 +2086,10 @@ type SiteConfiguration struct {
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
+	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
+	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
+	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsSrcCLIImageTag string `json:"executors.srcCLIImageTag,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`

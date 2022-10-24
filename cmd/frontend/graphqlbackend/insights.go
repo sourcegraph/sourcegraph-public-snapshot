@@ -16,7 +16,6 @@ import (
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
 	// Queries
-	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 

@@ -267,12 +267,12 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	defer dockerScriptFile1.Close()
 	dockerScriptFile1Content, err := io.ReadAll(dockerScriptFile1)
 	require.NoError(t, err)
-	assert.Equal(t, "\nset -x\n\n\ngo\nmod\ninstall\n", string(dockerScriptFile1Content))
+	assert.Equal(t, workspace.ScriptPreamble+"\n\ngo\nmod\ninstall\n", string(dockerScriptFile1Content))
 
 	dockerScriptFile2, err := os.Open(filepath.Join(testDir, ".sourcegraph-executor", "42.1_linux@deadbeef.sh"))
 	require.NoError(t, err)
 	defer dockerScriptFile2.Close()
 	dockerScriptFile2Content, err := io.ReadAll(dockerScriptFile2)
 	require.NoError(t, err)
-	assert.Equal(t, "\nset -x\n\n\nyarn\ninstall\n", string(dockerScriptFile2Content))
+	assert.Equal(t, workspace.ScriptPreamble+"\n\nyarn\ninstall\n", string(dockerScriptFile2Content))
 }

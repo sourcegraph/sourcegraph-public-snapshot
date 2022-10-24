@@ -215,10 +215,13 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
         )
     )
 
-    const settingsOrError = useObservable(useMemo(() => from(props.platformContext.settings), [props.platformContext.settings]))
+    const settingsOrError = useObservable(
+        useMemo(() => from(props.platformContext.settings), [props.platformContext.settings])
+    )
     const settings =
         settingsOrError !== undefined && isSettingsValid(settingsOrError) ? settingsOrError.final : undefined
-    const perforceCodeHostUrlToSwarmUrlMap = settings?.['perforce.codeHostToSwarmMap'] as ({[codeHost: string]: string} | undefined) || {}
+    const perforceCodeHostUrlToSwarmUrlMap =
+        (settings?.['perforce.codeHostToSwarmMap'] as { [codeHost: string]: string } | undefined) || {}
 
     if (!isOpen) {
         return <div className={styles.barCollapsed} />

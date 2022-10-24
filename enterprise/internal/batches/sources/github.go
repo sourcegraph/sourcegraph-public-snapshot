@@ -312,12 +312,12 @@ type githubClientFork interface {
 }
 
 func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace *string) (*types.Repo, error) {
-	meta, ok := targetRepo.Metadata.(*github.Repository)
-	if !ok || meta == nil {
+	targetMeta, ok := targetRepo.Metadata.(*github.Repository)
+	if !ok || targetMeta == nil {
 		return nil, errors.New("target repo is not a GitHub repo")
 	}
 
-	owner, name, err := github.SplitRepositoryNameWithOwner(meta.NameWithOwner)
+	owner, name, err := github.SplitRepositoryNameWithOwner(targetMeta.NameWithOwner)
 	if err != nil {
 		return nil, errors.New("parsing repo name")
 	}
@@ -327,10 +327,14 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.NameWithOwner, fork.NameWithOwner)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
 
-	return &remoteRepo, nil
+	return forkRepo, nil
 }
 
 func (GithubSource) IsPushResponseArchived(s string) bool {

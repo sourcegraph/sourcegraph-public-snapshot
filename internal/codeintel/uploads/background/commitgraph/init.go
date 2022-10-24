@@ -4,9 +4,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewUpdater(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewUpdater(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewCommitGraphUpdater(
+		backgroundJobs.NewCommitGraphUpdater(
 			ConfigInst.CommitGraphUpdateTaskInterval,
 			ConfigInst.MaxAgeForNonStaleBranches,
 			ConfigInst.MaxAgeForNonStaleTags,

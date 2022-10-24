@@ -551,8 +551,7 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 			// scheduler
 			opts := database.ListIndexableReposOptions{
-				CloneStatus:    types.CloneStatusNotCloned,
-				IncludePrivate: true,
+				CloneStatus: types.CloneStatusNotCloned,
 			}
 			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
 			if err != nil {

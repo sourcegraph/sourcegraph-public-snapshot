@@ -7,6 +7,7 @@ import {
     RefObject,
     useMemo,
     useRef,
+    useEffect,
     useLayoutEffect,
 } from 'react'
 
@@ -124,6 +125,8 @@ export const ComboboxPopover = forwardRef<HTMLDivElement, ComboboxPopoverProps>(
             position={Position.bottomStart}
             // We don't need to handle any focus management around popover, Combobox reach internal logic will handle it
             focusLocked={false}
+            // Returning target to focus Popover logic breaks combobox box flow with outside clicks
+            returnTargetFocus={false}
             // Turn off reach UI portal position logic PopoverContent does this job
             portal={false}
             // Make sure that the width of the suggestion isn't less than combobox input width
@@ -167,7 +170,7 @@ export const ComboboxOptionGroup = forwardRef((props, ref) => {
 
     return (
         <Component ref={ref} className={classNames(className, styles.group)} {...attributes}>
-            <Heading as={headingElement} className={styles.groupHeading}>
+            <Heading as={headingElement} data-group-heading={true} className={styles.groupHeading}>
                 {heading}
             </Heading>
             {children}
@@ -191,13 +194,19 @@ export const ComboboxOption = forwardRef((props, ref) => {
 
     // Scroll intro view on the first option mount if option
     // is selected
-    useLayoutEffect(() => {
+    useEffect(() => {
         const isSelected = isSelectedRef.current
         const listElement = listRef.current
         const optionElement = mergedRef.current
 
         if (isSelected) {
-            scrollIntoView(listElement, optionElement)
+            // Schedule scroll into view in the next frame in order to wait for possible
+            // on going positioning work in the ComboboxPopover component.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    scrollIntoView({ view: listElement, element: optionElement, center: true })
+                })
+            })
         }
     }, [listRef, mergedRef])
 
@@ -209,7 +218,7 @@ export const ComboboxOption = forwardRef((props, ref) => {
         const optionElement = mergedRef.current
 
         if (isOptionActive) {
-            scrollIntoView(listElement, optionElement)
+            scrollIntoView({ view: listElement, element: optionElement })
         }
     }, [navigationValue, value, listRef, mergedRef])
 
@@ -235,6 +244,13 @@ export const ComboboxOption = forwardRef((props, ref) => {
 
 export { ReachComboboxOptionText as ComboboxOptionText }
 
+interface ScrollOptions {
+    view: HTMLElement | null
+    element: HTMLElement | null
+    offset?: number
+    center?: boolean
+}
+
 /**
  * It scrolls element into view in case if element is placed outside of visible view area.
  *
@@ -252,7 +268,9 @@ export { ReachComboboxOptionText as ComboboxOptionText }
  *    └─────────────────────┘             ┗ ━└━─━─━─━─━─━─━─━─━─━─━┘━ ┛
  *```
  */
-function scrollIntoView(view: HTMLElement | null, element: HTMLElement | null): void {
+function scrollIntoView(options: ScrollOptions): void {
+    const { view, element, offset = 30, center } = options
+
     if (!view || !element) {
         return
     }
@@ -265,8 +283,13 @@ function scrollIntoView(view: HTMLElement | null, element: HTMLElement | null): 
     const scrollEnd = viewBox.height + scrollStart
 
     // Get relative option position relate to list element (combobox scrolling container)
-    const topOptionPosition = elementBox.y - viewBox.y + scrollStart
-    const bottomOptionPosition = topOptionPosition + elementBox.height
+    const topOptionPosition = elementBox.y - viewBox.y + scrollStart - offset
+    const bottomOptionPosition = topOptionPosition + elementBox.height + offset
+
+    if (center) {
+        view.scrollTop = elementBox.y - viewBox.y + scrollStart - viewBox.height / 2
+        return
+    }
 
     if (topOptionPosition < scrollStart) {
         view.scrollTop -= scrollStart - topOptionPosition

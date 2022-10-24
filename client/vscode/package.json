@@ -2,7 +2,7 @@
   "private": true,
   "name": "@sourcegraph/vscode",
   "displayName": "Sourcegraph",
-  "version": "2.2.12",
+  "version": "2.2.13",
   "description": "Sourcegraph for VS Code",
   "publisher": "sourcegraph",
   "sideEffects": true,
@@ -64,6 +64,12 @@
         "icon": "$(trash)"
       }
     ],
+    "authentication": [
+      {
+        "id": "sourcegraphauth",
+        "label": "Sourcegraph Auth"
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -113,10 +119,9 @@
         },
         "sourcegraph.accessToken": {
           "type": [
-            "string"
+            null
           ],
-          "default": "",
-          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
+          "description": "[Depreciated after v2.2.12] The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/<sourcegraph-username>/settings/tokens. Unless you are using a private instance of Sourcegraph, then ${SOURCEGRAPH_URL} is https://sourcegraph.com."
         },
         "sourcegraph.remoteUrlReplacements": {
           "type": [
@@ -222,7 +227,6 @@
     "package": "yarn run -T ts-node ./scripts/package.ts",
     "prebuild": "yarn build-inline-extensions",
     "prewatch": "yarn build-inline-extensions",
-    "vscode:prepublish": "yarn build-inline-extensions && yarn build",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "task:gulp": "yarn run -T cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
@@ -242,5 +246,8 @@
     "release:minor": "VSCE_RELEASE_TYPE=minor yarn run -T ts-node ./scripts/release.ts",
     "release:patch": "VSCE_RELEASE_TYPE=patch yarn run -T ts-node ./scripts/release.ts",
     "release:pre": "VSCE_RELEASE_TYPE=prerelease yarn run -T ts-node ./scripts/release.ts"
+  },
+  "devDependencies": {
+    "vsce": "^2.7.0"
   }
 }

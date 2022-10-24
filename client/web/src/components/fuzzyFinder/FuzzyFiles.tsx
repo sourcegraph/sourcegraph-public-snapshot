@@ -95,12 +95,70 @@ export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): 
     )
 }
 
+export class FuzzyRepoFiles {
+    private fsm: FuzzyFSM = { key: 'empty' }
+    constructor(
+        private readonly client: ApolloClient<object> | undefined,
+        private readonly createURL: createUrlFunction,
+        private readonly onNamesChanged: () => void,
+        private readonly repoRevision: FuzzyRepoRevision
+    ) {}
+    public fuzzyFSM(): FuzzyFSM {
+        return this.fsm
+    }
+    public handleQuery(): void {
+        if (this.fsm.key === 'empty') {
+            this.download().then(
+                () => {},
+                () => {}
+            )
+        }
+    }
+    private async download(): Promise<PersistableQueryResult[]> {
+        const client = this.client || (await getWebGraphQLClient())
+        this.fsm = { key: 'downloading' }
+        const response = await client.query<FileNamesResult, FileNamesVariables>({
+            query: getDocumentNode(FUZZY_GIT_LSFILES_QUERY),
+            variables: {
+                repository: this.repoRevision.repositoryName,
+                commit: this.repoRevision.revision,
+            },
+        })
+        const filenames = response.data.repository?.commit?.fileNames || []
+        const values = filenames.map(name => ({ text: name }))
+        this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
+        this.loopIndexing()
+        return values
+    }
+    private updateFSM(newFSM: FuzzyFSM): void {
+        this.fsm = newFSM
+        this.onNamesChanged()
+    }
+    private loopIndexing(): void {
+        if (this.fsm.key === 'indexing') {
+            this.fsm.indexing.continueIndexing().then(
+                next => {
+                    if (next.key === 'ready') {
+                        this.updateFSM({ key: 'ready', fuzzy: next.value })
+                    } else {
+                        this.updateFSM({ key: 'indexing', indexing: next })
+                        this.loopIndexing()
+                    }
+                },
+                error => {
+                    this.updateFSM({ key: 'failed', errorMessage: JSON.stringify(error) })
+                }
+            )
+        }
+    }
+}
+
 export class FuzzyFiles extends FuzzyQuery {
+    private readonly isGlobalFiles = true
     constructor(
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
-        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
-        private readonly isGlobalFilesRef: React.MutableRefObject<boolean>
+        private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -115,7 +173,7 @@ export class FuzzyFiles extends FuzzyQuery {
     }
 
     /* override */ protected rawQuery(query: string): string {
-        const repoFilter = this.isGlobalFilesRef.current ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
+        const repoFilter = this.isGlobalFiles ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
         return `${repoFilter}type:path count:100 ${query}`
     }
 

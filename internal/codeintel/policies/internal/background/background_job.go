@@ -9,6 +9,7 @@ import (
 
 type BackgroundJob interface {
 	NewRepositoryMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine
+	SetPolicyService(svc PolicyService)
 }
 
 type backgroundJob struct {

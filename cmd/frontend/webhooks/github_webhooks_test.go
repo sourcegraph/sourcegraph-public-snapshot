@@ -130,7 +130,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	err := esStore.Upsert(ctx, extSvc)
 	if err != nil {
-		t.Fatal(t)
+		t.Fatal(err)
 	}
 
 	hook := GitHubWebhook{

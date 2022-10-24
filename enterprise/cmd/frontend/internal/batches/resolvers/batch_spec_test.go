@@ -487,6 +487,15 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.AllCodeHosts = codeHosts
 	want.OnlyWithoutCredential = codeHosts
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+
+	// PERMISSIONS: Now we view the same batch spec but as another non-admin user, for
+	// example if a user is sharing a preview link with another user. This should still
+	// work.
+	want.ViewerCanAdminister = false
+	want.ViewerCanRetry = false
+	otherUser := bt.CreateTestUser(t, db, false)
+	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
+	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
 func TestBatchSpecResolver_Files(t *testing.T) {

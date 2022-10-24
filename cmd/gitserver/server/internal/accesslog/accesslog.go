@@ -140,5 +140,5 @@ func shouldLog(c schema.SiteConfiguration) bool {
 	if c.Log.GitserverAccessLogs { // legacy setting
 		return true
 	}
-	return c.Log.AuditLog != nil && c.Log.AuditLog.GitserverAccess
+	return audit.IsEnabled(c, audit.GitserverAccess)
 }

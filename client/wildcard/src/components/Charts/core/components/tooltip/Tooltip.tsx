@@ -63,6 +63,7 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
             targetElement={target}
             autoFocus={false}
             focusLocked={false}
+            returnTargetFocus={false}
             targetPadding={TOOLTIP_PADDING}
             position={Position.rightStart}
             className={styles.tooltip}

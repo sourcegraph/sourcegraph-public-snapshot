@@ -25,4 +25,5 @@ WHERE
     u.committed_at IS NOT NULL
 GROUP BY
     u.repository_id,
-    u.commit;
+    u.commit
+ON CONFLICT DO NOTHING;

@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -43,6 +44,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(deps.db, "codeintel")
 
+	backgroundJobs := background.New(deps.db, deps.gsc, scopedContext("background"))
 	svc := newService(
 		store,
 		repoStore,
@@ -51,10 +53,12 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		nil, // written in circular fashion
 		policyMatcher,
 		locker,
+		backgroundJobs,
 		scopedContext("service"),
 	)
-
 	svc.policySvc = policies.GetService(deps.db, svc, deps.gsc)
+	backgroundJobs.SetUploadsService(svc)
+
 	return svc, nil
 })
 

@@ -150,11 +150,15 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - GitserverClient
-        - UploadServiceForExpiration
-        - UploadServiceForCleanup
         - PolicyService
         - PolicyMatcher
-        - AutoIndexingService
+- filename: internal/codeintel/uploads/internal/background/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background
+      interfaces:
+        - UploadService
+        - GitserverClient
+
 # TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
 # This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
 - filename: internal/codeintel/uploads/mocks2_test.go

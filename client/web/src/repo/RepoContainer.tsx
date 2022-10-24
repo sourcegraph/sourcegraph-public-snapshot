@@ -354,9 +354,10 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.['perforce.codeHostToSwarmMap'] || {}
+        (props.settingsCascade.final &&
+            !isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.['perforce.codeHostToSwarmMap']) ||
+        {}
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
