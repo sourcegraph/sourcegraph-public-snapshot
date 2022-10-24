@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/url"
+	"os"
+	"time"
 
 	"cuelang.org/go/cue/errors"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/urfave/cli/v2"
 )
 
 type CodeHostSource interface {
@@ -17,46 +22,78 @@ type CodeHostDestination interface {
 }
 
 type Repo struct {
-	url  string
-	name string
+	FromGitURL string
+	ToGitURL   string
+	Name       string
+	Failed     string
+	Created    bool
+	Pushed     bool
 }
 
-func doBitbucket(ctx context.Context, cfg *Config) {
-	bt := NewBitbucketCodeHost(ctx, &cfg.From)
-	_, err := bt.ListRepos(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	repo, err := bt.CreateRepo(ctx, "willdor::test")
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("%+v", repo.String())
+var app = &cli.App{
+	Usage:       "Copy organizations across code hosts",
+	Description: "https://handbook.sourcegraph.com/departments/engineering/dev/tools/scaletesting/",
+	Compiled:    time.Now(),
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:  "state",
+			Usage: "Path to the file storing state, to resume work from",
+			Value: "codehostcopy.db",
+		},
+		&cli.StringFlag{
+			Name:  "config",
+			Usage: "Path to the config file defining what to copy",
+		},
+	},
+	Action: func(cmd *cli.Context) error {
+		return doRun(cmd.Context, log.Scoped("runner", ""), cmd.String("state"), cmd.String("config"))
+	},
+	Commands: []*cli.Command{
+		{
+			Name:        "new",
+			Description: "Create a new config file to start from",
+			Action: func(ctx *cli.Context) error {
+				return nil
+			},
+		},
+	},
 }
 
-func main() {
-	ctx := context.Background()
-	cfg, err := loadConfig("dev/scaletesting/codehostcopy/config.cue")
+func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
+	cfg, err := loadConfig(config)
 	if err != nil {
 		var cueErr errors.Error
 		if errors.As(err, &cueErr) {
-			log.Print(errors.Details(err, nil))
+			logger.Info(errors.Details(err, nil))
 		}
-		log.Fatal(err)
+		logger.Fatal("failed to load config", log.Error(err))
 	}
 
+	s, err := newState(state)
+	if err != nil {
+		logger.Fatal("failed to init state", log.Error(err))
+	}
 	gh, err := NewGithubCodeHost(ctx, &cfg.From)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("failed to init GitHub code host", log.Error(err))
 	}
 	gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("failed to init GitLab code host", log.Error(err))
 	}
-	//
-	runner := NewRunner(gh, gl)
-	if err := runner.Run(ctx); err != nil {
-		log.Fatal(err)
+
+	runner := NewRunner(logger, s, gh, gl)
+	return runner.Run(ctx, 20)
+}
+
+func main() {
+	cb := log.Init(log.Resource{
+		Name: "codehostcopy",
+	})
+	defer cb.Sync()
+	logger := log.Scoped("main", "")
+
+	if err := app.RunContext(context.Background(), os.Args); err != nil {
+		logger.Fatal("failed to run", log.Error(err))
 	}
 }
