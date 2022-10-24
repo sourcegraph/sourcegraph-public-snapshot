@@ -1215,6 +1215,73 @@
       "Triggers": []
     },
     {
+      "Name": "insight_series_recording_times",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "insight_series_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "recording_time",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "snapshot",
+          "Index": 3,
+          "TypeName": "boolean",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "insight_series_recording_time_insight_series_id_recording_t_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX insight_series_recording_time_insight_series_id_recording_t_key ON insight_series_recording_times USING btree (insight_series_id, recording_time)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (insight_series_id, recording_time)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "insight_series_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "insight_series",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "insight_view",
       "Comment": "Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.",
       "Columns": [

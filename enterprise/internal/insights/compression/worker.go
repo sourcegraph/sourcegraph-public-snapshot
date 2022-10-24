@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -75,9 +76,13 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 		commitStore:       commitStore,
 		maxHistoricalTime: startTime,
 		background:        background,
-		getCommits:        getCommits,
-		operations:        operations,
-		clock:             clock,
+		getCommits: func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+			// As this is an internal background task we should use an internal actor.
+			ctx = actor.WithInternalActor(ctx)
+			return getCommits(ctx, db, name, after, until, operation)
+		},
+		operations: operations,
+		clock:      clock,
 	}
 
 	return &indexer

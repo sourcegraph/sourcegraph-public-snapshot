@@ -85,7 +85,7 @@
 - [Azure](https://docs.sourcegraph.com/admin/deploy/docker-compose/azure)
 - [DigitalOcean](https://docs.sourcegraph.com/admin/deploy/docker-compose/digitalocean)
 - [Docker Compose](https://docs.sourcegraph.com/admin/deploy/docker-compose)
-- [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/docker-compose/google_cloud)
+- [Google Cloud (GCP)](https://docs.sourcegraph.com/admin/deploy/images/gce)
 - [Private Cloud](https://docs.sourcegraph.com/admin/deploy)
 - [Kubernetes (Enterprise-only)](https://docs.sourcegraph.com/admin/deploy/kubernetes)
 

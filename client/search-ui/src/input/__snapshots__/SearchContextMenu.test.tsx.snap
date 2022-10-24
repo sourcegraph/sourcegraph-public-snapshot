@@ -36,6 +36,11 @@ Array [
         name
       </span>
     </small>
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      ,
+    </span>
      
     <small
       class="itemDescription"
@@ -78,6 +83,11 @@ Array [
         name/test-version-1.5
       </span>
     </small>
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      ,
+    </span>
      
     <small
       class="itemDescription"

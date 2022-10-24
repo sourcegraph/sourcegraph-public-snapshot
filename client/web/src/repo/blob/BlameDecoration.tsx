@@ -153,6 +153,7 @@ export const BlameDecoration: React.FunctionComponent<{
                 targetPadding={createRectangle(0, 0, 8, 8)}
                 position={Position.topStart}
                 focusLocked={false}
+                returnTargetFocus={false}
                 onMouseEnter={resetAllTimeouts}
                 onMouseLeave={close}
                 className={styles.popoverContent}

@@ -31,6 +31,7 @@ type Index struct {
 	ExecutionLogs      []workerutil.ExecutionLogEntry `json:"execution_logs"`
 	Rank               *int                           `json:"placeInQueue"`
 	AssociatedUploadID *int                           `json:"associatedUpload"`
+	ShouldReindex      bool                           `json:"shouldReindex"`
 }
 
 func (i Index) RecordID() int {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -160,6 +161,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	var repositories []string
 	uniques := make(map[string]any)
 	stats := make(statistics)
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
 
 	// build a unique set of repositories - this will be useful to construct an inverted index of repo -> series
 	for _, definition := range definitions {
@@ -170,6 +172,14 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 				uniques[repository] = struct{}{}
 			}
 		}
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(definition.SampleIntervalUnit),
+			Value: definition.SampleIntervalValue,
+		}, definition.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			InsightSeriesID: definition.ID,
+			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+		})
 	}
 
 	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
@@ -211,6 +221,11 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 			return err
 		}
 	}
+
+	if err := s.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+	}
+
 	return nil
 }
 
@@ -431,7 +446,7 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 			continue
 		}
 
-		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
+		err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
 			h.logger.Error("unable to backfill scoped series", sglog.String("series_id", series.SeriesID), sglog.Error(err))
 			continue
@@ -446,7 +461,6 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		if err != nil {
 			h.logger.Warn("unable to purge jobs for old seriesID", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 		}
-
 	}
 
 	return
@@ -491,6 +505,22 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		}
 		return nil
 	})
+
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
+	for _, series := range definitions {
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+			Value: series.SampleIntervalValue,
+		}, series.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			InsightSeriesID: series.ID,
+			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+		})
+	}
+	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+	}
+
 	if multi != nil {
 		h.logger.Error("historical_enqueuer.buildFrames - multierror", sglog.Error(multi))
 	}
@@ -698,4 +728,39 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 
 	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job
+}
+
+// cachedGitFirstEverCommit is a simple in-memory cache for gitFirstEverCommit calls. It does so
+// using a map, and entries are never evicted because they are expected to be small and in general
+// unchanging.
+type cachedGitFirstEverCommit struct {
+	impl func(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error)
+
+	mu    sync.Mutex
+	cache map[api.RepoName]*gitdomain.Commit
+}
+
+func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db database.DB, repoName api.RepoName) (*gitdomain.Commit, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.cache == nil {
+		c.cache = map[api.RepoName]*gitdomain.Commit{}
+	}
+	if cached, ok := c.cache[repoName]; ok {
+		return cached, nil
+	}
+	entry, err := c.impl(ctx, db, repoName)
+	if err != nil {
+		return nil, err
+	}
+	c.cache[repoName] = entry
+	return entry, nil
+}
+
+func makeRecordings(times []time.Time, snapshot bool) []itypes.RecordingTime {
+	recordings := make([]itypes.RecordingTime, 0, len(times))
+	for _, t := range times {
+		recordings = append(recordings, itypes.RecordingTime{Snapshot: snapshot, Timestamp: t})
+	}
+	return recordings
 }

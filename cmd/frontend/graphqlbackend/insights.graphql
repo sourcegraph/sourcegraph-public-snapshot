@@ -167,6 +167,11 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+
+    """
+    Indicates if the series is currently loading additional data
+    """
+    isLoadingData: Boolean
 }
 
 extend type Query {

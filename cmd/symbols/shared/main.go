@@ -119,6 +119,7 @@ func Main(setup SetupFunc) {
 
 	// Create HTTP server
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
@@ -145,4 +146,18 @@ func mustInitializeFrontendDB(logger log.Logger, observationContext *observation
 	}
 
 	return db
+}
+
+func handlePanic(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				err := fmt.Sprintf("%v", rec)
+				http.Error(w, fmt.Sprintf("%v", rec), http.StatusInternalServerError)
+				logger.Error("recovered from panic", log.String("err", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }

@@ -88,7 +88,7 @@ export const FUZZY_REPOS_MOCK: MockedResponse<FuzzyFinderRepoResult> = {
         data: {
             search: {
                 results: {
-                    repositories: [{ name: 'github.com/sourcegraph/sourcegraph' }],
+                    repositories: [{ name: 'github.com/sourcegraph/sourcegraph', stars: 1234 }],
                 },
             },
         },
