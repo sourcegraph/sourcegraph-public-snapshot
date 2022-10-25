@@ -35,7 +35,7 @@ export const queryLisfUploadFields = (
         map(({ data }) => data),
         map(({ node }) => {
             if (!node || node.__typename !== 'LSIFUpload') {
-                throw new Error(
+                return new Error(
                     'No such LSIFUpload. This can happen if the upload is associated with a nonexistent commit.'
                 )
             }
