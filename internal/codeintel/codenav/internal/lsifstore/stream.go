@@ -76,21 +76,28 @@ func (s *store) ScanLocations(ctx context.Context, id int, f func(scheme, identi
 }
 
 const scanLocationsQuery = `
-SELECT * FROM (
+WITH
+defs AS (
 	SELECT
-		*,
-		'export' AS type
-	FROM lsif_data_definitions
-	WHERE dump_id = %s
-	ORDER BY scheme, identifier
-) UNION ALL (
+		d.scheme,
+		d.identifier,
+		'export' AS type,
+		d.data
+	FROM lsif_data_definitions d
+	WHERE d.dump_id = %s
+	ORDER BY d.scheme, d.identifier
+),
+refs AS (
 	SELECT
-		*,
-		'import' AS type
-	FROM lsif_data_references
-	WHERE dump_id = %s
-	ORDER BY scheme, identifier
-) s
+		r.scheme,
+		r.identifier,
+		'import' AS type,
+		r.data
+	FROM lsif_data_references r
+	WHERE r.dump_id = %s
+	ORDER BY r.scheme, r.identifier
+)
+SELECT * FROM defs UNION ALL SELECT * FROM refs
 `
 
 func runQuery(ctx context.Context, store *basestore.Store, query *sqlf.Query, f func(dbutil.Scanner) error) (err error) {

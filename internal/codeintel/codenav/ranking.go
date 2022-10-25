@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
@@ -19,9 +21,9 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	// if os.Getenv("SOURCEGRAPHDOTCOM_MODE")==""{
-	// 	return nil
-	// }
+	if os.Getenv("SOURCEGRAPHDOTCOM_MODE") == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		return nil
+	}
 
 	if s.rankingBucket == nil {
 		return errors.New("no ranking bucket configured")
@@ -56,13 +58,15 @@ func (s *Service) SerializeRankingGraph(
 	return nil
 }
 
+const maxWritableBytes = 1024 * 1024 * 1024 // 1GB
+
 func (s *Service) serializeAndPersistRankingGraphForUpload(
 	ctx context.Context,
 	id int,
 	repo string,
 	root string,
 ) (err error) {
-	writers := map[string]io.WriteCloser{}
+	writers := map[string]*gcsObjectWriter{}
 	defer func() {
 		for _, wc := range writers {
 			if closeErr := wc.Close(); closeErr != nil {
@@ -74,32 +78,43 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
 		path := filepath.Join(strconv.Itoa(id), filename)
 
-		w, ok := writers[path]
+		ow, ok := writers[path]
 		if !ok {
 			handle := s.rankingBucket.Object(path)
 			if err := handle.Delete(ctx); err != nil && err != storage.ErrObjectNotExist {
 				return err
 			}
 
-			w = handle.NewWriter(ctx)
-			w = bufioCloser{w, bufio.NewWriter(w)}
-			writers[path] = w
+			wc := handle.NewWriter(ctx)
+			ow = &gcsObjectWriter{
+				Writer:  bufio.NewWriter(wc),
+				c:       wc,
+				written: 0,
+			}
+			writers[path] = ow
 		}
 
-		if _, err := io.Copy(w, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
 			return err
+		} else {
+			ow.written += n
+
+			if ow.written > maxWritableBytes {
+				return errors.Newf("CSV output exceeds max bytes (%d)", maxWritableBytes)
+			}
 		}
 
 		return nil
 	})
 }
 
-type bufioCloser struct {
-	c io.Closer
+type gcsObjectWriter struct {
 	*bufio.Writer
+	c       io.Closer
+	written int64
 }
 
-func (b bufioCloser) Close() error {
+func (b *gcsObjectWriter) Close() error {
 	return errors.Append(b.Flush(), b.c.Close())
 }
 
@@ -167,6 +182,10 @@ func (s *Service) serializeRankingGraphForUpload(
 
 		return nil
 	}); err != nil {
+		return err
+	}
+
+	if err := write("done", "%s\n", time.Now().Format(time.RFC3339)); err != nil {
 		return err
 	}
 
