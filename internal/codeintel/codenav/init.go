@@ -1,6 +1,7 @@
 package codenav
 
 import (
+	backgroundjobs "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
@@ -37,14 +38,21 @@ type serviceDependencies struct {
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
 	store := store.New(deps.db, scopedContext("store"))
 	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
+	backgroundJobs := backgroundjobs.New(
+		scopedContext("background"),
+	)
 
-	return newService(
+	svc := newService(
 		store,
 		lsifStore,
 		deps.uploadSvc,
 		deps.gitserver,
+		backgroundJobs,
 		scopedContext("service"),
-	), nil
+	)
+
+	backgroundJobs.SetService(svc)
+	return svc, nil
 })
 
 func scopedContext(component string) *observation.Context {
