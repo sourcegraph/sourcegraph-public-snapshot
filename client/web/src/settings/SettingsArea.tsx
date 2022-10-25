@@ -169,7 +169,11 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
-                <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
+                <PageHeader className="mb-3">
+                    <PageHeader.Heading as="h3" styleAs="h2">
+                        <PageHeader.Breadcrumb>{`${term} settings`}</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 {this.props.extraHeader}
                 <Switch>
                     <Route

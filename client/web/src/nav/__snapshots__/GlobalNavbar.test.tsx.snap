@@ -206,7 +206,7 @@ exports[`GlobalNavbar default 1`] = `
             class="anchorLink btn btnSecondary btnOutline btnSm mr-1"
             href="/sign-in"
           >
-            Log in
+            Sign in
           </a>
           <a
             class="anchorLink btn btnSm signUp"

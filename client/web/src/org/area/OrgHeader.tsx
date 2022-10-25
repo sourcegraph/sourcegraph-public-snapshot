@@ -112,25 +112,23 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
             <div className="container">
                 {org && (
                     <>
-                        <PageHeader
-                            path={[
-                                {
-                                    icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
-                                    text: (
-                                        <span className="align-middle">
-                                            {org.displayName ? (
-                                                <>
-                                                    {org.displayName} ({org.name})
-                                                </>
-                                            ) : (
-                                                org.name
-                                            )}
-                                        </span>
-                                    ),
-                                },
-                            ]}
-                            className="mb-3"
-                        />
+                        <PageHeader className="mb-3">
+                            <PageHeader.Heading as="h2" styleAs="h1">
+                                <PageHeader.Breadcrumb
+                                    icon={() => <OrgAvatar org={org.name} size="lg" className="mr-3" />}
+                                >
+                                    <span className="align-middle">
+                                        {org.displayName ? (
+                                            <>
+                                                {org.displayName} ({org.name})
+                                            </>
+                                        ) : (
+                                            org.name
+                                        )}
+                                    </span>
+                                </PageHeader.Breadcrumb>
+                            </PageHeader.Heading>
+                        </PageHeader>
                         <div className="d-flex align-items-end justify-content-between">
                             <ul className="nav nav-tabs w-100">
                                 {memoizedNavItems.map(
