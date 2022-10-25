@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"math"
 	"net"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -66,8 +68,139 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Streamer // addr -> client
 }
 
+var rankingEnabled, _ = strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING"))
+
 // StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+
+	if rankingEnabled {
+		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
+	}
+
+	clients, err := s.searchers()
+	if err != nil {
+		return err
+	}
+
+	endpoints := make([]string, 0, len(clients))
+	for endpoint := range clients {
+		endpoints = append(endpoints, endpoint)
+	}
+
+	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
+
+	// rq is used to re-order results by priority.
+	var mu sync.Mutex
+	rq := newResultQueue(siteConfig, endpoints)
+
+	// Flush the queue latest after maxReorderDuration. The longer
+	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
+	// put on frontend. maxReorderDuration is effectively the budget we give each
+	// Zoekt to produce its highest ranking result. It should be large enough to
+	// give each Zoekt the chance to search at least 1 maximum size simple shard
+	// plus time spent on network.
+	//
+	// At the same time maxReorderDuration guarantees a minimum response time. It
+	// protects us from waiting on slow Zoekts for too long.
+	//
+	// maxReorderDuration and maxQueueDepth are tightly connected: If the queue is
+	// too short we will always flush before reaching maxReorderDuration and if the
+	// queue is too long we risk OOMs of frontend for queries with a lot of results.
+	//
+	// maxQueueDepth should be chosen as large as possible given the available
+	// resources.
+	if siteConfig.maxReorderDuration > 0 {
+		done := make(chan struct{})
+		defer close(done)
+
+		// we can race with done being closed and as such call FlushAll after
+		// the return of the function. So track if the function has exited.
+		searchDone := false
+		defer func() {
+			mu.Lock()
+			searchDone = true
+			mu.Unlock()
+		}()
+
+		go func() {
+			select {
+			case <-done:
+			case <-time.After(siteConfig.maxReorderDuration):
+				mu.Lock()
+				defer mu.Unlock()
+				if searchDone {
+					return
+				}
+				rq.FlushAll(streamer)
+			}
+		}()
+	}
+
+	// During rebalancing a repository can appear on more than one replica.
+	dedupper := dedupper{}
+
+	// GobCache exists so we only pay the cost of marshalling a query once
+	// when we aggregate it out over all the replicas. Zoekt's RPC layers
+	// unwrap this before passing it on to the Zoekt evaluation layers.
+	q = &query.GobCache{Q: q}
+
+	ch := make(chan error, len(clients))
+	for endpoint, c := range clients {
+		go func(endpoint string, c zoekt.Streamer) {
+			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+				// This shouldn't happen, but skip event if sr is nil.
+				if sr == nil {
+					return
+				}
+
+				mu.Lock()
+				defer mu.Unlock()
+
+				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+
+				rq.Enqueue(endpoint, sr)
+				rq.FlushReady(streamer)
+			}))
+			mu.Lock()
+			rq.Done(endpoint)
+			mu.Unlock()
+
+			if canIgnoreError(ctx, err) {
+				err = nil
+			}
+
+			ch <- err
+		}(endpoint, c)
+	}
+
+	var errs errors.MultiError
+	for i := 0; i < cap(ch); i++ {
+		errs = errors.Append(errs, <-ch)
+	}
+	if errs != nil {
+		return errs
+	}
+
+	mu.Lock()
+	metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
+	metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
+	metricFinalQueueSize.Add(float64(rq.queue.Len()))
+	metricMaxSizeBytes.WithLabelValues().Observe(float64(rq.metricMaxSizeBytes))
+
+	rq.FlushAll(streamer)
+	mu.Unlock()
+
+	return nil
+}
+
+type rankingSiteConfig struct {
+	maxQueueDepth      int
+	maxMatchCount      int
+	maxSizeBytes       int
+	maxReorderDuration time.Duration
+}
+
+func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
 	clients, err := s.searchers()
 	if err != nil {
 		return err
@@ -90,7 +223,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// During re-balancing a repository can appear on more than one replica.
 	dedupper := dedupper{}
 
-	// GobCache exists so we only pay the cost of marshalling a query once
+	// GobCache exists, so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
 	q = &query.GobCache{Q: q}
@@ -126,13 +259,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	return errs
-}
-
-type rankingSiteConfig struct {
-	maxQueueDepth      int
-	maxMatchCount      int
-	maxSizeBytes       int
-	maxReorderDuration time.Duration
 }
 
 func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {
