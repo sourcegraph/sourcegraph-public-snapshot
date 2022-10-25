@@ -56,8 +56,31 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
+// The data stored in user_external_account has this structure: "Values"["<attribute names for email or username>"] > "Values"[0] > "Value": string
 const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'emailaddress', '"http://schemas.xmlsoap.org/claims/EmailAddress'])
 const usernameAttrs = new Set(['nickname', 'login', 'username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
+
+function getUsernameOrEmail(data: SamlExternalData): string {
+    let userNameOrEmail = ''
+    if (data.Values) {
+        const entries = Object.entries(data.Values)
+        for (const [name, att] of entries) {
+            const attribute = att as Attribute
+            if (usernameAttrs.has(name)) {
+                userNameOrEmail = attribute.Values.length > 0 && attribute.Values[0].Value || ''
+                break
+            }
+            if (emailAttrs.has(name)) {
+                userNameOrEmail = attribute.Values.find((val: AttributeValue) =>
+                    val.Value.includes('@')
+                )?.Value || ''
+                break
+            }
+        }
+    }
+
+    return userNameOrEmail
+}
 
 const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
@@ -108,31 +131,14 @@ const getNormalizedAccount = (
             }
                 break
             case 'saml': {
-                // The data stored in user_external_account has this structure: “Values”[“<attribute names for email or username>"] > Values[0] > “Value”: string
-                let email = ''
-                let username = ''
-
                 const samlExternalData = accountExternalData as SamlExternalData
-                if (samlExternalData.Values) {
-                    const entries = Object.entries(samlExternalData.Values)
-                    for (const [name, att] of entries) {
-                        if (usernameAttrs.has(name)) {
-                            username = att.Values.length > 0 && att.Values[0].Value || ''
-
-                            break
-                        }
-                        if (emailAttrs.has(name)) {
-                            email = att.Values.find((val: AttributeValue) =>
-                                val.Value.includes('@')
-                            )?.Value || ''
-                        }
-                    }
-                }
+                // In case the SAML values don't have a username, we get the user email.
+                const userNameOrEmail = getUsernameOrEmail(samlExternalData)
                 normalizedAccount = {
                     ...normalizedAccount,
                     external: {
                         id: account.id,
-                        userName: username || email,
+                        userName: userNameOrEmail
                     },
                 }
             }
