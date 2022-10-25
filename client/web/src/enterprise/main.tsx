@@ -5,6 +5,7 @@
 
 import '@sourcegraph/shared/src/polyfills'
 
+import '../initBuildInfo'
 import '../monitoring/initMonitoring'
 
 import { createRoot } from 'react-dom/client'

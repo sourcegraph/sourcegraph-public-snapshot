@@ -31,6 +31,10 @@ We have tried two things that ended up not satisfying our needs:
 - One repository per package: The overhead of sharing code was too high. It required publishing intermediate packages (that were not used by any other consumers).
 - [Yarn workspaces](https://yarnpkg.com/lang/en/docs/workspaces/): The overhead of sharing code was still too high. Also, we encountered bugs (like [#4964](https://github.com/yarnpkg/yarn/issues/4964)) that made us feel it was not ready for production use.
 
+### Debugging production build
+
+The web application exposes a global `window.buildInfo` object containing `version` and `commitSHA` used to build the application bundle. If you're unsure what version of the client bundle you're debugging, use these variables to validate your assumptions.
+
 ### Design
 
 Based on our experience, we decided to:

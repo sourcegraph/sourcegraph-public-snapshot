@@ -8,53 +8,55 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	list     *observation.Operation
-	get      *observation.Operation
-	getBatch *observation.Operation
-	enqueue  *observation.Operation
-	delete   *observation.Operation
-
-	uploadsVisibleTo *observation.Operation
-
 	// Commits
-	getOldestCommitDate       *observation.Operation
 	getCommitsVisibleToUpload *observation.Operation
+	getCommitGraphMetadata    *observation.Operation
 	getStaleSourcedCommits    *observation.Operation
 	updateSourcedCommits      *observation.Operation
 	deleteSourcedCommits      *observation.Operation
 
 	// Repositories
-	getRepositoriesMaxStaleAge *observation.Operation
-	getDirtyRepositories       *observation.Operation
-	setRepositoryAsDirty       *observation.Operation
-	updateDirtyRepositories    *observation.Operation
+	getRepoName                             *observation.Operation
+	getRepositoriesForIndexScan             *observation.Operation
+	getDirtyRepositories                    *observation.Operation
+	getRecentUploadsSummary                 *observation.Operation
+	getLastUploadRetentionScanForRepository *observation.Operation
+	setRepositoriesForRetentionScan         *observation.Operation
+	getRepositoriesMaxStaleAge              *observation.Operation
 
 	// Uploads
-	getUploads                     *observation.Operation
-	updateUploadsVisibleToCommits  *observation.Operation
-	updateUploadRetention          *observation.Operation
-	updateUploadsReferenceCounts   *observation.Operation
-	softDeleteExpiredUploads       *observation.Operation
-	deleteUploadsWithoutRepository *observation.Operation
-	deleteUploadsStuckUploading    *observation.Operation
-	hardDeleteUploads              *observation.Operation
+	getUploads                           *observation.Operation
+	getUploadByID                        *observation.Operation
+	getUploadsByIDs                      *observation.Operation
+	getVisibleUploadsMatchingMonikers    *observation.Operation
+	getUploadDocumentsForPath            *observation.Operation
+	updateUploadsVisibleToCommits        *observation.Operation
+	deleteUploadByID                     *observation.Operation
+	inferClosestUploads                  *observation.Operation
+	deleteUploadsWithoutRepository       *observation.Operation
+	deleteUploadsStuckUploading          *observation.Operation
+	softDeleteExpiredUploads             *observation.Operation
+	softDeleteExpiredUploadsViaTraversal *observation.Operation
+	hardDeleteUploadsByIDs               *observation.Operation
+	deleteLsifDataByUploadIds            *observation.Operation
 
 	// Dumps
-	findClosestDumps *observation.Operation
-
-	// Packages
-	updatePackages *observation.Operation
+	getDumpsWithDefinitionsForMonikers *observation.Operation
+	getDumpsByIDs                      *observation.Operation
 
 	// References
-	updatePackageReferences *observation.Operation
+	referencesForUpload *observation.Operation
 
 	// Audit Logs
-	deleteOldAuditLogs *observation.Operation
+	getAuditLogsForUpload *observation.Operation
+	deleteOldAuditLogs    *observation.Operation
+
+	// Tags
+	getListTags *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_uploads",
 		metrics.WithLabels("op"),
@@ -65,52 +67,55 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		// Not used yet.
-		list:             op("List"),
-		get:              op("Get"),
-		getBatch:         op("GetBatch"),
-		enqueue:          op("Enqueue"),
-		delete:           op("Delete"),
-		uploadsVisibleTo: op("UploadsVisibleTo"),
-
 		// Commits
-		getOldestCommitDate:       op("GetOldestCommitDate"),
 		getCommitsVisibleToUpload: op("GetCommitsVisibleToUpload"),
+		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
 		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
 
 		// Repositories
-		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:       op("GetDirtyRepositories"),
-		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
-		updateDirtyRepositories:    op("UpdateDirtyRepositories"),
+		getRepoName:                             op("GetRepoName"),
+		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
+		getDirtyRepositories:                    op("GetDirtyRepositories"),
+		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
+		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
+		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
 
 		// Uploads
-		getUploads:                     op("GetUploads"),
-		updateUploadsVisibleToCommits:  op("UpdateUploadsVisibleToCommits"),
-		updateUploadRetention:          op("UpdateUploadRetention"),
-		updateUploadsReferenceCounts:   op("UpdateUploadsReferenceCounts"),
-		deleteUploadsWithoutRepository: op("DeleteUploadsWithoutRepository"),
-		deleteUploadsStuckUploading:    op("DeleteUploadsStuckUploading"),
-		softDeleteExpiredUploads:       op("SoftDeleteExpiredUploads"),
-		hardDeleteUploads:              op("HardDeleteUploads"),
+		getUploads:                           op("GetUploads"),
+		getUploadByID:                        op("GetUploadByID"),
+		getUploadsByIDs:                      op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers:    op("GetVisibleUploadsMatchingMonikers"),
+		getUploadDocumentsForPath:            op("GetUploadDocumentsForPath"),
+		updateUploadsVisibleToCommits:        op("UpdateUploadsVisibleToCommits"),
+		deleteUploadByID:                     op("DeleteUploadByID"),
+		inferClosestUploads:                  op("InferClosestUploads"),
+		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
+		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
+		softDeleteExpiredUploads:             op("SoftDeleteExpiredUploads"),
+		softDeleteExpiredUploadsViaTraversal: op("SoftDeleteExpiredUploadsViaTraversal"),
+		hardDeleteUploadsByIDs:               op("HardDeleteUploadsByIDs"),
+		deleteLsifDataByUploadIds:            op("DeleteLsifDataByUploadIds"),
 
 		// Dumps
-		findClosestDumps: op("FindClosestDumps"),
-
-		// Packages
-		updatePackages: op("UpdatePackages"),
+		getDumpsWithDefinitionsForMonikers: op("GetDumpsWithDefinitionsForMonikers"),
+		getDumpsByIDs:                      op("GetDumpsByIDs"),
 
 		// References
-		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload: op("ReferencesForUpload"),
 
 		// Audit Logs
-		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+		getAuditLogsForUpload: op("GetAuditLogsForUpload"),
+		deleteOldAuditLogs:    op("DeleteOldAuditLogs"),
+
+		// Tags
+		getListTags: op("GetListTags"),
 	}
 }

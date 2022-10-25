@@ -5,7 +5,7 @@
 Sourcegraph by default provides versions of services it needs to operate, including:
 
 - A [PostgreSQL](https://www.postgresql.org/) instance for storing long-term information, such as user information when using Sourcegraph's built-in authentication provider instead of an external one.
-- A second PostgreSQL instance for storing large-volume precise code intelligence data.
+- A second PostgreSQL instance for storing large-volume precise code graph data.
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
 - A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before they can be processed. _This data is for temporary storage and content will be automatically deleted once processed._

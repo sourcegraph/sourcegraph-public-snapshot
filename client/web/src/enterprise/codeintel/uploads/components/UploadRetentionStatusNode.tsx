@@ -95,7 +95,7 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                     {match.uploadSlice
                         .slice(0, 3)
                         .map<React.ReactNode>(upload => (
-                            <Link key={upload.id} to={`/site-admin/code-intelligence/uploads/${upload.id}`}>
+                            <Link key={upload.id} to={`/site-admin/code-graph/uploads/${upload.id}`}>
                                 {upload.projectRoot?.repository.name ?? 'unknown'}
                             </Link>
                         ))

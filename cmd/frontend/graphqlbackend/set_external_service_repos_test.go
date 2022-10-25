@@ -26,13 +26,13 @@ func TestSetExternalServiceRepos(t *testing.T) {
 			DisplayName:     "test",
 			NamespaceUserID: 1,
 			Kind:            extsvc.KindGitHub,
-			Config: `
+			Config: extsvc.NewUnencryptedConfig(`
 {
 	"authorization": {},
 	"repositoryQuery": [],
 	"token": "not_actually_a_real_token_that_would_be_silly",
 	"url": "https://github.com"
-}`,
+}`),
 		},
 		nil,
 	)
@@ -40,7 +40,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		require.Len(t, services, 1)
 
 		svc := services[0]
-		cfg, err := svc.Configuration()
+		cfg, err := svc.Configuration(ctx)
 		require.NoError(t, err)
 		require.IsType(t, &schema.GitHubConnection{}, cfg)
 

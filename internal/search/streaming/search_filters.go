@@ -28,36 +28,37 @@ type SearchFilters struct {
 // commonFileFilters are common filters used. It is used by SearchFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
+	label       string
 	regexp      *lazyregexp.Regexp
 	regexFilter string
 	globFilter  string
 }{
-	// Exclude go tests
 	{
+		label:       "Exclude Go tests",
 		regexp:      lazyregexp.New(`_test\.go$`),
 		regexFilter: `-file:_test\.go$`,
 		globFilter:  `-file:**_test.go`,
 	},
-	// Exclude go vendor
 	{
+		label:       "Exclude Go vendor",
 		regexp:      lazyregexp.New(`(^|/)vendor/`),
 		regexFilter: `-file:(^|/)vendor/`,
 		globFilter:  `-file:vendor/** -file:**/vendor/**`,
 	},
-	// Exclude node_modules
 	{
+		label:       "Exclude node_modules",
 		regexp:      lazyregexp.New(`(^|/)node_modules/`),
 		regexFilter: `-file:(^|/)node_modules/`,
 		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
-	// Exclude minified javascript
 	{
+		label:       "Exclude minified JavaScript",
 		regexp:      lazyregexp.New(`\.min\.js$`),
 		regexFilter: `-file:\.min\.js$`,
 		globFilter:  `-file:**.min.js`,
 	},
-	// Exclude javascript maps
 	{
+		label:       "Exclude JavaScript maps",
 		regexp:      lazyregexp.New(`\.js\.map$`),
 		regexFilter: `-file:\.js\.map$`,
 		globFilter:  `-file:**.js.map`,
@@ -87,34 +88,31 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
 			// since we have no native library call to match `**` for globs.
 			if ff.regexp.MatchString(fileMatchPath) {
-				s.filters.Add(ff.regexFilter, ff.regexFilter, lineMatchCount, limitHit, "file")
+				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, limitHit, "file")
 			}
 		}
 	}
 
 	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
-		extensionToLanguageLookup := func(path string) string {
-			language, _ := inventory.GetLanguageByFilename(path)
-			return strings.ToLower(language)
-		}
 		if ext := path.Ext(fileMatchPath); ext != "" {
-			language := extensionToLanguageLookup(fileMatchPath)
+			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
+			language := strings.ToLower(rawLanguage)
 			if language != "" {
 				if strings.Contains(language, " ") {
 					language = strconv.Quote(language)
 				}
 				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, value, lineMatchCount, limitHit, "lang")
+				s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
 			}
 		}
 	}
 
 	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "fork:yes", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "dynamic")
+		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "utility")
 		s.filters.MarkImportant("fork:yes")
 	}
 	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "archived:yes", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "dynamic")
+		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "utility")
 		s.filters.MarkImportant("archived:yes")
 	}
 
@@ -129,10 +127,6 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
 			addLangFilter(v.Path, lines, v.LimitHit)
 			addFileFilter(v.Path, lines, v.LimitHit)
-
-			if len(v.Symbols) > 0 {
-				s.filters.Add("type:symbol", "type:symbol", 1, v.LimitHit, "symbol")
-			}
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
 			// can only be used with the 'repo:' scope. In that case,

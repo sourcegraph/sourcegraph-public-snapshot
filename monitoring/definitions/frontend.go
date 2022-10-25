@@ -323,9 +323,10 @@ func Frontend() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
+			shared.CodeIntelligence.NewDependencyStoreGroup(containerName),
+			shared.CodeIntelligence.NewDependencyBackgroundJobGroup(containerName),
 			shared.CodeIntelligence.NewLockfilesGroup(containerName),
 
 			shared.GitServer.NewClientGroup(containerName),
@@ -333,6 +334,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
+			shared.Batches.NewBatchesHTTPAPIGroup(containerName),
 
 			// src_oobmigration_total
 			// src_oobmigration_duration_seconds_bucket
@@ -576,7 +578,8 @@ func Frontend() *monitoring.Dashboard {
 							Interpretation: `Account lockouts per minute`,
 						},
 					},
-				}},
+				},
+			},
 			{
 				Title:  "Organisation GraphQL API requests",
 				Hidden: true,
@@ -902,6 +905,7 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
 }
@@ -910,11 +914,11 @@ func orgMetricRows(orgMetricSpec []struct {
 	name        string
 	route       string
 	description string
-}) []monitoring.Row {
+},
+) []monitoring.Row {
 	result := []monitoring.Row{}
 	for _, m := range orgMetricSpec {
 		result = append(result, monitoring.Row{
-
 			{
 				Name:           m.name + "_rate",
 				Description:    "rate of " + m.description,

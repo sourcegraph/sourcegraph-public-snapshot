@@ -9,12 +9,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-
 	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -23,10 +17,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -354,9 +352,10 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 	return i.view.IsFrozen, nil
 }
 
-func (i *insightViewResolver) SeriesCount(ctx context.Context) (int32, error) {
+func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
 	_, err := i.computeDataSeries(ctx)
-	return int32(i.totalSeries), err
+	total := int32(i.totalSeries)
+	return &total, err
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {
@@ -469,11 +468,12 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	insightTx, err := r.insightStore.Transact(ctx)
-	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
+	dashboardTx := r.dashboardStore.With(insightTx)
+	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(insightTx))
 
 	var dashboardIds []int
 	if args.Input.Dashboards != nil {
@@ -510,7 +510,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
@@ -599,37 +599,22 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
+	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			_, err = createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 		} else {
-			// If it's a frontend series, we can just update it.
-			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
-			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
-				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
-					SeriesID:          *series.SeriesId,
-					Query:             series.Query,
-					Repositories:      series.RepositoryScope.Repositories,
-					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
-				})
-				if err != nil {
-					return nil, errors.Wrap(err, "UpdateFrontendSeries")
-				}
-			} else {
-				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
-				if err != nil {
-					return nil, errors.Wrap(err, "RemoveViewSeries")
-				}
-				_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
-				if err != nil {
-					return nil, errors.Wrap(err, "createAndAttachSeries")
-				}
+			err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveViewSeries")
 			}
-
+			_, err = createAndAttachSeries(ctx, tx, backfiller, r.insightEnqueuer, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
+			}
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
 				Label:  emptyIfNil(series.Options.Label),
 				Stroke: emptyIfNil(series.Options.LineColor),
@@ -644,11 +629,11 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	insightTx, err := r.insightStore.Transact(ctx)
-	dashboardTx := r.dashboardStore.With(insightTx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
+	dashboardTx := r.dashboardStore.With(insightTx)
 	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var dashboardIds []int
@@ -1013,16 +998,25 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 	var foundSeries bool
 	var err error
 	var dynamic bool
+	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
+	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
+		if _, err := querybuilder.ParseComputeQuery(series.Query); err != nil {
+			return nil, errors.Wrap(err, "query validation")
+		}
+	} else {
+		if _, err := querybuilder.ParseQuery(series.Query, "literal"); err != nil {
+			return nil, errors.Wrap(err, "query validation")
+		}
+	}
+
 	if series.GeneratedFromCaptureGroups != nil {
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	var groupBy *string
+	groupBy := lowercaseGroupBy(series.GroupBy)
 	var nextRecordingAfter time.Time
 	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
-		temp := strings.ToLower(*series.GroupBy)
-		groupBy = &temp
 		// We want to disable interval recording for compute types.
 		// December 31, 9999 is the maximum possible date in postgres.
 		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -1123,15 +1117,6 @@ func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlba
 		}
 	}
 	return false
-}
-
-func getExistingSeriesRepositories(seriesId string, existingSeries []types.InsightViewSeries) []string {
-	for i := range existingSeries {
-		if existingSeries[i].SeriesID == seriesId {
-			return existingSeries[i].Repositories
-		}
-	}
-	return nil
 }
 
 func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -1317,4 +1302,12 @@ func minInt(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+func lowercaseGroupBy(groupBy *string) *string {
+	if groupBy != nil {
+		temp := strings.ToLower(*groupBy)
+		return &temp
+	}
+	return groupBy
 }

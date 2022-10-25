@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -21,10 +22,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -47,18 +50,23 @@ type Test struct {
 	ExpectedTrailers http.Header
 }
 
-func TestRequest(t *testing.T) {
+func newRequest(method, path string, body io.Reader) *http.Request {
+	r := httptest.NewRequest(method, path, body)
+	r.Header.Add("X-Requested-With", "Sourcegraph")
+	return r
+}
+
+func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
 			Name:         "HTTP GET",
-			Request:      httptest.NewRequest("GET", "/exec", strings.NewReader("{}")),
+			Request:      newRequest("GET", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusMethodNotAllowed,
 			ExpectedBody: "",
 		},
-
 		{
 			Name:         "Command",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
 			ExpectedTrailers: http.Header{
@@ -69,7 +77,7 @@ func TestRequest(t *testing.T) {
 		},
 		{
 			Name:         "CommandWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
 			ExpectedTrailers: http.Header{
@@ -79,32 +87,63 @@ func TestRequest(t *testing.T) {
 			},
 		},
 		{
+			Name: "echo",
+			Request: newRequest(
+				"POST", "/exec", strings.NewReader(
+					`{"repo": "github.com/gorilla/mux", "args": ["testecho", "hi"]}`,
+				),
+			),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "hi",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Stderr":      {""},
+			},
+		},
+		{
+			Name: "stdin",
+			Request: newRequest(
+				"POST", "/exec", strings.NewReader(
+					`{"repo": "github.com/gorilla/mux", "args": ["testcat"], "stdin": "aGk="}`,
+				),
+			),
+			ExpectedCode: http.StatusOK,
+			ExpectedBody: "hi",
+			ExpectedTrailers: http.Header{
+				"X-Exec-Error":       {""},
+				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Stderr":      {""},
+			},
+		},
+		{
 			Name:         "NonexistingRepo",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
-			Name:         "NonexistingRepoWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
+			Name: "NonexistingRepoWithURL",
+			Request: newRequest(
+				"POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
 		},
 		{
 			Name:         "UnclonedRepoWithoutURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
 		},
 		{
 			Name:         "UnclonedRepoWithURL",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
 		{
 			Name:         "Error",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {"testerror"},
@@ -114,18 +153,21 @@ func TestRequest(t *testing.T) {
 		},
 		{
 			Name:         "EmptyInput",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
+			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
 		{
 			Name:         "BadCommand",
-			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "invalid command",
 		},
 	}
 
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		ReposDir:          "/testroot",
@@ -136,6 +178,7 @@ func TestRequest(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
+		DB: db,
 	}
 	h := s.Handler()
 
@@ -161,6 +204,23 @@ func TestRequest(t *testing.T) {
 			return 42, nil
 		case "testerror":
 			return 0, errors.New("testerror")
+		case "testecho", "testcat":
+			// We do an actual exec in this case to test that code path.
+			exe := strings.TrimPrefix(cmd.Args[1], "test")
+			lp, err := exec.LookPath(exe)
+			if err != nil {
+				return -1, err
+			}
+			cmd.Path = lp
+			cmd.Args = cmd.Args[1:]
+			cmd.Args[0] = exe
+			cmd.Dir = "" // the test doesn't setup the dir
+
+			// We run the real codepath cause we can in this case.
+			m := runCommandMock
+			runCommandMock = nil
+			defer func() { runCommandMock = m }()
+			return runCommand(ctx, cmd)
 		}
 		return 0, nil
 	}
@@ -197,7 +257,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	tests := []Test{
 		{
 			Name:         "Command",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
+			Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
 			ExpectedTrailers: http.Header{
@@ -208,19 +268,19 @@ func TestServer_handleP4Exec(t *testing.T) {
 		},
 		{
 			Name:         "Error",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
+			Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "subcommand \"bad_command\" is not allowed",
 		},
 		{
 			Name:         "EmptyBody",
-			Request:      httptest.NewRequest("POST", "/p4-exec", nil),
+			Request:      newRequest("POST", "/p4-exec", nil),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: `EOF`,
 		},
 		{
 			Name:         "EmptyInput",
-			Request:      httptest.NewRequest("POST", "/p4-exec", strings.NewReader("{}")),
+			Request:      newRequest("POST", "/p4-exec", strings.NewReader("{}")),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: `args must be greater than or equal to 1`,
 		},
@@ -229,6 +289,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		skipCloneForTests: true,
+		DB:                database.NewMockDB(),
 	}
 	h := s.Handler()
 
@@ -478,6 +539,12 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
+	if db == nil {
+		mDB := database.NewMockDB()
+		gr := database.NewMockGitserverRepoStore()
+		mDB.GitserverReposFunc.SetDefaultReturn(gr)
+		db = mDB
+	}
 	s := &Server{
 		Logger:           logtest.Scoped(t),
 		ReposDir:         repoDir,
@@ -530,16 +597,8 @@ func TestCloneRepo(t *testing.T) {
 		assert.Equal(t, errString, fromDB.LastError)
 	}
 
-	gr := types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
-	}
-	err := db.GitserverRepos().Upsert(ctx, &gr)
-	assertRepoState(types.CloneStatusNotCloned, 0, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -553,7 +612,7 @@ func TestCloneRepo(t *testing.T) {
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
 
-	_, err = s.cloneRepo(ctx, repoName, nil)
+	_, err := s.cloneRepo(ctx, repoName, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -622,6 +681,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 	if err := db.Repos().Create(ctx, dbRepo); err != nil {
 		t.Fatal(err)
 	}
+
 	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
@@ -637,17 +697,8 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 		assert.Equal(t, errString, fromDB.LastError)
 	}
 
-	// Insert initial gitserver_repos state
-	gr := types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusNotCloned,
-	}
-	err := db.GitserverRepos().Upsert(ctx, &gr)
-	assertRepoState(types.CloneStatusNotCloned, 0, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
 	reposDir := t.TempDir()
 	s := makeTestServer(ctx, t, reposDir, remote, db)
@@ -746,7 +797,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	}
 
 	// This will perform an initial clone
-	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size := dirSize(s.dir(repoName).Path("."))
@@ -790,7 +841,7 @@ func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req = httptest.NewRequest("GET", "/delete", bytes.NewReader(body))
+	req = newRequest("GET", "/delete", bytes.NewReader(body))
 	s.handleRepoDelete(rr, req)
 
 	size = dirSize(s.dir(repoName).Path("."))
@@ -867,7 +918,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
 		return "https://invalid.example.com/", nil
 	}
-	req := httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size := dirSize(s.dir(repoName).Path("."))
@@ -897,7 +948,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	// This will perform an initial clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	size = dirSize(s.dir(repoName).Path("."))
@@ -927,7 +978,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
 
 	// This will trigger an update since the repo is already cloned
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	want = &types.GitserverRepo{
@@ -951,7 +1002,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	doBackgroundRepoUpdateMock = nil
 
 	// This will trigger an update since the repo is already cloned
-	req = httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body))
+	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
 	s.handleRepoUpdate(rr, req)
 
 	want = &types.GitserverRepo{
@@ -1065,13 +1116,15 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 	// let's run the same request again.
 	// If the repo is already cloned, handleRepoUpdate will trigger an update instead of a clone.
 	// Because this test doesn't mock that code path, the method will return an error.
-	resp = runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
+	runAndCheck(t, httptest.NewRequest("GET", "/repo-update", bytes.NewReader(body)))
 	// we ignore the error, since this should trigger a fetch and fail because the URI is fake
 
 	// the repo should still be cloned though
-	if !resp.Cloned {
-		t.Fatal("expected cloned to be true")
+	gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
 	}
+	require.Equal(t, gr.CloneStatus, types.CloneStatusCloned)
 }
 
 func TestRemoveBadRefs(t *testing.T) {
@@ -1288,6 +1341,7 @@ func TestHostnameMatch(t *testing.T) {
 			s := Server{
 				Logger:   logtest.Scoped(t),
 				Hostname: tc.hostname,
+				DB:       database.NewMockDB(),
 			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
@@ -1417,13 +1471,13 @@ func TestHandleBatchLog(t *testing.T) {
 	tests := []BatchLogTest{
 		{
 			Name:         "bad request",
-			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(``)),
+			Request:      newRequest("POST", "/batch-log", strings.NewReader(``)),
 			ExpectedCode: http.StatusBadRequest,
 			ExpectedBody: "EOF", // the particular error when parsing empty payload
 		},
 		{
 			Name:         "empty",
-			Request:      httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{}`)),
+			Request:      newRequest("POST", "/batch-log", strings.NewReader(`{}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
 				Results: []protocol.BatchLogResult{},
@@ -1431,7 +1485,7 @@ func TestHandleBatchLog(t *testing.T) {
 		},
 		{
 			Name: "all resolved",
-			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
 				"repoCommits": [
 					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
 					{"repo": "github.com/foo/baz", "commitId": "deadbeef2"},
@@ -1462,7 +1516,7 @@ func TestHandleBatchLog(t *testing.T) {
 		},
 		{
 			Name: "partially resolved",
-			Request: httptest.NewRequest("POST", "/batch-log", strings.NewReader(`{
+			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
 				"repoCommits": [
 					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
 					{"repo": "github.com/foo/baz", "commitId": "dumbmilk1"},
@@ -1500,6 +1554,7 @@ func TestHandleBatchLog(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
+				DB:                      database.NewMockDB(),
 			}
 			h := server.Handler()
 
@@ -1522,6 +1577,159 @@ func TestHandleBatchLog(t *testing.T) {
 	}
 }
 
+func TestRunCommandGraceful(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no timeout", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		cmd := exec.Command("sleep", "0.1")
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, 0, exitStatus)
+	})
+
+	t.Run("context cancel", func(t *testing.T) {
+		t.Skip() // flake https://github.com/sourcegraph/sourcegraph/issues/40431
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest.sh")
+		var stdOut bytes.Buffer
+		cmd.Stdout = &stdOut
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, 0, exitStatus)
+		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
+	})
+
+	t.Run("context cancel, command doesn't exit", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest_noexit.sh")
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, -1, exitStatus)
+	})
+}
+
+func TestHeaderXRequestedWithMiddleware(t *testing.T) {
+	test := headerXRequestedWithMiddleware(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("success"))
+			w.WriteHeader(http.StatusOK)
+			return
+		}),
+	)
+
+	assertBody := func(result *http.Response, want string) {
+		b, err := ioutil.ReadAll(result.Body)
+		if err != nil {
+			t.Fatalf("failed to read body: %v", err)
+		}
+
+		data := string(b)
+
+		if data != want {
+			t.Fatalf(`Expected body to contain %q, but found %q`, want, data)
+		}
+	}
+
+	failureExpectation := "header X-Requested-With is not set or is invalid\n"
+
+	t.Run("x-requested-with not set", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		}
+
+		assertBody(result, failureExpectation)
+
+	})
+
+	t.Run("x-requested-with invalid value", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Add("X-Requested-With", "foo")
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusBadRequest {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		}
+
+		assertBody(result, failureExpectation)
+	})
+
+	t.Run("x-requested-with correct value", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.Header.Add("X-Requested-With", "Sourcegraph")
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusOK {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		}
+
+		assertBody(result, "success")
+	})
+
+	t.Run("check skippped for /ping", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/ping", nil)
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusOK {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		}
+	})
+
+	t.Run("check skipped for /git", func(t *testing.T) {
+		r := httptest.NewRequest(http.MethodGet, "/git/foo/bar", nil)
+		w := httptest.NewRecorder()
+
+		test(w, r)
+
+		result := w.Result()
+		defer result.Body.Close()
+
+		if result.StatusCode != http.StatusOK {
+			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		}
+	})
+
+}
+
 func mustEncodeJSONResponse(value any) string {
 	encoded, _ := json.Marshal(value)
 	return strings.TrimSpace(string(encoded))
@@ -1531,6 +1739,8 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
+	} else {
+		logtest.Init(m)
 	}
 	os.Exit(m.Run())
 }

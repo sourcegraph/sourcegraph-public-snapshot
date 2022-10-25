@@ -14,6 +14,7 @@ type AnalyticsFetcher struct {
 	db           database.DB
 	group        string
 	dateRange    string
+	grouping     string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
 	cache        bool
@@ -39,7 +40,8 @@ func (n *AnalyticsNode) UniqueUsers() float64 { return n.Data.UniqueUsers }
 func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUsers }
 
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "nodes")
+	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
+
 	if f.cache == true {
 		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
 			return nodes, nil
@@ -65,11 +67,56 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		nodes = append(nodes, &AnalyticsNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	now := time.Now()
+	to := now
+	daysOffset := 1
+	from, err := getFromDate(f.dateRange, now)
+	if err != nil {
 		return nil, err
 	}
 
-	return nodes, nil
+	if f.grouping == Weekly {
+		to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
+		daysOffset = 7
+	}
+
+	allNodes := make([]*AnalyticsNode, 0)
+
+	for date := to; date.After(from) || date.Equal(from); date = date.AddDate(0, 0, -daysOffset) {
+		var node *AnalyticsNode
+
+		for _, n := range nodes {
+			if bod(date).Equal(bod(n.Data.Date)) {
+				node = n
+				break
+			}
+		}
+
+		if node == nil {
+			node = &AnalyticsNode{
+				Data: AnalyticsNodeData{
+					Date:            bod(date),
+					Count:           0,
+					UniqueUsers:     0,
+					RegisteredUsers: 0,
+				},
+			}
+		}
+
+		allNodes = append(allNodes, node)
+	}
+
+	if _, err := setArrayToCache(cacheKey, allNodes); err != nil {
+		return nil, err
+	}
+
+	return allNodes, nil
+
+}
+
+func bod(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
 
 type AnalyticsSummaryData struct {
@@ -89,7 +136,7 @@ func (s *AnalyticsSummary) TotalUniqueUsers() float64 { return s.Data.TotalUniqu
 func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalRegisteredUsers }
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "summary")
+	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
 	if f.cache == true {
 		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
 			return summary, nil

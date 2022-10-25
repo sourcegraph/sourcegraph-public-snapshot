@@ -8,11 +8,10 @@ import (
 	"io/fs"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -29,7 +28,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
+func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
@@ -41,14 +40,17 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 		}
 		return info.OID().String()
 	}
+
+	logger = logger.Scoped("InventoryContext", "returns the inventory context for computing the inventory for the repository at the given commit").
+		With(log.String("repo", string(repo)), log.String("commitID", string(commitID)))
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return gitserver.NewClient(db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gitserver.NewClient(db).NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
+			return gsClient.NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)
@@ -58,7 +60,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
-					log15.Warn("Failed to unmarshal cached JSON inventory.", "repo", repo, "commitID", commitID, "path", e.Name(), "err", err)
+					logger.Warn("Failed to unmarshal cached JSON inventory.", log.String("path", e.Name()), log.Error(err))
 					return inventory.Inventory{}, false
 				}
 				return inv, true
@@ -72,7 +74,7 @@ func InventoryContext(repo api.RepoName, db database.DB, commitID api.CommitID, 
 			}
 			b, err := json.Marshal(&inv)
 			if err != nil {
-				log15.Warn("Failed to marshal JSON inventory for cache.", "repo", repo, "commitID", commitID, "path", e.Name(), "err", err)
+				logger.Warn("Failed to marshal JSON inventory for cache.", log.String("path", e.Name()), log.Error(err))
 				return
 			}
 			inventoryCache.Set(cacheKey, b)

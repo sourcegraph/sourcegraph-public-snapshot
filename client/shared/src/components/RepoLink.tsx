@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { Link } from '@sourcegraph/wildcard'
+import { LinkOrSpan } from './LinkOrSpan'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
@@ -11,6 +11,18 @@ export function displayRepoName(repoName: string): string {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
+}
+
+/**
+ * Returns the number of characters in the code host portion of the repository name
+ * (e.g. "github.com/sourcegraph/sourcegraph") returns 11, the length of "github.com/"
+ */
+export function codeHostSubstrLength(repoName: string): number {
+    const parts = repoName.split('/')
+    if (parts.length >= 3 && parts[0].includes('.')) {
+        return parts[0].length + 1 // add 1 to account for the trailing '/' in the code host name
+    }
+    return 0
 }
 
 /**
@@ -45,18 +57,14 @@ export const RepoLink: React.FunctionComponent<React.PropsWithChildren<Props>> =
 }) => {
     const [repoBase, repoName] = splitPath(displayRepoName(fullRepoName))
     const children = (
-        <span className={className || ''}>
-            {' '}
+        <span className={className}>
             {repoBase ? `${repoBase}/` : null}
             <span className={repoClassName}>{repoName}</span>
         </span>
     )
-    if (to === null) {
-        return children
-    }
     return (
-        <Link className={className || ''} to={to} onClick={onClick}>
+        <LinkOrSpan className={className} to={to} onClick={onClick}>
             {children}
-        </Link>
+        </LinkOrSpan>
     )
 }

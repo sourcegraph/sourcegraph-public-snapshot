@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -89,6 +89,14 @@ func Indexed() zoekt.Streamer {
 	})
 
 	return indexedSearch
+}
+
+// ListAllIndexed lists all indexed repositories with `Minimal: true`. If
+// indexed search is disabled it returns ErrIndexDisabled.
+func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
+	q := &query.Const{Value: true}
+	opts := &zoekt.ListOptions{Minimal: true}
+	return Indexed().List(ctx, q, opts)
 }
 
 func Indexers() *backend.Indexers {

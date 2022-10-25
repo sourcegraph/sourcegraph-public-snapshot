@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
@@ -7,8 +6,14 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
 
-import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
+import {
+    GLOBAL_CHANGESETS_STATS,
+    BATCH_CHANGES,
+    BATCH_CHANGES_BY_NAMESPACE,
+    GET_LICENSE_AND_USAGE_INFO,
+} from './backend'
 import { BatchChangeListPage } from './BatchChangeListPage'
 import {
     BATCH_CHANGES_BY_NAMESPACE_RESULT,
@@ -33,6 +38,12 @@ const config: Meta = {
 
 export default config
 
+const statBarData: GlobalChangesetsStatsResult = {
+    __typename: 'Query',
+    batchChanges: { __typename: 'BatchChangeConnection', totalCount: 30 },
+    globalChangesetsStats: { __typename: 'GlobalChangesetsStats', open: 7, closed: 5, merged: 21 },
+}
+
 const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchChanges = true) =>
     new WildcardMockLink([
         {
@@ -45,6 +56,16 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchC
         {
             request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
             result: { data: getLicenseAndUsageInfoResult(isLicensed, hasBatchChanges) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(GLOBAL_CHANGESETS_STATS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: {
+                data: statBarData,
+            },
             nMatches: Number.POSITIVE_INFINITY,
         },
     ])
@@ -62,23 +83,26 @@ const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
     },
 ])
 
-export const ListOfBatchChanges: Story = () => {
-    const canCreate = boolean('can create batch changes', true)
-
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={buildMocks()}>
-                    <BatchChangeListPage
-                        {...props}
-                        headingElement="h1"
-                        canCreate={canCreate}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
+export const ListOfBatchChanges: Story = args => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks()}>
+                <BatchChangeListPage
+                    {...props}
+                    headingElement="h1"
+                    canCreate={args.canCreate}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+ListOfBatchChanges.argTypes = {
+    canCreate: {
+        name: 'can create batch changes',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 ListOfBatchChanges.storyName = 'List of batch changes'

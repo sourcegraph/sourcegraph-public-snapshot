@@ -33,12 +33,31 @@ func Get(confFile, overwriteFile string) (*Config, error) {
 	}
 
 	globalConfOnce.Do(func() {
-		globalConf, globalConfErr = parseConf(confFile, overwriteFile)
+		globalConf, globalConfErr = parseConf(confFile, overwriteFile, false)
 	})
 	return globalConf, globalConfErr
 }
 
-func parseConf(confFile, overwriteFile string) (*Config, error) {
+// GetWithoutOverwrites retrieves the global config file and doesn't merge it
+// with another file..
+//
+// It must not be called before flag initalization, i.e. when confFile is not
+// set, or it will panic. This means that it can only be used in (*cli).Action,
+// (*cli).Before/(*cli).After, and postInitHooks
+func GetWithoutOverwrites(confFile string) (*Config, error) {
+	// If unset, Get was called in an illegal context, since sg.Before validates that the
+	// flags are non-empty.
+	if confFile == "" {
+		panic("sgconf.Get called before flag initialization")
+	}
+
+	globalConfOnce.Do(func() {
+		globalConf, globalConfErr = parseConf(confFile, "", true)
+	})
+	return globalConf, globalConfErr
+}
+
+func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error) {
 	// Try to determine root of repository, so we can look for config there
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
@@ -50,21 +69,23 @@ func parseConf(confFile, overwriteFile string) (*Config, error) {
 	if confFile == DefaultFile {
 		confFile = filepath.Join(repoRoot, confFile)
 	}
-	if overwriteFile == DefaultOverwriteFile {
-		overwriteFile = filepath.Join(repoRoot, overwriteFile)
-	}
 
 	conf, err := parseConfigFile(confFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to parse %q as configuration file", confFile)
 	}
 
-	if ok, _ := fileExists(overwriteFile); ok {
-		overwriteConf, err := parseConfigFile(overwriteFile)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
+	if !noOverwrite {
+		if overwriteFile == DefaultOverwriteFile {
+			overwriteFile = filepath.Join(repoRoot, overwriteFile)
 		}
-		conf.Merge(overwriteConf)
+		if ok, _ := fileExists(overwriteFile); ok {
+			overwriteConf, err := parseConfigFile(overwriteFile)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
+			}
+			conf.Merge(overwriteConf)
+		}
 	}
 
 	return conf, nil

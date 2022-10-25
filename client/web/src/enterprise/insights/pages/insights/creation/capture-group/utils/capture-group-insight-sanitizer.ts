@@ -2,7 +2,9 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedRepositories } from '../../../../../components'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { CaptureGroupFormFields } from '../types'
 
@@ -18,6 +20,13 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
             includeRepoRegexp: '',
             excludeRepoRegexp: '',
             context: '',
+            seriesDisplayOptions: {
+                limit: `${MAX_NUMBER_OF_SERIES}`,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
         },
         dashboards: [],
         seriesDisplayOptions: {},

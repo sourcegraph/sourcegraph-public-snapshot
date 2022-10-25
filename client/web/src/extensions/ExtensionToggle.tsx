@@ -21,8 +21,6 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettin
     className?: string
     /** Render big toggle */
     big?: boolean
-    userCannotToggle?: boolean
-    onHover?: (value: boolean) => void
     /** Additional logic to run on toggle */
     onToggleChange?: (enabled: boolean) => void
     /** Additional logic to run on update error */
@@ -84,8 +82,6 @@ export const ExtensionToggle: React.FunctionComponent<React.PropsWithChildren<Pr
     enabled,
     className,
     big,
-    userCannotToggle,
-    onHover,
     onToggleChange,
     onToggleError,
     subject,
@@ -160,12 +156,11 @@ export const ExtensionToggle: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const props: React.ComponentProps<typeof ToggleBig> = {
         onToggle,
-        onHover,
         className,
         value: optimisticEnabled,
-        title: userCannotToggle || !subject ? undefined : optimisticEnabled ? 'Click to disable' : 'Click to enable',
+        title: !subject ? undefined : optimisticEnabled ? 'Click to disable' : 'Click to enable',
         ['data-testid']: `extension-toggle-${extensionID}`,
-        disabled: userCannotToggle || !subject,
+        disabled: !subject,
     }
 
     return (

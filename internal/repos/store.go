@@ -9,14 +9,15 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,11 +44,6 @@ type Store interface {
 	Transact(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// CountNamespacedRepos counts the total number of repos that have been added by
-	// user or organization owned external services. If userID is specified, only
-	// repos owned by that user are counted. If orgID is specified, only repos owned
-	// by that organization are counted.
-	CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error)
 	// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo
 	// not in the given ids that is owned by the given external service. We run one
 	// query per repo rather than one batch query in order to reduce the chances of
@@ -120,7 +116,7 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 
@@ -221,45 +217,6 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-func (s *store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
-	logger := trace.Logger(ctx, s.Logger).With(
-		log.Int("userID", int(userID)),
-		log.Int("orgID", int(orgID)),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
-		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
-
-		if err != nil {
-			logger.Error("store.count-namespaced-repos", log.Uint64("count", count), log.Error(err))
-		}
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	var q *sqlf.Query
-	if userID > 0 {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND user_id = %d", userID)
-	} else if orgID > 0 {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND org_id = %d", orgID)
-	} else {
-		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr)
-	}
-
-	err = s.QueryRow(ctx, q).Scan(&count)
-	return count, err
-}
-
-const countTotalNamespacedReposQueryFmtstr = `
-SELECT COUNT(DISTINCT(repo_id))
-FROM external_service_repos
-WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
-
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
 	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
 	tr.LogFields(
@@ -337,7 +294,7 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "DeleteExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	err = s.Exec(ctx, sqlf.Sprintf(deleteExternalServiceRepoQuery, svc.ID, id))
@@ -495,7 +452,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "CreateExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.ID, &r.CreatedAt); err != nil {
@@ -666,7 +623,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
-		defer func() { _ = s.Done(err) }()
+		defer func() { err = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
@@ -788,34 +745,38 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
-		// required field for the sync worker, but
-		// the value is thrown out here
-		var executionLogs *[]any
-
-		var job SyncJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&executionLogs,
-			&job.ExternalServiceID,
-			&job.NextSyncAt,
-		); err != nil {
+		job, err := scanJob(rows)
+		if err != nil {
 			return nil, err
 		}
-
-		jobs = append(jobs, job)
+		jobs = append(jobs, *job)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
 	return jobs, nil
+}
+
+func scanJob(sc dbutil.Scanner) (*SyncJob, error) {
+	// required field for the sync worker, but
+	// the value is thrown out here
+	var executionLogs *[]any
+
+	var job SyncJob
+	return &job, sc.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&executionLogs,
+		&job.ExternalServiceID,
+		&job.NextSyncAt,
+	)
 }
 
 func metadataColumn(metadata any) (msg json.RawMessage, err error) {

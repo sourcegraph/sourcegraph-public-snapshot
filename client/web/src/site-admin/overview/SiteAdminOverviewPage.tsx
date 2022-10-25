@@ -10,15 +10,15 @@ import { ErrorLike, asError, isErrorLike, numberWithCommas, pluralize } from '@s
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
 import { PageTitle } from '../../components/PageTitle'
-import { Scalars } from '../../graphql-operations'
+import { Scalars, WAUsResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { SiteUsagePeriodFragment } from '../backend'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminOverviewPage.module.scss'
@@ -41,7 +41,7 @@ interface Props extends ActivationProps, ThemeProps {
         }
     }>
     /** For testing only */
-    _fetchWeeklyActiveUsers?: () => Observable<GQL.ISiteUsageStatistics>
+    _fetchWeeklyActiveUsers?: () => Observable<WAUsResult['site']['usageStatistics']>
 }
 
 const fetchOverview = (): Observable<{
@@ -88,20 +88,19 @@ const fetchOverview = (): Observable<{
         }))
     )
 
-const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
+const fetchWeeklyActiveUsers = (): Observable<WAUsResult['site']['usageStatistics']> =>
     queryGraphQL(gql`
         query WAUs {
             site {
                 usageStatistics {
                     waus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
+                        ...SiteUsagePeriodFields
                     }
                 }
             }
         }
+
+        ${SiteUsagePeriodFragment}
     `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site.usageStatistics)
@@ -126,9 +125,14 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
     )
 
     const stats = useObservable(
-        useMemo(() => _fetchWeeklyActiveUsers().pipe(catchError(error => of<ErrorLike>(asError(error)))), [
-            _fetchWeeklyActiveUsers,
-        ])
+        useMemo(
+            () =>
+                _fetchWeeklyActiveUsers().pipe(
+                    map(({ waus }) => ({ waus, daus: [], maus: [] })),
+                    catchError(error => of<ErrorLike>(asError(error)))
+                ),
+            [_fetchWeeklyActiveUsers]
+        )
     )
 
     let setupPercentage = 0

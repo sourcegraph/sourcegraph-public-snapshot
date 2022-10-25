@@ -6,11 +6,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -35,9 +36,10 @@ type repositoryConnectionResolver struct {
 // is the site admin because this method computes data from all available information in
 // the database.
 // This function takes returns a pagination of the repo IDs
-// 	r.ids - the full slice of sorted repo IDs
-// 	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
-// 	r.first - the # of repo IDs to return
+//
+//	r.ids - the full slice of sorted repo IDs
+//	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
+//	r.first - the # of repo IDs to return
 func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		var idSubset []int32
@@ -99,7 +101,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -109,14 +111,14 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 	}
 	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, repos[i])
+		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repos[i])
 	}
 	return resolvers, nil
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -126,7 +128,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

@@ -19,6 +19,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import styles from './RepoSettingsIndexPage.module.scss'
 
@@ -112,7 +113,7 @@ const TextSearchIndexedReference: React.FunctionComponent<
                             .&nbsp;
                             <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
                                 {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
-                                not indexed
+                                skipped during indexing
                             </Link>
                             .
                         </span>
@@ -133,19 +134,6 @@ interface State {
     textSearchIndex?: GQL.IRepositoryTextSearchIndex | null
     loading: boolean
     error?: Error
-}
-
-function prettyBytesBigint(bytes: bigint): string {
-    let unit = 0
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    const threshold = BigInt(1000)
-
-    while (bytes >= threshold) {
-        bytes /= threshold
-        unit += 1
-    }
-
-    return bytes.toString() + ' ' + units[unit]
 }
 
 /**

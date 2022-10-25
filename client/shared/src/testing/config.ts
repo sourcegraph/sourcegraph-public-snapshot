@@ -3,7 +3,7 @@
  * depended on by other modules is not included here.
  */
 export interface Config {
-    browser: 'firefox' | 'chrome'
+    browser: 'chrome'
     sudoToken: string
     sudoUsername: string
     gitHubClientID: string
@@ -69,8 +69,8 @@ const configFields: ConfigFields = {
         description: 'The browser to use.',
         defaultValue: 'chrome',
         parser: (value: string) => {
-            if (!['firefox', 'chrome'].includes(value)) {
-                throw new Error('BROWSER must be "chrome" or "firefox"')
+            if (value !== 'chrome') {
+                throw new Error('BROWSER must be "chrome"')
             }
             return value
         },
@@ -172,6 +172,7 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production.",
+        defaultValue: false,
     },
     keepBrowser: {
         envVar: 'KEEP_BROWSER',
@@ -190,6 +191,7 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             'If true, logs status messages to console. This does not log the browser console (use LOG_BROWSER_CONSOLE for that).',
+        defaultValue: true,
     },
     slowMo: {
         envVar: 'SLOWMO',

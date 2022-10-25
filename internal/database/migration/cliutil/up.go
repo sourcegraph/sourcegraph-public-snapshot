@@ -6,11 +6,10 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -30,14 +29,30 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
+	privilegedHashesFlag := &cli.StringSliceFlag{
+		Name:  "privileged-hash",
+		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.",
+		Value: nil,
+	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
+		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
+		Value: development,
+	}
+	ignoreSinglePendingLogFlag := &cli.BoolFlag{
+		Name:  "ignore-single-pending-log",
+		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
 		Value: development,
 	}
 	skipUpgradeValidationFlag := &cli.BoolFlag{
 		Name:  "skip-upgrade-validation",
 		Usage: "Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.",
+		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
+		Value: development,
+	}
+	skipOutOfBandMigrationValidationFlag := &cli.BoolFlag{
+		Name:  "skip-oobmigration-validation",
+		Usage: "Do not attempt to validate the progress of out-of-band migrations.",
 		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}
@@ -57,9 +72,19 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		}
 
 		return runner.Options{
-			Operations:           operations,
-			PrivilegedMode:       privilegedMode,
-			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
+			Operations:     operations,
+			PrivilegedMode: privilegedMode,
+			MatchPrivilegedHash: func(hash string) bool {
+				for _, candidate := range privilegedHashesFlag.Get(cmd) {
+					if hash == candidate {
+						return true
+					}
+				}
+
+				return false
+			},
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
 		}, nil
 	}
 
@@ -82,8 +107,17 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
+		db, err := extractDatabase(ctx, r)
+		if err != nil {
+			return err
+		}
 		if !skipUpgradeValidationFlag.Get(cmd) {
-			if err := validateUpgrade(ctx, r, version.Version()); err != nil {
+			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
+				return err
+			}
+		}
+		if !skipOutOfBandMigrationValidationFlag.Get(cmd) {
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner(db)); err != nil {
 				return err
 			}
 		}
@@ -107,24 +141,11 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			schemaNamesFlag,
 			unprivilegedOnlyFlag,
 			noopPrivilegedFlag,
+			privilegedHashesFlag,
 			ignoreSingleDirtyLogFlag,
+			ignoreSinglePendingLogFlag,
 			skipUpgradeValidationFlag,
+			skipOutOfBandMigrationValidationFlag,
 		},
 	}
-}
-
-func validateUpgrade(ctx context.Context, r Runner, version string) error {
-	store, err := r.Store(ctx, "frontend")
-	if err != nil {
-		return err
-	}
-
-	// NOTE: this is a dynamic type check as embedding basestore.ShareableStore
-	// into the store interface causes a cyclic import in db connection packages.
-	shareableStore, ok := store.(basestore.ShareableStore)
-	if !ok {
-		return errors.New("store does not support direct database handle access")
-	}
-
-	return upgradestore.NewWith(shareableStore.Handle()).ValidateUpgrade(ctx, "frontend", version)
 }

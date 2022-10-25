@@ -18,9 +18,10 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -42,6 +43,14 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 
 	root, err := root.RepositoryRoot()
 	if err != nil {
+		return err
+	}
+
+	// binaries get installed to <repository-root>/.bin. If the binary is installed with go build, then go
+	// will create .bin directory. Some binaries (like docsite) get downloaded instead of built and therefore
+	// need the directory to exist before hand.
+	binDir := filepath.Join(root, ".bin")
+	if err := os.Mkdir(binDir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
@@ -95,6 +104,10 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 
 	err = runner.waitForInstallation(ctx, cmdNames)
 	if err != nil {
+		return err
+	}
+
+	if err := writePid(); err != nil {
 		return err
 	}
 
@@ -279,6 +292,18 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 
 func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string]struct{}) error {
 	installationStart := time.Now()
+	installationSpans := make(map[string]*analytics.Span, len(cmdNames))
+	for name := range cmdNames {
+		_, installationSpans[name] = analytics.StartSpan(ctx, fmt.Sprintf("install %s", name), "install_command")
+	}
+	interrupt.Register(func() {
+		for _, span := range installationSpans {
+			if span.IsRecording() {
+				span.Cancelled()
+				span.End()
+			}
+		}
+	})
 
 	std.Out.Write("")
 	std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Installing %d commands...", len(cmdNames)))
@@ -312,7 +337,8 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 
 			delete(cmdNames, cmdName)
 			done += 1.0
-			analytics.LogEvent(ctx, "install_command", []string{cmdName}, installationStart, "succeeded")
+			installationSpans[cmdName].Succeeded()
+			installationSpans[cmdName].End()
 
 			progress.WriteLine(output.Styledf(output.StyleSuccess, "%s installed", cmdName))
 
@@ -339,7 +365,8 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 
 		case failure := <-c.failures:
 			progress.Destroy()
-			analytics.LogEvent(ctx, "install_command", []string{failure.cmdName}, installationStart, "failed")
+			installationSpans[failure.cmdName].RecordError("failed", failure.err)
+			installationSpans[failure.cmdName].End()
 
 			// Something went wrong with an installation, no need to wait for the others
 			printCmdError(std.Out.Output, failure.cmdName, failure.err)
@@ -529,10 +556,16 @@ var installFuncs = map[string]installFunc{
 		if err != nil {
 			return err
 		}
+		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
+		if _, err := os.Stat(target); err == nil {
+			return nil
+		} else if !os.IsNotExist(err) {
+			return err
+		}
 		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
 		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
-		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
-		return download.Executable(ctx, url, target)
+		_, err = download.Executable(ctx, url, target, false)
+		return err
 	},
 }
 

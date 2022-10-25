@@ -11,6 +11,8 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -23,14 +25,14 @@ const MonitorKind = "CodeMonitor"
 const utmSourceEmail = "code-monitoring-email"
 const priorityCritical = "CRITICAL"
 
-var MockSendEmailForNewSearchResult func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error
+var MockSendEmailForNewSearchResult func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error
 var MockExternalURL func() *url.URL
 
-func SendEmailForNewSearchResult(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
+func SendEmailForNewSearchResult(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error {
 	if MockSendEmailForNewSearchResult != nil {
-		return MockSendEmailForNewSearchResult(ctx, userID, data)
+		return MockSendEmailForNewSearchResult(ctx, db, userID, data)
 	}
-	return sendEmail(ctx, userID, newSearchResultsEmailTemplates, data)
+	return sendEmail(ctx, db, userID, newSearchResultsEmailTemplates, data)
 }
 
 var (
@@ -119,20 +121,20 @@ func NewTestTemplateDataForNewSearchResults(monitorDescription string) *Template
 	}
 }
 
-func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data any) error {
-	email, err := internalapi.Client.UserEmailsGetEmail(ctx, userID)
+func sendEmail(ctx context.Context, db database.DB, userID int32, template txtypes.Templates, data any) error {
+	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
+		}
 		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
 	}
-	if email == nil {
-		return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
-	}
 	if err := internalapi.Client.SendEmail(ctx, txtypes.Message{
-		To:       []string{*email},
+		To:       []string{email},
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		return errors.Errorf("internalapi.Client.SendEmail to email=%q userID=%d: %w", *email, userID, err)
+		return errors.Errorf("internalapi.Client.SendEmail to email=%q userID=%d: %w", email, userID, err)
 	}
 	return nil
 }

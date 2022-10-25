@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import * as H from 'history'
-import { uniq } from 'lodash'
+import { uniq, isEqual } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -19,7 +19,7 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
@@ -95,7 +95,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined, query: string) => void
+    onUpdate?: (value: C | ErrorLike | undefined, query: string, activeValues: FilteredConnectionArgs) => void
 
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
@@ -343,7 +343,13 @@ export class FilteredConnection<
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.useURLQuery) {
                             const searchFragment = this.urlQuery({ visibleResultCount: previousPage.length })
-                            if (this.props.location.search !== searchFragment) {
+                            const searchFragmentParams = new URLSearchParams(searchFragment)
+                            searchFragmentParams.sort()
+
+                            const oldParams = new URLSearchParams(this.props.location.search)
+                            oldParams.sort()
+
+                            if (!isEqual(Array.from(searchFragmentParams), Array.from(oldParams))) {
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,
@@ -353,11 +359,15 @@ export class FilteredConnection<
                             }
                         }
                         if (this.props.onUpdate) {
-                            this.props.onUpdate(connectionOrError, this.state.query)
+                            this.props.onUpdate(
+                                connectionOrError,
+                                this.state.query,
+                                this.buildArgs(this.state.activeValues)
+                            )
                         }
                         this.setState({ connectionOrError, ...rest })
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -479,36 +489,27 @@ export class FilteredConnection<
             errors.push(this.state.connectionOrError.error)
         }
 
-        // const shouldShowControls =
-        //     this.state.connectionOrError &&
-        //     !isErrorLike(this.state.connectionOrError) &&
-        //     this.state.connectionOrError.nodes &&
-        //     this.state.connectionOrError.nodes.length > 0 &&
-        //     this.props.hideControlsWhenEmpty
-
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
 
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
-                {
-                    /* shouldShowControls && */ (!this.props.hideSearch || this.props.filters) && (
-                        <ConnectionForm
-                            ref={this.setFilterRef}
-                            hideSearch={this.props.hideSearch}
-                            inputClassName={this.props.inputClassName}
-                            inputPlaceholder={inputPlaceholder}
-                            inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
-                            inputValue={this.state.query}
-                            onInputChange={this.onChange}
-                            autoFocus={this.props.autoFocus}
-                            filters={this.props.filters}
-                            onValueSelect={this.onDidSelectValue}
-                            values={this.state.activeValues}
-                            compact={this.props.compact}
-                            formClassName={this.props.formClassName}
-                        />
-                    )
-                }
+                {(!this.props.hideSearch || this.props.filters) && (
+                    <ConnectionForm
+                        ref={this.setFilterRef}
+                        hideSearch={this.props.hideSearch}
+                        inputClassName={this.props.inputClassName}
+                        inputPlaceholder={inputPlaceholder}
+                        inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
+                        inputValue={this.state.query}
+                        onInputChange={this.onChange}
+                        autoFocus={this.props.autoFocus}
+                        filters={this.props.filters}
+                        onValueSelect={this.onDidSelectValue}
+                        values={this.state.activeValues}
+                        compact={this.props.compact}
+                        formClassName={this.props.formClassName}
+                    />
+                )}
                 {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
 
                 {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
@@ -563,6 +564,7 @@ export class FilteredConnection<
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        this.props.onInputChange?.(event)
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
@@ -579,10 +581,8 @@ export class FilteredConnection<
         this.showMoreClicks.next()
     }
 
-    private buildArgs = (
-        values: Map<string, FilteredConnectionFilterValue>
-    ): { [name: string]: string | number | boolean } => {
-        let args: { [name: string]: string | number | boolean } = {}
+    private buildArgs = (values: Map<string, FilteredConnectionFilterValue>): FilteredConnectionArgs => {
+        let args: FilteredConnectionArgs = {}
         for (const key of values.keys()) {
             const value = values.get(key)
             if (value === undefined) {
@@ -603,4 +603,8 @@ export const resetFilteredConnectionURLQuery = (parameters: URLSearchParams): vo
     parameters.delete('visible')
     parameters.delete('first')
     parameters.delete('after')
+}
+
+export interface FilteredConnectionArgs {
+    [name: string]: string | number | boolean
 }

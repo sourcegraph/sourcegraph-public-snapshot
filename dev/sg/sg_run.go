@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/urfave/cli/v2"
+	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -26,21 +27,29 @@ var runCommand = &cli.Command{
 	Usage:     "Run the given commands",
 	ArgsUsage: "[command]",
 	UsageText: `
-# Run specific commands:
+# Run specific commands
 sg run gitserver
 sg run frontend
 
-# List available commands (defined under 'commands:' in 'sg.config.yaml'):
+# List available commands (defined under 'commands:' in 'sg.config.yaml')
 sg run -help
 
-# Run multiple commands:
+# Run multiple commands
 sg run gitserver frontend repo-updater
-	`,
+
+# View configuration for a command
+sg run -describe jaeger
+`,
 	Category: CategoryDev,
-	Flags:    []cli.Flag{},
-	Action:   runExec,
-	BashComplete: completeOptions(func() (options []string) {
-		config, _ := sgconf.Get(configFile, configOverwriteFile)
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "describe",
+			Usage: "Print details about selected run target",
+		},
+	},
+	Action: runExec,
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
+		config, _ := getConfig()
 		if config == nil {
 			return
 		}
@@ -52,7 +61,7 @@ sg run gitserver frontend repo-updater
 }
 
 func runExec(ctx *cli.Context) error {
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		return err
 	}
@@ -73,6 +82,18 @@ func runExec(ctx *cli.Context) error {
 		cmds = append(cmds, cmd)
 	}
 
+	if ctx.Bool("describe") {
+		for _, cmd := range cmds {
+			out, err := yaml.Marshal(cmd)
+			if err != nil {
+				return err
+			}
+			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+		}
+
+		return nil
+	}
+
 	return run.Commands(ctx.Context, config.Env, verbose, cmds...)
 }
 
@@ -81,10 +102,11 @@ func constructRunCmdLongHelp() string {
 
 	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
-		std.NewOutput(&out, false).WriteWarningf(err.Error())
+		// Do not treat error message as a format string
+		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
 		return out.String()
 	}
 
@@ -92,7 +114,10 @@ func constructRunCmdLongHelp() string {
 	fmt.Fprintf(&out, "Available commands in `%s`:\n", configFile)
 
 	var names []string
-	for name := range config.Commands {
+	for name, command := range config.Commands {
+		if command.Description != "" {
+			name = fmt.Sprintf("%s: %s", name, command.Description)
+		}
 		names = append(names, name)
 	}
 	sort.Strings(names)

@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -21,11 +20,22 @@ type Options struct {
 	// PrivilegedMode controls how privileged migrations are applied.
 	PrivilegedMode PrivilegedMode
 
+	// MatchPrivilegedHash is a function that matches a string indicating a deterministic hash
+	// of the set of privileged migrations that should be no-op'd against user-supplied strings
+	// given from a previous run with the same migration state. This value is only checked when
+	// running up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
+	MatchPrivilegedHash func(hash string) bool
+
 	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
 	// case when the _next_ migration application is the only failure. This is meant to enable
 	// a short development loop where the user can re-apply the `up` command without having to
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
+
+	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log in the
+	// specific case when the _next_ migration application is the only pending migration. This
+	// is meant to enable interruptable upgrades.
+	IgnoreSinglePendingLog bool
 }
 
 type PrivilegedMode uint
@@ -160,11 +170,6 @@ func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (M
 		return MigrationOperation{}, errors.Newf("nothing to revert")
 
 	default:
-		strLeafVersions := make([]string, 0, len(leafVersions))
-		for _, version := range leafVersions {
-			strLeafVersions = append(strLeafVersions, strconv.Itoa(version))
-		}
-
-		return MigrationOperation{}, errors.Newf("ambiguous revert - candidates include %s", strings.Join(strLeafVersions, ", "))
+		return MigrationOperation{}, errors.Newf("ambiguous revert - candidates include %s", strings.Join(intsToStrings(leafVersions), ", "))
 	}
 }

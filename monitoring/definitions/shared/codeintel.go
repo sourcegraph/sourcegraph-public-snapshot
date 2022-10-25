@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/common/model"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -84,7 +86,7 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 // src_codeintel_upload_processor_errors_total
 // src_codeintel_upload_processor_handlers
 func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring.Group {
-	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
+	group := Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
 			DescriptionRoot: "LSIF uploads",
@@ -103,6 +105,18 @@ func (codeIntelligence) NewUploadProcessorGroup(containerName string) monitoring
 		},
 		Handlers: NoAlertsOption("none"),
 	})
+
+	group.Rows[0] = append(group.Rows[0], monitoring.Observable{
+		Name:           "codeintel_upload_processor_upload_size",
+		Description:    "sum of upload sizes in bytes being processed by each precise code-intel worker instance",
+		Owner:          monitoring.ObservableOwnerCodeIntel,
+		Query:          `sum by(instance) (src_codeintel_upload_processor_upload_size{job="precise-code-intel-worker"})`,
+		NoAlert:        true,
+		Interpretation: "none",
+		Panel:          monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{instance}}"),
+	})
+
+	return group
 }
 
 // src_codeintel_commit_graph_total
@@ -161,9 +175,9 @@ func (codeIntelligence) NewCommitGraphProcessorGroup(containerName string) monit
 	})
 }
 
-// src_codeintel_index_scheduler_total
-// src_codeintel_index_scheduler_duration_seconds_bucket
-// src_codeintel_index_scheduler_errors_total
+// src_codeintel_autoindexing_total{op='HandleIndexSchedule'}
+// src_codeintel_autoindexing_duration_seconds_bucket{op='HandleIndexSchedule'}
+// src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule'}
 func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
@@ -172,19 +186,14 @@ func (codeIntelligence) NewIndexSchedulerGroup(containerName string) monitoring.
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_index_scheduler",
-				MetricDescriptionRoot: "scheduler",
-				By:                    []string{"op"},
+				MetricNameRoot:        "codeintel_autoindexing",
+				Filters:               []string{"op='HandleIndexSchedule'"},
+				MetricDescriptionRoot: "auto-indexing job scheduler",
+				RangeWindow:           model.Duration(time.Minute) * 10,
 			},
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
-			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
-		},
-		Aggregate: &SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
 			Duration:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
@@ -251,15 +260,17 @@ func (codeIntelligence) NewDependencyIndexProcessorGroup(containerName string) m
 // src_executor_total
 // src_executor_processor_total
 // src_executor_queued_duration_seconds_total
-func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.Group {
+func (codeIntelligence) NewExecutorQueueGroup(containerName, queueFilter string) monitoring.Group {
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
+			// if updating this, also update in NewExecutorProcessorGroup
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
+				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
 				By:                    []string{"queue"},
 			},
 		},
@@ -276,59 +287,65 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 	})
 }
 
+// src_executor_total
 // src_executor_processor_total
 // src_executor_processor_duration_seconds_bucket
 // src_executor_processor_errors_total
 // src_executor_processor_handlers
 func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitoring.Group {
+	// TODO: pass in as variable like in NewExecutorQueueGroup?
 	filters := []string{`queue=~"${queue:regex}"`}
+
+	constructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		JobLabel:              "sg_job",
+		MetricDescriptionRoot: "executor",
+		Filters:               filters,
+	}
+
+	queueConstructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "unprocessed executor job",
+		By:                    []string{"queue"},
+	}
 
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "executor",
-				MetricDescriptionRoot: "handler",
-				Filters:               filters,
-			},
+			ObservableConstructorOptions: constructorOptions,
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
-			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			Total:    NoAlertsOption("none"),
+			Duration: NoAlertsOption("none"),
+			Errors:   NoAlertsOption("none"),
+			ErrorRate: CriticalOption(
+				monitoring.Alert().
+					CustomQuery(Workerutil.LastOverTimeErrorRate(containerName, model.Duration(time.Hour*5), constructorOptions)).
+					For(time.Hour).
+					GreaterOrEqual(100),
+				`
+				- Determine the cause of failure from the auto-indexing job logs in the site-admin page.
+				- This alert fires if all executor jobs have been failing for the past hour. The alert will continue for up
+				to 5 hours until the error rate is no longer 100%, even if there are no running jobs in that time, as the
+				problem is not know to be resolved until jobs start succeeding again.
+			`),
 		},
-		Handlers: NoAlertsOption("none"),
+		Handlers: CriticalOption(
+			monitoring.Alert().
+				CustomQuery(Workerutil.QueueForwardProgress(containerName, constructorOptions, queueConstructorOptions)).
+				CustomDescription("0 active executor handlers and > 0 queue size").
+				LessOrEqual(0).
+				// ~5min for scale-from-zero
+				For(time.Minute*5),
+			`
+			- Check to see the state of any compute VMs, they may be taking longer than expected to boot.
+			- Make sure the executors appear under Site Admin > Executors.
+			- Check the Grafana dashboard section for APIClient, it should do frequent requests to Dequeue and Heartbeat and those must not fail.
+		`),
 	})
-}
-
-// src_executor_run_lock_wait_total
-// src_executor_run_lock_held_total
-func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
-	return monitoring.Group{
-		Title:  "Run lock contention",
-		Hidden: true,
-		Rows: []monitoring.Row{
-			{
-				Standard.Count("wait")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_wait",
-					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of milliseconds spent waiting for the run lock every 5m
-				`).Observable(),
-
-				Standard.Count("held")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_held",
-					MetricDescriptionRoot: "milliseconds",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of milliseconds spent holding for the run lock every 5m
-				`).Observable(),
-			},
-		},
-	}
 }
 
 // src_apiworker_command_total
@@ -343,6 +360,7 @@ func (codeIntelligence) NewExecutorSetupCommandGroup(containerName string) monit
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"setup.*"`},
 				By:                    []string{"op"},
@@ -376,6 +394,7 @@ func (codeIntelligence) NewExecutorExecutionCommandGroup(containerName string) m
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"exec.*"`},
 				By:                    []string{"op"},
@@ -409,6 +428,7 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "apiworker_command",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "command",
 				Filters:               []string{`op=~"teardown.*"`},
 				By:                    []string{"op"},
@@ -430,10 +450,10 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 	})
 }
 
-// src_apiworker_apiclient_total
-// src_apiworker_apiclient_duration_seconds_bucket
-// src_apiworker_apiclient_errors_total
-func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitoring.Group {
+// src_apiworker_apiclient_queue_total
+// src_apiworker_apiclient_queue_duration_seconds_bucket
+// src_apiworker_apiclient_queue_errors_total
+func (codeIntelligence) NewExecutorAPIQueueClientGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -441,7 +461,42 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "apiworker_apiclient",
+				MetricNameRoot:        "apiworker_apiclient_queue",
+				JobLabel:              "sg_job",
+				MetricDescriptionRoot: "client",
+				Filters:               nil,
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_apiworker_apiclient_files_total
+// src_apiworker_apiclient_files_duration_seconds_bucket
+// src_apiworker_apiclient_files_errors_total
+func (codeIntelligence) NewExecutorAPIFilesClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "executor",
+			DescriptionRoot: "Files API client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "apiworker_apiclient_files",
+				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "client",
 				Filters:               nil,
 				By:                    []string{"op"},
@@ -474,7 +529,7 @@ func (codeIntelligence) NewDBStoreGroup(containerName string) monitoring.Group {
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_dbstore",
+				MetricNameRoot:        "codeintel_uploads_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
@@ -581,7 +636,7 @@ func (codeIntelligence) NewLSIFStoreGroup(containerName string) monitoring.Group
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_lsifstore",
+				MetricNameRoot:        "codeintel_uploads_lsifstore",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
@@ -634,19 +689,19 @@ func (codeIntelligence) NewGitserverClientGroup(containerName string) monitoring
 	})
 }
 
-// src_codeintel_repoupdater_total
-// src_codeintel_repoupdater_duration_seconds_bucket
-// src_codeintel_repoupdater_errors_total
-func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitoring.Group {
+// src_codeintel_dependencies_total
+// src_codeintel_dependencies_duration_seconds_bucket
+// src_codeintel_dependencies_errors_total
+func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "repo-updater client",
+			DescriptionRoot: "dependencies service stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_repoupdater",
-				MetricDescriptionRoot: "client",
+				MetricNameRoot:        "codeintel_dependencies",
+				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
@@ -666,18 +721,50 @@ func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitori
 	})
 }
 
-// src_codeintel_dependencies_total
-// src_codeintel_dependencies_duration_seconds_bucket
-// src_codeintel_dependencies_errors_total
-func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitoring.Group {
+// src_codeintel_dependencies_store_total
+// src_codeintel_dependencies_store_duration_seconds_bucket
+// src_codeintel_dependencies_store_errors_total
+func (codeIntelligence) NewDependencyStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "dependencies service stats",
+			DescriptionRoot: "dependencies service store stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_dependencies",
+				MetricNameRoot:        "codeintel_dependencies_background",
+				MetricDescriptionRoot: "service",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_codeintel_dependencies_background_total
+// src_codeintel_dependencies_background_duration_seconds_bucket
+// src_codeintel_dependencies_background_errors_total
+func (codeIntelligence) NewDependencyBackgroundJobGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "dependencies service background stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_dependencies_background",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},

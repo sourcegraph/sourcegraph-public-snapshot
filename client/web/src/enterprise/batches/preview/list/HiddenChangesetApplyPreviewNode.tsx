@@ -25,12 +25,14 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
         <div className="p-2">
+            {/* eslint-disable-next-line no-restricted-syntax*/}
             <InputTooltip
                 id="select-changeset-hidden"
                 type="checkbox"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to publish to this repository."
+                placement="right"
             />
         </div>
         <HiddenChangesetApplyPreviewNodeStatusCell

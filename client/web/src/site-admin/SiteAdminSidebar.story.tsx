@@ -19,7 +19,6 @@ export const AdminSidebarItems: Story = () => (
         {webProps => (
             <SiteAdminSidebar
                 {...webProps}
-                className="site-admin-sidebar"
                 groups={siteAdminSidebarGroups}
                 isSourcegraphDotCom={false}
                 batchChangesEnabled={false}

@@ -19,8 +19,8 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
     Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -34,7 +34,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { AddMemberToOrgModal } from './AddMemberToOrgModal'
 import { ORG_MEMBERS_QUERY, ORG_MEMBER_REMOVE_MUTATION } from './gqlQueries'
@@ -44,7 +44,7 @@ import { getPaginatedItems, OrgMemberNotification } from './utils'
 import styles from './OrgMembersListPage.module.scss'
 
 interface Props
-    extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
+    extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'>,
         RouteComponentProps {
     onOrgGetStartedRefresh: () => void
 }
@@ -339,7 +339,6 @@ export const OrgMembersListPage: React.FunctionComponent<React.PropsWithChildren
                                     orgId={org.id}
                                     onInviteSent={onInviteSent}
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     size="lg"
                                     variant="link"
                                 />

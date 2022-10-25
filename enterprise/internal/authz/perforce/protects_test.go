@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -212,6 +213,7 @@ func TestMatchesAgainstDepot(t *testing.T) {
 }
 
 func TestScanFullRepoPermissions(t *testing.T) {
+	logger := logtest.Scoped(t)
 	f, err := os.Open("testdata/sample-protects-u.txt")
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +232,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -241,7 +243,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -254,41 +256,38 @@ func TestScanFullRepoPermissions(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/main/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "base/..."),
-					mustGlobPattern(t, "*/stuff/..."),
-					mustGlobPattern(t, "frontend/.../stuff/*"),
-					mustGlobPattern(t, "config.yaml"),
-					mustGlobPattern(t, "subdir/**"),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "subdir/remove/"),
-					mustGlobPattern(t, "subdir/*/also-remove/..."),
-					mustGlobPattern(t, ".../.secrets.env"),
+				Paths: []string{
+					mustGlobPattern(t, "-/..."),
+					mustGlobPattern(t, "/base/..."),
+					mustGlobPattern(t, "/*/stuff/..."),
+					mustGlobPattern(t, "/frontend/.../stuff/*"),
+					mustGlobPattern(t, "/config.yaml"),
+					mustGlobPattern(t, "/subdir/**"),
+					mustGlobPattern(t, "-/subdir/remove/"),
+					mustGlobPattern(t, "/subdir/some-dir/also-remove/..."),
+					mustGlobPattern(t, "/subdir/another-dir/also-remove/..."),
+					mustGlobPattern(t, "-/subdir/*/also-remove/..."),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 			"//depot/test/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, ".../.secrets.env"),
+				Paths: []string{
+					mustGlobPattern(t, "/..."),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 			"//depot/training/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "..."),
-					mustGlobPattern(t, ".../README.md"),
-					mustGlobPattern(t, "dir.yaml"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "secrets/..."),
-					mustGlobPattern(t, ".env"),
-					mustGlobPattern(t, ".../.secrets.env"),
+				Paths: []string{
+					mustGlobPattern(t, "/..."),
+					mustGlobPattern(t, "-/secrets/..."),
+					mustGlobPattern(t, "-/.env"),
+					mustGlobPattern(t, "/.../README.md"),
+					mustGlobPattern(t, "/dir.yaml"),
+					mustGlobPattern(t, "-/.../.secrets.env"),
 				},
 			},
 		},
@@ -299,6 +298,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 }
 
 func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
+	logger := logtest.Scoped(t)
 	f, err := os.Open("testdata/sample-protects-m.txt")
 	if err != nil {
 		t.Fatal(err)
@@ -317,14 +317,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -334,15 +334,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/main/base/": {
-				PathIncludes: []string{
-					mustGlobPattern(t, "**"),
-				},
-				PathExcludes: []string{
-					mustGlobPattern(t, "**"),
-					mustGlobPattern(t, "**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "build/deleteorgs.txt"),
-					mustGlobPattern(t, "**/base/build/**/asdf.txt"),
-					mustGlobPattern(t, "build/**/asdf.txt"),
+				Paths: []string{
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "/**"),
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/**/base/build/**/asdf.txt"),
+					mustGlobPattern(t, "-/build/**/asdf.txt"),
 				},
 			},
 		},
@@ -475,8 +474,52 @@ read  group     Rome    *  //depot/dev/...
 			protectsFile: "testdata/sample-protects-edb.txt",
 			canReadAll:   []string{"db/plpgsql/seed.psql"},
 		},
+		{
+			name:  "Leading slash edge cases",
+			depot: "//depot/",
+			protects: `
+read   group   Rome    *   //depot/.../something.java   ## Can read all files named 'something.java'
+read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
+`,
+			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java", "/dev/prodA/something.java", "/dev/prodA/another_dir/something.java"},
+			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+		},
+		{
+			name:  "Deny all, grant some",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   -//depot/main/...
+read    group   Dev1    *   -//depot/main/.../*.java
+read    group   Dev1    *   //depot/main/.../dev/foo.java
+`,
+			canReadAll:    []string{"dev/foo.java"},
+			cannotReadAny: []string{"dev/bar.java"},
+		},
+		{
+			name:  "Grant all, deny some",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/...
+read    group   Dev1    *   //depot/main/.../*.java
+read    group   Dev1    *   -//depot/main/.../dev/foo.java
+`,
+			canReadAll:    []string{"dev/bar.java"},
+			cannotReadAny: []string{"dev/foo.java"},
+		},
+		{
+			name:  "Tricky minus names",
+			depot: "//-depot/-main/",
+			protects: `
+read    group   Dev1    *   //-depot/-main/...
+read    group   Dev1    *   //-depot/-main/.../*.java
+read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
+`,
+			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
+			cannotReadAny: []string{"dev/foo.java"},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
 			if !strings.HasPrefix(tc.depot, "/") {
 				t.Fatal("depot must end in '/'")
 			}
@@ -513,14 +556,14 @@ read  group     Rome    *  //depot/dev/...
 			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
 				return rc, nil, nil
 			})
-			p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
 			perms := &authz.ExternalUserPermissions{
 				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 			}
-			if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
 				t.Fatal(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
@@ -532,7 +575,7 @@ read  group     Rome    *  //depot/dev/...
 			} else if ok && tc.noRules {
 				t.Fatal("expected no rules")
 			}
-			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.PathIncludes, rules.PathExcludes)
+			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -561,6 +604,7 @@ read  group     Rome    *  //depot/dev/...
 }
 
 func TestFullScanWildcardDepotMatching(t *testing.T) {
+	logger := logtest.Scoped(t)
 	f, err := os.Open("testdata/sample-protects-x.txt")
 	if err != nil {
 		t.Fatal(err)
@@ -579,14 +623,14 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
 		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
 	}
-	if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -596,16 +640,15 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 		},
 		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 			"//depot/654/deploy/base/": {
-				PathExcludes: []string{
-					mustGlobPattern(t, "**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "build/deleteorgs.txt"),
-					mustGlobPattern(t, "asdf/plsql/base/cCustomSchema*.sql"),
-				},
-				PathIncludes: []string{
-					mustGlobPattern(t, "db/upgrade-scripts/**"),
-					mustGlobPattern(t, "db/my_db/upgrade-scripts/**"),
-					mustGlobPattern(t, "asdf/config/my_schema.xml"),
-					mustGlobPattern(t, "db/plpgsql/**"),
+				Paths: []string{
+					mustGlobPattern(t, "-/**"),
+					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/build/deleteorgs.txt"),
+					mustGlobPattern(t, "-/asdf/plsql/base/cCustomSchema*.sql"),
+					mustGlobPattern(t, "/db/upgrade-scripts/**"),
+					mustGlobPattern(t, "/db/my_db/upgrade-scripts/**"),
+					mustGlobPattern(t, "/asdf/config/my_schema.xml"),
+					mustGlobPattern(t, "/db/plpgsql/**"),
 				},
 			},
 		},
@@ -709,6 +752,7 @@ func TestCheckWildcardDepotMatch(t *testing.T) {
 }
 
 func TestScanAllUsers(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	f, err := os.Open("testdata/sample-protects-a.txt")
 	if err != nil {
@@ -729,7 +773,7 @@ func TestScanAllUsers(t *testing.T) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}
@@ -739,7 +783,7 @@ func TestScanAllUsers(t *testing.T) {
 	}
 
 	users := make(map[string]struct{})
-	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
+	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users)); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]struct{}{

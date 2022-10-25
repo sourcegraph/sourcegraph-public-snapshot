@@ -37,7 +37,13 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 }) => {
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
+            <span
+                className={classNames(
+                    'test-search-result-label flex-grow-1',
+                    styles.titleInner,
+                    styles.mutedRepoFileLink
+                )}
+            >
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>

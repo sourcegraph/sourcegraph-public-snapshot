@@ -17,6 +17,7 @@ interface SeriesCardProps {
     query: string
     /** Color value of series. */
     stroke?: string
+
     /** Custom class name for root button element. */
     className?: string
     /** Edit handler. */

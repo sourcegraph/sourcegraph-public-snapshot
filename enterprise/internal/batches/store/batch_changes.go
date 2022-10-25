@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -62,7 +63,6 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var upsertBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:UpsertBatchChange
 INSERT INTO batch_changes (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (%s) WHERE %s
@@ -98,28 +98,28 @@ func (s *Store) upsertBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.CreatorID),
-		nullInt32Column(c.LastApplierID),
-		nullTimeColumn(c.LastAppliedAt),
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.CreatorID),
+		dbutil.NullInt32Column(c.LastApplierID),
+		dbutil.NullTimeColumn(c.LastAppliedAt),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullTimeColumn(c.ClosedAt),
+		dbutil.NullTimeColumn(c.ClosedAt),
 		c.BatchSpecID,
 		sqlf.Join(conflictTarget, ", "),
 		predicate,
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.CreatorID),
-		nullInt32Column(c.LastApplierID),
-		nullTimeColumn(c.LastAppliedAt),
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.CreatorID),
+		dbutil.NullInt32Column(c.LastApplierID),
+		dbutil.NullTimeColumn(c.LastAppliedAt),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullTimeColumn(c.ClosedAt),
+		dbutil.NullTimeColumn(c.ClosedAt),
 		c.BatchSpecID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
@@ -138,7 +138,6 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var createBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:CreateBatchChange
 INSERT INTO batch_changes (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
@@ -158,14 +157,14 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.CreatorID),
-		nullInt32Column(c.LastApplierID),
-		nullTimeColumn(c.LastAppliedAt),
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.CreatorID),
+		dbutil.NullInt32Column(c.LastApplierID),
+		dbutil.NullTimeColumn(c.LastAppliedAt),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullTimeColumn(c.ClosedAt),
+		dbutil.NullTimeColumn(c.ClosedAt),
 		c.BatchSpecID,
 		sqlf.Join(batchChangeColumns, ", "),
 	)
@@ -184,7 +183,6 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 }
 
 var updateBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:UpdateBatchChange
 UPDATE batch_changes
 SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -199,14 +197,14 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.CreatorID),
-		nullInt32Column(c.LastApplierID),
-		nullTimeColumn(c.LastAppliedAt),
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.CreatorID),
+		dbutil.NullInt32Column(c.LastApplierID),
+		dbutil.NullTimeColumn(c.LastAppliedAt),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
 		c.CreatedAt,
 		c.UpdatedAt,
-		nullTimeColumn(c.ClosedAt),
+		dbutil.NullTimeColumn(c.ClosedAt),
 		c.BatchSpecID,
 		c.ID,
 		sqlf.Join(batchChangeColumns, ", "),
@@ -224,7 +222,6 @@ func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 }
 
 var deleteBatchChangeQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:DeleteBatchChange
 DELETE FROM batch_changes WHERE id = %s
 `
 
@@ -235,7 +232,7 @@ type CountBatchChangesOpts struct {
 	States      []btypes.BatchChangeState
 	RepoID      api.RepoID
 
-	CreatorID int32
+	OnlyAdministeredByUserID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -257,7 +254,6 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 }
 
 var countBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:CountBatchChanges
 SELECT COUNT(batch_changes.id)
 FROM batch_changes
 %s
@@ -296,8 +292,8 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		}
 	}
 
-	if opts.CreatorID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
+	if opts.OnlyAdministeredByUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_changes.namespace_user_id = %d OR (EXISTS (SELECT 1 FROM org_members WHERE org_id = batch_changes.namespace_org_id AND user_id = %s AND org_id <> 0)))", opts.OnlyAdministeredByUserID, opts.OnlyAdministeredByUserID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -364,8 +360,26 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 	q := getBatchChangeQuery(&opts)
 
 	var c btypes.BatchChange
+	var userDeletedAt time.Time
+	var orgDeletedAt time.Time
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanBatchChange(&c, sc)
+		return sc.Scan(
+			&c.ID,
+			&c.Name,
+			&dbutil.NullString{S: &c.Description},
+			&dbutil.NullInt32{N: &c.CreatorID},
+			&dbutil.NullInt32{N: &c.LastApplierID},
+			&dbutil.NullTime{Time: &c.LastAppliedAt},
+			&dbutil.NullInt32{N: &c.NamespaceUserID},
+			&dbutil.NullInt32{N: &c.NamespaceOrgID},
+			&c.CreatedAt,
+			&c.UpdatedAt,
+			&dbutil.NullTime{Time: &c.ClosedAt},
+			&c.BatchSpecID,
+			// Namespace deleted values
+			&dbutil.NullTime{Time: &userDeletedAt},
+			&dbutil.NullTime{Time: &orgDeletedAt},
+		)
 	})
 	if err != nil {
 		return nil, err
@@ -375,23 +389,24 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 		return nil, ErrNoResults
 	}
 
+	if !userDeletedAt.IsZero() || !orgDeletedAt.IsZero() {
+		return nil, ErrDeletedNamespace
+	}
+
 	return &c, nil
 }
 
 var getBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChange
 SELECT %s FROM batch_changes
 LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id
 LEFT JOIN orgs  namespace_org  ON batch_changes.namespace_org_id = namespace_org.id
 WHERE %s
+ORDER BY id DESC
 LIMIT 1
 `
 
 func getBatchChangeQuery(opts *GetBatchChangeOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("namespace_user.deleted_at IS NULL"),
-		sqlf.Sprintf("namespace_org.deleted_at IS NULL"),
-	}
+	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.ID))
 	}
@@ -416,12 +431,18 @@ func getBatchChangeQuery(opts *GetBatchChangeOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
+	columns := append(batchChangeColumns, sqlf.Sprintf("namespace_user.deleted_at"), sqlf.Sprintf("namespace_org.deleted_at"))
+
 	return sqlf.Sprintf(
 		getBatchChangesQueryFmtstr,
-		sqlf.Join(batchChangeColumns, ", "),
+		sqlf.Join(columns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
+
+// ErrDeletedNamespace is the error when the namespace (either user or org) that is associated with the batch change
+// has been deleted.
+var ErrDeletedNamespace = errors.New("namespace has been deleted")
 
 type GetBatchChangeDiffStatOpts struct {
 	BatchChangeID int64
@@ -441,7 +462,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+		return sc.Scan(&diffStat.Added, &diffStat.Deleted)
 	})
 	if err != nil {
 		return nil, err
@@ -451,10 +472,8 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 }
 
 var getBatchChangeDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetBatchChangeDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM
 	changesets
@@ -484,7 +503,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 
 	var diffStat diff.Stat
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+		return sc.Scan(&diffStat.Added, &diffStat.Deleted)
 	})
 	if err != nil {
 		return nil, err
@@ -494,10 +513,8 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 }
 
 var getRepoDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:GetRepoDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
-	COALESCE(SUM(diff_stat_changed), 0) AS changed,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
 FROM changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
@@ -520,7 +537,7 @@ type ListBatchChangesOpts struct {
 	Cursor      int64
 	States      []btypes.BatchChangeState
 
-	CreatorID int32
+	OnlyAdministeredByUserID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -560,7 +577,6 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 }
 
 var listBatchChangesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_changes.go:ListBatchChanges
 SELECT %s FROM batch_changes
 %s
 WHERE %s
@@ -603,8 +619,8 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		}
 	}
 
-	if opts.CreatorID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
+	if opts.OnlyAdministeredByUserID != 0 {
+		preds = append(preds, sqlf.Sprintf("(batch_changes.namespace_user_id = %d OR (EXISTS (SELECT 1 FROM org_members WHERE org_id = batch_changes.namespace_org_id AND user_id = %s AND org_id <> 0)))", opts.OnlyAdministeredByUserID, opts.OnlyAdministeredByUserID))
 	}
 
 	if opts.NamespaceUserID != 0 {

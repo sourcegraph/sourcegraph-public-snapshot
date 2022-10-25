@@ -12,18 +12,13 @@ import {
 import {
     makeRepoURI,
     RepoRevision,
-    RevisionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
+    RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import {
-    ExternalLinkFields,
-    RepositoryRedirectResult,
-    RepositoryRedirectVariables,
-    RepositoryFields,
-} from '../graphql-operations'
+import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 
 export const externalLinkFieldsFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
@@ -41,6 +36,10 @@ export const repositoryFragment = gql`
             url
             serviceKind
         }
+        externalRepository {
+            serviceType
+            serviceID
+        }
         description
         viewerCanAdminister
         defaultBranch {
@@ -50,42 +49,6 @@ export const repositoryFragment = gql`
     }
 `
 
-/**
- * Fetch the repository.
- */
-export const fetchRepository = memoizeObservable(
-    (args: { repoName: string }): Observable<RepositoryFields> =>
-        requestGraphQL<RepositoryRedirectResult, RepositoryRedirectVariables>(
-            gql`
-                query RepositoryRedirect($repoName: String!) {
-                    repositoryRedirect(name: $repoName) {
-                        __typename
-                        ... on Repository {
-                            ...RepositoryFields
-                        }
-                        ... on Redirect {
-                            url
-                        }
-                    }
-                }
-                ${repositoryFragment}
-            `,
-            args
-        ).pipe(
-            map(dataOrThrowErrors),
-            map(data => {
-                if (!data.repositoryRedirect) {
-                    throw new RepoNotFoundError(args.repoName)
-                }
-                if (data.repositoryRedirect.__typename === 'Redirect') {
-                    throw new RepoSeeOtherError(data.repositoryRedirect.url)
-                }
-                return data.repositoryRedirect
-            })
-        ),
-    makeRepoURI
-)
-
 export interface ResolvedRevision extends ResolvedRevisionSpec {
     defaultBranch: string
 
@@ -93,19 +56,24 @@ export interface ResolvedRevision extends ResolvedRevisionSpec {
     rootTreeURL: string
 }
 
+export interface Repo {
+    repo: RepositoryFields
+}
+
 /**
  * When `revision` is undefined, the default branch is resolved.
  *
  * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
-export const resolveRevision = memoizeObservable(
-    ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision> =>
+export const resolveRepoRevision = memoizeObservable(
+    ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision & Repo> =>
         queryGraphQL(
             gql`
-                query ResolveRev($repoName: String!, $revision: String!) {
+                query ResolveRepoRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
                         __typename
                         ... on Repository {
+                            ...RepositoryFields
                             mirrorInfo {
                                 cloneInProgress
                                 cloneProgress
@@ -126,6 +94,7 @@ export const resolveRevision = memoizeObservable(
                         }
                     }
                 }
+                ${repositoryFragment}
             `,
             { repoName, revision: revision || '' }
         ).pipe(
@@ -157,7 +126,9 @@ export const resolveRevision = memoizeObservable(
                 if (!data.repositoryRedirect.commit.tree) {
                     throw new RevisionNotFoundError(defaultBranch)
                 }
+
                 return {
+                    repo: data.repositoryRedirect,
                     commitID: data.repositoryRedirect.commit.oid,
                     defaultBranch,
                     rootTreeURL: data.repositoryRedirect.commit.tree.url,
@@ -193,6 +164,35 @@ export const fetchFileExternalLinks = memoizeObservable(
                 }
                 return data.repository.commit.file.externalURLs
             })
+        ),
+    makeRepoURI
+)
+
+interface FetchCommitMessageResult {
+    __typename?: 'Query'
+    repository: {
+        commit: {
+            message: string
+        }
+    }
+}
+
+export const fetchCommitMessage = memoizeObservable(
+    (context: RepoRevision): Observable<string> =>
+        requestGraphQL<FetchCommitMessageResult, RepoRevision>(
+            gql`
+                query CommitMessage($repoName: String!, $revision: String!) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            message
+                        }
+                    }
+                }
+            `,
+            context
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => data.repository.commit.message)
         ),
     makeRepoURI
 )

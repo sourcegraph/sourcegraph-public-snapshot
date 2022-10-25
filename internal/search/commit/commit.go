@@ -94,7 +94,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.NewResolver(clients.DB)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	return nil, repos.Paginate(ctx, j.RepoOpts, func(page *searchrepos.Resolved) error {
 		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
 
@@ -220,6 +220,9 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 
 	// Convert parameters to nodes
 	for _, parameter := range b.Parameters {
+		if parameter.Annotation.Labels.IsSet(query.IsPredicate) {
+			continue
+		}
 		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
@@ -235,13 +238,11 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
+func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
 	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
 	for _, rev := range in {
 		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec:        rev.RevSpec,
-			RefGlob:        rev.RefGlob,
-			ExcludeRefGlob: rev.ExcludeRefGlob,
+			RevSpec: rev,
 		})
 	}
 	return out
@@ -336,8 +337,10 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var diffPreview, messagePreview *result.MatchedString
+	var structuredDiff []result.DiffFile
 	if diff {
 		diffPreview = &in.Diff
+		structuredDiff, _ = result.ParseDiffString(in.Diff.Content)
 	} else {
 		messagePreview = &in.Message
 	}
@@ -360,6 +363,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		},
 		Repo:           repo,
 		DiffPreview:    diffPreview,
+		Diff:           structuredDiff,
 		MessagePreview: messagePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}

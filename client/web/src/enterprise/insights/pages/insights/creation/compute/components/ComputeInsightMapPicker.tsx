@@ -5,15 +5,15 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { Button, ButtonGroup, ButtonProps, Tooltip } from '@sourcegraph/wildcard'
 
+import { GroupByField } from '../../../../../../../graphql-operations'
 import { SearchBasedInsightSeries } from '../../../../../core'
-import { ComputeInsightMap } from '../types'
 
 const TOOLTIP_TEXT = 'Available only for queries with type:commit and type:diff'
 
 export interface ComputeInsightMapPickerProps {
     series: SearchBasedInsightSeries[]
-    value: ComputeInsightMap
-    onChange: (nextValue: ComputeInsightMap) => void
+    value: GroupByField
+    onChange: (nextValue: GroupByField) => void
 }
 
 export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props => {
@@ -21,59 +21,53 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
 
     const handleOptionClick = (event: MouseEvent<HTMLButtonElement>): void => {
         const target = event.target as HTMLButtonElement
-        const pickedValue = target.value as ComputeInsightMap
+        const pickedValue = target.value as GroupByField
 
         onChange(pickedValue)
     }
 
-    const hasTypeDiffOrCommit = useMemo(
-        () =>
-            series.every(({ query }) => {
-                const tokens = scanSearchQuery(query)
+    const hasTypeDiffOrCommit = useMemo(() => {
+        if (series.length === 0) {
+            return false
+        }
 
-                if (tokens.type === 'success') {
-                    return tokens.term
-                        .filter((token): token is Filter => token.type === 'filter')
-                        .some(
-                            filter =>
-                                resolveFilter(filter.field.value)?.type === FilterType.type &&
-                                (filter.value?.value === 'diff' || filter.value?.value === 'commit')
-                        )
-                }
+        return series.every(({ query }) => {
+            const tokens = scanSearchQuery(query)
 
-                return false
-            }),
-        [series]
-    )
+            if (tokens.type === 'success') {
+                return tokens.term
+                    .filter((token): token is Filter => token.type === 'filter')
+                    .some(
+                        filter =>
+                            resolveFilter(filter.field.value)?.type === FilterType.type &&
+                            (filter.value?.value === 'diff' || filter.value?.value === 'commit')
+                    )
+            }
+
+            return false
+        })
+    }, [series])
 
     useEffect(() => {
-        if (!hasTypeDiffOrCommit && (value === ComputeInsightMap.Author || value === ComputeInsightMap.Date)) {
-            onChange(ComputeInsightMap.Repositories)
+        if (!hasTypeDiffOrCommit && (value === GroupByField.AUTHOR || value === GroupByField.DATE)) {
+            onChange(GroupByField.REPO)
         }
     }, [hasTypeDiffOrCommit, value, onChange])
 
     return (
         <ButtonGroup className="mb-3 d-block">
-            <OptionButton
-                active={value === ComputeInsightMap.Repositories}
-                value={ComputeInsightMap.Repositories}
-                onClick={handleOptionClick}
-            >
+            <OptionButton active={value === GroupByField.REPO} value={GroupByField.REPO} onClick={handleOptionClick}>
                 repository
             </OptionButton>
 
-            <OptionButton
-                active={value === ComputeInsightMap.Path}
-                value={ComputeInsightMap.Path}
-                onClick={handleOptionClick}
-            >
+            <OptionButton active={value === GroupByField.PATH} value={GroupByField.PATH} onClick={handleOptionClick}>
                 path
             </OptionButton>
 
             <Tooltip content={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}>
                 <OptionButton
-                    active={value === ComputeInsightMap.Author}
-                    value={ComputeInsightMap.Author}
+                    active={value === GroupByField.AUTHOR}
+                    value={GroupByField.AUTHOR}
                     disabled={!hasTypeDiffOrCommit}
                     onClick={handleOptionClick}
                 >
@@ -83,10 +77,9 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
 
             <Tooltip content={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}>
                 <OptionButton
-                    active={value === ComputeInsightMap.Date}
-                    value={ComputeInsightMap.Date}
+                    active={value === GroupByField.DATE}
+                    value={GroupByField.DATE}
                     disabled={!hasTypeDiffOrCommit}
-                    data-tooltip={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}
                     onClick={handleOptionClick}
                 >
                     date
@@ -97,7 +90,7 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
 }
 
 interface OptionButtonProps extends ButtonProps {
-    value: ComputeInsightMap
+    value: GroupByField
     active?: boolean
 }
 

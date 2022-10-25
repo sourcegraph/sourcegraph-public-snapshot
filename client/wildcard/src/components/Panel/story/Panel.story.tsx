@@ -105,6 +105,7 @@ export const Simple: Story = () => {
                 defaultSize={200}
                 storageKey={`size-cache-${position}`}
                 className={styles.panel}
+                ariaLabel="Storybook panel"
             >
                 <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
@@ -123,7 +124,7 @@ export const WithChildren: Story = (props = {}) => {
     const closePanel = () => setTabIndex(-1)
 
     return (
-        <Panel {...props}>
+        <Panel {...props} ariaLabel="Storybook panel">
             <Tabs index={tabIndex} size="small">
                 <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top')}>
                     <TabList>

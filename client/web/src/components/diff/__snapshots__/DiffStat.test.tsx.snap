@@ -6,7 +6,7 @@ exports[`DiffStat expandedCounts 1`] = `
     class=""
   >
     <div
-      aria-label="1 addition, 2 changes, 3 deletions"
+      aria-label="3 additions, 5 deletions"
       class="diffStat"
       data-state="closed"
       role="note"
@@ -14,17 +14,12 @@ exports[`DiffStat expandedCounts 1`] = `
       <strong
         class="mr-1 a11y-ignore text-success"
       >
-        +1
-      </strong>
-      <strong
-        class="mr-1 a11y-ignore text-warning"
-      >
-        •2
+        +3
       </strong>
       <strong
         class="a11y-ignore text-danger"
       >
-        −3
+        −5
       </strong>
     </div>
   </div>
@@ -37,7 +32,7 @@ exports[`DiffStat standard 1`] = `
     class=""
   >
     <div
-      aria-label="1 addition, 2 changes, 3 deletions"
+      aria-label="3 additions, 5 deletions"
       class="diffStat"
       data-state="closed"
       role="note"
@@ -59,7 +54,7 @@ exports[`DiffStatSquares 1`] = `
       class="square bg-success"
     />
     <div
-      class="square bg-warning"
+      class="square bg-danger"
     />
     <div
       class="square bg-danger"
@@ -83,7 +78,7 @@ exports[`DiffStatStack 1`] = `
       class="pb-1"
     >
       <div
-        aria-label="1 addition, 2 changes, 3 deletions"
+        aria-label="3 additions, 5 deletions"
         class="diffStat"
         data-state="closed"
         role="note"
@@ -91,17 +86,12 @@ exports[`DiffStatStack 1`] = `
         <strong
           class="mr-1 a11y-ignore text-success"
         >
-          +1
-        </strong>
-        <strong
-          class="mr-1 a11y-ignore text-warning"
-        >
-          •2
+          +3
         </strong>
         <strong
           class="a11y-ignore text-danger"
         >
-          −3
+          −5
         </strong>
       </div>
     </div>
@@ -112,7 +102,7 @@ exports[`DiffStatStack 1`] = `
         class="square bg-success"
       />
       <div
-        class="square bg-warning"
+        class="square bg-danger"
       />
       <div
         class="square bg-danger"

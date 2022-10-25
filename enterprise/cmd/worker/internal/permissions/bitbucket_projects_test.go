@@ -35,7 +35,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, jobID)
 
-	store := createBitbucketProjectPermissionsStore(db, &config{})
+	store := createBitbucketProjectPermissionsStore(logger, db, &config{})
 	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -53,11 +53,12 @@ func TestGetBitbucketClient(t *testing.T) {
 	require.NoError(t, err)
 
 	svc := types.ExternalService{
-		Config: string(cfg),
+		Config: extsvc.NewUnencryptedConfig(string(cfg)),
 	}
 
+	ctx := context.Background()
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(&svc)
+	client, err := handler.getBitbucketClient(ctx, logtest.Scoped(t), &svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -72,6 +73,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "github",
+			Config:      extsvc.NewEmptyConfig(),
 		},
 		nil,
 	)
@@ -139,11 +141,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	extSvc := &types.ExternalService{
-		ID:   1,
-		Kind: extsvc.KindBitbucketServer,
-	}
-
 	check := func() {
 		// check that the permissions were set
 		perms := db.Perms()
@@ -170,8 +167,8 @@ func TestSetPermissionsForUsers(t *testing.T) {
 
 		for _, bindID := range bindIDs {
 			userPerms := &authz.UserPendingPermissions{
-				ServiceType: extsvc.TypeBitbucketServer,
-				ServiceID:   "1",
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
 				BindID:      bindID,
 				Perm:        authz.Read,
 				Type:        authz.PermRepos,
@@ -190,7 +187,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
@@ -210,7 +206,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
@@ -230,7 +225,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// test with only non-existent users
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "username1@foo.bar", Permission: "read"},
@@ -254,7 +248,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
@@ -296,7 +289,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`),
 	})
 	require.NoError(t, err)
 
@@ -329,14 +322,14 @@ func TestHandleRestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(1, 10060, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 10056, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 10061, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 10058, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 10059, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 10072, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
 
 	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 	VALUES
@@ -405,7 +398,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`),
 	})
 	require.NoError(t, err)
 
@@ -438,14 +431,14 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(1, 10060, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 10056, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 10061, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 10058, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 10059, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 10072, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
 
 	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 	VALUES

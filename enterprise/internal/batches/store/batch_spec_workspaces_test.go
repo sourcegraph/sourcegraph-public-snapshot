@@ -7,29 +7,30 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
-func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	repoStore := database.ReposWith(logger, s)
 
-	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
-	repos, _ := ct.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)
+	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	repos, _ := bt.CreateTestRepos(t, ctx, s.DatabaseDB(), 4)
 	deletedRepo := repos[3].With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 	// Allow all repos but repos[2]
-	ct.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repos[0].ID, repos[1].ID, repos[3].ID)
+	bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repos[0].ID, repos[1].ID, repos[3].ID)
 
 	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 4)
 	for i := 0; i < cap(workspaces); i++ {
@@ -413,5 +414,43 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				t.Fatalf("workspace.Skipped is wrong. want=%t, have=%t", want, have)
 			}
 		}
+	})
+
+	t.Run("ListRetryBatchSpecWorkspaces", func(t *testing.T) {
+		successfulWorkspace := &btypes.BatchSpecWorkspace{
+			BatchSpecID: 9999,
+			RepoID:      repos[0].ID,
+		}
+		failedWorkspace := &btypes.BatchSpecWorkspace{
+			BatchSpecID: 9999,
+			RepoID:      repos[0].ID,
+		}
+
+		err := s.CreateBatchSpecWorkspace(ctx, successfulWorkspace)
+		require.NoError(t, err)
+		err = s.CreateBatchSpecWorkspace(ctx, failedWorkspace)
+		require.NoError(t, err)
+
+		err = s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state, cancel) VALUES (%s, %s, %s, %s)", successfulWorkspace.ID, user.ID, btypes.BatchSpecWorkspaceExecutionJobStateCompleted, true))
+		require.NoError(t, err)
+		err = s.Exec(ctx, sqlf.Sprintf("INSERT INTO batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, state, cancel) VALUES (%s, %s, %s, %s)", failedWorkspace.ID, user.ID, btypes.BatchSpecResolutionJobStateFailed, true))
+		require.NoError(t, err)
+
+		t.Run("All", func(t *testing.T) {
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+				BatchSpecID:      9999,
+				IncludeCompleted: true,
+			})
+			require.NoError(t, err)
+			assert.Len(t, have, 2)
+		})
+
+		t.Run("Uncompleted", func(t *testing.T) {
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+				BatchSpecID: 9999,
+			})
+			require.NoError(t, err)
+			assert.Len(t, have, 1)
+		})
 	})
 }

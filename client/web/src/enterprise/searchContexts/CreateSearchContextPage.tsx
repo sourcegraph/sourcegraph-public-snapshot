@@ -4,14 +4,13 @@ import { mdiMagnify } from '@mdi/js'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
@@ -46,7 +45,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }, platformContext),
+        ): Observable<SearchContextFields> => createSearchContext({ searchContext, repositories }, platformContext),
         [createSearchContext, platformContext]
     )
 

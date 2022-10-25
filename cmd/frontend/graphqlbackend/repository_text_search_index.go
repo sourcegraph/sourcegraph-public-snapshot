@@ -7,13 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
-	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegraph/zoekt/stream"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -75,8 +76,8 @@ type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
 
-func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
-	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
+func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
@@ -128,7 +129,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 	refByName := func(name string) *repositoryTextSearchIndexedRef {
 		possibleRefNames := []string{"refs/heads/" + name, "refs/tags/" + name}
 		for _, ref := range possibleRefNames {
-			if _, err := gitserver.NewClient(repoResolver.db).ResolveRevision(ctx, repoResolver.RepoName(), ref, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
+			if _, err := repoResolver.gitserverClient.ResolveRevision(ctx, repoResolver.RepoName(), ref, gitserver.ResolveRevisionOptions{NoEnsureRevision: true}); err == nil {
 				name = ref
 				break
 			}

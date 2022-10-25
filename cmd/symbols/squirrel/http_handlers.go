@@ -21,64 +21,66 @@ import (
 )
 
 // Responds to /localCodeIntel
-func LocalCodeIntelHandler(w http.ResponseWriter, r *http.Request) {
-	// Read the args from the request body.
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log15.Error("failed to read request body", "err", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var args types.RepoCommitPath
-	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
-		log15.Error("failed to decode request body", "err", err, "body", string(body))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	squirrel := New(readFileFromGitserver, nil)
-	defer squirrel.Close()
-
-	// Compute the local code intel payload.
-	payload, err := squirrel.localCodeIntel(r.Context(), args)
-	if payload != nil && os.Getenv("SQUIRREL_DEBUG") == "true" {
-		debugStringBuilder := &strings.Builder{}
-		fmt.Fprintln(debugStringBuilder, "👉 /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
-		contents, err := readFileFromGitserver(r.Context(), args)
+func LocalCodeIntelHandler(readFile ReadFileFunc) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Read the args from the request body.
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			log15.Error("failed to read file from gitserver", "err", err)
-		} else {
-			prettyPrintLocalCodeIntelPayload(debugStringBuilder, *payload, string(contents))
-			fmt.Fprintln(debugStringBuilder, "✅ /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
-
-			fmt.Println(" ")
-			fmt.Println(bracket(debugStringBuilder.String()))
-			fmt.Println(" ")
+			log15.Error("failed to read request body", "err", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-	}
-	if err != nil {
-		_ = json.NewEncoder(w).Encode(nil)
-
-		// Log the error if it's not an unrecognized file extension or unsupported language error.
-		if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, unsupportedLanguageError) {
-			log15.Error("failed to generate local code intel payload", "err", err)
+		var args types.RepoCommitPath
+		if err := json.NewDecoder(bytes.NewReader(body)).Decode(&args); err != nil {
+			log15.Error("failed to decode request body", "err", err, "body", string(body))
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
-		return
-	}
+		squirrel := New(readFile, nil)
+		defer squirrel.Close()
 
-	// Write the response.
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(payload)
-	if err != nil {
-		log15.Error("failed to write response: %s", "error", err)
-		http.Error(w, fmt.Sprintf("failed to generate local code intel payload: %s", err), http.StatusInternalServerError)
-		return
+		// Compute the local code intel payload.
+		payload, err := squirrel.localCodeIntel(r.Context(), args)
+		if payload != nil && os.Getenv("SQUIRREL_DEBUG") == "true" {
+			debugStringBuilder := &strings.Builder{}
+			fmt.Fprintln(debugStringBuilder, "👉 /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
+			contents, err := readFile(r.Context(), args)
+			if err != nil {
+				log15.Error("failed to read file from gitserver", "err", err)
+			} else {
+				prettyPrintLocalCodeIntelPayload(debugStringBuilder, *payload, string(contents))
+				fmt.Fprintln(debugStringBuilder, "✅ /localCodeIntel repo:", args.Repo, "commit:", args.Commit, "path:", args.Path)
+
+				fmt.Println(" ")
+				fmt.Println(bracket(debugStringBuilder.String()))
+				fmt.Println(" ")
+			}
+		}
+		if err != nil {
+			_ = json.NewEncoder(w).Encode(nil)
+
+			// Log the error if it's not an unrecognized file extension or unsupported language error.
+			if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, unsupportedLanguageError) {
+				log15.Error("failed to generate local code intel payload", "err", err)
+			}
+
+			return
+		}
+
+		// Write the response.
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(payload)
+		if err != nil {
+			log15.Error("failed to write response: %s", "error", err)
+			http.Error(w, fmt.Sprintf("failed to generate local code intel payload: %s", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
 // Responds to /symbolInfo
-func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.ResponseWriter, r *http.Request) {
+func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile ReadFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
 		body, err := io.ReadAll(r.Body)
@@ -95,13 +97,13 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc) func(w http.Resp
 		}
 
 		// Find the symbol.
-		squirrel := New(readFileFromGitserver, symbolSearch)
+		squirrel := New(readFile, symbolSearch)
 		defer squirrel.Close()
 		result, err := squirrel.symbolInfo(r.Context(), args)
 		if os.Getenv("SQUIRREL_DEBUG") == "true" {
 			debugStringBuilder := &strings.Builder{}
 			fmt.Fprintln(debugStringBuilder, "👉 /symbolInfo repo:", args.Repo, "commit:", args.Commit, "path:", args.Path, "row:", args.Row, "column:", args.Column)
-			squirrel.breadcrumbs.pretty(debugStringBuilder, readFileFromGitserver)
+			squirrel.breadcrumbs.pretty(debugStringBuilder, readFile)
 			if result == nil {
 				fmt.Fprintln(debugStringBuilder, "❌ no definition found")
 			} else {

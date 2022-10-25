@@ -1,8 +1,14 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Code } from '@sourcegraph/wildcard'
 
 import terminalStyles from './Terminal.module.scss'
+
+interface TerminalLineProps extends React.HTMLAttributes<HTMLLIElement> {
+    className?: string
+}
 
 // 73 '=' characters are the 100% of the progress bar
 const CHARACTERS_LENGTH = 73
@@ -19,9 +25,10 @@ export const TerminalTitle: React.FunctionComponent<React.PropsWithChildren<unkn
     </header>
 )
 
-export const TerminalLine: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
-    <li className={terminalStyles.terminalLine}>{children}</li>
-)
+export const TerminalLine: React.FunctionComponent<React.PropsWithChildren<TerminalLineProps>> = ({
+    children,
+    className,
+}) => <li className={classNames(terminalStyles.terminalLine, className)}>{children}</li>
 
 export const TerminalDetails: React.FunctionComponent<React.PropsWithChildren<unknown>> = ({ children }) => (
     <div>

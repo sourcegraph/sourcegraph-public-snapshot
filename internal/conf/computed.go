@@ -3,8 +3,6 @@ package conf
 import (
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -164,15 +163,26 @@ func ExecutorsFrontendURL() string {
 	return current.ExternalURL
 }
 
-func CodeIntelAutoIndexingEnabled() bool {
-	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
-		return *enabled
+func ExecutorsSrcCLIImage() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImage != "" {
+		return current.ExecutorsSrcCLIImage
 	}
-	return false
+
+	return "sourcegraph/src-cli"
 }
 
-func CodeIntelLockfileIndexingEnabled() bool {
-	if enabled := Get().CodeIntelLockfileIndexingEnabled; enabled != nil {
+func ExecutorsSrcCLIImageTag() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImageTag != "" {
+		return current.ExecutorsSrcCLIImageTag
+	}
+
+	return srccli.MinimumVersion
+}
+
+func CodeIntelAutoIndexingEnabled() bool {
+	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
 	}
 	return false
@@ -192,11 +202,6 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	}
 
 	return *val
-}
-
-func CodeInsightsGQLApiEnabled() bool {
-	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
@@ -260,14 +265,6 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func DependenciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {
@@ -292,6 +289,53 @@ func AuthMinPasswordLength() int {
 		return 12
 	}
 	return val
+}
+
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+	ml := Get().AuthMinPasswordLength
+
+	if p := Get().AuthPasswordPolicy; p != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+		}
+	}
+
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.
@@ -397,22 +441,6 @@ func GitMaxConcurrentClones() int {
 	v := Get().GitMaxConcurrentClones
 	if v <= 0 {
 		return 5
-	}
-	return v
-}
-
-func UserReposMaxPerUser() int {
-	v := Get().UserReposMaxPerUser
-	if v == 0 {
-		return 2000
-	}
-	return v
-}
-
-func UserReposMaxPerSite() int {
-	v := Get().UserReposMaxPerSite
-	if v == 0 {
-		return 200000
 	}
 	return v
 }

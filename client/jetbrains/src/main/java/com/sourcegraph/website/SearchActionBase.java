@@ -1,7 +1,6 @@
 package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -12,20 +11,15 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.browser.URLBuilder;
+import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
-import java.io.IOException;
-import java.net.URI;
-
 public abstract class SearchActionBase extends DumbAwareAction {
     public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
-        Logger logger = Logger.getInstance(this.getClass());
         final Project project = event.getProject();
 
         String selectedText = getSelectedText(project);
@@ -49,13 +43,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
         }
 
-        // Open the URL in the browser.
-        try {
-            Desktop.getDesktop().browse(URI.create(url));
-        } catch (IOException err) {
-            logger.debug("failed to open browser");
-            err.printStackTrace();
-        }
+        BrowserOpener.openInBrowser(project, url);
     }
 
     enum Scope {

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -18,11 +20,11 @@ import (
 // given repo, as well as the status of each given upload. When there is a change of
 // state for a repository, it is printed. The state changes that can occur are:
 //
-// - An upload fails to process (returns an error)
-// - An upload completes processing
-// - The last upload for a repository completes processing, but the
-//   containing repo has a stale commit graph
-// - A repository with no pending uploads has a fresh commit graph
+//   - An upload fails to process (returns an error)
+//   - An upload completes processing
+//   - The last upload for a repository completes processing, but the
+//     containing repo has a stale commit graph
+//   - A repository with no pending uploads has a fresh commit graph
 func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) error {
 	var oldState map[string]repoState
 	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))
@@ -35,6 +37,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 		if err != nil {
 			return err
 		}
+		request, response := internal.LastRequestResponsePair()
 
 		if verbose {
 			parts := make([]string, 0, len(repoNames))
@@ -73,7 +76,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index for %s@%s - ID %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7], uploadState.upload.id)
+						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, uploadState.upload.id, repoName, uploadState.upload.commit[:7])
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
 					var payload struct {
@@ -91,6 +94,11 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
 					}
 
+					var dst bytes.Buffer
+					json.Indent(&dst, []byte(response), "", "\t")
+					fmt.Printf("GRAPHQL REQUEST:\n%s\n\n", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(request, "\\t", "\t"), "\\n", "\n"), "\n\n", "\n"))
+					fmt.Printf("GRAPHQL RESPONSE:\n%s\n\n", dst.String())
+					fmt.Printf("RAW STATE DUMP:\n%+v\n", state)
 					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
 					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
 
@@ -111,8 +119,14 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					} else {
 						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
+					out, err = exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_configuration_policies'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
+					}
 
-					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)
+					return errors.Newf("unexpected state '%s' for %s (%s@%s)\nAudit Logs:\n%s", uploadState.state, uploadState.upload.id, uploadState.upload.repoName, uploadState.upload.commit[:7], logs)
 				}
 			}
 
@@ -168,7 +182,6 @@ func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta)
 	for _, upload := range uploads {
 		uploadIDs = append(uploadIDs, upload.id)
 	}
-	sort.Strings(uploadIDs)
 
 	var payload struct{ Data map[string]jsonUploadResult }
 	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, makeRepoStateQuery(repoNames, uploadIDs), nil, &payload); err != nil {

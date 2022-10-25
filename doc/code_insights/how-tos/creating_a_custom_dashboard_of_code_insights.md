@@ -29,5 +29,3 @@ Select which insights you want to add. Insights won't be added until you click s
 ## 5. Share your dashboard
 
 You can share your dashboard via the url, or by copying this same url in the "copy link" menu item next to the dashboards picker. 
-
-

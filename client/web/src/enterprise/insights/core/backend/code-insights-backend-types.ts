@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
 
-import { Series } from '../../../../charts'
+import { Series } from '@sourcegraph/wildcard'
+
 import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
@@ -10,6 +11,7 @@ import {
     LangStatsInsight,
     InsightsDashboardOwner,
     SearchBasedInsight,
+    ComputeInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
 
@@ -71,14 +73,15 @@ export interface FindInsightByNameInput {
 }
 
 export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
-
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData
     | MinimalCaptureGroupInsightData
     | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
     insight: CreationInsightInput
@@ -115,19 +118,14 @@ export interface SeriesPreviewSettings {
     groupBy?: GroupByField
 }
 
-export interface AccessibleInsightInfo {
-    id: string
-    title: string
-}
-
 export interface BackendInsightDatum {
     dateTime: Date
-    value: number | null
+    value: number
     link?: string
 }
 
 export interface BackendInsightData {
-    content: SeriesChartContent<any>
+    data: InsightContent<any>
     isFetchingHistoricalData: boolean
 }
 

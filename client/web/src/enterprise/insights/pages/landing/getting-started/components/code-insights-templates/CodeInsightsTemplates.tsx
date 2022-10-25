@@ -16,7 +16,6 @@ import {
     TabPanel,
     TabPanels,
     Tabs,
-    DeprecatedTooltipController,
     Icon,
     Link,
     ProductStatusBadge,
@@ -26,7 +25,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../core'
+import { InsightType } from '../../../../../core'
+import { useUiFeatures } from '../../../../../hooks'
 import { encodeCaptureInsightURL } from '../../../../insights/creation/capture-group'
 import { encodeSearchInsightUrl } from '../../../../insights/creation/search-insight'
 import {
@@ -147,9 +147,7 @@ const TemplateCard: React.FunctionComponent<React.PropsWithChildren<TemplateCard
     const { template, telemetryService } = props
     const { mode } = useContext(CodeInsightsLandingPageContext)
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const series =
         template.type === InsightType.SearchBased
@@ -207,10 +205,6 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
         copy(query)
         setCurrentCopyTooltip(copyCompletedTooltip)
         setTimeout(() => setCurrentCopyTooltip(copyTooltip), 1000)
-
-        requestAnimationFrame(() => {
-            DeprecatedTooltipController.forceUpdate()
-        })
 
         event.preventDefault()
         telemetryService.log(templateCopyClickEvenName)

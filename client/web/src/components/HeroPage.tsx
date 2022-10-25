@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H1 } from '@sourcegraph/wildcard'
+import { Link, H1, Icon } from '@sourcegraph/wildcard'
 
 import styles from './HeroPage.module.scss'
 
@@ -10,6 +10,7 @@ interface HeroPageProps {
     icon?: React.ComponentType<React.PropsWithChildren<any>>
     iconLinkTo?: string
     iconClassName?: string
+    iconAriaLabel?: string
     className?: string
     title?: string | JSX.Element
     subtitle?: string | JSX.Element
@@ -29,13 +30,13 @@ export const HeroPage: React.FunctionComponent<React.PropsWithChildren<HeroPageP
         )}
     >
         {props.icon && (
-            <div className={classNames(styles.icon, props.iconClassName)}>
+            <div className={classNames(styles.iconWrapper, props.iconClassName)}>
                 {props.iconLinkTo ? (
-                    <Link to={props.iconLinkTo}>
-                        <props.icon />
+                    <Link to={props.iconLinkTo} aria-label={props.iconAriaLabel || props.iconLinkTo}>
+                        <Icon className={styles.icon} as={props.icon} aria-hidden={true} />
                     </Link>
                 ) : (
-                    <props.icon />
+                    <Icon className={styles.icon} as={props.icon} aria-hidden={true} />
                 )}
             </div>
         )}

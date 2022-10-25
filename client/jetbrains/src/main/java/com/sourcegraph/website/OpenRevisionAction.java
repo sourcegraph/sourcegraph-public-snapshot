@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
+import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.git.CommitViewUriBuilder;
 import com.sourcegraph.git.GitUtil;
@@ -16,13 +17,11 @@ import com.sourcegraph.git.RepoInfo;
 import com.sourcegraph.git.RevisionContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
-import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 
 /**
- * Jetbrains IDE action to open a selected revision in Sourcegraph.
+ * JetBrains IDE action to open a selected revision in Sourcegraph.
  */
 public class OpenRevisionAction extends DumbAwareAction {
     private final Logger logger = Logger.getInstance(this.getClass());
@@ -73,20 +72,18 @@ public class OpenRevisionAction extends DumbAwareAction {
             return;
         }
 
+        String productName = ApplicationInfo.getInstance().getVersionName();
+        String productVersion = ApplicationInfo.getInstance().getFullVersion();
+        RepoInfo repoInfo = GitUtil.getRepoInfo(project.getProjectFilePath(), project);
+        CommitViewUriBuilder builder = new CommitViewUriBuilder();
+        URI uri;
         try {
-            String productName = ApplicationInfo.getInstance().getVersionName();
-            String productVersion = ApplicationInfo.getInstance().getFullVersion();
-            RepoInfo repoInfo = GitUtil.getRepoInfo(project.getProjectFilePath(), project);
-
-            CommitViewUriBuilder builder = new CommitViewUriBuilder();
-            URI uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), repoInfo, productName, productVersion);
-
-            // Open the URL in the browser.
-            Desktop.getDesktop().browse(uri);
-        } catch (IOException err) {
-            logger.debug("Failed to open browser.", err);
-            err.printStackTrace();
+            uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), repoInfo, productName, productVersion);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unable to build commit view URI for url " + ConfigUtil.getSourcegraphUrl(project) + ", revision " + context.getRevisionNumber() + ", product " + productName + ", version " + productVersion, e);
+            return;
         }
+        BrowserOpener.openInBrowser(project, uri);
     }
 
     @Override

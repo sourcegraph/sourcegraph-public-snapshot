@@ -8,11 +8,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
-import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
-import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
-import { useUiFeatures } from '../../../../../hooks/use-ui-features'
-import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
+import { LimitedAccessLabel } from '../../../../../components'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core'
+import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
+import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
@@ -30,13 +30,12 @@ export interface DashboardsContentProps extends TelemetryProps {
      * In case if id is undefined we get insights from the final
      * version of merged settings (all insights)
      */
-    dashboardID: string
+    currentDashboard?: InsightDashboard
     dashboards: InsightDashboard[]
 }
 
 export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
-    const { dashboardID, telemetryService, dashboards } = props
-    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
+    const { currentDashboard, dashboards, telemetryService } = props
 
     const history = useHistory()
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
@@ -45,15 +44,15 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
-    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
-        history.push(`/insights/dashboards/${dashboard.id}`)
-
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
-    }, [telemetryService, dashboardID])
+    }, [telemetryService])
+
+    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+        history.push(`/insights/dashboards/${dashboard.id}`)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -98,7 +97,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
-                    value={currentDashboard?.id}
+                    dashboard={currentDashboard}
                     dashboards={dashboards}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
                     onSelect={handleDashboardSelect}
@@ -118,7 +117,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                         variant="secondary"
                         disabled={addRemovePermissions.disabled}
                         onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
-                        data-testid="add-or-remove-insights"
                     >
                         Add or remove insights
                     </Button>
@@ -129,7 +127,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
                     message={
-                        dashboardID === ALL_INSIGHTS_DASHBOARD.id
+                        currentDashboard?.id === ALL_INSIGHTS_DASHBOARD.id
                             ? 'Create up to two global insights'
                             : 'Unlock Code Insights for full access to custom dashboards'
                     }

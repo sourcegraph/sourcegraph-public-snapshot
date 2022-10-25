@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -97,6 +96,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		otlog.String("query", args.Query),
 		otlog.String("version", args.Version),
 		otlog.String("pattern_type", args.PatternType),
+		otlog.Int("search_mode", args.SearchMode),
 	)
 
 	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
@@ -104,9 +104,18 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		return err
 	}
 
-	inputs, err := h.searchClient.Plan(ctx, args.Version, strPtr(args.PatternType), args.Query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := h.searchClient.Plan(
+		ctx,
+		args.Version,
+		strPtr(args.PatternType),
+		args.Query,
+		search.Mode(args.SearchMode),
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
 			return nil
@@ -127,7 +136,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	progress := &streamclient.ProgressAggregator{
 		Start:        start,
 		Limit:        limit,
-		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL(), conf.Tracer()),
+		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
 		DisplayLimit: displayLimit,
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
@@ -145,23 +154,35 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		}()
 	}
 
-	eventHandler := newEventHandler(
-		ctx,
-		h.logger,
-		h.db,
-		eventWriter,
-		progress,
-		h.flushTickerInternal,
-		h.pingTickerInterval,
-		displayLimit,
-		args.EnableChunkMatches,
-		logLatency,
-	)
-	batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-	alert, err := h.searchClient.Execute(ctx, batchedStream, inputs)
-	// Clean up streams before writing to eventWriter again.
-	batchedStream.Done()
-	eventHandler.Done()
+	// HACK: We awkwardly call an inline function here so that we can defer the
+	// cleanups. Defers are guaranteed to run even when unrolling a panic, so
+	// we can guarantee that the goroutines spawned by `newEventHandler` are
+	// cleaned up when this function exits. This is necessary because otherwise
+	// the background goroutines might try to write to the http response, which
+	// is no longer valid, which will cause a panic of its own that crashes the
+	// process because they are running in a goroutine that does not have a
+	// panic handler. We cannot add a panic handler because the goroutines are
+	// spawned by the go runtime.
+	alert, err := func() (*search.Alert, error) {
+		eventHandler := newEventHandler(
+			ctx,
+			h.logger,
+			h.db,
+			eventWriter,
+			progress,
+			h.flushTickerInternal,
+			h.pingTickerInterval,
+			displayLimit,
+			args.EnableChunkMatches,
+			logLatency,
+		)
+		defer eventHandler.Done()
+
+		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
+		defer batchedStream.Done()
+
+		return h.searchClient.Execute(ctx, batchedStream, inputs)
+	}()
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
@@ -206,6 +227,7 @@ type args struct {
 	PatternType        string
 	Display            int
 	EnableChunkMatches bool
+	SearchMode         int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -226,7 +248,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	a := args{
 		Query:          get("q", ""),
-		Version:        get("v", "V2"),
+		Version:        get("v", "V3"),
 		PatternType:    get("t", ""),
 		DecorationKind: get("dk", "html"),
 	}
@@ -244,6 +266,11 @@ func parseURLQuery(q url.Values) (*args, error) {
 	chunkMatches := get("cm", "f")
 	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
 		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	}
+
+	searchMode := get("sm", "0")
+	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
+		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
 	}
 
 	decorationLimit := get("dl", "0")
@@ -264,27 +291,6 @@ func strPtr(s string) *string {
 		return nil
 	}
 	return &s
-}
-
-// withDecoration hydrates event match with decorated hunks for a corresponding file match.
-func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
-	// FIXME: Use contextLines to constrain hunks.
-	_ = contextLines
-	if _, ok := internalResult.(*result.FileMatch); !ok {
-		return eventMatch
-	}
-
-	event, ok := eventMatch.(*streamhttp.EventContentMatch)
-	if !ok {
-		return eventMatch
-	}
-
-	if kind == "html" {
-		event.Hunks = DecorateFileHunksHTML(ctx, db, internalResult.(*result.FileMatch))
-	}
-
-	// TODO(team/search-product): support additional decoration for terminal clients #24617.
-	return eventMatch
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
@@ -313,6 +319,7 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		Repository:   string(fm.Repo.Name),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
@@ -389,6 +396,7 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	contentEvent := &streamhttp.EventContentMatch{
 		Type:         streamhttp.ContentMatchType,
 		Path:         fm.Path,
+		PathMatches:  fromRanges(fm.PathMatches),
 		RepositoryID: int32(fm.Repo.ID),
 		Repository:   string(fm.Repo.Name),
 		Commit:       string(fm.CommitID),
@@ -422,6 +430,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 			Name:          sym.Symbol.Name,
 			ContainerName: sym.Symbol.Parent,
 			Kind:          kindString,
+			Line:          int32(sym.Symbol.Line),
 		})
 	}
 
@@ -453,10 +462,12 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:         streamhttp.RepoMatchType,
-		RepositoryID: int32(rm.ID),
-		Repository:   string(rm.Name),
-		Branches:     branches,
+		Type:               streamhttp.RepoMatchType,
+		RepositoryID:       int32(rm.ID),
+		Repository:         string(rm.Name),
+		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
+		Branches:           branches,
+		DescriptionMatches: fromRanges(rm.DescriptionMatches),
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
@@ -466,6 +477,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
+		repoEvent.KeyValuePairs = r.KeyValuePairs
 	}
 
 	return repoEvent

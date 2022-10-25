@@ -4,11 +4,6 @@ const INSIGHTS_DASHBOARD_FRAGMENT = gql`
     fragment InsightsDashboardNode on InsightsDashboard {
         id
         title
-        views {
-            nodes {
-                id
-            }
-        }
         grants {
             users
             organizations

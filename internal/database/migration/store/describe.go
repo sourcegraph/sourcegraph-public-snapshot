@@ -222,7 +222,6 @@ func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {
 }
 
 const listExtensionsQuery = `
--- source: internal/database/migration/store/store.go:listExtensions
 SELECT
 	n.nspname AS schemaName,
 	e.extname AS extensionName
@@ -230,6 +229,7 @@ FROM pg_catalog.pg_extension e
 JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -241,7 +241,6 @@ func (s *Store) listEnums(ctx context.Context) ([]enum, error) {
 }
 
 const listEnumQuery = `
--- source: internal/database/migration/store/store.go:listEnums
 SELECT
 	n.nspname AS schemaName,
 	t.typname AS typeName,
@@ -251,6 +250,7 @@ JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
 JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -265,7 +265,6 @@ func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
 // TODO - not belonging to something else?
 
 const listFunctionsQuery = `
--- source: internal/database/migration/store/store.go:listFunctions
 SELECT
 	n.nspname AS schemaName,
 	p.proname AS functionName,
@@ -279,6 +278,7 @@ JOIN pg_language l ON l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
 LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	-- function is not defined in an extension
 	d.objid IS NULL
@@ -292,7 +292,6 @@ func (s *Store) listSequences(ctx context.Context) ([]sequence, error) {
 }
 
 const listSequencesQuery = `
--- source: internal/database/migration/store/store.go:listSequences
 SELECT
 	s.sequence_schema AS schemaName,
 	s.sequence_name AS sequenceName,
@@ -305,6 +304,7 @@ SELECT
 FROM information_schema.sequences s
 WHERE
 	s.sequence_schema NOT LIKE 'pg_%%' AND
+	s.sequence_schema NOT LIKE '_timescaledb_%%' AND
 	s.sequence_schema != 'information_schema'
 ORDER BY
 	s.sequence_schema,
@@ -316,7 +316,6 @@ func (s *Store) listTables(ctx context.Context) ([]table, error) {
 }
 
 const listTablesQuery = `
--- source: internal/database/migration/store/store.go:listTables
 SELECT
 	t.table_schema AS schemaName,
 	t.table_name AS tableName,
@@ -325,6 +324,7 @@ FROM information_schema.tables t
 WHERE
 	t.table_type = 'BASE TABLE' AND
 	t.table_schema NOT LIKE 'pg_%%' AND
+	t.table_schema NOT LIKE '_timescaledb_%%' AND
 	t.table_schema != 'information_schema'
 ORDER BY
 	t.table_schema,
@@ -336,7 +336,6 @@ func (s *Store) listColumns(ctx context.Context) ([]column, error) {
 }
 
 const listColumnsQuery = `
--- source: internal/database/migration/store/store.go:listColumns
 WITH
 tables AS MATERIALIZED (
 	SELECT
@@ -346,6 +345,7 @@ tables AS MATERIALIZED (
 	WHERE
 		t.table_type = 'BASE TABLE' AND
 		t.table_schema NOT LIKE 'pg_%%' AND
+		t.table_schema NOT LIKE '_timescaledb_%%' AND
 		t.table_schema != 'information_schema'
 ),
 element_types AS MATERIALIZED (
@@ -398,7 +398,6 @@ func (s *Store) listIndexes(ctx context.Context) ([]index, error) {
 }
 
 const listIndexesQuery = `
--- source: internal/database/migration/store/store.go:listIndexes
 SELECT
 	n.nspname AS schemaName,
 	table_class.relname AS tableName,
@@ -421,6 +420,7 @@ LEFT OUTER JOIN pg_catalog.pg_constraint con ON (
 )
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -433,7 +433,6 @@ func (s *Store) listConstraints(ctx context.Context) ([]constraint, error) {
 }
 
 const listConstraintsQuery = `
--- source: internal/database/migration/store/store.go:listConstraints
 SELECT
 	n.nspname AS schemaName,
 	table_class.relname AS tableName,
@@ -448,6 +447,7 @@ JOIN pg_catalog.pg_namespace n ON n.oid = table_class.relnamespace
 LEFT OUTER JOIN pg_catalog.pg_class reftable_class ON reftable_class.oid = con.confrelid
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	con.contype IN ('c', 'f', 't')
 ORDER BY
@@ -461,7 +461,6 @@ func (s *Store) listTriggers(ctx context.Context) ([]trigger, error) {
 }
 
 const listTriggersQuery = `
--- source: internal/database/migration/store/store.go:listTriggers
 SELECT
 	n.nspname AS schemaName,
 	c.relname AS tableName,
@@ -472,6 +471,7 @@ JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	NOT t.tgisinternal
 ORDER BY
@@ -485,7 +485,6 @@ func (s *Store) listViews(ctx context.Context) ([]view, error) {
 }
 
 const listViewsQuery = `
--- source: internal/database/migration/store/store.go:listViews
 SELECT
 	v.schemaname AS schemaName,
 	v.viewname AS viewName,
@@ -493,6 +492,7 @@ SELECT
 FROM pg_catalog.pg_views v
 WHERE
 	v.schemaname NOT LIKE 'pg_%%' AND
+	v.schemaname NOT LIKE '_timescaledb_%%' AND
 	v.schemaname != 'information_schema' AND
 	v.viewname NOT LIKE 'pg_stat_%%'
 ORDER BY

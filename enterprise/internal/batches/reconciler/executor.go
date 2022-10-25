@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -28,9 +30,9 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
-		gitserverClient:   gitserverClient,
+		client:            client,
 		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
@@ -43,7 +45,7 @@ func executePlan(ctx context.Context, logger log.Logger, gitserverClient Gitserv
 }
 
 type executor struct {
-	gitserverClient   GitserverClient
+	client            gitserver.Client
 	logger            log.Logger
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
@@ -119,6 +121,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		case btypes.ReconcilerOperationArchive:
 			e.archiveChangeset()
 
+		case btypes.ReconcilerOperationReattach:
+			e.reattachChangeset()
+
 		default:
 			err = errors.Errorf("executor operation %q not implemented", op)
 		}
@@ -133,7 +138,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
+	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -150,7 +155,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
-		ExternalBranch:      e.spec.Spec.HeadRef,
+		ExternalBranch:      e.spec.HeadRef,
 		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != store.ErrNoResults {
@@ -163,8 +168,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
-	// au is nil if we want to use the global credentials stored in the external
-	// service configuration.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
 		return err
@@ -180,7 +183,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return errCannotPushToArchivedRepo
 	}
 
-	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), remoteRepo)
+	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
 		return err
 	}
@@ -225,10 +228,10 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	}
 
 	cs := &sources.Changeset{
-		Title:      e.spec.Spec.Title,
+		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -343,10 +346,10 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	// We must construct the sources.Changeset after invoking changesetSource,
 	// since that may change the remoteRepo.
 	cs := sources.Changeset{
-		Title:      e.spec.Spec.Title,
+		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -378,10 +381,10 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := sources.Changeset{
-		Title:      e.spec.Spec.Title,
-		Body:       e.spec.Spec.Body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		Title:      e.spec.Title,
+		Body:       e.spec.Body,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -398,6 +401,11 @@ func (e *executor) detachChangeset() {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
+	// A changeset can be associated with multiple batch changes. Only set the detached_at field when the changeset is
+	// no longer associated with any batch changes.
+	if len(e.ch.BatchChanges) == 0 {
+		e.ch.DetachedAt = time.Now()
+	}
 }
 
 // archiveChangeset sets all associations to archived that are marked as "to-be-archived".
@@ -407,6 +415,13 @@ func (e *executor) archiveChangeset() {
 			e.ch.BatchChanges[i].IsArchived = true
 			e.ch.BatchChanges[i].Archive = false
 		}
+	}
+}
+
+// reattachChangeset resets detached_at to zero.
+func (e *executor) reattachChangeset() {
+	if !e.ch.DetachedAt.IsZero() {
+		e.ch.DetachedAt = time.Time{}
 	}
 }
 
@@ -458,10 +473,10 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := &sources.Changeset{
-		Title:      e.spec.Spec.Title,
-		Body:       e.spec.Spec.Body,
-		BaseRef:    e.spec.Spec.BaseRef,
-		HeadRef:    e.spec.Spec.HeadRef,
+		Title:      e.spec.Title,
+		Body:       e.spec.Body,
+		BaseRef:    e.spec.BaseRef,
+		HeadRef:    e.spec.HeadRef,
 		RemoteRepo: remoteRepo,
 		TargetRepo: e.targetRepo,
 		Changeset:  e.ch,
@@ -508,18 +523,11 @@ func (e *executor) remoteRepo(ctx context.Context) (*types.Repo, error) {
 }
 
 func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
-	return decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), e.ch, e.spec.Spec.Body)
+	return decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), e.ch, e.spec.Body)
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	// This is a ChangesetSource authenticated with the external service
-	// token.
-	css, err := sourcer.ForRepo(ctx, s, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	css, err = sources.WithAuthenticatorForChangeset(ctx, s, css, ch, repo, false)
+	css, err := sourcer.ForChangeset(ctx, s, ch)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -553,7 +561,7 @@ func (e pushCommitError) Error() string {
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
+	_, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
@@ -602,46 +610,24 @@ func handleArchivedRepo(
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
-	desc := spec.Spec
-
-	diff, err := desc.Diff()
-	if err != nil {
-		return opts, err
-	}
-
-	commitMessage, err := desc.CommitMessage()
-	if err != nil {
-		return opts, err
-	}
-
-	commitAuthorName, err := desc.AuthorName()
-	if err != nil {
-		return opts, err
-	}
-
-	commitAuthorEmail, err := desc.AuthorEmail()
-	if err != nil {
-		return opts, err
-	}
-
 	opts = protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
-		BaseCommit: api.CommitID(desc.BaseRev),
+		BaseCommit: api.CommitID(spec.BaseRev),
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     diff + "\n",
-		TargetRef: desc.HeadRef,
+		Patch:     string(spec.Diff) + "\n",
+		TargetRef: spec.HeadRef,
 
-		// CAUTION: `UniqueRef` means that we'll push to the branch even if it
+		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
 		// So when we retry publishing a changeset, this will overwrite what we
 		// pushed before.
 		UniqueRef: false,
 
 		CommitInfo: protocol.PatchCommitInfo{
-			Message:     commitMessage,
-			AuthorName:  commitAuthorName,
-			AuthorEmail: commitAuthorEmail,
+			Message:     spec.CommitMessage,
+			AuthorName:  spec.CommitAuthorName,
+			AuthorEmail: spec.CommitAuthorEmail,
 			Date:        spec.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the

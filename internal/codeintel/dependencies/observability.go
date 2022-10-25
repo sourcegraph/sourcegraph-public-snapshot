@@ -8,13 +8,13 @@ import (
 )
 
 type operations struct {
-	dependencies                           *observation.Operation
-	resolveLockfileDependenciesFromArchive *observation.Operation
-	resolveLockfileDependenciesFromStore   *observation.Operation
+	listDependencyRepos       *observation.Operation
+	upsertDependencyRepos     *observation.Operation
+	deleteDependencyReposByID *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_dependencies",
 		metrics.WithLabels("op"),
@@ -25,13 +25,13 @@ func newOperations(observationContext *observation.Context) *operations {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dependencies.%s", name),
 			MetricLabelValues: []string{name},
-			Metrics:           metrics,
+			Metrics:           m,
 		})
 	}
 
 	return &operations{
-		dependencies:                           op("Dependencies"),
-		resolveLockfileDependenciesFromArchive: op("resolveLockfileDependenciesFromArchive"),
-		resolveLockfileDependenciesFromStore:   op("resolveLockfileDependenciesFromStore"),
+		listDependencyRepos:       op("ListDependencyRepos"),
+		upsertDependencyRepos:     op("UpsertDependencyRepos"),
+		deleteDependencyReposByID: op("DeleteDependencyReposByID"),
 	}
 }

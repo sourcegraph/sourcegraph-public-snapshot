@@ -2,10 +2,11 @@ import React, { createContext, useContext } from 'react'
 
 import { StoreApi, UseBoundStore } from 'zustand'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+
+import { SearchPatternType } from './graphql-operations'
 
 import { QueryState, SubmitSearchParameters, toggleSubquery } from '.'
 
@@ -50,6 +51,11 @@ export enum InitialParametersSource {
     URL,
 }
 
+export enum SearchMode {
+    Precise = 0,
+    SmartSearch = 1 << 0,
+}
+
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
     /**
@@ -72,6 +78,7 @@ export interface SearchQueryState {
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
     searchQueryFromURL: string
+    searchMode: SearchMode
 
     // ACTIONS
     /**
@@ -122,6 +129,10 @@ export type QueryUpdate =
           type: 'toggleSubquery'
           value: string
       }
+    | {
+          type: 'replaceQuery'
+          value: string
+      }
 
 export function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
@@ -135,6 +146,8 @@ export function updateQuery(query: string, updates: QueryUpdate[]): string {
                 return updateFilter(query, update.field, update.value)
             case 'toggleSubquery':
                 return toggleSubquery(query, update.value)
+            case 'replaceQuery':
+                return update.value
         }
         return query
     }, query)

@@ -17,6 +17,9 @@ export const DownloadSpecModalStory: Story = () => (
     <WebStory>
         {props => (
             <DownloadSpecModal
+                setDownloadSpecModalDismissed={function (): void {
+                    throw new Error('Function not implemented.')
+                }}
                 name=""
                 originalInput=""
                 setIsDownloadSpecModalOpen={function (): void {

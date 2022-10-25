@@ -26,11 +26,12 @@ let
     });
   });
   # Pin a specific version of nixpkgs to ensure we get the same packages.
+  # To update find a recent commit to nixpkgs. To get the sha256 pass the URL to nix-prefetch-url --unpack
   pkgs = import
     (fetchTarball {
       url =
-        "https://github.com/NixOS/nixpkgs/archive/cbe587c735b734405f56803e267820ee1559e6c1.tar.gz";
-      sha256 = "0jii8slqbwbvrngf9911z3al1s80v7kk8idma9p9k0d5fm3g4z7h";
+        "https://github.com/NixOS/nixpkgs/archive/5e66f427c661955f08d55f654e82bab1b1a7abc1.tar.gz";
+      sha256 = "1rhyn1hrgpsl1ydihan3xb2azz4bghghg451a49sr5vh3v6yz5sy";
     })
     { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
@@ -59,7 +60,7 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_18
+    go_1_19
 
     # Lots of our tooling and go tests rely on git et al.
     git
@@ -96,4 +97,6 @@ pkgs.mkShell {
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+  DEV_WEB_BUILDER = "esbuild";
 }

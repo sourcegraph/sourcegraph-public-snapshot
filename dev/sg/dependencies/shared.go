@@ -1,11 +1,15 @@
 package dependencies
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -112,8 +116,9 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 }
 
 // categoryProgrammingLanguagesAndTools sets up programming languages and tooling using
-// asdf, which is uniform across platforms.
-func categoryProgrammingLanguagesAndTools() category {
+// asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
+// when they depend on the plaftorm we're installing them on.
+func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
 	return category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
@@ -219,21 +224,25 @@ func categoryAdditionalSGConfiguration() category {
 					if err != nil {
 						return err
 					}
+					// sgHome needs to have appropriate permissions
+					if err := os.Chmod(sgHome, os.ModePerm); err != nil {
+						return errors.Wrap(err, "failed to chmod sg home")
+					}
 
 					shell := usershell.ShellType(ctx)
 					if shell == "" {
 						return errors.New("failed to detect shell type")
 					}
+
+					// Generate the completion script itself
 					autocompleteScript := usershell.AutocompleteScripts[shell]
 					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-
-					cio.Verbosef("Writing autocomplete script to %s", autocompletePath)
-					if err := usershell.Run(ctx,
-						"echo", run.Arg(autocompleteScript), ">", autocompletePath,
-					).Wait(); err != nil {
-						return err
+					_ = os.Remove(autocompletePath) // forcibly remove old version first
+					if err := os.WriteFile(autocompletePath, []byte(autocompleteScript), os.ModePerm); err != nil {
+						return errors.Wrap(err, "generatng autocomplete script")
 					}
 
+					// Add the completion script to shell
 					shellConfig := usershell.ShellConfigPath(ctx)
 					if shellConfig == "" {
 						return errors.New("Failed to detect shell config path")
@@ -269,14 +278,18 @@ func categoryAdditionalSGConfiguration() category {
 	}
 }
 
+var gcloudSourceRegexp = regexp.MustCompile(`(Source \[)(?P<path>[^\]]*)(\] in your profile)`)
+
 func dependencyGcloud() *dependency {
 	return &dependency{
 		Name: "gcloud",
 		Check: checkAction(
 			check.Combine(
 				check.InPath("gcloud"),
+				check.FileExists("~/.config/gcloud/application_default_credentials.json"),
 				// User should have logged in with a sourcegraph.com account
-				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com")),
+				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com"),
+			),
 		),
 		Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 			if cio.Input == nil {
@@ -284,49 +297,57 @@ func dependencyGcloud() *dependency {
 			}
 
 			if err := check.InPath("gcloud")(ctx); err != nil {
+				var pathsToSource []string
+
 				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
-				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
+				if err := usershell.Command(ctx,
+					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
-					Run().StreamLines(cio.Write); err != nil {
+					Run().
+					Map(func(_ context.Context, line []byte, dst io.Writer) (int, error) {
+						// Listen for gcloud telling us to source paths
+						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
+							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
+							if len(shouldSource) > 0 {
+								pathsToSource = append(pathsToSource, string(shouldSource))
+							}
+						}
+						// Pass through to underlying writer
+						return dst.Write(line)
+					}).
+					StreamLines(cio.Write); err != nil {
 					return err
+				}
+
+				// If gcloud tells us to source some stuff, try to do it
+				if len(pathsToSource) > 0 {
+					shellConfig := usershell.ShellConfigPath(ctx)
+					if shellConfig == "" {
+						return errors.New("Failed to detect shell config path")
+					}
+					conf, err := os.ReadFile(shellConfig)
+					if err != nil {
+						return err
+					}
+					for _, p := range pathsToSource {
+						if !bytes.Contains(conf, []byte(p)) {
+							source := fmt.Sprintf("source %s", p)
+							cio.Verbosef("Adding %q to %s", source, shellConfig)
+							if err := usershell.Run(ctx,
+								"echo", run.Arg(source), ">>", shellConfig,
+							).Wait(); err != nil {
+								return errors.Wrapf(err, "adding %q", source)
+							}
+						}
+					}
 				}
 			}
 
-			if err := run.Cmd(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+			if err := usershell.Command(ctx, "gcloud auth application-default login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
 				return err
 			}
 
-			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
+			return usershell.Command(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
-	}
-}
-
-func opLoginFix() check.FixAction[CheckArgs] {
-	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
-		if cio.Input == nil {
-			return errors.New("interactive input required")
-		}
-
-		key, err := cio.Output.PromptPasswordf(cio.Input, "Enter secret key:")
-		if err != nil {
-			return err
-		}
-
-		email, err := cio.Output.PromptPasswordf(cio.Input, "Enter account email:")
-		if err != nil {
-			return err
-		}
-
-		password, err := cio.Output.PromptPasswordf(cio.Input, "Enter account password:")
-		if err != nil {
-			return err
-		}
-
-		return usershell.Command(ctx,
-			"op account add --signin --address team-sourcegraph.1password.com --email", email).
-			Env(map[string]string{"OP_SECRET_KEY": key}).
-			Input(strings.NewReader(password)).
-			Run().
-			StreamLines(cio.Verbose)
 	}
 }

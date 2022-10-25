@@ -5,11 +5,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -30,7 +29,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -55,11 +54,11 @@ func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, h
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(dbHandle, workerstore.Options{
+	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",
-		Scan:              scanSingleJob,
+		Scan:              workerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("next_sync_at"),
 		ColumnExpressions: syncJobColumns,
 		StalledMaxAge:     30 * time.Second,
@@ -71,24 +70,25 @@ func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, h
 		Name:              "repo_sync_worker",
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
+		CancelInterval:    5 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
-	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(opts.PrometheusRegisterer),
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, logger, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
 }
 
-func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
+func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerObservability {
 	var observationContext *observation.Context
 
 	if r == nil {
@@ -96,7 +96,7 @@ func newWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
 	} else {
 		observationContext = &observation.Context{
 			Logger:     log.Scoped("sync_worker", ""),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: r,
 		}
 	}
@@ -121,20 +121,22 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 	}
 }
 
-func runJobCleaner(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) {
+const cleanSyncJobsQueryFmtstr = `
+DELETE FROM external_service_sync_jobs
+WHERE
+	finished_at < NOW() - INTERVAL '1 day'
+  	AND
+  	state IN ('completed', 'failed')
+`
+
+func runJobCleaner(ctx context.Context, logger log.Logger, handle basestore.TransactableHandle, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
 
 	for {
-		_, err := handle.ExecContext(ctx, `
--- source: internal/repos/sync_worker.go:runJobCleaner
-DELETE FROM external_service_sync_jobs
-WHERE
-  finished_at < now() - INTERVAL '1 day'
-  AND state IN ('completed', 'errored')
-`)
+		_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
 		if err != nil && err != context.Canceled {
-			log15.Error("error while running job cleaner", "err", err)
+			logger.Error("error while running job cleaner", log.Error(err))
 		}
 
 		select {
@@ -143,19 +145,6 @@ WHERE
 		case <-t.C:
 		}
 	}
-}
-
-func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	if err != nil {
-		return nil, false, err
-	}
-
-	jobs, err := scanJobs(rows)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-
-	return &jobs[0], true, nil
 }
 
 // SyncJob represents an external service that needs to be synced

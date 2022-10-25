@@ -1,6 +1,6 @@
 # Using a managed object storage service (S3 or GCS)
 
-By default, Sourcegraph will use a MinIO server bundled with the instance to temporarily store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
+By default, Sourcegraph will use a MinIO server bundled with the instance to temporarily store code graph indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
 
 - `MINIO_ACCESS_KEY=<access key>`
 - `MINIO_SECRET_KEY=<secret key>`
@@ -32,6 +32,9 @@ To target an S3 bucket you've already provisioned, set the following environment
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_REGION=us-east-1` (default)
 
 **_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
+
+> NOTE: You don't need to set the `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
+
 
 ### Using GCS
 

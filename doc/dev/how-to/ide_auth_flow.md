@@ -82,7 +82,6 @@ Extension
 
 - The token creation callback page is only supported by instances on version 3.41.0.
 - Users on instances prior to 3.41.0 must create a token manually using the [default steps](#default-steps) for the authentication process. 
-  - This does not apply to cloud users as Sourcegraph Cloud will always be on the latest version.
 
 ### Example: VS Code Extension
 

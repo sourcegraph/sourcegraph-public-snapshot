@@ -3,6 +3,7 @@ import {
     load,
     Kind as YAMLKind,
     YamlMap as YAMLMap,
+    YAMLMapping,
     YAMLNode,
     YAMLSequence,
     YAMLScalar,
@@ -351,20 +352,30 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
  */
 export function quoteYAMLString(value: string): string {
     let needsQuotes = false
+    let needsEscaping = false
+
     // First we need to craft an AST where the value is the value to a key in an object.
     let ast = load('name: ' + value + '\n')
+
     // If that is not parseable, we might need quotes. Try that.
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
         ast = load('name: "' + value + '"\n')
         needsQuotes = true
-        // If this is still happening, bail out, we don't know what to do here.
-        if (!isYAMLMap(ast) || ast.errors.length > 0) {
-            return value
+
+        // We don't bail out here, we assume some characters in the value needs escaping,
+        // we set the value of `needsEscaping` to true.
+        // Also, check if there are more than one mapping. If there are, then the string value has a colon in it and an
+        // unbalanced quote - for example, "name": "value
+        // The unbalanced quote tricks the second load to think it is valid YAML since the value is closed with the
+        // ending quote.
+        if (!isYAMLMap(ast) || ast.errors.length > 0 || ast.mappings.length > 1) {
+            needsQuotes = false
+            needsEscaping = true
         }
     }
 
     // Then we traverse the AST to find the name key, so we can get the YAMLValue.
-    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name') as YAMLMapping
     if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
         return value
     }
@@ -379,6 +390,19 @@ export function quoteYAMLString(value: string): string {
     if (needsQuotes) {
         return `"${value}"`
     }
+
+    if (needsEscaping) {
+        // to properly escape the characters, we pass the raw string value into `JSON.stringify`,
+        // we use the raw string because we don't want to ignore special characters in regular expressions.
+        const updatedValue = JSON.stringify(String.raw`${value}`)
+        ast = load('name: ' + updatedValue + '\n')
+
+        // if there are no errors then we assume double quoting and escaping special characters works.
+        if (ast.errors.length === 0) {
+            return updatedValue
+        }
+    }
+
     return value
 }
 
@@ -391,14 +415,17 @@ export function quoteYAMLString(value: string): string {
  * @param value the value of the field to be updated
  * @param key the name of the field in the spec to be updated
  * @param quotable indicates if the value can be quoted or not
+ * @param commentExistingValue indicates whether the existing value should be commented instead of removed
  */
 export const insertFieldIntoLibraryItem = (
     librarySpec: string,
     value: string,
     key: string,
-    quotable: boolean = true
+    quotable: boolean,
+    commentExistingValue: boolean = false
 ): string => {
     const ast = load(librarySpec)
+    let existingValue = ''
 
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
         return librarySpec
@@ -413,10 +440,30 @@ export const insertFieldIntoLibraryItem = (
 
     const finalValue = quotable ? quoteYAMLString(value) : value
 
+    if (commentExistingValue) {
+        /**
+         * We get a slice of the spec containing the fields we want to replace. By doing this we can have a copy of the old value.
+         * We then split by new line so we can check each line and comment it out, we want to also make sure we don't comment out
+         * existing comments, so we check if each line starts with "#".
+         */
+        const existingValueArray = librarySpec
+            .slice(fieldMapping.value.startPosition, fieldMapping.value.endPosition)
+            .split('\n')
+            .map(line => (line === '' || line.startsWith('#') ? line : `# ${line}`))
+
+        existingValue = existingValueArray.join('\n')
+        // If the existing value contains a trailing new line, we also want to add that in.
+        if (existingValueArray.at(-1) === '') {
+            existingValue = existingValue.trim()
+            existingValue = existingValue + '\n'
+        }
+    }
+
     // Stitch the new <value> into the spec.
     return (
         librarySpec.slice(0, fieldMapping.value.startPosition) +
         finalValue +
+        existingValue +
         librarySpec.slice(fieldMapping.value.endPosition)
     )
 }
@@ -429,7 +476,7 @@ export const insertFieldIntoLibraryItem = (
  * @param name the name of the batch change to be inserted
  */
 export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string =>
-    insertFieldIntoLibraryItem(librarySpec, name, 'name')
+    insertFieldIntoLibraryItem(librarySpec, name, 'name', true)
 
 /**
  * Replaces the query of the provided `librarySpec`. If `librarySpec` or its query
@@ -437,9 +484,25 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  *
  * @param librarySpec the raw batch spec YAML example code from a library spec
  * @param query the updated query to be inserted
+ * @param commentExistingQuery indicates whether the existing query should be commented instead of deleted
  */
-export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string =>
-    insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${query}\n\n`, 'on', false)
+export const insertQueryIntoLibraryItem = (
+    librarySpec: string,
+    query: string,
+    commentExistingQuery: boolean
+): string => {
+    // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
+    // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
+    // since we are concerned with quoting the value, passing in a normal string works just fine.
+    const possiblyQuotedQuery = quoteYAMLString(query)
+    return insertFieldIntoLibraryItem(
+        librarySpec,
+        `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n`,
+        'on',
+        false,
+        commentExistingQuery
+    )
+}
 
 /**
  * Parses and performs a comparison between the values for the "on", "importChangesets",

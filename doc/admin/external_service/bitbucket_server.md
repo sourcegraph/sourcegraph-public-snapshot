@@ -9,7 +9,7 @@ To connect Bitbucket Server / Bitbucket Data Center to Sourcegraph:
 1. Configure the connection to Bitbucket Server / Bitbucket Data Center using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
-Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) which enables native code intelligence for every Bitbucket user when browsing code and reviewing pull requests, allows for faster permission syncing between Sourcegraph and Bitbucket Server / Bitbucket Data Center and adds support for webhooks to Bitbucket Server / Bitbucket Data Center.
+Also consider installing the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) which enables native code navigation for every Bitbucket user when browsing code and reviewing pull requests, allows for faster permission syncing between Sourcegraph and Bitbucket Server / Bitbucket Data Center and adds support for webhooks to Bitbucket Server / Bitbucket Data Center.
 
 ## Access token permissions
 

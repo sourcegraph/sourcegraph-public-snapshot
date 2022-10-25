@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type CreateBatchChangeArgs struct {
@@ -90,6 +90,7 @@ type CreateBatchSpecFromRawArgs struct {
 	Execute          bool
 	NoCache          bool
 	Namespace        graphql.ID
+	BatchChange      graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {
@@ -202,7 +203,7 @@ type DetachChangesetsArgs struct {
 type ListBatchChangeBulkOperationArgs struct {
 	First        int32
 	After        *string
-	CreatedAfter *DateTime
+	CreatedAfter *gqlutil.DateTime
 }
 
 type CreateChangesetCommentsArgs struct {
@@ -229,9 +230,7 @@ type PublishChangesetsArgs struct {
 }
 
 type ResolveWorkspacesForBatchSpecArgs struct {
-	BatchSpec        string
-	AllowIgnored     bool
-	AllowUnsupported bool
+	BatchSpec string
 }
 
 type ListImportingChangesetsArgs struct {
@@ -285,6 +284,8 @@ type BatchChangesResolver interface {
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
+	GlobalChangesetsStats(cx context.Context) (GlobalChangesetsStatsResolver, error)
+
 	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
 	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
@@ -292,7 +293,11 @@ type BatchChangesResolver interface {
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
 
+	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]ResolvedBatchSpecWorkspaceResolver, error)
+
 	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
+
+	MaxUnlicensedChangesets(ctx context.Context) int32
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -311,8 +316,8 @@ type BulkOperationResolver interface {
 	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
 	Initiator(ctx context.Context) (*UserResolver, error)
 	ChangesetCount() int32
-	CreatedAt() DateTime
-	FinishedAt() *DateTime
+	CreatedAt() gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 }
 
 type ChangesetJobErrorResolver interface {
@@ -331,10 +336,10 @@ type BatchSpecResolver interface {
 	Description() BatchChangeDescriptionResolver
 
 	Creator(context.Context) (*UserResolver, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 	Namespace(context.Context) (*NamespaceResolver, error)
 
-	ExpiresAt() *DateTime
+	ExpiresAt() *gqlutil.DateTime
 
 	ApplyURL(ctx context.Context) (*string, error)
 
@@ -350,8 +355,8 @@ type BatchSpecResolver interface {
 
 	AutoApplyEnabled() bool
 	State(context.Context) (string, error)
-	StartedAt(ctx context.Context) (*DateTime, error)
-	FinishedAt(ctx context.Context) (*DateTime, error)
+	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
+	FinishedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	FailureMessage(ctx context.Context) (*string, error)
 	WorkspaceResolution(ctx context.Context) (BatchSpecWorkspaceResolutionResolver, error)
 	ImportingChangesets(ctx context.Context, args *ListImportingChangesetsArgs) (ChangesetSpecConnectionResolver, error)
@@ -362,6 +367,8 @@ type BatchSpecResolver interface {
 	ViewerCanRetry(context.Context) (bool, error)
 
 	Source() string
+
+	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -459,7 +466,7 @@ type ChangesetSpecResolver interface {
 	ID() graphql.ID
 	// Type returns a value of type btypes.ChangesetSpecDescriptionType.
 	Type() string
-	ExpiresAt() *DateTime
+	ExpiresAt() *gqlutil.DateTime
 
 	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
 	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)
@@ -504,7 +511,6 @@ type GitBranchChangesetDescriptionResolver interface {
 	BaseRef() string
 	BaseRev() string
 
-	HeadRepository() *RepositoryResolver
 	HeadRef() string
 
 	Title() string
@@ -551,13 +557,13 @@ type BatchChangesCredentialResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
 	SSHPublicKey(ctx context.Context) (*string, error)
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
 }
 
 type ChangesetCountsArgs struct {
-	From            *DateTime
-	To              *DateTime
+	From            *gqlutil.DateTime
+	To              *gqlutil.DateTime
 	IncludeArchived bool
 }
 
@@ -589,6 +595,12 @@ type ListBatchSpecArgs struct {
 	First                       int32
 	After                       *string
 	IncludeLocallyExecutedSpecs *bool
+	ExcludeEmptySpecs           *bool
+}
+
+type ListBatchSpecWorkspaceFilesArgs struct {
+	First int32
+	After *string
 }
 
 type AvailableBulkOperationsArgs struct {
@@ -628,20 +640,18 @@ type BatchChangeResolver interface {
 	Name() string
 	Description() *string
 	State() string
-	InitialApplier(ctx context.Context) (*UserResolver, error)
 	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
-	LastAppliedAt() *DateTime
-	SpecCreator(ctx context.Context) (*UserResolver, error)
+	LastAppliedAt() *gqlutil.DateTime
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
-	CreatedAt() DateTime
-	UpdatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
 	ChangesetsStats(ctx context.Context) (ChangesetsStatsResolver, error)
 	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
-	ClosedAt() *DateTime
+	ClosedAt() *gqlutil.DateTime
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
@@ -660,6 +670,35 @@ type BatchSpecConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type BatchSpecWorkspaceFileConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
+}
+
+type BatchWorkspaceFileResolver interface {
+	ID() graphql.ID
+	ModifiedAt() gqlutil.DateTime
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
+
+	Path() string
+	Name() string
+	IsDirectory() bool
+	Content(ctx context.Context) (string, error)
+	ByteSize(ctx context.Context) (int32, error)
+	Binary(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context) (string, error)
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() string
+	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
+	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+
+	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToVirtualFile() (*VirtualFileResolver, bool)
+	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+}
+
 type CommonChangesetsStatsResolver interface {
 	Unpublished() int32
 	Draft() int32
@@ -670,6 +709,10 @@ type CommonChangesetsStatsResolver interface {
 }
 
 type RepoChangesetsStatsResolver interface {
+	CommonChangesetsStatsResolver
+}
+
+type GlobalChangesetsStatsResolver interface {
 	CommonChangesetsStatsResolver
 }
 
@@ -700,17 +743,11 @@ type ChangesetLabelResolver interface {
 type ChangesetResolver interface {
 	ID() graphql.ID
 
-	CreatedAt() DateTime
-	UpdatedAt() DateTime
-	NextSyncAt(ctx context.Context) (*DateTime, error)
-	// PublicationState returns a value of type btypes.ChangesetPublicationState.
-	PublicationState() string
-	// ReconcilerState returns a value of type btypes.ReconcilerState.
-	ReconcilerState() string
-	// ExternalState returns a value of type *btypes.ChangesetExternalState.
-	ExternalState() *string
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
+	NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error)
 	// State returns a value of type *btypes.ChangesetState.
-	State() (string, error)
+	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)
@@ -751,7 +788,7 @@ type ExternalChangesetResolver interface {
 
 	Error() *string
 	SyncerError() *string
-	ScheduleEstimateAt(ctx context.Context) (*DateTime, error)
+	ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error)
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
 }
@@ -765,11 +802,11 @@ type ChangesetEventsConnectionResolver interface {
 type ChangesetEventResolver interface {
 	ID() graphql.ID
 	Changeset() ExternalChangesetResolver
-	CreatedAt() DateTime
+	CreatedAt() gqlutil.DateTime
 }
 
 type ChangesetCountsResolver interface {
-	Date() DateTime
+	Date() gqlutil.DateTime
 	Total() int32
 	Merged() int32
 	Closed() int32
@@ -782,8 +819,8 @@ type ChangesetCountsResolver interface {
 
 type BatchSpecWorkspaceResolutionResolver interface {
 	State() string
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 	FailureMessage() *string
 
 	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
@@ -811,9 +848,9 @@ type BatchSpecWorkspaceResolver interface {
 	ID() graphql.ID
 
 	State() string
-	QueuedAt() *DateTime
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
+	QueuedAt() *gqlutil.DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 	CachedResultFound() bool
 	StepCacheResultCount() int32
 	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
@@ -844,7 +881,17 @@ type VisibleBatchSpecWorkspaceResolver interface {
 	Steps() ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
-	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
+	Executor(ctx context.Context) (*ExecutorResolver, error)
+}
+
+type ResolvedBatchSpecWorkspaceResolver interface {
+	OnlyFetchWorkspace() bool
+	Ignored() bool
+	Unsupported() bool
+	Repository(ctx context.Context) *RepositoryResolver
+	Branch(ctx context.Context) *GitRefResolver
+	Path() string
+	SearchResultPaths() []string
 }
 
 type BatchSpecWorkspaceStagesResolver interface {
@@ -862,8 +909,8 @@ type BatchSpecWorkspaceStepResolver interface {
 	Skipped() bool
 	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)
 
-	StartedAt() *DateTime
-	FinishedAt() *DateTime
+	StartedAt() *gqlutil.DateTime
+	FinishedAt() *gqlutil.DateTime
 
 	ExitCode() *int32
 	Environment() ([]BatchSpecWorkspaceEnvironmentVariableResolver, error)

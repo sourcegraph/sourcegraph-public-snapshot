@@ -44,7 +44,7 @@ export const CodeIntelAssociatedIndex: FunctionComponent<React.PropsWithChildren
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/indexes/${node.associatedIndex.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-graph/indexes/${node.associatedIndex.id}`}
                         >
                             <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
                         </Link>

@@ -69,10 +69,12 @@ var DeploySourcegraphDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"minio",
+	"node-exporter",
 	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
+	"prometheus-gcp",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -84,6 +86,8 @@ var DeploySourcegraphDockerImages = []string{
 	"worker",
 	"migrator",
 	"executor",
+	"executor-vm",
+	"opentelemetry-collector",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

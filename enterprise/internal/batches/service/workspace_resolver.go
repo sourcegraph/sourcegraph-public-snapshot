@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/gobwas/glob"
@@ -31,8 +32,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const searchAPIVersion = "V3"
 
 // RepoRevision describes a repository on a branch at a fixed revision.
 type RepoRevision struct {
@@ -399,7 +403,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 const internalSearchClientUserAgent = "Batch Changes repository resolver"
 
 func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	req, err := streamhttp.NewRequest(wr.frontendInternalURL, query)
+	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion)
 	if err != nil {
 		return err
 	}
@@ -443,7 +447,7 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gi
 		tr.Finish()
 	}()
 
-	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name)
+	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +609,6 @@ func findWorkspaces(
 
 	// Maps workspace config indexes to repositories matching them.
 	matched := map[int][]*RepoRevision{}
-
 	for _, repoRev := range repoRevs {
 		found := false
 
@@ -615,9 +618,11 @@ func findWorkspaces(
 				continue
 			}
 
-			// Don't allow duplicate matches.
+			// Don't allow duplicate matches. Collect the error so we return
+			// them all so users don't have to run it 1 by 1.
 			if found {
-				return nil, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In))
+				errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In)))
+				continue
 			}
 
 			matched[idx] = append(matched[idx], repoRev)
@@ -627,6 +632,9 @@ func findWorkspaces(
 		if !found {
 			root = append(root, repoRev)
 		}
+	}
+	if errs != nil {
+		return nil, errs
 	}
 
 	type repoWorkspaces struct {
@@ -683,8 +691,34 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
+			// Filter file matches by workspace. Only include paths that are
+			// _within_ the directory.
+			paths := []string{}
+			for _, probe := range workspace.RepoRevision.FileMatches {
+				if strings.HasPrefix(probe, path) {
+					paths = append(paths, probe)
+				}
+			}
+
+			repoRevision := *workspace.RepoRevision
+			repoRevision.FileMatches = paths
+
+			steps, err := stepsForRepo(spec, template.Repository{
+				Name:        string(repoRevision.Repo.Name),
+				Branch:      repoRevision.Branch,
+				FileMatches: repoRevision.FileMatches,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			// If the workspace doesn't have any steps we don't need to include it.
+			if len(steps) == 0 {
+				continue
+			}
+
 			workspaces = append(workspaces, &RepoWorkspace{
-				RepoRevision:       workspace.RepoRevision,
+				RepoRevision:       &repoRevision,
 				Path:               path,
 				OnlyFetchWorkspace: fetchWorkspace,
 			})
@@ -714,4 +748,38 @@ func (r *RepoRevision) Key() repoRevKey {
 		Branch: r.Branch,
 		Commit: string(r.Commit),
 	}
+}
+
+// stepsForRepo calculates the steps required to run on the given repo.
+func stepsForRepo(spec *batcheslib.BatchSpec, repo template.Repository) ([]batcheslib.Step, error) {
+	taskSteps := []batcheslib.Step{}
+	for _, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
+		if step.IfCondition() == "" {
+			taskSteps = append(taskSteps, step)
+			continue
+		}
+
+		batchChange := template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		}
+		stepCtx := &template.StepContext{
+			Repository:  repo,
+			BatchChange: batchChange,
+		}
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If we could evaluate the condition statically and the resulting
+		// boolean is false, we don't add that step.
+		if !static {
+			taskSteps = append(taskSteps, step)
+		} else if boolVal {
+			taskSteps = append(taskSteps, step)
+		}
+	}
+	return taskSteps, nil
 }

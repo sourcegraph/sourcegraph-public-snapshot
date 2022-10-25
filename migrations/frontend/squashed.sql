@@ -99,6 +99,40 @@ CREATE TYPE persistmode AS ENUM (
     'snapshot'
 );
 
+CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    INSERT INTO
+        batch_spec_workspace_execution_last_dequeues
+    SELECT
+        user_id,
+        MAX(started_at) as latest_dequeue
+    FROM
+        newtab
+    GROUP BY
+        user_id
+    ON CONFLICT (user_id) DO UPDATE SET
+        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);
+
+    RETURN NULL;
+END $$;
+
+CREATE FUNCTION changesets_computed_state_ensure() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+
+    NEW.computed_state = CASE
+        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'
+        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'
+        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'
+        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'
+        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'
+        ELSE NEW.external_state
+    END AS computed_state;
+
+    RETURN NEW;
+END $$;
+
 CREATE FUNCTION delete_batch_change_reference_on_changesets() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -398,6 +432,226 @@ CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[
     END;
 $$;
 
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      UPDATE gitserver_repos_statistics grs
+      SET
+        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),
+        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      SELECT
+        shard_id,
+        COUNT(*) AS total,
+        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,
+        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+      FROM
+        newtab
+      GROUP BY shard_id
+      ON CONFLICT(shard_id)
+      DO UPDATE
+      SET
+        total        = grs.total        + excluded.total,
+        not_cloned   = grs.not_cloned   + excluded.not_cloned,
+        cloning      = grs.cloning      + excluded.cloning,
+        cloned       = grs.cloned       + excluded.cloned,
+        failed_fetch = grs.failed_fetch + excluded.failed_fetch
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_gitserver_repos_statistics_on_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      --------------------
+      -- THIS IS UNCHANGED
+      --------------------
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      SELECT
+        newtab.shard_id AS shard_id,
+        COUNT(*) AS total,
+        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,
+        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+      FROM
+        newtab
+      GROUP BY newtab.shard_id
+      ON CONFLICT(shard_id) DO
+      UPDATE
+      SET
+        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),
+        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))
+      ;
+
+      --------------------
+      -- THIS IS UNCHANGED
+      --------------------
+      WITH moved AS (
+        SELECT
+          oldtab.shard_id AS shard_id,
+          COUNT(*) AS total,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,
+          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,
+          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch
+        FROM
+          oldtab
+        JOIN newtab ON newtab.repo_id = oldtab.repo_id
+        WHERE
+          oldtab.shard_id != newtab.shard_id
+        GROUP BY oldtab.shard_id
+      )
+      UPDATE gitserver_repos_statistics grs
+      SET
+        total        = grs.total        - moved.total,
+        not_cloned   = grs.not_cloned   - moved.not_cloned,
+        cloning      = grs.cloning      - moved.cloning,
+        cloned       = grs.cloned       - moved.cloned,
+        failed_fetch = grs.failed_fetch - moved.failed_fetch
+      FROM moved
+      WHERE moved.shard_id = grs.shard_id;
+
+      -------------------------------------------------
+      -- IMPORTANT: THIS IS CHANGED
+      -------------------------------------------------
+      WITH diff(not_cloned, cloning, cloned, failed_fetch) AS (
+        VALUES (
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)
+          )
+        )
+      )
+      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch)
+      SELECT not_cloned, cloning, cloned, failed_fetch
+      FROM diff
+      WHERE
+           not_cloned != 0
+        OR cloning != 0
+        OR cloned != 0
+        OR failed_fetch != 0
+      ;
+
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+      VALUES (
+        -- Insert negative counts
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned'),
+        (SELECT -COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+      );
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned)
+      VALUES (
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+        -- New repositories are always not_cloned by default, so we can count them as not cloned here
+        (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL)
+        -- New repositories never have last_error set, so we can also ignore those here
+      );
+      RETURN NULL;
+  END
+$$;
+
+CREATE FUNCTION recalc_repo_statistics_on_repo_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+      -- Insert diff of changes
+      WITH diff(total, soft_deleted, not_cloned, cloning, cloned, failed_fetch) AS (
+        VALUES (
+          (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NULL     AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NULL     AND blocked IS NULL),
+          (SELECT COUNT(*) FROM newtab WHERE deleted_at IS NOT NULL AND blocked IS NULL) - (SELECT COUNT(*) FROM oldtab WHERE deleted_at IS NOT NULL AND blocked IS NULL),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'not_cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'not_cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloning')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloning')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.clone_status = 'cloned')
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.clone_status = 'cloned')
+          ),
+          (
+            (SELECT COUNT(*) FROM newtab JOIN gitserver_repos gr ON gr.repo_id = newtab.id WHERE newtab.deleted_at is NULL AND newtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+            -
+            (SELECT COUNT(*) FROM oldtab JOIN gitserver_repos gr ON gr.repo_id = oldtab.id WHERE oldtab.deleted_at is NULL AND oldtab.blocked IS NULL AND gr.last_error IS NOT NULL)
+          )
+        )
+      )
+      INSERT INTO
+        repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)
+      SELECT total, soft_deleted, not_cloned, cloning, cloned, failed_fetch
+      FROM diff
+      WHERE
+           total != 0
+        OR soft_deleted != 0
+        OR not_cloned != 0
+        OR cloning != 0
+        OR cloned != 0
+        OR failed_fetch != 0
+      ;
+      RETURN NULL;
+  END
+$$;
+
 CREATE FUNCTION repo_block(reason text, at timestamp with time zone) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT
     AS $$
@@ -521,6 +775,14 @@ CREATE SEQUENCE access_tokens_id_seq
 
 ALTER SEQUENCE access_tokens_id_seq OWNED BY access_tokens.id;
 
+CREATE TABLE aggregated_user_statistics (
+    user_id bigint NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    user_last_active_at timestamp with time zone,
+    user_events_count bigint
+);
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -587,8 +849,8 @@ ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq OWNED BY batch_spec_exe
 
 CREATE TABLE batch_spec_resolution_jobs (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -601,7 +863,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer NOT NULL
+    initiator_id integer NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -615,8 +878,8 @@ ALTER SEQUENCE batch_spec_resolution_jobs_id_seq OWNED BY batch_spec_resolution_
 
 CREATE TABLE batch_spec_workspace_execution_jobs (
     id bigint NOT NULL,
-    batch_spec_workspace_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_workspace_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -630,7 +893,7 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    user_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -642,17 +905,17 @@ CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
 
 ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq OWNED BY batch_spec_workspace_execution_jobs.id;
 
+CREATE TABLE batch_spec_workspace_execution_last_dequeues (
+    user_id integer NOT NULL,
+    latest_dequeue timestamp with time zone
+);
+
 CREATE VIEW batch_spec_workspace_execution_queue AS
- WITH user_queues AS (
-         SELECT exec.user_id,
-            max(exec.started_at) AS latest_dequeue
-           FROM batch_spec_workspace_execution_jobs exec
-          GROUP BY exec.user_id
-        ), queue_candidates AS (
+ WITH queue_candidates AS (
          SELECT exec.id,
             rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
-             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+             JOIN batch_spec_workspace_execution_last_dequeues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
@@ -684,11 +947,34 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
    FROM (batch_spec_workspace_execution_jobs j
      LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));
 
+CREATE TABLE batch_spec_workspace_files (
+    id integer NOT NULL,
+    rand_id text NOT NULL,
+    batch_spec_id bigint NOT NULL,
+    filename text NOT NULL,
+    path text NOT NULL,
+    size bigint NOT NULL,
+    content bytea NOT NULL,
+    modified_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE batch_spec_workspace_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE batch_spec_workspace_files_id_seq OWNED BY batch_spec_workspace_files.id;
+
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    changeset_spec_ids jsonb DEFAULT '{}'::jsonb,
-    repo_id integer,
+    batch_spec_id integer NOT NULL,
+    changeset_spec_ids jsonb DEFAULT '{}'::jsonb NOT NULL,
+    repo_id integer NOT NULL,
     branch text NOT NULL,
     commit text NOT NULL,
     path text NOT NULL,
@@ -726,6 +1012,7 @@ CREATE TABLE batch_specs (
     allow_unsupported boolean DEFAULT false NOT NULL,
     allow_ignored boolean DEFAULT false NOT NULL,
     no_cache boolean DEFAULT false NOT NULL,
+    batch_change_id bigint,
     CONSTRAINT batch_specs_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL)))
 );
 
@@ -741,19 +1028,28 @@ ALTER SEQUENCE batch_specs_id_seq OWNED BY batch_specs.id;
 CREATE TABLE changeset_specs (
     id bigint NOT NULL,
     rand_id text NOT NULL,
-    spec jsonb DEFAULT '{}'::jsonb NOT NULL,
+    spec jsonb DEFAULT '{}'::jsonb,
     batch_spec_id bigint,
     repo_id integer NOT NULL,
     user_id integer,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     head_ref text,
     title text,
     external_id text,
-    fork_namespace citext
+    fork_namespace citext,
+    diff bytea,
+    base_rev text,
+    base_ref text,
+    body text,
+    published text,
+    commit_message text,
+    commit_author_name text,
+    commit_author_email text,
+    type text NOT NULL,
+    CONSTRAINT changeset_specs_published_valid_values CHECK (((published = 'true'::text) OR (published = 'false'::text) OR (published = '"draft"'::text) OR (published IS NULL)))
 );
 
 CREATE TABLE changesets (
@@ -772,7 +1068,6 @@ CREATE TABLE changesets (
     external_review_state text,
     external_check_state text,
     diff_stat_added integer,
-    diff_stat_changed integer,
     diff_stat_deleted integer,
     sync_state jsonb DEFAULT '{}'::jsonb NOT NULL,
     current_spec_id bigint,
@@ -796,6 +1091,9 @@ CREATE TABLE changesets (
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
+    detached_at timestamp with time zone,
+    computed_state text NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -836,7 +1134,8 @@ CREATE VIEW branch_changeset_specs_and_changesets AS
     changeset_specs.title AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1
            FROM changeset_specs changeset_specs_1
@@ -874,7 +1173,7 @@ CREATE TABLE changeset_jobs (
     changeset_id integer NOT NULL,
     job_type text NOT NULL,
     payload jsonb DEFAULT '{}'::jsonb,
-    state text DEFAULT 'queued'::text,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -887,6 +1186,7 @@ CREATE TABLE changeset_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -935,6 +1235,7 @@ CREATE TABLE cm_action_jobs (
     webhook bigint,
     slack_webhook bigint,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -1104,6 +1405,7 @@ CREATE TABLE cm_trigger_jobs (
     execution_logs json[],
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1145,6 +1447,45 @@ CREATE SEQUENCE cm_webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
+
+CREATE TABLE codeintel_autoindex_queue (
+    id integer NOT NULL,
+    repository_id integer NOT NULL,
+    rev text NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone
+);
+
+CREATE SEQUENCE codeintel_autoindex_queue_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_autoindex_queue_id_seq OWNED BY codeintel_autoindex_queue.id;
+
+CREATE TABLE codeintel_commit_dates (
+    repository_id integer NOT NULL,
+    commit_bytea bytea NOT NULL,
+    committed_at timestamp with time zone
+);
+
+COMMENT ON TABLE codeintel_commit_dates IS 'Maps commits within a repository to the commit date as reported by gitserver.';
+
+COMMENT ON COLUMN codeintel_commit_dates.repository_id IS 'Identifies a row in the `repo` table.';
+
+COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-character commit hash.';
+
+COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
+
+CREATE TABLE codeintel_inference_scripts (
+    insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
+    script text NOT NULL
+);
+
+COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';
 
 CREATE TABLE codeintel_langugage_support_requests (
     id integer NOT NULL,
@@ -1220,7 +1561,9 @@ CREATE TABLE codeintel_lockfiles (
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
     lockfile text,
-    fidelity text DEFAULT 'flat'::text NOT NULL
+    fidelity text DEFAULT 'flat'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1233,6 +1576,10 @@ COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile i
 
 COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
 
+COMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';
+
+COMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';
+
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
     START WITH 1
@@ -1242,6 +1589,11 @@ CREATE SEQUENCE codeintel_lockfiles_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
+
+CREATE TABLE codeintel_path_ranks (
+    repository_id integer NOT NULL,
+    payload text NOT NULL
+);
 
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
@@ -1369,11 +1721,35 @@ CREATE TABLE event_logs (
     feature_flags jsonb,
     cohort_id date,
     public_argument jsonb DEFAULT '{}'::jsonb NOT NULL,
+    first_source_url text,
+    last_source_url text,
+    referrer text,
+    device_id text,
+    insert_id text,
     CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT event_logs_check_source_not_empty CHECK ((source <> ''::text)),
     CONSTRAINT event_logs_check_version_not_empty CHECK ((version <> ''::text))
 );
+
+CREATE TABLE event_logs_export_allowlist (
+    id integer NOT NULL,
+    event_name text NOT NULL
+);
+
+COMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is enabled';
+
+COMMENT ON COLUMN event_logs_export_allowlist.event_name IS 'Name of the event that corresponds to event_logs.name';
+
+CREATE SEQUENCE event_logs_export_allowlist_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_export_allowlist_id_seq OWNED BY event_logs_export_allowlist.id;
 
 CREATE SEQUENCE event_logs_id_seq
     START WITH 1
@@ -1383,6 +1759,25 @@ CREATE SEQUENCE event_logs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE event_logs_id_seq OWNED BY event_logs.id;
+
+CREATE TABLE event_logs_scrape_state (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
 
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
@@ -1433,6 +1828,48 @@ CREATE SEQUENCE executor_heartbeats_id_seq
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
 
+CREATE TABLE executor_secret_access_logs (
+    id integer NOT NULL,
+    executor_secret_id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE executor_secret_access_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secret_access_logs_id_seq OWNED BY executor_secret_access_logs.id;
+
+CREATE TABLE executor_secrets (
+    id integer NOT NULL,
+    key text NOT NULL,
+    value bytea NOT NULL,
+    scope text NOT NULL,
+    encryption_key_id text,
+    namespace_user_id integer,
+    namespace_org_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    creator_id integer
+);
+
+COMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';
+
+CREATE SEQUENCE executor_secrets_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secrets_id_seq OWNED BY executor_secrets.id;
+
 CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -1450,6 +1887,7 @@ CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     external_service_id integer NOT NULL,
     permissions json[],
     unrestricted boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
 );
 
@@ -1487,14 +1925,33 @@ CREATE TABLE external_service_sync_jobs (
     finished_at timestamp with time zone,
     process_after timestamp with time zone,
     num_resets integer DEFAULT 0 NOT NULL,
-    external_service_id bigint,
+    external_service_id bigint NOT NULL,
     num_failures integer DEFAULT 0 NOT NULL,
     log_contents text,
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
+    repos_synced integer DEFAULT 0 NOT NULL,
+    repo_sync_errors integer DEFAULT 0 NOT NULL,
+    repos_added integer DEFAULT 0 NOT NULL,
+    repos_deleted integer DEFAULT 0 NOT NULL,
+    repos_modified integer DEFAULT 0 NOT NULL,
+    repos_unmodified integer DEFAULT 0 NOT NULL
 );
+
+COMMENT ON COLUMN external_service_sync_jobs.repos_synced IS 'The number of repos synced during this sync job.';
+
+COMMENT ON COLUMN external_service_sync_jobs.repo_sync_errors IS 'The number of times an error occurred syncing a repo during this sync job.';
+
+COMMENT ON COLUMN external_service_sync_jobs.repos_added IS 'The number of new repos discovered during this sync job.';
+
+COMMENT ON COLUMN external_service_sync_jobs.repos_deleted IS 'The number of repos deleted as a result of this sync job.';
+
+COMMENT ON COLUMN external_service_sync_jobs.repos_modified IS 'The number of existing repos whose metadata has changed during this sync job.';
+
+COMMENT ON COLUMN external_service_sync_jobs.repos_unmodified IS 'The number of existing repos whose metadata did not change during this sync job.';
 
 CREATE TABLE external_services (
     id bigint NOT NULL,
@@ -1600,7 +2057,8 @@ CREATE TABLE gitserver_relocator_jobs (
     repo_id integer NOT NULL,
     source_hostname text NOT NULL,
     dest_hostname text NOT NULL,
-    delete_source boolean DEFAULT false NOT NULL
+    delete_source boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE gitserver_relocator_jobs_id_seq
@@ -1642,8 +2100,30 @@ CREATE TABLE gitserver_repos (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_fetched timestamp with time zone DEFAULT now() NOT NULL,
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
-    repo_size_bytes bigint
+    repo_size_bytes bigint,
+    repo_status text
 );
+
+CREATE TABLE gitserver_repos_statistics (
+    shard_id text NOT NULL,
+    total bigint DEFAULT 0 NOT NULL,
+    not_cloned bigint DEFAULT 0 NOT NULL,
+    cloning bigint DEFAULT 0 NOT NULL,
+    cloned bigint DEFAULT 0 NOT NULL,
+    failed_fetch bigint DEFAULT 0 NOT NULL
+);
+
+COMMENT ON COLUMN gitserver_repos_statistics.shard_id IS 'ID of this gitserver shard. If an empty string then the repositories havent been assigned a shard.';
+
+COMMENT ON COLUMN gitserver_repos_statistics.total IS 'Number of repositories in gitserver_repos table on this shard';
+
+COMMENT ON COLUMN gitserver_repos_statistics.not_cloned IS 'Number of repositories in gitserver_repos table on this shard that are not cloned yet';
+
+COMMENT ON COLUMN gitserver_repos_statistics.cloning IS 'Number of repositories in gitserver_repos table on this shard that cloning';
+
+COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories in gitserver_repos table on this shard that are cloned';
+
+COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -1668,7 +2148,8 @@ CREATE TABLE insights_query_runner_jobs (
     priority integer DEFAULT 1 NOT NULL,
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -1822,7 +2303,8 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
-    external_service_sync timestamp with time zone
+    external_service_sync timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -1842,7 +2324,8 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     execution_logs json[],
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
-    last_heartbeat_at timestamp with time zone
+    last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -1930,6 +2413,10 @@ CREATE TABLE lsif_uploads (
     reference_count integer,
     indexer_version text,
     queued_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
+    uncompressed_size bigint,
+    last_referenced_scan_at timestamp with time zone,
+    last_traversal_scan_at timestamp with time zone,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -1958,6 +2445,10 @@ COMMENT ON COLUMN lsif_uploads.last_retention_scan_at IS 'The last time this upl
 COMMENT ON COLUMN lsif_uploads.reference_count IS 'The number of references to this upload data from other upload records (via lsif_references).';
 
 COMMENT ON COLUMN lsif_uploads.indexer_version IS 'The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.';
+
+COMMENT ON COLUMN lsif_uploads.last_referenced_scan_at IS 'The last time this upload was known to be referenced by another (possibly expired) index.';
+
+COMMENT ON COLUMN lsif_uploads.last_traversal_scan_at IS 'The last time this upload was known to be reachable by a non-expired index.';
 
 CREATE VIEW lsif_dumps AS
  SELECT u.id,
@@ -2067,6 +2558,8 @@ CREATE TABLE lsif_indexes (
     commit_last_checked_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2119,6 +2612,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -2284,6 +2778,17 @@ CREATE SEQUENCE lsif_uploads_audit_logs_seq
 
 ALTER SEQUENCE lsif_uploads_audit_logs_seq OWNED BY lsif_uploads_audit_logs.sequence;
 
+CREATE TABLE lsif_uploads_reference_counts (
+    upload_id integer NOT NULL,
+    reference_count integer NOT NULL
+);
+
+COMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.upload_id IS 'The identifier of the referenced upload.';
+
+COMMENT ON COLUMN lsif_uploads_reference_counts.reference_count IS 'The number of references to the associated upload from other records (via lsif_references).';
+
 CREATE TABLE lsif_uploads_visible_at_tip (
     repository_id integer NOT NULL,
     upload_id integer NOT NULL,
@@ -2321,7 +2826,8 @@ CREATE VIEW lsif_uploads_with_repository_name AS
     u.associated_index_id,
     u.expired,
     u.last_retention_scan_at,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.uncompressed_size
    FROM (lsif_uploads u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
@@ -2563,7 +3069,11 @@ CREATE TABLE product_licenses (
     id uuid NOT NULL,
     product_subscription_id uuid NOT NULL,
     license_key text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    license_version integer,
+    license_tags text[],
+    license_user_count integer,
+    license_expires_at timestamp with time zone
 );
 
 CREATE TABLE product_subscriptions (
@@ -2572,7 +3082,8 @@ CREATE TABLE product_subscriptions (
     billing_subscription_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    archived_at timestamp with time zone
+    archived_at timestamp with time zone,
+    account_number text
 );
 
 CREATE TABLE query_runner_state (
@@ -2604,7 +3115,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
-    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext))
+    CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
 );
 
 CREATE VIEW reconciler_changesets AS
@@ -2624,7 +3135,6 @@ CREATE VIEW reconciler_changesets AS
     c.external_review_state,
     c.external_check_state,
     c.diff_stat_added,
-    c.diff_stat_changed,
     c.diff_stat_deleted,
     c.sync_state,
     c.current_spec_id,
@@ -2632,6 +3142,7 @@ CREATE VIEW reconciler_changesets AS
     c.publication_state,
     c.owned_by_batch_change_id,
     c.reconciler_state,
+    c.computed_state,
     c.failure_message,
     c.started_at,
     c.finished_at,
@@ -2646,7 +3157,8 @@ CREATE VIEW reconciler_changesets AS
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
-    c.external_fork_namespace
+    c.external_fork_namespace,
+    c.detached_at
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -2710,6 +3222,12 @@ CREATE SEQUENCE repo_id_seq
 
 ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
 
+CREATE TABLE repo_kvps (
+    repo_id integer NOT NULL,
+    key text NOT NULL,
+    value text
+);
+
 CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
     permission text NOT NULL,
@@ -2725,6 +3243,27 @@ CREATE TABLE repo_permissions (
     user_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL,
     unrestricted boolean DEFAULT false NOT NULL
 );
+
+CREATE TABLE repo_statistics (
+    total bigint DEFAULT 0 NOT NULL,
+    soft_deleted bigint DEFAULT 0 NOT NULL,
+    not_cloned bigint DEFAULT 0 NOT NULL,
+    cloning bigint DEFAULT 0 NOT NULL,
+    cloned bigint DEFAULT 0 NOT NULL,
+    failed_fetch bigint DEFAULT 0 NOT NULL
+);
+
+COMMENT ON COLUMN repo_statistics.total IS 'Number of repositories that are not soft-deleted and not blocked';
+
+COMMENT ON COLUMN repo_statistics.soft_deleted IS 'Number of repositories that are soft-deleted and not blocked';
+
+COMMENT ON COLUMN repo_statistics.not_cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and not cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories that are NOT soft-deleted and not blocked and currently being cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver';
+
+COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
 
 CREATE TABLE saved_searches (
     id integer NOT NULL,
@@ -2852,10 +3391,13 @@ CREATE TABLE sub_repo_permissions (
     version integer DEFAULT 1 NOT NULL,
     path_includes text[],
     path_excludes text[],
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    paths text[]
 );
 
 COMMENT ON TABLE sub_repo_permissions IS 'Responsible for storing permissions at a finer granularity than repo';
+
+COMMENT ON COLUMN sub_repo_permissions.paths IS 'Paths that begin with a minus sign (-) are exclusion paths.';
 
 CREATE TABLE survey_responses (
     id bigint NOT NULL,
@@ -2911,7 +3453,8 @@ CREATE VIEW tracking_changeset_specs_and_changesets AS
     COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
@@ -3026,6 +3569,33 @@ CREATE TABLE versions (
     first_version text NOT NULL
 );
 
+CREATE SEQUENCE webhook_build_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE webhook_build_jobs (
+    repo_id integer,
+    repo_name text,
+    extsvc_kind text,
+    queued_at timestamp with time zone DEFAULT now(),
+    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    execution_logs json[],
+    last_heartbeat_at timestamp with time zone,
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    org text,
+    extsvc_id integer
+);
+
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -3045,6 +3615,41 @@ CREATE SEQUENCE webhook_logs_id_seq
 
 ALTER SEQUENCE webhook_logs_id_seq OWNED BY webhook_logs.id;
 
+CREATE TABLE webhooks (
+    id integer NOT NULL,
+    code_host_kind text NOT NULL,
+    code_host_urn text NOT NULL,
+    secret text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    encryption_key_id text,
+    uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    created_by_user_id integer,
+    updated_by_user_id integer
+);
+
+COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
+
+COMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';
+
+COMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';
+
+COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';
+
+COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';
+
+COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';
+
+CREATE SEQUENCE webhooks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE webhooks_id_seq OWNED BY webhooks.id;
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -3056,6 +3661,8 @@ ALTER TABLE ONLY batch_spec_execution_cache_entries ALTER COLUMN id SET DEFAULT 
 ALTER TABLE ONLY batch_spec_resolution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_resolution_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY batch_spec_workspace_files ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspace_files_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_spec_workspaces ALTER COLUMN id SET DEFAULT nextval('batch_spec_workspaces_id_seq'::regclass);
 
@@ -3085,6 +3692,8 @@ ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_langugage_support_requests ALTER COLUMN id SET DEFAULT nextval('codeintel_langugage_support_requests_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfile_references_id_seq'::regclass);
@@ -3103,7 +3712,15 @@ ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('event_logs_export_allowlist_id_seq'::regclass);
+
+ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval('executor_secret_access_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
@@ -3181,11 +3798,16 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_id_seq'::regcl
 
 ALTER TABLE ONLY webhook_logs ALTER COLUMN id SET DEFAULT nextval('webhook_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY webhooks ALTER COLUMN id SET DEFAULT nextval('webhooks_id_seq'::regclass);
+
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_value_sha256_key UNIQUE (value_sha256);
+
+ALTER TABLE ONLY aggregated_user_statistics
+    ADD CONSTRAINT aggregated_user_statistics_pkey PRIMARY KEY (user_id);
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
@@ -3207,6 +3829,12 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
+    ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
@@ -3259,11 +3887,20 @@ ALTER TABLE ONLY cm_trigger_jobs
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_autoindex_queue
+    ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_commit_dates
+    ADD CONSTRAINT codeintel_commit_dates_pkey PRIMARY KEY (repository_id, commit_bytea);
+
 ALTER TABLE ONLY codeintel_lockfile_references
     ADD CONSTRAINT codeintel_lockfile_references_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_lockfiles
     ADD CONSTRAINT codeintel_lockfiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_path_ranks
+    ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
@@ -3280,14 +3917,26 @@ ALTER TABLE ONLY discussion_threads
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY event_logs_export_allowlist
+    ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY event_logs_scrape_state
+    ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_hostname_key UNIQUE (hostname);
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
     ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
@@ -3312,6 +3961,9 @@ ALTER TABLE ONLY gitserver_relocator_jobs
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_pkey PRIMARY KEY (repo_id);
+
+ALTER TABLE ONLY gitserver_repos_statistics
+    ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
 
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);
@@ -3376,6 +4028,9 @@ ALTER TABLE ONLY lsif_retention_configuration
 ALTER TABLE ONLY lsif_uploads
     ADD CONSTRAINT lsif_uploads_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_key UNIQUE (upload_id);
+
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_pkey PRIMARY KEY (name);
 
@@ -3426,6 +4081,9 @@ ALTER TABLE ONLY registry_extension_releases
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
 
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_name_unique UNIQUE (name) DEFERRABLE;
@@ -3496,6 +4154,12 @@ ALTER TABLE ONLY versions
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_uuid_key UNIQUE (uuid);
+
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
@@ -3510,6 +4174,8 @@ CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (na
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
+CREATE INDEX batch_spec_resolution_jobs_state ON batch_spec_resolution_jobs USING btree (state);
+
 CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_execution_jobs USING btree (cancel);
@@ -3517,6 +4183,10 @@ CREATE INDEX batch_spec_workspace_execution_jobs_cancel ON batch_spec_workspace_
 CREATE INDEX batch_spec_workspace_execution_jobs_last_dequeue ON batch_spec_workspace_execution_jobs USING btree (user_id, started_at DESC);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_state ON batch_spec_workspace_execution_jobs USING btree (state);
+
+CREATE UNIQUE INDEX batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files USING btree (batch_spec_id, filename, path);
+
+CREATE INDEX batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);
 
 CREATE INDEX batch_spec_workspaces_batch_spec_id ON batch_spec_workspaces USING btree (batch_spec_id);
 
@@ -3546,6 +4216,10 @@ CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets
 
 CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
+CREATE INDEX changesets_computed_state ON changesets USING btree (computed_state);
+
+CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at);
+
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 
 CREATE INDEX changesets_external_title_idx ON changesets USING btree (external_title);
@@ -3558,9 +4232,13 @@ CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
+CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);
+
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
+
+CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
@@ -3596,6 +4274,8 @@ CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threa
 
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
 
+CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
+
 CREATE INDEX event_logs_name ON event_logs USING btree (name);
 
 CREATE INDEX event_logs_source ON event_logs USING btree (source);
@@ -3605,6 +4285,12 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE ((namespace_user_id IS NULL) AND (namespace_org_id IS NULL));
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE (namespace_org_id IS NOT NULL);
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE (namespace_user_id IS NOT NULL);
 
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
 
@@ -3638,6 +4324,8 @@ CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btre
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
 
+CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
+
 CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloned'::text);
 
 CREATE INDEX gitserver_repos_cloning_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloning'::text);
@@ -3664,7 +4352,11 @@ CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, c
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
 
+CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_jobs USING btree (state);
+
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
+
+CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
 
@@ -3806,17 +4498,39 @@ CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
 
+CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
+
+CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
+
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
 CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_at);
 
 CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_code);
 
+CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
+
+CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
+
+CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 
 CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos();
 
 CREATE TRIGGER trig_invalidate_session_on_password_change BEFORE UPDATE OF passwd ON users FOR EACH ROW EXECUTE FUNCTION invalidate_session_for_userid_on_password_change();
+
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_delete AFTER DELETE ON gitserver_repos REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_delete();
+
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_insert AFTER INSERT ON gitserver_repos REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_insert();
+
+CREATE TRIGGER trig_recalc_gitserver_repos_statistics_on_update AFTER UPDATE ON gitserver_repos REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_gitserver_repos_statistics_on_update();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert();
+
+CREATE TRIGGER trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update();
 
 CREATE TRIGGER trig_soft_delete_user_reference_on_external_service AFTER UPDATE OF deleted_at ON users FOR EACH ROW EXECUTE FUNCTION soft_delete_user_reference_on_external_service();
 
@@ -3841,6 +4555,9 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY access_tokens
     ADD CONSTRAINT access_tokens_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY aggregated_user_statistics
+    ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;
@@ -3869,11 +4586,20 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
 
+ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
+    ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE ONLY batch_spec_workspace_files
+    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
+
+ALTER TABLE ONLY batch_specs
+    ADD CONSTRAINT batch_specs_batch_change_id_fkey FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_specs
     ADD CONSTRAINT batch_specs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
@@ -4013,6 +4739,21 @@ ALTER TABLE ONLY discussion_threads_target_repo
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
 
@@ -4066,6 +4807,9 @@ ALTER TABLE ONLY lsif_references
 
 ALTER TABLE ONLY lsif_retention_configuration
     ADD CONSTRAINT lsif_retention_configuration_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY lsif_uploads_reference_counts
+    ADD CONSTRAINT lsif_uploads_reference_counts_upload_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY names
     ADD CONSTRAINT names_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -4130,6 +4874,9 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
 
+ALTER TABLE ONLY repo_kvps
+    ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);
 
@@ -4186,6 +4933,12 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY webhooks
+    ADD CONSTRAINT webhooks_updated_by_user_id_fkey FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);

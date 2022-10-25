@@ -8,7 +8,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Code } from '@sourcegraph/wildcard'
+import { Button, Code } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 interface Props extends PlatformContextProps<'requestGraphQL'> {
@@ -43,9 +43,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         <div className={styles.title}>
             <span className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate">
                 <>
-                    <button
-                        type="button"
-                        className="btn btn-text-link"
+                    <Button
+                        className="btn-text-link"
                         onClick={() =>
                             openRepo({
                                 repository: result.repository,
@@ -54,32 +53,20 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                         }
                     >
                         {displayRepoName(result.repository)}
-                    </button>
+                    </Button>
                     {' › '}
-                    <button
-                        type="button"
-                        className="btn btn-text-link"
-                        onClick={() => openCommit(getCommitMatchUrl(result))}
-                    >
+                    <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
                         {result.authorName}
-                    </button>
+                    </Button>
                     <span aria-hidden={true}>{': '}</span>
-                    <button
-                        type="button"
-                        className="btn btn-text-link"
-                        onClick={() => openCommit(getCommitMatchUrl(result))}
-                    >
+                    <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
                         {result.message.split('\n', 1)[0]}
-                    </button>
+                    </Button>
                 </>
             </span>
             <span className={styles.spacer} />
             {result.type === 'commit' && (
-                <button
-                    type="button"
-                    className="btn btn-text-link"
-                    onClick={() => openCommit(getCommitMatchUrl(result))}
-                >
+                <Button className="btn-text-link" onClick={() => openCommit(getCommitMatchUrl(result))}>
                     <Code className={styles.commitOid}>
                         <VisuallyHidden>Commit hash:</VisuallyHidden>
                         {result.oid.slice(0, 7)}
@@ -87,7 +74,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     </Code>{' '}
                     <VisuallyHidden>Commited</VisuallyHidden>
                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
-                </button>
+                </Button>
             )}
             {result.repoStars && <div className={styles.divider} />}
         </div>

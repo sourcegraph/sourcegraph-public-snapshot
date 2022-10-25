@@ -3,6 +3,7 @@ import * as fzy from 'fzy.js'
 import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
+import { createUrlFunction } from './WordSensitiveFuzzySearch'
 
 interface ScoredSearchValue extends SearchValue {
     score: number
@@ -14,6 +15,12 @@ class CacheCandidate {
         return parameters.query.startsWith(this.query)
     }
 }
+
+// The 0.2 value was chosen by manually observing the behavior and confirming
+// that it seems to give relevant results without too much noise.
+const FZY_MINIMUM_SCORE_THRESHOLD = 0.2
+
+const FZY_EQUAL_SCORE_THRESHOLD = 0.2
 
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
@@ -31,7 +38,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     private cacheCandidates: CacheCandidate[] = []
     private spaceSeparator = new RegExp('\\s+')
 
-    constructor(public readonly values: SearchValue[]) {
+    constructor(public readonly values: SearchValue[], private readonly createUrl: createUrlFunction) {
         super()
         this.totalFileCount = values.length
     }
@@ -41,26 +48,48 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         const searchValues: SearchValue[] = cacheCandidate ? cacheCandidate.candidates : this.values
         const isEmptyQuery = parameters.query.length === 0
         const candidates: ScoredSearchValue[] = []
+        const candidatesWithMatch: ScoredSearchValue[] = []
         const queryParts = parameters.query.split(this.spaceSeparator).filter(part => part.length > 0)
-        for (const value of searchValues) {
-            let score = 0
-            for (const queryPart of queryParts) {
-                const partScore = fzy.score(queryPart, value.text)
-                score += partScore
-            }
-            const isAcceptableScore = !isNaN(score) && score > 0.2
-            if (isEmptyQuery || isAcceptableScore) {
-                candidates.push({
-                    score,
-                    text: value.text,
-                })
+        if (isEmptyQuery) {
+            // Empty query, match all values
+            candidates.push(...searchValues.map(value => ({ ...value, score: 1 })))
+        } else {
+            for (const value of searchValues) {
+                let score = 0
+                if (queryParts.length === 1 && queryParts[0] === value.text) {
+                    score = value.text.length
+                } else {
+                    for (const queryPart of queryParts) {
+                        // TODO: the query 'sourcegraph' should have a higher
+                        // score for the value 'sourcegraph/sourcegraph' instead
+                        // of 'sourcegraph/scip'. Right now, `sourcegraph/scip` scores
+                        // equally.
+                        const partScore = fzy.score(queryPart, value.text)
+                        score += partScore
+                    }
+                }
+                const noMatch = isNaN(score) || !isFinite(score)
+                if (noMatch) {
+                    continue
+                }
+                if (score > FZY_MINIMUM_SCORE_THRESHOLD) {
+                    candidates.push({ ...value, score })
+                } else {
+                    candidatesWithMatch.push({ ...value, score })
+                }
             }
         }
 
-        this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates]))
+        this.cacheCandidates.push(new CacheCandidate(parameters.query, [...candidates, ...candidatesWithMatch]))
 
         const isComplete = candidates.length < parameters.maxResults
-        candidates.sort((a, b) => b.score - a.score)
+        candidates.sort((a, b) => {
+            const byScore = b.score - a.score
+            if (byScore < FZY_EQUAL_SCORE_THRESHOLD && a.ranking && b.ranking) {
+                return b.ranking - a.ranking
+            }
+            return byScore
+        })
         candidates.slice(0, parameters.maxResults)
 
         const links: HighlightedLinkProps[] = candidates.map(candidate => {
@@ -72,10 +101,9 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
             }
             const positions = compressedRangePositions([...offsets])
             return {
+                ...candidate,
                 positions,
-                text: candidate.text,
-                onClick: parameters.onClick,
-                url: parameters.createUrl?.(candidate.text),
+                url: candidate.url || this.createUrl?.(candidate.text),
             }
         })
         return {
@@ -91,6 +119,10 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
      * query.
      */
     private nextCacheCandidate(parameters: FuzzySearchParameters): CacheCandidate | undefined {
+        if (parameters.query === '') {
+            this.cacheCandidates = []
+            return undefined
+        }
         let cacheCandidate = this.lastCacheCandidate()
         while (cacheCandidate && !cacheCandidate.matches(parameters)) {
             this.cacheCandidates.pop()

@@ -264,7 +264,6 @@ type Changeset struct {
 	ExternalReviewState   ChangesetReviewState
 	ExternalCheckState    ChangesetCheckState
 	DiffStatAdded         *int32
-	DiffStatChanged       *int32
 	DiffStatDeleted       *int32
 	SyncState             ChangesetSyncState
 
@@ -279,6 +278,9 @@ type Changeset struct {
 	PublicationState   ChangesetPublicationState // "unpublished", "published"
 	UiPublicationState *ChangesetUiPublicationState
 
+	// State is a computed value. Changes to this value will never be persisted to the database.
+	State ChangesetState
+
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState
 	FailureMessage   *string
@@ -292,6 +294,9 @@ type Changeset struct {
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
+
+	// DetachedAt is the time when the changeset became "detached".
+	DetachedAt time.Time
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -340,16 +345,15 @@ func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
 	c.SetDiffStat(&diffStat)
 }
 
-// DiffStat returns a *diff.Stat if DiffStatAdded, DiffStatChanged, and
+// DiffStat returns a *diff.Stat if DiffStatAdded and
 // DiffStatDeleted are set, or nil if one or more is not.
 func (c *Changeset) DiffStat() *diff.Stat {
-	if c.DiffStatAdded == nil || c.DiffStatChanged == nil || c.DiffStatDeleted == nil {
+	if c.DiffStatAdded == nil || c.DiffStatDeleted == nil {
 		return nil
 	}
 
 	return &diff.Stat{
 		Added:   *c.DiffStatAdded,
-		Changed: *c.DiffStatChanged,
 		Deleted: *c.DiffStatDeleted,
 	}
 }
@@ -357,16 +361,12 @@ func (c *Changeset) DiffStat() *diff.Stat {
 func (c *Changeset) SetDiffStat(stat *diff.Stat) {
 	if stat == nil {
 		c.DiffStatAdded = nil
-		c.DiffStatChanged = nil
 		c.DiffStatDeleted = nil
 	} else {
-		added := stat.Added
+		added := stat.Added + stat.Changed
 		c.DiffStatAdded = &added
 
-		changed := stat.Changed
-		c.DiffStatChanged = &changed
-
-		deleted := stat.Deleted
+		deleted := stat.Deleted + stat.Changed
 		c.DiffStatDeleted = &deleted
 	}
 }
@@ -843,6 +843,9 @@ func (c *Changeset) Attach(batchChangeID int64) {
 		}
 	}
 	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
+	if !c.DetachedAt.IsZero() {
+		c.DetachedAt = time.Time{}
+	}
 }
 
 // Detach marks the given batch change as to-be-detached. Returns true, if the
@@ -1008,6 +1011,11 @@ type CommonChangesetsStats struct {
 
 // RepoChangesetsStats holds stats information on a list of changesets for a repo.
 type RepoChangesetsStats struct {
+	CommonChangesetsStats
+}
+
+// GlobalChangesetsStats holds stats information on all the changsets across the instance.
+type GlobalChangesetsStats struct {
 	CommonChangesetsStats
 }
 

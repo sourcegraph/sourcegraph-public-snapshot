@@ -48,6 +48,14 @@ func SignUp(baseURL, email, username, password string) (*Client, error) {
 	})
 }
 
+func SignUpOrSignIn(baseURL, email, username, password string) (*Client, error) {
+	client, err := SignUp(baseURL, email, username, password)
+	if err != nil {
+		return SignIn(baseURL, email, password)
+	}
+	return client, err
+}
+
 // SignIn performs the sign in with given user credentials.
 // It returns an authenticated client as the user for doing testing.
 func SignIn(baseURL, email, password string) (*Client, error) {
@@ -98,20 +106,24 @@ type Client struct {
 	sessionCookie *http.Cookie
 
 	userID         string
-	requestLogger  io.StringWriter
-	responseLogger io.StringWriter
+	requestLogger  LogFunc
+	responseLogger LogFunc
 }
+
+type LogFunc func(payload []byte)
+
+func noopLog(payload []byte) {}
 
 // NewClient instantiates a new client by performing a GET request then obtains the
 // CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only).
 // If request- or responseLogger are provided, the request and response bodies, respectively,
 // will be written to them for any GraphQL requests only.
-func NewClient(baseURL string, requestLogger, responseLogger io.StringWriter) (*Client, error) {
+func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, error) {
 	if requestLogger == nil {
-		requestLogger = io.Discard.(io.StringWriter)
+		requestLogger = noopLog
 	}
 	if responseLogger == nil {
-		responseLogger = io.Discard.(io.StringWriter)
+		responseLogger = noopLog
 	}
 
 	resp, err := http.Get(baseURL)
@@ -124,8 +136,6 @@ func NewClient(baseURL string, requestLogger, responseLogger io.StringWriter) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "read GET body")
 	}
-
-	responseLogger.WriteString(string(p))
 
 	csrfToken := extractCSRFToken(string(p))
 	var csrfCookie *http.Cookie
@@ -153,8 +163,6 @@ func (c *Client) authenticate(path string, body any) error {
 	if err != nil {
 		return errors.Wrap(err, "marshal body")
 	}
-
-	c.requestLogger.WriteString(string(p))
 
 	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewReader(p))
 	if err != nil {
@@ -274,8 +282,6 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		name = matches[2]
 	}
 
-	c.requestLogger.WriteString(string(body))
-
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -294,6 +300,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		}
 	}
 
+	c.requestLogger(body)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -305,7 +313,7 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		return errors.Wrap(err, "read response body")
 	}
 
-	c.responseLogger.WriteString(string(body))
+	c.responseLogger(body)
 
 	// Check if the response format should be JSON
 	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { mdiEye } from '@mdi/js'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { createLinkUrl, DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { createLinkUrl, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 import { getURLForMode } from './utils'
@@ -32,26 +32,18 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
     const label = mode === 'rendered' ? 'Show raw code file' : 'Show formatted file'
     const location = useLocation()
 
-    useEffect(() => {
-        DeprecatedTooltipController.forceUpdate()
-    }, [mode])
-
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink to={createLinkUrl(getURLForMode(location, otherMode))} file={true}>
+            <RepoHeaderActionMenuLink as={Link} to={createLinkUrl(getURLForMode(location, otherMode))} file={true}>
                 <Icon aria-hidden={true} svgPath={mdiEye} />
                 <span>{label}</span>
-            </RepoHeaderActionButtonLink>
+            </RepoHeaderActionMenuLink>
         )
     }
 
     return (
         <Tooltip content={label}>
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={createLinkUrl(getURLForMode(location, otherMode))}
-            >
+            <RepoHeaderActionButtonLink file={false} to={createLinkUrl(getURLForMode(location, otherMode))}>
                 <Icon aria-hidden={true} svgPath={mdiEye} />{' '}
                 <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
             </RepoHeaderActionButtonLink>

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -42,8 +43,8 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
-			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.com"},
+			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
+			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.org"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
@@ -145,9 +146,10 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			e := ExternalService{Kind: tc.kind, Config: string(cfg)}
+			e := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(cfg))}
 
-			have, err := e.RedactedConfig()
+			ctx := context.Background()
+			have, err := e.RedactedConfig(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -201,7 +203,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.com"},
+			old:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
 			in:   schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
 			out:  schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
 		},
@@ -408,10 +410,16 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			old := ExternalService{Kind: tc.kind, Config: string(oldCfg)}
-			in := ExternalService{Kind: tc.kind, Config: string(inCfg)}
+			old := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(oldCfg))}
+			in := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(inCfg))}
 
-			err = in.UnredactConfig(&old)
+			ctx := context.Background()
+			err = in.UnredactConfig(ctx, &old)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			cfg, err := in.Config.Decrypt(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -420,8 +428,7 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			assert.JSONEq(t, string(want), in.Config)
+			assert.JSONEq(t, string(want), cfg)
 		})
 	}
 }

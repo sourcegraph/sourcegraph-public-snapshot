@@ -4,8 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
-// eslint-disable-next-line no-restricted-imports
-import { Card, Icon } from '@sourcegraph/wildcard'
+import { Card, Icon, Button } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
@@ -62,7 +61,7 @@ export interface HoverOverlayProps
         TelemetryProps,
         ThemeProps,
         Pick<HoverOverlayAlertsProps, 'onAlertDismissed'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
+        PlatformContextProps<'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -149,7 +148,6 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
         <Card
             // needed for dynamic styling
             data-testid="hover-overlay"
-            // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
             className={classNames(hoverOverlayStyle.card, hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
@@ -163,8 +161,8 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                 )}
             >
                 {pinOptions?.showCloseButton && (
-                    <button
-                        type="button"
+                    <Button
+                        variant="icon"
                         onClick={
                             pinOptions.onCloseButtonClick
                                 ? transformMouseEvent(pinOptions.onCloseButtonClick)
@@ -177,7 +175,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                         )}
                     >
                         <Icon className={iconClassName} svgPath={mdiClose} inline={false} aria-label="Close" />
-                    </button>
+                    </Button>
                 )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
@@ -240,6 +238,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
 
                 {pinOptions && (
                     <button
+                        data-testid="hover-copy-link"
                         className={classNames('d-flex', 'align-items-center', hoverOverlayStyle.actionsCopyLink)}
                         onClick={onCopyLink}
                         onKeyPress={onCopyLink}

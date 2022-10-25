@@ -1,14 +1,13 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const USERS_STATISTICS = gql`
-    query UsersStatistics($dateRange: AnalyticsDateRange!) {
+    query UsersStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
-                users(dateRange: $dateRange) {
-                    summary {
-                        avgDAU
-                        avgWAU
-                        avgMAU
+                users(dateRange: $dateRange, grouping: $grouping) {
+                    monthlyActiveUsers {
+                        date
+                        count
                     }
                     activity {
                         nodes {
@@ -19,6 +18,7 @@ export const USERS_STATISTICS = gql`
                         summary {
                             totalCount
                             totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                     frequencies {

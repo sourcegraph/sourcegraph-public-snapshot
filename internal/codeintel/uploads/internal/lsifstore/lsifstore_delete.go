@@ -68,7 +68,6 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 }
 
 const deleteQuery = `
--- source: internal/codeintel/uploads/internal/lsifstore/lsifstore_delete.go:DeleteLsifDataByUploadIds
 DELETE FROM %s WHERE dump_id IN (%s)
 `
 

@@ -1,5 +1,7 @@
 import { take } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { TemporarySettings, TemporarySettingsSchema } from './TemporarySettings'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
@@ -30,16 +32,6 @@ const migrations: Migration[] = [
     {
         localStorageKey: 'finished-welcome-flow',
         temporarySettingsKey: 'signup.finishedWelcomeFlow',
-        type: 'boolean',
-    },
-    {
-        localStorageKey: 'hasDismissedBrowserExtensionAlert',
-        temporarySettingsKey: 'cta.browserExtensionAlertDismissed',
-        type: 'boolean',
-    },
-    {
-        localStorageKey: 'hasDismissedIdeExtensionAlert',
-        temporarySettingsKey: 'cta.ideExtensionAlertDismissed',
         type: 'boolean',
     },
     {
@@ -88,7 +80,7 @@ export async function migrateLocalStorageToTemporarySettings(storage: TemporaryS
                     localStorage.removeItem(migration.localStorageKey)
                 }
             } catch (error) {
-                console.error(
+                logger.error(
                     `Failed to migrate temporary settings "${migration.temporarySettingsKey}" from localStorage using key "${migration.localStorageKey}"`,
                     error
                 )

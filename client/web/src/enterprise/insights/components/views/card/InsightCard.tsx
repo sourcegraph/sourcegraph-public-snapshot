@@ -1,11 +1,19 @@
-import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
+import React, { FC, forwardRef, HTMLAttributes, ReactNode, PropsWithChildren } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, H2, H4, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Card,
+    ForwardReferenceComponent,
+    H2,
+    H4,
+    LoadingSpinner,
+    LegendItem,
+    LegendList,
+    Series,
+} from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
@@ -68,12 +76,16 @@ const InsightCardHeader = forwardRef(function InsightCardHeader(props, reference
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
-    <InsightCardBanner>
-        <LoadingSpinner />
-        {props.children}
-    </InsightCardBanner>
-)
+const InsightCardLoading: FC<PropsWithChildren<HTMLAttributes<HTMLElement>>> = props => {
+    const { 'aria-label': ariaLabel = 'loading', children, ...attributes } = props
+
+    return (
+        <InsightCardBanner {...attributes}>
+            <LoadingSpinner aria-label={ariaLabel} />
+            {children}
+        </InsightCardBanner>
+    )
+}
 
 const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>
@@ -91,7 +103,7 @@ const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<Insight
     return (
         <LegendList {...attributes}>
             {series.map(series => (
-                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={series.color} name={series.name} />
             ))}
         </LegendList>
     )

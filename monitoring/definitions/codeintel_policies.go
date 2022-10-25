@@ -12,6 +12,9 @@ func CodeIntelPolicies() *monitoring.Dashboard {
 		Description: "The service at `internal/codeintel/policies`.",
 		Variables:   []monitoring.ContainerVariable{},
 		Groups: []monitoring.Group{
+			shared.CodeIntelligence.NewPoliciesServiceGroup(""),
+			shared.CodeIntelligence.NewPoliciesStoreGroup(""),
+			shared.CodeIntelligence.NewPoliciesGraphQLTransportGroup(""),
 			shared.CodeIntelligence.NewRepoMatcherTaskGroup(""),
 		},
 	}

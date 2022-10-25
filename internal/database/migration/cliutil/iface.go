@@ -18,13 +18,14 @@ type Runner interface {
 type Store interface {
 	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
 	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
+	Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error)
 }
 
-// OutputFactory allows providing global output that might not be instantiated at compile
-// time.
+// OutputFactory allows providing global output that might not be instantiated at compile time.
 type OutputFactory func() *output.Output
 
 type RunnerFactory func(ctx context.Context, schemaNames []string) (Runner, error)
+type RunnerFactoryWithSchemas func(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (Runner, error)
 
 type runnerShim struct {
 	*runner.Runner

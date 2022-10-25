@@ -14,8 +14,10 @@ export interface FormFieldLabelProps {
 /**
  * A simple label to render alongside a form field.
  */
-export const FormFieldLabel = forwardRef(({ htmlFor, className, children, ...rest }, reference) => (
-    <Label htmlFor={htmlFor} className={className} ref={reference} {...rest}>
-        {children}
-    </Label>
-)) as ForwardReferenceComponent<'label', FormFieldLabelProps>
+export const FormFieldLabel = forwardRef(function FormFieldLabel({ htmlFor, className, children, ...rest }, reference) {
+    return (
+        <Label htmlFor={htmlFor} className={className} ref={reference} {...rest}>
+            {children}
+        </Label>
+    )
+}) as ForwardReferenceComponent<'label', FormFieldLabelProps>

@@ -67,7 +67,7 @@ func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMapping
 	ps.id = map[int64]*btypes.ChangesetUiPublicationState{}
 	for rid, pv := range ps.rand {
 		if spec, ok := specs[rid]; ok {
-			if !spec.Spec.Published.Nil() {
+			if !spec.Published.Nil() {
 				// If the changeset spec has an explicit published field, we cannot
 				// override the publication state in the UI.
 				errs = errors.Append(errs, errors.Newf("changeset spec %q has the published field set in its spec", rid))

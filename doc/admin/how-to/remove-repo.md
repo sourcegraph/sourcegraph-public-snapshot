@@ -26,3 +26,20 @@ This document assumes that you have:
 
 1. Remove the repository from the [exclude list](https://docs.sourcegraph.com/admin/external_service/github#exclude)
 2. The reclone process should start in the next syncing cycle
+
+## Manually purge deleted repository data from disk
+
+After a repository is deleted from Sourcegraph in the database, its data still remains on disk on gitserver so that in the event the repository is added again it doesn't need to be recloned. These repos are automatically removed when disk space is low on gitserver. However, it is possible to manually trigger removal of deleted repos in the following way:
+
+**NOTE:** This is not available on Docker Compose deployments.
+
+1. Browse to Site Admin -> Instrumentation -> Repo Updater -> Manual Repo Purge
+2. You'll be at a url similar to `https://sourcegraph-instance/-/debug/proxies/repo-updater/manual-purge`
+3. You need to specify a limit parameter which specifies the upper limit to the number of repos that will be removed, for example: `https://sourcegraph-instance/-/debug/proxies/repo-updater/manual-purge?limit=1000`
+4. This will trigger a background process to delete up to `limit` repos, rate limited at 1 per second. 
+
+It's possible to see the number of repos that can be cleaned up on disk in Grafana using this query:
+
+```
+max(src_repoupdater_purgeable_repos)
+```

@@ -21,8 +21,8 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
-import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
-import { ALL_INSIGHTS_DASHBOARD } from '../core'
+import { CodeInsightsPage } from '../components'
+import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -95,7 +95,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             to="/insights/add-dashboard"
                             variant="secondary"
                             className="mr-2"
-                            data-testid="add-dashboard-button"
+                            aria-label="Add dashboard"
                         >
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Add dashboard
                         </Button>

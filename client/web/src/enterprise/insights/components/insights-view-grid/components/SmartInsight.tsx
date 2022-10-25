@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useRef } from 'react'
+import React, { forwardRef, useEffect } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -21,8 +21,8 @@ export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<
  */
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
     const { insight, resizing = false, telemetryService, ...otherProps } = props
-    const localReference = useRef<HTMLElement>(null)
-    const mergedReference = useMergeRefs([reference, localReference])
+
+    const mergedReference = useMergeRefs([reference])
     const search = useSearchParameters()
 
     useEffect(() => {
@@ -37,16 +37,16 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
     if (isBackendInsight(insight)) {
         return (
             <BackendInsightView
+                ref={mergedReference}
                 insight={insight}
                 resizing={resizing}
                 telemetryService={telemetryService}
                 {...otherProps}
-                innerRef={mergedReference}
             />
         )
     }
 
-    // Search based extension and lang stats insight are handled by built-in fetchers
+    // Lang-stats insight is handled by built-in fetchers
     return (
         <BuiltInInsight
             insight={insight}

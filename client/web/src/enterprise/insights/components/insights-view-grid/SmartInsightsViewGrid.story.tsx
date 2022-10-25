@@ -4,6 +4,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../graphql-operations'
 import { SeriesChartContent, InsightExecutionType, InsightType, SearchBasedInsight } from '../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../core/backend/gql-backend'
 
@@ -22,6 +23,19 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
+const filters = {
+    excludeRepoRegexp: '',
+    includeRepoRegexp: '',
+    context: '',
+    seriesDisplayOptions: {
+        limit: '20',
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
+}
+
 const insightsWithManyLines: SearchBasedInsight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
@@ -31,7 +45,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #1',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -45,7 +59,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #2',
         series: [],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -66,7 +80,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -80,7 +94,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #4',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -115,7 +129,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
             { id: '', query: '', stroke: '', name: '' },
         ],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -129,7 +143,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #6',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -143,7 +157,7 @@ const insightsWithManyLines: SearchBasedInsight[] = [
         title: 'Backend insight #7',
         series: [{ id: '', query: '', stroke: '', name: '' }],
         step: { days: 1 },
-        filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+        filters,
         dashboardReferenceCount: 0,
         isFrozen: false,
         seriesDisplayOptions: {},
@@ -153,11 +167,11 @@ const insightsWithManyLines: SearchBasedInsight[] = [
 
 interface SeriesDatum {
     x: number
-    value: number | null
+    value: number
 }
 
 const getXValue = (datum: SeriesDatum): Date => new Date(datum.x)
-const getYValue = (datum: SeriesDatum): number | null => datum.value
+const getYValue = (datum: SeriesDatum): number => datum.value
 
 const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: SeriesChartContent<SeriesDatum> = {
     series: [
@@ -223,9 +237,6 @@ const LINE_CHART_WITH_HUGE_NUMBER_OF_LINES: SeriesChartContent<SeriesDatum> = {
             data: [
                 { x: 1588965700286 - 4 * 24 * 60 * 60 * 1000, value: 11000 },
                 { x: 1588965700286 - 3 * 24 * 60 * 60 * 1000, value: 11000 },
-                { x: 1588965700286 - 2 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286 - 1 * 24 * 60 * 60 * 1000, value: null },
-                { x: 1588965700286, value: null },
             ],
             color: 'var(--oc-grape-7)',
             getXValue,
@@ -615,8 +626,8 @@ function generateMocks(insights: SearchBasedInsight[]) {
                 id: insight.id,
                 filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                 seriesDisplayOptions: {
-                    limit: undefined,
-                    sortOptions: undefined,
+                    limit: 20,
+                    sortOptions: { direction: 'DESC', mode: 'RESULT_COUNT' },
                 },
             },
         },

@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
@@ -22,13 +24,15 @@ type backgroundJobs struct {
 	wg    sync.WaitGroup
 	count atomic.Int32
 
-	output chan string
+	verbose bool
+	output  chan string
 }
 
 // Context creates a context that can have background jobs added to it with background.Run
-func Context(ctx context.Context) context.Context {
+func Context(ctx context.Context, verbose bool) context.Context {
 	return context.WithValue(ctx, jobsKey, &backgroundJobs{
-		output: make(chan string, 10), // reasonable default
+		verbose: verbose,
+		output:  make(chan string, 10), // reasonable default
 	})
 }
 
@@ -40,17 +44,21 @@ func loadFromContext(ctx context.Context) *backgroundJobs {
 // this job is complete.
 //
 // Jobs get a context timeout of 30 seconds.
-func Run(ctx context.Context, job func(ctx context.Context, out *std.Output), verbose bool) {
+func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
 
 	b := new(bytes.Buffer)
-	out := std.NewOutput(b, verbose)
+	out := std.NewOutput(b, jobs.verbose)
 	go func() {
+		// Do not let the job run forever
 		jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
+		// Execute job
 		job(jobCtx, out)
+		// Signal the completion of this job
+		jobs.count.Dec()
 		jobs.output <- strings.TrimSpace(b.String())
 	}()
 }
@@ -59,15 +67,22 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output), ve
 // they complete.
 func Wait(ctx context.Context, out *std.Output) {
 	jobs := loadFromContext(ctx)
-	count := jobs.count.Load()
+	count := int(jobs.count.Load())
 	if count == 0 {
-		return // no jobs registered
+		return // no jobs left
 	}
-	start := time.Now() // start clock for additional time waited
+
+	_, span := analytics.StartSpan(ctx, "background_wait", "",
+		trace.WithAttributes(attribute.Int("jobs", count)))
+	defer span.End()
 
 	firstResultWithOutput := true
-	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
+	if jobs.verbose {
+		out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
+			count, pluralize("job", "jobs", count)))
+	}
 	go func() {
+		// Stream job output as they complete
 		for jobOutput := range jobs.output {
 			if jobOutput != "" {
 				if firstResultWithOutput {
@@ -83,6 +98,15 @@ func Wait(ctx context.Context, out *std.Output) {
 
 	// Done!
 	close(jobs.output)
-	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
-	analytics.LogEvent(ctx, "background_wait", nil, start)
+	if jobs.verbose {
+		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	}
+	span.Succeeded()
+}
+
+func pluralize(single, plural string, count int) string {
+	if count != 1 {
+		return plural
+	}
+	return single
 }

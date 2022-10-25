@@ -54,6 +54,7 @@ const indexPrototype: Omit<LsifIndexFields, 'id' | 'state' | 'queuedAt'> = {
         teardown: [executionLogPrototype],
     },
     associatedUpload: null,
+    shouldReindex: false,
 }
 
 const testIndexes: LsifIndexFields[] = [

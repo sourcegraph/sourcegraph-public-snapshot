@@ -15,7 +15,6 @@ import {
     GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
-    AccessibleInsightInfo,
     RemoveInsightFromDashboardInput,
     RepositorySuggestionData,
     CategoricalChartContent,
@@ -64,9 +63,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
-
-    getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
+    getInsights: (input: { dashboardId: string; withCompute: boolean }) => Observable<Insight[]>
 
     /**
      * Return insight (meta and presentation data) by insight id.

@@ -2,7 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/log"
 
@@ -19,6 +24,7 @@ import (
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
+var _ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
 
 // baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
 // database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
@@ -56,7 +62,6 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
-	backfiller           *background.ScopedBackfiller
 	insightEnqueuer      *background.InsightEnqueuer
 
 	baseInsightResolver
@@ -77,26 +82,8 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore),
 	}
-}
-
-func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	var idList []string
-	if args != nil && args.Ids != nil {
-		idList = make([]string, len(*args.Ids))
-		for i, id := range *args.Ids {
-			idList[i] = string(id)
-		}
-	}
-	return &insightConnectionResolver{
-		insightsStore:        r.timeSeriesStore,
-		workerBaseStore:      r.workerBaseStore,
-		insightMetadataStore: r.insightMetadataStore,
-		ids:                  idList,
-		orgStore:             database.NewDBWith(r.logger, r.workerBaseStore).Orgs(),
-	}, nil
 }
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
@@ -125,4 +112,52 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 		}
 	}
 	return
+}
+
+// AggregationResolver is the GraphQL resolver for insights aggregations.
+type AggregationResolver struct {
+	postgresDB database.DB
+	logger     log.Logger
+	operations *aggregationsOperations
+}
+
+func NewAggregationResolver(postgres database.DB, observationContext *observation.Context) graphqlbackend.InsightsAggregationResolver {
+	return &AggregationResolver{
+		logger:     log.Scoped("AggregationResolver", ""),
+		postgresDB: postgres,
+		operations: newAggregationsOperations(observationContext),
+	}
+}
+
+func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
+	return &searchAggregateResolver{
+		postgresDB:  r.postgresDB,
+		searchQuery: args.Query,
+		patternType: args.PatternType,
+		operations:  r.operations,
+	}, nil
+}
+
+type aggregationsOperations struct {
+	aggregations *observation.Operation
+}
+
+func newAggregationsOperations(observationContext *observation.Context) *aggregationsOperations {
+	redM := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"insights_aggregations",
+		metrics.WithLabels("op", "extended_mode", "aggregation_mode"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:              fmt.Sprintf("insights_aggregations.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redM,
+		})
+	}
+
+	return &aggregationsOperations{
+		aggregations: op("Aggregations"),
+	}
 }

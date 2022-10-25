@@ -150,7 +150,7 @@ func (s *Store) ExternalServices() database.ExternalServiceStore {
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() database.UserCredentialsStore {
-	return database.UserCredentialsWith(s, s.key)
+	return database.UserCredentialsWith(s.logger, s, s.key)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
@@ -196,6 +196,12 @@ type operations struct {
 	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
+	upsertBatchSpecWorkspaceFile *observation.Operation
+	deleteBatchSpecWorkspaceFile *observation.Operation
+	getBatchSpecWorkspaceFile    *observation.Operation
+	listBatchSpecWorkspaceFiles  *observation.Operation
+	countBatchSpecWorkspaceFiles *observation.Operation
+
 	getBulkOperation        *observation.Operation
 	listBulkOperations      *observation.Operation
 	countBulkOperations     *observation.Operation
@@ -237,8 +243,10 @@ type operations struct {
 	enqueueChangesetsToClose          *observation.Operation
 	getChangesetsStats                *observation.Operation
 	getRepoChangesetsStats            *observation.Operation
+	getGlobalChangesetsStats          *observation.Operation
 	enqueueNextScheduledChangeset     *observation.Operation
 	getChangesetPlaceInSchedulerQueue *observation.Operation
+	cleanDetachedChangesets           *observation.Operation
 
 	listCodeHosts         *observation.Operation
 	getExternalServiceIDs *observation.Operation
@@ -254,6 +262,7 @@ type operations struct {
 	listBatchSpecWorkspaces        *observation.Operation
 	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
+	listRetryBatchSpecWorkspaces   *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
@@ -330,6 +339,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
+			upsertBatchSpecWorkspaceFile: op("UpsertBatchSpecWorkspaceFile"),
+			deleteBatchSpecWorkspaceFile: op("DeleteBatchSpecWorkspaceFile"),
+			getBatchSpecWorkspaceFile:    op("GetBatchSpecWorkspaceFile"),
+			listBatchSpecWorkspaceFiles:  op("ListBatchSpecWorkspaceFiles"),
+			countBatchSpecWorkspaceFiles: op("CountBatchSpecWorkspaceFiles"),
+
 			getBulkOperation:        op("GetBulkOperation"),
 			listBulkOperations:      op("ListBulkOperations"),
 			countBulkOperations:     op("CountBulkOperations"),
@@ -371,8 +386,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
 			getChangesetsStats:                op("GetChangesetsStats"),
 			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
+			getGlobalChangesetsStats:          op("GetGlobalChangesetsStats"),
 			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
 			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
+			cleanDetachedChangesets:           op("CleanDetachedChangesets"),
 
 			listCodeHosts:         op("ListCodeHosts"),
 			getExternalServiceIDs: op("GetExternalServiceIDs"),
@@ -388,6 +405,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
 			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
+			listRetryBatchSpecWorkspaces:   op("ListRetryBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
 			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
@@ -428,6 +446,17 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
+// buildRecordScanner converts a scan*() function as implemented in lots of
+// places in this package into something we can use in
+// `dbworker.BuildWorkerScan`.
+func buildRecordScanner[T any](scan func(*T, dbutil.Scanner) error) func(dbutil.Scanner) (*T, error) {
+	return func(s dbutil.Scanner) (*T, error) {
+		var t T
+		err := scan(&t, s)
+		return &t, err
+	}
+}
+
 func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 	switch m := metadata.(type) {
 	case nil:
@@ -442,34 +471,6 @@ func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullInt64Column(n int64) *int64 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 type LimitOpts struct {

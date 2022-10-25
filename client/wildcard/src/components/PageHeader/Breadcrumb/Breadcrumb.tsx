@@ -42,8 +42,7 @@ export const Breadcrumb: React.FunctionComponent<BreadcrumbProps> = ({
                     <Icon
                         inline={false}
                         className={styles.icon}
-                        svgPath={typeof icon === 'string' ? icon : undefined}
-                        as={typeof icon !== 'string' ? icon : undefined}
+                        {...(typeof icon === 'string' ? { svgPath: icon } : { as: icon })}
                         {...(iconHidden ? { 'aria-hidden': true } : { 'aria-label': ariaLabel })}
                     />
                 )}

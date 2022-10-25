@@ -89,6 +89,11 @@ func GetExtensionByExtensionID(ctx context.Context, db database.DB, extensionID 
 		return nil, nil, err
 	}
 
+	err = ExtensionRegistryReadEnabled()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if isLocal {
 		if GetLocalExtensionByExtensionID != nil {
 			x, err := GetLocalExtensionByExtensionID(ctx, db, extensionIDWithoutPrefix)

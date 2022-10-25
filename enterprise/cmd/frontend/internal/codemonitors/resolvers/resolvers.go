@@ -9,13 +9,15 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -351,7 +353,7 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +376,7 @@ func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlback
 	}
 
 	for _, recipient := range args.Email.Recipients {
-		if err := sendTestEmail(ctx, recipient, args.Description); err != nil {
+		if err := sendTestEmail(ctx, r.db, recipient, args.Description); err != nil {
 			return nil, err
 		}
 	}
@@ -408,7 +410,7 @@ func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *grap
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func sendTestEmail(ctx context.Context, recipient graphql.ID, description string) error {
+func sendTestEmail(ctx context.Context, db database.DB, recipient graphql.ID, description string) error {
 	var (
 		userID int32
 		orgID  int32
@@ -422,7 +424,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 		return nil
 	}
 	data := background.NewTestTemplateDataForNewSearchResults(description)
-	return background.SendEmailForNewSearchResult(ctx, userID, data)
+	return background.SendEmailForNewSearchResult(ctx, db, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
@@ -672,7 +674,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	}
 	switch kind := relay.UnmarshalKind(owner); kind {
 	case "User":
-		return backend.CheckSiteAdminOrSameUser(ctx, r.db, ownerInt32)
+		return auth.CheckSiteAdminOrSameUser(ctx, r.db, ownerInt32)
 	case "Org":
 		return errors.Errorf("creating a code monitor with an org namespace is no longer supported")
 	default:
@@ -689,9 +691,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (graphql.I
 	return graphqlbackend.MarshalUserID(monitor.UserID), nil
 }
 
-//
 // MonitorConnection
-//
 type monitorConnection struct {
 	*Resolver
 	monitors    []graphqlbackend.MonitorResolver
@@ -755,9 +755,7 @@ func unmarshalAfter(after *string) (*int, error) {
 	return &a, err
 }
 
-//
 // Monitor
-//
 type monitor struct {
 	*Resolver
 	*edb.Monitor
@@ -771,8 +769,8 @@ func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, 
 	return graphqlbackend.UserByIDInt32(ctx, m.db, m.Monitor.CreatedBy)
 }
 
-func (m *monitor) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: m.Monitor.CreatedAt}
+func (m *monitor) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: m.Monitor.CreatedAt}
 }
 
 func (m *monitor) Description() string {
@@ -864,9 +862,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	return &monitorActionConnection{actions: actions, totalCount: int32(totalCount)}, nil
 }
 
-//
 // MonitorTrigger <<UNION>>
-//
 type monitorTrigger struct {
 	query graphqlbackend.MonitorQueryResolver
 }
@@ -875,9 +871,7 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 	return t.query, t.query != nil
 }
 
-//
 // Query
-//
 type monitorQuery struct {
 	*Resolver
 	*edb.QueryTrigger
@@ -919,9 +913,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totalCount: totalCount}, nil
 }
 
-//
 // MonitorTriggerEventConnection
-//
 type monitorTriggerEventConnection struct {
 	*Resolver
 	events     []graphqlbackend.MonitorTriggerEventResolver
@@ -943,9 +935,7 @@ func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
-//
 // MonitorTriggerEvent
-//
 type monitorTriggerEvent struct {
 	*Resolver
 	*edb.TriggerJob
@@ -989,11 +979,11 @@ func (m *monitorTriggerEvent) Message() *string {
 	return m.FailureMessage
 }
 
-func (m *monitorTriggerEvent) Timestamp() (graphqlbackend.DateTime, error) {
+func (m *monitorTriggerEvent) Timestamp() (gqlutil.DateTime, error) {
 	if m.FinishedAt == nil {
-		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}, nil
+		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}, nil
 	}
-	return graphqlbackend.DateTime{Time: *m.FinishedAt}, nil
+	return gqlutil.DateTime{Time: *m.FinishedAt}, nil
 }
 
 func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
@@ -1001,7 +991,6 @@ func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.
 }
 
 // ActionConnection
-//
 type monitorActionConnection struct {
 	actions    []graphqlbackend.MonitorAction
 	totalCount int32
@@ -1026,9 +1015,7 @@ func (a *monitorActionConnection) PageInfo() *graphqlutil.PageInfo {
 	panic("found non-email monitor action")
 }
 
-//
 // Action <<UNION>>
-//
 type action struct {
 	email        graphqlbackend.MonitorEmailResolver
 	webhook      graphqlbackend.MonitorWebhookResolver
@@ -1060,9 +1047,7 @@ func (a *action) ToMonitorSlackWebhook() (graphqlbackend.MonitorSlackWebhookReso
 	return a.slackWebhook, a.slackWebhook != nil
 }
 
-//
 // Email
-//
 type monitorEmail struct {
 	*Resolver
 	*edb.EmailAction
@@ -1286,9 +1271,7 @@ func intPtrToInt64Ptr(i *int) *int64 {
 	return &j
 }
 
-//
 // MonitorActionEmailRecipientConnection
-//
 type monitorActionEmailRecipientsConnection struct {
 	recipients     []graphqlbackend.NamespaceResolver
 	nextPageCursor string
@@ -1310,9 +1293,7 @@ func (a *monitorActionEmailRecipientsConnection) PageInfo() *graphqlutil.PageInf
 	return graphqlutil.NextPageCursor(a.nextPageCursor)
 }
 
-//
 // MonitorActionEventConnection
-//
 type monitorActionEventConnection struct {
 	events     []graphqlbackend.MonitorActionEventResolver
 	totalCount int32
@@ -1333,9 +1314,7 @@ func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
-//
 // MonitorEvent
-//
 type monitorActionEvent struct {
 	*Resolver
 	*edb.ActionJob
@@ -1357,11 +1336,11 @@ func (m *monitorActionEvent) Message() *string {
 	return m.FailureMessage
 }
 
-func (m *monitorActionEvent) Timestamp() graphqlbackend.DateTime {
+func (m *monitorActionEvent) Timestamp() gqlutil.DateTime {
 	if m.FinishedAt == nil {
-		return graphqlbackend.DateTime{Time: m.db.CodeMonitors().Now()}
+		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}
 	}
-	return graphqlbackend.DateTime{Time: *m.FinishedAt}
+	return gqlutil.DateTime{Time: *m.FinishedAt}
 }
 
 func validateSlackURL(urlString string) error {

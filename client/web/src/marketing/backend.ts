@@ -43,6 +43,7 @@ export function fetchAllSurveyResponses(): Observable<FetchSurveyResponsesResult
                 score
                 reason
                 better
+                otherUseCase
                 createdAt
             }
         `
@@ -81,6 +82,7 @@ export function fetchAllUsersWithSurveyResponses(args: {
                     score
                     reason
                     better
+                    otherUseCase
                     createdAt
                 }
                 usageStatistics {

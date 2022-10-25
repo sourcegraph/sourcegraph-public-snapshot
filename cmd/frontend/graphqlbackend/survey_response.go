@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -60,8 +61,8 @@ func (s *surveyResponseResolver) OtherUseCase() *string {
 	return s.surveyResponse.OtherUseCase
 }
 
-func (s *surveyResponseResolver) CreatedAt() DateTime {
-	return DateTime{Time: s.surveyResponse.CreatedAt}
+func (s *surveyResponseResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: s.surveyResponse.CreatedAt}
 }
 
 // SurveySubmissionInput contains a satisfaction (NPS) survey response.

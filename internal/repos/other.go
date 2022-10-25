@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,18 +19,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// A OtherSource yields repositories from a single Other connection configured
-// in Sourcegraph via the external services configuration.
-type OtherSource struct {
-	svc    *types.ExternalService
-	conn   *schema.OtherExternalServiceConnection
-	client httpcli.Doer
-}
+type (
+	// A OtherSource yields repositories from a single Other connection configured
+	// in Sourcegraph via the external services configuration.
+	OtherSource struct {
+		svc    *types.ExternalService
+		conn   *schema.OtherExternalServiceConnection
+		client httpcli.Doer
+		logger log.Logger
+	}
+
+	// A srcExposeItem is the object model returned by src-cli when serving git repos
+	srcExposeItem struct {
+		URI       string `json:"uri"`
+		Name      string `json:"name"`
+		ClonePath string `json:"clonePath"`
+	}
+)
 
 // NewOtherSource returns a new OtherSource from the given external service.
-func NewOtherSource(svc *types.ExternalService, cf *httpcli.Factory) (*OtherSource, error) {
+func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory, logger log.Logger) (*OtherSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.OtherExternalServiceConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
@@ -42,7 +57,7 @@ func NewOtherSource(svc *types.ExternalService, cf *httpcli.Factory) (*OtherSour
 		return nil, err
 	}
 
-	return &OtherSource{svc: svc, conn: &c, client: cli}, nil
+	return &OtherSource{svc: svc, conn: &c, client: cli, logger: logger}, nil
 }
 
 // ListRepos returns all Other repositories accessible to all connections configured
@@ -165,7 +180,7 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 
 	var data struct {
-		Items []*types.Repo
+		Items []*srcExposeItem
 	}
 	err = json.Unmarshal(b, &data)
 	if err != nil {
@@ -178,33 +193,56 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, error) {
 	}
 
 	urn := s.svc.URN()
+	repos := make([]*types.Repo, 0, len(data.Items))
+	loggedDeprecationError := false
 	for _, r := range data.Items {
-		// The only required field is URI
+		repo := &types.Repo{
+			URI: r.URI,
+		}
+		// The only required fields are URI and ClonePath
 		if r.URI == "" {
 			return nil, errors.Errorf("repo without URI returned from src-expose: %+v", r)
 		}
 
+		// ClonePath is always set in the new versions of src-cli.
+		// TODO: @varsanojidan Remove this by version 3.45.0 and add it to the check above.
+		if r.ClonePath == "" {
+			if !loggedDeprecationError {
+				s.logger.Debug("The version of src-cli serving git repositories is deprecated, please upgrade to the latest version.")
+				loggedDeprecationError = true
+			}
+			if !strings.HasSuffix(r.URI, "/.git") {
+				r.ClonePath = r.URI + "/.git"
+			}
+		}
+
 		// Fields that src-expose isn't allowed to control
-		r.ExternalRepo = api.ExternalRepoSpec{
-			ID:          r.URI,
+		repo.ExternalRepo = api.ExternalRepoSpec{
+			ID:          repo.URI,
 			ServiceType: extsvc.TypeOther,
 			ServiceID:   s.conn.Url,
 		}
-		cloneURL := clonePrefix + strings.TrimPrefix(r.URI, "/") + "/.git"
-		r.Sources = map[string]*types.SourceInfo{
+
+		cloneURL := clonePrefix + strings.TrimPrefix(r.ClonePath, "/")
+
+		repo.Sources = map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL,
 			},
 		}
-		r.Metadata = &extsvc.OtherRepoMetadata{
+		repo.Metadata = &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(cloneURL, s.conn.Url),
 		}
 		// The only required field left is Name
-		if r.Name == "" {
-			r.Name = api.RepoName(r.URI)
+		name := r.Name
+		if name == "" {
+			name = r.URI
 		}
+		// Remove any trailing .git in the name if exists (bare repos)
+		repo.Name = api.RepoName(strings.TrimSuffix(name, ".git"))
+		repos = append(repos, repo)
 	}
 
-	return data.Items, nil
+	return repos, nil
 }

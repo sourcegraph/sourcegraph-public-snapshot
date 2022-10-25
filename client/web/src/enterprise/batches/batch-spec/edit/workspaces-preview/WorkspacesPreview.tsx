@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiMagnify, mdiAlert } from '@mdi/js'
+import { mdiAlert, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -14,6 +14,8 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
+import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
@@ -41,10 +43,15 @@ const WAITING_MESSAGES = [
     "So, how's your day? (Still looking for matching workspaces...)",
     'Are you staying hydrated? (Still looking for matching workspaces...)',
     "Hold your horses, we're still not done yet...",
+    "A Go developer walks into a bar and tries to defer their bill, but they can't start a tab. (Sorry.)",
 ]
 
 /* The time to wait until we display the next waiting message, in seconds. */
 const WAITING_MESSAGE_INTERVAL = 10
+
+/** The minimum number of resolved workspaces at which we'll show a warning
+ * about Batch Changes performance. */
+const WORKSPACE_WARNING_MIN_TOTAL_COUNT = 2000
 
 interface WorkspacesPreviewProps {
     isReadOnly?: boolean
@@ -89,7 +96,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     const connection = workspacesConnection.connection
 
     // Before we've ever previewed workspaces for this batch change, there's no reason to
-    // show the list or filters for the connection.
+    // show the list.
     const shouldShowConnection = hasPreviewed || !!connection?.nodes.length
 
     // We "cache" the last results of the workspaces preview so that we can continue to
@@ -147,7 +154,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             >
                 <Button
                     variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
-                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    onClick={
+                        isWorkspacesPreviewInProgress
+                            ? cancel
+                            : () => {
+                                  eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                  return preview(debouncedCode)
+                              }
+                    }
                     // The "Cancel" button is always enabled while the preview is in progress
                     disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
                 >
@@ -207,25 +221,31 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         </>
     )
 
-    const totalCount = useMemo(() => {
+    const [visibleCount, totalCount] = useMemo<[number, number] | [null, null]>(() => {
         if (shouldShowConnection) {
-            if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
-                return (
-                    <span className={styles.totalCount}>
-                        Displaying {cachedWorkspacesPreview.nodes.length} of {cachedWorkspacesPreview.totalCount}
-                    </span>
-                )
+            // Show cached count when showCached is true AND the connection has no data. Else, the count will not match
+            // the actual.
+            if (cachedWorkspacesPreview && showCached && !connection?.nodes.length) {
+                return [cachedWorkspacesPreview.nodes.length, cachedWorkspacesPreview.totalCount ?? 0]
             }
             if (connection) {
-                return (
-                    <span className={styles.totalCount}>
-                        Displaying {connection.nodes.length} of {connection?.totalCount}
-                    </span>
-                )
+                return [connection.nodes.length, connection.totalCount ?? 0]
             }
         }
-        return null
+        return [null, null]
     }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
+
+    const totalCountDisplay = useMemo(
+        () =>
+            visibleCount !== null && totalCount !== null ? (
+                <span className={styles.totalCount}>
+                    Displaying {visibleCount} of {totalCount}
+                </span>
+            ) : null,
+        [visibleCount, totalCount]
+    )
+
+    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
 
     return (
         <div className={styles.container}>
@@ -243,8 +263,22 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                             />
                         </Tooltip>
                     )}
-                {totalCount}
+                {totalCountDisplay}
             </WorkspacesListHeader>
+            {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
+            {exceedsLicense((totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    <Alert variant="info">
+                        <div className="mb-2">
+                            <strong>
+                                Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                            </strong>
+                        </div>
+                        If more than {maxUnlicensedChangesets} changesets are generated, you won't be able to apply the
+                        batch change and actually publish the changesets to the code host.
+                    </Alert>
+                </div>
+            )}
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
@@ -259,7 +293,12 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     {ctaButton}
                 </div>
             )}
-            {shouldShowConnection && (
+            {totalCount !== null && totalCount >= WORKSPACE_WARNING_MIN_TOTAL_COUNT && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    <CTASizeWarning totalCount={totalCount} />
+                </div>
+            )}
+            {(hasPreviewed || isReadOnly) && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (
@@ -305,3 +344,17 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
         </animated.div>
     )
 }
+
+const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({ totalCount }) => (
+    <Alert variant="warning">
+        <div className="mb-2">
+            <strong>
+                It's over <s>9000</s> {WORKSPACE_WARNING_MIN_TOTAL_COUNT}!
+            </strong>
+        </div>
+        Batch changes with more than {WORKSPACE_WARNING_MIN_TOTAL_COUNT} workspaces may be unwieldy to manage. We're
+        working on providing more filtering options, and you can continue with this batch change if you want, but you
+        may want to break it into {Math.ceil(totalCount / WORKSPACE_WARNING_MIN_TOTAL_COUNT)} or more batch changes if
+        you can.
+    </Alert>
+)

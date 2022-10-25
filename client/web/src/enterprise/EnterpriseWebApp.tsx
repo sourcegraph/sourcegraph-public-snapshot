@@ -1,7 +1,6 @@
 import React from 'react'
 
 import '../SourcegraphWebApp.scss'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
@@ -13,6 +12,8 @@ import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extens
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
+import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
+import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
@@ -30,8 +31,10 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
     <SourcegraphWebApp
         extensionAreaRoutes={enterpriseExtensionAreaRoutes}
         extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-        extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={enterpriseExtensionsAreaHeaderActionButtons}
+        extensionsAreaRoutes={window.context.enableLegacyExtensions ? enterpriseExtensionsAreaRoutes : undefined}
+        extensionsAreaHeaderActionButtons={
+            window.context.enableLegacyExtensions ? enterpriseExtensionsAreaHeaderActionButtons : undefined
+        }
         siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
         siteAdminSideBarGroups={enterpriseSiteAdminSidebarGroups}
         siteAdminOverviewComponents={enterpriseSiteAdminOverviewComponents}
@@ -39,6 +42,8 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         userAreaRoutes={enterpriseUserAreaRoutes}
         userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
         userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+        orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
+        orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
         orgAreaRoutes={enterpriseOrganizationAreaRoutes}
         orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
         repoContainerRoutes={enterpriseRepoContainerRoutes}
@@ -47,7 +52,6 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
         codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
         codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}

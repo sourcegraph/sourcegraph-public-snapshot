@@ -13,17 +13,17 @@ export const stackStorm: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Passive sensor examples',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'from st2reactor.sensor.base import Sensor',
         },
         {
             title: 'Polling sensor examples',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'from st2reactor.sensor.base import PollingSensor',
         },
         {
             title: 'Trigger examples in rules',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'repo:Exchange trigger: file:.yaml$',
         },
         {

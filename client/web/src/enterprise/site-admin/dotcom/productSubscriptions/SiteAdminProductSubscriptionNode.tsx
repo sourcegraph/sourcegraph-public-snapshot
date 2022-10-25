@@ -22,13 +22,6 @@ export const siteAdminProductSubscriptionFragment = gql`
                 isPrimary
             }
         }
-        invoiceItem {
-            plan {
-                nameWithBrand
-            }
-            userCount
-            expiresAt
-        }
         activeLicense {
             id
             info {

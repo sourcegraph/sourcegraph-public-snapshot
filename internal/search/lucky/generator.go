@@ -20,7 +20,7 @@ const (
 	THREE
 )
 
-// NewComboGenerator returns a generator for queries produces by a combination
+// NewComboGenerator returns a generator for queries produced by a combination
 // of rules on a seed query. The generator has a strategy over two kinds of rule
 // sets: narrowing and widening rules. You can read more below, but if you don't
 // care about this and just want to apply rules sequentially, simply pass in
@@ -79,7 +79,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 	// - w, the index of the widen rule to apply (-1 if empty)
 	var n func(phase PHASE, k int, c *cg, w int) next
 	n = func(phase PHASE, k int, c *cg, w int) next {
-		var transform transform
+		var transform []transform
 		var descriptions []string
 		var generated *query.Basic
 
@@ -93,7 +93,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 				// Base case: we exhausted the set of narrow
 				// rules (if any) and we've attempted every
 				// widen rule with the sets of narrow rules.
-				return func() (*autoQuery, next) { return nil, nil }
+				return nil
 			}
 
 			transform = append(transform, widen[w].transform...)
@@ -182,6 +182,15 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 
 // pruneRules produces a minimum set of rules that apply successfully on the seed query.
 func pruneRules(seed query.Basic, rules []rule) []rule {
+	types, _ := seed.IncludeExcludeValues(query.FieldType)
+	for _, t := range types {
+		// Running additional diff searches is expensive, we clamp this
+		// until things improve.
+		if t == "diff" {
+			return []rule{}
+		}
+	}
+
 	applies := make([]rule, 0, len(rules))
 	for _, r := range rules {
 		g := applyTransformation(seed, r.transform)
@@ -194,7 +203,7 @@ func pruneRules(seed query.Basic, rules []rule) []rule {
 }
 
 // applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
-func applyTransformation(b query.Basic, transform transform) *query.Basic {
+func applyTransformation(b query.Basic, transform []transform) *query.Basic {
 	for _, apply := range transform {
 		res := apply(b)
 		if res == nil {

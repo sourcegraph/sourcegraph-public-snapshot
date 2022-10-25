@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { json } from '@codemirror/lang-json'
 import { foldGutter } from '@codemirror/language'
-import { EditorView } from '@codemirror/view'
+import { search, searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
+import { EditorView, keymap } from '@codemirror/view'
 import { isEmpty } from 'lodash'
 import { RouteComponentProps } from 'react-router-dom'
 import { fromFetch } from 'rxjs/fetch'
@@ -46,7 +48,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
         useMemo(
             () => [
                 EditorView.darkTheme.of(isLightTheme === false),
-                EditorView.editable.of(false),
+                EditorState.readOnly.of(true),
                 json(),
                 foldGutter(),
                 editorHeight({ height: '300px' }),
@@ -60,6 +62,8 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 }),
                 defaultEditorTheme,
                 jsonHighlighting,
+                search({ top: true }),
+                keymap.of(searchKeymap),
             ],
             [isLightTheme]
         )
@@ -127,7 +131,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
                 <li>Whether a code search has ever been executed (true/false)</li>
-                <li>Whether code intelligence has ever been used (true/false)</li>
+                <li>Whether code navigation has ever been used (true/false)</li>
                 <li>Aggregate counts of current daily, weekly, and monthly users</li>
                 <li>
                     Aggregate counts of current daily, weekly, and monthly users, by:
@@ -141,21 +145,20 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
                     <ul>
-                        <li>Code intelligence events (e.g., hover tooltips)</li>
+                        <li>Code navigation events (e.g., hover tooltips)</li>
                         <li>Searches using each search mode (interactive search, plain-text search)</li>
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
                 <li>
-                    Code intelligence usage data
+                    Code navigation usage data
                     <ul>
                         <li>Total number of repositories with and without an uploaded LSIF index</li>
                         <li>
-                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
-                            language
+                            Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
                         </li>
                         <li>
-                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            Number of users performing code navigation queries (e.g., hover tooltips) per week grouped
                             by language
                         </li>
                     </ul>
@@ -175,9 +178,9 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         <li>Total count of created batch changes</li>
                         <li>Total count of closed batch changes</li>
                         <li>Total count of changesets created by batch changes</li>
-                        <li>Aggregate counts of lines changed, added, deleted in changeset</li>
+                        <li>Aggregate counts of lines added, deleted in changeset</li>
                         <li>Total count of changesets created by batch changes that have been merged</li>
-                        <li>Aggregate counts of lines changed, added, deleted in merged changeset</li>
+                        <li>Aggregate counts of lines added, deleted in merged changeset</li>
                         <li>Total count of changesets manually added to a batch change</li>
                         <li>Total count of changesets manually added to a batch change that have been merged</li>
                         <li>
@@ -373,6 +376,25 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </li>
                     </ul>
                     <ul>Aggregate count of daily redirects from extension to Sourcegraph instance</ul>
+                </li>
+                <li>
+                    Migrated extensions data
+                    <ul>
+                        Aggregate data of:
+                        <li>
+                            <ul>Count interactions with the Git blame feature</ul>
+                            <ul>Count of unique users who interacted with the Git blame feature</ul>
+                            <ul>Count interactions with the open in editor feature</ul>
+                            <ul>Count of unique users who interacted with the open in editor feature</ul>
+                            <ul>Count interactions with the search exports feature</ul>
+                            <ul>Count of unique users who interacted with the search exports feature</ul>
+                            <ul>Count interactions with the go imports search query transformation feature</ul>
+                            <ul>
+                                Count of unique users who interacted with the go imports search query transformation
+                                feature
+                            </ul>
+                        </li>
+                    </ul>
                 </li>
             </ul>
             {updatesDisabled ? (

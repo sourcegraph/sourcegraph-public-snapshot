@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react'
 
 import * as H from 'history'
 
-import { asError, isErrorLike, renderMarkdown } from '@sourcegraph/common'
+import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -23,6 +23,8 @@ interface Props extends ThemeProps, TelemetryProps {
     routingPrefix: string
     afterCreateRoute: string
     userID?: Scalars['ID']
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -40,12 +42,14 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
 
     useEffect(() => {
-        telemetryService.logViewEvent('AddExternalService')
+        telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
 
     const getExternalServiceInput = useCallback(
@@ -75,7 +79,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             setIsCreating(true)
             try {
                 const service = await addExternalService(
-                    { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
+                    { input: { ...getExternalServiceInput() } },
                     telemetryService
                 )
                 setIsCreating(false)
@@ -84,7 +88,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                 setIsCreating(asError(error))
             }
         },
-        [getExternalServiceInput, telemetryService, userID]
+        [getExternalServiceInput, telemetryService]
     )
 
     useEffect(() => {
@@ -92,13 +96,13 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             // Refresh site flags so that global site alerts
             // reflect the latest configuration.
             // eslint-disable-next-line rxjs/no-ignored-subscription
-            refreshSiteFlags().subscribe({ error: error => console.error(error) })
+            refreshSiteFlags().subscribe({ error: error => logger.error(error) })
             history.push(afterCreateRoute)
         }
     }, [afterCreateRoute, createdExternalService, history])
 
     return (
-        <div className="mt-3">
+        <>
             <PageTitle title="Add repositories" />
             <H2>Add repositories</H2>
             {createdExternalService?.warning ? (
@@ -117,7 +121,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                     </Alert>
                 </div>
             ) : (
-                <div>
+                <>
                     <div className="mb-3">
                         <ExternalServiceCard {...externalService} />
                     </div>
@@ -136,9 +140,11 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         onChange={onChange}
                         loading={isCreating === true}
                         autoFocus={autoFocusForm}
+                        externalServicesFromFile={externalServicesFromFile}
+                        allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                     />
-                </div>
+                </>
             )}
-        </div>
+        </>
     )
 }

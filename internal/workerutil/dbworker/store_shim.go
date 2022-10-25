@@ -65,6 +65,10 @@ func (s *storeShim) MarkErrored(ctx context.Context, id int, errorMessage string
 	return s.Store.MarkErrored(ctx, id, errorMessage, store.MarkFinalOptions{})
 }
 
+func (s *storeShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
+	return s.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
+}
+
 // ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
 var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
 

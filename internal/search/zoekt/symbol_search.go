@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -43,7 +42,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, z.Repos, z.Query, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.
@@ -95,12 +94,12 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
+	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, nil, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.

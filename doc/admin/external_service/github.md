@@ -130,8 +130,8 @@ To set up webhooks:
 
 1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the GitHub configuration.
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"org": "your_org", "secret": "verylongrandomsecret"}]`
-1. Click **Update repositories**.
-1. Copy the webhook URL displayed below the **Update repositories** button.
+1. Click **Update configuration**.
+1. Copy the webhook URL displayed below the **Update configuration** button.
 1. On GitHub, go to the settings page of your organization. From there, click **Settings**, then **Webhooks**, then **Add webhook**.
 1. Fill in the webhook form:
    * **Payload URL**: the URL you copied above from Sourcegraph.

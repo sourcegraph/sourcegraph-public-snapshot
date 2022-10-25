@@ -10,8 +10,8 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -19,10 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -39,7 +40,7 @@ func TestSearchResults(t *testing.T) {
 	db := database.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
+		r, err := newSchemaResolver(db, gitserver.NewClient(db)).Search(ctx, &SearchArgs{Query: query, Version: version})
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
@@ -323,12 +324,13 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	searchInputs, err := run.NewSearchInputs(
+	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+	searchInputs, err := cli.Plan(
 		ctx,
-		db,
 		"V2",
 		&literalPatternType,
 		query,
+		search.Precise,
 		search.Batch,
 		&schema.Settings{},
 		false,
@@ -338,10 +340,9 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	resolver := &searchResolver{
+		client:       cli,
 		db:           db,
-		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
-		zoekt:        z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -561,12 +562,13 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.query,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,
@@ -576,10 +578,9 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 
 			resolver := &searchResolver{
+				client:       cli,
 				db:           db,
-				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
-				zoekt:        z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -666,12 +667,13 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.searchQuery,
+				search.Precise,
 				search.Batch,
 				&schema.Settings{},
 				false,
@@ -681,10 +683,9 @@ func TestSubRepoFiltering(t *testing.T) {
 			}
 
 			resolver := searchResolver{
+				client:       cli,
 				SearchInputs: searchInputs,
-				zoekt:        mockZoekt,
 				db:           db,
-				logger:       logtest.Scoped(t),
 			}
 
 			ctx := context.Background()

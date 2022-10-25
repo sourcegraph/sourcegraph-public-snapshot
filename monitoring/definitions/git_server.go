@@ -25,10 +25,14 @@ func GitServer() *monitoring.Dashboard {
 		Description: "Stores, manages, and operates Git repositories.",
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Shard",
-				Name:         "shard",
-				OptionsQuery: "label_values(src_gitserver_exec_running, instance)",
-				Multi:        true,
+				Label: "Shard",
+				Name:  "shard",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_gitserver_exec_running",
+					LabelName:     "instance",
+					ExampleOption: "gitserver-0:6060",
+				},
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -412,6 +416,17 @@ func GitServer() *monitoring.Dashboard {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerRepoManagement,
 							Interpretation: "Repositories removed due to disk pressure",
+						},
+					},
+					{
+						{
+							Name:           "non_existent_repos_removed",
+							Description:    "repositories removed because they are not defined in the DB",
+							Query:          "sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							Interpretation: "Repositoriess removed because they are not defined in the DB",
 						},
 					},
 					{

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,6 +36,11 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			}
 		}
 		return authz.Read, nil
+	})
+	checker.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
+		return func(path string) (authz.Perms, error) {
+			return checker.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+		}, nil
 	})
 
 	type args struct {
@@ -157,12 +163,32 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			},
 		},
 		{
-			name: "should filter commit matches",
+			name: "should filter commit matches where the user doesn't have access to any file in the ModifiedFiles",
 			args: args{
 				ctxActor: actor.FromUser(userWithSubRepoPerms),
 				matches: []result.Match{
 					&result.CommitMatch{
 						ModifiedFiles: []string{unauthorizedFileName},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+				},
+			},
+		},
+		{
+			name: "should filter commit matches where the diff is empty",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+						DiffPreview:   &result.MatchedString{Content: ""},
 					},
 				},
 			},

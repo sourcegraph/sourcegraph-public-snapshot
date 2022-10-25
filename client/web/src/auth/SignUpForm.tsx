@@ -15,15 +15,16 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox, Label, Text } from '@sourcegraph/wildcard'
+import { Link, Icon, Checkbox, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
+import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
-import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -45,50 +46,20 @@ interface SignUpFormProps {
     onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
+    context: Pick<
+        SourcegraphContext,
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
+    >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
-
-export function getPasswordRequirements(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
-): string {
-    let requirements = ''
-    const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-
-    if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-        console.log('Using enhanced password policy.')
-
-        if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-            requirements +=
-                'Your password must include at least ' + String(passwordPolicyReference.minimumLength) + ' characters'
-        }
-        if (
-            passwordPolicyReference.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0
-        ) {
-            requirements += ', ' + String(passwordPolicyReference.numberOfSpecialCharacters) + ' special characters'
-        }
-        if (
-            passwordPolicyReference.requireAtLeastOneNumber &&
-            passwordPolicyReference.requireAtLeastOneNumber === true
-        ) {
-            requirements += ', at least one number'
-        }
-        if (
-            passwordPolicyReference.requireUpperandLowerCase &&
-            passwordPolicyReference.requireUpperandLowerCase === true
-        ) {
-            requirements += ', at least one uppercase letter'
-        }
-    } else {
-        requirements += 'At least 12 characters'
-    }
-    return requirements
-}
 
 /**
  * The form for creating an account
@@ -168,7 +139,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
+        (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
@@ -250,13 +221,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             required={true}
                             disabled={loading}
                             autoComplete="new-password"
-                            minLength={
-                                context.experimentalFeatures.passwordPolicy?.enabled !== undefined &&
-                                context.experimentalFeatures.passwordPolicy.enabled &&
-                                context.experimentalFeatures.passwordPolicy?.minimumLength !== undefined
-                                    ? context.experimentalFeatures.passwordPolicy.minimumLength
-                                    : 12
-                            }
+                            minLength={context.authMinPasswordLength}
                             placeholder=" "
                             onInvalid={preventDefault}
                             inputRef={passwordInputReference}
@@ -299,8 +264,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn-block"
                         variant="primary"
+                        display="block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -311,11 +276,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <Button
-                                    href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn-block"
+                                    to={provider.authenticationURL}
+                                    display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
-                                    as="a"
+                                    as={AnchorLink}
                                 >
                                     {provider.serviceType === 'github' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />
@@ -367,68 +332,4 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
         }),
         catchError(() => of('Unknown error validating username'))
     )
-}
-
-function validatePassword(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
-    password: string
-): string | undefined {
-    if (context.experimentalFeatures.passwordPolicy?.enabled) {
-        if (
-            context.experimentalFeatures.passwordPolicy.minimumLength &&
-            password.length < context.experimentalFeatures.passwordPolicy.minimumLength
-        ) {
-            return (
-                'Password must be greater than ' +
-                String(context.experimentalFeatures.passwordPolicy.minimumLength) +
-                ' characters.'
-            )
-        }
-        if (
-            context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters &&
-            context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
-        ) {
-            const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
-            // This must be kept in sync with the security.go checks
-            const count = (password.match(specialCharacters) || []).length
-            if (
-                context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
-                count < context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters
-            ) {
-                return (
-                    'Password must contain ' +
-                    String(context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) +
-                    ' special character(s).'
-                )
-            }
-        }
-
-        if (
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber &&
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber
-        ) {
-            const validRequireAtLeastOneNumber = /\d+/
-            if (password.match(validRequireAtLeastOneNumber) === null) {
-                return 'Password must contain at least one number.'
-            }
-        }
-
-        if (
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase &&
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase
-        ) {
-            const validUseUpperCase = new RegExp('[A-Z]+')
-            if (!validUseUpperCase.test(password)) {
-                return 'Password must contain at least one uppercase letter.'
-            }
-        }
-
-        return undefined
-    }
-
-    if (password.length < 12) {
-        return 'Password must be at least 12 characters.'
-    }
-
-    return undefined
 }

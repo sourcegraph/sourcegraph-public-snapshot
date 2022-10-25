@@ -69,6 +69,19 @@ type dbHandle struct {
 	logger    log.Logger
 }
 
+// Raw attempts to unwrap a raw sql.DB pointer from the given value.
+func Raw(v any) (*sql.DB, bool) {
+	if shareableStore, ok := v.(ShareableStore); ok {
+		v = shareableStore.Handle()
+	}
+	if dbHandle, ok := v.(*dbHandle); ok {
+		v = dbHandle.DB
+	}
+
+	db, ok := v.(*sql.DB)
+	return db, ok
+}
+
 func (h *dbHandle) InTransaction() bool {
 	return false
 }

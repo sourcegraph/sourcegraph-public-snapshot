@@ -3,25 +3,20 @@
 
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
-import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import LightningBoltIcon from 'mdi-react/LightningBoltIcon'
-import RegexIcon from 'mdi-react/RegexIcon'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isErrorLike } from '@sourcegraph/common'
 import {
-    SearchPatternTypeProps,
     CaseSensitivityProps,
     SearchContextProps,
     SearchPatternTypeMutationProps,
+    SearchPatternTypeProps,
     SubmitSearchProps,
 } from '@sourcegraph/search'
-import { CopyQueryButton } from '@sourcegraph/search-ui/src/input/toggles/CopyQueryButton'
 import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
-import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
@@ -75,9 +70,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
         setCaseSensitivity,
         settingsCascade,
         className,
-        selectedSearchContextSpec,
         submitSearch,
-        showCopyQueryButton = true,
         structuralSearchDisabled,
         clearSearch,
     } = props
@@ -112,14 +105,14 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
 
     const toggleRegexp = useCallback((): void => {
         const newPatternType =
-            patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
+            patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.standard
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, submitOnToggle])
 
     const toggleStructuralSearch = useCallback((): void => {
-        const defaultPatternType = defaultPatternTypeValue || SearchPatternType.literal
+        const defaultPatternType = defaultPatternTypeValue || SearchPatternType.standard
 
         const newPatternType: SearchPatternType =
             patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
@@ -130,7 +123,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
 
     const toggleExpertMode = useCallback((): void => {
         const newPatternType =
-            patternType === SearchPatternType.lucky ? SearchPatternType.literal : SearchPatternType.lucky
+            patternType === SearchPatternType.lucky ? SearchPatternType.standard : SearchPatternType.lucky
 
         setPatternType(newPatternType)
         submitOnToggle({ newPatternType })
@@ -138,21 +131,14 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
 
     const luckySearchEnabled = defaultPatternTypeValue === SearchPatternType.lucky
 
-    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
-
-    const copyQueryButton = showCopyQueryButton && (
-        <CopyQueryButton
-            fullQuery={fullQuery}
-            keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-            isMacPlatform={isMacPlatform()}
-            className={classNames(styles.toggle, styles.copyQueryButton)}
-        />
-    )
-
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             {navbarSearchQuery !== '' && (
-                <Button className={classNames('btn-icon', props.className, styles.cancelButton)} onClick={clearSearch}>
+                <Button
+                    variant="icon"
+                    className={classNames(props.className, styles.cancelButton)}
+                    onClick={clearSearch}
+                >
                     <span aria-hidden="true">&times;</span>
                 </Button>
             )}
@@ -163,13 +149,11 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Expert mode"
                         isActive={false}
                         onToggle={toggleExpertMode}
-                        icon={LightningBoltIcon}
+                        iconSvgPath={mdiLightningBolt}
                         interactive={props.interactive}
-                        className="test-expert-mode-toggle"
-                        activeClassName="test-expert-mode-toggle--active"
+                        className={classNames(styles.toggle, 'test-expert-mode-toggle')}
                         disableOn={[]}
                     />
-                    {copyQueryButton}
                 </>
             ) : (
                 <>
@@ -177,10 +161,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Case sensitivity"
                         isActive={caseSensitive}
                         onToggle={toggleCaseSensitivity}
-                        icon={FormatLetterCaseIcon}
+                        iconSvgPath={mdiFormatLetterCase}
                         interactive={props.interactive}
-                        className="test-case-sensitivity-toggle"
-                        activeClassName="test-case-sensitivity-toggle--active"
+                        className={classNames(styles.toggle, 'test-case-sensitivity-toggle')}
                         disableOn={[
                             {
                                 condition:
@@ -204,10 +187,9 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         title="Regular expression"
                         isActive={patternType === SearchPatternType.regexp}
                         onToggle={toggleRegexp}
-                        icon={RegexIcon}
+                        iconSvgPath={mdiRegex}
                         interactive={props.interactive}
-                        className="test-regexp-toggle"
-                        activeClassName="test-regexp-toggle--active"
+                        className={classNames(styles.toggle, 'test-regexp-toggle')}
                         disableOn={[
                             {
                                 condition:
@@ -220,11 +202,10 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                     {!structuralSearchDisabled && (
                         <QueryInputToggle
                             title="Structural search"
-                            className="test-structural-search-toggle"
-                            activeClassName="test-structural-search-toggle--active"
+                            className={classNames(styles.toggle, 'test-structural-search-toggle')}
                             isActive={patternType === SearchPatternType.structural}
                             onToggle={toggleStructuralSearch}
-                            icon={CodeBracketsIcon}
+                            iconSvgPath={mdiCodeBrackets}
                             interactive={props.interactive}
                             disableOn={[
                                 {
@@ -241,14 +222,12 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                             title="Expert mode"
                             isActive={true}
                             onToggle={toggleExpertMode}
-                            icon={LightningBoltIcon}
+                            iconSvgPath={mdiLightningBolt}
                             interactive={props.interactive}
                             className="test-expert-mode-toggle"
-                            activeClassName="test-expert-mode-toggle--active"
                             disableOn={[]}
                         />
                     )}
-                    {copyQueryButton}
                 </>
             )}
         </div>

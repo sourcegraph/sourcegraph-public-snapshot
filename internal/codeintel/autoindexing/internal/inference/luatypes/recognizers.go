@@ -11,10 +11,10 @@ import (
 // scripts via UserData values. This struct can take one of two mutually
 // exclusive forms:
 //
-//   (1) An applicable recognizer with patterns and a generate function.
-//   (2) A fallback recognizer, which consists of a list of children.
-//       Execution of a fallback recognizer will invoke its children,
-//       in order and recursively, until the non-empty value is yielded.
+//	(1) An applicable recognizer with patterns and a generate function.
+//	(2) A fallback recognizer, which consists of a list of children.
+//	    Execution of a fallback recognizer will invoke its children,
+//	    in order and recursively, until the non-empty value is yielded.
 type Recognizer struct {
 	patterns           []*PathPattern
 	patternsForContent []*PathPattern
@@ -129,8 +129,15 @@ func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (recognizers map[string]*Recognizer, err error) {
 	recognizers = map[string]*Recognizer{}
 
+	if err := util.CheckTypeProperty(value, "sg.recognizer"); err != nil {
+		return nil, err
+	}
+
 	err = util.ForEach(value, func(key, value lua.LValue) error {
 		name := key.String()
+		if name == "__type" {
+			return nil
+		}
 
 		if value.Type() == lua.LTBool && !lua.LVAsBool(value) {
 			if allowFalseAsNil {

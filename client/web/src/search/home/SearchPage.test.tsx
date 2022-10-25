@@ -14,7 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/testing/searchTest
 
 import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
-import { ThemePreference } from '../../stores/themeState'
+import { ThemePreference } from '../../theme'
 import {
     HOME_PANELS_QUERY,
     RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
@@ -105,7 +105,6 @@ describe('SearchPage', () => {
         authenticatedUser: authUser,
         globbing: false,
         platformContext: {} as any,
-        keyboardShortcuts: [],
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},

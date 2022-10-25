@@ -18,4 +18,9 @@ describe('stringHuman', () => {
             '(a or b) (-repo:foo AND file:bar) content:"count:5000" /yowza/ "a\'b" \\d+'
         )
     })
+
+    test('render delimited syntax', () => {
+        const tokens = toSuccess(scanSearchQuery('patterntype:standard /test\\ .*me/ "and me"'))
+        expect(stringHuman(tokens)).toMatchInlineSnapshot('patterntype:standard /test\\ .*me/ "and me"')
+    })
 })

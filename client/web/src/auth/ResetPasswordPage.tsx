@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Button, Link, LoadingSpinner, Alert, Text, Input } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -91,10 +91,11 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         }
                     />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
+                        display="block"
                     >
                         {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
                     </Button>
@@ -136,7 +137,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         .text()
                         .catch(() => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
-                        .catch(error => console.error(error))
+                        .catch(error => logger.error(error))
                 }
             })
             .catch(error => this.setState({ submitOrError: asError(error) }))
@@ -201,7 +202,8 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                         disabled={this.state.submitOrError === 'loading'}
                     />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
+                        display="block"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"

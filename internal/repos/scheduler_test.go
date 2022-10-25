@@ -598,10 +598,12 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 						Name: a.Name,
 					},
 				},
-				Modified: []*types.Repo{
-					{
-						ID:   b.ID,
-						Name: b.Name,
+				Modified: ReposModified{
+					RepoModified{
+						Repo: &types.Repo{
+							ID:   b.ID,
+							Name: b.Name,
+						},
 					},
 				},
 			},

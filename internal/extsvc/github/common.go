@@ -22,11 +22,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1504,12 +1506,20 @@ func newHttpResponseState(statusCode int, headers http.Header) *httpResponseStat
 	}
 }
 
-func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
+func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
 	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
 	req.URL = apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	if auth != nil {
-		if err := auth.Authenticate(req); err != nil {
+
+	var autherWithRefresh auth.AuthenticatorWithRefresh
+	if auther != nil {
+		var ok bool
+		autherWithRefresh, ok = auther.(auth.AuthenticatorWithRefresh)
+		// Check if we should pre-emptively refresh
+		if ok && autherWithRefresh.NeedsRefresh() {
+			autherWithRefresh.Refresh(ctx, httpClient)
+		}
+		if err := auther.Authenticate(req); err != nil {
 			return nil, errors.Wrap(err, "authenticating request")
 		}
 	}
@@ -1528,9 +1538,16 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auth aut
 		span.Finish()
 	}()
 
-	resp, err = httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
+	if autherWithRefresh != nil {
+		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
+		if err != nil {
+			return nil, errors.Wrap(err, "do request with refresh and retry")
+		}
+	} else {
+		resp, err = httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			return nil, err
+		}
 	}
 	defer resp.Body.Close()
 
@@ -1872,30 +1889,41 @@ type restTopicsResponse struct {
 	Names []string `json:"names"`
 }
 
-func GetExternalAccountData(data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
-	var (
-		u github.User
-		t oauth2.Token
-	)
-
+func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	if data.Data != nil {
-		if err := data.GetAccountData(&u); err != nil {
+		var u github.User
+		if err := encryption.DecryptJSON(ctx, data.Data, &u); err != nil {
 			return nil, nil, err
 		}
+
 		usr = &u
 	}
+
 	if data.AuthData != nil {
-		if err := data.GetAuthData(&t); err != nil {
+		var t oauth2.Token
+		if err := encryption.DecryptJSON(ctx, data.AuthData, &t); err != nil {
 			return nil, nil, err
 		}
+
 		tok = &t
 	}
+
 	return usr, tok, nil
 }
 
-func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) {
-	data.SetAccountData(user)
-	data.SetAuthData(token)
+func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
+	serializedUser, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	serializedToken, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+
+	data.Data = extsvc.NewUnencryptedData(serializedUser)
+	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	return nil
 }
 
 type User struct {
@@ -1996,4 +2024,38 @@ func handlePullRequestError(err error) error {
 		return ErrPullRequestAlreadyExists
 	}
 	return err
+}
+
+// IsGitHubAppAccessToken checks whether the access token starts with "ghu",
+// which is used for GitHub App access tokens.
+func IsGitHubAppAccessToken(token string) bool {
+	return strings.HasPrefix(token, "ghu")
+}
+
+var MockGetOAuthContext func() *oauthutil.OAuthContext
+
+func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+	if MockGetOAuthContext != nil {
+		return MockGetOAuthContext()
+	}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			ghURL := strings.TrimSuffix(p.Url, "/")
+			if !strings.HasPrefix(baseURL, ghURL) {
+				continue
+			}
+
+			return &oauthutil.OAuthContext{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  ghURL + "/login/oauth/authorize",
+					TokenURL: ghURL + "/login/oauth/access_token",
+				},
+			}
+		}
+	}
+	return nil
 }

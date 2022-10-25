@@ -1,12 +1,14 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
+import classNames from 'classnames'
+import { isEqual } from 'lodash'
+import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -21,7 +23,10 @@ import { Page } from '../components/Page'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { RouteDescriptor } from '../util/contributions'
 
+import { overviewGroup } from './sidebaritems'
 import { SiteAdminSidebar, SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
+
+import styles from './SiteAdminArea.module.scss'
 
 const NotFoundPage: React.ComponentType<React.PropsWithChildren<{}>> = () => (
     <HeroPage
@@ -41,7 +46,7 @@ export interface SiteAdminAreaRouteContext
         ActivationProps,
         BatchChangesProps,
         TelemetryProps {
-    site: Pick<GQL.ISite, '__typename' | 'id'>
+    site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
     isSourcegraphDotCom: boolean
@@ -70,20 +75,29 @@ interface SiteAdminAreaProps
 export const analyticsGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'Analytics',
-        icon: ChartLineIcon,
+        icon: ChartLineVariantIcon,
     },
     items: [
+        {
+            label: 'Overview',
+            to: '/site-admin/',
+            exact: true,
+        },
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
         },
         {
-            label: 'Code intel',
+            label: 'Code navigation',
             to: '/site-admin/analytics/code-intel',
         },
         {
             label: 'Users',
             to: '/site-admin/analytics/users',
+        },
+        {
+            label: 'Insights',
+            to: '/site-admin/analytics/code-insights',
         },
         {
             label: 'Batch changes',
@@ -94,17 +108,12 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/notebooks',
         },
         {
-            label: 'Code insights (soon)',
-            to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Extensions (soon)',
+            label: 'Extensions',
             to: '/site-admin/analytics/extensions',
         },
         {
-            label: 'Overview (soon)',
-            to: '/site-admin/analytics',
-            exact: true,
+            label: 'Feedback survey',
+            to: '/site-admin/surveys',
         },
     ],
 }
@@ -121,13 +130,18 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
+        path: '/analytics/extensions',
+        render: lazyComponent(() => import('./analytics/AnalyticsExtensionsPage'), 'AnalyticsExtensionsPage'),
+        exact: true,
+    },
+    {
         path: '/analytics/users',
         render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
         exact: true,
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
         exact: true,
     },
     {
@@ -141,34 +155,24 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
-        exact: true,
-    },
-    {
-        path: '/analytics',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        path: '/',
+        render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
         exact: true,
     },
 ]
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
-    const { pathname } = useLocation()
-
     const reference = useRef<HTMLDivElement>(null)
-
-    useLayoutEffect(() => {
-        if (reference.current) {
-            reference.current.scrollIntoView()
-        }
-    }, [pathname])
 
     const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
-    const adminSideBarGroups = useMemo(
-        () => (!isAdminAnalyticsDisabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
-        [isAdminAnalyticsDisabled, props.sideBarGroups]
-    )
+    const adminSideBarGroups = useMemo(() => {
+        if (isAdminAnalyticsDisabled) {
+            return props.sideBarGroups
+        }
+        return [analyticsGroup, ...props.sideBarGroups.filter(group => !isEqual(group, overviewGroup))]
+    }, [isAdminAnalyticsDisabled, props.sideBarGroups])
+
     const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
         isAdminAnalyticsDisabled,
         props.routes,
@@ -196,10 +200,10 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <Page>
-            <PageHeader path={[{ text: 'Site Admin' }]} />
+            <PageHeader path={[{ text: 'Admin' }]} />
             <div className="d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
-                    className="flex-0 mr-3"
+                    className={classNames('flex-0 mr-3', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

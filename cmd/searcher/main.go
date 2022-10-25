@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
-	sentrylib "github.com/getsentry/sentry-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -33,13 +33,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,6 +49,8 @@ import (
 var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
 const port = "3181"
@@ -127,6 +130,11 @@ func run(logger log.Logger) error {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	maxTotalPathsLength, err := strconv.Atoi(maxTotalPathsLengthRaw)
+	if err != nil {
+		return errors.Wrapf(err, "invalid int %q for MAX_TOTAL_PATHS_LENGTH", maxTotalPathsLengthRaw)
+	}
+
 	if err := setupTmpDir(); err != nil {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
@@ -134,7 +142,7 @@ func run(logger log.Logger) error {
 	storeObservationContext := &observation.Context{
 		// Explicitly don't scope Store logger under the parent logger
 		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -147,19 +155,25 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
-					Format:  "tar",
+					Format:  gitserver.ArchiveFormatTar,
 				})
 			},
 			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-				pathspecs := make([]gitserver.Pathspec, len(paths))
+				pathspecs := make([]gitdomain.Pathspec, len(paths))
 				for i, p := range paths {
-					pathspecs[i] = gitserver.PathspecLiteral(p)
+					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
-					Format:    "tar",
+					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,
 				})
 			},
@@ -170,18 +184,22 @@ func run(logger log.Logger) error {
 			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
-		GitOutput: func(ctx context.Context, repo api.RepoName, args ...string) ([]byte, error) {
-			c := git.GitCommand(repo, args...)
-			return c.Output(ctx)
+
+		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+			// As this is an internal service call, we need an internal actor.
+			ctx = actor.WithInternalActor(ctx)
+			return git.DiffSymbols(ctx, repo, commitA, commitB)
 		},
+		MaxTotalPathsLength: maxTotalPathsLength,
+
 		Log: logger,
 	}
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
+	handler := actor.HTTPMiddleware(logger, service)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -231,18 +249,21 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	stdlog.SetFlags(0)
-	conf.Init()
 	logging.Init()
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
-
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the searcher service")

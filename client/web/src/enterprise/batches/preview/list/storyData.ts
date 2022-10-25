@@ -69,9 +69,8 @@ And the more explanatory body. And the more explanatory body. And the more expla
             ],
             diffStat: {
                 __typename: 'DiffStat',
-                added: 10,
-                changed: 8,
-                deleted: 2,
+                added: 18,
+                deleted: 10,
             },
             title: 'Add prettier to repository',
             published,
@@ -382,6 +381,61 @@ export const visibleChangesetApplyPreviewNodeStories = (
             },
         },
     },
+    'Change diff': {
+        __typename: 'VisibleChangesetApplyPreview',
+        operations: [ChangesetSpecOperation.UPDATE],
+        delta: {
+            titleChanged: false,
+            baseRefChanged: false,
+            diffChanged: true,
+            bodyChanged: false,
+            authorEmailChanged: false,
+            authorNameChanged: false,
+            commitMessageChanged: false,
+        },
+        targets: {
+            __typename: 'VisibleApplyPreviewTargetsUpdate',
+            changesetSpec: baseChangesetSpec(9, publicationStateSet ? true : null),
+            changeset: {
+                id: '123123',
+                title: 'Change diff',
+                state: ChangesetState.OPEN,
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
+                currentSpec: {
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'master',
+                        body: 'body',
+                        commits: [
+                            {
+                                subject: 'Abc',
+                                body: null,
+                                author: {
+                                    avatarURL: null,
+                                    displayName: 'alice',
+                                    email: 'alice@sourcegraph.test',
+                                    user: null,
+                                },
+                            },
+                        ],
+                        title: 'Title',
+                    },
+                },
+                author: {
+                    displayName: 'Alice',
+                    email: 'alice@email.test',
+                    user: {
+                        displayName: 'Alice',
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            },
+        },
+    },
     'Close changeset': {
         __typename: 'VisibleChangesetApplyPreview',
         operations: [ChangesetSpecOperation.CLOSE, ChangesetSpecOperation.DETACH],
@@ -406,9 +460,8 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     url: 'http://test.test/123',
                 },
                 diffStat: {
-                    added: 2,
-                    changed: 8,
-                    deleted: 10,
+                    added: 10,
+                    deleted: 18,
                 },
             },
         },
@@ -437,9 +490,8 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     url: 'http://test.test/123',
                 },
                 diffStat: {
-                    added: 2,
-                    changed: 8,
-                    deleted: 10,
+                    added: 10,
+                    deleted: 18,
                 },
             },
         },
@@ -471,61 +523,6 @@ export const visibleChangesetApplyPreviewNodeStories = (
                     description: {
                         __typename: 'GitBranchChangesetDescription',
                         baseRef: 'main',
-                        body: 'body',
-                        commits: [
-                            {
-                                subject: 'Abc',
-                                body: null,
-                                author: {
-                                    avatarURL: null,
-                                    displayName: 'alice',
-                                    email: 'alice@sourcegraph.test',
-                                    user: null,
-                                },
-                            },
-                        ],
-                        title: 'Title',
-                    },
-                },
-                author: {
-                    displayName: 'Alice',
-                    email: 'alice@email.test',
-                    user: {
-                        displayName: 'Alice',
-                        url: '/users/alice',
-                        username: 'alice',
-                    },
-                },
-            },
-        },
-    },
-    'Change diff': {
-        __typename: 'VisibleChangesetApplyPreview',
-        operations: [ChangesetSpecOperation.UPDATE],
-        delta: {
-            titleChanged: false,
-            baseRefChanged: false,
-            diffChanged: true,
-            bodyChanged: false,
-            authorEmailChanged: false,
-            authorNameChanged: false,
-            commitMessageChanged: false,
-        },
-        targets: {
-            __typename: 'VisibleApplyPreviewTargetsUpdate',
-            changesetSpec: baseChangesetSpec(9, publicationStateSet ? true : null),
-            changeset: {
-                id: '123123',
-                title: 'Change base ref',
-                state: ChangesetState.OPEN,
-                externalID: '123',
-                externalURL: {
-                    url: 'http://test.test/123',
-                },
-                currentSpec: {
-                    description: {
-                        __typename: 'GitBranchChangesetDescription',
-                        baseRef: 'master',
                         body: 'body',
                         commits: [
                             {
@@ -679,7 +676,7 @@ export const visibleChangesetApplyPreviewNodeStories = (
         targets: {
             __typename: 'VisibleApplyPreviewTargetsAttach',
             changesetSpec: baseChangesetSpec(12, publicationStateSet ? true : null, {
-                forkTarget: { pushUser: true, namespace: null },
+                forkTarget: { pushUser: true, namespace: '<user>' },
                 description: {
                     __typename: 'GitBranchChangesetDescription',
                     baseRepository: testRepo,
@@ -704,9 +701,8 @@ And the more explanatory body. And the more explanatory body. And the more expla
                     ],
                     diffStat: {
                         __typename: 'DiffStat',
-                        added: 10,
-                        changed: 8,
-                        deleted: 2,
+                        added: 18,
+                        deleted: 10,
                     },
                     title: 'Add prettier to forked repository',
                     published: publicationStateSet,

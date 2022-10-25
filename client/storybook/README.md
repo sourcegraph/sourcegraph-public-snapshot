@@ -4,20 +4,20 @@ Check out the [Storybook section](https://docs.sourcegraph.com/dev/background-in
 
 ## Usage
 
-Storybook configuration is setup as a `yarn workspace` symlink.
+Storybook configuration is set up as a `yarn workspace` symlink.
 
 Important commands are exposed via root `package.json`:
 
 ```sh
 yarn storybook
-yarn build-storybook
+yarn storybook:build
 ```
 
 ## Environment variables
 
 ```sh
 # Load only a subset of stories to boost build performance.
-STORIES_GLOB=client/web/src/**/*.story.tsx yarn start
+STORIES_GLOB='client/web/src/**/*.story.tsx' yarn start
 
 # Enable `webpack-bundle-analyzer` plugin.
 WEBPACK_BUNDLE_ANALYZER=true yarn start

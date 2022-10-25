@@ -21,6 +21,18 @@ const config: Meta = {
         },
     },
     decorators: [decorator],
+    argTypes: {
+        externalServiceCount: {
+            name: 'external service count',
+            control: { type: 'number' },
+            defaultValue: 2,
+        },
+        erroredWebhookCount: {
+            name: 'errored webhook count',
+            control: { type: 'number' },
+            defaultValue: 2,
+        },
+    },
 }
 
 export default config
@@ -104,10 +116,10 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
     return logs
 }
 
-export const NoLogs: Story = () => (
+export const NoLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs([])} />
             </MockedTestProvider>
         )}
@@ -116,10 +128,10 @@ export const NoLogs: Story = () => (
 
 NoLogs.storyName = 'no logs'
 
-export const OnePageOfLogs: Story = () => (
+export const OnePageOfLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(20, 2))} />
             </MockedTestProvider>
         )}
@@ -128,10 +140,10 @@ export const OnePageOfLogs: Story = () => (
 
 OnePageOfLogs.storyName = 'one page of logs'
 
-export const TwoPagesOfLogs: Story = () => (
+export const TwoPagesOfLogs: Story = args => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
                 <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(40, 2))} />
             </MockedTestProvider>
         )}

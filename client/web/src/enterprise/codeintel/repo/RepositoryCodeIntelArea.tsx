@@ -14,6 +14,7 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
+import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
 import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
@@ -52,6 +53,11 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     'CodeIntelConfigurationPage'
 )
 
+const CodeIntelInferenceConfigurationPage = lazyComponent<
+    CodeIntelInferenceConfigurationPageProps,
+    'CodeIntelInferenceConfigurationPage'
+>(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
+
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
     'CodeIntelRepositoryIndexConfigurationPage'
@@ -69,7 +75,7 @@ export const routes: readonly CodeIntelAreaRoute[] = [
     {
         path: '/',
         exact: true,
-        render: () => <Redirect to="./code-intelligence/uploads" />,
+        render: () => <Redirect to="./code-graph/uploads" />,
     },
     {
         path: '/uploads',
@@ -104,6 +110,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         render: props => <RepositoryIndexConfigurationPage {...props} />,
     },
     {
+        path: '/inference-configuration',
+        exact: true,
+        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
+    },
+    {
         path: '/configuration/:id',
         exact: true,
         render: props => <CodeIntelConfigurationPolicyPage {...props} />,
@@ -119,7 +130,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 )
 
 /**
- * Properties passed to all page components in the repository code intelligence area.
+ * Properties passed to all page components in the repository code navigation area.
  */
 export interface RepositoryCodeIntelAreaPageProps
     extends ThemeProps,
@@ -133,7 +144,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Code intelligence' },
+        header: { label: 'Code graph data' },
         items: [
             {
                 to: '/uploads',
@@ -158,12 +169,12 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 ]
 
 /**
- * Renders pages related to repository code intelligence.
+ * Renders pages related to repository code graph.
  */
 export const RepositoryCodeIntelArea: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>
 > = ({ match, useBreadcrumb, ...props }) => {
-    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code graph data' }), []))
 
     return (
         <div className="container d-flex mt-3">

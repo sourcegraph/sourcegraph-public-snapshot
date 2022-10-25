@@ -11,14 +11,13 @@ import {
 
 import { noop } from 'rxjs'
 
-import { FieldState, FormAPI, ValidationResult } from './useForm'
+import { FieldState, FormAPI } from './useForm'
 import { getEventValue } from './utils/get-event-value'
-import { AsyncValidator, useAsyncValidation } from './utils/use-async-validation'
+import { useAsyncValidation } from './utils/use-async-validation'
+import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage, Validator } from './validators'
 
-export type Validator<FieldValue> = (value: FieldValue | undefined, validity?: ValidityState | null) => ValidationResult
-
-export interface Validators<FieldValue> {
-    sync?: Validator<FieldValue>
+export interface Validators<FieldValue, ErrorContext> {
+    sync?: Validator<FieldValue, ErrorContext>
     async?: AsyncValidator<FieldValue>
 }
 
@@ -34,7 +33,7 @@ export interface InputProps<Value> extends Omit<InputHTMLAttributes<HTMLInputEle
  * native input element and expose meta state of input like touched,
  * validState and etc.
  */
-export interface useFieldAPI<FieldValue> {
+export interface useFieldAPI<FieldValue, ErrorContext = unknown> {
     /**
      * Props and handles which should be passed to input component in order
      * to track change of value, set controlled value and set errors by
@@ -53,6 +52,7 @@ export interface useFieldAPI<FieldValue> {
      * native validity state.
      */
     meta: FieldState<FieldValue> & {
+        validationContext: ErrorContext | undefined
         /**
          * Set state handler gives access to set inner state of useField.
          * Useful for complicated cases when need to deal with custom react input
@@ -62,10 +62,10 @@ export interface useFieldAPI<FieldValue> {
     }
 }
 
-export type UseFieldProps<FormValues, Key, Value> = {
+export type UseFieldProps<FormValues, Key, Value, ErrorContext> = {
     name: Key
     formApi: FormAPI<FormValues>
-    validators?: Validators<Value>
+    validators?: Validators<Value, ErrorContext>
 } & InputProps<Value>
 
 /**
@@ -75,18 +75,19 @@ export type UseFieldProps<FormValues, Key, Value> = {
  *
  * Should be used with useForm hook to connect field and form component's states.
  */
-export function useField<FormValues, Key extends keyof FormValues>(
-    props: UseFieldProps<FormValues, Key, FormValues[Key]>
-): useFieldAPI<FormValues[Key]> {
+export function useField<ErrorContext, FormValues, Key extends keyof FormValues>(
+    props: UseFieldProps<FormValues, Key, FormValues[Key], ErrorContext>
+): useFieldAPI<FormValues[Key], ErrorContext> {
     const { formApi, name, validators, onChange = noop, ...inputProps } = props
     const { submitted, touched: formTouched } = formApi
-    const { sync = noop, async } = validators ?? {}
+    const { sync: syncValidator, async: asyncValidator } = validators ?? {}
+
     const inputReference = useRef<HTMLInputElement & HTMLFieldSetElement>(null)
 
     const [state, setState] = useFormFieldState(name, formApi)
     const { start: startAsyncValidation, cancel: cancelAsyncValidation } = useAsyncValidation({
         inputReference,
-        asyncValidator: async,
+        asyncValidator,
         onValidationChange: asyncState => setState(previousState => ({ ...previousState, ...asyncState })),
     })
 
@@ -101,7 +102,6 @@ export function useField<FormValues, Key extends keyof FormValues>(
         // Clear custom validity from the last validation call.
         inputElement?.setCustomValidity?.('')
 
-        const nativeAttributeValidation = inputElement?.checkValidity?.() ?? true
         const validity = inputElement?.validity ?? null
 
         // If we got error from native attr validation (required, pattern, type)
@@ -109,15 +109,18 @@ export function useField<FormValues, Key extends keyof FormValues>(
         // standard validation error if validator doesn't provide message we fallback
         // on standard validationMessage string [1] (ex. Please fill in input.)
         const nativeErrorMessage = inputElement?.validationMessage ?? ''
-        const customValidation = sync(state.value, validity)
+        const customValidationResult = syncValidator ? syncValidator(state.value, validity) : undefined
 
-        if (customValidation || !nativeAttributeValidation) {
+        const customValidationMessage = getCustomValidationMessage(customValidationResult)
+        const customValidationContext = getCustomValidationContext(customValidationResult)
+
+        if (customValidationMessage) {
             // We have to cancel async validation from previous call
             // if we got sync validation native or custom.
             cancelAsyncValidation()
 
             // [1] Custom error message or fallback on native error message
-            const validationMessage = customValidation || nativeErrorMessage
+            const validationMessage = customValidationMessage || nativeErrorMessage
 
             inputElement?.setCustomValidity?.(validationMessage)
 
@@ -125,11 +128,12 @@ export function useField<FormValues, Key extends keyof FormValues>(
                 ...state,
                 validState: 'INVALID',
                 error: validationMessage,
+                errorContext: customValidationContext,
                 validity,
             }))
         }
 
-        if (async) {
+        if (asyncValidator) {
             // Due to the call of start async validation in useLayoutEffect we have to
             // schedule the async validation event in the next tick to be able run
             // observable pipeline validation since useAsyncValidation hook use
@@ -150,9 +154,10 @@ export function useField<FormValues, Key extends keyof FormValues>(
             ...state,
             validState: 'VALID' as const,
             error: '',
+            errorContext: customValidationContext,
             validity,
         }))
-    }, [state.value, sync, startAsyncValidation, async, cancelAsyncValidation, setState])
+    }, [state.value, syncValidator, startAsyncValidation, asyncValidator, cancelAsyncValidation, setState])
 
     const handleBlur = useCallback(() => setState(state => ({ ...state, touched: true })), [setState])
     const handleChange = useCallback(
@@ -176,6 +181,7 @@ export function useField<FormValues, Key extends keyof FormValues>(
         },
         meta: {
             ...state,
+            validationContext: state.errorContext as ErrorContext,
             touched: state.touched || submitted || formTouched,
             // Set state dispatcher gives access to set inner state of useField.
             // Useful for complex cases when you need to deal with custom react input

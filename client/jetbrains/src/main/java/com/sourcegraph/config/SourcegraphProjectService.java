@@ -13,9 +13,13 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphProjectService implements PersistentStateComponent<SourcegraphProjectService> {
     @Nullable
+    public String instanceType;
+    @Nullable
     public String url;
     @Nullable
     public String accessToken;
+    @Nullable
+    public String customRequestHeaders;
     @Nullable
     public String defaultBranch;
     @Nullable
@@ -36,6 +40,11 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     }
 
     @Nullable
+    public String getInstanceType() {
+        return instanceType;
+    }
+
+    @Nullable
     public String getSourcegraphUrl() {
         return url;
     }
@@ -43,6 +52,11 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Nullable
     public String getAccessToken() {
         return accessToken;
+    }
+
+    @Nullable
+    public String getCustomRequestHeaders() {
+        return customRequestHeaders;
     }
 
     @Nullable
@@ -77,8 +91,10 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
 
     @Override
     public void loadState(@NotNull SourcegraphProjectService settings) {
+        this.instanceType = settings.instanceType;
         this.url = settings.url;
         this.accessToken = settings.accessToken;
+        this.customRequestHeaders = settings.customRequestHeaders;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
         this.isGlobbingEnabled = settings.isGlobbingEnabled;

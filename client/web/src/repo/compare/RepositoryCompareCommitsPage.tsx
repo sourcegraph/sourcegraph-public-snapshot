@@ -22,14 +22,15 @@ function queryRepositoryComparisonCommits(args: {
     base: string | null
     head: string | null
     first?: number
+    path?: string
 }): Observable<GQL.IGitCommitConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int) {
+            query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int, $path: String) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            commits(first: $first) {
+                            commits(first: $first, path: $path) {
                                 nodes {
                                     ...GitCommitFields
                                 }
@@ -58,7 +59,10 @@ function queryRepositoryComparisonCommits(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+    /** An optional path of a specific file being compared */
+    path: string | null
+}
 
 /** A page with a list of commits in the comparison. */
 export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
@@ -128,5 +132,6 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             repo: this.props.repo.id,
             base: this.props.base.revision || null,
             head: this.props.head.revision || null,
+            path: this.props.path ?? undefined,
         })
 }

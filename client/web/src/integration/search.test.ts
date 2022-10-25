@@ -33,8 +33,8 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'filters',
         data: [
-            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
-            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'utility', limitHit: true },
+            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'utility', limitHit: true },
             // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
@@ -138,9 +138,7 @@ describe('Search', () => {
                 const editor = await createEditorAPI(driver, queryInputSelector)
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
-                // Using a regular expression here because currently the
-                // value for CodeMirror includes placeholders
-                expect(await editor.getValue()).toMatch(/^-file:/)
+                expect(await editor.getValue()).toStrictEqual('-file:')
                 await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
@@ -149,7 +147,7 @@ describe('Search', () => {
 
     describe('Suggestions', () => {
         withSearchQueryInput(editorName => {
-            test(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
+            test.skip(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -167,6 +165,7 @@ describe('Search', () => {
                                         containerName: 'jwtmiddleware',
                                         url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
                                         kind: SymbolKind.FUNCTION,
+                                        line: 56,
                                     },
                                 ],
                                 path: 'jwtmiddleware.go',
@@ -239,8 +238,8 @@ describe('Search', () => {
                     await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
-                    await driver.page.waitForSelector('a[href="/extensions"]')
-                    await driver.page.click('a[href="/extensions"]')
+                    await driver.page.waitForSelector('a[href="/notebooks"]')
+                    await driver.page.click('a[href="/notebooks"]')
                     // Search box is gone when in a non-search page
                     expect(await editor.getValue()).toStrictEqual(undefined)
                     // Field value is restored when the back button is pressed
@@ -278,15 +277,15 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&case=yes')
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes')
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })
@@ -326,7 +325,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })
@@ -335,9 +334,11 @@ describe('Search', () => {
     describe('Search button', () => {
         test('Clicking search button executes search', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            const editor = await createEditorAPI(driver, queryInputSelector)
+            await editor.focus()
+            await driver.page.keyboard.type(' hello')
+
             await driver.page.waitForSelector('.test-search-button', { visible: true })
-            // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
-            await driver.page.keyboard.type(' hello', { delay: 50 })
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
@@ -478,6 +479,7 @@ describe('Search', () => {
         test('symbol results', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
+                ...highlightFileResult,
             })
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
@@ -536,7 +538,7 @@ describe('Search', () => {
                     })
                 })
 
-                test('updates the query input and triggers suggestions', async () => {
+                test.skip('updates the query input and triggers suggestions', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
                     await driver.page.waitForSelector('[data-testid="search-type-suggest"]')
                     await driver.page.click('[data-testid="search-type-suggest"]')
@@ -554,7 +556,7 @@ describe('Search', () => {
                 driver.page.waitForNavigation(),
                 driver.page.click('[data-testid="search-type-submit"]'),
             ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard')
         })
     })
 })

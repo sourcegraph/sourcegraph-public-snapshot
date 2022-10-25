@@ -147,6 +147,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     patternType,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
@@ -232,7 +233,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     // Submit new search on change
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
-            console.log({ patternType })
             onSubmit({ patternType })
         },
         [onSubmit]
@@ -276,7 +276,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context.submittedSearchQueryState.queryState, platformContext, onSubmit]
     )
 
-    const onShareResultsClick = useCallback((): void => {
+    const onShareResultsClick = useCallback(async (): Promise<void> => {
         const queryState = context.submittedSearchQueryState
 
         const path = `/search?${buildSearchURLQuery(
@@ -285,9 +285,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             queryState.searchCaseSensitivity,
             context.selectedSearchContextSpec
         )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
-        extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
-            console.error('Error copying search link to clipboard:', error)
-        })
+        await extensionCoreAPI.copyLink(new URL(path, instanceURL).href)
         platformContext.telemetryService.log('VSCEShareLinkClick')
     }, [context, instanceURL, extensionCoreAPI, platformContext])
 
@@ -403,7 +401,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             showSearchContext={true}
                             platformContext={platformContext}
                             results={context.searchResults ?? undefined}
-                            authenticatedUser={authenticatedUser}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"

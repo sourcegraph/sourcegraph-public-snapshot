@@ -224,21 +224,25 @@ const SelectBox: React.FunctionComponent<
     }, [selectable, isPublishableResult])
 
     const input = isPublishableResult.publishable ? (
+        // eslint-disable-next-line no-restricted-syntax
         <InputTooltip
             id={`select-changeset-${isPublishableResult.changesetSpecID}`}
             type="checkbox"
             checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
             onChange={toggleSelected}
             tooltip="Click to select changeset for bulk-modifying the publication state"
+            placement="right"
             aria-label="Click to select changeset for bulk-modifying the publication state"
         />
     ) : (
+        // eslint-disable-next-line no-restricted-syntax
         <InputTooltip
             id="select-changeset-hidden"
             type="checkbox"
             checked={false}
             disabled={true}
             tooltip={isPublishableResult.reason}
+            placement="right"
             aria-label={isPublishableResult.reason}
         />
     )
@@ -504,7 +508,7 @@ const References: React.FunctionComponent<React.PropsWithChildren<{ spec: Visibl
 const ApplyDiffStat: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
     spec,
 }) => {
-    let diffStat: { added: number; changed: number; deleted: number }
+    let diffStat: { added: number; deleted: number }
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         if (!spec.targets.changeset.diffStat) {
             return null

@@ -1,11 +1,6 @@
-import { EditableDataSeries } from '../../../../components'
+import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 
-export enum ComputeInsightMap {
-    Repositories = 'repositories',
-    Path = 'path',
-    Author = 'author',
-    Date = 'date',
-}
+import { EditableDataSeries } from '../../../../components'
 
 export interface CreateComputeInsightFormFields {
     /**
@@ -28,5 +23,5 @@ export interface CreateComputeInsightFormFields {
      */
     dashboardReferenceCount: number
 
-    groupBy: ComputeInsightMap
+    groupBy: GroupByField
 }

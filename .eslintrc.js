@@ -35,8 +35,10 @@ const config = {
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
+    'no-console': 'error',
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    '@typescript-eslint/consistent-type-exports': 'warn',
     'no-restricted-imports': [
       'error',
       {
@@ -55,20 +57,10 @@ const config = {
             message: 'Use the <Link /> component from @sourcegraph/wildcard instead.',
           },
           {
-            name: 'reactstrap',
-            importNames: ['Form'],
-            message: 'Use the <Form /> component from @sourcegraph/branded package instead',
-          },
-          {
             name: 'zustand',
             importNames: ['default'],
             message:
               'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
-          },
-          {
-            name: 'reactstrap',
-            message:
-              'Please use components from the Wildcard component library instead. We work on removing `reactstrap` dependency.',
           },
           {
             name: 'chromatic/isChromatic',
@@ -91,6 +83,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
+          },
+          {
+            group: ['**/out/*'],
+            message:
+              "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
           },
         ],
       },
@@ -195,6 +192,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           'When using an icon as a Tooltip trigger, it must have an aria-label attribute and should not be hidden.',
       },
       {
+        selector: 'JSXElement[openingElement.name.name="InputTooltip"]',
+        message:
+          'Prefer using the <Tooltip> component with an <Input> directly, when possible. Please only use <InputTooltip> when the legacy styling it provides is needed. We will be working to fix style issues with <Input> (especially for checkboxes) in the future.',
+      },
+      {
         selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
         message:
           "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",
@@ -223,6 +225,12 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       rules: {
         'react/forbid-dom-props': 'off',
         'import/no-default-export': 'off',
+      },
+    },
+    {
+      files: ['**/gulpfile.js', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx'],
+      rules: {
+        'no-console': 'off',
       },
     },
   ],

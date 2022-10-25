@@ -18,7 +18,7 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/go-langserver.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/go-langserver.git"
     }
    },
    "Metadata": {
@@ -83,7 +83,7 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/python-langserver.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/python-langserver.git"
     }
    },
    "Metadata": {
@@ -148,7 +148,7 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/sg/python-langserver-fork.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/sg/python-langserver-fork.git"
     }
    },
    "Metadata": {
@@ -254,7 +254,7 @@
    "Sources": {
     "extsvc:bitbucketserver:1": {
      "ID": "extsvc:bitbucketserver:1",
-     "CloneURL": "https://keegan@bitbucket.example.com/scm/~keegan/rgp.git"
+     "CloneURL": "https://foo@bitbucket.example.com/scm/~keegan/rgp.git"
     }
    },
    "Metadata": {

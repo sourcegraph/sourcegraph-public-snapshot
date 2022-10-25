@@ -4,7 +4,6 @@
     {
       "files": [
         "./src/webview/index.scss",
-        "./src/webview/forkedBranded.scss",
         "./src/webview/theming/highlight.scss",
         "./src/webview/theming/monaco.scss"
       ],

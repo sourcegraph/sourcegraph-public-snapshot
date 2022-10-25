@@ -38,14 +38,14 @@ func TestToResultResolverList(t *testing.T) {
 			ChunkMatches: result.ChunkMatches{{
 				Content: "a",
 				Ranges: result.Ranges{{
-					Start: result.Location{Line: 1, Column: 0},
-					End:   result.Location{Line: 1, Column: 1},
+					Start: result.Location{Offset: 0, Line: 1, Column: 0},
+					End:   result.Location{Offset: 1, Line: 1, Column: 1},
 				}},
 			}, {
 				Content: "b",
 				Ranges: result.Ranges{{
-					Start: result.Location{Line: 2, Column: 0},
-					End:   result.Location{Line: 2, Column: 1},
+					Start: result.Location{Offset: 0, Line: 2, Column: 0},
+					End:   result.Location{Offset: 1, Line: 2, Column: 1},
 				}},
 			}},
 		},

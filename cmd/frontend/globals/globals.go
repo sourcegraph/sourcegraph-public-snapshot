@@ -145,7 +145,7 @@ var brandingWatchers uint32
 // WatchBranding watches for changes in the `branding` site configuration
 // so that changes are reflected in what is returned by the Branding function.
 // This should only be called once and will panic otherwise.
-func WatchBranding(licenseChecker func() error) {
+func WatchBranding() {
 	if atomic.AddUint32(&brandingWatchers, 1) != 1 {
 		panic("WatchBranding called more than once")
 	}
@@ -158,12 +158,6 @@ func WatchBranding(licenseChecker func() error) {
 			bcopy := *after
 			bcopy.BrandName = defaultBranding.BrandName
 			after = &bcopy
-		}
-
-		if err := licenseChecker(); err != nil {
-			SetBranding(defaultBranding)
-			log15.Error("globals.Branding.updateIgnored", "error", err)
-			return
 		}
 
 		if before := Branding(); !reflect.DeepEqual(before, after) {

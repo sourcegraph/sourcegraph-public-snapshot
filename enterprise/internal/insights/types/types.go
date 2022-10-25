@@ -198,3 +198,34 @@ type SeriesSortOptions struct {
 	Mode      SeriesSortMode
 	Direction SeriesSortDirection
 }
+
+type InsightSeriesRecordingTimes struct {
+	InsightSeriesID int // references insight_series(id)
+	RecordingTimes  []RecordingTime
+}
+
+type RecordingTime struct {
+	Timestamp time.Time
+	Snapshot  bool
+}
+
+type SearchAggregationMode string
+
+const (
+	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
+	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
+	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
+	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+)
+
+var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
+
+type AggregationNotAvailableReasonType string
+
+const (
+	INVALID_QUERY                      AggregationNotAvailableReasonType = "INVALID_QUERY"
+	INVALID_AGGREGATION_MODE_FOR_QUERY AggregationNotAvailableReasonType = "INVALID_AGGREGATION_MODE_FOR_QUERY"
+	TIMEOUT_EXTENSION_AVAILABLE        AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_AVAILABLE"
+	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
+	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
+)

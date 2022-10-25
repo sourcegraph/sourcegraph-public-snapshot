@@ -1,7 +1,7 @@
 # Prometheus global config
 global:
-  scrape_interval: 30s # Scrape services for updated metrics every 30s. Default is 1m.
-  evaluation_interval: 30s # Evaluate rules every 30s. Default is 1m.
+  scrape_interval: 1m # Scrape services for updated metrics every 1m.
+  evaluation_interval: 1m # Evaluate rules every 1m.
   # scrape_timeout is set to the global default (10s).
 
 # Alertmanager configuration

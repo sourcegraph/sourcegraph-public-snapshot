@@ -3,14 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -35,18 +34,19 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 
-	inputs, err := run.NewSearchInputs(
+	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+	inputs, err := cli.Plan(
 		ctx,
-		db,
 		args.Version,
 		args.PatternType,
 		args.Query,
+		search.Precise,
 		search.Batch,
 		settings,
 		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			return NewSearchAlertResolver(search.AlertForQuery(queryErr.Query, queryErr.Err)).wrapSearchImplementer(db), nil
 		}
@@ -54,11 +54,10 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
+		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
+		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
-		zoekt:        search.Indexed(),
-		searcherURLs: search.SearcherURLs(),
-		logger:       logger,
 	}, nil
 }
 
@@ -68,12 +67,10 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	SearchInputs *run.SearchInputs
-	db           database.DB
 	logger       log.Logger
-
-	zoekt        zoekt.Streamer
-	searcherURLs *endpoint.Map
+	client       client.SearchClient
+	SearchInputs *search.Inputs
+	db           database.DB
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings
@@ -89,7 +86,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, gitserver.NewClient(db)).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

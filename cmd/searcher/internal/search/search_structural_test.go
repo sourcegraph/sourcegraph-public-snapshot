@@ -439,8 +439,8 @@ func bar() {
 	}
 
 	t.Run("unlimited", test(10000, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("exact limit", test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
+	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
+	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
 	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
 }
 

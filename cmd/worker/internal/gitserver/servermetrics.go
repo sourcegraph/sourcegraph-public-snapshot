@@ -31,7 +31,7 @@ func (j *metricsJob) Config() []env.Config {
 	return nil
 }
 
-func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -45,11 +45,7 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		defer cancel()
 
 		var count int64
-		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM gitserver_repos AS g
-			INNER JOIN repo AS r ON g.repo_id = r.id
-			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
-		`).Scan(&count)
+		err := db.QueryRowContext(ctx, `SELECT SUM(failed_fetch) FROM gitserver_repos_statistics`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repository errors", log.Error(err))
 			return 0
@@ -66,10 +62,7 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 		defer cancel()
 
 		var count int64
-		err := db.QueryRowContext(ctx, `
-			SELECT COUNT(*) FROM repo AS r
-			WHERE r.deleted_at IS NULL
-		`).Scan(&count)
+		err := db.QueryRowContext(ctx, `SELECT SUM(total) FROM repo_statistics`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repositories", log.Error(err))
 			return 0

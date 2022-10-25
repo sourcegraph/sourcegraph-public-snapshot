@@ -1,6 +1,7 @@
 package workerutil
 
 import (
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/log"
@@ -14,4 +15,6 @@ func TestMain(m *testing.M) {
 	// If logs are needed to debug unit test behavior, then set the log level argument
 	// to the desired level.
 	logtest.InitWithLevel(m, log.LevelNone)
+
+	os.Exit(m.Run())
 }

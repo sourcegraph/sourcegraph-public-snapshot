@@ -10,14 +10,13 @@ import (
 	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit string) (err error) {
+func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err error) {
 	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("indexing %s@%s", repo, givenCommit))
 	defer threadStatus.End()
 
@@ -49,7 +48,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	missingCount := 0
 	tasklog.Start("RevList")
-	err = s.git.RevListEach(repo, db, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
+	err = s.git.RevList(ctx, repo, givenCommit, func(commitHash string) (shouldContinue bool, err error) {
 		defer tasklog.Continue("RevList")
 
 		tasklog.Start("GetCommitByHash")
@@ -85,7 +84,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 
 	tasklog.Start("Log")
 	entriesIndexed := 0
-	err = s.git.LogReverseEach(repo, db, givenCommit, missingCount, func(entry gitdomain.LogEntry) error {
+	err = s.git.LogReverseEach(ctx, repo, givenCommit, missingCount, func(entry gitdomain.LogEntry) error {
 		defer tasklog.Continue("Log")
 
 		threadStatus.SetProgress(entriesIndexed, missingCount)
@@ -165,7 +164,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		symbolsFromAddedFiles := map[string]*goset.Set[string]{}
 		{
 			tasklog.Start("ArchiveEach")
-			err = s.git.ArchiveEach(repo, entry.Commit, addedPaths, func(path string, contents []byte) error {
+			err = archiveEach(ctx, s.fetcher, repo, entry.Commit, addedPaths, func(path string, contents []byte) error {
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")

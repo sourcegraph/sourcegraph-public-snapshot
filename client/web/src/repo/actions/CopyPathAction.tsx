@@ -1,10 +1,10 @@
-import React, { useState, useLayoutEffect } from 'react'
+import React, { useState } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 import { useLocation } from 'react-router'
 
-import { Button, DeprecatedTooltipController, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -17,10 +17,6 @@ import styles from './CopyPathAction.module.scss'
 export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const location = useLocation()
     const [copied, setCopied] = useState(false)
-
-    useLayoutEffect(() => {
-        DeprecatedTooltipController.forceUpdate()
-    }, [copied])
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
         event.preventDefault()

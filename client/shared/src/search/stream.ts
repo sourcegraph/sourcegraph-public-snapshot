@@ -5,14 +5,19 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
 
 // The latest supported version of our search syntax. Users should never be able to determine the search version.
-// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
-// and will therefore default to V1.
-export const LATEST_VERSION = 'V2'
+// The version is set based on the release tag of the instance.
+// History:
+// V3 - default to standard interpretation (RFC 675): Interpret patterns enclosed by /.../ as regular expressions. Interpret patterns literally otherwise.
+// V2 - default to interpreting patterns literally only.
+// V1 - default to interpreting patterns as regular expressions.
+// None - Anything before 3.9.0 will not pass a version parameter and defaults to V1.
+export const LATEST_VERSION = 'V3'
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
 export type SearchType = 'file' | 'repo' | 'path' | 'symbol' | 'diff' | 'commit' | null
@@ -30,6 +35,7 @@ export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolM
 export interface PathMatch {
     type: 'path'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
@@ -40,12 +46,14 @@ export interface PathMatch {
 export interface ContentMatch {
     type: 'content'
     path: string
+    pathMatches?: Range[]
     repository: string
     repoStars?: number
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
 }
 
@@ -72,10 +80,17 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -95,6 +110,7 @@ export interface MatchedSymbol {
     name: string
     containerName: string
     kind: SymbolKind
+    line: number
 }
 
 type MarkdownText = string
@@ -124,6 +140,7 @@ export interface CommitMatch {
 export interface RepositoryMatch {
     type: 'repo'
     repository: string
+    repositoryMatches?: Range[]
     repoStars?: number
     repoLastFetched?: string
     description?: string
@@ -131,6 +148,7 @@ export interface RepositoryMatch {
     archived?: boolean
     private?: boolean
     branches?: string[]
+    descriptionMatches?: Range[]
 }
 
 /**
@@ -213,10 +231,10 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: string
+    kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'lucky-search-queries'
+export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 
 interface Alert {
     title: string
@@ -225,8 +243,12 @@ interface Alert {
     proposedQueries: ProposedQuery[] | null
 }
 
+// Same key values from internal/search/alert.go
+export type AnnotationName = 'ResultCount'
+
 interface ProposedQuery {
     description?: string | null
+    annotations?: { name: AnnotationName; value: string }[]
     query: string
 }
 
@@ -413,10 +435,12 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
     displayLimit?: number
+    chunkMatches?: boolean
 }
 
 function initiateSearchStream(
@@ -428,8 +452,10 @@ function initiateSearchStream(
         trace,
         decorationKinds,
         decorationContextLines,
+        searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -440,10 +466,12 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['sm', searchMode.toString()],
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])
@@ -564,6 +592,9 @@ export function streamComputeQuery(query: string): Observable<string[]> {
             onmessage(event) {
                 allData.push(event.data)
                 observer.next(allData)
+            },
+            onerror(event) {
+                observer.error(event)
             },
         }).then(
             () => observer.complete(),

@@ -65,10 +65,6 @@ describe('Code insight edit insight page', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforces a new GQL backend for the creation UI
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 
@@ -237,7 +233,13 @@ describe('Code insight edit insight page', () => {
                         includeRepoRegex: '',
                         searchContexts: [],
                     },
-                    seriesDisplayOptions: {},
+                    seriesDisplayOptions: {
+                        limit: 20,
+                        sortOptions: {
+                            direction: 'DESC',
+                            mode: 'RESULT_COUNT',
+                        },
+                    },
                 },
             },
             id: '001',

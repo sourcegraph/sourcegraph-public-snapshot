@@ -14,22 +14,25 @@ const config: Meta = {
 
 export default config
 
-const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'> = {
+const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
             authenticationURL: '/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F',
+            serviceID: 'https://github.com',
         },
         {
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
+            serviceID: 'https://gitlab.com',
         },
     ],
     experimentalFeatures: {},
+    authMinPasswordLength: 0,
 }
 
 export const Default: Story = () => (

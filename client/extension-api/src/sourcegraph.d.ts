@@ -2,7 +2,7 @@
  * ## The Sourcegraph extension API
  *
  * Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
- * - Code intelligence (go-to-definition, find references, hovers, etc.)
+ * - Code navigation (go-to-definition, find references, hovers, etc.)
  * - Test coverage overlays
  * - Links to live traces, log output, and performance data for a line of code
  * - Git blame
@@ -618,15 +618,6 @@ declare module 'sourcegraph' {
         dark?: ThemableDecorationAttachmentStyle
     }
 
-    interface TextDocumentDecorationTypeConfig {
-        /**
-         * Defines whether to show decorations inline (default) or in a separate column.
-         * Column display can only be applied if `enableExtensionsDecorationsColumnView`
-         * experimental feature is enabled.
-         */
-        display: 'inline' | 'column'
-    }
-
     /**
      * Represents a handle to a set of decorations.
      *
@@ -634,12 +625,8 @@ declare module 'sourcegraph' {
      * {@link sourcegraph.app.createDecorationType}
      */
     export interface TextDocumentDecorationType {
-        readonly extensionID?: string
-
         /** An opaque identifier. */
         readonly key: string
-
-        readonly config: TextDocumentDecorationTypeConfig
     }
 
     /**
@@ -1156,7 +1143,7 @@ declare module 'sourcegraph' {
          * Use this to create a unique handle to a set of decorations, that can be applied to
          * text editors using {@link setDecorations}.
          */
-        export function createDecorationType(config?: TextDocumentDecorationType['config']): TextDocumentDecorationType
+        export function createDecorationType(): TextDocumentDecorationType
 
         /**
          * Creates a statusBarItemType that can be used to add a status bar item to
@@ -1258,7 +1245,7 @@ declare module 'sourcegraph' {
          * The current version context of the workspace, if any.
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          *
@@ -1277,7 +1264,7 @@ declare module 'sourcegraph' {
          * The current search context of the workspace, if any.
          *
          * A search context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts.
          */
@@ -1417,7 +1404,7 @@ declare module 'sourcegraph' {
          * values can briefly be used to describe some common property of the underlying result set.
          *
          * We currently use this to display whether a file in the file match locations pane contains
-         * only precise or only search-based code intelligence results.
+         * only precise or only search-based code navigation results.
          */
         aggregableBadges?: AggregableBadge[]
     }
@@ -1483,6 +1470,16 @@ declare module 'sourcegraph' {
 
         /** Predefined icons to display next ot the summary. */
         iconKind?: 'info' | 'error' | 'warning'
+
+        /**
+         * When set, this renders a row of button underneath the content. Note
+         * that this was added after the extension deprecation and will only
+         * work with newer clients.
+         *
+         * When buttons are rendered this way, an eventual dismiss button is
+         * appended to this list.
+         */
+        buttons?: React.ReactNode[]
     }
 
     export interface HoverProvider {

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { logger } from '@sourcegraph/common'
 import { Button, Modal, Link, Code, Label, Text, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -60,6 +61,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.RUSTPACKAGES]: <span>Unsupported</span>,
+    [ExternalServiceKind.RUBYPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
@@ -119,7 +121,7 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
                     afterCreate()
                 }
             } catch (error) {
-                console.error(error)
+                logger.error(error)
             }
         },
         [

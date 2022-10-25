@@ -30,6 +30,7 @@ const CodeMonitorEmptyList: React.FunctionComponent<
                 className="my-3"
                 eventName="SignUpPLGMonitor_EmptyList"
                 text="Get started with code monitors"
+                forDotcom={false}
             />
         )}
     </div>

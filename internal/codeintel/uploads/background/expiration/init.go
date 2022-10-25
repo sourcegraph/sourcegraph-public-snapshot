@@ -1,15 +1,19 @@
 package expiration
 
 import (
-	"context"
-
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewExpirer(store DBStore, policyMatcher PolicyMatcher, metrics *metrics) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.Interval, &expirer{
-		dbStore:       store,
-		policyMatcher: policyMatcher,
-		metrics:       metrics,
-	})
+func NewExpirationTasks(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		backgroundJobs.NewUploadExpirer(
+			ConfigInst.ExpirerInterval,
+			ConfigInst.RepositoryProcessDelay,
+			ConfigInst.RepositoryBatchSize,
+			ConfigInst.UploadProcessDelay,
+			ConfigInst.UploadBatchSize,
+			ConfigInst.CommitBatchSize,
+			ConfigInst.PolicyBatchSize,
+		),
+	}
 }

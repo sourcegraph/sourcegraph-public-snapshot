@@ -10,7 +10,7 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
@@ -113,7 +113,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        error => console.error(error)
+                        error => logger.error(error)
                     )
             )
 

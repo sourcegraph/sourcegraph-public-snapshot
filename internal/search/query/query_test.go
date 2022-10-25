@@ -12,7 +12,7 @@ func TestPipelineStructural(t *testing.T) {
 		return pipelinePlan.ToQ().String()
 	}
 
-	autogold.Want("contains(...) spans newlines", `"repo:contains.file(\nfoo\n)"`).Equal(t, test("repo:contains.file(\nfoo\n)"))
+	autogold.Want("contains(...) spans newlines", `"repo:contains.path(\nfoo\n)"`).Equal(t, test("repo:contains.path(\nfoo\n)"))
 }
 
 func TestSubstituteSearchContexts(t *testing.T) {
@@ -41,6 +41,6 @@ func TestSubstituteSearchContexts(t *testing.T) {
 	})
 
 	t.Run("preserve predicate label", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test("context:gordo repo:contains.file(gordo)", true)))
+		autogold.Equal(t, autogold.Raw(test("context:gordo repo:contains.path(gordo)", true)))
 	})
 }

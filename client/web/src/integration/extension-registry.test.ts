@@ -17,7 +17,7 @@ const typescriptRawManifest = JSON.stringify({
     browserslist: [],
     categories: ['Programming languages'],
     contributes: {},
-    description: 'TypeScript/JavaScript code intelligence',
+    description: 'TypeScript/JavaScript code graph',
     devDependencies: {},
     extensionID: 'sourcegraph/typescript',
     main: 'dist/extension.js',
@@ -61,7 +61,7 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
         name: 'typescript',
         manifest: {
             raw: typescriptRawManifest,
-            description: 'TypeScript/JavaScript code intelligence',
+            description: 'TypeScript/JavaScript code graph',
         },
         createdAt: '2019-01-26T03:39:17Z',
         updatedAt: '2019-01-26T03:39:17Z',
@@ -123,6 +123,7 @@ describe('Extension Registry', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
+        testContext.overrideJsContext({ enableLegacyExtensions: true })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -136,6 +137,7 @@ describe('Extension Registry', () => {
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
+                            id: 'TestDefaultSettingsID',
                             settingsURL: null,
                             viewerCanAdminister: false,
                             latestSettings: {

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -82,7 +81,7 @@ func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos 
 	t.Helper()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	depsSvc := livedependencies.TestService(db, nil)
+	depsSvc := dependencies.TestService(db, nil)
 
 	_, err := depsSvc.UpsertDependencyRepos(ctx, dependencyRepos)
 	if err != nil {
@@ -150,16 +149,16 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindNpmPackages,
-		Config: marshalJSON(t, &schema.NpmPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
 			Registry:     "https://registry.npmjs.org",
 			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
-		}),
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewNpmPackagesSource(&svc, cf)
+	src, err := NewNpmPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

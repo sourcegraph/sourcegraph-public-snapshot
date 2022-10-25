@@ -11,6 +11,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -287,7 +288,7 @@ func TestStoreDequeueView(t *testing.T) {
 
 	options := defaultTestStoreOptions(nil)
 	options.ViewName = "workerutil_test_view v"
-	options.Scan = testScanFirstRecordView
+	options.Scan = BuildWorkerScan(testScanRecordView)
 	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
@@ -332,10 +333,10 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("expected a second dequeueable record")
 	}
 
-	if val := record1.(TestRecord).ID; val != 1 {
+	if val := record1.(*TestRecord).ID; val != 1 {
 		t.Errorf("unexpected id. want=%d have=%d", 1, val)
 	}
-	if val := record2.(TestRecord).ID; val != 2 {
+	if val := record2.(*TestRecord).ID; val != 2 {
 		t.Errorf("unexpected id. want=%d have=%d", 2, val)
 	}
 
@@ -364,7 +365,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 5 * time.Minute
 	options.ColumnExpressions = []*sqlf.Query{
@@ -403,7 +404,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 	}
 
 	options := defaultTestStoreOptions(nil)
-	options.Scan = testScanFirstRecordRetry
+	options.Scan = BuildWorkerScan(testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 0
 	options.ColumnExpressions = []*sqlf.Query{
@@ -1084,4 +1085,30 @@ func TestStoreHeartbeat(t *testing.T) {
 		2: 5 * time.Second, // not in known ID list
 		3: 0,               // updated
 	})
+}
+
+func TestStoreCanceledJobs(t *testing.T) {
+	db := setupStoreTest(t)
+
+	if _, err := db.ExecContext(context.Background(), `
+		INSERT INTO workerutil_test (id, state, worker_hostname, cancel)
+		VALUES
+			-- not processing
+			(1, 'queued', 'worker1', false),
+			-- not canceling
+			(2, 'processing', 'worker1', false),
+			-- this one should be returned
+			(3, 'processing', 'worker1', true),
+			-- other worker
+			(4, 'processing', 'worker2', true)
+	`); err != nil {
+		t.Fatalf("unexpected error inserting records: %s", err)
+	}
+
+	toCancel, err := testStore(db, defaultTestStoreOptions(nil)).CanceledJobs(context.Background(), []int{1, 2, 3}, CanceledJobsOptions{WorkerHostname: "worker1"})
+	if err != nil {
+		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	}
+
+	require.ElementsMatch(t, toCancel, []int{3}, "invalid set of jobs returned")
 }

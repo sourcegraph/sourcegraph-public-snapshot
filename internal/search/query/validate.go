@@ -392,12 +392,9 @@ func validateRefGlobs(nodes []Node) error {
 
 // validatePredicates validates predicate parameters with respect to their validation logic.
 func validatePredicate(field, value string, negated bool) error {
-	if negated {
-		return errors.New("predicates do not currently support negation")
-	}
 	name, params := ParseAsPredicate(value)                // guaranteed to succeed
 	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-	if err := predicate.ParseParams(params); err != nil {
+	if err := predicate.Unmarshal(params, negated); err != nil {
 		return errors.Errorf("invalid predicate value: %s", err)
 	}
 	return nil

@@ -3,15 +3,15 @@ package squirrel
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
 	sitter "github.com/smacker/go-tree-sitter"
 
 	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -124,15 +124,6 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 	}, nil
 }
 
-// How to read a file from gitserver.
-func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := gitserver.NewClient(nil).ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
-	if err != nil {
-		return nil, errors.Newf("failed to get file contents: %s", err)
-	}
-	return data, nil
-}
-
 // DirOrNode is a union type that can either be a directory or a node. It's returned by getDef().
 //
 // - It's usually   a Node, e.g. when finding the definition of an identifier
@@ -170,6 +161,22 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	}
 }
 
+const defaultMaxSquirrelDepth = 100
+
+var maxSquirrelDepth = func() int {
+	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
+	if maxDepth == "" {
+		return defaultMaxSquirrelDepth
+	}
+
+	v, err := strconv.Atoi(maxDepth)
+	if err != nil {
+		panic(fmt.Sprintf("invalid value for SRC_SQUIRREL_MAX_STACK_DEPTH: %s", err))
+	}
+
+	return v
+}()
+
 func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
@@ -183,6 +190,10 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 	squirrel.breadcrumbWithOpts(node, func() string { return msg }, 3)
 
 	squirrel.depth += 1
+	if squirrel.depth > maxSquirrelDepth {
+		panic(errors.New("max squirrel stack depth exceeded"))
+	}
+
 	return func() {
 		squirrel.depth -= 1
 

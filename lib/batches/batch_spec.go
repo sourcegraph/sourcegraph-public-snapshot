@@ -133,17 +133,11 @@ type Mount struct {
 	Path       string `json:"path" yaml:"path"`
 }
 
-type ParseBatchSpecOptions struct {
-	AllowArrayEnvironments bool
-	AllowTransformChanges  bool
-	AllowConditionalExec   bool
+func ParseBatchSpec(data []byte) (*BatchSpec, error) {
+	return parseBatchSpec(schema.BatchSpecJSON, data)
 }
 
-func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
-	return parseBatchSpec(schema.BatchSpecJSON, data, opts)
-}
-
-func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
+func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
 		var multiErr errors.MultiError
@@ -167,35 +161,8 @@ func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*Ba
 
 	var errs error
 
-	if !opts.AllowArrayEnvironments {
-		for i, step := range spec.Steps {
-			if !step.Env.IsStatic() {
-				errs = errors.Append(errs, NewValidationError(errors.Errorf("step %d includes one or more dynamic environment variables, which are unsupported in this Sourcegraph version", i+1)))
-			}
-		}
-	}
-
 	if len(spec.Steps) != 0 && spec.ChangesetTemplate == nil {
 		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes steps but no changesetTemplate")))
-	}
-
-	if spec.TransformChanges != nil && !opts.AllowTransformChanges {
-		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes transformChanges, which is not supported in this Sourcegraph version")))
-	}
-
-	if len(spec.Workspaces) != 0 && !opts.AllowTransformChanges {
-		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes workspaces, which is not supported in this Sourcegraph version")))
-	}
-
-	if !opts.AllowConditionalExec {
-		for i, step := range spec.Steps {
-			if step.IfCondition() != "" {
-				errs = errors.Append(errs, NewValidationError(errors.Newf(
-					"step %d in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version",
-					i+1,
-				)))
-			}
-		}
 	}
 
 	for i, step := range spec.Steps {

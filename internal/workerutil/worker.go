@@ -30,6 +30,7 @@ type Worker struct {
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
+	cancelClock      glock.Clock
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -77,19 +78,23 @@ type WorkerOptions struct {
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
 
+	// CancelInterval is the interval between checking for jobs that are to be canceled. If not set,
+	// the worker will not check for canceled jobs.
+	CancelInterval time.Duration
+
 	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
 	MaximumRuntimePerJob time.Duration
 
 	// Metrics configures logging, tracing, and metrics for the work loop.
-	Metrics WorkerMetrics
+	Metrics WorkerObservability
 }
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock)
+	return newWorker(ctx, store, handler, options, clock, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, cancelClock, shutdownClock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -116,6 +121,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		options:          options,
 		dequeueClock:     mainClock,
 		heartbeatClock:   heartbeatClock,
+		cancelClock:      cancelClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		rootCtx:          ctx,
@@ -163,6 +169,35 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
+
+	if w.options.CancelInterval > 0 {
+		// Create a background routine that periodically checks for jobs that are to be canceled.
+		go func() {
+			for {
+				select {
+				case <-w.finished:
+					// All jobs finished.
+					return
+				case <-w.cancelClock.After(w.options.CancelInterval):
+				}
+
+				knownIDs := w.runningIDSet.Slice()
+				canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
+				if err != nil {
+					w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
+					continue
+				}
+
+				if len(canceled) > 0 {
+					w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
+				}
+
+				for _, id := range canceled {
+					w.runningIDSet.Cancel(id)
+				}
+			}
+		}()
+	}
 
 	var shutdownChan <-chan time.Time
 	if w.options.MaxActiveTime > 0 {
@@ -236,12 +271,6 @@ func (w *Worker) Wait() {
 	<-w.finished
 }
 
-// Cancel cancels the handler context of the running job with the given record id.
-// It will eventually be marked as failed.
-func (w *Worker) Cancel(id int) {
-	w.runningIDSet.Cancel(id)
-}
-
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
@@ -283,7 +312,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(
+		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
+		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
+		w.options.Name,
+	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
@@ -343,8 +376,15 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+	var handleErr error
+	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
+	defer func() {
+		// prioritize handleErr in `operations.handle.With` without bubbling handleErr up if non-nil
+		if handleErr == nil && err != nil {
+			handleErr = err
+		}
+		endOperation(1, observation.Args{})
+	}()
 
 	// If a maximum runtime is configured, set a deadline on the handle context.
 	if w.options.MaximumRuntimePerJob > 0 {
@@ -354,7 +394,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
-	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))

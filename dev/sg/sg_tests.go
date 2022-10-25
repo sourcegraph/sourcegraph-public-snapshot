@@ -8,8 +8,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -29,8 +29,8 @@ var testCommand = &cli.Command{
 # Run different test suites:
 sg test backend
 sg test backend-integration
-sg test frontend
-sg test frontend-e2e
+sg test client
+sg test web-e2e
 
 # List available test suites:
 sg test -help
@@ -39,8 +39,8 @@ sg test -help
 sg test backend-integration -run TestSearch
 `,
 	Category: CategoryDev,
-	BashComplete: completeOptions(func() (options []string) {
-		config, _ := sgconf.Get(configFile, configOverwriteFile)
+	BashComplete: cliutil.CompleteOptions(func() (options []string) {
+		config, _ := getConfig()
 		if config == nil {
 			return
 		}
@@ -53,7 +53,7 @@ sg test backend-integration -run TestSearch
 }
 
 func testExec(ctx *cli.Context) error {
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		return err
 	}
@@ -80,10 +80,11 @@ func constructTestCmdLongHelp() string {
 
 	// Attempt to parse config to list available testsuites, but don't fail on
 	// error, because we should never error when the user wants --help output.
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
-		std.NewOutput(&out, false).WriteWarningf(err.Error())
+		// Do not treat error message as a format string
+		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
 		return out.String()
 	}
 

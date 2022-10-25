@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
@@ -12,6 +12,11 @@ describe('FormTriggerArea', () => {
 
     beforeAll(() => {
         clock = sinon.useFakeTimers()
+        Range.prototype.getClientRects = () => ({
+            length: 0,
+            item: () => null,
+            [Symbol.iterator]: [][Symbol.iterator],
+        })
     })
 
     afterAll(() => {
@@ -154,11 +159,11 @@ describe('FormTriggerArea', () => {
         })
     }
 
-    test('Append patternType:literal if no patternType is present', async () => {
+    test('Append patternType:literal if no patternType is present', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
@@ -168,28 +173,16 @@ describe('FormTriggerArea', () => {
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        userEvent.click(triggerInput)
-
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test type:diff repo:test')
-
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
     })
 
-    test('Do not append patternType:literal if patternType is present', async () => {
+    test('Do not append patternType:literal if patternType is present', () => {
         const onQueryChange = sinon.spy()
         renderWithBrandedContext(
             <FormTriggerArea
-                query=""
+                query="test patternType:regexp type:diff repo:test"
                 triggerCompleted={false}
                 onQueryChange={onQueryChange}
                 setTriggerCompleted={sinon.spy()}
@@ -199,17 +192,6 @@ describe('FormTriggerArea', () => {
             />
         )
         userEvent.click(screen.getByTestId('trigger-button'))
-
-        const triggerInput = screen.getByTestId('trigger-query-edit')
-        userEvent.click(triggerInput)
-
-        await waitFor(() => expect(triggerInput.querySelector('textarea[role="textbox"]')).toBeInTheDocument())
-
-        const textbox = triggerInput.querySelector('textarea[role="textbox"]')!
-        userEvent.type(textbox, 'test patternType:regexp type:diff repo:test')
-        act(() => {
-            clock.tick(600)
-        })
         userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test patternType:regexp type:diff repo:test')

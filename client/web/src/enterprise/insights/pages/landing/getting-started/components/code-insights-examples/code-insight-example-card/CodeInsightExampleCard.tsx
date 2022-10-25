@@ -4,10 +4,10 @@ import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link } from '@sourcegraph/wildcard'
+import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
+import { useCodeInsightsState } from '../../../../../../../../stores'
 import {
     InsightCard,
     InsightCardHeader,
@@ -15,7 +15,8 @@ import {
     SeriesBasedChartTypes,
     SeriesChart,
 } from '../../../../../../components'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../../core'
+import { InsightType } from '../../../../../../core'
+import { useUiFeatures } from '../../../../../../hooks'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
 import {
     CodeInsightsLandingPageContext,
@@ -52,9 +53,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -110,7 +109,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
 
             <LegendList className={styles.legend}>
                 {content.series.map(series => (
-                    <LegendItem key={series.id as string} color={getLineColor(series)} name={series.name}>
+                    <LegendItem key={series.id as string} color={series.color} name={series.name}>
                         <span className={classNames(styles.legendItem, 'flex-shrink-0 mr-2')}>{series.name}</span>
                         <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={series.query} />
                     </LegendItem>
@@ -128,12 +127,15 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
 }
 
 const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProps> = props => {
-    const { content, templateLink, className, telemetryService } = props
+    const {
+        content: { title, groupSearch, repositories, ...content },
+        templateLink,
+        className,
+        telemetryService,
+    } = props
     const seriesToggleState = useSeriesToggle()
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useCodeInsightsState()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
@@ -153,13 +155,9 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     return (
         <InsightCard className={className} onMouseEnter={trackMouseEnter} onMouseLeave={trackMouseLeave}>
             <InsightCardHeader
-                title={content.title}
+                title={title}
                 subtitle={
-                    <CodeInsightsQueryBlock
-                        as={SyntaxHighlightedSearchQuery}
-                        query={content.repositories}
-                        className="mt-1"
-                    />
+                    <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={repositories} className="mt-1" />
                 }
             >
                 {templateLink && (
@@ -194,7 +192,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                 <InsightCardLegend series={content.series} className={styles.legend} />
             </div>
 
-            <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={content.groupSearch} className="mt-3" />
+            <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={groupSearch} className="mt-3" />
         </InsightCard>
     )
 }

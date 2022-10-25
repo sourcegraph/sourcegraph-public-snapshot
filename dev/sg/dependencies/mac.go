@@ -135,7 +135,14 @@ var Mac = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(),
+	categoryProgrammingLanguagesAndTools(
+		// src-cli is installed differently on Ubuntu and Mac
+		&dependency{
+			Name:  "src",
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
+		},
+	),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsHomebrew},
@@ -247,17 +254,6 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
-			{
-				Name:  "1password",
-				Check: checkAction(check1password()),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "brew install --cask 1password/tap/1password-cli").StreamLines(cio.Verbose); err != nil {
-						return err
-					}
-
-					return opLoginFix()(ctx, cio, args)
-				},
-			},
 		},
 	},
 }

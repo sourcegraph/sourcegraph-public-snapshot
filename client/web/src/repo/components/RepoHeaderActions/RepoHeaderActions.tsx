@@ -2,7 +2,16 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ButtonLink, ButtonLinkProps, Button, ForwardReferenceComponent, MenuButton } from '@sourcegraph/wildcard'
+import {
+    ButtonLink,
+    ButtonLinkProps,
+    ForwardReferenceComponent,
+    MenuButton,
+    MenuItem,
+    MenuLink,
+    MenuItemProps,
+    MenuLinkProps,
+} from '@sourcegraph/wildcard'
 
 import styles from './RepoHeaderActions.module.scss'
 
@@ -30,9 +39,9 @@ RepoHeaderActionButtonLink.displayName = 'RepoHeaderActionButtonLink'
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<
     React.PropsWithChildren<Pick<React.AriaAttributes, 'aria-label'>>
 > = ({ children, ...ariaAttributes }) => (
-    <Button as={MenuButton} className={classNames('btn-icon', styles.action)} {...ariaAttributes}>
+    <MenuButton className={styles.action} {...ariaAttributes}>
         {children}
-    </Button>
+    </MenuButton>
 )
 
 export type RepoHeaderActionAnchorProps = Omit<ButtonLinkProps, 'as' | 'href'> & {
@@ -57,3 +66,46 @@ export const RepoHeaderActionAnchor = React.forwardRef((props: RepoHeaderActionA
     )
 }) as ForwardReferenceComponent<typeof ButtonLink, RepoHeaderActionAnchorProps>
 RepoHeaderActionAnchor.displayName = 'RepoHeaderActionAnchor'
+
+type RepoHeaderActionMenuLinkProps = MenuLinkProps & {
+    /**
+     * to determine if this button is for file or not
+     */
+    file?: boolean
+    className?: string
+}
+
+export const RepoHeaderActionMenuLink = React.forwardRef((props: RepoHeaderActionMenuLinkProps, reference) => {
+    const { children, className, file, ...rest } = props
+
+    return (
+        <MenuLink className={classNames(file ? styles.fileAction : styles.action, className)} ref={reference} {...rest}>
+            {children}
+        </MenuLink>
+    )
+}) as ForwardReferenceComponent<'a', RepoHeaderActionMenuLinkProps>
+RepoHeaderActionMenuLink.displayName = 'RepoHeaderActionMenuLink'
+
+export type RepoHeaderActionMenuItemProps = MenuItemProps & {
+    /**
+     * to determine if this anchor is for file or not
+     */
+    file?: boolean
+    className?: string
+}
+
+export const RepoHeaderActionMenuItem = React.forwardRef((props: RepoHeaderActionMenuItemProps, reference) => {
+    const { children, className, file, onSelect, ...rest } = props
+
+    return (
+        <MenuItem
+            className={classNames(file ? styles.fileAction : styles.action, className)}
+            ref={reference}
+            onSelect={onSelect}
+            {...rest}
+        >
+            {children}
+        </MenuItem>
+    )
+}) as ForwardReferenceComponent<'div', RepoHeaderActionMenuItemProps>
+RepoHeaderActionMenuItem.displayName = 'RepoHeaderActionMenuItem'

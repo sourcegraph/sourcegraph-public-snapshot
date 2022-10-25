@@ -1,5 +1,7 @@
 // Scale icon size with heading size. 26px font size (h1) -> 22px icon size
-$path-icon-size: (22em / 26);
+:root {
+    --path-icon-size: calc(22em / 26);
+}
 
 .wrapper {
     display: inline-flex;
@@ -22,8 +24,8 @@ $path-icon-size: (22em / 26);
 
 .icon {
     margin-right: 0.5rem;
-    height: $path-icon-size;
-    width: $path-icon-size;
+    height: var(--path-icon-size);
+    width: var(--path-icon-size);
 }
 
 .text {

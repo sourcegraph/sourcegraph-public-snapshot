@@ -1,7 +1,7 @@
 # Kustomize
 
-> WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations. 
-> If you have yet to deploy Sourcegraph, it is highly recommended to us Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)). 
+> WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations.
+> If you have yet to deploy Sourcegraph, it is highly recommended to us Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
 
 Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template-free way to customize configuration with a simple configuration file.
 
@@ -29,7 +29,7 @@ See the [overlays guide](#overlays) to learn about the [overlays we provide](#pr
 
 ## Overlays
 
-An [*overlay*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) specifies customizations for a base directory of Kubernetes manifests, in this case the `base/` directory in the [reference repository](#reference-repository). 
+An [*overlay*](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/#bases-and-overlays) specifies customizations for a base directory of Kubernetes manifests, in this case the `base/` directory in the [reference repository](#reference-repository).
 
 Overlays can:
 
@@ -89,7 +89,7 @@ Overlays provided out-of-the-box are in the subdirectories of [`deploy-sourcegra
 This overlay adds a namespace declaration to all the manifests.
 
 1. Change the namespace by replacing `ns-sourcegraph` to the name of your choice everywhere within the
-[overlays/namespaced/](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/) directory. 
+[overlays/namespaced/](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/namespaced/) directory.
 
 1. Generate the overlay by running this command from the `root` directory:
 
@@ -118,7 +118,7 @@ This overlay adds a namespace declaration to all the manifests.
 
 #### Storageclass
 
-By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests. 
+By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests.
 
 You need to create the storageclass if it doesn't exist yet. See [these docs](./configure.md#configure-a-storage-class) for more instructions.
 
@@ -135,7 +135,7 @@ You need to create the storageclass if it doesn't exist yet. See [these docs](./
 kubectl apply --prune -l deploy=sourcegraph -f generated-cluster --recursive
 ```
 
-1. Ensure the persistent volumes have been created in the correct storage class by running the following command and inspecting the output: 
+1. Ensure the persistent volumes have been created in the correct storage class by running the following command and inspecting the output:
 
 ```shell script
 kubectl get pvc
@@ -184,7 +184,7 @@ If you are starting a fresh installation use the overlay `non-privileged-create-
 If you already are running a Sourcegraph instance using user `root` and want to convert to running with non-root user then
 you need to apply a migration step that will change the permissions of all persistent volumes so that the volumes can be
 used by the non-root user. This migration is provided as overlay `migrate-to-nonprivileged`. After the migration you can use
-overlay `non-privileged`. If you have previously deployed your cluster in a non-default namespace, be sure to edit the `kustomization.yaml` file in the overlays directly to ensure the files are generated with the correct namespace. 
+overlay `non-privileged`. If you have previously deployed your cluster in a non-default namespace, be sure to edit the `kustomization.yaml` file in the overlays directly to ensure the files are generated with the correct namespace.
 
 This kustomization injects initContainers in all pods with persistent volumes to transfer ownership of directories to specified non-root users. It is used for migrating existing installations to a non-privileged environment.
 

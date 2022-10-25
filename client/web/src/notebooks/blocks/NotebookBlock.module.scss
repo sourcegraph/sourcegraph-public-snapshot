@@ -11,6 +11,10 @@
     &:hover {
         border: 1px solid var(--border-color);
     }
+
+    :global(.is-read-only-notebook) &:hover {
+        border-color: transparent;
+    }
 }
 
 .selected {

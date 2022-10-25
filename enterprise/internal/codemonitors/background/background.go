@@ -23,9 +23,9 @@ func NewBackgroundJobs(logger log.Logger, db edb.EnterpriseDB) []goroutine.Backg
 	return []goroutine.BackgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, db, triggerMetrics),
-		newTriggerQueryResetter(ctx, codeMonitorsStore, triggerMetrics),
-		newActionRunner(ctx, codeMonitorsStore, actionMetrics),
-		newActionJobResetter(ctx, codeMonitorsStore, actionMetrics),
+		newTriggerQueryRunner(ctx, logger.Scoped("TriggerQueryRunner", ""), db, triggerMetrics),
+		newTriggerQueryResetter(ctx, logger.Scoped("TriggerQueryResetter", ""), codeMonitorsStore, triggerMetrics),
+		newActionRunner(ctx, logger.Scoped("ActionRunner", ""), codeMonitorsStore, actionMetrics),
+		newActionJobResetter(ctx, logger.Scoped("ActionJobResetter", ""), codeMonitorsStore, actionMetrics),
 	}
 }

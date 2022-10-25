@@ -28,6 +28,14 @@ type Definitions struct {
 	definitionsMap map[int]Definition
 }
 
+func NewDefinitions(migrationDefinitions []Definition) (*Definitions, error) {
+	if err := reorderDefinitions(migrationDefinitions); err != nil {
+		return nil, errors.Wrap(err, "reorderDefinitions")
+	}
+
+	return newDefinitions(migrationDefinitions), nil
+}
+
 func newDefinitions(migrationDefinitions []Definition) *Definitions {
 	definitionsMap := make(map[int]Definition, len(migrationDefinitions))
 	for _, migrationDefinition := range migrationDefinitions {
@@ -109,27 +117,33 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 // LeafDominator returns the unique migration definition that dominates the set
 // of leaf migrations. If no such migration exists, a false-valued flag is returned.
 //
+// Additional migration identifiers can be passed, which are added to the initial
+// set of leaf identifiers.
+//
 // Note that if there is a single leaf, this function returns that leaf. If there
 // exist multiple leaves, then this function returns the nearest common ancestor (nca)
 // of all leaves. This gives us a nice clean single-entry, single-exit graph prefix
 // that can be squashed into a single migration.
 //
-//              +-- ... --+           +-- [ leaf 1 ]
-//              |         |           |
-//    [ root ] -+         +- [ nca ] -+
-//              |         |           |
-//              +-- ... --+           +-- [ leaf 2 ]
-func (ds *Definitions) LeafDominator() (Definition, bool) {
+//	          +-- ... --+           +-- [ leaf 1 ]
+//	          |         |           |
+//	[ root ] -+         +- [ nca ] -+
+//	          |         |           |
+//	          +-- ... --+           +-- [ leaf 2 ]
+func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
 	leaves := ds.Leaves()
-	if len(leaves) == 0 {
+	if len(leaves) == 0 && len(extraIDs) == 0 {
 		return Definition{}, false
 	}
 
 	dominators := ds.dominators()
 
-	ids := make([][]int, 0, len(leaves))
+	ids := make([][]int, 0, len(leaves)+len(extraIDs))
 	for _, leaf := range leaves {
 		ids = append(ids, dominators[leaf.ID])
+	}
+	for _, id := range extraIDs {
+		ids = append(ids, dominators[id])
 	}
 
 	same := intersect(ids[0], ids[1:]...)

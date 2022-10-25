@@ -20,14 +20,14 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PlatformContextProps } from '../../platform/context'
-import { ExtensionsControllerProps } from '../controller'
+import { RequiredExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
 
 import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps
-    extends ExtensionsControllerProps,
+    extends RequiredExtensionsControllerProps,
         PlatformContextProps<'sideloadedExtensionURL' | 'settings'> {
     link: React.ComponentType<React.PropsWithChildren<{ id: string }>>
 }

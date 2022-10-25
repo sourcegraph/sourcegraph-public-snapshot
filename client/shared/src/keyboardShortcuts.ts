@@ -1,12 +1,9 @@
-import { Key, ModifierKey } from '@slimsag/react-shortcuts'
+import { Key, ModifierKey } from '@sourcegraph/shared/src/react-shortcuts'
 
 /**
  * An action and its associated keybindings.
  */
 export interface KeyboardShortcut {
-    /** A unique ID for this keybinding. */
-    id: string
-
     /** A descriptive title. */
     title: string
 
@@ -20,7 +17,7 @@ export interface KeyboardShortcut {
 /** A key sequence (that triggers a keyboard shortcut). */
 export interface Keybinding {
     /** Keys that must be held down. */
-    held?: ModifierKey[]
+    held?: (ModifierKey | 'Mod')[]
 
     /** Keys that must be pressed in order (when holding the `held` keys). */
     ordered: Key[]

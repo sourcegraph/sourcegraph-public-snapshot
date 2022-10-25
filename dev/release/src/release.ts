@@ -1,8 +1,9 @@
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
+import execa from 'execa'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -15,6 +16,7 @@ import {
     CreatedChangeset,
     createTag,
     ensureTrackingIssues,
+    closeTrackingIssue,
     releaseName,
     commentOnIssue,
     queryIssues,
@@ -23,15 +25,16 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
+import * as update from './update'
 import {
     cacheFolder,
     formatDate,
     timezoneLink,
-    hubSpotFeedbackFormStub,
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
     ensureSrcCliUpToDate,
+    getLatestTag,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -43,12 +46,14 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
+    | 'release:branch-cut'
     // release
     | 'release:status'
     | 'release:create-candidate'
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
+    | 'release:announce'
     | 'release:close'
     // util
     | 'util:clear-cache'
@@ -144,12 +149,20 @@ const steps: Step[] = [
                     ...calendarTime(config.releaseDate),
                 },
                 {
-                    title: `Deploy Sourcegraph ${name} to managed instances`,
+                    title: `Start deploying Sourcegraph ${name} to Cloud instances`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [config.teamEmail],
                     transparency: 'transparent',
                     ...calendarTime(config.oneWorkingDayAfterRelease),
+                },
+                {
+                    title: `All Cloud instances upgraded to Sourcegraph ${name}`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
+                    anyoneCanAddSelf: true,
+                    attendees: [config.teamEmail],
+                    transparency: 'transparent',
+                    ...calendarTime(config.oneWorkingWeekAfterRelease),
                 },
             ]
 
@@ -171,6 +184,7 @@ const steps: Step[] = [
             const {
                 releaseDate,
                 captainGitHubUsername,
+                oneWorkingWeekBeforeRelease,
                 threeWorkingDaysBeforeRelease,
                 oneWorkingDayAfterRelease,
                 captainSlackUsername,
@@ -185,6 +199,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDate: date,
+                oneWorkingWeekBeforeRelease: new Date(oneWorkingWeekBeforeRelease),
                 threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 dryRun: dryRun.trackingIssues || false,
@@ -224,7 +239,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
             const prMessage = `changelog: cut sourcegraph@${release.version}`
-            await createChangesets({
+            const pullRequest = await createChangesets({
                 requiredCommands: [],
                 changes: [
                     {
@@ -291,6 +306,34 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 ],
                 dryRun: config.dryRun.changesets,
             })
+            const changeLogPrUrl = pullRequest[0].pullRequestURL
+            console.log(
+                `\nPlease review the changelog PR at ${changeLogPrUrl}, and merge manually when checks have passed.`
+            )
+        },
+    },
+    {
+        id: 'release:branch-cut',
+        description: 'Create release branch',
+        run: async config => {
+            const { upcoming: release } = await releaseVersions(config)
+            const branch = `${release.major}.${release.minor}`
+            let message: string
+            // notify cs team on patch release cut
+            if (release.patch !== 0) {
+                message = `:mega: *${release.version}* branch has been cut cc: @cs`
+            } else {
+                message = `:mega: *${release.version}* branch has been cut.`
+            }
+            try {
+                // Create and push new release branch from changelog commit
+                await execa('git', ['branch', branch])
+                await execa('git', ['push', 'origin', branch])
+                await postMessage(message, config.slackAnnounceChannel)
+                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version} --wait\n`)
+            } catch (error) {
+                console.error('Failed to create release branch', error)
+            }
         },
     },
     {
@@ -304,7 +347,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             if (!trackingIssue) {
                 throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
-
+            const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
+            const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
+            const latestBuildMessage = `Latest release build: ${latestTag}. See the build status on <${latestBuildURL}|Buildkite>`
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
@@ -320,7 +365,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const message = `:mega: *${release.version} Release Status Update*
 
 * Tracking issue: ${trackingIssue.url}
-* ${blockingMessage}: ${blockingIssuesURL}`
+* ${blockingMessage}: ${blockingIssuesURL}
+* ${latestBuildMessage}`
             if (!config.dryRun.slack) {
                 await postMessage(message, config.slackAnnounceChannel)
             }
@@ -338,16 +384,21 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
-            await createTag(
-                await getAuthenticatedGitHubClient(),
-                {
-                    owner: 'sourcegraph',
-                    repo: 'sourcegraph',
-                    branch,
-                    tag,
-                },
-                config.dryRun.tags || false
-            )
+            try {
+                await createTag(
+                    await getAuthenticatedGitHubClient(),
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        branch,
+                        tag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
+            } catch (error) {
+                console.error(`Failed to create tag: ${tag}`, error)
+            }
         },
     },
     {
@@ -374,6 +425,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
+            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -421,13 +473,6 @@ cc @${config.captainGitHubUsername}
                 `${release.major}.${release.minor}`,
             ]
 
-            // we join with escaped newlines for the 'sed' command
-            const upgradeGuideEntry = [
-                `## ${previousVersion} -> ${nextVersion}`,
-                'TODO',
-                hubSpotFeedbackFormStub(previousVersion),
-            ].join('\\n\\n')
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -468,22 +513,29 @@ cc @${config.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
-                            // Add a stub to add upgrade guide entries
-                            notPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries on patch release"',
+                            // Cut udpate guides with entries from unreleased.
+                            (directory: string, updateDirectory = '/doc/admin/updates') => {
+                                updateDirectory = directory + updateDirectory
+                                for (const file of readdirSync(updateDirectory)) {
+                                    const fullPath = path.join(updateDirectory, file)
+                                    let updateContents = readFileSync(fullPath).toString()
+                                    if (notPatchRelease) {
+                                        const releaseHeader = `## v${previousVersion} ➔ v${nextVersion}`
+                                        const unreleasedHeader = '## Unreleased'
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
+                                    } else if (previousNotPatchRelease) {
+                                        updateContents = updateContents.replace(previousVersion, release.version)
+                                    } else {
+                                        updateContents = updateContents.replace(previous.version, release.version)
+                                    }
+                                    writeFileSync(fullPath, updateContents)
+                                }
+                            },
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
-                                if (notPatchRelease) {
-                                    items.push('Update the upgrade guides in `doc/admin/updates`')
-                                } else {
-                                    items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
-                                        'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
-                                    )
-                                }
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
@@ -528,9 +580,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [`tools/update-docker-tags.sh ${release.version}`],
                         ...prBodyAndDraftState([
-                            `Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR ${
-                                notPatchRelease ? '' : '(note: `pure-docker` release is optional for patch releases)'
-                            }`,
+                            'Follow the [release guide](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/RELEASING.md#releasing-pure-docker) to complete this PR',
                         ]),
                     },
                     {
@@ -665,8 +715,8 @@ Batch change: ${batchChangeURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:announce',
+        description: 'Announce a release as live',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -731,6 +781,15 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     console.log(`dryRun enabled, skipping GitHub comment to ${trackingIssue.url}: ${comment}`)
                 }
             }
+        },
+    },
+    {
+        id: 'release:close',
+        description: 'Close tracking issues for current release',
+        run: async config => {
+            const { previous: release } = await releaseVersions(config)
+            // close tracking issue
+            await closeTrackingIssue(release)
         },
     },
     {

@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -26,9 +25,13 @@ var (
 	_ ForkableChangesetSource = BitbucketCloudSource{}
 )
 
-func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketCloudConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
 
@@ -53,8 +56,8 @@ func NewBitbucketCloudSource(svc *types.ExternalService, cf *httpcli.Factory) (*
 
 // GitserverPushConfig returns an authenticated push config used for pushing
 // commits to the code host.
-func (s BitbucketCloudSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, store, repo, s.client.Authenticator())
+func (s BitbucketCloudSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.client.Authenticator())
 }
 
 // WithAuthenticator returns a copy of the original Source configured to use the
@@ -211,23 +214,23 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 // the given namespace, ensuring that the fork exists and is a fork of the
 // target repo.
 func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
-	upstreamRepo := targetRepo.Metadata.(*bitbucketcloud.Repo)
+	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
 	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, upstreamRepo.Slug); err == nil {
-		return s.createRemoteRepo(targetRepo, fork), nil
+	if fork, err := s.client.Repo(ctx, namespace, targetMeta.Slug); err == nil {
+		return s.copyRepoAsFork(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
-	fork, err := s.client.ForkRepository(ctx, upstreamRepo, bitbucketcloud.ForkInput{
+	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	return s.createRemoteRepo(targetRepo, fork), nil
+	return s.copyRepoAsFork(targetRepo, fork)
 }
 
 // GetUserFork returns a repo pointing to a fork of the given repo in the
@@ -241,14 +244,17 @@ func (s BitbucketCloudSource) GetUserFork(ctx context.Context, targetRepo *types
 	return s.GetNamespaceFork(ctx, targetRepo, user.Username)
 }
 
-func (BitbucketCloudSource) createRemoteRepo(targetRepo *types.Repo, fork *bitbucketcloud.Repo) *types.Repo {
-	// This needs to be good enough to get the right values out of
-	// bitbucketCloudCloneURL(), which only looks at the metadata, so we can
-	// just copy it in over the top of the targetRepo.
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+func (s BitbucketCloudSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
+	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
-	return &remoteRepo
+	// Now we make a copy of the target repo, but with its sources and metadata updated to
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.FullName, fork.FullName)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
+
+	return forkRepo, nil
 }
 
 func (s BitbucketCloudSource) annotatePullRequest(ctx context.Context, repo *bitbucketcloud.Repo, pr *bitbucketcloud.PullRequest) (*bbcs.AnnotatedPullRequest, error) {

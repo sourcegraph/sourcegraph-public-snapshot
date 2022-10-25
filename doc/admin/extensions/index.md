@@ -1,5 +1,7 @@
 # Administration of Sourcegraph extensions and the extension registry
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../extensions/deprecation.md).
+
 [Sourcegraph extensions](../../extensions/index.md) add features to Sourcegraph. Sourcegraph Free and Enterprise instances allow users to view and enable extensions from the [Sourcegraph.com extension registry](https://sourcegraph.com/extensions).
 
 Site administrators can customize how Sourcegraph extensions are used on their instance, with options for:
@@ -68,7 +70,7 @@ Note: When enabling this setting, desired extensions and languages need to be sp
   "extensions": { "allowRemoteExtensions": ["chris/token-highlights"] }
 }
 ```
-You will also need to manually enable language extensions for Code Intelligence to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
+You will also need to manually enable language extensions for code navigation to work properly by adding them to `"DefaultSettings"` in your site configuration. List of languages can be found here: [Sourcegraph default language settings](
 https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/graphqlbackend/default_settings.go#L14-51).
 
 ## Allow only extensions authored by Sourcegraph

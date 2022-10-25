@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { SearchContextInputProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -22,8 +21,11 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
+import { exampleTripsAndTricks } from './LoggedOutHomepage.constants'
+import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './SearchPage.module.scss'
 
@@ -32,12 +34,9 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<
-            'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'
-        >,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
         SearchContextInputProps,
         HomePanelsProps,
         CodeInsightsProps {
@@ -59,6 +58,11 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
 
+    /** The value entered by the user in the query input */
+    const [queryState, setQueryState] = useState<QueryState>({
+        query: '',
+    })
+
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -67,12 +71,8 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
             )}
-            <div
-                className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
-                })}
-            >
-                <SearchPageInput {...props} source="home" />
+            <div className={styles.searchContainer}>
+                <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div
                 className={classNames(styles.panelsContainer, {
@@ -80,9 +80,30 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
+                {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
+                    <TipsAndTricks
+                        title="Tips and Tricks"
+                        examples={exampleTripsAndTricks}
+                        moreLink={{
+                            label: 'More search features',
+                            href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                            trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
+                        }}
+                        {...props}
+                    />
+                )}
 
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
+                )}
+
+                {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
+                    <QueryExamplesHomepage
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
+                        telemetryService={props.telemetryService}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
+                    />
                 )}
             </div>
 

@@ -2,7 +2,6 @@ import '../platform/polyfills'
 
 import React, { useMemo } from 'react'
 
-import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react'
 import * as Comlink from 'comlink'
 import { createRoot } from 'react-dom/client'
@@ -10,14 +9,8 @@ import { MemoryRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import {
-    AnchorLink,
-    setLinkComponent,
-    useObservable,
-    WildcardThemeContext,
-    // This is the root Tooltip usage
-    DeprecatedTooltip,
-} from '@sourcegraph/wildcard'
+import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
+import { AnchorLink, setLinkComponent, useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 import { createEndpointsForWebToNode } from '../comlink/webviewEndpoint'
@@ -128,7 +121,6 @@ root.render(
                     <Main />
                 </CompatRouter>
             </MemoryRouter>
-            <DeprecatedTooltip key={1} className="sourcegraph-tooltip" />
         </WildcardThemeContext.Provider>
     </ShortcutProvider>
 )

@@ -3,6 +3,8 @@ import escapeRegExp from 'lodash/escapeRegExp'
 import { defer } from 'rxjs'
 import { retry } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { InsightContentType } from '../../../../types/insight/common'
 import { GetSearchInsightContentInput, InsightSeriesContent } from '../../../code-insights-backend-types'
 
@@ -142,7 +144,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
 
         const firstCommit = search.results.results[0]
         if (search.results.results.length === 0 || firstCommit?.__typename !== 'CommitSearchResult') {
-            console.warn(`No result for ${commitQueries[index_]}`)
+            logger.warn(`No result for ${commitQueries[index_]}`)
 
             return { commit: null, date }
         }

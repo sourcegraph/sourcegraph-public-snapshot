@@ -1,3 +1,4 @@
+import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
@@ -154,6 +155,10 @@ export interface EditorAPI {
      */
     replace: (input: string, method?: 'type' | 'paste') => Promise<void>
     /**
+     * Append the provided input to the editor's content
+     */
+    append: (input: string, method?: 'type' | 'paste') => Promise<void>
+    /**
      * Triggers application of the specified suggestion.
      */
     selectSuggestion: (label: string) => Promise<void>
@@ -190,6 +195,10 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     selectMethod: 'keyboard',
                 })
             },
+            async append(newText: string, method = 'type') {
+                await api.focus()
+                return driver.enterText(method, newText)
+            },
             async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
                 if (suggestion !== undefined) {
@@ -211,7 +220,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         return api
     },
     codemirror6: (driver: Driver, rootSelector: string) => {
-        const inputSelector = `${rootSelector} .cm-content`
         // Selector to use to wait for the editor to be complete loaded
         const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
@@ -227,10 +235,27 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await driver.page.click(rootSelector)
             },
             getValue() {
-                return driver.page.evaluate(
-                    (inputSelector: string) => document.querySelector<HTMLDivElement>(inputSelector)?.textContent,
-                    inputSelector
-                )
+                return driver.page.evaluate((selector: string) => {
+                    // Typecast "as any" is used to avoid TypeScript complaining
+                    // about window not having this property. We decided that
+                    // it's fine to use this in a test context
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                    const fromDOM = (window as any).CodeMirrorFindFromDOM as
+                        | typeof EditorView['findFromDOM']
+                        | undefined
+                    if (!fromDOM) {
+                        throw new Error(
+                            'CodeMirror DOM API not exposed. Ensure the web app is built with INTEGRATION_TESTS=true.'
+                        )
+                    }
+                    const editorElement = document.querySelector<HTMLElement>(selector)
+                    if (editorElement) {
+                        // Returns an EditorView
+                        // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
+                        return fromDOM(editorElement)?.state.sliceDoc()
+                    }
+                    return undefined
+                }, rootSelector)
             },
             replace(newText: string, method = 'type') {
                 return driver.replaceText({
@@ -239,6 +264,10 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     enterTextMethod: method,
                     selectMethod: 'selectall',
                 })
+            },
+            async append(newText: string, method = 'type') {
+                await api.focus()
+                return driver.enterText(method, newText)
             },
             async waitForSuggestion(suggestion?: string) {
                 await driver.page.waitForSelector(completionSelector)
@@ -283,7 +312,10 @@ export function enableEditor(editor: Editor): Partial<Settings> {
  * It also waits for the editor to be ready
  */
 export const createEditorAPI = async (driver: Driver, rootSelector: string): Promise<EditorAPI> => {
-    await driver.page.waitForSelector(rootSelector)
+    // We append `.test-editor` to make sure to wait for the actual editor
+    // component to load and not e.g. target the placeholder input used by
+    // LazyMonacoSearchQueryInput
+    await driver.page.waitForSelector(`${rootSelector}.test-editor`)
     const editor = await driver.page.evaluate<(selector: string) => string | undefined>(
         selector => (document.querySelector(selector) as HTMLElement).dataset.editor,
         rootSelector
@@ -292,6 +324,8 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         case 'monaco':
         case 'codemirror6':
             break
+        case undefined:
+            throw new Error("Can't determine editor, data-editor=... is not set.")
         default:
             throw new Error(`${editor} is not a supported editor`)
     }

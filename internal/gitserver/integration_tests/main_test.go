@@ -30,7 +30,8 @@ var root string
 
 // This is a default gitserver test client currently used for RequestRepoUpdate
 // gitserver calls during invocation of MakeGitRepository function
-var testGitserverClient *gitserver.ClientImplementor
+var testGitserverClient gitserver.Client
+var gitserverAddresses []string
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -63,6 +64,10 @@ func init() {
 		log.Fatal(err)
 	}
 
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
+
 	srv := &http.Server{
 		Handler: (&server.Server{
 			Logger:   sglog.Scoped("server", "the gitserver service"),
@@ -74,6 +79,7 @@ func init() {
 				return &server.GitRepoSyncer{}, nil
 			},
 			GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
+			DB:                      db,
 		}).Handler(),
 	}
 	go func() {
@@ -83,10 +89,8 @@ func init() {
 	}()
 
 	serverAddress := l.Addr().String()
-	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, database.NewMockDB(), []string{serverAddress})
-	gitserver.AddrsMock = func() []string {
-		return []string{serverAddress}
-	}
+	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, db, []string{serverAddress})
+	gitserverAddresses = []string{serverAddress}
 }
 
 var Times = []string{
@@ -135,14 +139,6 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 		t.Fatal(resp.Error)
 	}
 	return repo
-}
-
-func MustParseTime(layout, value string) time.Time {
-	tm, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err.Error())
-	}
-	return tm
 }
 
 func AppleTime(t string) string {

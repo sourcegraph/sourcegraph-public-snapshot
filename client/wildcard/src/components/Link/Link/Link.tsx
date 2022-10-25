@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import { ForwardReferenceExoticComponent } from '../../../types'
 
 export interface LinkProps
     extends Pick<

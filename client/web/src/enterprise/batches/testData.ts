@@ -1,15 +1,17 @@
 import { subSeconds } from 'date-fns'
 
-import { BatchSpecListFields, BatchSpecState } from '../../graphql-operations'
+import { BatchSpecListFields, BatchSpecSource, BatchSpecState } from '../../graphql-operations'
 
 const COMMON_NODE_FIELDS = {
     __typename: 'BatchSpec',
     createdAt: subSeconds(new Date(), 30).toISOString(),
+    startedAt: subSeconds(new Date(), 25).toISOString(),
     finishedAt: new Date().toISOString(),
     originalInput: 'name: super-cool-spec',
     description: {
         name: 'super-cool-spec',
     },
+    source: BatchSpecSource.LOCAL,
     namespace: {
         url: '/users/courier-new',
         namespaceName: 'courier-new',

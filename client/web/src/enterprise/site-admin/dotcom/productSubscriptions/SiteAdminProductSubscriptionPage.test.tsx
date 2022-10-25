@@ -24,10 +24,8 @@ describe('SiteAdminProductSubscriptionPage', () => {
                 _queryProductSubscription={() =>
                     of<GQL.IProductSubscription>({
                         __typename: 'ProductSubscription',
-                        events: [] as GQL.IProductSubscription['events'],
                         createdAt: '2020-01-01',
                         url: '/s',
-                        urlForSiteAdminBilling: null,
                     } as GQL.IProductSubscription)
                 }
                 _queryProductLicenses={() =>

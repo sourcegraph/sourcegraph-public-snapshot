@@ -1,19 +1,20 @@
 import { applyEdits, JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { ExternalServiceKind } from '../graphql-operations'
+
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Code intelligence regression test suite', () => {
+describe('Code graph regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
     const config = getConfig(
         'gitHubToken',
@@ -29,12 +30,12 @@ describe('Code intelligence regression test suite', () => {
         'testUserPassword'
     )
     const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+        kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',
@@ -53,7 +54,7 @@ describe('Code intelligence regression test suite', () => {
         outerResourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,
@@ -99,7 +100,7 @@ describe('Code intelligence regression test suite', () => {
         }
     })
 
-    describe('Basic code intelligence regression test suite', () => {
+    describe('Basic code graph regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
         before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))
@@ -110,7 +111,8 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('File sidebar, multiple levels of directories', async () => {
+        // Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/39000
+        test.skip('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'

@@ -70,8 +70,8 @@ export const SearchPageFooter: React.FunctionComponent<
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }
 
-    const logDevelopmentToolTimeClicked = (): void => {
-        telemetryService.log('HomepageDevToolTimeClicked')
+    const logDiscordClicked = (): void => {
+        telemetryService.log('HomepageDiscordClicked')
     }
 
     return isSourcegraphDotCom ? (
@@ -101,18 +101,14 @@ export const SearchPageFooter: React.FunctionComponent<
                 ))}
                 <li>
                     <Link
-                        to="https://info.sourcegraph.com/dev-tool-time"
-                        className={styles.devToolTimeWrapper}
-                        onClick={logDevelopmentToolTimeClicked}
+                        to="https://srcgr.ph/discord-server"
+                        className={styles.discordWrapper}
+                        onClick={logDiscordClicked}
                     >
-                        <img
-                            src={`${assetsRoot}/img/devtooltime-logo.svg`}
-                            alt=""
-                            className={styles.devToolTimeImage}
-                        />
-                        <div className={styles.devToolTimeText}>
-                            <H2 className={styles.linkSectionHeading}>Dev tool time</H2>
-                            <div>The show where developers talk about dev tools, productivity hacks, and more.</div>
+                        <img src={`${assetsRoot}/img/discord-footer-logo.svg`} alt="" className={styles.discordImage} />
+                        <div className={styles.discordText}>
+                            <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
+                            <div>If you need help or want to share something with the community, join us!</div>
                         </div>
                     </Link>
                 </li>
@@ -134,15 +130,19 @@ export const SearchPageFooter: React.FunctionComponent<
                     >
                         Browser extensions
                     </Link>
-                    <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
-                        className="px-3"
-                        to="/extensions"
-                        target="_blank"
-                        onClick={() => logLinkClicked('SourcegraphExtensions')}
-                    >
-                        Sourcegraph extensions
-                    </Link>
+                    {window.context.enableLegacyExtensions ? (
+                        <>
+                            <span aria-hidden="true" className="border-right d-none d-md-inline" />
+                            <Link
+                                className="px-3"
+                                to="/extensions"
+                                target="_blank"
+                                onClick={() => logLinkClicked('SourcegraphExtensions')}
+                            >
+                                Sourcegraph extensions
+                            </Link>
+                        </>
+                    ) : null}
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
                 </span>
                 <span className="d-flex flex-row">

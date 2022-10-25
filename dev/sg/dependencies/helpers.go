@@ -2,7 +2,9 @@ package dependencies
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/user"
@@ -83,36 +85,6 @@ func pathExists(path string) (bool, error) {
 	return false, err
 }
 
-func checkInMainRepoOrRepoInDirectory(context.Context) error {
-	_, err := root.RepositoryRoot()
-	if err != nil {
-		ok, err := pathExists("sourcegraph")
-		if !ok || err != nil {
-			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
-		}
-		return nil
-	}
-	return nil
-}
-
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
-	ok, err := pathExists("dev-private")
-	if ok && err == nil {
-		return nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrap(err, "failed to check for dev-private repository")
-	}
-
-	p := filepath.Join(wd, "..", "dev-private")
-	ok, err = pathExists(p)
-	if ok && err == nil {
-		return nil
-	}
-	return errors.New("could not find dev-private repository either in current directory or one above")
-}
-
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
 // of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {
@@ -191,7 +163,12 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	config, _ := sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	var config *sgconf.Config
+	if args.DisableOverwrite {
+		config, _ = sgconf.GetWithoutOverwrites(args.ConfigFile)
+	} else {
+		config, _ = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	}
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
@@ -266,6 +243,28 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 	}
 }
 
+func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		lines, err := usershell.Command(ctx, "src version").StdOut().Run().Lines()
+		if err != nil {
+			return errors.Wrapf(err, "failed to run 'src version'")
+		}
+
+		if len(lines) < 2 {
+			return errors.Newf("unexpected output from src: %s", strings.Join(lines, "\n"))
+		}
+		out := lines[0]
+
+		elems := strings.Split(out, " ")
+		if len(elems) != 3 {
+			return errors.Newf("unexpected output from src: %s", out)
+		}
+
+		trimmed := strings.TrimSpace(elems[2])
+		return check.Version("src", trimmed, versionConstraint)
+	}
+}
+
 func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
 	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
 	if err != nil {
@@ -282,6 +281,44 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	if version == "" {
 		return "", errors.Newf("tool %q not found in .tool-versions", tool)
 	}
+	return fmt.Sprintf("~> %s", version), nil
+}
+
+func getPackageManagerConstraint(ctx context.Context, tool string) (string, error) {
+	repoRoot, err := root.RepositoryRoot()
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to determine repository root location")
+	}
+
+	jsonFile, err := os.Open(filepath.Join(repoRoot, "package.json"))
+	if err != nil {
+		return "", errors.Wrap(err, "Open package.json")
+	}
+	defer jsonFile.Close()
+
+	jsonData, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		return "", errors.Wrap(err, "Read package.json")
+	}
+
+	data := struct {
+		PackageManager string `json:"packageManager"`
+	}{}
+
+	if err := json.Unmarshal(jsonData, &data); err != nil {
+		return "", errors.Wrap(err, "Unmarshal package.json")
+	}
+
+	var version string
+	parts := strings.Split(data.PackageManager, "@")
+	if parts[0] == tool {
+		version = parts[1]
+	}
+
+	if version == "" {
+		return "", errors.Newf("yarn version is not found in package.json")
+	}
+
 	return fmt.Sprintf("~> %s", version), nil
 }
 
@@ -313,7 +350,7 @@ func checkYarnVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return err
 	}
 
-	constraint, err := getToolVersionConstraint(ctx, "yarn")
+	constraint, err := getPackageManagerConstraint(ctx, "yarn")
 	if err != nil {
 		return err
 	}
@@ -351,7 +388,7 @@ func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("yarn", trimmed, constraint)
+	return check.Version("nodejs", trimmed, constraint)
 }
 
 func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
@@ -375,13 +412,6 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	return check.Version("cargo", parts[1], constraint)
-}
-
-// check1password defines the 1password dependency check which is uniform across platforms.
-func check1password() check.CheckFunc {
-	return check.Combine(
-		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
-		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"))
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {

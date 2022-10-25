@@ -36,6 +36,7 @@ import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { RegistryExtensionFields } from '../../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 const publishExtension = (
@@ -63,7 +64,7 @@ const publishExtension = (
 
 interface Props extends ThemeProps, TelemetryProps {
     /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<RegistryExtensionFields>
 
     authenticatedUser: AuthenticatedUser
     history: H.History

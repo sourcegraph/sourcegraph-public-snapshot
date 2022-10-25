@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -40,9 +39,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstBatchSpecWorkspaceExecutionJob(rows, err)
-	},
+	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
@@ -54,15 +51,9 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	ViewName: "batch_spec_workspace_execution_jobs_with_rank batch_spec_workspace_execution_jobs",
 }
 
-type BatchSpecWorkspaceExecutionWorkerStore interface {
-	dbworkerstore.Store
-
-	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
-}
-
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) BatchSpecWorkspaceExecutionWorkerStore {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
@@ -82,27 +73,6 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 	logger log.Logger
 
 	observationContext *observation.Context
-}
-
-func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
-
-	t := true
-	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-		Cancel:         &t,
-		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		WorkerHostname: executorName,
-		ExcludeRank:    true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]int, 0, len(cs))
-	for _, c := range cs {
-		ids = append(ids, c.RecordID())
-	}
-	return ids, nil
 }
 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
@@ -135,16 +105,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	events, err := logEventsFromLogEntries(job.ExecutionLogs)
-	if err != nil {
-		return false, err
-	}
-
-	stepResults, err := extractCacheEntries(events)
-	if err != nil {
-		return false, err
-	}
-
 	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return false, err
@@ -155,6 +115,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
+	events := logEventsFromLogEntries(job.ExecutionLogs)
+	stepResults, err := extractCacheEntries(events)
+	if err != nil {
+		return false, err
+	}
 	if err := storeCacheResults(ctx, tx, stepResults, spec.UserID); err != nil {
 		return false, err
 	}
@@ -214,11 +179,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, errors.Wrap(err, "loading batch spec")
 	}
 
-	events, err := logEventsFromLogEntries(job.ExecutionLogs)
-	if err != nil {
-		return false, errors.Wrap(err, "logEventsFromLogEntries")
-	}
-
 	// Impersonate as the user to ensure the repo is still accessible by them.
 	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
 	repo, err := tx.Repos().Get(ctx, workspace.RepoID)
@@ -226,6 +186,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, errors.Wrap(err, "failed to validate repo access")
 	}
 
+	events := logEventsFromLogEntries(job.ExecutionLogs)
 	stepResults, err := extractCacheEntries(events)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to extract cache entries")
@@ -272,7 +233,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			return false, errors.Wrap(err, "failed to build db changeset specs")
 		}
 		changesetSpec.BatchSpecID = batchSpec.ID
-		changesetSpec.RepoID = repo.ID
+		changesetSpec.BaseRepoID = repo.ID
 		changesetSpec.UserID = batchSpec.UserID
 
 		specs = append(specs, changesetSpec)
@@ -325,7 +286,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 }
 
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
 UPDATE
 	batch_spec_workspaces
 SET
@@ -369,11 +329,9 @@ func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batches
 	return cacheEntries, nil
 }
 
-var ErrNoSrcCLILogEntry = errors.New("no src-cli log entry found in execution logs")
-
-func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) ([]*batcheslib.LogEvent, error) {
+func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.LogEvent {
 	if len(logs) < 1 {
-		return nil, errors.Newf("job has no execution logs")
+		return nil
 	}
 
 	var (
@@ -382,15 +340,15 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) ([]*batcheslib
 	)
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" {
+		if e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
 			entry = e
 			found = true
 			break
 		}
 	}
 	if !found {
-		return nil, ErrNoSrcCLILogEntry
+		return nil
 	}
 
-	return btypes.ParseJSONLogsFromOutput(entry.Out), nil
+	return btypes.ParseJSONLogsFromOutput(entry.Out)
 }

@@ -18,7 +18,13 @@ type VCSSyncer interface {
 	// CloneCommand returns the command to be executed for cloning from remote.
 	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// Fetch tries to fetch updates from the remote to given directory.
-	Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error
+	// The revspec parameter is optional and specifies that the client is specifically
+	// interested in fetching the provided revspec (example "v2.3.4^0").
+	// For package hosts (vcsPackagesSyncer, npm/pypi/crates.io), the revspec is used
+	// to lazily fetch package versions. More details at
+	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
+	// Beware that the revspec parameter can be any random user-provided string.
+	Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) error
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }

@@ -1,18 +1,22 @@
 package dbconn
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/qustavo/sqlhooks/v2"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,6 +36,16 @@ var defaultMaxOpen = func() int {
 	v, err := strconv.Atoi(str)
 	if err != nil {
 		log.Fatalln("SRC_PGSQL_MAX_OPEN:", err)
+	}
+	return v
+}()
+
+var defaultMaxIdle = func() int {
+	// For now, use the old default of max_idle == max_open
+	str := env.Get("SRC_PGSQL_MAX_IDLE", "30", "Maximum number of idle connections to Postgres")
+	v, err := strconv.Atoi(str)
+	if err != nil {
+		log.Fatalln("SRC_PGSQL_MAX_IDLE:", err)
 	}
 	return v
 }()
@@ -69,19 +83,135 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	}
 }
 
+// extendedDriver wraps sqlHooks' driver to provide a conn that implements Ping, ResetSession
+// and CheckNamedValue, which is mandatory as otelsql is instrumenting these methods.
+// For all mandatory methods the sqlHooks driver is used. For the optional methods namely Ping, ResetSession and CheckNamedValue
+// (which the sqlHooks driver does not implement), extendedConn goes to the original default driver.
+//
+//	                            Ping()
+//	                            ResetSession()
+//	                            CheckNamedValue()
+//	                   ┌──────────────────────────────┐
+//	                   │                              │
+//	                   │                              │
+//	                   │                              │
+//	┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
+//	│       │   │            │   │        │     │             │
+//	│otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
+//	│       │   │            │   │        │     │             │
+//	└─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
+//	  │           │                │              │
+//	  │           │                │              │Implements all SQL driver methods
+//	  │           │                │
+//	  │           │                │Only implements mandatory ones
+//	  │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
+//	  │           │
+//	  │           │Implement all SQL driver methods
+//	  │
+//	  │Expects all SQL driver methods
+//
+// A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
+type extendedDriver struct {
+	driver.Driver
+}
+
+// extendedConn wraps sqlHooks' conn that does implement Ping, ResetSession and
+// CheckNamedValue into one that does, by accessing the underlying conn from the
+// original driver that does implement these methods.
+type extendedConn struct {
+	driver.Conn
+	driver.ConnPrepareContext
+	driver.ConnBeginTx
+
+	execerContext  driver.ExecerContext
+	queryerContext driver.QueryerContext
+}
+
+var _ driver.Pinger = &extendedConn{}
+var _ driver.SessionResetter = &extendedConn{}
+var _ driver.NamedValueChecker = &extendedConn{}
+
+// Open returns a conn wrapped through extendedConn, implementing the
+// Ping, ResetSession and CheckNamedValue optional methods that the
+// otelsql.Conn expects to be implemented.
+func (d *extendedDriver) Open(str string) (driver.Conn, error) {
+	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
+		return nil, errors.New("sql driver is not a sqlhooks.Driver")
+	}
+	c, err := d.Driver.Open(str)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure we're not casting things blindly.
+	if _, ok := c.(any).(driver.ExecerContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ExecerContext")
+	}
+	if _, ok := c.(any).(driver.QueryerContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.QueryerContext")
+	}
+	if _, ok := c.(any).(driver.Conn); !ok {
+		return nil, errors.New("sql conn doen't implement driver.Conn")
+	}
+	if _, ok := c.(any).(driver.ConnPrepareContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ConnPrepareContext")
+	}
+	if _, ok := c.(any).(driver.ConnBeginTx); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ConnBeginTx")
+	}
+
+	// Build the extended connection.
+	return &extendedConn{
+		Conn:               c.(any).(driver.Conn),
+		ConnPrepareContext: c.(any).(driver.ConnPrepareContext),
+		ConnBeginTx:        c.(any).(driver.ConnBeginTx),
+		execerContext:      c.(any).(driver.ExecerContext),
+		queryerContext:     c.(any).(driver.QueryerContext),
+	}, nil
+}
+
+// Access the underlying connection, so we can forward the methods that
+// sqlhooks does not implement on its own.
+func (n *extendedConn) rawConn() driver.Conn {
+	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
+	return c.Conn.Conn
+}
+
+func (n *extendedConn) Ping(ctx context.Context) error {
+	return n.rawConn().(driver.Pinger).Ping(ctx)
+}
+
+func (n *extendedConn) ResetSession(ctx context.Context) error {
+	return n.rawConn().(driver.SessionResetter).ResetSession(ctx)
+}
+
+func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
+	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+}
+
+func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.execerContext.ExecContext(ctx, query, args)
+}
+
+func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.queryerContext.QueryContext(ctx, query, args)
+}
+
 func registerPostgresProxy() {
 	m := promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_pgsql_request_total",
 		Help: "Total number of SQL requests to the database.",
 	}, []string{"type"})
 
-	sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
+	dri := sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
 		&metricHooks{
 			metricSQLSuccessTotal: m.WithLabelValues("success"),
 			metricSQLErrorTotal:   m.WithLabelValues("error"),
 		},
-		&tracingHooks{},
-	)))
+	))
+	sql.Register("postgres-proxy", &extendedDriver{dri})
 }
 
 var registerOnce sync.Once
@@ -89,7 +219,22 @@ var registerOnce sync.Once
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
 
-	db, err := sql.Open("postgres-proxy", stdlib.RegisterConnConfig(cfg))
+	db, err := otelsql.Open(
+		"postgres-proxy",
+		stdlib.RegisterConnConfig(cfg),
+		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+		otelsql.WithSQLCommenter(true),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			OmitConnResetSession: true,
+			ArgumentOptions: otelsql.ArgumentOptions{
+				EnableAttributes: true,
+				Skip: func(ctx context.Context, query string, args []any) bool {
+					// Do not decorate span with args as attributes if that's a bulk insertion
+					// or if we have too many args (it's unreadable anyway).
+					return isBulkInsertion(ctx) || len(args) > 24
+				}},
+		}),
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
 	}
@@ -101,7 +246,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	}
 
 	db.SetMaxOpenConns(maxOpen)
-	db.SetMaxIdleConns(maxOpen)
+	db.SetMaxIdleConns(defaultMaxIdle)
 	db.SetConnMaxIdleTime(time.Minute)
 
 	return db, nil

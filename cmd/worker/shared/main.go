@@ -10,17 +10,16 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
+	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -28,8 +27,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -37,16 +36,17 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
-	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
+func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
+	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
-		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
-		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+		"codeintel-crates-syncer":               codeintel.NewCratesSyncerJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
+		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
+		"repo-statistics-compactor":             repostatistics.NewCompactor(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -65,7 +65,6 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	conf.Init()
 	logging.Init()
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	if err := keyring.Init(context.Background()); err != nil {
@@ -269,18 +268,4 @@ func jobNames(jobs map[string]job.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-func composeRegisterMigrations(fns ...func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-		for _, fn := range fns {
-			if fn != nil {
-				if err := fn(db, outOfBandMigrationRunner); err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
-	}
 }

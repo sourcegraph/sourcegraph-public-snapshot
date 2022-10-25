@@ -23,7 +23,7 @@ type lineRange struct {
 	EndLineCharacter   int
 }
 
-func findLineRangeInQueryParameters(queryParameters map[string][]string) *lineRange {
+func FindLineRangeInQueryParameters(queryParameters map[string][]string) *lineRange {
 	for key := range queryParameters {
 		if lineRange := getLineRange(key); lineRange != nil {
 			return lineRange
@@ -63,7 +63,7 @@ func formatCharacter(character int) string {
 	return fmt.Sprintf(":%d", character)
 }
 
-func formatLineRange(lineRange *lineRange) string {
+func FormatLineRange(lineRange *lineRange) string {
 	if lineRange == nil {
 		return ""
 	}
@@ -79,7 +79,7 @@ func formatLineRange(lineRange *lineRange) string {
 
 func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange) string {
 	blobPreviewImageURL := previewServiceURL + blobURLPath
-	formattedLineRange := formatLineRange(lineRange)
+	formattedLineRange := FormatLineRange(lineRange)
 
 	queryValues := url.Values{}
 	if formattedLineRange != "" {
@@ -95,7 +95,7 @@ func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRa
 }
 
 func getBlobPreviewTitle(blobFilePath string, lineRange *lineRange, symbolResult *result.Symbol) string {
-	formattedLineRange := formatLineRange(lineRange)
+	formattedLineRange := FormatLineRange(lineRange)
 	formattedBlob := path.Base(blobFilePath)
 	if formattedLineRange != "" {
 		formattedBlob += "?" + formattedLineRange

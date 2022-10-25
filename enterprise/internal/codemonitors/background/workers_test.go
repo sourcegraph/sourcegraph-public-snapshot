@@ -46,7 +46,7 @@ func TestActionRunner(t *testing.T) {
 
 			// Mocks.
 			got := TemplateDataNewSearchResults{}
-			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
+			MockSendEmailForNewSearchResult = func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error {
 				got = *data
 				return nil
 			}

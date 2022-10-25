@@ -33,43 +33,6 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
     >
       Subscription 
     </h2>
-    <div
-      class="card mt-3"
-    >
-      <div
-        class="cardHeader"
-      >
-        Billing
-      </div>
-      <div
-        class="cardBody"
-      >
-        <span
-          class="text-muted "
-        >
-          No billing information is associated with this subscription. 
-          <a
-            class="anchorLink"
-            href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
-          >
-            Contact sales
-          </a>
-           for help.
-        </span>
-      </div>
-    </div>
-    <div
-      class="card mt-3"
-    >
-      <div
-        class="cardHeader"
-      >
-        History
-      </div>
-      <productsubscriptionhistory
-        productsubscription="[object Object]"
-      />
-    </div>
   </div>
 </DocumentFragment>
 `;

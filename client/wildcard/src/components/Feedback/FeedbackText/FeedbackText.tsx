@@ -1,6 +1,7 @@
 import * as React from 'react'
 
-import { Link, Text } from '@sourcegraph/wildcard'
+import { Link } from '../../Link'
+import { Text } from '../../Typography'
 
 interface FeedbackTextProps {
     /**

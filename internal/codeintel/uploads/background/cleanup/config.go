@@ -26,7 +26,7 @@ func (c *config) Load() {
 	commitResolverMaximumCommitLagName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG", "PRECISE_CODE_INTEL_COMMIT_RESOLVER_MAXIMUM_COMMIT_LAG")
 	uploadTimeoutName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_UPLOAD_TIMEOUT", "PRECISE_CODE_INTEL_UPLOAD_TIMEOUT")
 
-	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_INTERVAL", "1m", "How frequently to run the updater janitor routine.")
+	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_CLEANUP_INTERVAL", "1m", "How frequently to run the updater janitor routine.")
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
 	c.AuditLogMaxAge = c.GetInterval(auditLogMaxAgeName, "720h", "The maximum time a code intel audit log record can remain on the database.")

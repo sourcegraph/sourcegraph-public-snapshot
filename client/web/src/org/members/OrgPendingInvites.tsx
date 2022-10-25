@@ -18,8 +18,8 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
     Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -33,7 +33,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { UserAvatar } from '../../user/UserAvatar'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { ORG_PENDING_INVITES_QUERY, ORG_RESEND_INVITATION_MUTATION, ORG_REVOKE_INVITATION_MUTATION } from './gqlQueries'
 import { IModalInviteResult, InvitedNotification, InviteMemberModalHandler } from './InviteMemberModal'
@@ -48,7 +48,7 @@ import {
 
 import styles from './OrgPendingInvites.module.scss'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
+interface Props extends Pick<OrgAreaRouteContext, 'org' | 'authenticatedUser' | 'isSourcegraphDotCom'> {
     onOrgGetStartedRefresh: () => void
 }
 interface OrganizationInvitation {
@@ -389,7 +389,6 @@ export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChild
                                     onInviteSent={onInviteSent}
                                     eventLoggerEventName="InviteMemberCTAClicked"
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     variant="link"
                                 />
                                 {` to join you on ${org.name} on Sourcegraph`}

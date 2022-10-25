@@ -9,7 +9,7 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -50,7 +50,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         deleteSavedSearch(search.id).pipe(
                             mapTo(undefined),
                             catchError(error => {
-                                console.error(error)
+                                logger.error(error)
                                 return []
                             })
                         )

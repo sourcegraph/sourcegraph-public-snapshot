@@ -8,15 +8,40 @@ import { BlockDirection, BlockProps } from '..'
 import { Notebook } from '.'
 
 interface UseNotebookEventHandlersProps
-    extends Pick<BlockProps, 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
+    extends Pick<BlockProps, 'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
     notebook: Notebook
     selectedBlockId: string | null
     commandPaletteInputReference: React.RefObject<HTMLInputElement>
-    setSelectedBlockId: (blockId: string | null) => void
+    selectBlock: (blockId: string | null) => void
 }
 
-export function focusBlock(blockId: string): void {
-    document.querySelector<HTMLDivElement>(`[data-block-id="${blockId}"] .block`)?.focus()
+function getBlockElement(id: string): HTMLDivElement | null {
+    return document.querySelector<HTMLDivElement>(`[data-block-id="${id}"] .block`)
+}
+
+export function focusBlockElement(blockId: string, isReadOnly: boolean): void {
+    if (!isReadOnly) {
+        const blockElement = getBlockElement(blockId)
+        blockElement?.focus()
+    }
+}
+
+function isTopOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { top } = blockElement.getBoundingClientRect()
+    return top >= 0
+}
+
+function isBottomOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { bottom } = blockElement.getBoundingClientRect()
+    return bottom <= window.innerHeight
 }
 
 export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
@@ -27,7 +52,8 @@ export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
     commandPaletteInputReference,
-    setSelectedBlockId,
+    isReadOnly,
+    selectBlock,
     onMoveBlock,
     onRunBlock,
     onDeleteBlock,
@@ -37,13 +63,13 @@ export function useNotebookEventHandlers({
         (id: string, direction: BlockDirection) => {
             const blockId = direction === 'up' ? notebook.getPreviousBlockId(id) : notebook.getNextBlockId(id)
             if (blockId) {
-                setSelectedBlockId(blockId)
-                focusBlock(blockId)
+                selectBlock(blockId)
+                focusBlockElement(blockId, isReadOnly)
             } else if (!blockId && direction === 'down') {
                 commandPaletteInputReference.current?.focus()
             }
         },
-        [notebook, commandPaletteInputReference, setSelectedBlockId]
+        [notebook, commandPaletteInputReference, isReadOnly, selectBlock]
     )
 
     const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
@@ -53,7 +79,7 @@ export function useNotebookEventHandlers({
             const target = event.target as HTMLElement | null
             const blockWrapper = target?.closest<HTMLDivElement>('.block-wrapper')
             if (!blockWrapper) {
-                setSelectedBlockId(null)
+                selectBlock(null)
                 return
             }
 
@@ -66,25 +92,53 @@ export function useNotebookEventHandlers({
 
             const blockId = blockWrapper.dataset.blockId
             if (blockId) {
-                setSelectedBlockId(blockId)
+                selectBlock(blockId)
             }
         }
 
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
 
+            // Don't handle keydown events if the alt/option key is pressed.
+            // This allows using Opt+Arrow keys to page up/down on macOS.
+            if (event.altKey) {
+                return
+            }
+
             if (isInputElement(target)) {
                 return
             }
 
             if (!selectedBlockId && event.key === 'ArrowDown') {
-                setSelectedBlockId(notebook.getFirstBlockId())
+                selectBlock(notebook.getFirstBlockId())
             } else if (event.key === 'Escape' && !isInputElement(target)) {
-                setSelectedBlockId(null)
+                selectBlock(null)
             }
 
             if (!selectedBlockId) {
                 return
+            }
+
+            // Focus on the last `menuitem` of the prev block when using `Shift + Tab`
+            // while focusing on selected block element
+            if (
+                document.activeElement ===
+                    document.querySelector<HTMLDivElement>(`[data-block-id="${selectedBlockId}"] .block`) &&
+                event.shiftKey &&
+                event.key === 'Tab'
+            ) {
+                const previousBlockId = notebook.getPreviousBlockId(selectedBlockId)
+
+                if (previousBlockId) {
+                    event.preventDefault()
+
+                    focusBlockElement(previousBlockId, isReadOnly)
+
+                    const menuItems = document.querySelectorAll<HTMLAnchorElement>(
+                        `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
+                    )
+                    menuItems[menuItems.length - 1]?.focus()
+                }
             }
 
             const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)
@@ -92,10 +146,22 @@ export function useNotebookEventHandlers({
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'
                 if (isModifierKeyDown) {
                     onMoveBlock(selectedBlockId, direction)
-                    // Prevent page scrolling in Firefox
+                    // Prevent page scrolling
                     event.preventDefault()
                 } else {
+                    // If the block is not visible in the direction we're moving, scroll the window. Otherwise, move the selection.
+                    // Also allow scrolling beyond the selected block if it is the first/last block.
+                    if (
+                        (event.key === 'ArrowUp' && !isTopOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowDown' && !isBottomOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowUp' && selectedBlockId === notebook.getFirstBlockId()) ||
+                        (event.key === 'ArrowDown' && selectedBlockId === notebook.getLastBlockId())
+                    ) {
+                        return
+                    }
                     onMoveBlockSelection(selectedBlockId, direction)
+                    // Prevent page scrolling
+                    event.preventDefault()
                 }
             } else if (event.key === 'Enter' && isModifierKeyDown) {
                 onRunBlock(selectedBlockId)
@@ -122,8 +188,9 @@ export function useNotebookEventHandlers({
     }, [
         notebook,
         selectedBlockId,
+        isReadOnly,
         onMoveBlockSelection,
-        setSelectedBlockId,
+        selectBlock,
         isMacPlatform,
         onMoveBlock,
         onRunBlock,

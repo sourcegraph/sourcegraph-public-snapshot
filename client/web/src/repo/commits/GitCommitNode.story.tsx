@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 
@@ -71,22 +70,44 @@ const gitCommitNode: GitCommitFields = {
         'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore.',
 }
 
-export const FullCustomizable: Story = () => (
+export const FullCustomizable: Story = args => (
     <WebStory>
         {() => (
             <Card>
                 <GitCommitNode
                     node={gitCommitNode}
-                    compact={boolean('compact', false)}
-                    expandCommitMessageBody={boolean('expandCommitMessageBody', false)}
-                    showSHAAndParentsRow={boolean('showSHAAndParentsRow', false)}
-                    hideExpandCommitMessageBody={boolean('hideExpandCommitMessageBody', false)}
-                    preferAbsoluteTimestamps={boolean('preferAbsoluteTimestamps', false)}
+                    compact={args.compact}
+                    expandCommitMessageBody={args.expandCommitMessageBody}
+                    showSHAAndParentsRow={args.showSHAAndParentsRow}
+                    hideExpandCommitMessageBody={args.hideExpandCommitMessageBody}
+                    preferAbsoluteTimestamps={args.preferAbsoluteTimestamps}
                 />
             </Card>
         )}
     </WebStory>
 )
+FullCustomizable.argTypes = {
+    compact: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    expandCommitMessageBody: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    showSHAAndParentsRow: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    hideExpandCommitMessageBody: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    preferAbsoluteTimestamps: {
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 FullCustomizable.storyName = 'Full customizable'
 

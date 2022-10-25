@@ -1,4 +1,3 @@
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
@@ -19,10 +18,18 @@ const config: Meta = {
 
 export default config
 
-export const Success: Story = () => (
-    <WebStory>{() => <StatusCode code={number('code', 204, { min: 100, max: 399 })} />}</WebStory>
-)
+export const Success: Story = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
+Success.argTypes = {
+    code: {
+        control: { type: 'number', min: 100, max: 399 },
+        defaultValue: 204,
+    },
+}
 
-export const Failure: Story = () => (
-    <WebStory>{() => <StatusCode code={number('code', 418, { min: 400, max: 599 })} />}</WebStory>
-)
+export const Failure: Story = args => <WebStory>{() => <StatusCode code={args.code} />}</WebStory>
+Failure.argTypes = {
+    code: {
+        control: { type: 'number', min: 400, max: 599 },
+        defaultValue: 418,
+    },
+}

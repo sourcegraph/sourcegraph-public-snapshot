@@ -2,11 +2,9 @@ import { Observable, of, ReplaySubject, Subject } from 'rxjs'
 import { catchError, map, switchMap, throttleTime } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
-import { createAggregateError, isErrorLike } from '@sourcegraph/common'
+import { createAggregateError } from '@sourcegraph/common'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { getEnabledExtensionsForSubject } from '@sourcegraph/shared/src/extensions/extensions'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     gqlToCascade,
@@ -42,9 +40,8 @@ export function initializeSourcegraphSettings({
                     throw createAggregateError(errors)
                 }
 
-                return gqlToCascade(data?.viewerSettings as ISettingsCascade)
+                return gqlToCascade(data.viewerSettings)
             }),
-            map(settingsCascade => stripNonDefaultExtensions(settingsCascade)),
             catchError(() => of(EMPTY_SETTINGS_CASCADE))
         )
         .subscribe(settingsCascade => {
@@ -61,20 +58,4 @@ export function initializeSourcegraphSettings({
             refreshes.next()
         },
     }
-}
-
-/**
- * Mutates settings cascade to remove all non-default Sourcegraph extensions.
- * Remove when non-programming language extension features are implemented
- * for the VS Code extension.
- */
-function stripNonDefaultExtensions(settingsCascade: SettingsCascadeOrError): SettingsCascadeOrError {
-    if (!settingsCascade.final || isErrorLike(settingsCascade.final)) {
-        return settingsCascade
-    }
-
-    const defaultExtensions = getEnabledExtensionsForSubject(settingsCascade, 'DefaultSettings') || {}
-    settingsCascade.final.extensions = defaultExtensions
-
-    return settingsCascade
 }

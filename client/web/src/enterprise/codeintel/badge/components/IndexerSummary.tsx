@@ -123,7 +123,7 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                                         width={16}
                                     />{' '}
                                     <TelemetricLink
-                                        to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
+                                        to={`/${repoName}/-/code-graph/uploads?filters=errored`}
                                         label="Latest upload processing"
                                         alwaysShowLabel={true}
                                         eventName="CodeIntelligenceUploadErrorInvestigated"
@@ -143,7 +143,7 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                                         width={16}
                                     />{' '}
                                     <TelemetricLink
-                                        to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
+                                        to={`/${repoName}/-/code-graph/indexes?filters=errored`}
                                         label="Latest indexing"
                                         alwaysShowLabel={true}
                                         eventName="CodeIntelligenceIndexErrorInvestigated"

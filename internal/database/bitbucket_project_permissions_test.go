@@ -27,12 +27,14 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	ctx := context.Background()
 
 	check := func(jobID int, projectKey string, permissions []types.UserPermission, unrestricted bool) {
-		rows, err := db.QueryContext(ctx, `SELECT * FROM explicit_permissions_bitbucket_projects_jobs WHERE id = $1`, jobID)
+		q := sqlf.Sprintf("SELECT %s FROM explicit_permissions_bitbucket_projects_jobs WHERE id = %s", sqlf.Join(BitbucketProjectPermissionsColumnExpressions, ","), jobID)
+		rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		require.NoError(t, err)
 
-		job, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)
+		require.True(t, rows.Next())
+		job, err := ScanBitbucketProjectPermissionJob(rows)
 		require.NoError(t, err)
-		require.True(t, ok)
+		require.NotNil(t, job)
 		require.Equal(t, "queued", job.State)
 		require.Equal(t, projectKey, job.ProjectKey)
 		require.Equal(t, int64(1), job.ExternalServiceID)
@@ -152,12 +154,14 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	rows, err := db.QueryContext(ctx, `SELECT * FROM explicit_permissions_bitbucket_projects_jobs WHERE id = 1`)
+	q := sqlf.Sprintf("SELECT %s FROM explicit_permissions_bitbucket_projects_jobs WHERE id = 1", sqlf.Join(BitbucketProjectPermissionsColumnExpressions, ","))
+	rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	require.NoError(t, err)
 
-	record, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)
+	require.True(t, rows.Next())
+	job, err := ScanBitbucketProjectPermissionJob(rows)
 	require.NoError(t, err)
-	require.True(t, ok)
+	require.NotNil(t, job)
 	require.Equal(t, &types.BitbucketProjectPermissionJob{
 		ID:                1,
 		State:             "queued",
@@ -175,7 +179,7 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		ExternalServiceID: 1,
 		Permissions:       []types.UserPermission{{Permission: "read", BindID: "omar@sourcegraph.com"}},
 		Unrestricted:      false,
-	}, record)
+	}, job)
 }
 
 func TestListJobsQuery(t *testing.T) {
@@ -184,7 +188,6 @@ func TestListJobsQuery(t *testing.T) {
 		gotString := got.Query(sqlf.PostgresBindVar)
 
 		want := `
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 
@@ -203,7 +206,6 @@ LIMIT 100
 
 		gotString := got.Query(sqlf.PostgresBindVar)
 		want := `
--- source: internal/database/bitbucket_project_permissions.go:BitbucketProjectPermissionsStore.listWorkerJobsQuery
 SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 WHERE project_key IN ($1 , $2 , $3 , $4) AND state = $5

@@ -22,7 +22,7 @@ interface Props extends ThemeProps, TelemetryProps {
     showEmailForm: boolean
     /** Called to perform the signup on the server. */
     onSignUp: (args: SignUpArguments) => Promise<void>
-    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'>
 }
 
 const VSCodeIcon: React.FC = () => (
@@ -73,6 +73,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
             context={{
                 authProviders: [],
                 sourcegraphDotComMode: true,
+                authMinPasswordLength: context.authMinPasswordLength,
                 experimentalFeatures: context.experimentalFeatures,
             }}
             buttonLabel="Sign up"
@@ -162,7 +163,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                     </small>
                     <hr className={styles.separator} />
                     <div>
-                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                     </div>
                 </div>
             </div>

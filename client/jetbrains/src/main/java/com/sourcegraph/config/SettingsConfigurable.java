@@ -39,8 +39,10 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        return !mySettingsComponent.getSourcegraphUrl().equals(ConfigUtil.getSourcegraphUrl(project))
-            || !mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
+        return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
+            || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
+            || !(mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project)) || mySettingsComponent.getAccessToken().isEmpty() && ConfigUtil.getAccessToken(project) == null)
+            || !mySettingsComponent.getCustomRequestHeaders().equals(ConfigUtil.getCustomRequestHeaders(project))
             || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
             || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
             || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project)
@@ -57,12 +59,18 @@ public class SettingsConfigurable implements Configurable {
 
         String oldUrl = ConfigUtil.getSourcegraphUrl(project);
         String oldAccessToken = ConfigUtil.getAccessToken(project);
-        String newUrl = mySettingsComponent.getSourcegraphUrl();
+        String newUrl = mySettingsComponent.getEnterpriseUrl();
         String newAccessToken = mySettingsComponent.getAccessToken();
-        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
+        String newCustomRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken, newCustomRequestHeaders);
 
         publisher.beforeAction(context);
 
+        if (pSettings.instanceType != null) {
+            pSettings.instanceType = mySettingsComponent.getInstanceType().name();
+        } else {
+            aSettings.instanceType = mySettingsComponent.getInstanceType().name();
+        }
         if (pSettings.url != null) {
             pSettings.url = newUrl;
         } else {
@@ -72,6 +80,11 @@ public class SettingsConfigurable implements Configurable {
             pSettings.accessToken = newAccessToken;
         } else {
             aSettings.accessToken = newAccessToken;
+        }
+        if (pSettings.customRequestHeaders != null) {
+            pSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
+        } else {
+            aSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
         }
         if (pSettings.defaultBranch != null) {
             pSettings.defaultBranch = mySettingsComponent.getDefaultBranchName();
@@ -96,9 +109,11 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public void reset() {
-        mySettingsComponent.setSourcegraphUrl(ConfigUtil.getSourcegraphUrl(project));
+        mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
+        mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
         String accessToken = ConfigUtil.getAccessToken(project);
         mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");
+        mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
         String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
         mySettingsComponent.setDefaultBranchName(defaultBranchName);
         String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);

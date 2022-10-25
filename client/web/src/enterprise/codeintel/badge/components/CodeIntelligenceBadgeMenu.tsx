@@ -96,19 +96,19 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
     const dotStyle = showDotError ? styles.braindotError : showDotAttention ? styles.braindotAttention : ''
 
     return (
-        <Menu className="btn-icon">
+        <Menu>
             <>
                 <MenuButton
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}
                     onClick={() => setBadgeUsed(true)}
-                    aria-label="Code intelligence"
+                    aria-label="Code graph"
                 >
                     <Icon aria-hidden={true} svgPath={mdiBrain} />
                 </MenuButton>
 
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu} isOpen={isStorybook}>
                     <MenuHeader>
-                        Code intelligence{' '}
+                        Code graph{' '}
                         {isNew && (
                             <Badge variant="info" className="text-uppercase mx-2">
                                 NEW

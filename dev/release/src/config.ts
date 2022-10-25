@@ -21,6 +21,7 @@ export interface Config {
     threeWorkingDaysBeforeRelease: string
     releaseDate: string
     oneWorkingDayAfterRelease: string
+    oneWorkingWeekAfterRelease: string
 
     slackAnnounceChannel: string
 

@@ -2,6 +2,8 @@ import { AxePuppeteer } from '@axe-core/puppeteer'
 import type { Result, NodeResult, RunOptions } from 'axe-core'
 import { Page } from 'puppeteer'
 
+import { logger } from '@sourcegraph/common'
+
 /**
  * Takes a list of Axe violation nodes and formats them into a readable string.
  */
@@ -74,6 +76,6 @@ export async function accessibilityAudit(page: Page, config: AccessibilityAuditC
             throw new Error(errorMessage)
         }
 
-        console.warn(errorMessage)
+        logger.warn(errorMessage)
     }
 }

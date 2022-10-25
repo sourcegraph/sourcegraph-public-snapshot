@@ -1,10 +1,10 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -107,6 +107,8 @@ export interface ResultContainerProps {
      */
     className?: string
 
+    resultsClassName?: string
+
     as?: React.ElementType
     index: number
 }
@@ -122,15 +124,14 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     expandLabel,
     collapsedChildren,
     expandedChildren,
-    icon,
     title,
     titleClassName,
     description,
-    matchCountLabel,
     repoName,
     repoStars,
     onResultClicked,
     className,
+    resultsClassName,
     resultType,
     as: Component = 'div',
     index,
@@ -140,11 +141,20 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    const toggle = (): void => {
+    const rootRef = useRef<HTMLElement>(null)
+    const toggle = useCallback((): void => {
         if (collapsible) {
             setExpanded(expanded => !expanded)
         }
-    }
+
+        // Scroll back to top of result when collapsing
+        if (expanded) {
+            setTimeout(() => {
+                const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+                rootRef.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+            }, 0)
+        }
+    }, [collapsible, expanded])
 
     const trackReferencePanelClick = (): void => {
         if (onResultClicked) {
@@ -157,22 +167,12 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             data-testid="result-container"
             data-result-type={resultType}
             data-expanded={allExpanded}
+            data-collapsible={collapsible}
             onClick={trackReferencePanelClick}
+            ref={rootRef}
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
-                    <Icon
-                        className="flex-shrink-0"
-                        as={icon}
-                        {...(resultType
-                            ? {
-                                  'aria-label': `${resultType} result`,
-                              }
-                            : {
-                                  'aria-hidden': true,
-                              })}
-                    />
-                    <div className={classNames('mx-1', styles.headerDivider)} />
                     <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
@@ -183,42 +183,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                             <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>
                         )}
                     </div>
-                    {matchCountLabel && (
-                        <span className="d-flex align-items-center">
-                            <small>{matchCountLabel}</small>
-                            {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
-                        </span>
-                    )}
-                    {collapsible && (
-                        <Button
-                            data-testid="toggle-matches-container"
-                            className={classNames('py-0', styles.toggleMatchesContainer)}
-                            onClick={toggle}
-                            variant="link"
-                            size="sm"
-                        >
-                            {expanded ? (
-                                <>
-                                    {collapseLabel && (
-                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
-                                    )}
-                                    {collapseLabel}
-                                    {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
-                                </>
-                            ) : (
-                                <>
-                                    {expandLabel && (
-                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
-                                    )}
-                                    {expandLabel}
-                                    {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
-                                </>
-                            )}
-                        </Button>
-                    )}
-                    {matchCountLabel && formattedRepositoryStarCount && (
-                        <div className={classNames('mx-2', styles.headerDivider)} />
-                    )}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <SearchResultStar aria-label={`${repoStars} stars`} />
@@ -226,8 +190,25 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                {!expanded && collapsedChildren}
-                {expanded && expandedChildren}
+                <div className={classNames(styles.collapsibleResults, resultsClassName)}>
+                    <div>{expanded ? expandedChildren : collapsedChildren}</div>
+                    {collapsible && (
+                        <button
+                            type="button"
+                            className={classNames(
+                                styles.toggleMatchesButton,
+                                expanded && styles.toggleMatchesButtonExpanded
+                            )}
+                            onClick={toggle}
+                            data-testid="toggle-matches-container"
+                        >
+                            <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                            <span className={styles.toggleMatchesButtonText}>
+                                {expanded ? collapseLabel : expandLabel}
+                            </span>
+                        </button>
+                    )}
+                </div>
             </article>
         </Component>
     )

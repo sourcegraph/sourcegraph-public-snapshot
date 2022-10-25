@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -19,27 +18,34 @@ import (
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
-	svc  *types.ExternalService
-	conn *schema.GitoliteConnection
-	// We ask gitserver to talk to gitolite because it holds the ssh keys
-	// required for authentication.
-	cli     *gitserver.ClientImplementor
+	svc     *types.ExternalService
+	conn    *schema.GitoliteConnection
 	exclude excludeFunc
+
+	// gitoliteLister allows us to list Gitlolite repos. In practice, we ask
+	// gitserver to talk to gitolite because it holds the ssh keys required for
+	// authentication.
+	lister *gitserver.GitoliteLister
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitoliteConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
-	gitserverDoer, err := cf.Doer(
+	gitoliteDoer, err := cf.Doer(
 		httpcli.NewMaxIdleConnsPerHostOpt(500),
 		// The provided httpcli.Factory is one used for external services - however,
 		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
 		// have to ensure that the actor transport used for internal clients is provided.
-		httpcli.ActorTransportOpt)
+		httpcli.ActorTransportOpt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -54,13 +60,12 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 		return nil, err
 	}
 
-	gitserverClient := gitserver.NewClient(db)
-	gitserverClient.HTTPClient = gitserverDoer
+	lister := gitserver.NewGitoliteLister(gitoliteDoer)
 
 	return &GitoliteSource{
 		svc:     svc,
 		conn:    &c,
-		cli:     gitserverClient,
+		lister:  lister,
 		exclude: exclude,
 	}, nil
 }
@@ -68,7 +73,7 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 // ListRepos returns all Gitolite repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	all, err := s.cli.ListGitolite(ctx, s.conn.Host)
+	all, err := s.lister.ListRepos(ctx, s.conn.Host)
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
 		return
@@ -77,7 +82,12 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 	for _, r := range all {
 		repo := s.makeRepo(r)
 		if !s.excludes(r, repo) {
-			results <- SourceResult{Source: s, Repo: repo}
+			select {
+			case <-ctx.Done():
+				results <- SourceResult{Err: ctx.Err()}
+				return
+			case results <- SourceResult{Source: s, Repo: repo}:
+			}
 		}
 	}
 }

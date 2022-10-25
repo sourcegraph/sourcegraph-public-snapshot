@@ -76,7 +76,7 @@ const defaultProps: SearchContextMenuProps = {
     defaultSearchContextSpec: 'global',
     selectedSearchContextSpec: 'global',
     selectSearchContextSpec: () => {},
-    closeMenu: () => {},
+    onMenuClose: () => {},
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     searchContextsEnabled: true,
     platformContext: NOOP_PLATFORM_CONTEXT,

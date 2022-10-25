@@ -27,11 +27,11 @@ func TestOverrideGenerators(t *testing.T) {
 			description: "override",
 			overrideScript: `
 				local path = require("path")
-				local patterns = require("sg.patterns")
-				local recognizers = require("sg.recognizers")
+				local pattern = require("sg.autoindex.patterns")
+				local recognizer = require("sg.autoindex.recognizer")
 
-				local custom_recognizer = recognizers.path_recognizer {
-					patterns = { patterns.path_basename("sg-test") },
+				local custom_recognizer = recognizer.new_path_recognizer {
+					patterns = { pattern.new_path_basename("sg-test") },
 
 					-- Invoked when go.mod files exist
 					generate = function(_, paths)
@@ -50,9 +50,9 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				local recognizers = {}
-				recognizers["custom.test"] = custom_recognizer
-				return recognizers
+				return require("sg.autoindex.config").new({
+					["custom.test"] = custom_recognizer,
+				})
 			`,
 			repositoryContents: map[string]string{
 				"sg-test":     "",
@@ -77,11 +77,11 @@ func TestOverrideGenerators(t *testing.T) {
 			description: "disable default",
 			overrideScript: `
 				local path = require("path")
-				local patterns = require("sg.patterns")
-				local recognizers = require("sg.recognizers")
+				local pattern = require("sg.autoindex.patterns")
+				local recognizer = require("sg.autoindex.recognizer")
 
-				local custom_recognizer = recognizers.path_recognizer {
-					patterns = { patterns.path_basename("sg-test") },
+				local custom_recognizer = recognizer.new_path_recognizer {
+					patterns = { pattern.new_path_basename("sg-test") },
 
 					-- Invoked when go.mod files exist
 					generate = function(_, paths)
@@ -100,10 +100,10 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				local recognizers = {}
-				recognizers["sg.test"] = false -- Disable builtin recognizer
-				recognizers["mycompany.test"] = custom_recognizer
-				return recognizers
+				return require("sg.autoindex.config").new({
+					["sg.test"] = false,
+					["mycompany.test"] = custom_recognizer,
+				})
 			`,
 			repositoryContents: map[string]string{
 				"sg-test":     "",

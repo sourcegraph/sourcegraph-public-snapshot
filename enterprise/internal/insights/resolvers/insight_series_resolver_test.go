@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -29,34 +30,39 @@ func TestResolver_InsightSeries(t *testing.T) {
 		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
+		insightStore := store.NewInsightStore(insightsDB)
+
+		view := types.InsightView{
+			Title:            "title1",
+			Description:      "desc1",
+			PresentationType: types.Line,
+		}
+		insightSeries := types.InsightSeries{
+			SeriesID:            "1234567",
+			Query:               "query1",
+			CreatedAt:           now,
+			OldestHistoricalAt:  now,
+			LastRecordedAt:      now,
+			NextRecordingAfter:  now,
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
+		}
+		var err error
+		view, err = insightStore.CreateView(ctx, view, []store.InsightViewGrant{store.GlobalGrant()})
+		require.NoError(t, err)
+		insightSeries, err = insightStore.CreateSeries(ctx, insightSeries)
+		require.NoError(t, err)
+		insightStore.AttachSeriesToView(ctx, insightSeries, view, types.InsightViewSeriesMetadata{
+			Label:  "",
+			Stroke: "",
+		})
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
-		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
-			{
-				UniqueID:    "unique1",
-				Title:       "title1",
-				Description: "desc1",
-				Series: []types.InsightViewSeries{
-					{
-						UniqueID:           "unique1",
-						SeriesID:           "1234567",
-						Title:              "title1",
-						Description:        "desc1",
-						Query:              "query1",
-						CreatedAt:          now,
-						OldestHistoricalAt: now,
-						LastRecordedAt:     now,
-						NextRecordingAfter: now,
-						Label:              "label1",
-						LineColor:          "color1",
-					},
-				},
-			},
-		}, nil)
+
 		resolver.insightMetadataStore = insightMetadataStore
 
-		// Create the insights connection resolver and query series.
-		conn, err := resolver.Insights(ctx, nil)
+		// Create the insightview connection resolver and query series.
+		conn, err := resolver.InsightViews(ctx, &graphqlbackend.InsightViewQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,7 +73,8 @@ func TestResolver_InsightSeries(t *testing.T) {
 		}
 		var series [][]graphqlbackend.InsightSeriesResolver
 		for _, node := range nodes {
-			series = append(series, node.Series())
+			s, _ := node.DataSeries(ctx)
+			series = append(series, s)
 		}
 		return ctx, series
 	}

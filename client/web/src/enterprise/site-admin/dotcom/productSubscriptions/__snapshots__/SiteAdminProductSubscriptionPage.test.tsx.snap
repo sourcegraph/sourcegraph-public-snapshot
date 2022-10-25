@@ -120,31 +120,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <th
               class="text-nowrap"
             >
-              Billing
-            </th>
-            <td
-              class="w-100"
-            >
-              <div
-                class="site-admin-product-subscription-billing-link"
-              >
-                <div
-                  class="d-flex align-items-center"
-                >
-                  <button
-                    class="btn btnSecondary btnSm"
-                    type="button"
-                  >
-                    Link billing subscription
-                  </button>
-                </div>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <th
-              class="text-nowrap"
-            >
               Created at
             </th>
             <td
@@ -292,24 +267,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
         <div
           class="normal"
         />
-      </div>
-    </div>
-    <div
-      class="card mt-3"
-    >
-      <div
-        class="cardHeader"
-      >
-        History
-      </div>
-      <div
-        class="cardBody"
-      >
-        <span
-          class="text-muted"
-        >
-          No events
-        </span>
       </div>
     </div>
   </div>

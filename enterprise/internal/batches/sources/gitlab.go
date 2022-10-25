@@ -6,10 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/Masterminds/semver"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -29,9 +31,13 @@ var _ DraftChangesetSource = &GitLabSource{}
 var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitLabSource(svc.URN(), &c, cf)
@@ -73,8 +79,8 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(ctx, store, repo, s.au)
+func (s GitLabSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.au)
 }
 
 func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -151,7 +157,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 // CreateDraftChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	c.Title = gitlab.SetWIP(c.Title)
+	v, err := s.determineVersion(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	c.Title = gitlab.SetWIPOrDraft(c.Title, v)
 
 	exists, err := s.CreateChangeset(ctx, c)
 	if err != nil {
@@ -163,8 +174,10 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 		return false, errors.New("Changeset is not a GitLab merge request")
 	}
 
+	isDraftOrWIP := mr.WorkInProgress || mr.Draft
+
 	// If it already exists, but is not a WIP, we need to update the title.
-	if exists && !mr.WorkInProgress {
+	if exists && !isDraftOrWIP {
 		if err := s.UpdateChangeset(ctx, c); err != nil {
 			return exists, err
 		}
@@ -409,6 +422,33 @@ func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, e
 	}
 }
 
+func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
+	var v string
+	chvs, err := versions.GetVersions()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, chv := range chvs {
+		if chv.ExternalServiceKind == extsvc.KindGitLab && chv.Key == s.client.Urn() {
+			v = chv.Version
+			break
+		}
+	}
+
+	// if we are unable to get the version from Redis, we default to making a request
+	// to the codehost to get the version.
+	if v == "" {
+		v, err = s.client.GetVersion(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	version, err := semver.NewVersion(v)
+	return version, err
+}
+
 // UpdateChangeset updates the merge request on GitLab to reflect the local
 // state of the Changeset.
 func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
@@ -421,8 +461,13 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	// Avoid accidentally undrafting the changeset by checking its current
 	// status.
 	title := c.Title
-	if mr.WorkInProgress {
-		title = gitlab.SetWIP(c.Title)
+	if mr.WorkInProgress || mr.Draft {
+		v, err := s.determineVersion(ctx)
+		if err != nil {
+			return err
+		}
+
+		title = gitlab.SetWIPOrDraft(c.Title, v)
 	}
 
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
@@ -450,9 +495,14 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 	}
 
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIP(c.Title)
-	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
+	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
+	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
 	// will prepend the WIP: prefix again.
+
+	// We have to set both Draft and WorkInProgress or else the changeset will retain it's
+	// draft status. Both fields mirror each other, so if either is true then Gitlab assumes
+	// the changeset is still a draft.
+	mr.Draft = false
 	mr.WorkInProgress = false
 
 	return s.UpdateChangeset(ctx, c)
@@ -494,29 +544,38 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	return c.Changeset.SetMetadata(updated)
 }
 
+// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+// the given namespace, ensuring that the fork exists and is a fork of the
+// target repo.
 func (s *GitLabSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
 	return s.getFork(ctx, targetRepo, &namespace)
 }
 
+// GetUserFork returns a repo pointing to a fork of the given repo in the
+// currently authenticated user's namespace.
 func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	return s.getFork(ctx, targetRepo, nil)
 }
 
 func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, namespace *string) (*types.Repo, error) {
-	project, ok := targetRepo.Metadata.(*gitlab.Project)
+	targetMeta, ok := targetRepo.Metadata.(*gitlab.Project)
 	if !ok {
 		return nil, errors.New("target repo is not a GitLab project")
 	}
 
-	fork, err := s.client.ForkProject(ctx, project, namespace)
+	fork, err := s.client.ForkProject(ctx, targetMeta, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking project")
 	}
 
-	remoteRepo := *targetRepo
-	remoteRepo.Metadata = fork
+	// Now we make a copy of the target repo, but with its sources and metadata updated ƒto
+	// point to the fork
+	forkRepo, err := CopyRepoAsFork(targetRepo, fork, targetMeta.PathWithNamespace, fork.PathWithNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating target repo sources")
+	}
 
-	return &remoteRepo, nil
+	return forkRepo, nil
 }
 
 func (*GitLabSource) IsPushResponseArchived(s string) bool {

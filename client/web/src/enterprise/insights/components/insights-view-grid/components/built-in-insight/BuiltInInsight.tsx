@@ -4,9 +4,8 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, useDeepMemo, ParentSize } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../../charts'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
 import { InsightContentType } from '../../../../core/types/insight/common'
@@ -67,19 +66,23 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
-    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
-
     return (
         <InsightCard
             {...otherProps}
             ref={mergedInsightCardReference}
             data-testid={`insight-card.${insight.id}`}
+            aria-label="Insight card"
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
             <InsightCardHeader
                 title={
-                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                    <Link
+                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Go to the insight page"
+                    >
                         {insight.title}
                     </Link>
                 }

@@ -12,7 +12,7 @@ Examples:
 
 A **worker** is an generic process configured with a _store_ and a _handler_. In short, the store describes how to interact with where jobs are persisted; the handler (supplied by the user) describes how to process each job. Both of these components will be discussed in more detail below.
 
-The **store** is responsible for selecting the next available job from the backing persistence layer and suitably _locking_ it from other consumers as well as updating the job records as they make progress in the handler. Generally, this will be an instance of [dbworker/store.Store](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/internal/workerutil/dbworker/store/store.go#L204:6), although there are [other implementations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/enterprise/cmd/executor/internal/apiclient/client.go#L51:6).
+The **store** is responsible for selecting the next available job from the backing persistence layer and suitably _locking_ it from other consumers as well as updating the job records as they make progress in the handler. Generally, this will be an instance of [dbworker/store.Store](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/workerutil/dbworker/store/store%5C.go+NewStore&patternType=standard), although there are [other implementations](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/enterprise/cmd/executor/internal/apiclient/client.go#L51:6).
 
 The **handler** is responsible for handling a single job once dequeued from the associated store. Handlers can be fairly minimal, but there are a number of hooks which can be overridden to customize the behavior of the worker.
 
@@ -98,12 +98,13 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
 | `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
 | `worker_hostname`   | text                     | Hostname of the worker that picked up the job |
+| `cancel`            | boolean                  | Set to true to cancel an in-flight job |
 
 The target jobs table may have additional columns as the store only selects and updates records. Again, inserting/enqueueing job records is a task that is **not** handled by the worker, thus columns with non-null constraints are safe to add here as well.
 
 The shape of the target table is configured via options on the database-backed store instance. The `TableName` option specifies the name of the table used in `UPDATE` and `SELECT [FOR UPDATE]` statements. The `ViewName` option, if supplied, specifies the view used in `SELECT` statements (the data of which is ultimately passed to the handler hook). This can be useful when the job record has foreign keys to other relations that should be eagerly selected.
 
-The `ColumnExpressions` option is a list of `*sqlf.Query` values to select from the configured table or view. The `Scan` option specifies a function to call to read a job record from a `*sql.Rows` object. The values in the rows object are precisely the values selected via `ColumnExpressions`.
+The `ColumnExpressions` option is a list of `*sqlf.Query` values to select from the configured table or view. The `Scan` option specifies a function to call to read job records from a `*sql.Rows` object. The values available in each row in the rows object are precisely the values selected via `ColumnExpressions`.
 
 The `OrderByExpression` option specifies a `*sql.Query` expression which is used to order the records by priority. A dequeue operation will select the first record which is not currently being processed by another worker.
 
@@ -133,6 +134,12 @@ To handle this case, register a [resetter]() instance to periodically run in the
 
 This behavior can be controlled by setting the `StalledMaxAge` and `MaxNumResets` options on the database-backed store instance, which control the maximum grace period setting a record to _processing_ and locking it and number of times a record can be reset (to avoid poison messages from indefinitely crashing workers), respectively. Once a record hits the maximum number of resets, the resetter will move it from state _processing_ to _failed_ with a canned failure message.
 
+### Cancelation
+
+Cancelation of jobs in the database-backend store can be achieved in two ways:
+1. By removing the job record from the database. The worker will eventually notice that the record doesn't exist anymore and will stop execution.
+1. By setting `cancel` to `TRUE` on the record. If `CancelInterval` is set on the worker store, it will check for records to be canceled. These will ultimately end up in state `'canceled'`. This can be used to keep the record while still being able to cancel workloads.
+
 ## Adding a new worker
 
 This guide will show you how to add a new database-backed worker instance.
@@ -159,6 +166,7 @@ CREATE TABLE example_jobs (
   last_heartbeat_at timestamp with time zone,
   execution_logs    json[],
   worker_hostname   text not null default '',
+  cancel            boolean not null default false
 
   repository_id integer not null
 );
@@ -199,6 +207,7 @@ type ExampleJob struct {
 	LastHeartbeatAt time.Time
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
+  Cancel          bool
 
 	RepositoryID   int
 	RepositoryName string
@@ -217,69 +226,61 @@ var exampleJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("example_jobs.last_heartbeat_at"),
 	sqlf.Sprintf("example_jobs.execution_logs"),
 	sqlf.Sprintf("example_jobs.worker_hostname"),
+	sqlf.Sprintf("example_jobs.cancel"),
 	sqlf.Sprintf("example_jobs.repository_id"),
 	sqlf.Sprintf("example_jobs.repository_name"),
 }
 ```
 
-Now, we define a function `scanFirstExampleJob` that consumes a `*sql.Rows` object and returns an `ExampleJob` struct value (hidden behind the abstract `workerutil.Record` type) and a boolean flag indicating whether the result rows were non-empty. We write this method to work specifically with the SQL expressions from `exampleJobColumns`, above.
+`ExampleJob` will need to implement the `workerutil.Record` interface to be returned from the scanning function, so let's also do that:
+
+```go
+func (j *ExampleJob) RecordID() int {
+	return j.ID
+}
+```
+
+Now, we define a function `scanExampleJob` that scans a single record (provided as a `dbutil.Scanner`) into an `ExampleJob`. We write this method to work specifically with the SQL expressions from `exampleJobColumns`, above.
 
 ```go
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// scanFirstExampleJob scans a single job from the return value of `*Store.query`.
-func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, exists bool, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
+	var job ExampleJob
+	var executionLogs []dbworkerstore.ExecutionLogEntry
 
-	if rows.Next() {
-		var job ExampleJob
-		var executionLogs []dbworkerstore.ExecutionLogEntry
-
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.QueuedAt,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&job.LastHeartbeatAt,
-			pq.Array(&executionLogs),
-			&job.WorkerHostname,
-			&job.RepositoryID,
-			&job.RepositoryName,
-		); err != nil {
-			return nil, false, err
-		}
-
-		for _, entry := range executionLogs {
-			job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
-		}
-
-		return job, true, nil
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&job.StartedAt,
+		&job.FinishedAt,
+		&job.ProcessAfter,
+		&job.NumResets,
+		&job.NumFailures,
+		&job.LastHeartbeatAt,
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+		&job.RepositoryID,
+		&job.RepositoryName,
+	); err != nil {
+		return nil, err
 	}
 
-	return ExampleJob{}, false, nil
+	for _, entry := range executionLogs {
+		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+	}
+
+	return &job, nil
 }
-```
-
-This scanning function is a [basestore](./basestore.md) idiom which allows us to call it directly from the result of `*store.Query`:
-
-```go
-job, exists, err := scanFirstExampleJob(store.Query(
-	"SELECT %s FROM example_jobs_with_repository_name example_jobs LIMIT 1",
-	sqlf.Join(expressions, ", "),
-))
 ```
 
 #### Step 3: Configure the store
@@ -289,25 +290,28 @@ Given our table definition and new scanning function, we can configure a databas
 ```go
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func makeStore(db dbutil.DB) store.Store {
+func makeStore(db dbutil.DB) dbworkerstore.Store {
 	return store.New(db, store.Options{
 		Name:              "example_job_worker_store",
 		TableName:         "example_jobs",
 		ViewName:          "example_jobs_with_repository_name example_jobs",
 		ColumnExpressions: exampleJobColumns,
-		Scan:              scanFirstExampleJob,
+		Scan:              dbworkerstore.BuildWorkerScan(scanExampleJob),
 		OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
 		MaxNumResets:      5,
 		HeartbeatInterval: time.Second,
 		StalledMaxAge:     time.Second * 5,
+    CancelInterval:    time.Second,
 	})
 }
 ```
 
 Notice here that we provided a table name and view name with an _alias_ back to the table name, which we can use to unambiguously refer to columns in the expressions listed in `exampleJobColumns`.
+
+`dbworkerstore.BuildWorkerScan` adapts a scanning function that scans a single record into a scanning function that can handle an entire `*sql.Rows` resultset.
 
 #### Step 4: Write the handler
 
@@ -338,10 +342,10 @@ func (h *handler) Handle(ctx context.Context, tx store.Store, rawRecord workerut
 	// Due to us registering our own Scan functions with the dbstore (see next step),
 	// we can guarantee that the value of rawRecord will always be of a particular
 	// processable type.
-	record := rawRecord.(MyRecord)
+	job := rawRecord.(*ExampleJob)
 
 	// Do the actual processing
-	return store.Process(record)
+	return store.Process(job)
 }
 ```
 
@@ -383,7 +387,7 @@ func makeResetter(workerStore store.Store) {
 
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 
-The worker and resetter may or or may execute in the same process. For example, we run all code intelligence background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
+The worker and resetter may or or may execute in the same process. For example, we run all code navigation background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
 
 #### Step 7: Consider adding indexes
 

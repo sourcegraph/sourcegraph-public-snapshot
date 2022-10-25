@@ -88,17 +88,17 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		if err := mw.store.Create(r.Context(), &types.WebhookLog{
 			ExternalServiceID: externalServiceID,
 			StatusCode:        writer.statusCode,
-			Request: types.WebhookLogMessage{
+			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header:  r.Header,
 				Body:    buf.Bytes(),
 				Method:  r.Method,
 				URL:     url,
 				Version: r.Proto,
-			},
-			Response: types.WebhookLogMessage{
+			}),
+			Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header: writer.Header(),
 				Body:   writer.buf.Bytes(),
-			},
+			}),
 		}); err != nil {
 			// This is non-fatal, but almost certainly indicates a significant
 			// problem nonetheless.

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -13,8 +14,9 @@ import (
 )
 
 const (
-	repoName   = "perforce/test-perms"
-	aliceEmail = "alice@perforce.sgdev.org"
+	perforceRepoName = "perforce/test-perms"
+	aliceEmail       = "alice@perforce.sgdev.org"
+	aliceUsername    = "alice"
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
@@ -37,7 +39,11 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
+	// flaky test
+	// https://github.com/sourcegraph/sourcegraph/issues/40882
 	t.Run("cannot read hack.sh", func(t *testing.T) {
+		t.Skip("skipping because flaky")
+
 		// Should not be able to read hack.sh
 		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
 		if err != nil {
@@ -53,7 +59,11 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
+	// flaky test
+	// https://github.com/sourcegraph/sourcegraph/issues/40883
 	t.Run("file list excludes excluded files", func(t *testing.T) {
+		t.Skip("skipping because flaky")
+
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
@@ -78,7 +88,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	createPerforceExternalService(t)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
-	err := client.WaitForReposToBeIndexed(repoName)
+	err := client.WaitForReposToBeIndexed(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,16 +203,29 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 		})
 	}
 
+	t.Run("commit search admin", func(t *testing.T) {
+		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Admin should have access to ALL commits: there are 6 total
+		commitsNumber := len(results.Results)
+		expectedCommitsNumber := 6
+		if commitsNumber != expectedCommitsNumber {
+			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
+		}
+	})
+
 	t.Run("commit search", func(t *testing.T) {
 		results, err := userClient.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// Alice should have access to only 1 commit at the moment (other 2 commits modify hack.sh which is
-		// inaccessible for Alice)
+		// Alice should have access to only 3 commits at the moment
 		commitsNumber := len(results.Results)
-		if commitsNumber != 1 {
-			t.Fatalf("Should have access to 1 commit but got %d", commitsNumber)
+		expectedCommitsNumber := 3
+		if commitsNumber != expectedCommitsNumber {
+			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
 		}
 	})
 
@@ -220,15 +243,11 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
 			hasAccess: true,
 		},
-		{
-			name:     "direct access to inaccessible commit-2",
-			revision: "d9d835aa4b08e1dcb06a21a6dffe6e44f0a141d1",
-		},
 	}
 
 	for _, test := range commitAccessTests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := userClient.GitGetCommitMessage(repoName, test.revision)
+			_, err := userClient.GitGetCommitMessage(perforceRepoName, test.revision)
 			if err != nil {
 				if test.hasAccess {
 					t.Fatal(err)
@@ -242,7 +261,7 @@ func TestSubRepoPermissionsSearch(t *testing.T) {
 	}
 
 	t.Run("archive repo", func(t *testing.T) {
-		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, repoName)
+		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, perforceRepoName)
 		response, err := userClient.GetWithHeaders(url, map[string][]string{"Accept": {"application/zip"}})
 		if err != nil {
 			t.Fatal(err)
@@ -275,40 +294,66 @@ func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string) {
 	// Alice doesn't have access to Security directory. (there is a .sh file)
 	alicePassword := "alicessupersecurepassword"
 	t.Log("Creating Alice")
-	userClient, err := gqltestutil.SignUp(*baseURL, aliceEmail, "alice", alicePassword)
+	userClient, err := gqltestutil.SignUpOrSignIn(*baseURL, aliceEmail, aliceUsername, alicePassword)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	aliceID := userClient.AuthenticatedUserID()
-	t.Cleanup(func() {
-		if err := client.DeleteUser(aliceID, true); err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeTestUserAfterTest(t, aliceID)
 
 	if err := client.SetUserEmailVerified(aliceID, aliceEmail, true); err != nil {
 		t.Fatal(err)
 	}
 
-	err = userClient.WaitForReposToBeCloned(repoName)
+	err = userClient.WaitForReposToBeCloned(perforceRepoName)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return userClient, repoName
+
+	syncUserPerms(t, aliceID, aliceUsername)
+	return userClient, perforceRepoName
+}
+
+func syncUserPerms(t *testing.T, userID, userName string) {
+	t.Helper()
+	err := client.ScheduleUserPermissionsSync(userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait up to 30 seconds for the user to have permissions synced
+	// from the code host at least once.
+	err = gqltestutil.Retry(30*time.Second, func() error {
+		userPermsInfo, err := client.UserPermissionsInfo(userName)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if userPermsInfo != nil && !userPermsInfo.SyncedAt.IsZero() {
+			return nil
+		}
+		return gqltestutil.ErrContinueRetry
+	})
+	if err != nil {
+		t.Fatal("Waiting for user permissions to be synced:", err)
+	}
 }
 
 func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
 
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		t.Fatal(err)
 	}
 	oldSiteConfig := new(schema.SiteConfiguration)
 	*oldSiteConfig = *siteConfig
 	t.Cleanup(func() {
-		err = client.UpdateSiteConfiguration(oldSiteConfig)
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -320,7 +365,7 @@ func enableSubRepoPermissions(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	err = client.UpdateSiteConfiguration(siteConfig)
+	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {
 		t.Fatal(err)
 	}

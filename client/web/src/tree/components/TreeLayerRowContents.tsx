@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Link, LinkProps } from '@sourcegraph/wildcard'
 
-import styles from './TreeLayerRowContents.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeLayerRowContentsProps = HTMLAttributes<HTMLDivElement> & {
     isNew?: boolean
