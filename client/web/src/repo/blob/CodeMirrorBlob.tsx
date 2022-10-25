@@ -175,7 +175,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 ? tokensAsLinks({
                       history,
                       blobInfo,
-                      preloadGoToDefinition: true,
+                      preloadGoToDefinition,
                   })
                 : [],
             syntaxHighlight.of(blobInfo),
