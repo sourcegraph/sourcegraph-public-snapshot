@@ -88,14 +88,14 @@ type insightStatusResolver struct {
 	backfillQueuedAt                                    *time.Time
 }
 
-func (i insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
-func (i insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
-func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
-func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
-func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
+func (i *insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
+func (i *insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
+func (i *insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
+func (i *insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
+func (i *insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
 }
-func (i insightStatusResolver) IsLoadingData() (*bool, error) {
+func (i *insightStatusResolver) IsLoadingData() (*bool, error) {
 	loading := i.backfillQueuedAt == nil || i.pendingJobs > 0
 	return &loading, nil
 }
@@ -463,4 +463,32 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
+}
+
+var _ graphqlbackend.TimeoutDatapointAlert = &timeoutDatapointAlertResolver{}
+var _ graphqlbackend.IncompleteDatapointAlert = &incompleteDataPointAlertResolver{}
+
+type incompleteDataPointAlertResolver struct {
+	resolver any
+}
+
+func (i *incompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbackend.TimeoutDatapointAlert, bool) {
+	t, ok := i.resolver.(*timeoutDatapointAlertResolver)
+	return t, ok
+}
+
+type timeoutDatapointAlertResolver struct {
+	point store.IncompleteDatapoint
+}
+
+func (t *timeoutDatapointAlertResolver) Repository(ctx context.Context) (graphqlbackend.RepositoryResolver, error) {
+	panic("implement me")
+}
+
+func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: t.point.Time}
+}
+
+func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) ([]graphqlbackend.IncompleteDatapointAlert, error) {
+
 }

@@ -197,7 +197,7 @@ interface IncompleteDatapointAlert {
 """
 Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
 """
-interface TimeoutDatapointAlert {
+type TimeoutDatapointAlert implements IncompleteDatapointAlert {
     """
     An optional repository that may be associated with this incomplete data point.
     """
