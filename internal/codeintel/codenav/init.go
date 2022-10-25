@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/log"
 
@@ -57,11 +58,11 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	)
 
 	rankingBucket := func() *storage.BucketHandle {
-		// if rankingBucketCredentialsFile == "" {
-		// 	return nil
-		// }
+		if rankingBucketCredentialsFile == "" {
+			return nil
+		}
 
-		client, err := storage.NewClient(context.Background()) // option.WithCredentialsFile(rankingBucketCredentialsFile))
+		client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(rankingBucketCredentialsFile))
 		if err != nil {
 			log.Scoped("codenav", "").Error("failed to create storage client", log.Error(err))
 			return nil
