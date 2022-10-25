@@ -82,8 +82,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		types, _ := b.IncludeExcludeValues(query.FieldType)
-		resultTypes := computeResultTypes(types, b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -278,8 +277,7 @@ func orderSearcherJob(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	types, _ := f.IncludeExcludeValues(query.FieldType)
-	resultTypes := computeResultTypes(types, f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
 	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
@@ -600,11 +598,12 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
+func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
 		return result.TypeStructural
 	}
 
+	types, _ := b.IncludeExcludeValues(query.FieldType)
 	if len(types) == 0 {
 		return result.TypeFile | result.TypePath | result.TypeRepo
 	}
