@@ -28,15 +28,6 @@ func newTest(t *testing.T) *httptestutil.Client {
 
 	db := database.NewMockDB()
 
-	//gh := webhooks.GitHubWebhook{
-	//	DB: db,
-	//}
-	//webhookhandlers.Init(db, &gh)
-	//enterpriseServices.GitHubWebhook.Register(&gh)
-	//
-	//ghSync := repos.GitHubWebhookHandler{}
-	//ghSync.Register(&gh)
-
 	return httptestutil.NewTest(NewHandler(db,
 		router.New(mux.NewRouter()),
 		nil,
