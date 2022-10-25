@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,11 +19,11 @@ import (
 type WebhookHandlers struct {
 }
 
-// WebhooksHandler is responsible for handling all incoming webhooks
+// NewHandler is responsible for handling all incoming webhooks
 // and invoking the correct handlers depending on where the webhooks
 // come from.
 func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handler {
-	base := mux.NewRouter().PathPrefix("/webhooks").Subrouter()
+	base := mux.NewRouter().PathPrefix("/.api/webhooks").Subrouter()
 	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(logger, db, gh))
 
 	return base

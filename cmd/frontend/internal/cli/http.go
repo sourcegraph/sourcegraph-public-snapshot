@@ -90,9 +90,6 @@ func newExternalHTTPHandler(
 
 	githubAppSetupHandler := newGitHubAppSetupHandler()
 
-	// 🚨 SECURITY: This handler implements its own secret-based auth
-	webhookHandler := webhooks.NewHandler(logger, db, &gh)
-
 	// App handler (HTML pages), the call order of middleware is LIFO.
 	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
@@ -113,7 +110,6 @@ func newExternalHTTPHandler(
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
-	sm.Handle("/webhooks/", secureHeadersMiddleware(webhookHandler, crossOriginPolicyAPI))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	const urlPathPrefix = "/.assets"
 	// The asset handler should be wrapped into a middleware that enables cross-origin requests
