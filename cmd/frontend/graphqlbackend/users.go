@@ -127,7 +127,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	users, _, err := r.compute(ctx)
+	users, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -142,14 +142,6 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 	// We got less results than limit, means we've had all results
 	if after < r.opt.Limit {
 		return graphqlutil.HasNextPage(false), nil
-	}
-
-	// In case the number of results happens to be the same as the limit,
-	// we need another query to get accurate total count with same cursor
-	// to determine if there are more results than the limit we set.
-	totalCount, err := r.TotalCount(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	if int(totalCount) > after {
