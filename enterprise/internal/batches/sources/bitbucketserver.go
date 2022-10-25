@@ -334,11 +334,11 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
 
 		fmt.Printf("GOING TO CREATE FORK! %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
-		// hikelly := parent.Project.Key + "-" + parent.Slug
-		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &hikelly})
+		createdFork := parent.Project.Key + "-" + parent.Slug
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork})
 
 		fmt.Printf("FORK CREATED SUCCESSFULLY! Origin ID: %v", fork.Origin.ID)
 		if err != nil {
@@ -365,9 +365,9 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
-			// hikelly := parent.Project.Key + "-" + parent.Slug
-			// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &hikelly,
+		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
+		createdFork := parent.Project.Key + "-" + parent.Slug
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork,
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
 		})
 		if err != nil {
@@ -400,8 +400,8 @@ var (
 )
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
-	// repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
-	repo, err := s.client.Repo(ctx, namespace, parent.Slug)
+	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
+	// repo, err := s.client.Repo(ctx, namespace, parent.Slug)
 
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
