@@ -194,7 +194,7 @@
           ]
         },
         "sourcegraph.proxyPath": {
-          "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX socket.",
+          "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
           "type": "string",
           "default": "",
           "examples": [

@@ -1,4 +1,4 @@
-import net from 'net'
+import type net from 'net'
 
 import { ClientRequest, RequestOptions } from 'agent-base'
 import HttpProxyAgent from 'http-proxy-agent'
@@ -7,7 +7,7 @@ import fetch, { Headers } from 'node-fetch'
 import vscode from 'vscode'
 
 export { fetch, Headers }
-export type { BodyInit, RequestInit, Response, HeadersInit } from 'node-fetch'
+export type { BodyInit, Response, HeadersInit } from 'node-fetch'
 
 interface HttpsProxyAgentInterface {
     callback(req: ClientRequest, opts: RequestOptions): Promise<net.Socket>
@@ -24,17 +24,17 @@ export function getProxyAgent(): HttpsProxyAgentInterface | undefined {
     const proxyPath = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyPath')
 
     if (proxyProtocol || proxyHost || proxyPort || proxyPath) {
+        if (!HttpProxyAgent) {
+            return undefined // This is in case we're in the browser and webpack points to browser-fakes/proxy-agent.ts
+        }
         // Can't use dynamic imports here because this function is called from extension.ts:activate()
         // which is a sync context, so this can't be async either.
         const ProxyAgent = proxyProtocol === 'http' ? HttpProxyAgent : HttpsProxyAgent
-        if (!ProxyAgent) {
-            return undefined // This is in case we're in the browser and webpack points to browser-fakes/proxy-agent.ts
-        }
         return new ((ProxyAgent as unknown) as HttpsProxyAgentConstructor)({
-            ...(proxyProtocol ? { port: proxyProtocol } : null),
-            ...(proxyHost ? { port: proxyHost } : null),
+            ...(proxyProtocol ? { protocol: proxyProtocol } : null),
+            ...(proxyHost ? { host: proxyHost } : null),
             ...(proxyPort ? { port: proxyPort } : null),
-            ...(proxyPath ? { port: proxyPath } : null),
+            ...(proxyPath ? { path: proxyPath } : null),
         })
     }
 
