@@ -184,6 +184,11 @@ Represents a terminally incomplete data point at a specific time, and optionally
 """
 interface IncompleteDatapointAlert {
     """
+    Reason for why the data point is marked terminally incomplete.
+    """
+    reasonType: IncompleteDatapointReasonType!
+
+    """
     An optional repository that may be associated with this incomplete data point.
     """
     repository: Repository
@@ -201,6 +206,11 @@ set of dynamically expanded timeseries (in other words, captured values).
 """
 type DynamicSeriesTimeoutAlert implements IncompleteDatapointAlert {
     """
+    Reason for why the data point is marked terminally incomplete.
+    """
+    reasonType: IncompleteDatapointReasonType!
+
+    """
     An optional repository that may be associated with this incomplete data point.
     """
     repository: Repository
@@ -216,6 +226,11 @@ Represents a terminally incomplete data point due to a query timeout.
 """
 type StaticSeriesTimeoutAlert implements IncompleteDatapointAlert {
     """
+    Reason for why the data point is marked terminally incomplete.
+    """
+    reasonType: IncompleteDatapointReasonType!
+
+    """
     An optional repository that may be associated with this incomplete data point.
     """
     repository: Repository
@@ -224,6 +239,10 @@ type StaticSeriesTimeoutAlert implements IncompleteDatapointAlert {
     The data point that is incomplete.
     """
     time: DateTime!
+}
+
+enum IncompleteDatapointReasonType {
+    TIMEOUT
 }
 
 extend type Query {
