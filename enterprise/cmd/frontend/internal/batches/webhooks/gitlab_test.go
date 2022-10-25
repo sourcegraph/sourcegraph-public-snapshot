@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -583,12 +584,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
 				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
-				err := h.handleEvent(ctx, es, event)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if want := http.StatusInternalServerError; err.code != want {
-					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
-				}
+				err := h.handleEvent(ctx, db, event)
+                require.Error(t, err)
 			})
 		})
 

@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"sync"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
@@ -19,25 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type Registerer interface {
-	Register(webhook *GitHubWebhook)
-}
-
-// WebhookHandler is a handler for a webhook event, the 'event' param could be any of the event types
-// permissible based on the event type(s) the handler was registered against. If you register a handler
-// for many event types, you should do a type switch within your handler.
-// Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
-type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error
-
-// GitHubWebhook is responsible for handling incoming http requests for github webhooks
-// and routing to any registered WebhookHandlers, events are routed by their event type,
-// passed in the X-Github-Event header
-type GitHubWebhook struct {
-	DB database.DB
-
-	mu       sync.RWMutex
-	handlers map[string][]WebhookHandler
-}
+type GitHubWebhook Webhook
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
@@ -111,7 +92,7 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
-	for _, handler := range h.handlers[eventType] {
+	for _, handler := range h.handlers[extsvc.KindGitHub][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
 		g.Go(func() error {
@@ -119,20 +100,6 @@ func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
-}
-
-// Register associates a given event type(s) with the specified handler.
-// Handlers are organized into a stack and executed sequentially, so the order in
-// which they are provided is significant.
-func (h *GitHubWebhook) Register(handler WebhookHandler, eventTypes ...string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.handlers == nil {
-		h.handlers = make(map[string][]WebhookHandler)
-	}
-	for _, eventType := range eventTypes {
-		h.handlers[eventType] = append(h.handlers[eventType], handler)
-	}
 }
 
 func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types.ExternalService, error) {

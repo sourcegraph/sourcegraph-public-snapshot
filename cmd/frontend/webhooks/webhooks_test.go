@@ -60,7 +60,7 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	gh := GitHubWebhook{
+	gh := Webhook{
 		DB: db,
 	}
 

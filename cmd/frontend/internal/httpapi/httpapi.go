@@ -42,7 +42,7 @@ import (
 
 type Handlers struct {
 	GitHubWebhook                   webhooks.Registerer
-	GitLabWebhook                   http.Handler
+	GitLabWebhook                   webhooks.Registerer
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
