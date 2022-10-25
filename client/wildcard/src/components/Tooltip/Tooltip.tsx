@@ -1,5 +1,6 @@
 import React, { FC, forwardRef, ReactElement, useEffect, useRef, useState } from 'react'
 
+import { useId } from '@reach/auto-id'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useDebounce } from '../../hooks'
@@ -63,6 +64,7 @@ export interface TooltipProps {
 export const Tooltip: FC<TooltipProps> = props => {
     const { children, content, defaultOpen = false, placement = 'bottom' } = props
 
+    const tooltipId = useId()
     const [target, setTarget] = useState<HTMLElement | null>(null)
     const [tail, setTail] = useState<HTMLDivElement | null>(null)
     const popoverContentRef = useRef<HTMLDivElement>(null)
@@ -124,12 +126,15 @@ export const Tooltip: FC<TooltipProps> = props => {
 
     return (
         <>
-            <TooltipTarget ref={setTarget}>{children}</TooltipTarget>
+            <TooltipTarget ref={setTarget} aria-describedby={isOpen ? tooltipId : undefined}>
+                {children}
+            </TooltipTarget>
 
             {content && target && (
                 <>
                     <PopoverContent
                         role="tooltip"
+                        id={tooltipId}
                         ref={popoverContentRef}
                         isOpen={isOpen}
                         target={target}
@@ -152,11 +157,12 @@ export const Tooltip: FC<TooltipProps> = props => {
 }
 
 interface TooltipTargetProps {
+    'aria-describedby': string | undefined
     children: React.ReactElement
 }
 
 const TooltipTarget = forwardRef<any, TooltipTargetProps>((props, forwardedRef) => {
-    const { children } = props
+    const { 'aria-describedby': ariaDescribedby, children } = props
 
     const mergedRef = useMergeRefs([forwardedRef, (children as any).ref])
     let trigger: React.ReactElement
@@ -181,6 +187,7 @@ const TooltipTarget = forwardRef<any, TooltipTargetProps>((props, forwardedRef) 
 
     if (React.isValidElement(trigger)) {
         return React.cloneElement(trigger as ReactElement, {
+            'aria-describedby': ariaDescribedby,
             ref: mergedRef,
         })
     }

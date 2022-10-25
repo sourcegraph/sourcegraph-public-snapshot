@@ -4972,7 +4972,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@reach/auto-id@npm:0.16.0":
+"@reach/auto-id@npm:0.16.0, @reach/auto-id@npm:^0.16.0":
   version: 0.16.0
   resolution: "@reach/auto-id@npm:0.16.0"
   dependencies:
@@ -28959,6 +28959,7 @@ pvutils@latest:
     "@pollyjs/core": ^5.1.0
     "@pollyjs/persister-fs": ^5.0.0
     "@reach/accordion": ^0.16.1
+    "@reach/auto-id": ^0.16.0
     "@reach/combobox": ^0.16.5
     "@reach/dialog": ^0.16.2
     "@reach/menu-button": ^0.16.2
