@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -34,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -64,7 +66,6 @@ func NewHandler(
 	schema *graphql.Schema,
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
-	gh *webhooks.GitHubWebhook,
 ) http.Handler {
 	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
 
@@ -89,12 +90,20 @@ func NewHandler(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
+	gh := webhooks.GitHubWebhook{
+		DB: db,
+	}
+	webhookhandlers.Init(db, &gh)
+	handlers.GitHubWebhook.Register(&gh)
+	ghSync := repos.GitHubWebhookHandler{}
+	ghSync.Register(&gh)
+
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	// TODO: Integrate with webhookMiddleware.Logger
-	webhookHandler := webhooks.NewHandler(logger, db, gh)
+	webhookHandler := webhooks.NewHandler(logger, db, &gh)
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookHandler))
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gh)))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
