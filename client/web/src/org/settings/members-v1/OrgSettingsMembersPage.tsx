@@ -256,7 +256,6 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                         updates={this.userUpdates}
                         history={this.props.history}
                         location={this.props.location}
-                        useURLQuery={false}
                     />
                 </Container>
             </div>
@@ -283,6 +282,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 query OrganizationSettingsMembers($id: ID!, $first: Int!, $after: String, $query: String) {
                     node(id: $id) {
                         ... on Org {
+                            __typename
                             viewerCanAdminister
                             members(query: $query, first: $first, after: $after) {
                                 nodes {
@@ -315,7 +315,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 }
                 const org = data.node
                 if (org.__typename !== 'Org') {
-                    throw new Error('Unepxected node type')
+                    throw new Error('Unexpected node type')
                 }
                 if (!org.members) {
                     this.setState({ viewerCanAdminister: false, hasOneMember: false })
