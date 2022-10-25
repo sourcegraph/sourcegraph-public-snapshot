@@ -21,7 +21,7 @@ import (
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	db := config.InsightsDB
-	backfillStore := newBackfillStore(db)
+	backfillStore := NewBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
 
