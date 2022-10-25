@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- When a `content:` filter is used in a query, only file contents will be searched (previously any of file contents, paths, or repos were searched). However, as before, if `type:` is also set, the `content:` filter will search for results of the specified `type:`. [#43442](https://github.com/sourcegraph/sourcegraph/pull/43442)
 
 ### Fixed
 

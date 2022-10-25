@@ -900,6 +900,23 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	return searchType
 }
 
+func Test_computeResultTypes(t *testing.T) {
+	test := func(input string) string {
+		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+		b := plan[0]
+		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		return resultTypes.String()
+	}
+
+	t.Run("only search file content when type not set", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo content:bar")))
+	})
+
+	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo bar")))
+	})
+}
+
 func TestRepoSubsetTextSearch(t *testing.T) {
 	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
