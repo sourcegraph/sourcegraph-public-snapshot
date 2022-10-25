@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 
@@ -183,13 +182,11 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 
 	// We would have had all results when no limit set
 	if r.opt.LimitOffset == nil {
-		fmt.Println("branch 1")
 		return graphqlutil.HasNextPage(false), nil
 	}
 
 	// We got less results than limit, means we've had all results
 	if after < r.opt.Limit {
-		fmt.Println("branch 2")
 		return graphqlutil.HasNextPage(false), nil
 	}
 
@@ -198,15 +195,12 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 	// to determine if there are more results than the limit we set.
 	totalCount, err := r.TotalCount(ctx)
 	if err != nil {
-		fmt.Println("branch 3")
 		return nil, err
 	}
 
 	if int(totalCount) > after {
-		fmt.Println("branch 4")
 		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
-	fmt.Println("branch 5")
 	return graphqlutil.HasNextPage(false), nil
 }
 
