@@ -1,7 +1,3 @@
-- filename: cmd/frontend/internal/auth/userpasswd/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
-  interfaces:
-    - LockoutStore
 - filename: dev/team/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/dev/team
   interfaces:
@@ -10,32 +6,6 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: internal/codeintel/shared/resolvers/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers
-  interfaces:
-    - UploadsService
-    - AutoIndexingService
-  package: sharedresolvers
-- filename: internal/codeintel/uploads/transport/graphql/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
-  interfaces:
-    - AutoIndexingService
-    - UploadService
-    - PolicyService
-- filename: internal/codeintel/autoindexing/transport/graphql/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql
-  interfaces:
-    - AutoIndexingService
-    - UploadsService
-    - PolicyService
-- filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
-  interfaces:
-    - AutoIndexingService
-    - UploadsService
-    - PolicyService
-    - GitserverClient
-    - CodeNavService
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:
@@ -47,14 +17,6 @@
     - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
-- filename: enterprise/internal/insights/background/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
-  interfaces:
-    - RepoStore
-- filename: enterprise/internal/insights/compression/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
-  interfaces:
-    - CommitStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
