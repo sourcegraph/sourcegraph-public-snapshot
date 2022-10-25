@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import sinon from 'sinon'
+import { stub } from 'sinon'
 
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 
@@ -18,11 +18,11 @@ describe('SearchSidebarSection', () => {
         })
     )
 
-    const onFilterChosen = sinon.stub()
+    const onFilterChosen = stub()
 
     it('should render all items initially', () => {
         render(
-            <SearchFilterSection sectionId="id" header="Dynamic filters" showSearch={true}>
+            <SearchFilterSection sectionId="id" header="Dynamic filters" searchOptions={{ ariaLabel: 'Find filters' }}>
                 {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchFilterSection>
         )
@@ -33,7 +33,7 @@ describe('SearchSidebarSection', () => {
 
     it('should filter items based on search', () => {
         render(
-            <SearchFilterSection sectionId="id" header="Dynamic filters" showSearch={true}>
+            <SearchFilterSection sectionId="id" header="Dynamic filters" searchOptions={{ ariaLabel: 'Find filters' }}>
                 {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchFilterSection>
         )
@@ -45,7 +45,7 @@ describe('SearchSidebarSection', () => {
 
     it('should clear search when items change', () => {
         const { rerender } = render(
-            <SearchFilterSection sectionId="id" header="Dynamic filters" showSearch={true}>
+            <SearchFilterSection sectionId="id" header="Dynamic filters" searchOptions={{ ariaLabel: 'Find filters' }}>
                 {getDynamicFilterLinks(filters, ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchFilterSection>
         )
@@ -53,7 +53,7 @@ describe('SearchSidebarSection', () => {
         userEvent.type(screen.getByTestId('sidebar-section-search-box'), 'Script')
 
         rerender(
-            <SearchFilterSection sectionId="id" header="Dynamic filters" showSearch={true}>
+            <SearchFilterSection sectionId="id" header="Dynamic filters" searchOptions={{ ariaLabel: 'Find filters' }}>
                 {getDynamicFilterLinks(
                     [filters[0], filters[5], filters[3]],
                     ['file', 'lang', 'utility'],
@@ -68,7 +68,7 @@ describe('SearchSidebarSection', () => {
 
     it('should not show search if only one item in list', () => {
         render(
-            <SearchFilterSection sectionId="id" header="Dynamic filters" showSearch={true}>
+            <SearchFilterSection sectionId="id" header="Dynamic filters" searchOptions={{ ariaLabel: 'Find filters' }}>
                 {getDynamicFilterLinks([filters[2]], ['file', 'lang', 'utility'], onFilterChosen)}
             </SearchFilterSection>
         )

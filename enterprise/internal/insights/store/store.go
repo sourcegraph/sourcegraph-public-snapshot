@@ -27,6 +27,7 @@ type Interface interface {
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
 }
 
 var _ Interface = &Store{}
@@ -87,6 +88,9 @@ type SeriesPoint struct {
 }
 
 func (s *SeriesPoint) String() string {
+	if s.Capture != nil {
+		return fmt.Sprintf("SeriesPoint{Time: %q, Capture: %q, Value: %v}", s.Time, *s.Capture, s.Value)
+	}
 	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
 }
 
@@ -94,6 +98,8 @@ func (s *SeriesPoint) String() string {
 type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
+	// ID is the unique integer series ID to query, if non-nil.
+	ID *int
 
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
@@ -108,6 +114,9 @@ type SeriesPointsOpts struct {
 
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
+
+	// Whether to augment the series points data with zero values.
+	SupportsAugmentation bool
 
 	// Limit is the number of data points to query, if non-zero.
 	Limit int
@@ -134,6 +143,8 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	opts.Excluded = append(opts.Excluded, denylist...)
 
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
 	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
@@ -146,9 +157,27 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			return err
 		}
 		points = append(points, point)
+		capture := ""
+		if point.Capture != nil {
+			capture = *point.Capture
+		}
+		captureValues[capture] = struct{}{}
+		pointsMap[point.Time.String()+capture] = &point
 		return nil
 	})
-	return points, err
+	if err != nil {
+		return nil, err
+	}
+
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
+	}
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
+	return points, nil
 }
 
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
@@ -225,16 +254,35 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		return nil
 	})
 
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
+
 	for _, pointTime := range mapping {
 		for _, point := range pointTime {
-			points = append(points, SeriesPoint{
+			pt := SeriesPoint{
 				SeriesID: *opts.SeriesID,
 				Time:     point.Time,
 				Value:    point.Value,
 				Capture:  point.Capture,
-			})
+			}
+			points = append(points, pt)
+			capture := ""
+			if point.Capture != nil {
+				capture = *point.Capture
+			}
+			captureValues[capture] = struct{}{}
+			pointsMap[point.Time.String()+capture] = &pt
 		}
 	}
+
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
+	}
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
 	return points, err
 }
 
@@ -556,7 +604,6 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	if len(seriesRecordingTimes) == 0 {
 		return nil
 	}
-
 	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
 
 	for _, series := range seriesRecordingTimes {
@@ -637,6 +684,50 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 	return nil
 }
 
+func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
+	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
+		return []SeriesPoint{}, nil
+	}
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []SeriesPoint
+	if len(recordingsData.RecordingTimes) > 0 {
+		augmentedPoints = coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
+	}
+	return augmentedPoints, nil
+}
+
+func coalesceZeroValues(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
+	augmentedPoints := []SeriesPoint{}
+	for _, recordingTime := range recordingTimes {
+		timestamp := recordingTime.Timestamp
+		// We have to pivot on potential capture values as well. This is because for capture group data we need to know
+		// which capture group values to attach zero data to. Take points [{oct 20, "a"}, {oct 24 "a"}, {oct 24 "b"}]
+		// and recording times [oct 20, oct 24]. Without the capture value data we would not be able to know we have a
+		// missing {oct 20, "b"} entry.
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if captureValue != "" {
+					capture = &captureValue
+				}
+				augmentedPoints = append(augmentedPoints, SeriesPoint{
+					SeriesID: seriesID,
+					Time:     timestamp,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+	return augmentedPoints
+}
+
 const upsertRepoNameFmtStr = `
 WITH e AS(
 	INSERT INTO repo_names(name)
@@ -650,7 +741,7 @@ UNION
 `
 
 const getInsightSeriesRecordingTimesStr = `
-SELECT recording_time FROM insight_series_recording_times
+SELECT date_trunc('seconds', recording_time) FROM insight_series_recording_times
 WHERE %s
 ORDER BY recording_time ASC;
 `

@@ -44,7 +44,7 @@ import { ResourceDestructor } from './TestResourceManager'
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
  */
-export async function ensureLoggedInOrCreateTestUser(
+export async function ensureSignedInOrCreateTestUser(
     driver: Driver,
     gqlClient: GraphQLClient,
     {
@@ -65,13 +65,13 @@ export async function ensureLoggedInOrCreateTestUser(
     if (deleteIfExists) {
         await deleteUser(gqlClient, username, false)
     } else {
-        // Attempt to log in first
+        // Attempt to sign in first
         try {
-            await driver.ensureLoggedIn({ username, password: testUserPassword })
+            await driver.ensureSignedIn({ username, password: testUserPassword })
             return userDestructor
         } catch (error) {
             logger.error(
-                `Login failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
+                `Signing in failed (error: ${asError(error).message}), will attempt to create user ${JSON.stringify(
                     username
                 )}`
             )
@@ -79,7 +79,7 @@ export async function ensureLoggedInOrCreateTestUser(
     }
 
     await createTestUser(driver, gqlClient, { username, testUserPassword })
-    await driver.ensureLoggedIn({ username, password: testUserPassword })
+    await driver.ensureSignedIn({ username, password: testUserPassword })
     return userDestructor
 }
 

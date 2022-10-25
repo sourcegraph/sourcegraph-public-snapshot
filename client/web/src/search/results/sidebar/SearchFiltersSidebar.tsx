@@ -142,9 +142,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             <SearchSidebarSection
                 sectionId={SectionID.REPOSITORIES}
                 header="Repositories"
-                showSearch={true}
+                searchOptions={{ ariaLabel: 'Find repositories', noResultText: getRepoFilterNoResultText }}
                 minItems={1}
-                noResultText={getRepoFilterNoResultText}
             >
                 {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
             </SearchSidebarSection>
@@ -160,8 +159,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 <SearchSidebarSection
                     sectionId={SectionID.REVISIONS}
                     header="Revisions"
-                    showSearch={true}
-                    clearSearchOnChange={repoName}
+                    searchOptions={{
+                        ariaLabel: 'Find revisions',
+                        clearSearchOnChange: repoName,
+                    }}
                 >
                     {getRevisions({ repoName, onFilterClick: onSearchSubmit })}
                 </SearchSidebarSection>
@@ -170,10 +171,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             <SearchSidebarSection
                 sectionId={SectionID.SEARCH_REFERENCE}
                 header="Search reference"
-                showSearch={true}
-                // search reference should always preserve the filter
-                // (false is just an arbitrary but static value)
-                clearSearchOnChange={false}
+                searchOptions={{
+                    ariaLabel: 'Find filters',
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange: false,
+                }}
             >
                 {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
             </SearchSidebarSection>

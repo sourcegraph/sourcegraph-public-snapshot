@@ -12,14 +12,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestWebhooksHandler(t *testing.T) {
@@ -62,10 +64,12 @@ func TestWebhooksHandler(t *testing.T) {
 		DB: db,
 	}
 
-	srv := httptest.NewServer(NewHandler(logger, db, &gh))
+	base := mux.NewRouter()
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(NewHandler(logger, db, &gh))
+	srv := httptest.NewServer(base)
 
 	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
 
 		req, err := http.NewRequest("POST", requestURL, nil)
 		require.NoError(t, err)
@@ -77,7 +81,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("not-found webhook returns 404", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, uuid.New())
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, uuid.New())
 
 		resp, err := http.Post(requestURL, "", nil)
 		require.NoError(t, err)
@@ -86,7 +90,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("malformed UUID returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/SomeInvalidUUID", srv.URL)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/SomeInvalidUUID", srv.URL)
 
 		resp, err := http.Post(requestURL, "", nil)
 		require.NoError(t, err)
@@ -95,7 +99,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("incorrect GitLab secret returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitLabWH.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
 
 		req, err := http.NewRequest("POST", requestURL, nil)
 		require.NoError(t, err)
@@ -107,7 +111,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("correct GitHub secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWH.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("githubsecret"))
 		payload := []byte(`{"body": "text"}`)
@@ -127,7 +131,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 
 		payload := []byte(`{"body": "text"}`)
 
@@ -143,7 +147,7 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 
 	t.Run("incorrect GitHub secret returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/webhooks/%v", srv.URL, gitHubWH.UUID)
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("wrongsecret"))
 		payload := []byte(`{"body": "text"}`)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,7 +32,8 @@ func TestCreateWebhook(t *testing.T) {
 
 	ws := NewWebhookService(db, keyring.Default())
 
-	ghURN := "https://github.com"
+	ghURN, err := extsvc.NewCodeHostBaseURL("https://github.com")
+	require.NoError(t, err)
 	testSecret := "mysecret"
 	tests := []struct {
 		label        string
@@ -44,7 +46,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			label:        "basic",
 			codeHostKind: extsvc.KindGitHub,
-			codeHostURN:  ghURN,
+			codeHostURN:  ghURN.String(),
 			secret:       &testSecret,
 			expected: types.Webhook{
 				ID:              1,
@@ -58,7 +60,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			label:        "invalid code host",
 			codeHostKind: "InvalidKind",
-			codeHostURN:  ghURN,
+			codeHostURN:  ghURN.String(),
 			expectedErr:  errors.New("webhooks are not supported for code host kind InvalidKind"),
 		},
 		{
