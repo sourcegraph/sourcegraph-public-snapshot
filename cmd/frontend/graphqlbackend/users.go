@@ -103,12 +103,12 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins can list users and only org members can
 	// list other org members.
-	if r.opt.OrgId == nil {
+	if r.opt.OrgID == 0 {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *r.opt.OrgId); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, r.opt.OrgID); err != nil {
 			if err == auth.ErrNotAnOrgMember {
 				return nil, errors.New("must be a member of this organization to view members")
 			}
@@ -143,12 +143,12 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count users and only org members can
 	// count other org members.
-	if r.opt.OrgId == nil {
+	if r.opt.OrgID == 0 {
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return 0, err
 		}
 	} else {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *r.opt.OrgId); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, r.opt.OrgID); err != nil {
 			if err == auth.ErrNotAnOrgMember {
 				return 0, errors.New("must be a member of this organization to view members")
 			}

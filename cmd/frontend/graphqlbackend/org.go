@@ -174,7 +174,7 @@ func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) 
 		db: o.db,
 		opt: database.UsersListOptions{
 			Query:       query,
-			OrgId:       &o.org.ID,
+			OrgID:       o.org.ID,
 			LimitOffset: limitOffset,
 		},
 	}, nil
