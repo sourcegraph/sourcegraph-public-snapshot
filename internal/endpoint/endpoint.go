@@ -22,10 +22,10 @@ type Map interface {
 	GetN(key string, n int) ([]string, error)
 }
 
-// urlMap is a consistent hash map to URLs. It uses the kubernetes API to watch
-// the endpoints for a service and update the map when they change. It can
-// also fallback to static URLs if not configured for kubernetes.
-type urlMap struct {
+// endpointsMap is a consistent hash map to URLs. It uses the kubernetes API to
+// watch the endpoints for a service and update the map when they change. It
+// can also fallback to static URLs if not configured for kubernetes.
+type endpointsMap struct {
 	urlspec string
 
 	mu  sync.RWMutex
@@ -74,22 +74,22 @@ func New(urlspec string) Map {
 // string. Unlike static endpoints created via New.
 //
 // Static Maps are guaranteed to never return an error.
-func Static(endpoints ...string) *urlMap {
-	return &urlMap{
+func Static(endpoints ...string) *endpointsMap {
+	return &endpointsMap{
 		urlspec: fmt.Sprintf("%v", endpoints),
 		hm:      newConsistentHash(endpoints),
 	}
 }
 
 // Empty returns an Endpoint map which always fails with err.
-func Empty(err error) *urlMap {
-	return &urlMap{
+func Empty(err error) *endpointsMap {
+	return &endpointsMap{
 		urlspec: "error: " + err.Error(),
 		err:     err,
 	}
 }
 
-func (m *urlMap) String() string {
+func (m *endpointsMap) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }
 
@@ -98,7 +98,7 @@ func (m *urlMap) String() string {
 // Note: For k8s URLs we return URLs based on the registered endpoints. The
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
-func (m *urlMap) Get(key string) (string, error) {
+func (m *endpointsMap) Get(key string) (string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -112,7 +112,7 @@ func (m *urlMap) Get(key string) (string, error) {
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
-func (m *urlMap) GetN(key string, n int) ([]string, error) {
+func (m *endpointsMap) GetN(key string, n int) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -130,7 +130,7 @@ func (m *urlMap) GetN(key string, n int) ([]string, error) {
 // for each key which will acquire the endpoint map for each call. The benefit
 // is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
 // is immutable vs may change between Get calls).
-func (m *urlMap) GetMany(keys ...string) ([]string, error) {
+func (m *endpointsMap) GetMany(keys ...string) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -149,7 +149,7 @@ func (m *urlMap) GetMany(keys ...string) ([]string, error) {
 }
 
 // Endpoints returns a list of all addresses. Do not modify the returned value.
-func (m *urlMap) Endpoints() ([]string, error) {
+func (m *endpointsMap) Endpoints() ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -163,7 +163,7 @@ func (m *urlMap) Endpoints() ([]string, error) {
 }
 
 // discover updates the Map with discovered endpoints
-func (m *urlMap) discover() {
+func (m *endpointsMap) discover() {
 	if m.discofunk == nil {
 		return
 	}
@@ -177,7 +177,7 @@ func (m *urlMap) discover() {
 	<-ready
 }
 
-func (m *urlMap) sync(ch chan endpoints, ready chan struct{}) {
+func (m *endpointsMap) sync(ch chan endpoints, ready chan struct{}) {
 	for eps := range ch {
 		log15.Info(
 			"endpoints discovered",

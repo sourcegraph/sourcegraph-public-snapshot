@@ -46,7 +46,7 @@ func TestGetN(t *testing.T) {
 	}
 }
 
-func expectEndpoints(t *testing.T, m *urlMap, endpoints ...string) {
+func expectEndpoints(t *testing.T, m *endpointsMap, endpoints ...string) {
 	t.Helper()
 
 	// We ask for the URL of a large number of keys, we expect to see every
@@ -106,7 +106,7 @@ func TestSync(t *testing.T) {
 	defer close(eps)
 
 	urlspec := "http://test"
-	m := &urlMap{
+	m := &endpointsMap{
 		urlspec: urlspec,
 		discofunk: func(disco chan endpoints) {
 			for {
