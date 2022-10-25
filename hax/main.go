@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -77,36 +78,41 @@ func mainErr(ctx context.Context) (err error) {
 		return nil
 	}
 
+	n := 1 // runtime.GOMAXPROCS(0)
 	g := group.New().WithErrors().WithContext(ctx)
-	ids := make(chan int, 1024)
-	gcsWriteQueue := make(chan serializableProgress, 1024)
-	progressWriteQueue := make(chan blockingSerializableProgress, 1024)
-
-	go func() {
-		id := progress.IDOffset
-
-		for {
-			id++
-			ids <- id
-		}
-	}()
+	gcsWriteQueue := make(chan serializableProgress, n)
+	progressWriteQueue := make(chan blockingSerializableProgress, n)
 
 	g.Go(func(ctx context.Context) error {
 		defer close(gcsWriteQueue)
 
+	loop:
 		for !progress.Done {
-			id, nextIDOffset, nextBefore, err := processNextUpload(ctx, frontendStore, codeIntelStore, ids, progress.Before)
+			id, nextBefore, out, err := processNextUpload(ctx, frontendStore, codeIntelStore, progress.Before)
 			if err != nil {
 				return err
 			}
 
-			progress.IDOffset = nextIDOffset
 			progress.Before = nextBefore
 			if nextBefore == 0 {
 				progress.Done = true
 			}
 
-			gcsWriteQueue <- serializableProgress{id, progress}
+			for {
+				select {
+				case gcsWriteQueue <- serializableProgress{
+					id:       id,
+					progress: progress,
+					out:      out,
+				}:
+					continue loop
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+				fmt.Printf("Stuck sending to GCS write queue\n")
+				time.Sleep(time.Millisecond * 500)
+			}
 		}
 
 		return nil
@@ -116,15 +122,42 @@ func mainErr(ctx context.Context) (err error) {
 		defer close(progressWriteQueue)
 
 		for serializableProgress := range gcsWriteQueue {
-			done := make(chan struct{})
-			progressWriteQueue <- blockingSerializableProgress{
-				serializableProgress: serializableProgress,
-				done:                 done,
+			done := make(chan error, 1)
+		selectLoop:
+			for {
+				select {
+				case progressWriteQueue <- blockingSerializableProgress{
+					serializableProgress: serializableProgress,
+					done:                 done,
+				}:
+					break selectLoop
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+				fmt.Printf("Stuck sending to progress write queue\n")
+				time.Sleep(time.Millisecond * 500)
 			}
 
-			g.Go(func(ctx context.Context) error {
+			g.Go(func(ctx context.Context) (err error) {
 				defer close(done)
-				return moveToGCS(ctx, bucket, serializableProgress.id)
+				defer func() { done <- err }()
+
+				for {
+					select {
+					case err := <-serializableProgress.out:
+						if err != nil {
+							return err
+						}
+
+						return moveToGCS(ctx, bucket, serializableProgress.id)
+					case <-ctx.Done():
+						return ctx.Err()
+					default:
+					}
+					fmt.Printf("Stuck waiting for progress.out\n")
+					time.Sleep(time.Millisecond * 500)
+				}
 			})
 		}
 
@@ -133,15 +166,26 @@ func mainErr(ctx context.Context) (err error) {
 
 	g.Go(func(ctx context.Context) error {
 		for serializableProgress := range progressWriteQueue {
-			<-serializableProgress.done
+			for {
+				select {
+				case err := <-serializableProgress.done:
+					if err != nil {
+						return err
+					}
+					serialized, err := json.Marshal(serializableProgress.progress)
+					if err != nil {
+						return err
+					}
 
-			serialized, err := json.Marshal(serializableProgress.progress)
-			if err != nil {
-				return err
-			}
-
-			if err := os.WriteFile(progressFile, serialized, os.ModePerm); err != nil {
-				return err
+					if err := os.WriteFile(progressFile, serialized, os.ModePerm); err != nil {
+						return err
+					}
+				case <-ctx.Done():
+					return ctx.Err()
+				default:
+				}
+				fmt.Printf("Stuck waiting for progress.done\n")
+				time.Sleep(time.Millisecond * 500)
 			}
 		}
 
@@ -156,49 +200,59 @@ func moveToGCS(ctx context.Context, bucket *storage.BucketHandle, id int) (err e
 	fmt.Printf("Uploading %d...\n", id)
 	defer func() { fmt.Printf("Done uploading %d (%s)\n", id, time.Since(start)) }()
 
+	g := group.New().WithErrors().WithContext(ctx)
+
 	for _, filename := range []string{"documents.csv", "references.csv", "monikers.csv"} {
-		objectName := filepath.Join(fmt.Sprintf("%d", id), filename)
-		obj := bucket.Object(objectName)
-		if err := obj.Delete(ctx); err != nil {
-			if err != storage.ErrObjectNotExist {
-				return err
-			}
-		}
-		w := obj.NewWriter(ctx)
+		filename := filename
 
-		if err := func() (err error) {
-			defer func() {
-				if closeErr := w.Close(); closeErr != nil {
-					err = errors.Append(err, closeErr)
-				}
-			}()
-
-			return func() (err error) {
-				f, err := os.Open(filepath.Join(scratchPath, objectName))
-				if err != nil {
+		g.Go(func(ctx context.Context) error {
+			objectName := filepath.Join(fmt.Sprintf("%d", id), filename)
+			obj := bucket.Object(objectName)
+			if err := obj.Delete(ctx); err != nil {
+				if err != storage.ErrObjectNotExist {
 					return err
 				}
+			}
+			w := obj.NewWriter(ctx)
+
+			return func() (err error) {
 				defer func() {
-					if closeErr := f.Close(); closeErr != nil {
+					if closeErr := w.Close(); closeErr != nil {
 						err = errors.Append(err, closeErr)
 					}
 				}()
 
-				if _, err := io.Copy(w, f); err != nil {
-					return err
-				}
+				return func() (err error) {
+					f, err := os.Open(filepath.Join(scratchPath, objectName))
+					if err != nil {
+						return err
+					}
+					defer func() {
+						if closeErr := f.Close(); closeErr != nil {
+							err = errors.Append(err, closeErr)
+						}
+					}()
 
-				return nil
+					if _, err := io.Copy(w, f); err != nil {
+						return err
+					}
+
+					return nil
+				}()
 			}()
-		}(); err != nil {
-			return err
-		}
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return os.RemoveAll(filepath.Join(scratchPath, fmt.Sprintf("%d", id)))
 }
 
-func processNextUpload(ctx context.Context, frontendStore, codeIntelStore *basestore.Store, ids <-chan int, before int) (id, idOffset, nextBefore int, _ error) {
+var sem = make(chan struct{}, runtime.GOMAXPROCS(0))
+
+func processNextUpload(ctx context.Context, frontendStore, codeIntelStore *basestore.Store, before int) (id, nextBefore int, _ <-chan error, _ error) {
 	beforeCond := sqlf.Sprintf("")
 	if before != 0 {
 		beforeCond = sqlf.Sprintf("u.id < %s AND", before)
@@ -219,26 +273,36 @@ func processNextUpload(ctx context.Context, frontendStore, codeIntelStore *bases
 		LIMIT 1
 	`, beforeCond)))
 	if err != nil || !ok {
-		return 0, 0, 0, err
+		return 0, 0, nil, err
 	}
-
-	start := time.Now()
-	fmt.Printf("Processing %d...\n", uploadMeta.id)
-	defer func() { fmt.Printf("Done processing %d (%s)\n", uploadMeta.id, time.Since(start)) }()
 
 	root := uploadMeta.root
 	if root == "" {
 		root = "/"
 	}
-	if err := processUpload(ctx, frontendStore, codeIntelStore, uploadMeta, ids); err != nil {
-		return 0, 0, 0, err
+
+	select {
+	case sem <- struct{}{}:
+	case <-ctx.Done():
+		return 0, 0, nil, ctx.Err()
 	}
 
-	return uploadMeta.id, <-ids, uploadMeta.id, nil
+	out := make(chan error, 1)
+	go func() {
+		defer func() { <-sem }()
+		defer close(out)
+		out <- processUpload(ctx, frontendStore, codeIntelStore, uploadMeta)
+	}()
+
+	return uploadMeta.id, uploadMeta.id, out, nil
 }
 
-func processUpload(ctx context.Context, frontendStore, codeIntelStore *basestore.Store, uploadMeta uploadMeta, ids <-chan int) error {
-	localPathLookup := map[string]int{}
+func processUpload(ctx context.Context, frontendStore, codeIntelStore *basestore.Store, uploadMeta uploadMeta) error {
+	start := time.Now()
+	fmt.Printf("Processing %d...\n", uploadMeta.id)
+	defer func() { fmt.Printf("Done processing %d (%s)\n", uploadMeta.id, time.Since(start)) }()
+
+	localPathLookup := map[string]int64{}
 	definitionIDs := map[ID]countAndPath{}
 
 	if err := withWriter(uploadMeta.id, "documents.csv", func(f func(format string, args ...any) error) error {
@@ -254,7 +318,7 @@ func processUpload(ctx context.Context, frontendStore, codeIntelStore *basestore
 				return err
 			}
 
-			id := <-ids
+			id := hash(strings.Join([]string{uploadMeta.repo, uploadMeta.root, path}, ":"))
 			localPathLookup[path] = id
 			for _, r := range document.Ranges {
 				definitionIDs[r.DefinitionResultID] = countAndPath{id, definitionIDs[r.DefinitionResultID].count + 1}
@@ -342,24 +406,24 @@ type uploadMeta struct {
 }
 
 type countAndPath struct {
-	documentID int
+	documentID int64
 	count      int
 }
 
 type jsonProgress struct {
-	IDOffset int
-	Before   int
-	Done     bool
+	Before int
+	Done   bool
 }
 
 type serializableProgress struct {
 	id       int
 	progress jsonProgress
+	out      <-chan error
 }
 
 type blockingSerializableProgress struct {
 	serializableProgress
-	done <-chan struct{}
+	done <-chan error
 }
 
 var scanFirstUploadMeta = basestore.NewFirstScanner(func(s dbutil.Scanner) (meta uploadMeta, err error) {
@@ -451,6 +515,7 @@ func runQuery(ctx context.Context, store *basestore.Store, query *sqlf.Query, f 
 	return nil
 }
 
+//
 // Filesystem utils
 
 func withWriter(uploadID int, filename string, f func(f func(format string, args ...any) error) error) (err error) {
@@ -469,8 +534,33 @@ func withWriter(uploadID int, filename string, f func(f func(format string, args
 		}
 	}()
 
+	total := int64(0)
+
 	return f(func(format string, args ...any) error {
-		_, err := io.Copy(wc, strings.NewReader(fmt.Sprintf(format, args...)))
-		return err
+		n, err := io.Copy(wc, strings.NewReader(fmt.Sprintf(format, args...)))
+		if err != nil {
+			return err
+		}
+
+		total += n
+		if total > 1024*1024*1024 {
+			return errors.Newf("%d TOO BIG", uploadID)
+		}
+
+		return nil
 	})
+}
+
+//
+// Hash utils
+
+func hash(v string) (h int64) {
+	if len(v) == 0 {
+		return 0
+	}
+	for _, r := range v {
+		h = 31*h + int64(r)
+	}
+
+	return h
 }
