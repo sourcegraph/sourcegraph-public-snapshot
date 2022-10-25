@@ -172,6 +172,58 @@ type InsightSeriesStatus {
     Indicates if the series is currently loading additional data
     """
     isLoadingData: Boolean
+
+    """
+    Data points that are flagged terminally incomplete for this series.
+    """
+    incompleteDatapoints: [IncompleteDatapointAlert!]
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+interface IncompleteDatapointAlert {
+    """
+    An optional repository that may be associated with this incomplete data point.
+    """
+    repository: Repository
+
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point due to a query timeout, specifically for a dynamic series (for example capture group series).
+Given this is for a dynamic series it is not known which timeseries would map to the result, and therefore this applies to the entire
+set of dynamically expanded timeseries (in other words, captured values).
+"""
+type DynamicSeriesTimeoutAlert implements IncompleteDatapointAlert {
+    """
+    An optional repository that may be associated with this incomplete data point.
+    """
+    repository: Repository
+
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point due to a query timeout.
+"""
+type StaticSeriesTimeoutAlert implements IncompleteDatapointAlert {
+    """
+    An optional repository that may be associated with this incomplete data point.
+    """
+    repository: Repository
+
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
 }
 
 extend type Query {
