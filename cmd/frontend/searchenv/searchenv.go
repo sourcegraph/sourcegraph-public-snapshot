@@ -16,10 +16,10 @@ var (
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
 	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
+	searcherURLs     endpoint.Map
 
 	indexedEndpointsOnce sync.Once
-	indexedEndpoints     *endpoint.Map
+	indexedEndpoints     endpoint.Map
 
 	IndexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
@@ -34,7 +34,7 @@ var (
 	}()
 )
 
-func SearcherURLs() *endpoint.Map {
+func SearcherURLs() endpoint.Map {
 	searcherURLsOnce.Do(func() {
 		if len(strings.Fields(searcherURL)) == 0 {
 			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
@@ -45,7 +45,7 @@ func SearcherURLs() *endpoint.Map {
 	return searcherURLs
 }
 
-func IndexedEndpoints() *endpoint.Map {
+func IndexedEndpoints() endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexedEndpoints = endpoint.New(addr)

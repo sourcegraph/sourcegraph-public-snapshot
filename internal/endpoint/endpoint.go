@@ -11,16 +11,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type MapLike interface {
+// Map is a map to endpoints of a single service.
+type Map interface {
+	// Endpoints returns the list of a service's endpoints as discovered thrugh
+	// the chosen service discovery mechanism.
 	Endpoints() ([]string, error)
+	// Get returns the URL that's closest to the given key in the map of endpoints.
 	Get(key string) (string, error)
+	// Get returns the n closest URLs for the given key in the map of endpoints.
 	GetN(key string, n int) ([]string, error)
 }
 
-// Map is a consistent hash map to URLs. It uses the kubernetes API to watch
+// urlMap is a consistent hash map to URLs. It uses the kubernetes API to watch
 // the endpoints for a service and update the map when they change. It can
 // also fallback to static URLs if not configured for kubernetes.
-type Map struct {
+type urlMap struct {
 	urlspec string
 
 	mu  sync.RWMutex
@@ -56,7 +61,7 @@ type endpoints struct {
 //	"k8s+http://searcher"
 //	"k8s+rpc://indexed-searcher?kind=sts"
 //	"http://searcher-0 http://searcher-1 http://searcher-2"
-func New(urlspec string) *Map {
+func New(urlspec string) Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
@@ -69,22 +74,22 @@ func New(urlspec string) *Map {
 // string. Unlike static endpoints created via New.
 //
 // Static Maps are guaranteed to never return an error.
-func Static(endpoints ...string) *Map {
-	return &Map{
+func Static(endpoints ...string) *urlMap {
+	return &urlMap{
 		urlspec: fmt.Sprintf("%v", endpoints),
 		hm:      newConsistentHash(endpoints),
 	}
 }
 
 // Empty returns an Endpoint map which always fails with err.
-func Empty(err error) *Map {
-	return &Map{
+func Empty(err error) *urlMap {
+	return &urlMap{
 		urlspec: "error: " + err.Error(),
 		err:     err,
 	}
 }
 
-func (m *Map) String() string {
+func (m *urlMap) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }
 
@@ -93,7 +98,7 @@ func (m *Map) String() string {
 // Note: For k8s URLs we return URLs based on the registered endpoints. The
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
-func (m *Map) Get(key string) (string, error) {
+func (m *urlMap) Get(key string) (string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -107,7 +112,7 @@ func (m *Map) Get(key string) (string, error) {
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
-func (m *Map) GetN(key string, n int) ([]string, error) {
+func (m *urlMap) GetN(key string, n int) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -125,7 +130,7 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 // for each key which will acquire the endpoint map for each call. The benefit
 // is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
 // is immutable vs may change between Get calls).
-func (m *Map) GetMany(keys ...string) ([]string, error) {
+func (m *urlMap) GetMany(keys ...string) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -144,7 +149,7 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 }
 
 // Endpoints returns a list of all addresses. Do not modify the returned value.
-func (m *Map) Endpoints() ([]string, error) {
+func (m *urlMap) Endpoints() ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -158,7 +163,7 @@ func (m *Map) Endpoints() ([]string, error) {
 }
 
 // discover updates the Map with discovered endpoints
-func (m *Map) discover() {
+func (m *urlMap) discover() {
 	if m.discofunk == nil {
 		return
 	}
@@ -172,7 +177,7 @@ func (m *Map) discover() {
 	<-ready
 }
 
-func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
+func (m *urlMap) sync(ch chan endpoints, ready chan struct{}) {
 	for eps := range ch {
 		log15.Info(
 			"endpoints discovered",

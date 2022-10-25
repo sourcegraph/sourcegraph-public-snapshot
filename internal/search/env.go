@@ -43,7 +43,7 @@ func (m confEndpointMap) GetN(key string, n int) ([]string, error) {
 
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
 
-func SearcherURLs() endpoint.MapLike {
+func SearcherURLs() endpoint.Map {
 	return confEndpointMap{
 		getter: func() []string { return conf.Get().ServiceConnections().Searchers },
 	}

@@ -22,8 +22,8 @@ import (
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(urlspec string) *Map {
-	return &Map{
+func K8S(urlspec string) Map {
+	return &urlMap{
 		urlspec:   urlspec,
 		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
 	}

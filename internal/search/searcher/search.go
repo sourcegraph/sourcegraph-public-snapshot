@@ -171,7 +171,7 @@ var MockSearchFilesInRepo func(
 func (s *TextSearchJob) searchFilesInRepo(
 	ctx context.Context,
 	db database.DB,
-	searcherURLs endpoint.MapLike,
+	searcherURLs endpoint.Map,
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
 	rev string,

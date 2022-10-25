@@ -68,7 +68,7 @@ type Client struct {
 	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 
 	endpointOnce sync.Once
-	endpoint     *endpoint.Map
+	endpoint     endpoint.Map
 
 	langMappingOnce  resetonce.Once
 	langMappingCache map[string][]glob.Glob

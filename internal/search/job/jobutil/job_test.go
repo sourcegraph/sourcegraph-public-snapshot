@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -37,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 func TestNewPlanJob(t *testing.T) {
@@ -1300,7 +1301,7 @@ func RunRepoSubsetTextSearch(
 	repos []*search.RepositoryRevisions,
 	q query.Q,
 	zoekt *searchbackend.FakeSearcher,
-	searcherURLs *endpoint.Map,
+	searcherURLs endpoint.Map,
 	mode search.GlobalSearchMode,
 	useFullDeadline bool,
 ) ([]*result.FileMatch, streaming.Stats, error) {

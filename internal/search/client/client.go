@@ -46,7 +46,7 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs endpoint.MapLike) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs endpoint.Map) SearchClient {
 	return &searchClient{
 		logger:       logger,
 		db:           db,
@@ -59,7 +59,7 @@ type searchClient struct {
 	logger       log.Logger
 	db           database.DB
 	zoekt        zoekt.Streamer
-	searcherURLs endpoint.MapLike
+	searcherURLs endpoint.Map
 }
 
 func (s *searchClient) Plan(
