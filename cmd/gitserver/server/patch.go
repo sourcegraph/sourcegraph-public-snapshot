@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -178,6 +179,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+	if !gitdomain.IsAllowedGitCmd(logger, applyArgs) {
+		return http.StatusInternalServerError, resp
+	}
+
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
