@@ -72,23 +72,20 @@ type userConnectionResolver struct {
 	err        error
 }
 
-// compute caches results from the more expensive user list creation that occurs when activePeriod
-// is set to a specific length of time.
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
-	if r.activePeriod == nil {
-		return nil, 0, errors.New("activePeriod must not be nil")
-	}
 	r.once.Do(func() {
 		var err error
-		switch *r.activePeriod {
-		case "TODAY":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
-		case "THIS_WEEK":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
-		case "THIS_MONTH":
-			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
-		default:
-			err = errors.Errorf("unknown user active period %s", *r.activePeriod)
+		if r.activePeriod != nil && *r.activePeriod != "ALL_TIME" {
+			switch *r.activePeriod {
+			case "TODAY":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
+			case "THIS_WEEK":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
+			case "THIS_MONTH":
+				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
+			default:
+				err = errors.Errorf("unknown user active period %s", *r.activePeriod)
+			}
 		}
 		if err != nil {
 			r.err = err
@@ -106,13 +103,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
-	var users []*types.User
-	var err error
-	if r.useCache() {
-		users, _, err = r.compute(ctx)
-	} else {
-		users, err = r.db.Users().List(ctx, &r.opt)
-	}
+	users, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -131,24 +122,12 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	var count int
-	var err error
-	if r.useCache() {
-		_, count, err = r.compute(ctx)
-	} else {
-		count, err = r.db.Users().Count(ctx, &r.opt)
-	}
+	_, count, err := r.compute(ctx)
 	return int32(count), err
 }
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	var users []*types.User
-	var err error
-	if r.useCache() {
-		users, _, err = r.compute(ctx)
-	} else {
-		users, err = r.db.Users().List(ctx, &r.opt)
-	}
+	users, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -177,10 +156,6 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
-}
-
-func (r *userConnectionResolver) useCache() bool {
-	return r.activePeriod != nil && *r.activePeriod != "ALL_TIME"
 }
 
 func checkMembersAccess(ctx context.Context, db database.DB, orgID int32) error {
