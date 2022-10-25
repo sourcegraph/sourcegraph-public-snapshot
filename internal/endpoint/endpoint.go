@@ -20,6 +20,8 @@ type Map interface {
 	Get(key string) (string, error)
 	// Get returns the n closest URLs for the given key in the map of endpoints.
 	GetN(key string, n int) ([]string, error)
+	// GetMany is the same as calling Get on each item of keys, but optimized.
+	GetMany(keys ...string) ([]string, error)
 }
 
 // endpointsMap is a consistent hash map to URLs. It uses the kubernetes API to

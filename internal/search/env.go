@@ -36,9 +36,24 @@ func (m confEndpointMap) Get(key string) (string, error) {
 	em := endpoint.Static(m.getter()...)
 	return em.Get(key)
 }
+
 func (m confEndpointMap) GetN(key string, n int) ([]string, error) {
 	em := endpoint.Static(m.getter()...)
 	return em.GetN(key, n)
+}
+
+func (m confEndpointMap) GetMany(keys ...string) ([]string, error) {
+	em := endpoint.Static(m.getter()...)
+	urls := make([]string, len(keys))
+	for i, k := range keys {
+		u, err := em.Get(k)
+		if err != nil {
+			return urls, err
+		}
+
+		urls[i] = u
+	}
+	return urls, nil
 }
 
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
