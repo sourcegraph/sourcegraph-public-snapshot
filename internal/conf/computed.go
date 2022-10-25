@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -160,6 +161,24 @@ func ExecutorsFrontendURL() string {
 	}
 
 	return current.ExternalURL
+}
+
+func ExecutorsSrcCLIImage() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImage != "" {
+		return current.ExecutorsSrcCLIImage
+	}
+
+	return "sourcegraph/src-cli"
+}
+
+func ExecutorsSrcCLIImageTag() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImageTag != "" {
+		return current.ExecutorsSrcCLIImageTag
+	}
+
+	return srccli.MinimumVersion
 }
 
 func CodeIntelAutoIndexingEnabled() bool {
@@ -422,22 +441,6 @@ func GitMaxConcurrentClones() int {
 	v := Get().GitMaxConcurrentClones
 	if v <= 0 {
 		return 5
-	}
-	return v
-}
-
-func UserReposMaxPerUser() int {
-	v := Get().UserReposMaxPerUser
-	if v == 0 {
-		return 2000
-	}
-	return v
-}
-
-func UserReposMaxPerSite() int {
-	v := Get().UserReposMaxPerSite
-	if v == 0 {
-		return 200000
 	}
 	return v
 }

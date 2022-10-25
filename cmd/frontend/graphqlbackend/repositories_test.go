@@ -11,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -88,8 +88,8 @@ func TestRepositories(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Path:          []any{"repositories", "totalCount"},
-						Message:       backend.ErrMustBeSiteAdmin.Error(),
-						ResolverError: backend.ErrMustBeSiteAdmin,
+						Message:       auth.ErrMustBeSiteAdmin.Error(),
+						ResolverError: auth.ErrMustBeSiteAdmin,
 					},
 				},
 			},

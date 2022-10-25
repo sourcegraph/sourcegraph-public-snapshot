@@ -4,6 +4,14 @@
 
 This page isn’t an exhaustive list of general-purpose tips for using GoLand; it aims to remain Sourcegraph specific.
 
+### Correct GOROOT, GOPATH, and Modules settings after running `sg setup`
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/img/goland_gopath.png" class="lead-screenshot">
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/img/goland_goroot.png" class="lead-screenshot">
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/img/goland_modules.png" class="lead-screenshot">
+
 ### Use .editorconfig
 
 GoLand automatically picks up the `.editorconfig` file [committed at the root](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.editorconfig) of our repository. You don't need to do anything, just make sure that you don't disable the bundled plugin.

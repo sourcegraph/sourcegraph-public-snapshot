@@ -9,7 +9,6 @@ import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { logger } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -17,6 +16,7 @@ import { Button, LoadingSpinner, Link, Alert, Code, Text, PageHeader, Container 
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
+import { SiteResult } from '../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -207,7 +207,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
 }
 
 interface State {
-    site?: GQL.ISite
+    site?: SiteResult['site']
     loading: boolean
     error?: Error
 
@@ -435,7 +435,14 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             restartToApply = await updateSiteConfiguration(lastConfigurationID, newContents).toPromise<boolean>()
         } catch (error) {
             logger.error(error)
-            this.setState({ saving: false, error })
+            this.setState({
+                saving: false,
+                error: new Error(
+                    String(error) +
+                        '\nError occured while attempting to save site configuration. Please backup changes before reloading the page.'
+                ),
+            })
+            throw error
         }
 
         const oldContents = lastConfiguration?.effectiveContents || ''

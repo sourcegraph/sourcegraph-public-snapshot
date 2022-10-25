@@ -12,11 +12,10 @@ import (
 	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -36,8 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,9 +92,22 @@ func main() {
 	// be ready for traffic.
 	close(ready)
 
-	// Initialize stores
-	gitserverClient := gitserver.New(db, observationContext)
+	// Initialize sub-repo permissions client
+	var err error
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		logger.Fatal("Failed to create sub-repo client", log.Error(err))
+	}
 
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: codeIntelDB,
+	})
+	if err != nil {
+		logger.Fatal("Failed to create codeintel services", log.Error(err))
+	}
+
+	// Initialize stores
 	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
 	if err != nil {
 		logger.Fatal("Failed to create upload store", log.Error(err))
@@ -106,29 +116,14 @@ func main() {
 		logger.Fatal("Failed to initialize upload store", log.Error(err))
 	}
 
-	// Initialize sub-repo permissions client
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		logger.Fatal("Failed to create sub-repo client", log.Error(err))
-	}
-
-	uploadsSvc := uploads.GetService(db, database.NewDBWith(logger, codeIntelDB), gitserverClient)
-
 	// Initialize worker
-	rootContext := actor.WithInternalActor(context.Background())
-	handler := uploadsSvc.WorkerutilHandler(
+	worker := uploads.GetBackgroundJob(services.UploadsService).NewWorker(
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
+		config.WorkerPollInterval,
+		config.MaximumRuntimePerJob,
 	)
-	worker := dbworker.NewWorker(rootContext, uploadsSvc.WorkerutilStore(), handler, workerutil.WorkerOptions{
-		Name:                 "precise_code_intel_upload_worker",
-		NumHandlers:          config.WorkerConcurrency,
-		Interval:             config.WorkerPollInterval,
-		HeartbeatInterval:    time.Second,
-		Metrics:              makeWorkerMetrics(observationContext),
-		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
-	})
 
 	// Initialize health server
 	server := httpserver.NewFromAddr(addr, &http.Server{
@@ -169,7 +164,7 @@ func mustInitializeDB() *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB() stores.CodeIntelDB {
+func mustInitializeCodeIntelDB() codeintelshared.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -179,7 +174,7 @@ func mustInitializeCodeIntelDB() stores.CodeIntelDB {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return stores.NewCodeIntelDB(db)
+	return codeintelshared.NewCodeIntelDB(db)
 }
 
 func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {
@@ -189,10 +184,6 @@ func makeObservationContext(observationContext *observation.Context, withHoney b
 	ctx := *observationContext
 	ctx.HoneyDataset = nil
 	return &ctx
-}
-
-func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
-	return workerutil.NewMetrics(observationContext, "codeintel_upload_processor")
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

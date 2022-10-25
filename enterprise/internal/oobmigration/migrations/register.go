@@ -19,7 +19,7 @@ import (
 )
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitCodeIntelDatabase()
+	codeIntelDB, err := workerCodeIntel.InitDB()
 	if err != nil {
 		return err
 	}

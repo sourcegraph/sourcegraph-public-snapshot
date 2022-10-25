@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -223,27 +224,22 @@ func TestDiff(t *testing.T) {
 			{opts: DiffOptions{Base: "foo", Head: "bar"}, want: "foo...bar"},
 		} {
 			t.Run("rangeSpec: "+tc.want, func(t *testing.T) {
-				c := NewClient(db)
-				Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+				c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 					// The range spec is the sixth argument.
 					if args[5] != tc.want {
 						t.Errorf("unexpected rangeSpec: have: %s; want: %s", args[5], tc.want)
 					}
 					return nil, nil
-				}
-				t.Cleanup(ResetMocks)
+				})
 				_, _ = c.Diff(ctx, tc.opts, nil)
 			})
 		}
 	})
 
 	t.Run("ExecReader error", func(t *testing.T) {
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return nil, errors.New("ExecReader error")
-		}
-		t.Cleanup(ResetMocks)
-
+		})
 		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
@@ -319,11 +315,9 @@ index 9bd8209..d2acfa9 100644
 			"README.md",
 		}
 
-		c := NewClient(db)
-		Mocks.ExecReader = func(args []string) (reader io.ReadCloser, err error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		t.Cleanup(ResetMocks)
+		})
 
 		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i == nil {
@@ -364,18 +358,15 @@ index 51a59ef1c..493090958 100644
 -this is my file content
 +this is my file contnent
 `
-	db := database.NewMockDB()
-	client := NewClient(db)
 	t.Run("basic", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -384,12 +375,11 @@ index 51a59ef1c..493090958 100644
 		}
 	})
 	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 			return io.NopCloser(strings.NewReader(testDiff)), nil
-		}
-		ctx := context.Background()
+		})
 		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
 			UID: 1,
 		})
 		fileName := "foo"
@@ -404,7 +394,7 @@ index 51a59ef1c..493090958 100644
 			return authz.Read, nil
 		})
 		usePermissionsForFilePermissionsFunc(checker)
-		hunks, err := client.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
+		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
 		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -2831,4 +2821,89 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
 		}, nil
 	})
+}
+
+func TestLFSSmudge(t *testing.T) {
+	// TODO enforce on CI once CI has git-lfs
+	if _, err := exec.LookPath("git-lfs"); err != nil {
+		t.Skip("git-lfs not installed")
+	}
+
+	ctx := context.Background()
+	ClientMocks.LocalGitserver = true
+	t.Cleanup(func() {
+		ResetClientMocks()
+	})
+
+	files := map[string]string{
+		"in-lfs.txt":       "I am in LFS\n",
+		"in-git-small.txt": "I am small and in git\n",
+		"in-git-large.txt": strings.Repeat("I am large and in git\n", 10),
+	}
+
+	var gitCmds []string
+	for path, content := range files {
+		gitCmds = append(gitCmds, fmt.Sprintf(`echo -n -e %q > %s`, content, path))
+	}
+	gitCmds = append(gitCmds,
+		`git lfs install --local`,
+		`git lfs track in-lfs.txt`,
+		`git add .`,
+		`git commit -m "lfs"`,
+	)
+
+	// We ensure we test against a bare repo because a lot of LFS stuff only
+	// seems to work under the assumption of a working copy.
+	repo := MakeBareGitRepository(t, gitCmds...)
+
+	c := NewClient(database.NewMockDB())
+	head, err := c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check that LFSSmudge always returns the file contents
+	for path, content := range files {
+		r, err := c.LFSSmudge(ctx, repo, head, path, nil)
+		if err != nil {
+			t.Fatalf("failed to run lfs-smudge on %q: %v", path, err)
+		}
+		b, err := io.ReadAll(r)
+		if err != nil {
+			t.Fatalf("failed to read output of lfs-smudge on %q: %v", path, err)
+		}
+		if err := r.Close(); err != nil {
+			t.Fatalf("failed to close reader for lfs-smudge on %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Make sure we correctly added contents to git instead of LFS
+	for path, content := range files {
+		if path == "in-lfs.txt" {
+			continue
+		}
+		b, err := c.ReadFile(ctx, repo, head, path, nil)
+		if err != nil {
+			t.Fatalf("failed to read file %q: %v", path, err)
+		}
+		if d := cmp.Diff(content, string(b)); d != "" {
+			t.Fatalf("unexpected LFS content for %q (-want, +got):\n%s", path, d)
+		}
+	}
+
+	// Check that we have a pointer for LFS in git.
+	want := `version https://git-lfs.github.com/spec/v1
+oid sha256:6779da4a4fc9920a86eeb6f7a01062513dbbcc8f221028c7345993884e89a508
+size 12
+`
+	b, err := c.ReadFile(ctx, repo, head, "in-lfs.txt", nil)
+	if err != nil {
+		t.Fatalf("failed to read file in-lfs.txt: %v", err)
+	}
+	if d := cmp.Diff(want, string(b)); d != "" {
+		t.Fatalf("unexpected LFS pointer (-want, +got):\n%s", d)
+	}
 }

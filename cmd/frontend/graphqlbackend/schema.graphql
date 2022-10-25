@@ -104,6 +104,16 @@ type Mutation {
     deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
 
     """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
+    """
+    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+
+    """
+    Deletes a webhook by given ID. Only site admins may perform this mutation.
+    """
+    deleteWebhook(id: ID!): EmptyResponse!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!
@@ -1574,39 +1584,6 @@ type Query {
     ): WebhookLogConnection!
 
     """
-    Retrieve active executor compute instances.
-    """
-    executors(
-        """
-        An (optional) search query that searches over the hostname, queue name, os, architecture, and
-        version properties.
-        """
-        query: String
-
-        """
-        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
-        """
-        active: Boolean
-
-        """
-        Returns the first n executors.
-        """
-        first: Int
-
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): ExecutorConnection!
-
-    """
-    Returns true if executors have been configured on the Sourcegraph instance.
-    This is based on heuristics and doesn't necessarily mean that they would be
-    working.
-    """
-    areExecutorsConfigured: Boolean!
-
-    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
@@ -1650,104 +1627,26 @@ type Query {
         """
         organization: ID!
     ): OrgMembersSummary!
-}
-
-"""
-A list of active executors compute instances.
-"""
-type ExecutorConnection {
-    """
-    A list of executors.
-    """
-    nodes: [Executor!]!
 
     """
-    The total number of executors in this result set.
+    Lists webhooks. Only available to site admins.
+    If no kind is given, it returns all webhooks.
+    If first is omitted, 20 items are returned
     """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-An active executor compute instance.
-"""
-type Executor implements Node {
-    """
-    The unique identifier of this executor.
-    """
-    id: ID!
-
-    """
-    The hostname of the executor instance.
-    """
-    hostname: String!
-
-    """
-    The queue name that the executor polls for work.
-    """
-    queueName: String!
-
-    """
-    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
-    """
-    active: Boolean!
-
-    """
-    The operating system running the executor.
-    """
-    os: String!
-
-    """
-    The machine architure running the executor.
-    """
-    architecture: String!
-
-    """
-    The version of Git used by the executor.
-    """
-    dockerVersion: String!
-
-    """
-    The version of the executor.
-    """
-    executorVersion: String!
-
-    """
-    The version of Docker used by the executor.
-    """
-    gitVersion: String!
-
-    """
-    The version of Ignite used by the executor.
-    """
-    igniteVersion: String!
-
-    """
-    The version of src-cli used by the executor.
-    """
-    srcCliVersion: String!
-
-    """
-    The first time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    firstSeenAt: DateTime!
-
-    """
-    The last time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    lastSeenAt: DateTime!
-    """
-    The compatibility of the executor with respect to the Sourcegraph instance.
-    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
-    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
-
-    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
-    """
-    compatibility: ExecutorCompatibility
+    webhooks(
+        """
+        Returns the first n webhooks from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Optionally filter by kind.
+        """
+        kind: ExternalServiceKind
+    ): WebhookConnection!
 }
 
 """
@@ -2008,26 +1907,6 @@ enum SearchQueryOutputFormat {
     Mermaid flowchart format.
     """
     MERMAID
-}
-
-"""
-The compatibility of the executor with the sourcegraph instance.
-"""
-enum ExecutorCompatibility {
-    """
-    Executor version is more than one version behind the Sourcegraph instance.
-    """
-    OUTDATED
-
-    """
-    Executor is up-to-date with the Sourcegraph instance.
-    """
-    UP_TO_DATE
-
-    """
-    Executor version is more than one version ahead of the Sourcegraph instance.
-    """
-    VERSION_AHEAD
 }
 
 """
@@ -2498,6 +2377,7 @@ enum ExternalServiceKind {
     PHABRICATOR
     PYTHONPACKAGES
     RUSTPACKAGES
+    RUBYPACKAGES
 }
 
 """
@@ -2730,6 +2610,36 @@ type ExternalServiceSyncJob implements Node {
     Error message, if the sync failed.
     """
     failureMessage: String
+
+    """
+    The number of repos synced during this sync job.
+    """
+    reposSynced: Int!
+
+    """
+    The number of times an error occurred syncing a repo during this sync job.
+    """
+    repoSyncErrors: Int!
+
+    """
+    The number of new repos discovered during this sync job.
+    """
+    reposAdded: Int!
+
+    """
+    The number of repos deleted as a result of this sync job.
+    """
+    reposDeleted: Int!
+
+    """
+    The number of existing repos whose metadata has changed during this sync job.
+    """
+    reposModified: Int!
+
+    """
+    The number of existing repos whose metadata did not change during this sync job.
+    """
+    reposUnmodified: Int!
 }
 
 """
@@ -3371,6 +3281,12 @@ type RepositoryComparison {
         Return the first n commits from the list.
         """
         first: Int
+
+        """
+        Filter to only the commits that modify files that match path.
+        Path can be either a file or a containing directory.
+        """
+        path: String
     ): GitCommitConnection!
     """
     The file diffs for each changed file.
@@ -5927,6 +5843,17 @@ type Site implements SettingsSubject {
     """
     needsRepositoryConfiguration: Boolean!
     """
+    Whether the external services haven been created from a configuration file
+    specified in the EXTSVC_CONFIG_FILE.
+    """
+    externalServicesFromFile: Boolean!
+    """
+    Whether the external services can be updated even if `externalServicesFromFile` is
+    true. All changes made while `externalServicesFromFile` is true will be discarded once
+    Sourcegraph restarts.
+    """
+    allowEditExternalServicesWithFile: Boolean!
+    """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
     """
@@ -6483,21 +6410,17 @@ type AnalyticsUsersFrequencyItem {
 }
 
 """
-Average DAUs/WAUs/MAUs.
+Monthly active users
 """
-type AnalyticsUsersSummaryResult {
+type AnalyticsMonthlyActiveUsers {
     """
-    Average DAUs
+    year-month for which the total active users are calculated
     """
-    avgDAU: Float!
+    date: String!
     """
-    Average WAUs
+    total count of active users
     """
-    avgWAU: Float!
-    """
-    Average MAUs
-    """
-    avgMAU: Float!
+    count: Float!
 }
 
 """
@@ -6513,9 +6436,9 @@ type AnalyticsUsersResult {
     """
     frequencies: [AnalyticsUsersFrequencyItem!]!
     """
-    Average number of active users summary.
+    Monthly active users for last 3 months.
     """
-    summary: AnalyticsUsersSummaryResult!
+    monthlyActiveUsers: [AnalyticsMonthlyActiveUsers!]!
 }
 
 """
@@ -7693,6 +7616,64 @@ type TemporarySettings {
 }
 
 """
+Represents a webhook receiver from a code host.
+"""
+type Webhook implements Node {
+    """
+    The unique ID of the webhook.
+    """
+    id: ID!
+    """
+    The user facing UUID of the webhook.
+    """
+    uuid: String!
+    """
+    The URL of the webhook in the instance. This is the location where we expect to receive payloads.
+    """
+    url: String!
+    """
+    The kind of code host sending payloads. (eg. GitHub, GitLab)
+    """
+    codeHostKind: ExternalServiceKind!
+    """
+    The URN of the code host instance. (eg. https://gitlab.com)
+    """
+    codeHostURN: String!
+    """
+    Optional secret.
+    """
+    secret: String
+    """
+    The last time this webhook was updated.
+    """
+    updatedAt: DateTime!
+    """
+    When the webhook was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of webhooks
+"""
+type WebhookConnection {
+    """
+    A list of webhooks.
+    """
+    nodes: [Webhook!]!
+
+    """
+    The total number of webhooks in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
 A list of logged webhook deliveries.
 """
 type WebhookLogConnection {
@@ -7829,4 +7810,157 @@ enum CloneStatus {
     NOT_CLONED
     CLONING
     CLONED
+}
+
+extend type Query {
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+
+    """
+    Returns true if executors have been configured on the Sourcegraph instance.
+    This is based on heuristics and doesn't necessarily mean that they would be
+    working.
+    """
+    areExecutorsConfigured: Boolean!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
+    """
+    The compatibility of the executor with respect to the Sourcegraph instance.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+
+    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
+    """
+    compatibility: ExecutorCompatibility
+}
+
+"""
+The compatibility of the executor with the sourcegraph instance.
+"""
+enum ExecutorCompatibility {
+    """
+    Executor version is more than one version behind the Sourcegraph instance.
+    """
+    OUTDATED
+
+    """
+    Executor is up-to-date with the Sourcegraph instance.
+    """
+    UP_TO_DATE
+
+    """
+    Executor version is more than one version ahead of the Sourcegraph instance.
+    """
+    VERSION_AHEAD
 }

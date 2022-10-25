@@ -74,8 +74,7 @@ interface MockedFeatureFlagsProviderProps {
  * Provides mocked feature flag value for testing purposes.
  *
  * @example
- * const overrides = new Map([['my-feature-flag', true]]);
- * return (<MockedFeatureFlagsProvider overrides={overrides}>
+ * return (<MockedFeatureFlagsProvider overrides={{'my-feature-flag': true}}>
  *              <ComponentUsingFeatureFlag />
  *         </MockedFeatureFlagsProvider>)
  */

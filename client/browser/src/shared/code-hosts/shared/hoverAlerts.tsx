@@ -4,6 +4,7 @@ import type { HoverAlert } from 'sourcegraph'
 
 import { combineLatestOrDefault } from '@sourcegraph/common'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { ButtonLink } from '@sourcegraph/wildcard'
 
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
@@ -49,20 +50,27 @@ export async function onHoverAlertDismissed(alertType: string): Promise<void> {
 }
 
 /**
- * Returns the alert to show when the user is on private code (that has not
- * been added to Cloud) and has sourcegraph.com as the URL.
- * The alert informs the user to setup a private Sourcegraph instance.
+ * Returns the alert to show when the user is on an unindexed repo and does not
+ * have sourcegraph.com as the URL. The alert informs the user to setup add a
+ * repo.
  */
-export const createPrivateCodeHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
+export const createRepoNotFoundHoverAlert = (codeHost: Pick<CodeHost, 'hoverOverlayClassProps'>): HoverAlert => ({
     type: 'private-code',
+    buttons: [
+        <ButtonLink
+            key="learn_more"
+            href="https://docs.sourcegraph.com/admin/repo/add"
+            className={codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''}
+            target="_blank"
+            rel="noopener norefferer"
+        >
+            Learn more
+        </ButtonLink>,
+    ],
     summary: {
         kind: MarkupKind.Markdown,
         value:
-            '#### Sourcegraph for private code\n\n' +
-            'To get Sourcegraph hovers on your private repositories, you need to set up a private Sourcegraph instance and connect it to the browser extension.' +
-            '\n\n' +
-            `<a href="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud" class="${
-                codeHost.hoverOverlayClassProps?.actionItemClassName ?? ''
-            }" target="_blank" rel="noopener norefferer">Show more info</a>`,
+            '#### Repository not added\n\n' +
+            'This repository is not indexed by your Sourcegraph instance. Add the repository to get Code Intelligence overlays.',
     },
 })

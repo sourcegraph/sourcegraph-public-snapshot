@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link, H3, Icon } from '@sourcegraph/wildcard'
+import { Link, H3, Icon, Checkbox, Tooltip } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -19,20 +19,37 @@ import styles from './CodeIntelIndexNode.module.scss'
 export interface CodeIntelIndexNodeProps {
     node: LsifIndexFields
     now?: () => Date
+    selection: Set<string> | 'all'
+    onCheckboxToggle: (id: string, checked: boolean) => void
 }
 
 export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeIntelIndexNodeProps>> = ({
     node,
     now,
+    selection,
+    onCheckboxToggle,
 }) => (
     <>
         <span className={styles.separator} />
 
+        <Checkbox
+            label=""
+            id="disabledFieldsetCheck"
+            disabled={selection === 'all'}
+            checked={selection === 'all' ? true : selection.has(node.id)}
+            onChange={input => onCheckboxToggle(node.id, input.target.checked)}
+        />
+
         <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
+            <div className="m-0 d-flex flex-row">
                 <H3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
                 </H3>
+                {node.shouldReindex && (
+                    <Tooltip content="This index has been marked for reindexeding.">
+                        <div className={classNames(styles.tag, 'ml-1 rounded')}>(marked for reindexeding)</div>
+                    </Tooltip>
+                )}
             </div>
 
             <div>

@@ -1,6 +1,7 @@
-import React from 'react'
+import { FC, PropsWithChildren } from 'react'
 
 import { mdiClose, mdiRadioboxBlank } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 
@@ -9,7 +10,7 @@ import { Icon, Code } from '@sourcegraph/wildcard'
 import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
-    checks: {
+    checks?: {
         isValidOperator: true | false | undefined
         isValidPatternType: true | false | undefined
         isNotRepo: true | false | undefined
@@ -18,67 +19,70 @@ interface SearchQueryChecksProps {
     }
 }
 
-const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: true | false | undefined }>> = ({
-    children,
-    valid,
-}) => {
+export const SearchQueryChecks: FC<SearchQueryChecksProps> = ({ checks }) => (
+    <ul aria-label="Search query validation checks list" className={classNames(styles.checks)}>
+        <CheckListItem
+            errorMessage="shouldn't contains a match over more than a single line"
+            valid={checks?.isNoNewLines}
+        >
+            Does not contain a match over more than a single line.
+        </CheckListItem>
+        <CheckListItem
+            errorMessage="shouldn't contain boolean operators, AND, OR, NOT (regular
+                expression boolean operators can still be used)"
+            valid={checks?.isValidOperator}
+        >
+            Does not contain boolean operators <Code>AND</Code>, <Code>OR</Code>, and <Code>NOT</Code> (regular
+            expression boolean operators can still be used)
+        </CheckListItem>
+        <CheckListItem
+            errorMessage="shouldn't contain patternType:literal or patternType:structural"
+            valid={checks?.isValidPatternType}
+        >
+            Does not contain <Code>patternType:literal</Code> or <Code>patternType:structural</Code>
+        </CheckListItem>
+        <CheckListItem errorMessage="shouldn't contain repo filter" valid={checks?.isNotRepo}>
+            Does not contain <Code>repo:</Code> filter
+        </CheckListItem>
+        <CheckListItem errorMessage="shouldn't contain commit or diff search" valid={checks?.isNotCommitOrDiff}>
+            Does not contain <Code>commit</Code> or <Code>diff</Code> search
+        </CheckListItem>
+    </ul>
+)
+
+interface CheckListItemProps {
+    valid: true | false | undefined
+    errorMessage: string
+}
+
+const CheckListItem: FC<PropsWithChildren<CheckListItemProps>> = props => {
+    const { valid, errorMessage, children } = props
+
     if (valid === true) {
         return (
-            <>
+            <li aria-label="Successful validation check">
                 <Icon aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
-            </>
+            </li>
         )
     }
 
     if (valid === false) {
         return (
-            <>
+            <li role="alert" aria-live="polite">
                 <Icon aria-hidden={true} className={classNames(styles.icon, 'text-danger')} svgPath={mdiClose} />
-                <span className="text-muted">{children}</span>
-            </>
+                <span aria-hidden={true} className="text-muted">
+                    {children}
+                </span>
+                <VisuallyHidden>Failed validation check. {errorMessage}</VisuallyHidden>
+            </li>
         )
     }
 
     return (
-        <>
+        <li aria-label="Validation rule">
             <Icon aria-hidden={true} className={classNames(styles.icon, styles.smaller)} svgPath={mdiRadioboxBlank} />{' '}
             <span className="text-muted">{children}</span>
-        </>
+        </li>
     )
 }
-
-export const SearchQueryChecks: React.FunctionComponent<React.PropsWithChildren<SearchQueryChecksProps>> = ({
-    checks,
-}) => (
-    <div className={classNames(styles.checksWrapper)}>
-        <ul className={classNames(styles.checks)}>
-            <li>
-                <CheckListItem valid={checks.isNoNewLines}>
-                    Does not contain a match over more than a single line.
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isValidOperator}>
-                    Does not contain boolean operators <Code>AND</Code>, <Code>OR</Code>, and <Code>NOT</Code> (regular
-                    expression boolean operators can still be used)
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isValidPatternType}>
-                    Does not contain <Code>patternType:literal</Code> and <Code>patternType:structural</Code>
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNotRepo}>
-                    Does not contain <Code>repo:</Code> filter
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNotCommitOrDiff}>
-                    Does not contain <Code>commit</Code> or <Code>diff</Code> search
-                </CheckListItem>
-            </li>
-        </ul>
-    </div>
-)

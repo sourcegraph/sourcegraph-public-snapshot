@@ -25,7 +25,6 @@ func (s *store) GetUploadDocumentsForPath(ctx context.Context, bundleID int, pat
 }
 
 const documentsCountQuery = `
--- source: internal/codeintel/stores/lsifstore/documents.go:Documents
 SELECT
 	COUNT(*)
 FROM
@@ -36,7 +35,6 @@ WHERE
 `
 
 const documentsQuery = `
--- source: internal/codeintel/stores/lsifstore/documents.go:Documents
 SELECT
 	path
 FROM

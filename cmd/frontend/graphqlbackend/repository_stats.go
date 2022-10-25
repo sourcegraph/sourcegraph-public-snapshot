@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -161,7 +161,7 @@ func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (da
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
 	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
 	db := r.db
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 

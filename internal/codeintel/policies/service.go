@@ -6,8 +6,10 @@ import (
 	"time"
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -15,56 +17,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ service = (*Service)(nil)
-
-type service interface {
-	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) ([]types.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (_ types.ConfigurationPolicy, _ bool, err error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy types.ConfigurationPolicy) (types.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error)
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-
-	// Retention Policy
-	GetRetentionPolicyOverview(ctx context.Context, upload types.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []types.RetentionPolicyMatchCandidate, totalCount int, err error)
-
-	// Repository
-	GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	GetPreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType types.GitObjectType, pattern string) (map[string][]string, error)
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []types.ConfigurationPolicy, err error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
-
-	// GetUnsafeDB returns the underlying database handle. This is used by the
-	// resolvers that have the old convention of using the database handle directly.
-	GetUnsafeDB() database.DB
-}
-
 type Service struct {
-	store      store.Store
-	uploadSvc  UploadService
-	gitserver  GitserverClient
-	operations *operations
+	store         store.Store
+	uploadSvc     UploadService
+	gitserver     GitserverClient
+	backgroundJob background.BackgroundJob
+	operations    *operations
 }
 
 func newService(
 	policiesStore store.Store,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
+	backgroundJob background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:      policiesStore,
-		uploadSvc:  uploadSvc,
-		gitserver:  gitserver,
-		operations: newOperations(observationContext),
+		store:         policiesStore,
+		uploadSvc:     uploadSvc,
+		gitserver:     gitserver,
+		backgroundJob: backgroundJob,
+		operations:    newOperations(observationContext),
 	}
+}
+
+func GetBackgroundJobs(s *Service) background.BackgroundJob {
+	return s.backgroundJob
 }
 
 func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
 	return policies.NewMatcher(gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
 }
 
-func (s *Service) GetConfigurationPolicies(ctx context.Context, opts types.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
+func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (_ []types.ConfigurationPolicy, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -109,11 +94,18 @@ func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy 
 		repositoryMatchLimit = &val
 	}
 
-	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+	if err := s.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
 }
 
 func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error) {
@@ -140,7 +132,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.RetentionExtractor, true, false)
 
-	configPolicies, _, err := s.GetConfigurationPolicies(ctx, types.GetConfigurationPoliciesOptions{
+	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
 		Term:             query,
 		ForDataRetention: true,
@@ -244,19 +236,7 @@ func (s *Service) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Contex
 	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	configurationPolicies, err = s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
-	if err != nil {
-		return nil, err
-	}
-
-	return configurationPolicies, nil
-}
-
-func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
+	return s.store.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
 }
 
 func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload types.Upload) (commits []string, err error) {
@@ -345,10 +325,12 @@ func policyByID(policies []types.ConfigurationPolicy, id int) *types.Configurati
 	if id == -1 {
 		return nil
 	}
+
 	for _, policy := range policies {
 		if policy.ID == id {
 			return &policy
 		}
 	}
+
 	return nil
 }

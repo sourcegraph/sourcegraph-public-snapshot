@@ -30,7 +30,6 @@ func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, p
 }
 
 const packageInformationQuery = `
--- source: internal/codeintel/stores/lsifstore/packages.go:PackageInformation
 SELECT
 	dump_id,
 	path,

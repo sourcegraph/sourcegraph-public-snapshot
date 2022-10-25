@@ -2,7 +2,6 @@ import { subDays, subHours, subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockedResponse } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -21,6 +20,7 @@ import {
     BatchSpecWorkspaceStepFields,
     BatchSpecExecutionFields,
     BatchSpecWorkspacesResult,
+    BatchSpecSource,
     ExecutorCompatibility,
 } from '../../../graphql-operations'
 import { EXECUTORS, IMPORTING_CHANGESETS, WORKSPACES, WORKSPACE_RESOLUTION_STATUS } from '../create/backend'
@@ -289,7 +289,7 @@ export const mockWorkspace = (
             command: ['src', 'batch', 'exec', '-f', 'input.json'],
             durationMilliseconds: null,
             exitCode: null,
-            key: 'step.src.0',
+            key: 'step.src.batch-exec',
             out:
                 'stdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"STARTED","metadata":{}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"PROGRESS","metadata":{"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"PROGRESS","metadata":{"done":1,"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"SUCCESS","metadata":{}}\nstdout: {"operation":"DETERMINING_WORKSPACE_TYPE","timestamp":"2022-04-21T06:26:59.188Z","status":"STARTED","metadata":{}}\n',
             startTime: subMinutes(now, 10).toISOString(),

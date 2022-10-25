@@ -80,6 +80,11 @@ func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
 }
 
+func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return (strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest"))
+}
+
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
 // cause it to be interpreted as a git command line argument.
 func checkSpecArgSafety(spec string) error {

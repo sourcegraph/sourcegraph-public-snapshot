@@ -145,13 +145,13 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             const { node } = dataOrThrowErrors(result)
 
             if (!node) {
-                throw new Error(`Node ${repoID} not found`)
+                return { nodes: [] }
             }
             if (node.__typename !== 'Repository') {
-                throw new Error(`Node is a ${node.__typename}, not a Repository`)
+                return { nodes: [] }
             }
             if (!node.commit?.symbols?.nodes) {
-                throw new Error('Could not resolve commit symbols for repository')
+                return { nodes: [] }
             }
 
             return node.commit.symbols
@@ -186,16 +186,18 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
 
     return (
         <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
-            <ConnectionForm
-                inputValue={searchValue}
-                onInputChange={event => setSearchValue(event.target.value)}
-                inputPlaceholder="Search symbols..."
-                compact={true}
-                formClassName={styles.form}
-            />
-            <SummaryContainer compact={true} className={styles.summaryContainer}>
-                {query && summary}
-            </SummaryContainer>
+            <div className={styles.formContainer}>
+                <ConnectionForm
+                    inputValue={searchValue}
+                    onInputChange={event => setSearchValue(event.target.value)}
+                    inputPlaceholder="Search symbols..."
+                    compact={true}
+                    formClassName={styles.form}
+                />
+                <SummaryContainer compact={true} className={styles.summaryContainer}>
+                    {query && summary}
+                </SummaryContainer>
+            </div>
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>

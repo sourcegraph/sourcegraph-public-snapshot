@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -180,12 +179,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
 			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
-		}
-	}
-
-	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
-			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -943,7 +936,7 @@ func isGlobal(op search.RepoOptions) bool {
 
 	// repo:has.commit.after() is handled during the repo resolution step,
 	// and we cannot depend on Zoekt for this information.
-	if op.CommitAfter != "" {
+	if op.CommitAfter != nil {
 		return false
 	}
 

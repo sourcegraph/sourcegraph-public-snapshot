@@ -6,13 +6,17 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields } from '../../../graphql-operations'
+import {
+    ProductSubscriptionFields,
+    ProductSubscriptionsResult,
+    ProductSubscriptionsVariables,
+    UserAreaUserFields,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import {
     productSubscriptionFragment,
@@ -26,7 +30,7 @@ interface Props extends RouteComponentProps<{}> {
 }
 
 class FilteredProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
+    ProductSubscriptionFields,
     ProductSubscriptionNodeProps
 > {}
 
@@ -41,9 +45,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     }, [])
 
     const queryLicenses = useCallback(
-        (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
-            const variables: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
-                first: args.first,
+        (args: { first?: number }): Observable<ProductSubscriptionsResult['dotcom']['productSubscriptions']> => {
+            const variables: ProductSubscriptionsVariables = {
+                first: args.first ?? null,
                 account: props.user.id,
             }
             return queryGraphQL(

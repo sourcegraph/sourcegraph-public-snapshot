@@ -217,6 +217,53 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "2 GitLab configs with the same URL",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
+				AuthProviders: []schema.AuthProviders{{
+					Gitlab: &schema.GitLabAuthProvider{
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						DisplayName:  "GitLab",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+				}, {
+					Gitlab: &schema.GitLabAuthProvider{
+						ClientID:     "my-client-id-2",
+						ClientSecret: "my-client-secret-2",
+						DisplayName:  "GitLab Duplicate",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+				}},
+			}}},
+			wantProviders: []Provider{
+				{
+					GitLabAuthProvider: &schema.GitLabAuthProvider{
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						DisplayName:  "GitLab",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+					Provider: provider("https://gitlab.com/", oauth2.Config{
+						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:  "https://gitlab.com/oauth/authorize",
+							TokenURL: "https://gitlab.com/oauth/token",
+						},
+						Scopes: []string{"read_user", "api"},
+					}),
+				},
+			},
+			wantProblems: []string{
+				`Cannot have more than one auth provider with url "https://gitlab.com/", only the first one will be used`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

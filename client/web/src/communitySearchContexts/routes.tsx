@@ -25,6 +25,7 @@ const StanfordCommunitySearchContextPage = lazyComponent(
 )
 const CncfCommunitySearchContextPage = lazyComponent(() => import('./cncf'), 'CncfCommunitySearchContextPage')
 const JuliaCommunitySearchContextPage = lazyComponent(() => import('./Julia'), 'JuliaCommunitySearchContextPage')
+const BackstageCommunitySearchContextPage = lazyComponent(() => import('./Backstage'), 'BackstageCommunitySearchContextPage')
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
 export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
@@ -66,6 +67,11 @@ export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/julia',
         render: props => <JuliaCommunitySearchContextPage {...props} />,
+        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
+    },
+    {
+        path: '/backstage',
+        render: props => <BackstageCommunitySearchContextPage {...props} />,
         condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
     },
 ]

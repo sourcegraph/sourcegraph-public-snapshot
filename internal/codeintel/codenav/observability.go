@@ -12,20 +12,15 @@ import (
 )
 
 type operations struct {
-	getReferences                        *observation.Operation
-	getImplementations                   *observation.Operation
-	getDiagnostics                       *observation.Operation
-	getHover                             *observation.Operation
-	getDefinitions                       *observation.Operation
-	getRanges                            *observation.Operation
-	getStencil                           *observation.Operation
-	getMonikersByPosition                *observation.Operation
-	getBulkMonikerLocations              *observation.Operation
-	getPackageInformation                *observation.Operation
-	getUploadsWithDefinitionsForMonikers *observation.Operation
-	getUploadIDsWithReferences           *observation.Operation
-	getDumpsByIDs                        *observation.Operation
-	getClosestDumpsForBlob               *observation.Operation
+	getReferences          *observation.Operation
+	getImplementations     *observation.Operation
+	getDiagnostics         *observation.Operation
+	getHover               *observation.Operation
+	getDefinitions         *observation.Operation
+	getRanges              *observation.Operation
+	getStencil             *observation.Operation
+	getDumpsByIDs          *observation.Operation
+	getClosestDumpsForBlob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -45,20 +40,15 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getReferences:                        op("getReferences"),
-		getImplementations:                   op("getImplementations"),
-		getDiagnostics:                       op("getDiagnostics"),
-		getHover:                             op("getHover"),
-		getDefinitions:                       op("getDefinitions"),
-		getRanges:                            op("getRanges"),
-		getStencil:                           op("getStencil"),
-		getMonikersByPosition:                op("GetMonikersByPosition"),
-		getBulkMonikerLocations:              op("GetBulkMonikerLocations"),
-		getPackageInformation:                op("GetPackageInformation"),
-		getUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
-		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
-		getDumpsByIDs:                        op("GetDumpsByIDs"),
-		getClosestDumpsForBlob:               op("GetClosestDumpsForBlob"),
+		getReferences:          op("getReferences"),
+		getImplementations:     op("getImplementations"),
+		getDiagnostics:         op("getDiagnostics"),
+		getHover:               op("getHover"),
+		getDefinitions:         op("getDefinitions"),
+		getRanges:              op("getRanges"),
+		getStencil:             op("getStencil"),
+		getDumpsByIDs:          op("GetDumpsByIDs"),
+		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
 	}
 }
 

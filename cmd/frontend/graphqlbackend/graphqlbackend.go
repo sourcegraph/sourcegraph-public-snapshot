@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -56,9 +56,6 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
-
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
 	var currentUserID int32
@@ -73,31 +70,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
 	// it and the user issuing it.
 	requestName := sgtrace.GraphQLRequestName(ctx)
-	lvl := log15.Debug
-	if requestName == "unknown" {
-		lvl = log15.Info
-	}
 	requestSource := sgtrace.RequestSource(ctx)
-
-	if !disableLog {
-		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" || logAllRequests {
-			reason := ""
-			if requestName == "unknown" {
-				reason = "for unnamed GraphQL request above "
-			}
-			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
-QUERY
------
-%s
-
-VARIABLES
----------
-%v
-
-`, reason, requestName, currentUserID, requestSource, queryString, variables)
-		}
-	}
 
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -339,27 +312,28 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
 }
 
 func NewSchema(
 	db database.DB,
+	gitserverClient gitserver.Client,
 	batchChanges BatchChangesResolver,
 	codeIntel CodeIntelResolver,
 	insights InsightsResolver,
@@ -372,7 +346,7 @@ func NewSchema(
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db)
+	resolver := newSchemaResolver(db, gitserverClient)
 	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
@@ -482,6 +456,7 @@ func NewSchema(
 type schemaResolver struct {
 	logger            sglog.Logger
 	db                database.DB
+	gitserverClient   gitserver.Client
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 
@@ -502,10 +477,11 @@ type schemaResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB) *schemaResolver {
+func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
 		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
+		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 
@@ -552,8 +528,11 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return webhookLogByID(ctx, db, id)
 		},
+		"Webhook": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return webhookByID(ctx, db, id)
+		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorByID(ctx, db, id, r)
+			return executorByID(ctx, db, id)
 		},
 		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return externalServiceSyncJobByID(ctx, db, id)
@@ -580,7 +559,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db)
+	return newSchemaResolver(r.db, r.gitserverClient)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
@@ -614,7 +593,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Only site admins can reclone repositories.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -622,7 +601,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db).RequestRepositoryClone(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
 	}
 
@@ -639,7 +618,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can delete repositories from disk.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -652,7 +631,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 
@@ -668,7 +647,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo), nil
+	return NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
 }
 
 type RedirectResolver struct {
@@ -705,7 +684,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if err != nil {
 			return nil, err
 		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo)}, nil
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
 	}
 	var name api.RepoName
 	if args.Name != nil {
@@ -726,7 +705,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.logger, r.db).GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -737,7 +716,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -772,13 +751,13 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	}
 	if userID > 0 {
 		// 🚨 SECURITY: Make sure the user is the same user being requested
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	}
 	if orgID > 0 {
 		// 🚨 SECURITY: Make sure the user can access the organization
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, err
 		}
 	}

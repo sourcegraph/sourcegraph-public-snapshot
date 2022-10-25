@@ -8,12 +8,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -100,7 +100,8 @@ index 9bd8209..d2acfa9 100644
 
 	repo := &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", CreatedAt: time.Now()}
 
-	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, NewRepositoryResolver(db, gitserver.NewClient(db), repo), string(wantHeadRevision), testDiff)
+	gitserverClient := gitserver.NewMockClient()
+	previewComparisonResolver, err := NewPreviewRepositoryComparisonResolver(ctx, db, gitserverClient, NewRepositoryResolver(db, gitserverClient, repo), string(wantHeadRevision), testDiff)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,14 +213,12 @@ index 9bd8209..d2acfa9 100644
 		}
 		fileDiff := fileDiffs[0]
 
-		gitserver.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+		gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, name string, _ authz.SubRepoPermissionChecker) ([]byte, error) {
 			if name != "INSTALL.md" {
 				t.Fatalf("ReadFile received call for wrong file: %s", name)
 			}
-
 			return []byte(testOldFile), nil
-		}
-		defer func() { gitserver.Mocks.ReadFile = nil }()
+		})
 
 		newFile := fileDiff.NewFile()
 		if newFile == nil {
@@ -391,12 +390,4 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		return api.CommitID(rev), nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }

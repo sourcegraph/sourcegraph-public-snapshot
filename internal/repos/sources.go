@@ -76,6 +76,8 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 		return NewPythonPackagesSource(ctx, svc, cf)
 	case extsvc.KindRustPackages:
 		return NewRustPackagesSource(ctx, svc, cf)
+	case extsvc.KindRubyPackages:
+		return NewRubyPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
 	default:

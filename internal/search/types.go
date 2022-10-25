@@ -331,11 +331,6 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// CodeOwnershipFilters when true will add the code ownership post-search
-	// filter and allow users to search by code owners using the has.owner
-	// predicate.
-	CodeOwnershipFilters bool `json:"code-ownership"`
-
 	// When true lucky search runs by default. Adding for A/B testing in
 	// 08/2022. To be removed at latest by 12/2022.
 	AbLuckySearch bool `json:"ab-lucky-search"`
@@ -364,7 +359,7 @@ type RepoOptions struct {
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
-	CommitAfter string
+	CommitAfter *query.RepoHasCommitAfterArgs
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
@@ -410,8 +405,9 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	if op.SearchContextSpec != "" {
 		add(otlog.String("searchContextSpec", op.SearchContextSpec))
 	}
-	if op.CommitAfter != "" {
-		add(otlog.String("commitAfter", op.CommitAfter))
+	if op.CommitAfter != nil {
+		add(otlog.String("commitAfter.time", op.CommitAfter.TimeRef))
+		add(otlog.Bool("commitAfter.negated", op.CommitAfter.Negated))
 	}
 	if op.Visibility != query.Any {
 		add(otlog.String("visibility", string(op.Visibility)))
@@ -497,7 +493,9 @@ func (op *RepoOptions) String() string {
 		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
 	}
 
-	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	if op.CommitAfter != nil {
+		fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter.TimeRef)
+	}
 	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.UseIndex != query.Yes {

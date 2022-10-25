@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,8 +32,8 @@ type GitLabWebhook struct {
 	failHandleEvent error
 }
 
-func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{Webhook: &Webhook{store, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *GitLabWebhook {
+	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
 }
 
 // ServeHTTP implements the http.Handler interface.
@@ -226,7 +227,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 	return nil
 }
 
-func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEventCommon) error {
+func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event *webhooks.MergeRequestEventCommon) error {
 	// We need to get our changeset ID for this to work. To get _there_, we need
 	// the repo ID, and then we can use the merge request IID to match the
 	// external ID.
@@ -248,7 +249,7 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 	return nil
 }
 
-func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, event *webhooks.PipelineEvent) error {
+func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event *webhooks.PipelineEvent) error {
 	// Pipeline webhook payloads don't include the merge request very reliably:
 	// for example, re-running a pipeline from the GitLab UI will result in no
 	// merge request field, even when that pipeline was attached to a merge

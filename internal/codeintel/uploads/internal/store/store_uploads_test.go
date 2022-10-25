@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -110,12 +110,6 @@ func TestGetUploads(t *testing.T) {
 		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
 
-	t.Logf("%v", sqlf.Sprintf(
-		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
-		50,
-		t5,
-	).Query(sqlf.PostgresBindVar))
-
 	dirtyRepositoryQuery := sqlf.Sprintf(
 		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
 		50,
@@ -179,7 +173,7 @@ func TestGetUploads(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			uploads, totalCount, err := store.GetUploads(ctx, types.GetUploadsOptions{
+			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
 				RepositoryID:     testCase.repositoryID,
 				State:            testCase.state,
 				Term:             testCase.term,
@@ -238,7 +232,7 @@ func TestGetUploads(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		uploads, totalCount, err := store.GetUploads(ctx,
-			types.GetUploadsOptions{
+			shared.GetUploadsOptions{
 				Limit: 1,
 			},
 		)
@@ -617,7 +611,7 @@ func TestDeleteUploadsStuckUploading(t *testing.T) {
 		t.Errorf("unexpected count. want=%d have=%d", 2, count)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), types.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -657,7 +651,7 @@ func TestDeleteUploads(t *testing.T) {
 		types.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
 	)
 
-	err := store.DeleteUploads(context.Background(), types.DeleteUploadsOptions{
+	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
 		State:        "uploading",
 		Term:         "",
 		VisibleAtTip: false,
@@ -666,7 +660,7 @@ func TestDeleteUploads(t *testing.T) {
 		t.Fatalf("unexpected error deleting uploads: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), types.GetUploadsOptions{Limit: 5})
+	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads: %s", err)
 	}
@@ -693,107 +687,25 @@ func TestHardDeleteUploadsByIDs(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertUploads(t, db,
-		types.Upload{ID: 51, State: "completed"},
+		types.Upload{ID: 51, State: "deleting"},
 		types.Upload{ID: 52, State: "completed"},
-		types.Upload{ID: 53, State: "completed"},
+		types.Upload{ID: 53, State: "queued"},
 		types.Upload{ID: 54, State: "completed"},
 	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
-	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-	})
-
-	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{51, 52, 53, 54}, shared.DependencyReferenceCountUpdateTypeNone); err != nil {
-		t.Fatalf("unexpected error updating reference counts: %s", err)
-	}
-	assertReferenceCounts(t, db, map[int]int{
-		51: 0,
-		52: 2, // referenced by 51, 54
-		53: 2, // referenced by 51, 52
-		54: 0,
-	})
 
 	if err := store.HardDeleteUploadsByIDs(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
-	assertReferenceCounts(t, db, map[int]int{
-		// 51 was deleted
-		52: 1, // referenced by 54
-		53: 1, // referenced by 54
-		54: 0,
-	})
-}
 
-func TestBackfillReferenceCountBatch(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
-
-	n := 150
-	expectedReferenceCounts := make([]int, 0, n)
-	for i := 0; i < n; i++ {
-		expectedReferenceCounts = append(expectedReferenceCounts, n-i-1)
+	expectedStates := map[int]string{
+		52: "completed",
+		53: "queued",
+		54: "completed",
 	}
-
-	insertQuery := sqlf.Sprintf("INSERT INTO repo (id, name) VALUES (42, 'foo'), (43, 'bar')")
-	if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error inserting repo: %s", err)
-	}
-
-	for i := 0; i < n; i++ {
-		insertQuery := sqlf.Sprintf(
-			"INSERT INTO lsif_uploads (repository_id, commit, state, indexer, num_parts, uploaded_parts) VALUES (%s, %s, 'completed', 'lsif-go', 0, '{}')",
-			42+i/(n/2), // 50% id=42, 50% id=43
-			fmt.Sprintf("%040d", i),
-		)
-		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-			t.Fatalf("unexpected error inserting upload: %s", err)
-		}
-
-		insertQuery = sqlf.Sprintf(
-			"INSERT INTO lsif_packages (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
-			fmt.Sprintf("pkg-%03d", i),
-			i+1,
-		)
-		if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-			t.Fatalf("unexpected error inserting upload: %s", err)
-		}
-
-		for j := i - 1; j >= 0; j-- {
-			insertQuery := sqlf.Sprintf(
-				"INSERT INTO lsif_references (scheme, name, version, dump_id) VALUES ('test', %s, '1.2.3', %s)",
-				fmt.Sprintf("pkg-%03d", j),
-				i+1,
-			)
-			if _, err := db.ExecContext(context.Background(), insertQuery.Query(sqlf.PostgresBindVar), insertQuery.Args()...); err != nil {
-				t.Fatalf("unexpected error inserting upload: %s", err)
-			}
-		}
-	}
-
-	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
-	}
-	referenceCountQuery := sqlf.Sprintf("SELECT urc.reference_count FROM lsif_uploads_reference_counts urc ORDER BY urc.upload_id")
-	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
-		t.Fatalf("unexpected error querying uploads: %s", err)
-	} else if diff := cmp.Diff(expectedReferenceCounts[:n/2], referenceCounts); diff != "" {
-		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
-	}
-
-	if err := store.BackfillReferenceCountBatch(context.Background(), n/2); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
-	}
-	if referenceCounts, err := basestore.ScanInts(db.QueryContext(context.Background(), referenceCountQuery.Query(sqlf.PostgresBindVar), referenceCountQuery.Args()...)); err != nil {
-		t.Fatalf("unexpected error querying uploads: %s", err)
-	} else if diff := cmp.Diff(expectedReferenceCounts, referenceCounts); diff != "" {
-		t.Errorf("unexpected reference counts (-want +got):\n%s", diff)
+	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 }
 
@@ -853,13 +765,13 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	store := New(db, &observation.TestContext)
 
 	insertUploads(t, db,
-		types.Upload{ID: 50, State: "completed"},
-		types.Upload{ID: 51, State: "completed"},
-		types.Upload{ID: 52, State: "completed"},
-		types.Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
-		types.Upload{ID: 54, State: "completed"}, // referenced by 52
-		types.Upload{ID: 55, State: "completed"}, // referenced by 51
-		types.Upload{ID: 56, State: "completed"}, // referenced by 52, 53
+		types.Upload{ID: 50, RepositoryID: 100, State: "completed"},
+		types.Upload{ID: 51, RepositoryID: 101, State: "completed"},
+		types.Upload{ID: 52, RepositoryID: 102, State: "completed"},
+		types.Upload{ID: 53, RepositoryID: 102, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		types.Upload{ID: 54, RepositoryID: 103, State: "completed"}, // referenced by 52
+		types.Upload{ID: 55, RepositoryID: 103, State: "completed"}, // referenced by 51
+		types.Upload{ID: 56, RepositoryID: 103, State: "completed"}, // referenced by 52, 53
 	)
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
@@ -882,15 +794,12 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
+	// expire uploads 51-54
 	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if _, err := store.UpdateUploadsReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, shared.DependencyReferenceCountUpdateTypeAdd); err != nil {
-		t.Fatalf("unexpected error updating reference counts: %s", err)
-	}
-
-	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
+	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
 		t.Fatalf("unexpected error soft deleting uploads: %s", err)
 	} else if count != 2 {
 		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
@@ -924,8 +833,187 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 	}
 	sort.Ints(keys)
 
-	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
+	expectedKeys := []int{101, 102}
+	if diff := cmp.Diff(expectedKeys, keys); diff != "" {
+		t.Errorf("unexpected dirty repositories (-want +got):\n%s", diff)
+	}
+}
+
+func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	// The packages in this test reference each other in the following way:
+	//
+	//     [p1] ---> [p2] -> [p3]    [p8]
+	//      ^         ^       |       ^
+	//      |         |       |       |
+	//      +----+----+       |       |
+	//           |            v       v
+	// [p6] --> [p5] <------ [p4]    [p9]
+	//  ^
+	//  |
+	//  v
+	// [p7]
+	//
+	// Note that all packages except for p6 are attached to an expired upload,
+	// and each upload is _reachable_ from a non-expired upload.
+
+	insertUploads(t, db,
+		types.Upload{ID: 100, RepositoryID: 50, State: "completed"}, // Referenced by 104
+		types.Upload{ID: 101, RepositoryID: 51, State: "completed"}, // Referenced by 100, 104
+		types.Upload{ID: 102, RepositoryID: 52, State: "completed"}, // Referenced by 101
+		types.Upload{ID: 103, RepositoryID: 53, State: "completed"}, // Referenced by 102
+		types.Upload{ID: 104, RepositoryID: 54, State: "completed"}, // Referenced by 103, 105
+		types.Upload{ID: 105, RepositoryID: 55, State: "completed"}, // Referenced by 106
+		types.Upload{ID: 106, RepositoryID: 56, State: "completed"}, // Referenced by 105
+
+		// Another component
+		types.Upload{ID: 107, RepositoryID: 57, State: "completed"}, // Referenced by 108
+		types.Upload{ID: 108, RepositoryID: 58, State: "completed"}, // Referenced by 107
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 100, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 101, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 102, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 103, Scheme: "test", Name: "p4", Version: "1.2.3"},
+		{DumpID: 104, Scheme: "test", Name: "p5", Version: "1.2.3"},
+		{DumpID: 105, Scheme: "test", Name: "p6", Version: "1.2.3"},
+		{DumpID: 106, Scheme: "test", Name: "p7", Version: "1.2.3"},
+
+		// Another component
+		{DumpID: 107, Scheme: "test", Name: "p8", Version: "1.2.3"},
+		{DumpID: 108, Scheme: "test", Name: "p9", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 100, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 101, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 102, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 103, Scheme: "test", Name: "p5", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 104, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 104, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 105, Scheme: "test", Name: "p5", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 106, Scheme: "test", Name: "p6", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 105, Scheme: "test", Name: "p7", Version: "1.2.3"}},
+
+		// Another component
+		{Package: shared.Package{DumpID: 107, Scheme: "test", Name: "p9", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 108, Scheme: "test", Name: "p8", Version: "1.2.3"}},
+	})
+
+	// We'll first confirm that none of the uploads can be deleted by either of the soft delete mechanisms;
+	// once we expire the upload providing p6, the "unreferenced" method should no-op, but the traversal
+	// method should soft delete all fo them.
+
+	// expire all uploads except 105 and 109
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 0 {
+		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+	}
+	for i := 0; i < 9; i++ {
+		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
+		if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+			t.Fatalf("unexpected error soft deleting uploads: %s", err)
+		} else if count != 0 {
+			t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+		}
+	}
+	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 0 {
+		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+	}
+
+	// Expire upload 105, making the connected component soft-deletable
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{105}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+	// Reset timestamps so the test is deterministics
+	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET last_traversal_scan_at = NULL"); err != nil {
+		t.Fatalf("unexpected error clearing last_traversal_scan_at: %s", err)
+	}
+	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 0 {
+		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+	}
+	// First connected component (rooted with upload 100)
+	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 7 {
+		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 7, count)
+	}
+	// Second connected component (rooted with upload 107)
+	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 0 {
+		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+	}
+
+	// Ensure records were deleted
+	expectedStates := map[int]string{
+		100: "deleting",
+		101: "deleting",
+		102: "deleting",
+		103: "deleting",
+		104: "deleting",
+		105: "deleting",
+		106: "deleting",
+		107: "completed",
+		108: "completed",
+	}
+	if states, err := getUploadStates(db, 100, 101, 102, 103, 104, 105, 106, 107, 108); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	}
+
+	// Ensure repository was marked as dirty
+	repositoryIDs, err := store.GetDirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	expectedKeys := []int{50, 51, 52, 53, 54, 55, 56}
+	if diff := cmp.Diff(expectedKeys, keys); diff != "" {
+		t.Errorf("unexpected dirty repositories (-want +got):\n%s", diff)
+	}
+
+	// expire uploads 107-108, making the second connected component soft-deletable
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{107, 108}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+	if count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 0 {
+		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+	}
+	if count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 2 {
+		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 2, count)
+	}
+
+	// Ensure new records were deleted
+	expectedStates = map[int]string{
+		107: "deleting",
+		108: "deleting",
+	}
+	if states, err := getUploadStates(db, 107, 108); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 }
 
@@ -2056,32 +2144,12 @@ func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
 	return ids
 }
 
-func assertReferenceCounts(t *testing.T, store database.DB, expectedReferenceCountsByID map[int]int) {
-	db := basestore.NewWithHandle(store.Handle())
-
-	referenceCountsByID, err := scanIntPairs(db.Query(context.Background(), sqlf.Sprintf(`SELECT upload_id, reference_count FROM lsif_uploads_reference_counts ORDER BY upload_id`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying reference counts: %s", err)
-	}
-
-	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
-	}
-}
-
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
 // with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
 // an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
 // insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
-}
-
-// insertVisibleAtTipNonDefaultBranch populates rows of the lsif_uploads_visible_at_tip table for the
-// given repository with the given identifiers. Each upload is assumed to refer to the tip of a branch
-// distinct from the default branch or a tag.
-func insertVisibleAtTipNonDefaultBranch(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, false, uploadIDs...)
 }
 
 func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {

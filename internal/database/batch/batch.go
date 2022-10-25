@@ -115,6 +115,12 @@ func NewInserter(ctx context.Context, db dbutil.DB, tableName string, maxNumPara
 	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, "", nil, nil)
 }
 
+// NewInserterWithConflict creates a new batch inserter using the given database handle, table name, column names,
+// and on conflict clause. For performance and atomicity, handle should be a transaction.
+func NewInserterWithConflict(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, onConflictClause string, columnNames ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, nil, nil)
+}
+
 // NewInserterWithReturn creates a new batch inserter using the given database handle, table
 // name, insert column names, and column names to scan on each inserted row. The given scanner
 // will be called once for each row inserted into the target table. Beware that this function

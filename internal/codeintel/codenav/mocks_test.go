@@ -16,8 +16,8 @@ import (
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	gitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )

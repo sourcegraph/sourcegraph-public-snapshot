@@ -91,11 +91,17 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {
 	var children []zoekt.Q
 	if opt.Path != "" {
-		re, _ := syntax.Parse(opt.Path, 0)
+		re, err := syntax.Parse(opt.Path, syntax.Perl)
+		if err != nil {
+			panic(err)
+		}
 		children = append(children, &zoekt.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
 	}
 	if opt.Content != "" {
-		re, _ := syntax.Parse(opt.Content, 0)
+		re, err := syntax.Parse(opt.Content, syntax.Perl)
+		if err != nil {
+			panic(err)
+		}
 		children = append(children, &zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
 	}
 	q := zoekt.NewAnd(children...)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -220,7 +221,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				parts = append(parts, "slow http request")
 			}
 			if m.Code >= minCode {
-				parts = append(parts, "unexpected status code")
+				parts = append(parts, fmt.Sprintf("unexpected status code %d", m.Code))
 			}
 
 			msg := strings.Join(parts, ", ")
@@ -271,7 +272,7 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				logger.Error("handler panic", log.Error(err))
+				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()

@@ -3,12 +3,12 @@ import React, { useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
+    BatchSpecSource,
     CancelBatchSpecExecutionResult,
     CancelBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'

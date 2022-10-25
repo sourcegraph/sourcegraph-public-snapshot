@@ -1,9 +1,22 @@
 package cleanup
 
-import dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+import (
+	"time"
 
-type AutoIndexingService interface {
-	WorkerutilStore() dbworkerstore.Store
-	DependencySyncStore() dbworkerstore.Store
-	DependencyIndexingStore() dbworkerstore.Store
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+)
+
+type AutoIndexingServiceBackgroundJobs interface {
+	NewJanitor(
+		interval time.Duration,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+		failedIndexBatchSize int,
+		failedIndexMaxAge time.Duration,
+	) goroutine.BackgroundRoutine
+
+	NewIndexResetter(interval time.Duration) *dbworker.Resetter
+	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 }

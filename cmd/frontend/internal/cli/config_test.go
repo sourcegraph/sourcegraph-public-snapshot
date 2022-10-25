@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestServiceConnections(t *testing.T) {
@@ -22,6 +25,29 @@ func TestServiceConnections(t *testing.T) {
 	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
 		t.Fatal("expected non-empty service connections")
 	}
+}
+
+func TestWriteSiteConfig(t *testing.T) {
+	db := database.NewMockDB()
+	confStore := database.NewMockConfStore()
+	conf := &database.SiteConfig{ID: 1}
+	confStore.SiteGetLatestFunc.SetDefaultReturn(
+		conf,
+		nil,
+	)
+	logger := logtest.Scoped(t)
+	db.ConfFunc.SetDefaultReturn(confStore)
+	confSource := newConfigurationSource(logger, db)
+
+	t.Run("error when incorrect last ID", func(t *testing.T) {
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID-1)
+		assert.Error(t, err)
+	})
+
+	t.Run("no error when correct last ID", func(t *testing.T) {
+		err := confSource.Write(context.Background(), conftypes.RawUnified{}, conf.ID)
+		assert.NoError(t, err)
+	})
 }
 
 func TestReadSiteConfigFile(t *testing.T) {

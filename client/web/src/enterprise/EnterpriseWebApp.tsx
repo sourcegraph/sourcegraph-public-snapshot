@@ -12,6 +12,8 @@ import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extens
 import { enterpriseExtensionsAreaRoutes } from './extensions/routes'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
+import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
+import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
 import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { enterpriseRepoContainerRoutes, enterpriseRepoRevisionContainerRoutes } from './repo/routes'
 import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
@@ -40,6 +42,8 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         userAreaRoutes={enterpriseUserAreaRoutes}
         userSettingsSideBarItems={enterpriseUserSettingsSideBarItems}
         userSettingsAreaRoutes={enterpriseUserSettingsAreaRoutes}
+        orgSettingsSideBarItems={enterpriseOrgSettingsSideBarItems}
+        orgSettingsAreaRoutes={enterpriseOrgSettingsAreaRoutes}
         orgAreaRoutes={enterpriseOrganizationAreaRoutes}
         orgAreaHeaderNavItems={enterpriseOrgAreaHeaderNavItems}
         repoContainerRoutes={enterpriseRepoContainerRoutes}

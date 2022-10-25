@@ -66,7 +66,7 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		sudoToken: op.SudoToken,
 
 		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli, nil),
+		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,
@@ -210,13 +210,6 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 	}
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itoa(int(user.ID)))
-	return listProjects(ctx, client)
-}
-
-// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
-// token.
-func (p *SudoProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	client := p.clientProvider.GetOAuthClient(token)
 	return listProjects(ctx, client)
 }
 

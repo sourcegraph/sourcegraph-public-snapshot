@@ -258,7 +258,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
 function itemKey(item: SearchMatch): string {
     if (item.type === 'content') {
-        const lineStart = item.lineMatches.length > 0 ? item.lineMatches[0].lineNumber : 0
+        const lineStart = item.chunkMatches
+            ? item.chunkMatches.length > 0
+                ? item.chunkMatches[0].contentStart.line
+                : 0
+            : 0
         return `file:${getMatchUrl(item)}:${lineStart}`
     }
     if (item.type === 'symbol') {

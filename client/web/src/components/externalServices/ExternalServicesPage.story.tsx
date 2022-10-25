@@ -75,6 +75,8 @@ export const ListOfExternalServices: Story = () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={{ id: '123' }}
                 queryExternalServices={queryExternalServices}
+                externalServicesFromFile={false}
+                allowEditExternalServicesWithFile={false}
             />
         )}
     </WebStory>

@@ -7,10 +7,9 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -65,28 +64,20 @@ func TestResolveLocations(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	t.Cleanup(func() {
-		gitserver.Mocks.ResolveRevision = nil
-		backend.Mocks.Repos.GetCommit = nil
-	})
-
-	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
 			return "", &gitdomain.RevisionNotFoundError{}
 		}
 		return api.CommitID(spec), nil
-	}
-
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *sgtypes.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
-		return &gitdomain.Commit{ID: commitID}, nil
-	}
+	})
 
 	r1 := types.Range{Start: types.Position{Line: 11, Character: 12}, End: types.Position{Line: 13, Character: 14}}
 	r2 := types.Range{Start: types.Position{Line: 21, Character: 22}, End: types.Position{Line: 23, Character: 24}}
 	r3 := types.Range{Start: types.Position{Line: 31, Character: 32}, End: types.Position{Line: 33, Character: 34}}
 	r4 := types.Range{Start: types.Position{Line: 41, Character: 42}, End: types.Position{Line: 43, Character: 44}}
 
-	locations, err := resolveLocations(context.Background(), sharedresolvers.NewCachedLocationResolver(db), []types.UploadLocation{
+	locations, err := resolveLocations(context.Background(), sharedresolvers.NewCachedLocationResolver(db, gsClient), []types.UploadLocation{
 		{Dump: types.Dump{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: "p1"},
 		{Dump: types.Dump{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: "p2"},
 		{Dump: types.Dump{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: "p3"},

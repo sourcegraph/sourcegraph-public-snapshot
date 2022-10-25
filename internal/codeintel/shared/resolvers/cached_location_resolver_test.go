@@ -10,7 +10,6 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -35,22 +34,13 @@ func TestCachedLocationResolver(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	t.Cleanup(func() {
-		gitserver.Mocks.ResolveRevision = nil
-		backend.Mocks.Repos.GetCommit = nil
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID(spec), nil
 	})
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(spec), nil
-	}
-
 	var commitCalls uint32
-	gitserver.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
-		atomic.AddUint32(&commitCalls, 1)
-		return &gitdomain.Commit{ID: commitID}, nil
-	}
-
-	cachedResolver := NewCachedLocationResolver(db)
+	cachedResolver := NewCachedLocationResolver(db, gsClient)
 
 	var repositoryIDs []api.RepoID
 	for i := 1; i <= numRepositories; i++ {
@@ -171,7 +161,9 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	repositoryResolver, err := NewCachedLocationResolver(db).Repository(context.Background(), 50)
+	gsClient := gitserver.NewMockClient()
+
+	repositoryResolver, err := NewCachedLocationResolver(db, gsClient).Repository(context.Background(), 50)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -180,7 +172,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver(db).Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := NewCachedLocationResolver(db, gsClient).Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -199,12 +191,10 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	db := database.NewStrictMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return "", &gitdomain.RevisionNotFoundError{}
-	}
-	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
 
-	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
+	commitResolver, err := NewCachedLocationResolver(db, gsClient).Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -213,7 +203,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := NewCachedLocationResolver(db).Path(context.Background(), 50, "deadbeef", "main.go")
+	pathResolver, err := NewCachedLocationResolver(db, gsClient).Path(context.Background(), 50, "deadbeef", "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

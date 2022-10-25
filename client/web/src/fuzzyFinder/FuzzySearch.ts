@@ -3,8 +3,6 @@ import { HighlightedLinkProps } from '../components/fuzzyFinder/HighlightedLink'
 export interface FuzzySearchParameters {
     query: string
     maxResults: number
-    createUrl?: (value: string) => string
-    onClick?: () => void
 }
 
 export interface FuzzySearchResult {
@@ -14,8 +12,17 @@ export interface FuzzySearchResult {
     falsePositiveRatio?: number
 }
 
+export enum SearchIconKind {
+    codeHost,
+    symbol,
+}
+
 export interface SearchValue {
     text: string
+    ranking?: number
+    url?: string
+    icon?: JSX.Element
+    onClick?: () => void
 }
 
 export type IndexingFSM = SearchIndexing | SearchReady
@@ -24,7 +31,8 @@ export interface SearchIndexing {
     indexedFileCount: number
     totalFileCount: number
     partialFuzzy: FuzzySearch
-    continue: () => Promise<IndexingFSM>
+    isIndexing: () => boolean
+    continueIndexing: () => Promise<IndexingFSM>
 }
 export interface SearchReady {
     key: 'ready'

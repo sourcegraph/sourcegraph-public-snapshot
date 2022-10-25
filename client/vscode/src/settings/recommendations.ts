@@ -1,6 +1,8 @@
 /**
  * Disabled due to violation of the VS Code's UX guidelines for notifications
- * To be revaluated in the future
+ * To be revaluated in the future: https://code.visualstudio.com/api/ux-guidelines/notifications
+ * This functions add Sourcegraph to workspace recommendations if haven't already
+ * eg: recommendSourcegraph(localStorageService).catch(() => {})
  */
 
 import * as vscode from 'vscode'

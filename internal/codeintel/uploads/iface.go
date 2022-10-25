@@ -2,22 +2,25 @@ package uploads
 
 import (
 	"context"
+	"io"
 	"time"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type Locker interface {
 	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
-}
-
-type CommitCache interface {
-	ExistsBatch(ctx context.Context, commits []codeintelgitserver.RepositoryCommit) ([]bool, error)
 }
 
 type GitserverClient interface {
@@ -29,9 +32,27 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
+
+	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
+	Head(ctx context.Context, repositoryID int) (string, bool, error)
+	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
+	ListFiles(ctx context.Context, repositoryID int, commit string, pattern *regexp.Regexp) ([]string, error)
+	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
+	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
+
+	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options gitserver.ArchiveOptions) (io.ReadCloser, error)
+	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 }
 
 type RepoStore interface {
 	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
 	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+}
+
+type PolicyService interface {
+	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+}
+
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
 }

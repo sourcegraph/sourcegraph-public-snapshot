@@ -22,7 +22,7 @@ import {
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 

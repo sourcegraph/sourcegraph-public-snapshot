@@ -24,7 +24,6 @@ func (s *store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (i
 }
 
 const insertDependencySyncingJobQuery = `
--- source: internal/codeintel/stores/dbstore/dependency_index.go:InsertDependencySyncingJob
 INSERT INTO lsif_dependency_syncing_jobs (upload_id) VALUES (%s)
 RETURNING id
 `

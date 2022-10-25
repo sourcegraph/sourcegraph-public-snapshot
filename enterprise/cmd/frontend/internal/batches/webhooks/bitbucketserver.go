@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,9 +25,9 @@ type BitbucketServerWebhook struct {
 	*Webhook
 }
 
-func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, extsvc.TypeBitbucketServer},
+		Webhook: &Webhook{store, gitserverClient, extsvc.TypeBitbucketServer},
 	}
 }
 

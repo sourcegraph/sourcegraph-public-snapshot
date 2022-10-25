@@ -2,7 +2,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
+import { OrgAreaRoute, OrgAreaRouteContext } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
 import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
@@ -40,7 +40,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/batch-changes/:batchChangeName/edit',
-        render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
+        render: ({ match, ...props }: OrgAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
             <EditBatchSpecPage
                 {...props}
                 batchChange={{ name: match.params.batchChangeName, namespace: props.org.id }}
@@ -55,7 +55,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         render: ({
             match,
             ...props
-        }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string; batchSpecID: string }>) => (
+        }: OrgAreaRouteContext & RouteComponentProps<{ batchChangeName: string; batchSpecID: string }>) => (
             <ExecuteBatchSpecPage
                 {...props}
                 batchSpecID={match.params.batchSpecID}

@@ -6,7 +6,7 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextRepositoryRevisisonsFields } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
@@ -76,7 +76,7 @@ const actions: {
 ]
 
 export interface SearchContextRepositoriesFormAreaProps extends ThemeProps, TelemetryProps {
-    repositories: ISearchContextRepositoryRevisions[] | undefined
+    repositories: SearchContextRepositoryRevisisonsFields[] | undefined
     validateRepositories: () => Observable<Error[]>
     onChange: (config: string, isInitialValue?: boolean) => void
 }

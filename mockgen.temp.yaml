@@ -31,11 +31,11 @@
 - filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
   interfaces:
-    - GitBlobResolver
     - AutoIndexingService
     - UploadsService
     - PolicyService
     - GitserverClient
+    - CodeNavService
 - filename: enterprise/cmd/frontend/internal/registry/stores/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores
   interfaces:
@@ -103,7 +103,11 @@
     - UserExternalAccountsStore
     - UserPublicRepoStore
     - UserStore
+    - WebhookStore
     - WebhookLogStore
+    - ExecutorStore
+    - ExecutorSecretStore
+    - ExecutorSecretAccessLogStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:

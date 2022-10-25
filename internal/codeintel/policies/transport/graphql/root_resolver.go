@@ -12,9 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
+	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -89,7 +92,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 		pageSize = int(*args.First)
 	}
 
-	opts := types.GetConfigurationPoliciesOptions{
+	opts := policiesshared.GetConfigurationPoliciesOptions{
 		Limit:  pageSize,
 		Offset: offset,
 	}
@@ -142,7 +145,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -195,7 +198,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -239,7 +242,7 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.policySvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -285,7 +288,8 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *Previe
 	resv := make([]*sharedresolvers.RepositoryResolver, 0, len(ids))
 	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
 	for _, id := range ids {
-		repo, err := backend.NewRepos(logger, r.policySvc.GetUnsafeDB()).Get(ctx, api.RepoID(id))
+		db := r.policySvc.GetUnsafeDB()
+		repo, err := backend.NewRepos(logger, db, gitserver.NewClient(db)).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}

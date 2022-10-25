@@ -23,6 +23,8 @@ interface Props extends ThemeProps, TelemetryProps {
     routingPrefix: string
     afterCreateRoute: string
     userID?: Scalars['ID']
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -40,6 +42,8 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     telemetryService,
     userID,
     autoFocusForm,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
 }) => {
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
@@ -75,7 +79,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             setIsCreating(true)
             try {
                 const service = await addExternalService(
-                    { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
+                    { input: { ...getExternalServiceInput() } },
                     telemetryService
                 )
                 setIsCreating(false)
@@ -84,7 +88,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                 setIsCreating(asError(error))
             }
         },
-        [getExternalServiceInput, telemetryService, userID]
+        [getExternalServiceInput, telemetryService]
     )
 
     useEffect(() => {
@@ -136,6 +140,8 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         onChange={onChange}
                         loading={isCreating === true}
                         autoFocus={autoFocusForm}
+                        externalServicesFromFile={externalServicesFromFile}
+                        allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                     />
                 </>
             )}

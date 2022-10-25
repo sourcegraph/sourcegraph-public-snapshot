@@ -29,6 +29,8 @@ func init() {
 	})
 }
 
+const devPrivateDefaultBranch = "master"
+
 var (
 	debugStartServices cli.StringSlice
 	infoStartServices  cli.StringSlice
@@ -164,6 +166,16 @@ func startExec(ctx *cli.Context) error {
 		}
 	}
 
+	pid, exists, err := run.PidExistsWithArgs(os.Args[1:])
+	if err != nil {
+		std.Out.WriteAlertf("Could not check if 'sg %s' is already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
+		return errors.Wrap(err, "Failed to check if sg is already running with the same arguments or not.")
+	}
+	if exists {
+		std.Out.WriteAlertf("Found 'sg %s' already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
+		return errors.New("no concurrent sg start with same arguments allowed")
+	}
+
 	commandset := args[0]
 	set, ok := config.Commandsets[commandset]
 	if !ok {
@@ -214,21 +226,38 @@ func startExec(ctx *cli.Context) error {
 			return cliutil.NewEmptyExitErr(1)
 		}
 
-		// dev-private exists, try to update the configuration
-		update := std.Out.Pending(output.Styled(output.StylePending, "Updating dev-private..."))
-		if err := sgrun.Bash(ctx.Context, "git pull origin main").
-			Dir(devPrivatePath).
-			Run().Wait(); err != nil {
-
+		// dev-private exists, let's see if there are any changes
+		update := std.Out.Pending(output.Styled(output.StylePending, "Checking for dev-private changes..."))
+		shouldUpdate, err := shouldUpdateDevPrivate(ctx.Context, devPrivatePath, devPrivateDefaultBranch)
+		if shouldUpdate {
+			update.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "We found some changes in dev-private that you're missing out on! If you want the new changes, 'cd ../dev-private' and then do a 'git stash' and a 'git pull'!"))
+		}
+		if err != nil {
 			update.Close()
-			std.Out.WriteWarningf("WARNING: failed to update dev-private:")
+			std.Out.WriteWarningf("WARNING: Encountered some trouble while checking if there are remote changes in dev-private!")
 			std.Out.Write("")
 			std.Out.Write(err.Error())
 			std.Out.Write("")
+		} else {
+			update.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done checking dev-private changes"))
 		}
 	}
 
 	return startCommandSet(ctx.Context, set, config)
+}
+
+func shouldUpdateDevPrivate(ctx context.Context, path, branch string) (bool, error) {
+	// git fetch so that we check whether there are any remote changes
+	if err := sgrun.Bash(ctx, fmt.Sprintf("git fetch origin %s", branch)).Dir(path).Run().Wait(); err != nil {
+		return false, err
+	}
+	// Now we check if there are any changes. If the output is empty, we're not missing out on anything.
+	output, err := sgrun.Bash(ctx, fmt.Sprintf("git diff --shortstat origin/%s", branch)).Dir(path).Run().String()
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0, err
+
 }
 
 func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.Config) error {

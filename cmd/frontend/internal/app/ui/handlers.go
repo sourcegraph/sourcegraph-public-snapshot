@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -312,14 +311,6 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
-		if envvar.SourcegraphDotComMode() && !actor.FromContext(r.Context()).IsAuthenticated() && !strings.Contains(r.UserAgent(), "Cookiebot") {
-			// The user is not signed in and tried to access Sourcegraph.com.
-			// Redirect to about.sourcegraph.com so they see general info page.
-			// Don't redirect Cookiebot so it can scan the website without authentication.
-			http.Redirect(w, r, (&url.URL{Scheme: aboutRedirectScheme, Host: aboutRedirectHost}).String(), http.StatusTemporaryRedirect)
-			return nil
-		}
-
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
@@ -373,7 +364,7 @@ func serveEmbed(db database.DB) handlerFunc {
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {
 	// NOTE: It makes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
@@ -390,7 +381,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 		}
 		return false, nil
 	}
-	stat, err := gitserver.NewClient(db).Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stat, err := client.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			serveError(w, r, db, err, http.StatusNotFound)
@@ -432,7 +423,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
 		if handled {
 			return nil
 		}
@@ -463,7 +454,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db)
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient(db))
 		if handled {
 			return nil
 		}

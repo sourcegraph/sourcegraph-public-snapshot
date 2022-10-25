@@ -6,4 +6,5 @@ const (
 	NpmPackagesScheme    = "npm"
 	PythonPackagesScheme = "python"
 	RustPackagesScheme   = "rust-analyzer"
+	RubyPackagesScheme   = "scip-ruby"
 )

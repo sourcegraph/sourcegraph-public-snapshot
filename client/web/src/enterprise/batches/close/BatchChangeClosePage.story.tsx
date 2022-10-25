@@ -3,7 +3,6 @@ import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { WebStory } from '../../../components/WebStory'
@@ -15,6 +14,7 @@ import {
     BatchChangeFields,
     BatchSpecState,
     BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
 import {
     queryChangesets as _queryChangesets,

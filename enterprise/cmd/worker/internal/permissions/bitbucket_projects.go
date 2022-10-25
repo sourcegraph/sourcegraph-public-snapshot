@@ -63,11 +63,11 @@ func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
 // Routines is called by the worker service to start the worker.
 // It returns a list of goroutines that the worker service should start and manage.
 func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	wdb, err := workerdb.Init()
+	wdb, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
-	db := edb.NewEnterpriseDB(database.NewDB(logger, wdb))
+	db := edb.NewEnterpriseDB(wdb)
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
@@ -403,7 +403,7 @@ func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.Share
 // These are the metrics that are used by the worker and resetter.
 // They are required by the workerutil package for automatic metrics collection.
 type bitbucketProjectPermissionsMetrics struct {
-	workerMetrics workerutil.WorkerMetrics
+	workerMetrics workerutil.WorkerObservability
 	resets        prometheus.Counter
 	resetFailures prometheus.Counter
 	errors        prometheus.Counter

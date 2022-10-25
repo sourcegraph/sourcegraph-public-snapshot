@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -58,7 +58,7 @@ func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
 
 	rootResolver := NewRootResolver(mockAutoIndexingService, mockUploadsService, mockPolicyService, &observation.TestContext)
 
-	if _, err := rootResolver.DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != backend.ErrNotAuthenticated {
-		t.Errorf("unexpected error. want=%q have=%q", backend.ErrNotAuthenticated, err)
+	if _, err := rootResolver.DeleteLSIFIndex(context.Background(), &struct{ ID graphql.ID }{id}); err != auth.ErrNotAuthenticated {
+		t.Errorf("unexpected error. want=%q have=%q", auth.ErrNotAuthenticated, err)
 	}
 }

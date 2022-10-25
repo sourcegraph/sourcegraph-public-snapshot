@@ -2,7 +2,9 @@ package graphql
 
 import (
 	"context"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
@@ -15,7 +17,7 @@ type RootResolver interface {
 }
 
 type rootResolver struct {
-	svc                            Service
+	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
 	uploadSvc                      UploadsService
 	policiesSvc                    PolicyService
@@ -27,7 +29,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(svc Service, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) RootResolver {
+func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) RootResolver {
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -58,8 +60,16 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDat
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
-	gbr := NewGitBlobResolver(r.svc, int(args.Repo.ID), string(args.Commit), args.Path, r.operations, reqState)
+	if len(uploads) == 0 {
+		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
+		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
+			err = r.autoindexingSvc.QueueRepoRev(ctx, int(args.Repo.ID), string(args.Commit))
+		}
 
-	return NewGitBlobLSIFDataResolverQueryResolver(r.autoindexingSvc, r.uploadSvc, r.policiesSvc, r.gitserver, gbr, errTracer), nil
+		return nil, err
+	}
+
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
+
+	return NewGitBlobLSIFDataResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
 }

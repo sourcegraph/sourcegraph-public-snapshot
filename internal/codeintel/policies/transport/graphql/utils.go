@@ -8,7 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -84,7 +84,7 @@ func validateConfigurationPolicy(policy CodeIntelConfigurationPolicy) error {
 	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
-	if policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
+	if policy.IndexingEnabled && policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
 	}
 

@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -215,7 +215,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		Line:         10,
 		Character:    20,
 	}
-	remoteUploads := updateSvcDumpToSharedDump(dumps)
+	remoteUploads := dumps
 	adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)

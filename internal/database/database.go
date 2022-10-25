@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -49,7 +50,11 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Webhooks(encryption.Key) WebhookStore
 	RepoStatistics() RepoStatisticsStore
+	Executors() ExecutorStore
+	ExecutorSecrets(encryption.Key) ExecutorSecretStore
+	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -73,15 +78,15 @@ type db struct {
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
+	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *db) Transact(ctx context.Context) (DB, error) {
@@ -97,7 +102,7 @@ func (d *db) Done(err error) error {
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokensWith(d.Store)
+	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
@@ -117,7 +122,7 @@ func (d *db) EventLogs() EventLogStore {
 }
 
 func (d *db) SecurityEventLogs() SecurityEventLogsStore {
-	return SecurityEventLogsWith(d.Store)
+	return SecurityEventLogsWith(d.logger, d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
@@ -216,6 +221,22 @@ func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
 }
 
+func (d *db) Webhooks(key encryption.Key) WebhookStore {
+	return WebhooksWith(d.Store, key)
+}
+
 func (d *db) RepoStatistics() RepoStatisticsStore {
 	return RepoStatisticsWith(d.Store)
+}
+
+func (d *db) Executors() ExecutorStore {
+	return ExecutorsWith(d.Store)
+}
+
+func (d *db) ExecutorSecrets(key encryption.Key) ExecutorSecretStore {
+	return ExecutorSecretsWith(d.logger, d.Store, key)
+}
+
+func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
+	return ExecutorSecretAccessLogsWith(d.Store)
 }

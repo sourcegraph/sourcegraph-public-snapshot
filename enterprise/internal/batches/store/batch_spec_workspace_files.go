@@ -94,7 +94,6 @@ func (s *Store) upsertBatchSpecWorkspaceFileQuery(m *btypes.BatchSpecWorkspaceFi
 }
 
 var upsertBatchSpecWorkspaceFileQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:UpsertBatchSpecWorkspaceFile
 INSERT INTO batch_spec_workspace_files (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (%s) WHERE TRUE
@@ -141,7 +140,6 @@ func deleteBatchSpecWorkspaceFileQuery(opts DeleteBatchSpecWorkspaceFileOpts) *s
 }
 
 var deleteBatchSpecWorkspaceFileQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:DeleteBatchSpecWorkspaceFile
 DELETE FROM batch_spec_workspace_files
 WHERE %s`
 
@@ -198,7 +196,6 @@ func getBatchSpecWorkspaceFileQuery(opts GetBatchSpecWorkspaceFileOpts) *sqlf.Qu
 }
 
 var getBatchSpecWorkspaceFileQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:GetBatchSpecWorkspaceFile
 SELECT %s FROM batch_spec_workspace_files
 WHERE %s
 LIMIT 1`
@@ -255,7 +252,6 @@ func countBatchSpecWorkspaceFilesQuery(opts ListBatchSpecWorkspaceFileOpts) *sql
 }
 
 var countBatchSpecWorkspaceFileQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:CountBatchSpecWorkspaceFiles
 SELECT COUNT(1) FROM batch_spec_workspace_files
 %s
 WHERE %s`
@@ -315,7 +311,6 @@ func listBatchSpecWorkspaceFilesQuery(opts ListBatchSpecWorkspaceFileOpts) *sqlf
 }
 
 var listBatchSpecWorkspaceFileQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_files.go:ListBatchSpecWorkspaceFiles
 SELECT %s FROM batch_spec_workspace_files
 %s
 WHERE %s

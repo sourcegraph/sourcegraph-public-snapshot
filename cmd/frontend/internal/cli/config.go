@@ -119,7 +119,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.Write(ctx, raw)
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -445,19 +445,27 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 	}
 
 	return conftypes.RawUnified{
+		ID:                 site.ID,
 		Site:               site.Contents,
 		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
-	// TODO(slimsag): future: pass lastID through for race prevention
+func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, false)
+}
+
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	if site.ID != lastID {
+		return errors.New("site config has been modified by another request, write not allowed")
+	}
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site, isOverride)
 	if err != nil {
+		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil

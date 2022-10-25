@@ -30,7 +30,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
-	return NewGitTreeEntryResolver(fm.db, fm.Commit(), CreateFileInfo(fm.Path, false))
+	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient(fm.db), fm.Commit(), CreateFileInfo(fm.Path, false))
 }
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {

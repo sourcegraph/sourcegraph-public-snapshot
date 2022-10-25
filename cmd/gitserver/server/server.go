@@ -395,6 +395,35 @@ func shortGitCommandSlow(args []string) time.Duration {
 	}
 }
 
+// 🚨 SECURITY: headerXRequestedWithMiddleware will ensure that the X-Requested-With
+// header contains the correct value. See "What does X-Requested-With do, anyway?" in
+// https://github.com/sourcegraph/sourcegraph/pull/27931.
+func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
+
+		// Do not apply the middleware to /ping and /git endpoints.
+		//
+		// 1. /ping is used by health check services who most likely don't set this header
+		// at all.
+		//
+		// 2. /git may be used to run "git fetch" from another gitserver instance over
+		// HTTP and the fetchCommand does not set this header yet.
+		if strings.HasPrefix(r.URL.Path, "/ping") || strings.HasPrefix(r.URL.Path, "/git") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
+			l.Error("header X-Requested-With is not set or is invalid", log.String("path", r.URL.Path))
+			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -469,6 +498,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
+	// This endpoint allows us to expose gitserver itself as a "git service"
+	// (ETOOMANYGITS!) that allows other services to run commands like "git fetch"
+	// directly against a gitserver replica and treat it as a git remote.
+	//
+	// Example use case for this is a repo migration from one replica to another during
+	// scaling events and the new destination gitserver replica can directly clone from
+	// the gitserver replica which hosts the repository currently.
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
 		conf.DefaultClient(),
@@ -502,15 +538,16 @@ func (s *Server) Handler() http.Handler {
 			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
 		)))
 
-	return mux
+	// 🚨 SECURITY: This must be wrapped in headerXRequestedWithMiddleware.
+	return headerXRequestedWithMiddleware(mux)
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
-func (s *Server) Janitor(interval time.Duration) {
+func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	for {
 		gitserverAddrs := currentGitserverAddresses()
-		s.cleanupRepos(gitserverAddrs)
+		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
 }
@@ -857,11 +894,6 @@ func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, cont
 	pendingClones.Inc()
 	defer pendingClones.Dec()
 	return s.cloneLimiter.Acquire(ctx)
-}
-
-// queryCloneLimiter reports the capacity and length of the clone limiter's queue
-func (s *Server) queryCloneLimiter() (cap, len int) {
-	return s.cloneLimiter.GetLimit()
 }
 
 func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -1591,6 +1623,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
+				ev.AddField("stdin_size", len(req.Stdin))
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
@@ -1713,6 +1746,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	dir.Set(cmd)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
+	cmd.Stdin = bytes.NewReader(req.Stdin)
 
 	exitStatus, execErr = runCommand(ctx, cmd)
 
@@ -2023,13 +2057,17 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return "", errors.Errorf("cannot clone from the same gitserver instance")
 		}
 
-		remoteURL, err = vcs.ParseURL(filepath.Join(opts.CloneFromShard, "git", string(repo)))
+		remoteURL, err = vcs.ParseURL(opts.CloneFromShard)
+		if err != nil {
+			return "", err
+		}
+		remoteURL = remoteURL.JoinPath("git", string(repo))
 	} else {
 		// We may be attempting to clone a private repo so we need an internal actor.
 		remoteURL, err = s.getRemoteURL(actor.WithInternalActor(ctx), repo)
-	}
-	if err != nil {
-		return "", err
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// isCloneable causes a network request, so we limit the number that can
@@ -2171,8 +2209,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, tmp, syncer, repo, remoteURL); err != nil {
-		s.Logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+	if err := setHEAD(ctx, logger, tmp, syncer, remoteURL); err != nil {
+		logger.Error("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2482,7 +2520,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
 func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
-	logger := s.Logger.Scoped("backgroundRepoUpdate", "")
+	logger := s.Logger.Scoped("backgroundRepoUpdate", "").With(log.String("repo", string(repo)))
 
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
@@ -2534,8 +2572,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, dir, syncer, repo, remoteURL); err != nil {
-		logger.Error("Failed to ensure HEAD exists", log.String("repo", string(repo)), log.Error(err))
+	if err := setHEAD(ctx, logger, dir, syncer, remoteURL); err != nil {
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
@@ -2545,18 +2582,18 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("Failed to update last changed time", log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed setting last fetch in DB", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting last fetch in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed setting repo size", log.String("repo", string(repo)), log.Error(err))
+		logger.Warn("failed setting repo size", log.Error(err))
 	}
 
 	return nil
@@ -2614,7 +2651,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSyncer, repo api.RepoName, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2630,7 +2667,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 	dir.Set(cmd)
 	output, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
-		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
 	}
 
@@ -2651,7 +2688,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 		dir.Set(cmd)
 		list, err := cmd.Output()
 		if err != nil {
-			logger.Error("Failed to list branches", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+			logger.Error("Failed to list branches", log.Error(err), log.String("output", string(output)))
 			return errors.Wrap(err, "failed to list branches")
 		}
 		lines := strings.Split(string(list), "\n")
@@ -2665,7 +2702,7 @@ func setHEAD(ctx context.Context, logger log.Logger, dir GitDir, syncer VCSSynce
 	cmd = exec.CommandContext(ctx, "git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
 	dir.Set(cmd)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		logger.Error("Failed to set HEAD", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
+		logger.Error("Failed to set HEAD", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "Failed to set HEAD")
 	}
 

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -57,7 +56,6 @@ func main() {
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
-		// fresh
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
@@ -66,6 +64,9 @@ func main() {
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+
+		// Note: experimental (not documented)
+		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
@@ -83,7 +84,7 @@ func init() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders(logger log.Logger) {
-	sqlDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return
 	}
@@ -92,7 +93,6 @@ func setAuthzProviders(logger log.Logger) {
 	globals.WatchPermissionsUserMapping()
 
 	ctx := context.Background()
-	db := database.NewDB(logger, sqlDB)
 
 	for range time.NewTicker(eiauthz.RefreshInterval()).C {
 		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -638,6 +639,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
 		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
+		ctx = actor.WithInternalActor(ctx)
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
@@ -958,6 +960,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
@@ -1056,6 +1059,7 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need old and new batch specs.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
@@ -1231,6 +1235,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 
 	// Create a user.
 	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	ctx = actor.WithInternalActor(ctx)
 
 	// Next, we need a batch spec.
 	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
