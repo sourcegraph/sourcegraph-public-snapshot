@@ -244,7 +244,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 headingElement="h2"
                 description={
                     <>
-                        Repositories are synced from connected{' '}
+                        Repositories are synced from horsegraph{' '}
                         <Link
                             to="/site-admin/external-services"
                             data-testid="test-repositories-code-host-connections-link"

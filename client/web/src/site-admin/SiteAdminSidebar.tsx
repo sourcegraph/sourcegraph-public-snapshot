@@ -32,6 +32,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
     ...props
 }) => (
     <SidebarGroup className={className}>
+        <h4>foobar</h4>
         <ul className="list-group">
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>

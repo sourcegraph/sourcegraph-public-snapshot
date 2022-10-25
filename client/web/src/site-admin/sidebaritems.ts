@@ -64,6 +64,10 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },
+        {
+            label: 'Webhooks',
+            to: '/site-admin/webhooks',
+        },
     ],
 }
 
