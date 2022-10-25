@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"cloud.google.com/go/storage"
 	traceLog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,8 +28,10 @@ type Service struct {
 	lsifstore      lsifstore.LsifStore
 	gitserver      GitserverClient
 	uploadSvc      UploadService
+	rankingBucket  *storage.BucketHandle
 	backgroundJobs background.BackgroundJob
 	operations     *operations
+	logger         log.Logger
 }
 
 func newService(
@@ -35,6 +39,7 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
+	rankingBucket *storage.BucketHandle,
 	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
@@ -43,8 +48,10 @@ func newService(
 		lsifstore:      lsifstore,
 		gitserver:      gitserver,
 		uploadSvc:      uploadSvc,
+		rankingBucket:  rankingBucket,
 		backgroundJobs: backgroundJobs,
 		operations:     newOperations(observationContext),
+		logger:         log.Scoped("codenav", ""),
 	}
 }
 

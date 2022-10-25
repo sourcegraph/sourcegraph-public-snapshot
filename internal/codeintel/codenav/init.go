@@ -1,11 +1,18 @@
 package codenav
 
 import (
+	"context"
+
+	"cloud.google.com/go/storage"
+
+	"github.com/sourcegraph/log"
+
 	backgroundjobs "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -35,6 +42,13 @@ type serviceDependencies struct {
 	gitserver   GitserverClient
 }
 
+var (
+	bucketName                   = env.Get("CODEINTEL_CODENAV_RANKING_BUCKET", "lsif-pagerank-experiment", "The GCS bucket.")
+	rankingGraphKey              = env.Get("CODEINTEL_CODENAV_RANKING_GRAPH_KEY", "test", "An identifier of the graph export. Change to start a new export in the configured bucket.")
+	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_CODENAV_RANKING_GRAPH_BATCH_SIZE", 1, "How many uploads to process at once.")
+	rankingBucketCredentialsFile = env.Get("CODEINTEL_CODENAV_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
+)
+
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
 	store := store.New(deps.db, scopedContext("store"))
 	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
@@ -42,11 +56,26 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		scopedContext("background"),
 	)
 
+	rankingBucket := func() *storage.BucketHandle {
+		// if rankingBucketCredentialsFile == "" {
+		// 	return nil
+		// }
+
+		client, err := storage.NewClient(context.Background()) // option.WithCredentialsFile(rankingBucketCredentialsFile))
+		if err != nil {
+			log.Scoped("codenav", "").Error("failed to create storage client", log.Error(err))
+			return nil
+		}
+
+		return client.Bucket(bucketName)
+	}()
+
 	svc := newService(
 		store,
 		lsifStore,
 		deps.uploadSvc,
 		deps.gitserver,
+		rankingBucket,
 		backgroundJobs,
 		scopedContext("service"),
 	)
