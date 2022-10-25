@@ -17,25 +17,55 @@ type HttpsProxyAgentConstructor = new (
     options: string | { [key: string]: number | boolean | string | null }
 ) => HttpsProxyAgentInterface
 
-export function getProxyAgent(): HttpsProxyAgentInterface | undefined {
+export function getProxyAgent(): ((url: URL | string) => HttpsProxyAgentInterface | undefined) | undefined {
     const proxyProtocol = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyProtocol')
     const proxyHost = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyHost')
     const proxyPort = vscode.workspace.getConfiguration('sourcegraph').get<number>('proxyPort')
     const proxyPath = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyPath')
 
-    if (proxyProtocol || proxyHost || proxyPort || proxyPath) {
-        if (!HttpProxyAgent) {
-            return undefined // This is in case we're in the browser and webpack points to browser-fakes/proxy-agent.ts
+    // Quit if we're in the browser—we don't need proxying there.
+    if (HttpsProxyAgent === null) {
+        return undefined
+    }
+
+    if (proxyHost && !proxyPort) {
+        console.error('proxyHost is set but proxyPort is not. These two settings must be set together.')
+        return undefined
+    }
+
+    if (proxyPort && !proxyHost) {
+        console.error('proxyPort is set but proxyHost is not. These two settings must be set together.')
+        return undefined
+    }
+
+    if (proxyHost || proxyPort || proxyPath) {
+        return (url: URL | string) => {
+            const protocol = getProtocol(url)
+            if (protocol === undefined) {
+                return undefined
+            }
+            const ProxyAgent = ((protocol === 'http'
+                ? HttpProxyAgent
+                : HttpsProxyAgent) as unknown) as HttpsProxyAgentConstructor
+            return new ProxyAgent({
+                protocol: proxyProtocol === 'http' || proxyProtocol === 'https' ? proxyProtocol : 'https',
+                ...(proxyHost ? { host: proxyHost } : null),
+                ...(proxyPort ? { port: proxyPort } : null),
+                ...(proxyPath ? { path: proxyPath } : null),
+            })
         }
-        // Can't use dynamic imports here because this function is called from extension.ts:activate()
-        // which is a sync context, so this can't be async either.
-        const ProxyAgent = proxyProtocol === 'http' ? HttpProxyAgent : HttpsProxyAgent
-        return new ((ProxyAgent as unknown) as HttpsProxyAgentConstructor)({
-            ...(proxyProtocol ? { protocol: proxyProtocol } : null),
-            ...(proxyHost ? { host: proxyHost } : null),
-            ...(proxyPort ? { port: proxyPort } : null),
-            ...(proxyPath ? { path: proxyPath } : null),
-        })
+    }
+
+    return undefined
+}
+
+function getProtocol(url: URL | string): string | undefined {
+    if (typeof url === 'string') {
+        return url.startsWith('http:') ? 'http' : 'https'
+    }
+
+    if (url instanceof URL) {
+        return url.protocol === 'http:' ? 'http' : 'https'
     }
 
     return undefined

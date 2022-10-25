@@ -174,7 +174,7 @@ function EventSource(url, eventSourceInitDict) {
     }
 
     if (proxyAgent) {
-      options.agent = proxyAgent
+      options.agent = proxyAgent(url)
     }
 
     request = (isSecure ? https : http).request(options, res => {

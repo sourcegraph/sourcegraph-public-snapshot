@@ -174,7 +174,7 @@
           ]
         },
         "sourcegraph.proxyHost": {
-          "description": "The host to use when proxying requests to the Sourcegraph instance.  It shouldn't include a protocol (like \"http://\") or a port (like \":7080\")",
+          "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
           "type": "string",
           "default": "",
           "examples": [
@@ -183,7 +183,7 @@
           ]
         },
         "sourcegraph.proxyPort": {
-          "description": "The port to use when proxying requests to the Sourcegraph instance.",
+          "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
           "type": "number",
           "default": 0,
           "examples": [
