@@ -45,7 +45,7 @@ func (r *webhookResolver) URL() (string, error) {
 }
 
 func (r *webhookResolver) CodeHostURN() string {
-	return r.hook.CodeHostURN
+	return r.hook.CodeHostURN.String()
 }
 
 func (r *webhookResolver) CodeHostKind() string {

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -260,11 +261,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN,
-		dbutil.NullStringColumn(encryptedSecret),
-		dbutil.NullStringColumn(keyID),
-		dbutil.NullInt32Column(actorUID),
-		newWebhook.ID,
+		newWebhook.CodeHostURN.String(), encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -393,11 +390,12 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		rawSecret string
 	)
 
+	var codeHostURL string
 	if err := sc.Scan(
 		&hook.ID,
 		&hook.UUID,
 		&hook.CodeHostKind,
-		&hook.CodeHostURN,
+		&codeHostURL,
 		&dbutil.NullString{S: &rawSecret},
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
@@ -417,6 +415,12 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	}
 	// If both keyID and rawSecret are empty then we didn't set a secret and we leave
 	// hook.Secret as nil
+
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(codeHostURL)
+	if err != nil {
+		return nil, err
+	}
+	hook.CodeHostURN = codeHostURN
 
 	return &hook, nil
 }

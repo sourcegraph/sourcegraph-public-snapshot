@@ -98,7 +98,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	return body, nil
 }
 
-func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn string, secret string, gh *GitHubWebhook) {
+func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string, gh *GitHubWebhook) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
