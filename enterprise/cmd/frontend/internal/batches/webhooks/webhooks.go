@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -38,7 +39,7 @@ func (h Webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
-	externalServiceID types.CodeHostURN,
+	externalServiceID extsvc.CodeHostBaseURL,
 ) (*types.Repo, error) {
 	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
@@ -60,10 +61,10 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (types.CodeHostURN, error) {
+func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (extsvc.CodeHostBaseURL, error) {
 	c, err := extSvc.Configuration(ctx)
 	if err != nil {
-		return types.CodeHostURN{}, errors.Wrap(err, "Failed to get external service config")
+		return extsvc.CodeHostBaseURL{}, errors.Wrap(err, "Failed to get external service config")
 	}
 
 	var serviceID string
@@ -78,10 +79,10 @@ func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService
 		serviceID = c.Url
 	}
 	if serviceID == "" {
-		return types.CodeHostURN{}, errors.New("could not determine service id")
+		return extsvc.CodeHostBaseURL{}, errors.New("could not determine service id")
 	}
 
-	return types.NewCodeHostURN(serviceID)
+	return extsvc.NewCodeHostBaseURL(serviceID)
 }
 
 type keyer interface {
@@ -90,7 +91,7 @@ type keyer interface {
 
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
-	externalServiceID types.CodeHostURN,
+	externalServiceID extsvc.CodeHostBaseURL,
 	pr PR,
 	ev keyer,
 ) (err error) {

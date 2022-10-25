@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -335,12 +336,12 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		rawSecret string
 	)
 
-	var urnString string
+	var codeHostURL string
 	if err := sc.Scan(
 		&hook.ID,
 		&hook.UUID,
 		&hook.CodeHostKind,
-		&urnString,
+		&codeHostURL,
 		&dbutil.NullString{S: &rawSecret},
 		&hook.CreatedAt,
 		&hook.UpdatedAt,
@@ -361,7 +362,7 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 	// If both keyID and rawSecret are empty then we didn't set a secret and we leave
 	// hook.Secret as nil
 
-	codeHostURN, err := types.NewCodeHostURN(urnString)
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(codeHostURL)
 	if err != nil {
 		return nil, err
 	}

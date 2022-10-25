@@ -28,7 +28,7 @@ type Registerer interface {
 // permissible based on the event type(s) the handler was registered against. If you register a handler
 // for many event types, you should do a type switch within your handler.
 // Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
-type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN types.CodeHostURN, event any) error
+type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error
 
 // GitHubWebhook is responsible for handling incoming http requests for github webhooks
 // and routing to any registered WebhookHandlers, events are routed by their event type,
@@ -74,7 +74,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	codeHostURN, err := types.NewCodeHostURN(config.Url)
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
 	if err != nil {
 		log15.Error("Could not parse code host URL from config", "error", err)
 		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
@@ -84,7 +84,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.HandleWebhook(w, r, codeHostURN, body)
 }
 
-func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN types.CodeHostURN, requestBody []byte) {
+func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, requestBody []byte) {
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -109,7 +109,7 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN types.CodeHostURN, e any) error {
+func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
