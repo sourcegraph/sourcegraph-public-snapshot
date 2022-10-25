@@ -26,7 +26,7 @@ Some insights generate and persist time series data, while others calculate thei
 
 To create a Code Insight that will generate and persist time series data, use the mutation below.
 
-Important: Specify the list of repositories that for the insight should run over in `repositoryScope.repositories` or leave it empty to specify that the query should be run across all repositories.
+Important: Specify the list of repositories that the insight should run over in `repositoryScope.repositories` or leave it empty to specify that the query should be run across all repositories.
 
 ```gql
 mutation CreateLineChartSearchInsight($input: LineChartSearchInsightInput!) {
