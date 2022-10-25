@@ -28,8 +28,13 @@ type ServiceConnections struct {
 	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
 	CodeInsightsDSN string `json:"codeInsightsPostgresDSN"`
 
-	Searchers    []string      `json:"searchers"`
-	Zoekts       []string      `json:"zoekts"`
+	// Searchers is the addresses of searcher instances that should be talked to.
+	Searchers []string `json:"searchers"`
+	// Zoekts is the addresses of Zoekt instances to talk to.
+	Zoekts []string `json:"zoekts"`
+	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
+	// cache the list of indexed repository. After TTL is over, new list will
+	// get requested from Zoekt shards.
 	ZoektListTTL time.Duration `json:"zoektListTTL"`
 }
 
