@@ -83,7 +83,7 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getAllByRole('tooltip', { hidden: true })).toBeInTheDocument()
+            expect(rendered.getByRole('tooltip', { hidden: true })).toBeInTheDocument()
         })
 
         // Not sure why `userEvent.type(rendered.getByTestId('trigger-1'), '{esc}')` doesn't work
