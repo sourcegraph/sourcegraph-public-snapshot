@@ -23,6 +23,7 @@ import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
@@ -40,7 +41,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput } from './notebooks'
+import type { BlockInput, NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -77,7 +78,9 @@ export interface LayoutProps
         HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]

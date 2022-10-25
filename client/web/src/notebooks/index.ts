@@ -120,3 +120,7 @@ export interface BlockDependencies {
     enableGoImportsSearchQueryTransform: undefined | boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
+
+export interface NotebookProps {
+    notebooksEnabled: boolean
+}

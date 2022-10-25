@@ -52,6 +52,8 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     showSearchBox: false,
     authenticatedUser: null,
     setFuzzyFinderIsVisible: () => {},
+    notebooksEnabled: true,
+    codeMonitoringEnabled: true,
 })
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {

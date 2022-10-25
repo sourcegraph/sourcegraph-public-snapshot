@@ -53,5 +53,6 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
         codeIntelligenceEnabled={false}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
+        notebooksEnabled={false}
     />
 )

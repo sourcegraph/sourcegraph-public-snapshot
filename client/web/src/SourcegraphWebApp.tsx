@@ -54,6 +54,7 @@ import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -63,7 +64,7 @@ import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAr
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
-import { BlockInput } from './notebooks'
+import { BlockInput, NotebookProps } from './notebooks'
 import { createNotebook } from './notebooks/backend'
 import { blockToGQLInput } from './notebooks/serialize'
 import type { OrgAreaRoute } from './org/area/OrgArea'
@@ -108,7 +109,9 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
