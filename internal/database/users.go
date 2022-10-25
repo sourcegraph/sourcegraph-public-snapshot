@@ -878,8 +878,7 @@ EXISTS (
 	FROM org_members
 	WHERE
 		org_members.user_id = u.id
-		AND org_members.org_id = %d
-		AND org_members.org_id <> 0)
+		AND org_members.org_id = %d)
 `
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
