@@ -86,6 +86,8 @@ func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
 type insightStatusResolver struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time
+	series                                              types.InsightSeries
+	baseInsightResolver
 }
 
 func (i *insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
@@ -489,6 +491,16 @@ func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: t.point.Time}
 }
 
-func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) ([]graphqlbackend.IncompleteDatapointAlert, error) {
+func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	var reasons []store.IncompleteDatapoint
+	// todo actually load
 
+	for _, reason := range reasons {
+		switch reason.Reason {
+		case store.ReasonTimeout:
+			resolvers = append(resolvers, &incompleteDataPointAlertResolver{resolver: &timeoutDatapointAlertResolver{point: reason}})
+		}
+	}
+
+	return resolvers, err
 }
