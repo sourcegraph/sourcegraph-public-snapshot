@@ -19946,6 +19946,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "webhook_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
@@ -19997,6 +20010,13 @@
           "RefTableName": "external_services",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE"
+        },
+        {
+          "Name": "webhook_logs_webhook_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "webhooks",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []

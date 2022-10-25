@@ -3603,7 +3603,8 @@ CREATE TABLE webhook_logs (
     status_code integer NOT NULL,
     request bytea NOT NULL,
     response bytea NOT NULL,
-    encryption_key_id text NOT NULL
+    encryption_key_id text NOT NULL,
+    webhook_id integer
 );
 
 CREATE SEQUENCE webhook_logs_id_seq
@@ -4933,6 +4934,9 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY webhook_logs
+    ADD CONSTRAINT webhook_logs_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
