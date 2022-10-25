@@ -184,6 +184,7 @@ const steps: Step[] = [
             const {
                 releaseDate,
                 captainGitHubUsername,
+                oneWorkingWeekBeforeRelease,
                 threeWorkingDaysBeforeRelease,
                 oneWorkingDayAfterRelease,
                 captainSlackUsername,
@@ -198,6 +199,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDate: date,
+                oneWorkingWeekBeforeRelease: new Date(oneWorkingWeekBeforeRelease),
                 threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 dryRun: dryRun.trackingIssues || false,
@@ -319,9 +321,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             let message: string
             // notify cs team on patch release cut
             if (release.patch !== 0) {
-                message = `:mega: *${release.version} branch has been cut cc: @cs`
+                message = `:mega: *${release.version}* branch has been cut cc: @cs`
             } else {
-                message = `:mega: *${release.version} branch has been cut.`
+                message = `:mega: *${release.version}* branch has been cut.`
             }
             try {
                 // Create and push new release branch from changelog commit
@@ -347,7 +349,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             }
             const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
-            const latestBuildMessage = `Latest release build: ${latestTag}. See the build status [here](${latestBuildURL}) `
+            const latestBuildMessage = `Latest release build: ${latestTag}. See the build status on <${latestBuildURL}|Buildkite>`
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`

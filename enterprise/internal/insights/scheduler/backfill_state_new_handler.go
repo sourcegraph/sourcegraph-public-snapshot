@@ -51,7 +51,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), // TODO add in a real all repos iterator
+		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{

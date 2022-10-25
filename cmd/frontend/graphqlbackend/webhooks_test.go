@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -176,10 +177,17 @@ func TestListWebhooks(t *testing.T) {
 }
 
 func TestWebhooks_CursorPagination(t *testing.T) {
+	gitlabURN, err := extsvc.NewCodeHostBaseURL("gitlab.com")
+	require.NoError(t, err)
+	githubURN, err := extsvc.NewCodeHostBaseURL("github.com")
+	require.NoError(t, err)
+	bbURN, err := extsvc.NewCodeHostBaseURL("bb.com")
+	require.NoError(t, err)
+
 	mockWebhooks := []*types.Webhook{
-		{ID: 0, CodeHostURN: "gitlab.com"},
-		{ID: 1, CodeHostURN: "github.com"},
-		{ID: 2, CodeHostURN: "bb.com"},
+		{ID: 0, CodeHostURN: gitlabURN},
+		{ID: 1, CodeHostURN: githubURN},
+		{ID: 2, CodeHostURN: bbURN},
 	}
 
 	store := database.NewMockWebhookStore()

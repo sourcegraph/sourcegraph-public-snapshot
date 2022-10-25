@@ -1,0 +1,135 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.wrapper {
+    --illustration-width: 156px;
+
+    background: linear-gradient(270deg, #270741 0%, #340957 100%);
+    box-shadow: 0 4px 16px rgba(46, 34, 119, 0.1);
+    border-radius: 5px;
+    display: flex;
+    &:hover {
+        text-decoration: none;
+
+        .trial-button {
+            background: #A305E1;
+            color: #ffffff;
+        }
+    }
+}
+
+.illustration {
+    display: none;
+    @media (--lg-breakpoint-up) {
+        display: block;
+    }
+}
+
+.content {
+    width: 100%;
+    text-align: center;
+    padding: 1.25rem;
+    @media (--md-breakpoint-up) {
+        display: flex;
+        text-align: left;
+        align-items: center;
+    }
+    @media (--lg-breakpoint-up) {
+        width: calc(100% - var(--illustration-width));
+        padding: 0 3.125rem 0 1.25rem;
+    }
+}
+
+.try-cloud {
+    color: #D0BFFF;
+    font-size: 1.688rem;
+    line-height: 31px;
+    margin-bottom: 0.125rem;
+}
+
+.bylines {
+    color: #ffffff;
+    font-size: 1.375rem;
+    line-height: 1.563rem;
+    overflow: hidden;
+    margin-bottom: 0;
+    @media (--sm-breakpoint-up) {
+        height: 1.563rem;
+    }
+    
+    span {
+        display: block;
+        @media (--sm-breakpoint-up) {
+            animation: spin_words 7s infinite 1s;
+        }
+
+        &:not(:first-child) {
+            display: none;
+            @media (--sm-breakpoint-up) {
+                display: block;
+            }
+        }
+    }
+}
+
+.sign-up {
+    color: #ffffff;
+    font-size: 1.188rem;
+    margin-top: 1.188rem;
+    margin-bottom: 0;
+}
+
+.button-container {
+    max-width: 260px;
+    width: 100%;
+    margin: 1.25rem auto 0;
+    @media (--md-breakpoint-up) {
+        margin: 0 0 0 auto;
+    }
+}
+
+.trial-button {
+    background: #ffffff;
+    color: #A305E1;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    margin-left: auto;
+    &:hover {
+        background: #A305E1 !important;
+        color: #ffffff !important;
+    }
+}
+
+.self-hosted-copy {
+    margin-top: 0.5rem;
+
+    a {
+        margin-left: 0.188rem;
+    }
+}
+
+@keyframes spin_words{
+    10%{
+        transform: translateY(-112%);
+    }
+    25%{
+        transform: translateY(-100%);
+    }
+    35%{
+        transform: translateY(-212%);
+    }
+    50%{
+        transform: translateY(-200%);
+    }
+    60%{
+        transform: translateY(-312%);
+    }
+    75%{
+        transform: translateY(-300%);
+    }
+    85%{
+        transform: translateY(-412%);
+    }
+    100%{
+        transform: translateY(-400%);
+    }
+}

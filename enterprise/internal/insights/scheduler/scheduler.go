@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -101,10 +102,11 @@ type BackgroundJobMonitor struct {
 }
 
 type JobMonitorConfig struct {
-	InsightsDB     edb.InsightsDB
-	RepoStore      database.RepoStore
-	BackfillRunner pipeline.Backfiller
-	ObsContext     *observation.Context
+	InsightsDB      edb.InsightsDB
+	RepoStore       database.RepoStore
+	BackfillRunner  pipeline.Backfiller
+	ObsContext      *observation.Context
+	AllRepoIterator *discovery.AllReposIterator
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
@@ -142,6 +144,10 @@ func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, b
 		return errors.New("invalid series backfill")
 	}
 	return basestore.NewWithHandle(handle).Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
+}
+
+func (s *Scheduler) With(other basestore.ShareableStore) *Scheduler {
+	return &Scheduler{backfillStore: s.backfillStore.With(other)}
 }
 
 func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,8 +19,8 @@ import (
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn string, payload any) error {
-	return func(ctx context.Context, db database.DB, urn string, payload any) error {
+func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}

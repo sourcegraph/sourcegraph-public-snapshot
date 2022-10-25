@@ -304,22 +304,14 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("len(points)", int(4)).Equal(t, len(points))
-	if diff := cmp.Diff(4, len(points)); diff != "" {
-		t.Errorf("len(points): %v", diff)
+	stringify := func(points []SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		return s
 	}
-	if diff := cmp.Diff(want[0], points[0]); diff != "" {
-		t.Errorf("points[0].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[1], points[1]); diff != "" {
-		t.Errorf("points[1].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[2], points[2]); diff != "" {
-		t.Errorf("points[2].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[3], points[3]); diff != "" {
-		t.Errorf("points[3].String(): %v", diff)
-	}
+	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
 }
 
 func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
@@ -805,6 +797,107 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 				recordingTimes = append(recordingTimes, recording.Timestamp)
 			}
 			tc.want.Equal(t, stringifyTimes(recordingTimes))
+		})
+	}
+}
+
+func Test_coalesceZeroValues(t *testing.T) {
+	stringify := func(points []SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		// Sort for determinism.
+		sort.Strings(s)
+		return s
+	}
+	testTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	generateTimes := func(n int) []time.Time {
+		times := []time.Time{}
+		for i := 0; i < n; i++ {
+			times = append(times, testTime.AddDate(0, 0, i))
+		}
+		return times
+	}
+	capture := func(s string) *string {
+		return &s
+	}
+	makeRecordingTimes := func(times []time.Time) []types.RecordingTime {
+		recordingTimes := make([]types.RecordingTime, len(times))
+		for i, t := range times {
+			recordingTimes[i] = types.RecordingTime{Timestamp: t}
+		}
+		return recordingTimes
+	}
+
+	testCases := []struct {
+		points         map[string]*SeriesPoint
+		recordingTimes []time.Time
+		captureValues  map[string]struct{}
+		want           autogold.Value
+	}{
+		{
+			nil,
+			nil,
+			nil,
+			autogold.Want("empty returns empty", []string{}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 12, nil},
+			},
+			[]time.Time{},
+			map[string]struct{}{"": {}},
+			autogold.Want("empty recording times returns empty", []string{}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 1, nil},
+			},
+			generateTimes(2),
+			map[string]struct{}{"": {}},
+			autogold.Want("augment one data point", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
+			}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTCone":   {"1", testTime, 1, capture("one")},
+				"2020-01-01 00:00:00 +0000 UTCtwo":   {"1", testTime, 2, capture("two")},
+				"2020-01-01 00:00:00 +0000 UTCthree": {"1", testTime, 3, capture("three")},
+				"2020-01-02 00:00:00 +0000 UTCone":   {"1", testTime.AddDate(0, 0, 1), 1, capture("one")},
+			},
+			generateTimes(2),
+			map[string]struct{}{"one": {}, "two": {}, "three": {}},
+			autogold.Want("augment capture data points", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "two", Value: 2}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "three", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "two", Value: 0}`,
+			}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"1", testTime, 11, nil},
+				"2020-01-02 00:00:00 +0000 UTC": {"1", testTime.AddDate(0, 0, 1), 22, nil},
+			},
+			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
+			map[string]struct{}{"": {}},
+			autogold.Want("augment data point in the past", []string{
+				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 22}`,
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
+			tc.want.Equal(t, stringify(got))
 		})
 	}
 }

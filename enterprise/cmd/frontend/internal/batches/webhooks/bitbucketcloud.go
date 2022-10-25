@@ -134,7 +134,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 	return e, extSvc, nil
 }
 
-func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID string) ([]PR, keyer, error) {
+func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID extsvc.CodeHostBaseURL) ([]PR, keyer, error) {
 	switch e := theirs.(type) {
 	case *bitbucketcloud.PullRequestApprovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
@@ -178,7 +178,7 @@ func bitbucketCloudPullRequestEventPRs(e *bitbucketcloud.PullRequestEvent) []PR 
 
 func bitbucketCloudRepoCommitStatusEventPRs(
 	ctx context.Context, bstore *store.Store,
-	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID string,
+	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID extsvc.CodeHostBaseURL,
 ) ([]PR, error) {
 	// Bitbucket Cloud repo commit statuses only include the commit hash they
 	// relate to, not the branch or PR, so we have to go look up the relevant
@@ -190,7 +190,7 @@ func bitbucketCloudRepoCommitStatusEventPRs(
 			{
 				ID:          e.Repository.UUID,
 				ServiceType: extsvc.TypeBitbucketCloud,
-				ServiceID:   externalServiceID,
+				ServiceID:   externalServiceID.String(),
 			},
 		},
 	})

@@ -1684,7 +1684,7 @@ type Webhook struct {
 	// UUID is the ID we display externally and will appear in the webhook URL
 	UUID         uuid.UUID
 	CodeHostKind string
-	CodeHostURN  string
+	CodeHostURN  extsvc.CodeHostBaseURL
 	// Secret can be in one of three states:
 	//
 	// 1. nil, no secret provided.

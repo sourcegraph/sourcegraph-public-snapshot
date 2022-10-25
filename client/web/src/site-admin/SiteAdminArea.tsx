@@ -200,7 +200,11 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <Page>
-            <PageHeader path={[{ text: 'Admin' }]} />
+            <PageHeader>
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <div className="d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3', styles.sidebar)}

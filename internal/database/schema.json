@@ -501,6 +501,24 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "executor_secret_access_logs_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "executor_secrets_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "explicit_permissions_bitbucket_projects_jobs_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -8308,6 +8326,295 @@
         }
       ],
       "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "executor_secret_access_logs",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "executor_secret_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('executor_secret_access_logs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "executor_secret_access_logs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secret_access_logs_pkey ON executor_secret_access_logs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "executor_secret_access_logs_executor_secret_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "executor_secrets",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "executor_secret_access_logs_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "executor_secrets",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "created_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "creator_id",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "NULL, if the user has been deleted."
+        },
+        {
+          "Name": "encryption_key_id",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('executor_secrets_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace_org_id",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "namespace_user_id",
+          "Index": 6,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "scope",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 9,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "value",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "executor_secrets_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_pkey ON executor_secrets USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "executor_secrets_unique_key_global",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "executor_secrets_unique_key_namespace_org",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "executor_secrets_unique_key_namespace_user",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "executor_secrets_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL"
+        },
+        {
+          "Name": "executor_secrets_namespace_org_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "orgs",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE"
+        },
+        {
+          "Name": "executor_secrets_namespace_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
