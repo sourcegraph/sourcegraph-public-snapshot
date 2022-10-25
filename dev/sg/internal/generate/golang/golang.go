@@ -50,9 +50,9 @@ func Generate(ctx context.Context, args []string, progressBar bool, verbosity Ou
 	)
 
 	// Run go generate [./...]
-	if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut, &sb); err != nil {
-		return &generate.Report{Output: sb.String(), Err: err}
-	}
+	// if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut, &sb); err != nil {
+	// 	return &generate.Report{Output: sb.String(), Err: err}
+	// }
 
 	// Run goimports -w
 	if err := runGoImports(ctx, verbosity, reportOut, &sb); err != nil {
