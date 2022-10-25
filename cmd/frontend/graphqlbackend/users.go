@@ -144,7 +144,7 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	if int(totalCount) > after {
+	if totalCount > after {
 		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
 	return graphqlutil.HasNextPage(false), nil
