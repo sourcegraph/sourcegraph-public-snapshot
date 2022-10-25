@@ -27,7 +27,7 @@ export const RepositoryPreview: FunctionComponent<React.PropsWithChildren<Reposi
             ) : (
                 preview && (
                     <>
-                        <Text>
+                        <Text aria-live="polite">
                             <small>
                                 {preview.repositoryNames.length === 0
                                     ? 'Configuration policy does not match any known repositories.'
