@@ -4,8 +4,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/stream"
+)
+
+var (
+	metricFinalAggregateSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_zoekt_final_aggregate_size",
+		Help:    "The number of file matches we aggregated before flushing",
+		Buckets: prometheus.ExponentialBuckets(1, 2, 20),
+	}, []string{"reason"})
 )
 
 // collectSender is a sender that will aggregate results. Once sending is
@@ -107,7 +117,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 	// stopCollectingAndFlush will send what we have collected and all future
 	// sends will go via sender directly.
-	stopCollectingAndFlush := func() {
+	stopCollectingAndFlush := func(reason string) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -116,6 +126,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 		}
 
 		if agg, ok := collectSender.Done(); ok {
+			metricFinalAggregateSize.WithLabelValues(reason).Observe(float64(len(agg.Files)))
 			sender.Send(agg)
 		}
 
@@ -133,7 +144,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 		case <-timerCancel:
 			timer.Stop()
 		case <-timer.C:
-			stopCollectingAndFlush()
+			stopCollectingAndFlush("timer_expired")
 		}
 	}()
 
@@ -146,6 +157,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 			// happen for queries yielding an extreme number of results.
 			if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
 				if agg, ok := collectSender.Done(); ok {
+					metricFinalAggregateSize.WithLabelValues("max_size_reached").Observe(float64(len(agg.Files)))
 					sender.Send(agg)
 					collectSender.sizeBytes = 0
 				}
@@ -154,5 +166,5 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 			sender.Send(event)
 		}
 		mu.Unlock()
-	}), stopCollectingAndFlush
+	}), func() { stopCollectingAndFlush("final") }
 }

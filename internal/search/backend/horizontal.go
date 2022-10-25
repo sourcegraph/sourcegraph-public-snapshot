@@ -213,8 +213,15 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
+	// Hack: 500ms is a better default for this function. The original default of 0
+	// disables the flushCollectSender and offers no ranking at all. Once this
+	// function is not behind a feature flag anymore, we should update the default.
+	if siteConfig.maxReorderDuration == 0 {
+		siteConfig.maxReorderDuration = 500 * time.Millisecond
+	}
+
 	var mu sync.Mutex
-	flushCollectSender, cancel := newFlushCollectSender(
+	flushCollectSender, flushAll := newFlushCollectSender(
 		&collectOpts{
 			maxDocDisplayCount: opts.MaxDocDisplayCount,
 			flushWallTime:      siteConfig.maxReorderDuration,
@@ -222,7 +229,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 		},
 		streamer,
 	)
-	defer cancel()
+	defer flushAll()
 
 	// During re-balancing a repository can appear on more than one replica.
 	dedupper := dedupper{}
