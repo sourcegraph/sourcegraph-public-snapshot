@@ -7,12 +7,11 @@ Welcome, new batch change developer! This section will give you a rough overview
 > NOTE: Never hesitate to ask in [`#batch-changes-internal`](https://sourcegraph.slack.com/archives/C01LJ9DK8ES) for help!
 
 ### What are batch changes?
-//to-do
 
 Before diving into the technical part of batch changes, make sure to read up on what batch changes are, what they're not and what we want them to be:
 
 1. Look at the [batch changes product page](https://about.sourcegraph.com).
-1. Watch the 2min [demo video](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+1. Watch the 2min [demo video](https://www.youtube.com/watch?v=GKyHYqH6ggY)
 
 Next: **create your first batch change!**
 
