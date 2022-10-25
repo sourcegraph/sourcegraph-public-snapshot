@@ -73,7 +73,7 @@
 
     &--expanded {
         position: sticky;
-        top: 1px;
+        top: 0;
         background-color: var(--color-bg-2);
 
         &:hover {
