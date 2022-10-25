@@ -59,6 +59,17 @@ func TestUsers_Pagination(t *testing.T) {
 		{Username: "user1"},
 		{Username: "user2"},
 	}, nil)
+	users.ListFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+		if opt.LimitOffset.Offset == 2 {
+			return []*types.User{
+				{Username: "user3"},
+				{Username: "user4"},
+			}, nil
+		}
+		return []*types.User{
+			{Username: "user1"},
+			{Username: "user2"}}, nil
+	})
 	users.CountFunc.SetDefaultReturn(4, nil)
 
 	db := database.NewMockDB()
@@ -96,14 +107,6 @@ func TestUsers_Pagination(t *testing.T) {
 				}
 			`,
 		},
-	})
-
-	users.ListFunc.SetDefaultReturn([]*types.User{
-		{Username: "user3"},
-		{Username: "user4"},
-	}, nil)
-
-	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
