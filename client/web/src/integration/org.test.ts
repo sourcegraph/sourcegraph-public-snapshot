@@ -189,10 +189,15 @@ describe('Organizations', () => {
                     }),
                     OrganizationMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 2,
                                 nodes: [testMember, testMember2],
+                                pageInfo: {
+                                    endCursor: null,
+                                    hasNextPage: false,
+                                },
                             },
                         },
                     }),
