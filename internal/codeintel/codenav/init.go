@@ -2,6 +2,7 @@ package codenav
 
 import (
 	"context"
+	"os"
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/option"
@@ -58,11 +59,16 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	)
 
 	rankingBucket := func() *storage.BucketHandle {
-		if rankingBucketCredentialsFile == "" {
+		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 			return nil
 		}
 
-		client, err := storage.NewClient(context.Background(), option.WithCredentialsFile(rankingBucketCredentialsFile))
+		var opts []option.ClientOption
+		if rankingBucketCredentialsFile != "" {
+			opts = append(opts, option.WithCredentialsFile(rankingBucketCredentialsFile))
+		}
+
+		client, err := storage.NewClient(context.Background(), opts...)
 		if err != nil {
 			log.Scoped("codenav", "").Error("failed to create storage client", log.Error(err))
 			return nil
