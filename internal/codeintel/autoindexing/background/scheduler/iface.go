@@ -12,6 +12,7 @@ type AutoIndexingServiceBackgroundJobs interface {
 		repositoryProcessDelay time.Duration,
 		repositoryBatchSize int,
 		policyBatchSize int,
+		inferenceConcurrency int,
 	) goroutine.BackgroundRoutine
 
 	NewOnDemandScheduler(

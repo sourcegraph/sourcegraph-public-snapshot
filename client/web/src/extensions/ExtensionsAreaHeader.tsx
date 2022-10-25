@@ -29,7 +29,6 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
     <div className="container">
         {props.isPrimaryHeader && (
             <PageHeader
-                path={[{ icon: mdiPuzzleOutline, text: 'Extensions' }]}
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: ButtonIcon, label, tooltip }) =>
                         condition(props) && (
@@ -40,7 +39,11 @@ export const ExtensionsAreaHeader: React.FunctionComponent<
                             </Tooltip>
                         )
                 )}
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={mdiPuzzleOutline}>Extensions</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
         )}
         <Alert variant="warning" className={props.isPrimaryHeader ? 'mt-4' : ''}>
             <H4 as={H2}>Sourcegraph extensions are being deprecated</H4>

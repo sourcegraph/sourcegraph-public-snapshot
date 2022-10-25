@@ -45,6 +45,7 @@
     display: block;
     align-items: center;
     justify-content: space-between;
+    padding: 0 0 0 0.35rem;
 }
 
 .row {
@@ -68,6 +69,16 @@
         width: 100%;
         background-color: var(--color-bg-3);
         color: var(--body-color);
+    }
+
+    &--expanded {
+        position: sticky;
+        top: 0;
+        background-color: var(--color-bg-2);
+
+        &:hover {
+            background-color: var(--color-bg-3);
+        }
     }
 
     &-contents,

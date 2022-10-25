@@ -227,7 +227,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 	return nil
 }
 
-func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID string, event *webhooks.MergeRequestEventCommon) error {
+func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event *webhooks.MergeRequestEventCommon) error {
 	// We need to get our changeset ID for this to work. To get _there_, we need
 	// the repo ID, and then we can use the merge request IID to match the
 	// external ID.
@@ -249,7 +249,7 @@ func (h *GitLabWebhook) enqueueChangesetSyncFromEvent(ctx context.Context, esID 
 	return nil
 }
 
-func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID string, event *webhooks.PipelineEvent) error {
+func (h *GitLabWebhook) handlePipelineEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event *webhooks.PipelineEvent) error {
 	// Pipeline webhook payloads don't include the merge request very reliably:
 	// for example, re-running a pipeline from the GitLab UI will result in no
 	// merge request field, even when that pipeline was attached to a merge
