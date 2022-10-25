@@ -82,9 +82,9 @@ Example variables:
 }
 ```
 
-## Creating a just-in-time insight
+## Creating a pie chart insight
 
-Pie chart insights show language usage across the specified repositories. Because this type of chart has not yet been generalized to other use cases, the `query` field in the input is not used. To create one, use the mutation below.
+Pie chart insights show language usage across a specified repository. Because this type of chart has not yet been generalized to other use cases, the `query` field in the input is not used. To create one, use the mutation below.
 
 ```gql
 mutation CreatePieChartSearchInsight($input: PieChartSearchInsightInput!) {
