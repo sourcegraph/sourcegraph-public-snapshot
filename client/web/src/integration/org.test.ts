@@ -187,7 +187,7 @@ describe('Organizations', () => {
                     Organization: () => ({
                         organization: testOrg,
                     }),
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
                             __typename: 'Org',
                             viewerCanAdminister: true,
@@ -225,12 +225,17 @@ describe('Organizations', () => {
                 // Override for the fetch post-removal
                 testContext.overrideGraphQL({
                     ...graphQlResults,
-                    OrganizationMembers: () => ({
+                    OrganizationSettingsMembers: () => ({
                         node: {
+                            __typename: 'Org',
                             viewerCanAdminister: true,
                             members: {
                                 totalCount: 1,
                                 nodes: [testMember2],
+                            },
+                            pageInfo: {
+                                endCursor: null,
+                                hasNextPage: false,
                             },
                         },
                     }),
