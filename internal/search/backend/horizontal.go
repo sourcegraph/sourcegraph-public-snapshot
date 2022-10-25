@@ -215,7 +215,11 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	var mu sync.Mutex
 	flushCollectSender, cancel := newFlushCollectSender(
-		&collectOpts{maxDocDisplayCount: opts.MaxDocDisplayCount, flushWallTime: siteConfig.maxReorderDuration},
+		&collectOpts{
+			maxDocDisplayCount: opts.MaxDocDisplayCount,
+			flushWallTime:      siteConfig.maxReorderDuration,
+			maxSizeBytes:       siteConfig.maxSizeBytes,
+		},
 		streamer,
 	)
 	defer cancel()

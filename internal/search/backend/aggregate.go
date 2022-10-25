@@ -16,11 +16,13 @@ import (
 type collectSender struct {
 	aggregate          *zoekt.SearchResult
 	maxDocDisplayCount int
+	sizeBytes          uint64
 }
 
 type collectOpts struct {
 	maxDocDisplayCount int
 	flushWallTime      time.Duration
+	maxSizeBytes       int
 }
 
 func newCollectSender(opts *collectOpts) *collectSender {
@@ -57,6 +59,8 @@ func (c *collectSender) Send(r *zoekt.SearchResult) {
 
 	// We receive monotonically decreasing values, so we update on every call.
 	c.aggregate.MaxPendingPriority = r.MaxPendingPriority
+
+	c.sizeBytes += r.SizeBytes()
 }
 
 // Done returns the aggregated result. Before returning them the files are
@@ -137,6 +141,15 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 		mu.Lock()
 		if collectSender != nil {
 			collectSender.Send(event)
+
+			// Protect against too large aggregates. This should be the exception and only
+			// happen for queries yielding an extreme number of results.
+			if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
+				if agg, ok := collectSender.Done(); ok {
+					sender.Send(agg)
+					collectSender.sizeBytes = 0
+				}
+			}
 		} else {
 			sender.Send(event)
 		}
