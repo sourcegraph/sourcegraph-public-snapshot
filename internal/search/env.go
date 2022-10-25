@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,44 +25,12 @@ var (
 	indexedDialer     backend.ZoektDialer
 )
 
-type confEndpointMap struct {
-	getter func() []string
-}
-
-func (m confEndpointMap) Endpoints() ([]string, error) {
-	return m.getter(), nil
-}
-
-func (m confEndpointMap) Get(key string) (string, error) {
-	em := endpoint.Static(m.getter()...)
-	return em.Get(key)
-}
-
-func (m confEndpointMap) GetN(key string, n int) ([]string, error) {
-	em := endpoint.Static(m.getter()...)
-	return em.GetN(key, n)
-}
-
-func (m confEndpointMap) GetMany(keys ...string) ([]string, error) {
-	em := endpoint.Static(m.getter()...)
-	urls := make([]string, len(keys))
-	for i, k := range keys {
-		u, err := em.Get(k)
-		if err != nil {
-			return urls, err
-		}
-
-		urls[i] = u
-	}
-	return urls, nil
-}
-
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
 
 func SearcherURLs() endpoint.Map {
-	return confEndpointMap{
-		getter: func() []string { return conf.Get().ServiceConnections().Searchers },
-	}
+	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		return conns.Searchers
+	})
 }
 
 func Indexed() zoekt.Streamer {
@@ -70,16 +39,14 @@ func Indexed() zoekt.Streamer {
 	}
 
 	indexedSearchOnce.Do(func() {
-		if eps := conf.Get().ServiceConnections().Zoekts; eps != nil {
-			indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
-				"", // no hostname means its the aggregator
-				&backend.HorizontalSearcher{
-					Map: confEndpointMap{
-						getter: func() []string { return conf.Get().ServiceConnections().Zoekts },
-					},
-					Dial: getIndexedDialer(),
-				}))
-		}
+		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
+			"", // no hostname means its the aggregator
+			&backend.HorizontalSearcher{
+				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+					return conns.Zoekts
+				}),
+				Dial: getIndexedDialer(),
+			}))
 	})
 
 	return indexedSearch
@@ -96,9 +63,9 @@ func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		indexers = &backend.Indexers{
-			Map: confEndpointMap{
-				getter: func() []string { return conf.Get().ServiceConnections().Zoekts },
-			},
+			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+				return conns.Zoekts
+			}),
 			Indexed: reposAtEndpoint(getIndexedDialer()),
 		}
 	})

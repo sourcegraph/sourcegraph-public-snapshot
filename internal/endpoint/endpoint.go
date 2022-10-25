@@ -8,6 +8,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -219,4 +221,104 @@ func (m *endpointsMap) sync(ch chan endpoints, ready chan struct{}) {
 			close(ready)
 		}
 	}
+}
+
+type connsGetter func(conns conftypes.ServiceConnections) []string
+
+// ConfBased returns a Map that watches the global conf and calls the provided
+// getter to extract endpoints. Under the hood it initialized the returned Map
+// by calling Static on the endpoints returned by the getter.
+func ConfBased(getter connsGetter) Map {
+	return &confEndpointMap{getter: getter}
+}
+
+type confEndpointMap struct {
+	getter connsGetter
+
+	em  Map
+	err error
+	mu  sync.RWMutex
+
+	init sync.Once
+}
+
+func (m *confEndpointMap) getAndWatch() {
+	conf.Watch(func() {
+		serviceConnections := conf.Get().ServiceConnections()
+		extracted := m.getter(serviceConnections)
+		if extracted == nil {
+			m.mu.Lock()
+			m.err = errors.New("no service connections found in conf")
+			m.mu.Unlock()
+			return
+		}
+
+		em := Static(extracted...)
+
+		m.mu.Lock()
+		m.em = em
+		m.err = nil
+		m.mu.Unlock()
+	})
+}
+
+func (m *confEndpointMap) Endpoints() ([]string, error) {
+	m.init.Do(m.getAndWatch)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return m.em.Endpoints()
+}
+
+func (m *confEndpointMap) Get(key string) (string, error) {
+	m.init.Do(m.getAndWatch)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.err != nil {
+		return "", m.err
+	}
+
+	return m.em.Get(key)
+}
+
+func (m *confEndpointMap) GetN(key string, n int) ([]string, error) {
+	m.init.Do(m.getAndWatch)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	return m.em.GetN(key, n)
+}
+
+func (m *confEndpointMap) GetMany(keys ...string) ([]string, error) {
+	m.init.Do(m.getAndWatch)
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.err != nil {
+		return nil, m.err
+	}
+
+	urls := make([]string, len(keys))
+	for i, k := range keys {
+		u, err := m.em.Get(k)
+		if err != nil {
+			return urls, err
+		}
+
+		urls[i] = u
+	}
+	return urls, nil
 }
