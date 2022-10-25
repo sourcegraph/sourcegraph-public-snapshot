@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,7 +64,9 @@ func TestWebhooksHandler(t *testing.T) {
 		DB: db,
 	}
 
-	srv := httptest.NewServer(NewHandler(logger, db, &gh))
+	base := mux.NewRouter()
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(NewHandler(logger, db, &gh))
+	srv := httptest.NewServer(base)
 
 	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)

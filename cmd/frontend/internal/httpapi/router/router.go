@@ -57,7 +57,7 @@ func New(base *mux.Router) *mux.Router {
 
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
-	base.Path("/webhooks").Methods("POST").Name(Webhooks)
+	base.Path("/webhooks/{webhook_uuid}").Methods("POST").Name(Webhooks)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
