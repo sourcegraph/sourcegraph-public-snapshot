@@ -149,12 +149,9 @@ export const Tooltip: FC<TooltipProps> = props => {
                         {content}
                     </PopoverContent>
 
-                    {isOpen &&
-                        <PopoverTail
-                            ref={setTail}
-                            forceRender={true} size='sm'
-                            className={styles.tooltipArrow} />
-                    }
+                    {isOpen && (
+                        <PopoverTail ref={setTail} forceRender={true} size="sm" className={styles.tooltipArrow} />
+                    )}
                 </>
             )}
         </>
