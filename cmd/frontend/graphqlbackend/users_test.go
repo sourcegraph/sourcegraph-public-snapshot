@@ -97,6 +97,45 @@ func TestUsers_Pagination(t *testing.T) {
 			`,
 		},
 	})
+
+	users.ListFunc.SetDefaultReturn([]*types.User{
+		{Username: "user3"},
+		{Username: "user4"},
+	}, nil)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					users(first: 2, after: "2") {
+						nodes { username }
+						totalCount
+						pageInfo { hasNextPage, endCursor }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "user3"
+							},
+							{
+								"username": "user4"
+							}
+						],
+						"totalCount": 4,
+						"pageInfo": {
+							"hasNextPage": false,
+							"endCursor": null
+						 }
+					}
+				}
+			`,
+		},
+	})
 }
 func TestUsers_InactiveSince(t *testing.T) {
 	if testing.Short() {
