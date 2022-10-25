@@ -14,6 +14,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,12 +22,12 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	if os.Getenv("SOURCEGRAPHDOTCOM_MODE") == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
-
 	if s.rankingBucket == nil {
-		return errors.New("no ranking bucket configured")
+		s.logger.Warn("No ranking bucket is configured")
+		return nil
 	}
 
 	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, rankingGraphBatchSize)
