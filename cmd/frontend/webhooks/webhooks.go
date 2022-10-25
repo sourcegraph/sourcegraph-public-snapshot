@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,19 +19,12 @@ import (
 type WebhookHandlers struct {
 }
 
-// WebhooksHandler is responsible for handling all incoming webhooks
+// NewHandler is responsible for handling all incoming webhooks
 // and invoking the correct handlers depending on where the webhooks
 // come from.
 func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handler {
-	base := mux.NewRouter().PathPrefix("/webhooks").Subrouter()
-	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(logger, db, gh))
-
-	return base
-}
-
-func webhookHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.HandlerFunc {
 	logger = logger.Scoped("webhookHandler", "handler used to route webhooks")
-	return func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {
 			http.Error(w, "missing uuid", http.StatusBadRequest)
@@ -80,7 +74,7 @@ func webhookHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.H
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
-	}
+	})
 }
 
 func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
