@@ -496,6 +496,9 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
 	}
+	if !series.SupportsAugmentation {
+		return nil
+	}
 	err = s.Exec(ctx, sqlf.Sprintf(deleteSnapshotRecordingTimeSql, series.ID))
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete snapshot recording time for series_id %d", series.ID)
