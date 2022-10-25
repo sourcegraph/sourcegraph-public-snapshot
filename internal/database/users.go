@@ -872,6 +872,15 @@ const listUsersInactiveCond = `
 		timestamp >= %s
 ))
 `
+const orgMembershipCond = `
+EXISTS (
+	SELECT 1
+	FROM org_members
+	WHERE
+		org_members.user_id = u.id
+		AND org_members.org_id = %d
+		AND org_members.org_id <> 0)
+`
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -893,15 +902,7 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 		}
 	}
 	if opt.OrgId != nil {
-		conds = append(conds, sqlf.Sprintf(`
-EXISTS (
-	SELECT 1
-	FROM org_members
-	WHERE
-		org_members.user_id = u.id
-		AND org_members.org_id = %d
-		AND org_members.org_id <> 0)
-`, *opt.OrgId))
+		conds = append(conds, sqlf.Sprintf(orgMembershipCond, *opt.OrgId))
 	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
