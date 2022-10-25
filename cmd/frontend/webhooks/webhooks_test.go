@@ -128,6 +128,15 @@ func TestWebhooksHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+			WebhookID: &gitHubWH.ID,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, logs, 1)
+		for _, log := range logs {
+			assert.Equal(t, gitHubWH.ID, *log.WebhookID)
+		}
 	})
 
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {

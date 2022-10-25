@@ -24,7 +24,10 @@ type WebhookHandlers struct {
 // come from.
 func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handler {
 	logger = logger.Scoped("webhookHandler", "handler used to route webhooks")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	webhookMiddleware := NewLogMiddleware(
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
+	)
+	return webhookMiddleware.Logger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {
 			http.Error(w, "missing uuid", http.StatusBadRequest)
@@ -44,6 +47,7 @@ func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handl
 			http.Error(w, "Could not find webhook with provided UUID.", http.StatusNotFound)
 			return
 		}
+		SetWebhookID(r.Context(), webhook.ID)
 
 		var secret string
 		if webhook.Secret != nil {
@@ -74,7 +78,7 @@ func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handl
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
-	})
+	}))
 }
 
 func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
