@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"sync"
 
@@ -18,13 +19,14 @@ import (
 
 type usersArgs struct {
 	graphqlutil.ConnectionArgs
+	After         *string
 	Query         *string
 	Tag           *string
 	ActivePeriod  *string
 	InactiveSince *gqlutil.DateTime
 }
 
-func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
+func (r *schemaResolver) Users(args *usersArgs) (*userConnectionResolver, error) {
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -36,7 +38,14 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 		opt.InactiveSince = args.InactiveSince.Time
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
+	if args.After != nil && opt.LimitOffset != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		opt.LimitOffset.Offset = int(cursor)
+	}
+	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil
 }
 
 type UserConnectionResolver interface {
@@ -174,11 +183,13 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 
 	// We would have had all results when no limit set
 	if r.opt.LimitOffset == nil {
+		fmt.Println("branch 1")
 		return graphqlutil.HasNextPage(false), nil
 	}
 
 	// We got less results than limit, means we've had all results
 	if after < r.opt.Limit {
+		fmt.Println("branch 2")
 		return graphqlutil.HasNextPage(false), nil
 	}
 
@@ -187,12 +198,15 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 	// to determine if there are more results than the limit we set.
 	totalCount, err := r.TotalCount(ctx)
 	if err != nil {
+		fmt.Println("branch 3")
 		return nil, err
 	}
 
 	if int(totalCount) > after {
+		fmt.Println("branch 4")
 		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
+	fmt.Println("branch 5")
 	return graphqlutil.HasNextPage(false), nil
 }
 

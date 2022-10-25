@@ -1333,6 +1333,10 @@ type Query {
         """
         first: Int
         """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
         Return users whose usernames or display names match the query.
         """
         query: String
