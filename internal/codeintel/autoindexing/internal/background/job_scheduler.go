@@ -2,7 +2,10 @@ package background
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"golang.org/x/sync/semaphore"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -17,9 +20,10 @@ func (b *backgroundJob) NewScheduler(
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
 	policyBatchSize int,
+	inferenceConcurrency int,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize)
+		return b.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize, inferenceConcurrency)
 	}), b.operations.handleIndexScheduler)
 }
 
@@ -28,6 +32,7 @@ func (b backgroundJob) handleScheduler(
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
 	policyBatchSize int,
+	inferenceConcurrency int,
 ) error {
 	if !autoIndexingEnabled() {
 		return nil
@@ -62,17 +67,32 @@ func (b backgroundJob) handleScheduler(
 
 	now := timeutil.Now()
 
+	// In parallel enqueue all the repos.
+	var (
+		sema  = semaphore.NewWeighted(int64(inferenceConcurrency))
+		errs  error
+		errMu sync.Mutex
+	)
+
 	for _, repositoryID := range repositories {
-		if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
-			if err == nil {
-				err = repositoryErr
-			} else {
-				err = errors.Append(err, repositoryErr)
-			}
+		if err := sema.Acquire(ctx, 1); err != nil {
+			return err
 		}
+		go func(repositoryID int) {
+			defer sema.Release(1)
+			if repositoryErr := b.handleRepository(ctx, repositoryID, policyBatchSize, now); repositoryErr != nil {
+				errMu.Lock()
+				errs = errors.Append(errs, repositoryErr)
+				errMu.Unlock()
+			}
+		}(repositoryID)
 	}
 
-	return err
+	if err := sema.Acquire(ctx, int64(inferenceConcurrency)); err != nil {
+		return errors.Wrap(err, "acquiring semaphore")
+	}
+
+	return errs
 }
 
 func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {

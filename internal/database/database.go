@@ -53,6 +53,8 @@ type DB interface {
 	Webhooks(encryption.Key) WebhookStore
 	RepoStatistics() RepoStatisticsStore
 	Executors() ExecutorStore
+	ExecutorSecrets(encryption.Key) ExecutorSecretStore
+	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -229,4 +231,12 @@ func (d *db) RepoStatistics() RepoStatisticsStore {
 
 func (d *db) Executors() ExecutorStore {
 	return ExecutorsWith(d.Store)
+}
+
+func (d *db) ExecutorSecrets(key encryption.Key) ExecutorSecretStore {
+	return ExecutorSecretsWith(d.logger, d.Store, key)
+}
+
+func (d *db) ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore {
+	return ExecutorSecretAccessLogsWith(d.Store)
 }
