@@ -78,7 +78,7 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { PageRoutes } from './routes.constants'
+import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -528,7 +528,7 @@ export class SourcegraphWebApp extends React.Component<
                     namespace: this.state.authenticatedUser.id,
                 },
             }).subscribe(createdNotebook => {
-                history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+                history.push(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
             })
         )
     }

@@ -236,14 +236,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
                                 Notebooks
                             </NavLink>
                         </NavItem>
                     )}
                     {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to="/code-monitoring">
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -256,14 +256,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to="/insights">
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
                                 Insights
                             </NavLink>
                         </NavItem>
                     )}
                     {enableLegacyExtensions && (
                         <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to="/extensions">
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
                                 Extensions
                             </NavLink>
                         </NavItem>

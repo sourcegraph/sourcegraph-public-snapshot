@@ -131,8 +131,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
+    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
