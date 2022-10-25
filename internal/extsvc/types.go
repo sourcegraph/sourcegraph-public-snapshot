@@ -794,7 +794,7 @@ func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
 	return CodeHostBaseURL{baseURL: NormalizeBaseURL(codeHostURL).String()}, nil
 }
 
-// String returns the stored, noramlized code host URN as a string.
+// String returns the stored, normalized code host URN as a string.
 func (c CodeHostBaseURL) String() string {
 	return c.baseURL
 }
