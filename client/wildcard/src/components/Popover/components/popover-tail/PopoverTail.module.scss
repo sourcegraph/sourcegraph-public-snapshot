@@ -4,15 +4,15 @@
     left: 0;
     overflow: hidden;
 
-    --tail-width: 18px;
+    --tail-width: 24px;
     --tail-background: var(--dropdown-bg);
     --tail-border: 1px solid var(--dropdown-border-color);
 
     width: var(--tail-width);
     height: calc(var(--tail-width) / 2);
 
-    &--size-md {
-        --tail-width: 28px;
+    &--size-sm {
+        --tail-width: 14px;
     }
 
     &--size-lg {

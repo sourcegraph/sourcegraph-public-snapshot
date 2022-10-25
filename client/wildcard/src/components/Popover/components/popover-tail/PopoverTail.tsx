@@ -16,10 +16,8 @@ enum PopoverSize {
     lg = 'lg',
 }
 
-const sizeClasses: Record<PopoverSize, string> = {
-    // sm is set by default (no styles are needed)
-    [PopoverSize.sm]: '',
-    [PopoverSize.md]: style.tailSizeMd,
+const sizeClasses: Partial<Record<PopoverSize, string>> = {
+    [PopoverSize.sm]: style.tailSizeSm,
     [PopoverSize.lg]: style.tailSizeLg,
 }
 
@@ -29,7 +27,7 @@ interface PopoverTailProps extends HTMLAttributes<HTMLElement> {
 }
 
 export const PopoverTail = forwardRef<HTMLDivElement, PopoverTailProps>((props, ref) => {
-    const { size = PopoverSize.sm, forceRender = false, className, ...attributes } = props
+    const { size = PopoverSize.md, forceRender = false, className, ...attributes } = props
 
     const { setTailElement, isOpen: isContextOpen } = useContext(PopoverContext)
     const { renderRoot } = useContext(PopoverRoot)
