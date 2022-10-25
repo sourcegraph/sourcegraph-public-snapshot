@@ -52,6 +52,52 @@ func TestUsers(t *testing.T) {
 	})
 }
 
+func TestUsers_Pagination(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefaultReturn([]*types.User{
+		{Username: "user1"},
+		{Username: "user2"},
+	}, nil)
+	users.CountFunc.SetDefaultReturn(4, nil)
+
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					users(first: 2) {
+						nodes { username }
+						totalCount
+						pageInfo { hasNextPage, endCursor }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"users": {
+						"nodes": [
+							{
+								"username": "user1"
+							},
+							{
+								"username": "user2"
+							}
+						],
+						"totalCount": 4,
+						"pageInfo": {
+							"hasNextPage": true,
+							"endCursor": "2"
+						 }
+					}
+				}
+			`,
+		},
+	})
+}
 func TestUsers_InactiveSince(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
