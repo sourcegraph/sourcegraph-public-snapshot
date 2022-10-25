@@ -172,7 +172,7 @@ CREATE TABLE insight_series (
     backfill_attempts integer DEFAULT 0 NOT NULL,
     needs_migration boolean,
     backfill_completed_at timestamp without time zone,
-    supports_augmentation boolean DEFAULT false
+    supports_augmentation boolean DEFAULT true NOT NULL
 );
 
 COMMENT ON TABLE insight_series IS 'Data series that comprise code insights.';
