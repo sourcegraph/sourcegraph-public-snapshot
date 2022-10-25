@@ -42,8 +42,12 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	ghc := github.NewClient(tc)
 
-	fmt.Println(*getInstallAccessToken(ctx, ghc))
+	appToken, err := getInstallAccessToken(ctx, ghc)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	fmt.Println(*appToken)
 }
 
 func genJwtToken(appID string, keyPath string) (string, error) {
@@ -73,7 +77,7 @@ func genJwtToken(appID string, keyPath string) (string, error) {
 
 }
 
-func getInstallAccessToken(ctx context.Context, ghc *github.Client) *string {
+func getInstallAccessToken(ctx context.Context, ghc *github.Client) (*string, error) {
 	// Get organation installation ID
 	orgInstallation, _, err := ghc.Apps.FindOrganizationInstallation(ctx, "sourcegraph")
 	if err != nil {
@@ -89,6 +93,6 @@ func getInstallAccessToken(ctx context.Context, ghc *github.Client) *string {
 		log.Fatal(err)
 	}
 
-	return token.Token
+	return token.Token, nil
 
 }

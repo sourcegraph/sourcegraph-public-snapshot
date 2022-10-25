@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -16,22 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )
 
-func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
-	recording := filepath.Join("testdata", strings.ReplaceAll(t.Name(), " ", "-"))
-	recorder, err := httptestutil.NewRecorder(recording, *updateRecordings, func(i *cassette.Interaction) error {
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if *updateRecordings {
-		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
-		))
-		recorder.SetTransport(httpClient.Transport)
-	}
-	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
-}
+var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
 
 func TestGenJwtToken(t *testing.T) {
 
@@ -40,11 +26,41 @@ func TestGenJwtToken(t *testing.T) {
 	keyPath := os.Getenv("KEY_PATH")
 	require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
 
-	jwt, err := genJwtToken(appID, keyPath)
+	_, err := genJwtToken(appID, keyPath)
 	require.NoError(t, err)
-	t.Log("%+s", jwt)
+}
+
+func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
+	recording := filepath.Join("tests/testdata", strings.ReplaceAll(t.Name(), " ", "-"))
+	recorder, err := httptestutil.NewRecorder(recording, *updateRecordings, func(i *cassette.Interaction) error {
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	appID := os.Getenv("GITHUB_APP_ID")
+	require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
+	keyPath := os.Getenv("KEY_PATH")
+	require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
+	jwt, err := genJwtToken(appID, keyPath)
+
+	if *updateRecordings {
+		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: jwt},
+		))
+		recorder.SetTransport(httpClient.Transport)
+	}
+	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
 }
 
 func TestGetInstallAccessToken(t *testing.T) {
+	ctx := context.Background()
+
+	ghc, stop := newTestGitHubClient(ctx, t)
+	defer stop()
+
+	_, err := getInstallAccessToken(ctx, ghc)
+	require.NoError(t, err)
 
 }
