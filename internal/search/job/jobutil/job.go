@@ -601,18 +601,19 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
 func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
-	var rts result.Types
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
-		rts = result.TypeStructural
-	} else {
-		if len(types) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, t := range types {
-				rts = rts.With(result.TypeFromString[t])
-			}
-		}
+		return result.TypeStructural
 	}
+
+	if len(types) == 0 {
+		return result.TypeFile | result.TypePath | result.TypeRepo
+	}
+
+	var rts result.Types
+	for _, t := range types {
+		rts = rts.With(result.TypeFromString[t])
+	}
+
 	return rts
 }
 
