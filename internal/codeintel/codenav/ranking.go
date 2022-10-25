@@ -53,12 +53,13 @@ func (s *Service) SerializeRankingGraph(
 			log.String("repo", upload.Repo),
 			log.String("root", upload.Root),
 		)
+		s.operations.numUploadsRead.Inc()
 	}
 
 	return nil
 }
 
-const maxWritableBytes = 1024 * 1024 * 1024 // 1GB
+const maxBytesPerObject = 1024 * 1024 * 1024 // 1GB
 
 func (s *Service) serializeAndPersistRankingGraphForUpload(
 	ctx context.Context,
@@ -98,9 +99,10 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 			return err
 		} else {
 			ow.written += n
+			s.operations.numBytesUploaded.Add(float64(n))
 
-			if ow.written > maxWritableBytes {
-				return errors.Newf("CSV output exceeds max bytes (%d)", maxWritableBytes)
+			if ow.written > maxBytesPerObject {
+				return errors.Newf("CSV output exceeds max bytes (%d)", maxBytesPerObject)
 			}
 		}
 
