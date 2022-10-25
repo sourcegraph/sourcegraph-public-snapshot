@@ -170,6 +170,10 @@ func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) 
 		query = *args.Query
 	}
 
+	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	return &userConnectionResolver{
 		db: o.db,
 		opt: database.UsersListOptions{

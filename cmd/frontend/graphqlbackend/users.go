@@ -25,7 +25,7 @@ type usersArgs struct {
 	InactiveSince *gqlutil.DateTime
 }
 
-func (r *schemaResolver) Users(args *usersArgs) (*userConnectionResolver, error) {
+func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -44,6 +44,11 @@ func (r *schemaResolver) Users(args *usersArgs) (*userConnectionResolver, error)
 		}
 		opt.LimitOffset.Offset = int(cursor)
 	}
+
+	if err := checkMembersAccess(ctx, r.db, 0); err != nil {
+		return nil, err
+	}
+
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil
 }
 
@@ -101,21 +106,6 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins can list users and only org members can
-	// list other org members.
-	if r.opt.OrgID == 0 {
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, r.opt.OrgID); err != nil {
-			if err == auth.ErrNotAnOrgMember {
-				return nil, errors.New("must be a member of this organization to view members")
-			}
-			return nil, err
-		}
-	}
-
 	var users []*types.User
 	var err error
 	if r.useCache() {
@@ -141,21 +131,6 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins can count users and only org members can
-	// count other org members.
-	if r.opt.OrgID == 0 {
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-			return 0, err
-		}
-	} else {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, r.opt.OrgID); err != nil {
-			if err == auth.ErrNotAnOrgMember {
-				return 0, errors.New("must be a member of this organization to view members")
-			}
-			return 0, err
-		}
-	}
-
 	var count int
 	var err error
 	if r.useCache() {
@@ -206,4 +181,22 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 
 func (r *userConnectionResolver) useCache() bool {
 	return r.activePeriod != nil && *r.activePeriod != "ALL_TIME"
+}
+
+func checkMembersAccess(ctx context.Context, db database.DB, orgID int32) error {
+	// 🚨 SECURITY: Only site admins can see users and only org members can
+	// count see org members.
+	if orgID == 0 {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+			return err
+		}
+	} else {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, db, orgID); err != nil {
+			if err == auth.ErrNotAnOrgMember {
+				return errors.New("must be a member of this organization to view members")
+			}
+			return err
+		}
+	}
+	return nil
 }
