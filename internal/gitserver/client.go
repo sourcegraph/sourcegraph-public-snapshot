@@ -1148,6 +1148,17 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
+	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
+	// signature prevents us from doing that.
+	//
+	// We should consolidate into a single method for creating requests so that we are
+	// setting all the required properties like headers, trace spans in a central place.
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -1253,6 +1264,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
