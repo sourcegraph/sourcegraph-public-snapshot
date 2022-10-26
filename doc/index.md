@@ -16,10 +16,15 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <div class="grid">
   <!-- Sourcegraph Cloud -->
-  <a class="btn-app btn" href="/cloud">
-			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
-			<h3>Sourcegraph Cloud</h3>
-		  <p>Create a single-tenant instance managed by Sourcegraph</p>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
   </a>
 </div>
 
@@ -135,4 +140,3 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <i class="fa-regular fa-envelope"></i> Contact us
   </a>
 </div>
-
