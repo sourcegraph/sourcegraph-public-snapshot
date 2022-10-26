@@ -536,6 +536,7 @@ type EncryptionKeys struct {
 	CacheSize int `json:"cacheSize,omitempty"`
 	// EnableCache description: enable LRU cache for decryption APIs
 	EnableCache            bool           `json:"enableCache,omitempty"`
+	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -1130,8 +1131,6 @@ type JVMPackagesConnection struct {
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
-	// GitserverAccessLogs description: DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.
-	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1910,6 +1909,8 @@ type SettingsExperimentalFeatures struct {
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// PreloadGoToDefinition description: Preload definitions for available tokens in the visible viewport.
+	PreloadGoToDefinition bool `json:"preloadGoToDefinition,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts

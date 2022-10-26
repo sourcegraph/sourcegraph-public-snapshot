@@ -161,7 +161,7 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 	}
 }
 
-const defaultMaxSquirrelDepth = 10_000
+const defaultMaxSquirrelDepth = 100
 
 var maxSquirrelDepth = func() int {
 	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
@@ -177,7 +177,7 @@ var maxSquirrelDepth = func() int {
 	return v
 }()
 
-func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) (func(), error) {
+func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
 	caller := ""
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
@@ -191,14 +191,14 @@ func (squirrel *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() 
 
 	squirrel.depth += 1
 	if squirrel.depth > maxSquirrelDepth {
-		return nil, errors.New("max squirrel stack depth exceeded")
+		panic(errors.New("max squirrel stack depth exceeded"))
 	}
 
 	return func() {
 		squirrel.depth -= 1
 
 		msg = fmt.Sprintf("%s(%v) => %v", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.FgYellow).Sprint(ret()))
-	}, nil
+	}
 }
 
 // breadcrumb adds a breadcrumb.

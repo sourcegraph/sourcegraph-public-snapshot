@@ -395,6 +395,35 @@ func shortGitCommandSlow(args []string) time.Duration {
 	}
 }
 
+// 🚨 SECURITY: headerXRequestedWithMiddleware will ensure that the X-Requested-With
+// header contains the correct value. See "What does X-Requested-With do, anyway?" in
+// https://github.com/sourcegraph/sourcegraph/pull/27931.
+func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		l := log.Scoped("gitserver", "headerXRequestedWithMiddleware")
+
+		// Do not apply the middleware to /ping and /git endpoints.
+		//
+		// 1. /ping is used by health check services who most likely don't set this header
+		// at all.
+		//
+		// 2. /git may be used to run "git fetch" from another gitserver instance over
+		// HTTP and the fetchCommand does not set this header yet.
+		if strings.HasPrefix(r.URL.Path, "/ping") || strings.HasPrefix(r.URL.Path, "/git") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if value := r.Header.Get("X-Requested-With"); value != "Sourcegraph" {
+			l.Error("header X-Requested-With is not set or is invalid", log.String("path", r.URL.Path))
+			http.Error(w, "header X-Requested-With is not set or is invalid", http.StatusBadRequest)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -469,6 +498,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
+	// This endpoint allows us to expose gitserver itself as a "git service"
+	// (ETOOMANYGITS!) that allows other services to run commands like "git fetch"
+	// directly against a gitserver replica and treat it as a git remote.
+	//
+	// Example use case for this is a repo migration from one replica to another during
+	// scaling events and the new destination gitserver replica can directly clone from
+	// the gitserver replica which hosts the repository currently.
 	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
 		conf.DefaultClient(),
@@ -502,7 +538,8 @@ func (s *Server) Handler() http.Handler {
 			handleGetObject(s.Logger.Scoped("commands/get-object", "handles get object"), getObjectFunc),
 		)))
 
-	return mux
+	// 🚨 SECURITY: This must be wrapped in headerXRequestedWithMiddleware.
+	return headerXRequestedWithMiddleware(mux)
 }
 
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
@@ -1621,44 +1658,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		}()
 	}
 
-	dir := s.dir(req.Repo)
-	if !repoCloned(dir) {
-		if conf.Get().DisableAutoGitUpdates {
-			logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
-			return
-		}
-
-		cloneProgress, cloneInProgress := s.locker.Status(dir)
-		if cloneInProgress {
+	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, req.Repo); !cloned {
+		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-				CloneInProgress: true,
-				CloneProgress:   cloneProgress,
-			})
-			return
-		}
-
-		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
-		if err != nil {
-			logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
+		} else {
 			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
-			return
 		}
-		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
+		_ = json.NewEncoder(w).Encode(notFoundPayload)
 		return
 	}
 
+	dir := s.dir(req.Repo)
 	if !conf.Get().DisableAutoGitUpdates {
 		// ensureRevision may kick off a git fetch operation which we don't want if we've
 		// configured DisableAutoGitUpdates.

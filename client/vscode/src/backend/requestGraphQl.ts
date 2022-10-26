@@ -1,12 +1,15 @@
 import { authentication } from 'vscode'
 
 import { asError } from '@sourcegraph/common'
-import { checkOk, GraphQLResult, GRAPHQL_URI, isHTTPAuthError } from '@sourcegraph/http-client'
+import { checkOk, GRAPHQL_URI, GraphQLResult, isHTTPAuthError } from '@sourcegraph/http-client'
 
 import { handleAccessTokenError } from '../settings/accessTokenSetting'
-import { endpointSetting, endpointRequestHeadersSetting } from '../settings/endpointSetting'
+import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
+
+import { fetch, getProxyAgent, Headers, HeadersInit } from './fetch'
 
 let invalidated = false
+
 /**
  * To be called when Sourcegraph URL changes.
  */
@@ -43,19 +46,20 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         // Debt: intercepted requests in integration tests
         // have 0 status codes, so don't check in test environment.
         const checkFunction = process.env.IS_TEST ? <T>(value: T): T => value : checkOk
-        const response = checkFunction(
-            await fetch(url, {
-                body: JSON.stringify({
-                    query: request,
-                    variables,
-                }),
-                method: 'POST',
-                headers,
-            })
-        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const options: any = {
+            agent: getProxyAgent(),
+            body: JSON.stringify({
+                query: request,
+                variables,
+            }),
+            method: 'POST',
+            headers,
+        }
+
+        const response = checkFunction(await fetch(url, options))
         // TODO request cancellation w/ VS Code cancellation tokens.
-        // eslint-disable-next-line @typescript-eslint/return-await
-        return response.json() as Promise<GraphQLResult<any>>
+        return (await response.json()) as GraphQLResult<R>
     } catch (error) {
         // If `overrideAccessToken` is set, we're validating the token
         // and errors will be displayed in the UI.

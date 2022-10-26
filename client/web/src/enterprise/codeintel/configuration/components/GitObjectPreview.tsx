@@ -93,16 +93,6 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
 }) => (
     <div>
         {GitObjectHeader}
-        <small>
-            {preview.preview.length === 0 ? (
-                <>Configuration policy does not match any known commits.</>
-            ) : (
-                <>
-                    Configuration policy will be applied to the following
-                    {typeText}.
-                </>
-            )}
-        </small>
 
         {previewError && <ErrorAlert prefix="Error fetching matching git objects" error={previewError} />}
 
@@ -110,6 +100,16 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
             <LoadingSpinner className={styles.loading} />
         ) : (
             <>
+                <small aria-live="polite">
+                    {preview.preview.length === 0 ? (
+                        <>Configuration policy does not match any known commits.</>
+                    ) : (
+                        <>
+                            Configuration policy will be applied to the following
+                            {` ${preview.preview.length} ${typeText}`}.
+                        </>
+                    )}
+                </small>
                 {preview.preview.length === 0 ? (
                     <div className="mt-2 pt-2">
                         <div className={styles.empty}>

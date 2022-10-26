@@ -22,5 +22,4 @@ func Init(db database.DB, w *webhooks.GitHubWebhook) {
 	w.Register(handleGitHubRepoAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "team_add")
 	w.Register(handleGitHubUserAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "organisation")
 	w.Register(handleGitHubUserAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "membership")
-
 }

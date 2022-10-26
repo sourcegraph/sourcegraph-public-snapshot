@@ -15,7 +15,13 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
 ## Unreleased
+
+<!-- Add changes changes to this section before release. -->
+
+_Upgrade notes for the next version will appear here._
+## v4.0 ➔ v4.1
 
 <!-- Add changes changes to this section before release. -->
 
