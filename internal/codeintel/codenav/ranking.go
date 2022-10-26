@@ -78,7 +78,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	}()
 
 	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-		path := filepath.Join(strconv.Itoa(id), filename)
+		path := filepath.Join("ranking", rankingGraphKey, strconv.Itoa(id), filename)
 
 		ow, ok := writers[path]
 		if !ok {
