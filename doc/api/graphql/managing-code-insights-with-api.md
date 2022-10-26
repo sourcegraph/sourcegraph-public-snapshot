@@ -20,7 +20,7 @@ See [Managing Dashboards](#managing-dashboards) below for more information.
 
 ## Just-in-time vs persisted insights
 
-Some insights generate and persist time series data, while others calculate their data just-in-time on page load. Currently, line chart insights will be persisted, while the language statistics pie charts that run over a single repository will be genearted just-in-time.
+Some insights generate and persist time series data, while others calculate their data just-in-time on page load. Currently, line chart insights will be persisted, while the language statistics pie charts that run over a single repository will be generated just-in-time.
 
 ## Creating a persisted insight
 
