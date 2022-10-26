@@ -16,12 +16,6 @@ func TestNew(t *testing.T) {
 		c.Assert(err, qt.IsNil)
 		c.Assert(s, qt.IsNotNil)
 	})
-
-	c.Run("NOK", func(c *qt.C) {
-		s, err := New("/non-existing")
-		c.Assert(err, qt.IsNotNil)
-		c.Assert(s, qt.IsNil)
-	})
 }
 
 func TestInsert(t *testing.T) {
