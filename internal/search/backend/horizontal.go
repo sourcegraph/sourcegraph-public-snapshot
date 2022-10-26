@@ -230,6 +230,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 		},
 		streamer,
 	)
+	defer flushAll()
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
@@ -268,13 +269,8 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	for i := 0; i < cap(ch); i++ {
 		errs = errors.Append(errs, <-ch)
 	}
-	if errs != nil {
-		return errs
-	}
 
-	flushAll()
-
-	return nil
+	return errs
 }
 
 func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {
