@@ -7,9 +7,10 @@ import (
 )
 
 type resetterMetrics struct {
-	numIndexResets                  prometheus.Counter
-	numIndexResetFailures           prometheus.Counter
-	numIndexResetErrors             prometheus.Counter
+	numIndexResets        prometheus.Counter
+	numIndexResetFailures prometheus.Counter
+	numIndexResetErrors   prometheus.Counter
+
 	numDependencyIndexResets        prometheus.Counter
 	numDependencyIndexResetFailures prometheus.Counter
 	numDependencyIndexResetErrors   prometheus.Counter

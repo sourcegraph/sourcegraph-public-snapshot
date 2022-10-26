@@ -14,9 +14,9 @@ func (b backgroundJob) NewIndexResetter(interval time.Duration) *dbworker.Resett
 		Name:     "precise_code_intel_index_worker_resetter",
 		Interval: interval,
 		Metrics: dbworker.ResetterMetrics{
-			RecordResets:        b.metrics.numIndexResets,
-			RecordResetFailures: b.metrics.numIndexResetFailures,
-			Errors:              b.metrics.numIndexResetErrors,
+			RecordResets:        b.resetterMetrics.numIndexResets,
+			RecordResetFailures: b.resetterMetrics.numIndexResetFailures,
+			Errors:              b.resetterMetrics.numIndexResetErrors,
 		},
 	})
 }
@@ -29,9 +29,9 @@ func (b backgroundJob) NewDependencyIndexResetter(interval time.Duration) *dbwor
 		Name:     "precise_code_intel_dependency_index_worker_resetter",
 		Interval: interval,
 		Metrics: dbworker.ResetterMetrics{
-			RecordResets:        b.metrics.numDependencyIndexResets,
-			RecordResetFailures: b.metrics.numDependencyIndexResetFailures,
-			Errors:              b.metrics.numDependencyIndexResetErrors,
+			RecordResets:        b.resetterMetrics.numDependencyIndexResets,
+			RecordResetFailures: b.resetterMetrics.numDependencyIndexResetFailures,
+			Errors:              b.resetterMetrics.numDependencyIndexResetErrors,
 		},
 	})
 }

@@ -236,7 +236,7 @@ func (t *traceLogger) Log(fields ...otlog.Field) {
 func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 	if honey.Enabled() {
 		for _, attr := range attributes {
-			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
 		}
 	}
 	if t.trace != nil {

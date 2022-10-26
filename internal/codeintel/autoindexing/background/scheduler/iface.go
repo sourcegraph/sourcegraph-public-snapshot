@@ -7,7 +7,7 @@ import (
 )
 
 type AutoIndexingServiceBackgroundJobs interface {
-	NewScheduler(
+	NewRepoIndexingScheduler(
 		interval time.Duration,
 		repositoryProcessDelay time.Duration,
 		repositoryBatchSize int,

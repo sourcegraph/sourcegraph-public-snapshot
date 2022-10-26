@@ -6,7 +6,7 @@ import (
 
 func NewSchedulers(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		backgroundJobs.NewScheduler(
+		backgroundJobs.NewRepoIndexingScheduler(
 			ConfigInst.SchedulerInterval,
 			ConfigInst.RepositoryProcessDelay,
 			ConfigInst.RepositoryBatchSize,

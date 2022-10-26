@@ -104,7 +104,6 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		gitserverClient: gitserverClient,
 		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
-		operations:      newOperations(&observation.TestContext),
 		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
 	}
 

@@ -21,7 +21,7 @@ type BackgroundJob interface {
 	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
-	NewScheduler(interval time.Duration, repositoryProcessDelay time.Duration, repositoryBatchSize int, policyBatchSize int, inferenceConcurrency int) goroutine.BackgroundRoutine
+	NewRepoIndexingScheduler(interval time.Duration, repositoryProcessDelay time.Duration, repositoryBatchSize int, policyBatchSize int, inferenceConcurrency int) goroutine.BackgroundRoutine
 	NewJanitor(
 		interval time.Duration,
 		minimumTimeSinceLastCheck time.Duration,
@@ -54,14 +54,14 @@ type backgroundJob struct {
 	externalServiceStore    ExternalServiceStore
 	dependencyIndexingStore dbworkerstore.Store
 
-	operations *operations
-	clock      glock.Clock
-	logger     log.Logger
+	clock  glock.Clock
+	logger log.Logger
 
-	metrics                *resetterMetrics
-	janitorMetrics         *janitorMetrics
-	depencencySyncMetrics  workerutil.WorkerObservability
-	depencencyIndexMetrics workerutil.WorkerObservability
+	indexSchedulerOperations *indexSchedulerOperations
+	resetterMetrics          *resetterMetrics
+	janitorMetrics           *janitorMetrics
+	depencencySyncMetrics    workerutil.WorkerObservability
+	depencencyIndexMetrics   workerutil.WorkerObservability
 }
 
 func New(
@@ -97,14 +97,14 @@ func New(
 		externalServiceStore:    externalServiceStore,
 		dependencyIndexingStore: dependencyIndexingStore,
 
-		operations: newOperations(observationContext),
-		clock:      glock.NewRealClock(),
-		logger:     observationContext.Logger,
+		clock:  glock.NewRealClock(),
+		logger: observationContext.Logger,
 
-		metrics:                newResetterMetrics(observationContext),
-		janitorMetrics:         newJanitorMetrics(observationContext),
-		depencencySyncMetrics:  workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
-		depencencyIndexMetrics: workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+		indexSchedulerOperations: newOperations(observationContext),
+		resetterMetrics:          newResetterMetrics(observationContext),
+		janitorMetrics:           newJanitorMetrics(observationContext),
+		depencencySyncMetrics:    workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+		depencencyIndexMetrics:   workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 	}
 }
 
