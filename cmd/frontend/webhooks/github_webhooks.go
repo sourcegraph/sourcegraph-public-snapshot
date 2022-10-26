@@ -8,7 +8,6 @@ import (
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -80,28 +79,12 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 	}
 
 	// match event handlers
-	err = h.Dispatch(ctx, eventType, codeHostURN, e)
+	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-// Dispatch accepts an event for a particular event type and dispatches it
-// to the appropriate stack of handlers, if any are configured.
-func (h *GitHubWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	g := errgroup.Group{}
-	for _, handler := range h.handlers[extsvc.KindGitHub][eventType] {
-		// capture the handler variable within this loop
-		handler := handler
-		g.Go(func() error {
-			return handler(ctx, h.DB, codeHostURN, e)
-		})
-	}
-	return g.Wait()
 }
 
 func (h *GitHubWebhook) getExternalService(r *http.Request, body []byte) (*types.ExternalService, error) {

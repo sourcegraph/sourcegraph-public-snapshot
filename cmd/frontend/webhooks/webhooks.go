@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -163,4 +164,20 @@ func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.Code
 	}
 
 	gh.HandleWebhook(w, r, urn, payload)
+}
+
+// Dispatch accepts an event for a particular event type and dispatches it
+// to the appropriate stack of handlers, if any are configured.
+func (h *Webhook) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	g := errgroup.Group{}
+	for _, handler := range h.handlers[codeHostKind][eventType] {
+		// capture the handler variable within this loop
+		handler := handler
+		g.Go(func() error {
+			return handler(ctx, h.DB, codeHostURN, e)
+		})
+	}
+	return g.Wait()
 }

@@ -1,7 +1,6 @@
 package webhooks
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,13 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/errgroup"
 )
 
-type GitLabWebhook Webhook
+type GitLabWebhook struct {
+	*Webhook
+}
 
 func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
-
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -62,24 +61,10 @@ func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 	}
 
 	// Route the request based on the event type.
-	err = h.Dispatch(ctx, eventKind.ObjectKind, codeHostURN, event)
+	err = h.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func (h *GitLabWebhook) Dispatch(ctx context.Context, eventType string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	g := errgroup.Group{}
-	for _, handler := range h.handlers[extsvc.KindGitLab][eventType] {
-		// capture the handler variable within this loop
-		handler := handler
-		g.Go(func() error {
-			return handler(ctx, h.DB, codeHostURN, e)
-		})
-	}
-	return g.Wait()
 }

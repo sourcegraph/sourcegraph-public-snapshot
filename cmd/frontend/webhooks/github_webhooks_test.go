@@ -34,7 +34,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 	if !called {
@@ -46,7 +46,7 @@ func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 	h := GitHubWebhook{Webhook: &Webhook{}}
 	ctx := context.Background()
 	// no op
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 }
@@ -66,7 +66,7 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 	if len(called) != 2 {
@@ -89,7 +89,7 @@ func TestGithubWebhookDispatchError(t *testing.T) {
 	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
+	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
 		t.Errorf("Expected %q, got %q", want, have)
 	}
 	if len(called) != 2 {
