@@ -1,4 +1,4 @@
-package main
+package store
 
 import (
 	"database/sql"
@@ -7,7 +7,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type state struct {
+// Store wraps the connection to a SQLite database, to hold the state
+// of the current task, so it can be interrupted and resumed safely.
+type Store struct {
 	// sqlite is not thread-safe, this mutex protects access to it
 	sync.Mutex
 	// where the DB file is
@@ -17,15 +19,17 @@ type state struct {
 }
 
 var createTableStmt = `CREATE TABLE IF NOT EXISTS repos (
-  name STRING PRIMARY KEY,
-  failed STRING DEFAULT "",
-  created BOOLEAN DEFAULT FALSE,
-  pushed BOOLEAN DEFAULT FALSE,
-  from_git_url STRING DEFAULT "",
-  to_git_url STRING DEFAULT ""
+name STRING PRIMARY KEY,
+failed STRING DEFAULT "",
+created BOOLEAN DEFAULT FALSE,
+pushed BOOLEAN DEFAULT FALSE,
+git_url STRING DEFAULT "",
+to_git_url STRING DEFAULT ""
 )`
 
-func newState(path string) (*state, error) {
+// New returns a new store and creates the underlying database if
+// it doesn't exist already.
+func New(path string) (*Store, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
@@ -39,16 +43,17 @@ func newState(path string) (*state, error) {
 		return nil, err
 	}
 
-	return &state{
+	return &Store{
 		path: path,
 		db:   db,
 	}, nil
 }
 
-func (s *state) load() ([]*Repo, error) {
+// Load returns all repositories saved in the Store.
+func (s *Store) Load() ([]*Repo, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT name, failed, created, pushed, from_git_url, to_git_url FROM repos`)
+	rows, err := s.db.Query(`SELECT name, failed, created, pushed, git_url, to_git_url FROM repos`)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +62,7 @@ func (s *state) load() ([]*Repo, error) {
 	var repos []*Repo
 	for rows.Next() {
 		var r Repo
-		err := rows.Scan(&r.Name, &r.Failed, &r.Created, &r.Pushed, &r.FromGitURL, &r.ToGitURL)
+		err := rows.Scan(&r.Name, &r.Failed, &r.Created, &r.Pushed, &r.GitURL, &r.ToGitURL)
 		if err != nil {
 			return nil, err
 		}
@@ -70,12 +75,13 @@ var saveRepoStmt = `UPDATE repos SET
 failed = ?, 
 created = ?,
 pushed = ?,
-from_git_url = ?,
+git_url = ?,
 to_git_url = ?
 
 WHERE name = ?`
 
-func (s *state) saveRepo(r *Repo) error {
+// SaveRepo persists a repository in the store or returns an error otherwise.
+func (s *Store) SaveRepo(r *Repo) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -84,7 +90,7 @@ func (s *state) saveRepo(r *Repo) error {
 		r.Failed,
 		r.Created,
 		r.Pushed,
-		r.FromGitURL,
+		r.GitURL,
 		r.ToGitURL,
 		r.Name)
 
@@ -94,7 +100,10 @@ func (s *state) saveRepo(r *Repo) error {
 	return nil
 }
 
-func (s *state) insert(repos []*Repo) error {
+var insertReposStmt = `INSERT INTO repos(name, failed, created, pushed, git_url, to_git_url) VALUES (?, ?, ?, ?, ?, ?)`
+
+// Insert creates and persists fresh repos records in the store.
+func (s *Store) Insert(repos []*Repo) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
@@ -102,14 +111,22 @@ func (s *state) insert(repos []*Repo) error {
 		return err
 	}
 	for _, r := range repos {
-		if _, err := tx.Exec(`INSERT INTO repos(name, from_git_url) VALUES (?, ?)`, r.Name, r.FromGitURL); err != nil {
+		if _, err := tx.Exec(
+			insertReposStmt,
+			r.Name,
+			r.Failed,
+			r.Created,
+			r.Pushed,
+			r.GitURL,
+			r.ToGitURL,
+		); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (s *state) countCompletedRepos() (int, error) {
+func (s *Store) CountCompletedRepos() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -119,7 +136,7 @@ func (s *state) countCompletedRepos() (int, error) {
 	return count, err
 }
 
-func (s *state) countAllRepos() (int, error) {
+func (s *Store) CountAllRepos() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
