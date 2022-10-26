@@ -60,14 +60,14 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	gh := GitHubWebhook{Webhook: &Webhook{DB: db}}
+	gh := GitHubWebhook{WebhookRouter: &WebhookRouter{DB: db}}
 
 	webhookMiddleware := NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gh.Webhook)))
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gh.WebhookRouter)))
 	srv := httptest.NewServer(base)
 
 	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {

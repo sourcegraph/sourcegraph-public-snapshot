@@ -88,7 +88,7 @@ func NewHandler(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	wh := webhooks.Webhook{
+	wh := webhooks.WebhookRouter{
 		DB: db,
 	}
 	webhookhandlers.Init(db, &wh)
@@ -101,7 +101,7 @@ func NewHandler(
 	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
-	gitHubWebhook := webhooks.GitHubWebhook{Webhook: &wh}
+	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))

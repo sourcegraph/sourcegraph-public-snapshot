@@ -18,7 +18,7 @@ import (
 )
 
 type GitHubWebhook struct {
-	*Webhook
+	*WebhookRouter
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {

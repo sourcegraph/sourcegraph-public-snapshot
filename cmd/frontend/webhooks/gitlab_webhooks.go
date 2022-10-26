@@ -14,7 +14,7 @@ import (
 )
 
 type GitLabWebhook struct {
-	*Webhook
+	*WebhookRouter
 }
 
 func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {

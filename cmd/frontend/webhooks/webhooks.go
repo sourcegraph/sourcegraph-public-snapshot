@@ -19,12 +19,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-type WebhookHandlers struct{}
+// WebhookRouter is responsible for handling incoming http requests for all webhooks
+// and routing to any registered WebhookHandlers, events are routed by their code host kind
+// and event type.
+type WebhookRouter struct {
+	DB database.DB
 
-type Registerer interface {
-	Register(webhook *Webhook)
+	mu sync.RWMutex
+	// Mapped by codeHostKind: webhookEvent: handlers
+	handlers map[string]map[string][]WebhookHandler
 }
 
+type Registerer interface {
+	Register(webhookRouter *WebhookRouter)
+}
+
+// RegistererHandler combines the Registerer and http.Handler interfaces.
+// This allows for webhooks to use both the old paths (.api/gitlab-webhooks)
+// and the generic new path (.api/webhooks).
 type RegistererHandler interface {
 	Registerer
 	http.Handler
@@ -33,7 +45,7 @@ type RegistererHandler interface {
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
-func (h *Webhook) Register(handler WebhookHandler, codeHostKind string, eventTypes ...string) {
+func (h *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, eventTypes ...string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.handlers == nil {
@@ -50,7 +62,7 @@ func (h *Webhook) Register(handler WebhookHandler, codeHostKind string, eventTyp
 // NewHandler is responsible for handling all incoming webhooks
 // and invoking the correct handlers depending on where the webhooks
 // come from.
-func NewHandler(logger log.Logger, db database.DB, gh *Webhook) http.Handler {
+func NewHandler(logger log.Logger, db database.DB, gh *WebhookRouter) http.Handler {
 	base := mux.NewRouter().PathPrefix("/.api/webhooks").Subrouter()
 	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(logger, db, gh))
 
@@ -63,18 +75,7 @@ func NewHandler(logger log.Logger, db database.DB, gh *Webhook) http.Handler {
 // Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
 type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error
 
-// Webhook is responsible for handling incoming http requests for github webhooks
-// and routing to any registered WebhookHandlers, events are routed by their event type,
-// passed in the X-Github-Event header
-type Webhook struct {
-	DB database.DB
-
-	mu sync.RWMutex
-	// Mapped by codeHostKind: webhookEvent: handlers
-	handlers map[string]map[string][]WebhookHandler
-}
-
-func webhookHandler(logger log.Logger, db database.DB, wh *Webhook) http.HandlerFunc {
+func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.HandlerFunc {
 	logger = logger.Scoped("webhookHandler", "handler used to route webhooks")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
@@ -110,7 +111,7 @@ func webhookHandler(logger log.Logger, db database.DB, wh *Webhook) http.Handler
 
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
-			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, &GitHubWebhook{Webhook: wh})
+			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, &GitHubWebhook{WebhookRouter: wh})
 			return
 		case extsvc.KindGitLab:
 			if secret != "" {
@@ -168,7 +169,7 @@ func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.Code
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *Webhook) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
+func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}

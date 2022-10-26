@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +41,7 @@ func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *Git
 	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
 }
 
-func (h *GitLabWebhook) Register(router *fewebhooks.Webhook) {
+func (h *GitLabWebhook) Register(router *fewebhooks.WebhookRouter) {
 	router.Register(
 		h.handleEvent,
 		extsvc.KindGitLab,
@@ -70,17 +69,16 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
 
-	rawConfig, err := extSvc.Config.Decrypt(r.Context())
+	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
 		log15.Error("Could not decode external service config", "error", err)
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-	config := &schema.GitLabConnection{}
-	err = json.Unmarshal([]byte(rawConfig), config)
-	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
+	config, ok := c.(*schema.GitLabConnection)
+	if !ok {
+		log15.Error("Could not decode external service config")
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
