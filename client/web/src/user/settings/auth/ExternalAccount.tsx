@@ -64,7 +64,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                         <>
                             {account.external?.userUrl ? (
                                 <>
-                                    {account.external.userName}(
+                                    {account.external.userName} (
                                     <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
                                         @{account.external.userLogin}
                                     </Link>

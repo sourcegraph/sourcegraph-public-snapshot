@@ -1,20 +1,21 @@
 import {Attribute, getUsernameOrEmail, SamlExternalData} from './ExternalAccountsSignIn'
 
-function toAttribute(value: any): Attribute {
+function toAttribute(value: string): Attribute {
     return {
-        'Values': [
+        Name: 'test',
+        Values: [
             {
-                'Value': value,
+                Value: value,
             }
         ]
-    } as Attribute
+    }
 }
 
-function samlDataObject(keysValues: any): SamlExternalData {
+function samlDataObject(keysValues: object): SamlExternalData {
     // Add some other fields to make sure we are getting the right ones
-    keysValues['some random field'] = 'false'
-    keysValues['another random field'] = 'Mon Oct 10 2022 13:07:34 GMT+0000 (Coordinated Universal Time)'
-    keysValues['one more random field'] = 'banana'
+    Object.assign(keysValues, {'any field':'false'})
+    Object.assign(keysValues, {'random field':'Mon Oct 10 2022 13:07:34 GMT+0000 (Coordinated Universal Time)'})
+    Object.assign(keysValues, {'one more random field':'banana'})
 
     const testData: unknown = {
         'Values': Object.fromEntries(
@@ -81,19 +82,6 @@ describe('getUsernameOrEmail', () => {
 
         for (const testCase of testCases) {
             expect(getUsernameOrEmail(testCase)).toEqual('adalovelace')
-        }
-    })
-
-    test('saml account data has no email and no username', () => {
-        const testCases = [
-            samlDataObject({
-                'missingdata': 'missingdata',
-            }),
-        ]
-
-        // todo: check if it would be better thrown an exception
-        for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('')
         }
     })
 })
