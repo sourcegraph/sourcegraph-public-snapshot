@@ -213,8 +213,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 type connsGetter func(conns conftypes.ServiceConnections) []string
 
 // ConfBased returns a Map that watches the global conf and calls the provided
-// getter to extract endpoints. Under the hood it initialized the returned Map
-// by calling Static on the endpoints returned by the getter.
+// getter to extract endpoints.
 func ConfBased(getter connsGetter) *Map {
 	return &Map{
 		urlspec: "conf-based",
