@@ -1301,7 +1301,7 @@ func RunRepoSubsetTextSearch(
 	repos []*search.RepositoryRevisions,
 	q query.Q,
 	zoekt *searchbackend.FakeSearcher,
-	searcherURLs endpoint.Map,
+	searcherURLs *endpoint.Map,
 	mode search.GlobalSearchMode,
 	useFullDeadline bool,
 ) ([]*result.FileMatch, streaming.Stats, error) {

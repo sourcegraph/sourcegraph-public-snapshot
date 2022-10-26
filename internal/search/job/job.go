@@ -70,6 +70,6 @@ type RuntimeClients struct {
 	Logger       log.Logger
 	DB           database.DB
 	Zoekt        zoekt.Streamer
-	SearcherURLs endpoint.Map
+	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
 }

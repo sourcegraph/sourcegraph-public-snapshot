@@ -27,7 +27,7 @@ var (
 
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
 
-func SearcherURLs() endpoint.Map {
+func SearcherURLs() *endpoint.Map {
 	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
 		return conns.Searchers
 	})

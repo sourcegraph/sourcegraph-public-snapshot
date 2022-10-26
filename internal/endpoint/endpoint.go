@@ -13,23 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Map is a map to endpoints of a single service.
-type Map interface {
-	// Endpoints returns the list of a service's endpoints as discovered thrugh
-	// the chosen service discovery mechanism.
-	Endpoints() ([]string, error)
-	// Get returns the URL that's closest to the given key in the map of endpoints.
-	Get(key string) (string, error)
-	// Get returns the n closest URLs for the given key in the map of endpoints.
-	GetN(key string, n int) ([]string, error)
-	// GetMany is the same as calling Get on each item of keys, but optimized.
-	GetMany(keys ...string) ([]string, error)
-}
-
-// endpointsMap is a consistent hash map to URLs. It uses the kubernetes API to
+// Map is a consistent hash map to URLs. It uses the kubernetes API to
 // watch the endpoints for a service and update the map when they change. It
 // can also fallback to static URLs if not configured for kubernetes.
-type endpointsMap struct {
+type Map struct {
 	urlspec string
 
 	mu  sync.RWMutex
@@ -65,7 +52,7 @@ type endpoints struct {
 //	"k8s+http://searcher"
 //	"k8s+rpc://indexed-searcher?kind=sts"
 //	"http://searcher-0 http://searcher-1 http://searcher-2"
-func New(urlspec string) Map {
+func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
@@ -78,22 +65,22 @@ func New(urlspec string) Map {
 // string. Unlike static endpoints created via New.
 //
 // Static Maps are guaranteed to never return an error.
-func Static(endpoints ...string) *endpointsMap {
-	return &endpointsMap{
+func Static(endpoints ...string) *Map {
+	return &Map{
 		urlspec: fmt.Sprintf("%v", endpoints),
 		hm:      newConsistentHash(endpoints),
 	}
 }
 
 // Empty returns an Endpoint map which always fails with err.
-func Empty(err error) *endpointsMap {
-	return &endpointsMap{
+func Empty(err error) *Map {
+	return &Map{
 		urlspec: "error: " + err.Error(),
 		err:     err,
 	}
 }
 
-func (m *endpointsMap) String() string {
+func (m *Map) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
 }
 
@@ -102,7 +89,7 @@ func (m *endpointsMap) String() string {
 // Note: For k8s URLs we return URLs based on the registered endpoints. The
 // endpoint may not actually be available yet / at the moment. So users of the
 // URL should implement a retry strategy.
-func (m *endpointsMap) Get(key string) (string, error) {
+func (m *Map) Get(key string) (string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -116,7 +103,7 @@ func (m *endpointsMap) Get(key string) (string, error) {
 }
 
 // GetN gets the n closest URLs in the hash to the provided key.
-func (m *endpointsMap) GetN(key string, n int) ([]string, error) {
+func (m *Map) GetN(key string, n int) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -134,7 +121,7 @@ func (m *endpointsMap) GetN(key string, n int) ([]string, error) {
 // for each key which will acquire the endpoint map for each call. The benefit
 // is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
 // is immutable vs may change between Get calls).
-func (m *endpointsMap) GetMany(keys ...string) ([]string, error) {
+func (m *Map) GetMany(keys ...string) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -153,7 +140,7 @@ func (m *endpointsMap) GetMany(keys ...string) ([]string, error) {
 }
 
 // Endpoints returns a list of all addresses. Do not modify the returned value.
-func (m *endpointsMap) Endpoints() ([]string, error) {
+func (m *Map) Endpoints() ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -167,7 +154,7 @@ func (m *endpointsMap) Endpoints() ([]string, error) {
 }
 
 // discover updates the Map with discovered endpoints
-func (m *endpointsMap) discover() {
+func (m *Map) discover() {
 	if m.discofunk == nil {
 		return
 	}
@@ -181,7 +168,7 @@ func (m *endpointsMap) discover() {
 	<-ready
 }
 
-func (m *endpointsMap) sync(ch chan endpoints, ready chan struct{}) {
+func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	for eps := range ch {
 		log15.Info(
 			"endpoints discovered",
@@ -228,97 +215,22 @@ type connsGetter func(conns conftypes.ServiceConnections) []string
 // ConfBased returns a Map that watches the global conf and calls the provided
 // getter to extract endpoints. Under the hood it initialized the returned Map
 // by calling Static on the endpoints returned by the getter.
-func ConfBased(getter connsGetter) Map {
-	return &confEndpointMap{getter: getter}
-}
+func ConfBased(getter connsGetter) *Map {
+	return &Map{
+		urlspec: "conf-based",
+		discofunk: func(disco chan endpoints) {
+			conf.Watch(func() {
+				serviceConnections := conf.Get().ServiceConnections()
 
-type confEndpointMap struct {
-	getter connsGetter
+				eps := getter(serviceConnections)
+				if eps == nil {
+					disco <- endpoints{
+						Error: errors.New("no service connections found in conf"),
+					}
+				}
 
-	em  Map
-	err error
-	mu  sync.RWMutex
-
-	init sync.Once
-}
-
-func (m *confEndpointMap) getAndWatch() {
-	conf.Watch(func() {
-		serviceConnections := conf.Get().ServiceConnections()
-		extracted := m.getter(serviceConnections)
-		if extracted == nil {
-			m.mu.Lock()
-			m.err = errors.New("no service connections found in conf")
-			m.mu.Unlock()
-			return
-		}
-
-		em := Static(extracted...)
-
-		m.mu.Lock()
-		m.em = em
-		m.err = nil
-		m.mu.Unlock()
-	})
-}
-
-func (m *confEndpointMap) Endpoints() ([]string, error) {
-	m.init.Do(m.getAndWatch)
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.err != nil {
-		return nil, m.err
+				disco <- endpoints{Endpoints: eps}
+			})
+		},
 	}
-
-	return m.em.Endpoints()
-}
-
-func (m *confEndpointMap) Get(key string) (string, error) {
-	m.init.Do(m.getAndWatch)
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.err != nil {
-		return "", m.err
-	}
-
-	return m.em.Get(key)
-}
-
-func (m *confEndpointMap) GetN(key string, n int) ([]string, error) {
-	m.init.Do(m.getAndWatch)
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.err != nil {
-		return nil, m.err
-	}
-
-	return m.em.GetN(key, n)
-}
-
-func (m *confEndpointMap) GetMany(keys ...string) ([]string, error) {
-	m.init.Do(m.getAndWatch)
-
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	if m.err != nil {
-		return nil, m.err
-	}
-
-	urls := make([]string, len(keys))
-	for i, k := range keys {
-		u, err := m.em.Get(k)
-		if err != nil {
-			return urls, err
-		}
-
-		urls[i] = u
-	}
-	return urls, nil
 }
