@@ -199,6 +199,8 @@ func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
 }
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
+	t.Skip("Flaky due to unexpected ordering of results: https://github.com/sourcegraph/sourcegraph/issues/43472")
+
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := testStoreWithoutConfigurationPolicies(t, db)
