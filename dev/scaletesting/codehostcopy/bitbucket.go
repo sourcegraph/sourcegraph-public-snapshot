@@ -47,7 +47,7 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 		return nil, errors.Newf("no clone links on repo %s", repo.Name)
 	}
 	for _, l := range cloneLinks {
-		if l.Name == "https" {
+		if l.Name == "https" || l.Name == "http" {
 			return url.Parse(l.Url)
 		}
 	}

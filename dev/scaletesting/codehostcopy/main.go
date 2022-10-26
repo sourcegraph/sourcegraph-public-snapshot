@@ -12,7 +12,9 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
+	sgerr "github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed config.example.cue
@@ -49,12 +51,60 @@ var app = &cli.App{
 		{
 			Name:        "example",
 			Description: "Create a new config file to start from",
-			Action: func(ctx *cli.Context) error {
+			Action: func(_ *cli.Context) error {
 				fmt.Printf("%s", exampleConfig)
 				return nil
 			},
 		},
+		{
+			Name:        "list",
+			Description: "list repos from the 'from' codehost defined in the configuration",
+			Action: func(cmd *cli.Context) error {
+				return doList(cmd.Context, log.Scoped("list", ""), cmd.String("state"), cmd.String("config"), cmd.Int("limit"))
+			},
+			Flags: []cli.Flag{
+				&cli.IntFlag{
+					Name:        "limit",
+					DefaultText: "limit the amount of repos that gets printed. Use 0 to print all repos",
+					Value:       10,
+				},
+			},
+		},
 	},
+}
+
+func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostDestination, error) {
+	switch cfg.Kind {
+	case "bitbucket":
+		{
+			return NewBitbucketCodeHost(ctx, logger, &cfg)
+		}
+	case "gitlab":
+		{
+			return NewGitLabCodeHost(ctx, &cfg)
+		}
+	default:
+		{
+			return nil, sgerr.Newf("unknown code host %q", cfg.Kind)
+		}
+	}
+}
+
+func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostSource, error) {
+	switch cfg.Kind {
+	case "bitbucket":
+		{
+			return NewBitbucketCodeHost(ctx, logger, &cfg)
+		}
+	case "github":
+		{
+			return NewGithubCodeHost(ctx, &cfg)
+		}
+	default:
+		{
+			return nil, sgerr.Newf("unknown code host %q", cfg.Kind)
+		}
+	}
 }
 
 func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
@@ -71,17 +121,41 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 	if err != nil {
 		logger.Fatal("failed to init state", log.Error(err))
 	}
-	gh, err := NewGithubCodeHost(ctx, &cfg.From)
+	from, err := createSourceCodeHost(ctx, logger, cfg.From)
 	if err != nil {
-		logger.Fatal("failed to init GitHub code host", log.Error(err))
-	}
-	gl, err := NewGitLabCodeHost(ctx, &cfg.Destination)
-	if err != nil {
-		logger.Fatal("failed to init GitLab code host", log.Error(err))
+		logger.Fatal("failed to create from code host", log.Error(err))
 	}
 
-	runner := NewRunner(logger, s, gh, gl)
-	return runner.Run(ctx, 20)
+	dest, err := createDestinationCodeHost(ctx, logger, cfg.From)
+	if err != nil {
+		logger.Fatal("failed to create destination code host", log.Error(err))
+	}
+	runner := NewRunner(logger, s, from, dest)
+	return runner.Copy(ctx, 20)
+}
+
+func doList(ctx context.Context, logger log.Logger, state string, config string, limit int) error {
+	cfg, err := loadConfig(config)
+	if err != nil {
+		var cueErr errors.Error
+		if errors.As(err, &cueErr) {
+			logger.Info(errors.Details(err, nil))
+		}
+		logger.Fatal("failed to load config", log.Error(err))
+	}
+	s, err := store.New(state)
+	if err != nil {
+		logger.Fatal("failed to init state", log.Error(err))
+	}
+
+	from, err := createSourceCodeHost(ctx, logger, cfg.From)
+	if err != nil {
+		logger.Fatal("failed to create from code host", log.Error(err))
+	}
+
+	runner := NewRunner(logger, s, from, nil)
+	return runner.List(ctx, limit)
+
 }
 
 func main() {

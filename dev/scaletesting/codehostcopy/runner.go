@@ -41,9 +41,48 @@ func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest Co
 	}
 }
 
-func (r *Runner) Run(ctx context.Context, concurrency int) error {
+func (r *Runner) List(ctx context.Context, limit int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
-	r.logger.Info("test")
+
+	// Load existing repositories.
+	srcRepos, err := r.store.Load()
+	if err != nil {
+		r.logger.Error("failed to open state database", log.Error(err))
+		return err
+	}
+	loadedFromDB := true
+
+	// If we're starting fresh, really fetch them.
+	if len(srcRepos) == 0 {
+		loadedFromDB = false
+		r.logger.Info("No existing state found, creating ...")
+		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
+		repos, err := r.source.ListRepos(ctx)
+
+		if err != nil {
+			r.logger.Error("failed to list repositories from source", log.Error(err))
+			return err
+		}
+		srcRepos = repos
+		if err := r.store.Insert(repos); err != nil {
+			r.logger.Error("failed to insert repositories from source", log.Error(err))
+			return err
+		}
+	}
+	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (from db: %v)", loadedFromDB)))
+	if limit != 0 && limit < len(srcRepos) {
+		srcRepos = srcRepos[:limit]
+	}
+	for _, r := range srcRepos {
+		block.Writef("Name: %s Created: %v Pushed: %v GitURL: %s ToGitURL: %s Failed: %s", r.Name, r.Created, r.Pushed, r.GitURL, r.ToGitURL, r.Failed)
+	}
+	block.Close()
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Repo count: %d", len(srcRepos)))
+	return nil
+}
+
+func (r *Runner) Copy(ctx context.Context, concurrency int) error {
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
 	// Load existing repositories.
 	srcRepos, err := r.store.Load()

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GithubCodeHost struct {
@@ -28,7 +29,7 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 
 	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create github client")
 	}
 	return &GithubCodeHost{
 		def: def,

@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -71,8 +72,8 @@ func (s *Store) Load() ([]*Repo, error) {
 	return repos, nil
 }
 
-var saveRepoStmt = `UPDATE repos SET 
-failed = ?, 
+var saveRepoStmt = `UPDATE repos SET
+failed = ?,
 created = ?,
 pushed = ?,
 git_url = ?,
@@ -120,6 +121,7 @@ func (s *Store) Insert(repos []*Repo) error {
 			r.GitURL,
 			r.ToGitURL,
 		); err != nil {
+			println(fmt.Sprintf("%+v", r))
 			return err
 		}
 	}

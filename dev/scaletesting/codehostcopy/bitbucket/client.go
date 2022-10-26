@@ -327,14 +327,16 @@ func (c *Client) ListReposForProjects(ctx context.Context, projects []*Project) 
 	repos := make([]*Repo, 0)
 	for _, p := range projects {
 
+		project := p
 		g.Go(func() getResult[[]*Repo] {
-			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
+			url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", project.Key))
 			all, err := getAll[*Repo](ctx, c, url)
 			if err != nil {
 				return getResult[[]*Repo]{
 					Err: err,
 				}
 			}
+
 			results, error := extractResults(all)
 			return getResult[[]*Repo]{
 				Result: results,
