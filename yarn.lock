@@ -20011,7 +20011,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"https-proxy-agent@npm:5, https-proxy-agent@npm:5.0.1, https-proxy-agent@npm:^5.0.0":
+"https-proxy-agent@npm:5, https-proxy-agent@npm:5.0.1, https-proxy-agent@npm:^5.0.0, https-proxy-agent@npm:^5.0.1":
   version: 5.0.1
   resolution: "https-proxy-agent@npm:5.0.1"
   dependencies:
@@ -29449,9 +29449,11 @@ pvutils@latest:
     highlightjs-graphql: ^1.0.2
     html-webpack-harddisk-plugin: ^2.0.0
     html-webpack-plugin: ^5.3.2
+    http-proxy-agent: ^5.0.0
     http-proxy-middleware: ^1.1.2
     http-status-codes: ^2.1.4
     https-browserify: ^1.0.0
+    https-proxy-agent: ^5.0.1
     identity-obj-proxy: ^3.0.0
     is-absolute-url: ^3.0.3
     iterare: ^1.2.1

@@ -90,7 +90,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                             disableTimeout,
                         })
                     ),
-                    map(({ blob }) => {
+                    map(blob => {
                         if (blob === null) {
                             setRichHTML(null)
                             return blob

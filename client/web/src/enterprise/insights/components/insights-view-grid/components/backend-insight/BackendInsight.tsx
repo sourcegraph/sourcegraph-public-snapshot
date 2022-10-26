@@ -77,7 +77,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 seriesDisplayOptions: {
                     limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
                     sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
-                }
+                },
             },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
