@@ -1,0 +1,7 @@
+[
+  {
+    "path": "internal/codeintel/policies/internal/store",
+    "prefix": "TestSelectPoliciesForRepositoryMembershipUpdate",
+    "reason": "The same policies are returned but in an unexpected order."
+  }
+]
