@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"sync/atomic"
+	"time"
 
 	"github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
@@ -290,6 +292,17 @@ func main() {
 			if existingTeam != nil {
 				currentTeam.Created = true
 				currentTeam.Failed = ""
+
+				teamMembers, resp, tErr := gh.Teams.ListTeamMembersBySlug(ctx, currentTeam.Org, currentTeam.Name, nil)
+				if tErr != nil && resp.StatusCode != 404 {
+					writeFailure(out, "Failed to get members of team %s, reason: %s", currentTeam.Name, tErr)
+					return
+				}
+				// Members have been randomly selected before, so save to state
+				if len(teamMembers) != 0 {
+					currentTeam.HasMembers = true
+				}
+
 				if tErr = state.saveTeam(currentTeam); tErr != nil {
 					log.Fatal(tErr)
 				}
@@ -299,33 +312,35 @@ func main() {
 				return
 			}
 
-			// get 50 random users to be member of this team (as per https://sourcegraph.slack.com/archives/C03GMM0F2BA/p1665658367720609)
-			randomTeamMemberLogins, tErr := state.getRandomUsers(50)
-			if tErr != nil {
-				log.Fatal(tErr)
-			}
-
 			// users need to be member of the team's parent org to join the team
 			userState := "active"
 			userRole := "member"
-			for _, randomMember := range randomTeamMemberLogins {
-				// this should be idempotent
-				_, _, tErr = gh.Organizations.EditOrgMembership(ctx, randomMember, t.Org, &github.Membership{
+			var randomTeamMemberLogins []string
+			// get 50 random users to be member of this team (as per https://sourcegraph.slack.com/archives/C03GMM0F2BA/p1665658367720609)
+			rand.Seed(time.Now().Unix())
+			for i := 0; i < 1; i++ {
+				randomUser := users[rand.Intn(len(users))]
+				_, _, tErr = gh.Organizations.EditOrgMembership(ctx, randomUser.Login, t.Org, &github.Membership{
 					State:        &userState,
 					Role:         &userRole,
 					Organization: &github.Organization{Login: &t.Org},
-					User:         &github.User{Login: &randomMember},
+					User:         &github.User{Login: &randomUser.Login},
 				})
-
 				if tErr != nil {
-					log.Fatal(tErr)
+					currentTeam.Failed = tErr.Error()
+					currentTeam.HasMembers = false
+					if tErr = state.saveTeam(currentTeam); tErr != nil {
+						log.Fatal(tErr)
+					}
 				}
+				randomTeamMemberLogins = append(randomTeamMemberLogins, randomUser.Login)
 			}
 
-			_, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{
+			team, resp, tErr := gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{
 				Name:        currentTeam.Name,
 				Maintainers: randomTeamMemberLogins,
 			})
+			team.GetID()
 
 			if tErr != nil {
 				writeFailure(out, "Failed to create team with name %s, reason: %s", currentTeam.Name, tErr)
