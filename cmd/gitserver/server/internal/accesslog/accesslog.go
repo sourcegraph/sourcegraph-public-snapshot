@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
-	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
@@ -48,9 +48,8 @@ func fromContext(ctx context.Context) *paramsContext {
 
 // accessLogger handles HTTP requests and, if logEnabled, logs accesses.
 type accessLogger struct {
-	logger     log.Logger
-	next       http.HandlerFunc
-	logEnabled *atomic.Bool
+	logger log.Logger
+	next   http.HandlerFunc
 }
 
 var _ http.Handler = &accessLogger{}
@@ -68,7 +67,7 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.next(w, r)
 
 	// If access logging is not enabled, we are done
-	if !a.logEnabled.Load() {
+	if !isEnabled() {
 		return
 	}
 
@@ -104,30 +103,20 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+var isEnabled = conf.Cached(func() bool {
+	return audit.IsEnabled(conf.Get().SiteConfiguration, audit.GitserverAccess)
+})
+
 // HTTPMiddleware will extract actor information and params collected by Record that has
 // been stored in the context, in order to log a trace of the access.
 func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, next http.HandlerFunc) http.HandlerFunc {
 	handler := &accessLogger{
-		logger:     logger,
-		next:       next,
-		logEnabled: atomic.NewBool(audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)),
+		logger: logger,
+		next:   next,
 	}
-	if handler.logEnabled.Load() {
+	if isEnabled() {
 		logger.Info(accessLoggingEnabledMessage)
 	}
-
-	// Allow live toggling of access logging
-	watcher.Watch(func() {
-		newShouldLog := audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)
-		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
-		if changed {
-			if newShouldLog {
-				logger.Info(accessLoggingEnabledMessage)
-			} else {
-				logger.Info("access logging disabled")
-			}
-		}
-	})
 
 	return handler.ServeHTTP
 }
