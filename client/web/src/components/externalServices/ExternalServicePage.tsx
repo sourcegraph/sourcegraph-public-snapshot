@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
-import {mdiChevronDown, mdiChevronLeft} from '@mdi/js';
-import {format} from 'date-fns';
+import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
+import { format } from 'date-fns'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
@@ -373,19 +373,11 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.startedAt === null && 'Not started yet.'}
-                    {node.startedAt !== null && (
-                        <>
-                            Started at {format(Date.parse(node.startedAt), 'pp')}.
-                        </>
-                    )}
+                    {node.startedAt !== null && <>Started at {format(Date.parse(node.startedAt), 'pp')}.</>}
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.finishedAt === null && 'Not finished yet.'}
-                    {node.finishedAt !== null && (
-                        <>
-                            Finished at {format(Date.parse(node.finishedAt), 'pp')}.
-                        </>
-                    )}
+                    {node.finishedAt !== null && <>Finished at {format(Date.parse(node.finishedAt), 'pp')}.</>}
                 </div>
                 <div className="flex-shrink-0 flex-grow-1 mr-1">
                     {node.startedAt && (
