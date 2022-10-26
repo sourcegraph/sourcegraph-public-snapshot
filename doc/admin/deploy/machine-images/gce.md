@@ -16,6 +16,23 @@ Following these docs will provision the following resources:
 
 > WARNING: Connection to the internet is required to pull Docker images at first launch.
 
+## Instance size chart
+
+Select a deployment image and machine type according to the number of users and repositories you have using this table.
+
+If you fall between two sizes, choose the larger of the two. For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
+
+|                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
+|------------------|------------|-------------|-------------|-------------|-------------|
+| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
+| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
+| **Series**       | N2         | N2          | N2          | N2          | N2          |
+| **Recommended**  | standard-8 | standard-16 | standard-32 | standard-48 | standard-96 |
+| **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-64 |
+| **Lastest Version Links**   | [download](https://storage.googleapis.com/sourcegraph-images/latest/Sourcegraph-XS.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Sourcegraph-S.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Sourcegraph-M.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Sourcegraph-L.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Sourcegraph-XL.tar.gz) |
+
+> NOTE: Sourcegraph GCE images are optimized for the specific set of resources provided by the machine type, please ensure you use the correct GCE image for the associated GCE machine type. You can [resize your machine type anytime](https://cloud.google.com/compute/docs/instances/changing-machine-type-of-stopped-instance), but your Sourcegraph GCE image must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct GCE image that is optimized for your machine type.
+
 ---
 
 ## Deploy Sourcegraph
@@ -24,7 +41,7 @@ Following these docs will provision the following resources:
 
 <img class="screenshot" src="./assets/gcp-bucket.png"/>
 
-1. In the [instance size chart](#instance-size-chart) below, download the image (`tar.gz`) file that matches your deployment size
+1. Download the image (`tar.gz`) file that matches your deployment size from the [instance size chart](#instance-size-chart)
 2. Navigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
 3. **Upload** the `tar.gz` file to a bucket (create one if needed)
 4. Copy the **URL**
@@ -78,27 +95,6 @@ Your can also switch users in the terminal with the command below:
 ```bash
 $ sudo su sourcegraph
 ```
-
----
-
-## Instance size chart
-
-Select a deployment image and machine type according to the number of users and repositories you have using this table.
-
-If you fall between two sizes, choose the larger of the two. For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
-
-|                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
-|------------------|------------|-------------|-------------|-------------|-------------|
-| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
-| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
-| **Series**       | N2         | N2          | N2          | N2          | N2          |
-| **Recommended**  | standard-8 | standard-16 | standard-32 | standard-48 | standard-96 |
-| **Minimum**      | standard-8 | standard-8  | standard-16 | standard-32 | standard-64 |
-| **Lastest Version Links**   | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XS.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-S.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-M.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-L.tar.gz) | [download](https://storage.googleapis.com/sourcegraph-images/latest/Soucegraph-XL.tar.gz) |
-
-File Size: ~<2GB
-
-> NOTE: Sourcegraph GCE images are optimized for the specific set of resources provided by the machine type, please ensure you use the correct GCE image for the associated GCE machine type. You can [resize your machine type anytime](https://cloud.google.com/compute/docs/instances/changing-machine-type-of-stopped-instance), but your Sourcegraph GCE image must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct GCE image that is optimized for your machine type.
 
 ---
 
