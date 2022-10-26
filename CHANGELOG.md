@@ -23,7 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- When a `content:` filter is used in a query, only file contents will be searched (previously any of file contents, paths, or repos were searched). However, as before, if `type:` is also set, the `content:` filter will search for results of the specified `type:`. [#43442](https://github.com/sourcegraph/sourcegraph/pull/43442)
 
 ### Fixed
 
@@ -33,6 +33,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Remove the older `log.gitserver.accessLogs` site config setting. The setting is succeeded by `log.auditLog.gitserverAccess`. [#43174](https://github.com/sourcegraph/sourcegraph/pull/43174)
 - Remove `LOG_ALL_GRAPHQL_REQUESTS` env var. The setting is succeeded by `log.auditLog.graphQL`. [#43181](https://github.com/sourcegraph/sourcegraph/pull/43181)
+
+## 4.1.1
+
+### Fixed
+
+- Fixed a bug with normalizing the `published` draft value for `changeset_specs`. [#43390](https://github.com/sourcegraph/sourcegraph/pull/43390)
 
 ## 4.1.0
 

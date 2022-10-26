@@ -56,14 +56,15 @@ func main() {
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
-		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
-		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
-		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
-		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
-		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
+		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
+		"codeintel-codenav-ranking":                   codeintel.NewRankingGraphSerializerJob(),
+		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
+		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
+		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
+		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 
 		// Note: experimental (not documented)
 		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),

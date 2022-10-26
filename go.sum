@@ -624,6 +624,8 @@ github.com/derision-test/glock v1.0.0 h1:b6sViZG+Cm6QtdpqbfWEjaBVbzNPntIS4GzsxpS
 github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
 github.com/derision-test/go-mockgen v1.3.4 h1:MGsUieA37/yol7I+dIzTxHoyXAQr/S0SnEVnnva0CWM=
 github.com/derision-test/go-mockgen v1.3.4/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
+github.com/derision-test/go-mockgen v1.3.6 h1:56qoOxncBNM/eWrrgX++XR00gtQuXSFXpp9ee+OjRd4=
+github.com/derision-test/go-mockgen v1.3.6/go.mod h1:/TXUePlhtHmDDCaDAi/a4g6xOHqMDz3Wf0r2NPGskB4=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.1.0 h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=
@@ -754,6 +756,7 @@ github.com/frankban/quicktest v1.4.0/go.mod h1:36zfPVQyHxymz4cH7wlDmVwDrJuljRB60
 github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM0I9ntUbOk+k=
 github.com/frankban/quicktest v1.14.0/go.mod h1:NeW+ay9A/U67EYXNFA1nPE8e/tnQv/09mUdL/ijj8og=
 github.com/frankban/quicktest v1.14.3 h1:FJKSZTDHjyhriyC81FLQ0LY93eSai0ZyR/ZIkd3ZUKE=
+github.com/frankban/quicktest v1.14.3/go.mod h1:mgiwOwqx65TmIk1wJ6Q7wvnVMocbUorkibMOrVTHZps=
 github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=

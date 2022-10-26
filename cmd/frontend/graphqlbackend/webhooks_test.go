@@ -466,7 +466,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 					"node": {
 						"id": %q,
 						"uuid": %q,
-                        "url": "%s/webhooks/%s"
+                        "url": "%s/.api/webhooks/%s"
 					}
 				}
 			`, webhookIDMarshaled, whUUID.String(), testURL, whUUID.String()),

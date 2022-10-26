@@ -1595,6 +1595,12 @@ CREATE TABLE codeintel_path_ranks (
     payload text NOT NULL
 );
 
+CREATE TABLE codeintel_ranking_exports (
+    upload_id integer NOT NULL,
+    graph_key text NOT NULL,
+    locked_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -3603,7 +3609,8 @@ CREATE TABLE webhook_logs (
     status_code integer NOT NULL,
     request bytea NOT NULL,
     response bytea NOT NULL,
-    encryption_key_id text NOT NULL
+    encryption_key_id text NOT NULL,
+    webhook_id integer
 );
 
 CREATE SEQUENCE webhook_logs_id_seq
@@ -3901,6 +3908,9 @@ ALTER TABLE ONLY codeintel_lockfiles
 
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
+
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
@@ -4715,6 +4725,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
@@ -4933,6 +4946,9 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY webhook_logs
+    ADD CONSTRAINT webhook_logs_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;

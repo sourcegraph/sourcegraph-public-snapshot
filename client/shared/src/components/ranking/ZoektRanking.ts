@@ -48,11 +48,41 @@ function sortHunkMatches(hunk: Hunk): void {
     })
 }
 
+function mergeHunks(hunks: Hunk[], context: number) : void {
+    const hunksSortedByLineNumber = hunks.slice().sort((a, b) => {
+        if (a.startLine < b.startLine) {
+            return -1
+        }
+        if (a.startLine === b.startLine) {
+            return 0
+        }
+        return 1
+    })
+
+    for (let index = 0; index < hunksSortedByLineNumber.length - 1; index++) {
+        const current = hunksSortedByLineNumber[index]
+        const next = hunksSortedByLineNumber[index + 1]
+
+        if (next.startLine - current.startLine <= context) {
+            const originalHunkIndex = hunks.indexOf(current)
+            const nextHunkIndex = hunks.indexOf(next)
+
+            if (originalHunkIndex > -1 && nextHunkIndex > -1) {
+                const originalHunk = hunks[originalHunkIndex]
+                for (const match of next.matches) {
+                    addHunkItem(originalHunk, match)
+                }
+                hunks.splice(nextHunkIndex, 1)
+                index++
+            }
+        }
+    }
+}
+
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
-    return (
-        item.startLine + context + 1 >= group.startLine - context &&
-        item.endLine - context - 1 <= group.endLine + context
-    )
+    // Return true if item and group have overlapping or adjacent context
+    return (item.startLine >= group.endLine && item.startLine - group.endLine - 2 * context <= 1)
+        || (item.endLine <= group.startLine && group.startLine - item.endLine - 2 * context <= 1)
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
@@ -72,6 +102,10 @@ function results(matches: MatchItem[], maxResults: number, context: number): Ran
             hunks.push(hunk)
         }
     }
+
+    // Merge hunks with overlapping or adjacent line ranges
+    mergeHunks(hunks, context)
+
     const groups: MatchGroup[] = []
     const visibleMatches: MatchItem[] = []
     hunks = hunks.slice(0, maxResults)
