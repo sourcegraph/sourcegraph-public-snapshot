@@ -6,7 +6,7 @@
   },
   {
     "path": "internal/gitserver",
-    "prefix": "TestRepository_Branches_IncludeCommit",
+    "prefix": "TestLFSSmudge",
     "reason": "Git config seems to be borked after introduction of https://github.com/sourcegraph/sourcegraph/pull/43227"
   }
 ]

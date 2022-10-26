@@ -2764,8 +2764,6 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 }
 
 func TestRepository_Branches_IncludeCommit(t *testing.T) {
-	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
-
 	ClientMocks.LocalGitserver = true
 	t.Cleanup(func() {
 		ResetClientMocks()
@@ -2826,6 +2824,8 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 }
 
 func TestLFSSmudge(t *testing.T) {
+	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
+
 	// TODO enforce on CI once CI has git-lfs
 	if _, err := exec.LookPath("git-lfs"); err != nil {
 		t.Skip("git-lfs not installed")
