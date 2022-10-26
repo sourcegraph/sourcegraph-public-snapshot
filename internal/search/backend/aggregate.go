@@ -119,9 +119,6 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 	// stopCollectingAndFlush will send what we have collected and all future
 	// sends will go via sender directly.
 	stopCollectingAndFlush := func(reason string) {
-		mu.Lock()
-		defer mu.Unlock()
-
 		if collectSender == nil {
 			return
 		}
@@ -145,32 +142,30 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 		case <-timerCancel:
 			timer.Stop()
 		case <-timer.C:
+			mu.Lock()
 			stopCollectingAndFlush("timer_expired")
+			mu.Unlock()
 		}
 	}()
 
 	return stream.SenderFunc(func(event *zoekt.SearchResult) {
-		mu.Lock()
-		if collectSender != nil {
-			collectSender.Send(event)
+			mu.Lock()
+			if collectSender != nil {
+				collectSender.Send(event)
 
-			// Protect against too large aggregates. This should be the exception and only
-			// happen for queries yielding an extreme number of results.
-			if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
-				if agg, ok := collectSender.Done(); ok {
-					metricFinalAggregateSize.WithLabelValues("max_size_reached").Observe(float64(len(agg.Files)))
-					sender.Send(agg)
+				// Protect against too large aggregates. This should be the exception and only
+				// happen for queries yielding an extreme number of results.
+				if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
+					stopCollectingAndFlush("max_size_reached")
+
 				}
-
-				// From now on use sender directly
-				collectSender = nil
-
-				// Stop timer goroutine if it is still running.
-				close(timerCancel)
+			} else {
+				sender.Send(event)
 			}
-		} else {
-			sender.Send(event)
+			mu.Unlock()
+		}), func() {
+			mu.Lock()
+			stopCollectingAndFlush("final_flush")
+			mu.Unlock()
 		}
-		mu.Unlock()
-	}), func() { stopCollectingAndFlush("final") }
 }
