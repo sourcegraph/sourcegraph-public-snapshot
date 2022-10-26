@@ -12,7 +12,6 @@ function toAttribute(value: any): Attribute {
 
 function samlDataObject(keysValues: any): SamlExternalData {
     // Add some other fields to make sure we are getting the right ones
-    // const values = new Map(Object.entries(keysValues))
     keysValues['some random field'] = 'false'
     keysValues['another random field'] = 'Mon Oct 10 2022 13:07:34 GMT+0000 (Coordinated Universal Time)'
     keysValues['one more random field'] = 'banana'
