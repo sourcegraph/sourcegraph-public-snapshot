@@ -1658,44 +1658,18 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 		}()
 	}
 
-	dir := s.dir(req.Repo)
-	if !repoCloned(dir) {
-		if conf.Get().DisableAutoGitUpdates {
-			logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
-			return
-		}
-
-		cloneProgress, cloneInProgress := s.locker.Status(dir)
-		if cloneInProgress {
+	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, req.Repo); !cloned {
+		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-				CloneInProgress: true,
-				CloneProgress:   cloneProgress,
-			})
-			return
-		}
-
-		cloneProgress, err := s.cloneRepo(ctx, req.Repo, nil)
-		if err != nil {
-			logger.Debug("error starting repo clone", log.String("repo", string(req.Repo)), log.Error(err))
+		} else {
 			status = "repo-not-found"
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
-			return
 		}
-		status = "clone-in-progress"
 		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
-			CloneInProgress: true,
-			CloneProgress:   cloneProgress,
-		})
+		_ = json.NewEncoder(w).Encode(notFoundPayload)
 		return
 	}
 
+	dir := s.dir(req.Repo)
 	if !conf.Get().DisableAutoGitUpdates {
 		// ensureRevision may kick off a git fetch operation which we don't want if we've
 		// configured DisableAutoGitUpdates.
