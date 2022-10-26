@@ -143,7 +143,6 @@ func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo
 		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
 
 		seriesBackfills, backillErr := i.getSeriesBackfills(ctx, i.series.InsightSeriesID)
-		log15.Error(fmt.Sprintf("backfills found: %d, id:%d", len(seriesBackfills), i.series.InsightSeriesID))
 		if backillErr != nil {
 			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
 			return
