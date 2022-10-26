@@ -155,15 +155,19 @@ func scanAllBackfills(rows *sql.Rows, queryErr error) (_ []SeriesBackfill, err e
 
 	var results []SeriesBackfill
 	for rows.Next() {
+		var cost *float64
 		var temp SeriesBackfill
 		if err := rows.Scan(
 			&temp.Id,
 			&temp.SeriesId,
 			&dbutil.NullInt{N: &temp.repoIteratorId},
-			&temp.EstimatedCost,
+			&cost,
 			&temp.State,
 		); err != nil {
 			return []SeriesBackfill{}, err
+		}
+		if cost != nil {
+			temp.EstimatedCost = *cost
 		}
 		results = append(results, temp)
 	}

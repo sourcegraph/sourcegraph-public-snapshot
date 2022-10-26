@@ -95,7 +95,8 @@ type insightStatusResolver struct {
 	statusOnce   sync.Once
 	series       types.InsightViewSeries
 
-	status statusInfo
+	status    statusInfo
+	statusErr error
 }
 
 func (i *insightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
@@ -125,40 +126,35 @@ func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error
 	return &status.isLoading, nil
 }
 
-func (i *insightStatusResolver) calculateStatus(ctx context.Context) (status statusInfo, err error) {
-
+func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
 	i.statusOnce.Do(func() {
-		var statusInfo statusInfo
-
 		status, statusErr := queryrunner.QueryJobsStatus(ctx, i.baseResolver.workerBaseStore, i.series.SeriesID)
 		if statusErr != nil {
-			err = errors.Wrap(statusErr, "QueryJobsStatus")
+			i.statusErr = errors.Wrap(statusErr, "QueryJobsStatus")
 			return
 		}
-		statusInfo.backfillQueuedAt = i.series.BackfillQueuedAt
-		statusInfo.completedJobs = int32(status.Completed)
-		statusInfo.failedJobs = int32(status.Failed)
-		statusInfo.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
+		i.status.backfillQueuedAt = i.series.BackfillQueuedAt
+		i.status.completedJobs = int32(status.Completed)
+		i.status.failedJobs = int32(status.Failed)
+		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
 
 		backfillStore := scheduler.NewBackfillStore(i.baseResolver.insightsDB)
 		seriesBackfills, backillErr := backfillStore.LoadSeriesBackfills(ctx, i.series.InsightSeriesID)
 		log15.Error(fmt.Sprintf("backfills found: %d, id:%d", len(seriesBackfills), i.series.InsightSeriesID))
 		if backillErr != nil {
-			err = errors.Wrap(statusErr, "LoadSeriesBackfills")
+			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
 			return
 		}
 		backfillInProgress := false
 		for n := range seriesBackfills {
-			//log15.Error(fmt.Sprintf("seriesId: %d backfillId :%d", seriesBackfills[n].SeriesId, seriesBackfills[n].Id))
 			if seriesBackfills[n].SeriesId == i.series.InsightSeriesID && !seriesBackfills[n].IsTerminalState() {
 				backfillInProgress = true
 				break
 			}
 		}
-		statusInfo.isLoading = statusInfo.backfillQueuedAt == nil || statusInfo.pendingJobs > 0 || backfillInProgress
-		i.status = statusInfo
+		i.status.isLoading = i.status.backfillQueuedAt == nil || i.status.pendingJobs > 0 || backfillInProgress
 	})
-	return i.status, err
+	return i.status, i.statusErr
 }
 
 func NewStatusResolver(r *baseInsightResolver, series types.InsightViewSeries) *insightStatusResolver {
