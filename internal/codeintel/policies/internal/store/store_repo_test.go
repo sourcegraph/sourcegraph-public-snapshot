@@ -233,6 +233,10 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 			ids = append(ids, policy.ID)
 		}
 
+		sort.Slice(ids, func(i, j int) bool {
+			return ids[i] < ids[j]
+		})
+
 		return ids
 	}
 
