@@ -12,6 +12,8 @@ import {
     BlobStencilFields,
     BlobVariables,
     HighlightResponseFormat,
+    StencilResult,
+    StencilVariables,
 } from '../../graphql-operations'
 import { useExperimentalFeatures } from '../../stores'
 
@@ -20,20 +22,18 @@ import { useExperimentalFeatures } from '../../stores'
  */
 const applyDefaultValuesToFetchBlobOptions = ({
     disableTimeout = false,
-    stencil = false,
     format = HighlightResponseFormat.HTML_HIGHLIGHT,
     ...options
 }: FetchBlobOptions): Required<FetchBlobOptions> => ({
     ...options,
     disableTimeout,
     format,
-    stencil,
 })
 
 function fetchBlobCacheKey(options: FetchBlobOptions): string {
-    const { disableTimeout, format, stencil } = applyDefaultValuesToFetchBlobOptions(options)
+    const { disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
 
-    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}&stencil=${stencil}`
+    return `${makeRepoURI(options)}?disableTimeout=${disableTimeout}&=${format}`
 }
 
 interface FetchBlobOptions {
@@ -42,18 +42,10 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
-    stencil?: boolean
 }
 
-interface FetchBlobResponse {
-    blob: BlobFileFields | null
-    stencil?: BlobStencilFields[]
-}
-
-export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<FetchBlobResponse> => {
-    const { repoName, revision, filePath, disableTimeout, format, stencil } = applyDefaultValuesToFetchBlobOptions(
-        options
-    )
+export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
+    const { repoName, revision, filePath, disableTimeout, format } = applyDefaultValuesToFetchBlobOptions(options)
 
     // We only want to include HTML data if explicitly requested. We always
     // include LSIF because this is used for languages that are configured
@@ -70,17 +62,9 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 $disableTimeout: Boolean!
                 $format: HighlightResponseFormat!
                 $html: Boolean!
-                $stencil: Boolean!
             ) {
                 repository(name: $repoName) {
                     commit(rev: $revision) {
-                        blob(path: $filePath) @include(if: $stencil) {
-                            lsif {
-                                stencil {
-                                    ...BlobStencilFields
-                                }
-                            }
-                        }
                         file(path: $filePath) {
                             ...BlobFileFields
                         }
@@ -97,19 +81,8 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                     lsif
                 }
             }
-
-            fragment BlobStencilFields on Range {
-                start {
-                    line
-                    character
-                }
-                end {
-                    line
-                    character
-                }
-            }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html, stencil }
+        { repoName, revision, filePath, disableTimeout, format, html }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
@@ -117,10 +90,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 throw new Error('Commit not found')
             }
 
-            return {
-                blob: data.repository.commit.file,
-                stencil: data.repository.commit.blob?.lsif?.stencil,
-            }
+            return data.repository.commit.file
         })
     )
 }, fetchBlobCacheKey)
@@ -158,3 +128,52 @@ export const usePrefetchBlobFormat = (): HighlightResponseFormat => {
      */
     return HighlightResponseFormat.HTML_HIGHLIGHT
 }
+
+interface FetchStencilOptions {
+    repoName: string
+    revision: string
+    filePath: string
+}
+
+export const fetchStencil = memoizeObservable((options: FetchStencilOptions): Observable<BlobStencilFields[]> => {
+    const { repoName, revision, filePath } = applyDefaultValuesToFetchBlobOptions(options)
+
+    return requestGraphQL<StencilResult, StencilVariables>(
+        gql`
+            query Stencil($repoName: String!, $revision: String!, $filePath: String!) {
+                repository(name: $repoName) {
+                    commit(rev: $revision) {
+                        blob(path: $filePath) {
+                            lsif {
+                                stencil {
+                                    ...BlobStencilFields
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment BlobStencilFields on Range {
+                start {
+                    line
+                    character
+                }
+                end {
+                    line
+                    character
+                }
+            }
+        `,
+        { repoName, revision, filePath }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.repository?.commit) {
+                throw new Error('Commit not found')
+            }
+
+            return data.repository.commit.blob?.lsif?.stencil || []
+        })
+    )
+}, makeRepoURI)
