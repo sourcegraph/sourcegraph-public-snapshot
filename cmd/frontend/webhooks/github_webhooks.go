@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/google/go-github/github"
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
@@ -181,4 +182,25 @@ func validateAnyConfiguredSecret(c *schema.GitHubConnection, sig string, body []
 
 	// If we make it here then none of our webhook secrets were valid
 	return errors.Errorf("unable to validate webhook signature")
+}
+
+func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string, gh *GitHubWebhook) {
+	if secret == "" {
+		payload, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
+			return
+		}
+
+		gh.HandleWebhook(w, r, urn, payload)
+		return
+	}
+
+	payload, err := github.ValidatePayload(r, []byte(secret))
+	if err != nil {
+		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+		return
+	}
+
+	gh.HandleWebhook(w, r, urn, payload)
 }

@@ -13,25 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitLabWebhook struct {
-	*WebhookRouter
-}
-
-func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
+func (h *WebhookRouter) HandleGitLabWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
-
-	// Parse the event proper.
-	if r.Body == nil {
-		http.Error(w, "missing request body", http.StatusBadRequest)
-		return
-	}
-	payload, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, errors.Wrap(err, "reading payload").Error(), http.StatusInternalServerError)
-		return
-	}
 
 	var eventKind struct {
 		ObjectKind string `json:"object_kind"`
@@ -55,7 +40,7 @@ func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 			w.WriteHeader(http.StatusNoContent)
 			fmt.Fprintf(w, "%v", err)
 		} else {
-			http.Error(w, errors.Wrap(err, "unmarshalling payload").Error(), http.StatusInternalServerError)
+			http.Error(w, errors.Wrap(err, "unmarshalling event kind from webhook payload").Error(), http.StatusInternalServerError)
 		}
 		return
 	}
@@ -67,4 +52,40 @@ func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
+	glSecret := r.Header.Get("X-Gitlab-Token")
+	if glSecret != secret {
+		return nil, errors.New("secrets don't match!")
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+
+	return body, nil
+}
+
+func (h *WebhookRouter) handleGitLabWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+	if secret == "" {
+		payload, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
+			return
+		}
+
+		h.HandleGitLabWebhook(w, r, urn, payload)
+		return
+	}
+
+	payload, err := gitlabValidatePayload(r, secret)
+	if err != nil {
+		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+		return
+	}
+
+	h.HandleGitLabWebhook(w, r, urn, payload)
 }

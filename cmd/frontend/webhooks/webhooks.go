@@ -2,13 +2,10 @@ package webhooks
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"sync"
 
-	"github.com/google/go-github/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -114,13 +111,8 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, &GitHubWebhook{WebhookRouter: wh})
 			return
 		case extsvc.KindGitLab:
-			if secret != "" {
-				_, err := gitlabValidatePayload(r, secret)
-				if err != nil {
-					http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-					return
-				}
-			}
+			wh.handleGitLabWebHook(w, r, webhook.CodeHostURN, secret)
+			return
 		case extsvc.KindBitbucketServer:
 			// TODO: handle Bitbucket Server secret verification
 		case extsvc.KindBitbucketCloud:
@@ -129,42 +121,6 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
 	})
-}
-
-func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
-	glSecret := r.Header.Get("X-Gitlab-Token")
-	if glSecret != secret {
-		return nil, errors.New("secrets don't match!")
-	}
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	return body, nil
-}
-
-func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string, gh *GitHubWebhook) {
-	if secret == "" {
-		payload, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
-			return
-		}
-
-		gh.HandleWebhook(w, r, urn, payload)
-		return
-	}
-
-	payload, err := github.ValidatePayload(r, []byte(secret))
-	if err != nil {
-		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-		return
-	}
-
-	gh.HandleWebhook(w, r, urn, payload)
 }
 
 // Dispatch accepts an event for a particular event type and dispatches it
