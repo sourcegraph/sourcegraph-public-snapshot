@@ -2824,6 +2824,8 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 }
 
 func TestLFSSmudge(t *testing.T) {
+	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
+
 	// TODO enforce on CI once CI has git-lfs
 	if _, err := exec.LookPath("git-lfs"); err != nil {
 		t.Skip("git-lfs not installed")

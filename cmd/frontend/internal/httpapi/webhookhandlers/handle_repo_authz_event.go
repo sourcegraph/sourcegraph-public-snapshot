@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,8 +21,8 @@ import (
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn string, payload any) error {
-	return func(ctx context.Context, db database.DB, urn string, payload any) error {
+func handleGitHubRepoAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}

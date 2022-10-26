@@ -1074,6 +1074,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Timestamp that this series completed a full repository iteration for backfill. This flag has limited semantic value, and only means it tried to queue up queries for each repository. It does not guarantee success on those queries."
+        },
+        {
+          "Name": "supports_augmentation",
+          "Index": 22,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "true",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [

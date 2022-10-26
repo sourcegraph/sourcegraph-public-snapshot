@@ -238,7 +238,7 @@ func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer 
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: discovery.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},

@@ -1595,6 +1595,12 @@ CREATE TABLE codeintel_path_ranks (
     payload text NOT NULL
 );
 
+CREATE TABLE codeintel_ranking_exports (
+    upload_id integer NOT NULL,
+    graph_key text NOT NULL,
+    locked_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -1827,6 +1833,48 @@ CREATE SEQUENCE executor_heartbeats_id_seq
     CACHE 1;
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
+
+CREATE TABLE executor_secret_access_logs (
+    id integer NOT NULL,
+    executor_secret_id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE executor_secret_access_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secret_access_logs_id_seq OWNED BY executor_secret_access_logs.id;
+
+CREATE TABLE executor_secrets (
+    id integer NOT NULL,
+    key text NOT NULL,
+    value bytea NOT NULL,
+    scope text NOT NULL,
+    encryption_key_id text,
+    namespace_user_id integer,
+    namespace_org_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    creator_id integer
+);
+
+COMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';
+
+CREATE SEQUENCE executor_secrets_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secrets_id_seq OWNED BY executor_secrets.id;
 
 CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     id integer NOT NULL,
@@ -3561,7 +3609,8 @@ CREATE TABLE webhook_logs (
     status_code integer NOT NULL,
     request bytea NOT NULL,
     response bytea NOT NULL,
-    encryption_key_id text NOT NULL
+    encryption_key_id text NOT NULL,
+    webhook_id integer
 );
 
 CREATE SEQUENCE webhook_logs_id_seq
@@ -3675,6 +3724,10 @@ ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval('executor_secret_access_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
@@ -3856,6 +3909,9 @@ ALTER TABLE ONLY codeintel_lockfiles
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
 
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
+
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
 
@@ -3885,6 +3941,12 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
     ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
@@ -4233,6 +4295,12 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE ((namespace_user_id IS NULL) AND (namespace_org_id IS NULL));
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE (namespace_org_id IS NOT NULL);
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE (namespace_user_id IS NOT NULL);
 
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
 
@@ -4657,6 +4725,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
@@ -4680,6 +4751,21 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
@@ -4860,6 +4946,9 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+ALTER TABLE ONLY webhook_logs
+    ADD CONSTRAINT webhook_logs_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
