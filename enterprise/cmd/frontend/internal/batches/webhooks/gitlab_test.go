@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -585,7 +586,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
 				err := h.handleEvent(ctx, db, event)
-                require.Error(t, err)
+				require.Error(t, err)
 			})
 		})
 
