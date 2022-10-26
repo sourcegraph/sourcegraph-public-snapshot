@@ -6,14 +6,14 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (h *WebhookRouter) HandleGitLabWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (h *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -32,7 +32,7 @@ func (h *WebhookRouter) HandleGitLabWebhook(w http.ResponseWriter, r *http.Reque
 			// We don't want to return a non-2XX status code and have GitLab
 			// retry the webhook, so we'll log that we don't know what to do
 			// and return 204.
-			log15.Debug("unknown object kind", "err", err)
+			logger.Debug("unknown object kind", log.Error(err))
 
 			// We don't use respond() here so that we don't log an error, since
 			// this really isn't one.
@@ -48,7 +48,7 @@ func (h *WebhookRouter) HandleGitLabWebhook(w http.ResponseWriter, r *http.Reque
 	// Route the request based on the event type.
 	err = h.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
 	if err != nil {
-		log15.Error("Error handling github webhook event", "error", err)
+		logger.Error("Error handling github webhook event", log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -69,7 +69,7 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	return body, nil
 }
 
-func (h *WebhookRouter) handleGitLabWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+func (h *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -77,7 +77,7 @@ func (h *WebhookRouter) handleGitLabWebHook(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		h.HandleGitLabWebhook(w, r, urn, payload)
+		h.HandleGitLabWebhook(logger, w, r, urn, payload)
 		return
 	}
 
@@ -87,5 +87,5 @@ func (h *WebhookRouter) handleGitLabWebHook(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	h.HandleGitLabWebhook(w, r, urn, payload)
+	h.HandleGitLabWebhook(logger, w, r, urn, payload)
 }

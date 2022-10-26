@@ -10,6 +10,7 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -23,6 +24,7 @@ type GitHubWebhook struct {
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logger := log.Scoped("ServeGitHubWebhook", "direct endpoint for github webhook")
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log15.Error("Error parsing github webhook event", "error", err)
@@ -62,10 +64,10 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.HandleWebhook(w, r, codeHostURN, body)
+	h.HandleWebhook(logger, w, r, codeHostURN, body)
 }
 
-func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, requestBody []byte) {
+func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, requestBody []byte) {
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -74,7 +76,7 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 	eventType := gh.WebHookType(r)
 	e, err := gh.ParseWebHook(eventType, requestBody)
 	if err != nil {
-		log15.Error("Error parsing github webhook event", "error", err)
+		logger.Error("Error parsing github webhook event", log.Error(err))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -82,7 +84,7 @@ func (h *GitHubWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
-		log15.Error("Error handling github webhook event", "error", err)
+		logger.Error("Error handling github webhook event", log.Error(err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -184,7 +186,7 @@ func validateAnyConfiguredSecret(c *schema.GitHubConnection, sig string, body []
 	return errors.Errorf("unable to validate webhook signature")
 }
 
-func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string, gh *GitHubWebhook) {
+func handleGitHubWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string, gh *GitHubWebhook) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -192,7 +194,7 @@ func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.Code
 			return
 		}
 
-		gh.HandleWebhook(w, r, urn, payload)
+		gh.HandleWebhook(logger, w, r, urn, payload)
 		return
 	}
 
@@ -202,5 +204,5 @@ func handleGitHubWebHook(w http.ResponseWriter, r *http.Request, urn extsvc.Code
 		return
 	}
 
-	gh.HandleWebhook(w, r, urn, payload)
+	gh.HandleWebhook(logger, w, r, urn, payload)
 }
