@@ -214,8 +214,10 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
 	// Hack: 500ms is a better default for this function. The original default of 0
-	// disables the flushCollectSender and offers no ranking at all. Once this
-	// function is not behind a feature flag anymore, we should update the default.
+	// disables the flushCollectSender and offers no ranking at all. For now
+	// StreamSearch and streamSearchExperimentalRanking share newRankingSiteConfig.
+	// Once this function is not behind a feature flag anymore, we should update the
+	// default.
 	if siteConfig.maxReorderDuration == 0 {
 		siteConfig.maxReorderDuration = 500 * time.Millisecond
 	}

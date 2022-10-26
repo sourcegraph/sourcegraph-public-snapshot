@@ -84,6 +84,7 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 
 	agg := c.aggregate
 	c.aggregate = nil
+	c.sizeBytes = 0
 
 	zoekt.SortFiles(agg.Files)
 
@@ -159,8 +160,13 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 				if agg, ok := collectSender.Done(); ok {
 					metricFinalAggregateSize.WithLabelValues("max_size_reached").Observe(float64(len(agg.Files)))
 					sender.Send(agg)
-					collectSender.sizeBytes = 0
 				}
+
+				// From now on use sender directly
+				collectSender = nil
+
+				// Stop timer goroutine if it is still running.
+				close(timerCancel)
 			}
 		} else {
 			sender.Send(event)
