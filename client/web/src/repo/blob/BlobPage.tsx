@@ -109,7 +109,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-
     const enableTokenKeyboardNavigation =
         props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
