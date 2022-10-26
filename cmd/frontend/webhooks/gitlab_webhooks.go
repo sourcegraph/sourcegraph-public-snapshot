@@ -6,25 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/sync/errgroup"
 )
 
 type GitLabWebhook Webhook
-
-var (
-	errExternalServiceNotFound     = errors.New("external service not found")
-	errExternalServiceWrongKind    = errors.New("external service is not of the expected kind")
-	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
-)
 
 func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
 
@@ -47,8 +38,8 @@ func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 		ObjectKind string `json:"object_kind"`
 	}
 	if err := json.Unmarshal(payload, &eventKind); err != nil {
-        http.Error(w, errors.Wrap(err, "determining object kind").Error(), http.StatusInternalServerError)
-        return
+		http.Error(w, errors.Wrap(err, "determining object kind").Error(), http.StatusInternalServerError)
+		return
 	}
 
 	event, err := webhooks.UnmarshalEvent(payload)
@@ -71,7 +62,7 @@ func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, co
 	}
 
 	// Route the request based on the event type.
-    err = h.Dispatch(ctx, eventKind.ObjectKind, codeHostURN, event)
+	err = h.Dispatch(ctx, eventKind.ObjectKind, codeHostURN, event)
 	if err != nil {
 		log15.Error("Error handling github webhook event", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -91,34 +82,4 @@ func (h *GitLabWebhook) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
-}
-
-// getExternalServiceFromRawID retrieves the external service matching the
-// given raw ID, which is usually going to be the string in the
-// externalServiceID URL parameter.
-//
-// On failure, errExternalServiceNotFound is returned if the ID doesn't match
-// any GitLab service.
-func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw string) (*types.ExternalService, error) {
-	id, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing the raw external service ID")
-	}
-
-	es, err := h.DB.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		IDs:   []int64{id},
-		Kinds: []string{extsvc.KindGitLab},
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing external services")
-	}
-
-	if len(es) == 0 {
-		return nil, errExternalServiceNotFound
-	} else if len(es) > 1 {
-		// This _really_ shouldn't happen, since we provided only one ID above.
-		return nil, errors.New("too many external services found")
-	}
-
-	return es[0], nil
 }

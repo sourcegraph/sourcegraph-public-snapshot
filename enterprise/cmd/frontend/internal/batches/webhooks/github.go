@@ -48,7 +48,7 @@ func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client) *Git
 func (h *GitHubWebhook) Register(router *webhooks.Webhook) {
 	router.Register(
 		h.handleGitHubWebhook,
-        extsvc.KindGitHub,
+		extsvc.KindGitHub,
 		githubEvents...,
 	)
 }

@@ -19,7 +19,7 @@ import (
 )
 
 type GitHubWebhook struct {
-    *Webhook
+	*Webhook
 }
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {

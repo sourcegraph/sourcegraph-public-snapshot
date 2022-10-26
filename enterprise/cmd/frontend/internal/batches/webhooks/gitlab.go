@@ -70,22 +70,22 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
 
-    rawConfig, err := extSvc.Config.Decrypt(r.Context())
-    if err != nil {
-        log15.Error("Could not decode external service config", "error", err)
-        http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-        return
-    }
-
-    config := &schema.GitLabConnection{}
-    err = json.Unmarshal([]byte(rawConfig), config)
+	rawConfig, err := extSvc.Config.Decrypt(r.Context())
 	if err != nil {
 		log15.Error("Could not decode external service config", "error", err)
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-    codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	config := &schema.GitLabConnection{}
+	err = json.Unmarshal([]byte(rawConfig), config)
+	if err != nil {
+		log15.Error("Could not decode external service config", "error", err)
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
+	}
+
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
 	if err != nil {
 		log15.Error("Could not parse code host URL from config", "error", err)
 		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)

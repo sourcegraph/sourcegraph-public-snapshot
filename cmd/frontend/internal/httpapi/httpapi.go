@@ -93,7 +93,7 @@ func NewHandler(
 	}
 	webhookhandlers.Init(db, &wh)
 	handlers.GitHubWebhook.Register(&wh)
-    handlers.GitLabWebhook.Register(&wh)
+	handlers.GitLabWebhook.Register(&wh)
 	ghSync := repos.GitHubWebhookHandler{}
 	ghSync.Register(&wh)
 
@@ -101,7 +101,7 @@ func NewHandler(
 	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
-    gitHubWebhook := webhooks.GitHubWebhook{Webhook: &wh}
+	gitHubWebhook := webhooks.GitHubWebhook{Webhook: &wh}
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
