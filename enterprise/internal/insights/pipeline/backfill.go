@@ -279,8 +279,7 @@ func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) Result
 			return reqContext, ctx.Err()
 		}
 		logger.Debug("writing search results")
-		// todo(leo): save recording times by parsing from points or passing into function.
-		err := insightStore.RecordSeriesPointsAndRecordingTimes(ctx, points, types.InsightSeriesRecordingTimes{})
+		err := insightStore.RecordSeriesPoints(ctx, points)
 		return reqContext, err
 	}
 
