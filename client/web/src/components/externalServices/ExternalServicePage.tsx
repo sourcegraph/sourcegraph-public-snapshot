@@ -360,12 +360,12 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         ]
     }, [node])
 
-    let runningStatuses = [
+    const runningStatuses = new Set<ExternalServiceSyncJobState> ([
         ExternalServiceSyncJobState.QUEUED,
         ExternalServiceSyncJobState.PROCESSING,
         ExternalServiceSyncJobState.CANCELING,
-    ]
-    const [isExpanded, setIsExpanded] = useState(runningStatuses.includes(node.state))
+    ])
+    const [isExpanded, setIsExpanded] = useState(runningStatuses.has(node.state))
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
@@ -399,7 +399,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         </>
                     )}
                 </div>
-                {runningStatuses.includes(node.state) && (
+                {runningStatuses.has(node.state) && (
                     <LoaderButton
                         label="Cancel"
                         alwaysShowLabel={true}
