@@ -204,7 +204,7 @@ func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
 				errMsg = err.Error()
 			}
 
-			tc.want.Equal(t, fmt.Sprintf("loading: %t error: %s", loadingResult, errMsg))
+			tc.want.Equal(t, fmt.Sprintf("loading:%t error:%s", loadingResult, errMsg))
 		})
 	}
 
