@@ -56,10 +56,8 @@ class LineFocus implements PluginValue {
 
         this.subscription.add(
             fromEvent<FocusEvent>(view.dom, 'focusin').subscribe(event => {
-                const currentFocus = event.target as HTMLElement | null
-
-                if (currentFocus) {
-                    const nearestLine = view.state.doc.lineAt(view.posAtDOM(currentFocus))
+                if (event.target instanceof HTMLElement) {
+                    const nearestLine = view.state.doc.lineAt(view.posAtDOM(event.target))
                     this.lastFocusedLine = nearestLine.number
                 }
             })
@@ -82,11 +80,13 @@ class LineFocus implements PluginValue {
 
     private focusLine({ line, preventScroll = true }: { line: number; preventScroll?: boolean }): void {
         const nextLine = this.view.state.doc.line(line)
-        const nextLineElement = this.view.domAtPos(nextLine.from).node as HTMLElement | null
-        if (nextLineElement) {
+        const nextLineElement = this.view.domAtPos(nextLine.from).node
+        if (nextLineElement instanceof HTMLElement) {
             this.lastFocusedLine = line
             window.requestAnimationFrame(() => {
-                nextLineElement.focus({ preventScroll })
+                if (document.activeElement !== nextLineElement && !this.view.dom.contains(document.activeElement)) {
+                    nextLineElement.focus({ preventScroll })
+                }
             })
         }
     }
