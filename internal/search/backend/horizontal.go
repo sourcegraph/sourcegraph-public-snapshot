@@ -220,7 +220,6 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 		siteConfig.maxReorderDuration = 500 * time.Millisecond
 	}
 
-	var mu sync.Mutex
 	flushCollectSender, flushAll := newFlushCollectSender(
 		&collectOpts{
 			maxDocDisplayCount: opts.MaxDocDisplayCount,
@@ -232,6 +231,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	defer flushAll()
 
 	// During re-balancing a repository can appear on more than one replica.
+	var mu sync.Mutex
 	dedupper := dedupper{}
 
 	// GobCache exists, so we only pay the cost of marshalling a query once
@@ -249,9 +249,8 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				}
 
 				mu.Lock()
-				defer mu.Unlock()
-
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+				mu.Unlock()
 
 				flushCollectSender.Send(sr)
 			}))
