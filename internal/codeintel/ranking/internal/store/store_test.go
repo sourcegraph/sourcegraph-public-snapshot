@@ -84,7 +84,7 @@ func TestDocumentRanks(t *testing.T) {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 	if err := store.SetDocumentRanks(ctx, repoName, map[string][]float64{
-		"cmd/args.go":        {7, 8, 9}, //new
+		"cmd/args.go":        {7, 8, 9}, // new
 		"internal/secret.go": {6, 7, 8}, // edited
 		"internal/util.go":   {5, 6, 7}, // edited
 	}); err != nil {
