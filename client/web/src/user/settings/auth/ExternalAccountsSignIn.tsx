@@ -24,16 +24,16 @@ interface GitLabExternalData {
     web_url: string
 }
 
-interface SamlExternalData {
-    Values: Map<string, Attribute>
+export interface SamlExternalData {
+    Values: object
 }
 
-interface Attribute {
+export interface Attribute {
     Name: string
     Values: AttributeValue[]
 }
 
-interface AttributeValue {
+export interface AttributeValue {
     Value: string
 }
 
@@ -57,10 +57,10 @@ interface Props {
 }
 
 // The data stored in user_external_account has this structure: "Values"["<attribute names for email or username>"] > "Values"[0] > "Value": string
-const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'emailaddress', '"http://schemas.xmlsoap.org/claims/EmailAddress'])
+const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'emailaddress', 'http://schemas.xmlsoap.org/claims/EmailAddress'])
 const usernameAttrs = new Set(['nickname', 'login', 'username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
 
-function getUsernameOrEmail(data: SamlExternalData): string {
+export function getUsernameOrEmail(data: SamlExternalData): string {
     let userNameOrEmail = ''
     if (data.Values) {
         const entries = Object.entries(data.Values)
@@ -74,7 +74,6 @@ function getUsernameOrEmail(data: SamlExternalData): string {
                 userNameOrEmail = attribute.Values.find((val: AttributeValue) =>
                     val.Value.includes('@')
                 )?.Value || ''
-                break
             }
         }
     }
