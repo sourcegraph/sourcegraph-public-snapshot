@@ -95,7 +95,7 @@ export function applyConfig(config: PluginConfig): void {
     customRequestHeaders = parseCustomRequestHeadersString(config.customRequestHeadersAsString)
     anonymousUserId = config.anonymousUserId || 'no-user-id'
     pluginVersion = config.pluginVersion
-    polyfillEventSource({ ...(accessToken ? { Authorization: `token ${accessToken}` } : {}), ...customRequestHeaders })
+    polyfillEventSource({ ...(accessToken ? { Authorization: `token ${accessToken}` } : {}), ...customRequestHeaders }, undefined)
 }
 
 function parseCustomRequestHeadersString(headersString: string | null): Record<string, string> | null {

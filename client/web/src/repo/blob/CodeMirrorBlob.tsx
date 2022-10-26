@@ -40,6 +40,10 @@ const staticExtensions: Extension = [
         // triggering the in-document search (see below) work when Mod-f is
         // pressed
         tabindex: '0',
+        // CodeMirror defaults to role="textbox" which does not produce the
+        // desired screenreader behavior we want for this component.
+        // See https://github.com/sourcegraph/sourcegraph/issues/43375
+        role: 'generic',
     }),
     editorHeight({ height: '100%' }),
     EditorView.theme({

@@ -4,6 +4,7 @@ import * as vscode from 'vscode'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
+import { getProxyAgent } from '../backend/fetch'
 import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
 import { initializeCodeIntel } from '../code-intel/initialize'
 import { ExtensionCoreAPI } from '../contract'
@@ -65,7 +66,8 @@ export function registerWebviews({
             if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
                 const newCustomHeaders = endpointRequestHeadersSetting()
                 polyfillEventSource(
-                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {}
+                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {},
+                    getProxyAgent()
                 )
             }
         })

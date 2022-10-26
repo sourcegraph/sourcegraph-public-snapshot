@@ -84,10 +84,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
-# TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
-# This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
-- filename: internal/codeintel/autoindexing/internal/background/mocks_storeworker_test.go
-  sources:
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
@@ -152,21 +148,16 @@
         - GitserverClient
         - PolicyService
         - PolicyMatcher
+    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
+      interfaces:
+        - Store
+      prefix: Worker
 - filename: internal/codeintel/uploads/internal/background/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background
       interfaces:
         - UploadService
         - GitserverClient
-
-# TODO - cannot merge with the one above because 'Store' is looked for in multiple packages.
-# This is a deficiency of go-mockgen filed in https://github.com/derision-test/go-mockgen/issues/36.
-- filename: internal/codeintel/uploads/mocks2_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
 - filename: internal/database/migration/runner/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
@@ -232,3 +223,41 @@
     - path: github.com/sourcegraph/sourcegraph/internal/conf/conftypes
       interfaces:
         - SiteConfigQuerier
+- filename: cmd/frontend/internal/auth/userpasswd/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
+  interfaces:
+    - LockoutStore
+- filename: internal/codeintel/shared/resolvers/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers
+  interfaces:
+    - UploadsService
+    - AutoIndexingService
+  package: sharedresolvers
+- filename: internal/codeintel/uploads/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
+  interfaces:
+    - AutoIndexingService
+    - UploadService
+    - PolicyService
+- filename: internal/codeintel/autoindexing/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql
+  interfaces:
+    - AutoIndexingService
+    - UploadsService
+    - PolicyService
+- filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
+  interfaces:
+    - AutoIndexingService
+    - UploadsService
+    - PolicyService
+    - GitserverClient
+    - CodeNavService
+- filename: enterprise/internal/insights/background/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
+  interfaces:
+    - RepoStore
+- filename: enterprise/internal/insights/compression/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression
+  interfaces:
+    - CommitStore
