@@ -62,11 +62,6 @@
         "category": "Sourcegraph",
         "title": "Remove Repository from Sourcegraph File System",
         "icon": "$(trash)"
-      },
-      {
-        "command": "sourcegraph.auth",
-        "category": "Sourcegraph",
-        "title": "Log in to Sourcegraph"
       }
     ],
     "authentication": [
@@ -168,6 +163,43 @@
           "examples": [
             "/Users/USERNAME/Documents/"
           ]
+        },
+        "sourcegraph.proxyProtocol": {
+          "description": "The protocol to use when proxying requests to the Sourcegraph instance.",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "http",
+            "https"
+          ]
+        },
+        "sourcegraph.proxyHost": {
+          "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "localhost",
+            "1.2.3.4"
+          ]
+        },
+        "sourcegraph.proxyPort": {
+          "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
+          "type": "number",
+          "default": 0,
+          "examples": [
+            80,
+            443,
+            7080,
+            9090
+          ]
+        },
+        "sourcegraph.proxyPath": {
+          "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
+          "type": "string",
+          "default": "",
+          "examples": [
+            "/home/user/path/unix.socket"
+          ]
         }
       }
     },
@@ -232,7 +264,6 @@
     "package": "yarn run -T ts-node ./scripts/package.ts",
     "prebuild": "yarn build-inline-extensions",
     "prewatch": "yarn build-inline-extensions",
-    "vscode:prepublish": "yarn build-inline-extensions && yarn build",
     "build-inline-extensions": "node scripts/build-inline-extensions",
     "task:gulp": "yarn run -T cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "build:esbuild": "NODE_ENV=development yarn task:gulp esbuild",
@@ -252,5 +283,8 @@
     "release:minor": "VSCE_RELEASE_TYPE=minor yarn run -T ts-node ./scripts/release.ts",
     "release:patch": "VSCE_RELEASE_TYPE=patch yarn run -T ts-node ./scripts/release.ts",
     "release:pre": "VSCE_RELEASE_TYPE=prerelease yarn run -T ts-node ./scripts/release.ts"
+  },
+  "devDependencies": {
+    "vsce": "^2.7.0"
   }
 }

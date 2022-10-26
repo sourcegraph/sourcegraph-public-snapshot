@@ -13,7 +13,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 import { getUser, setTosAccepted } from './util/api'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import {
-    ensureLoggedInOrCreateTestUser,
+    ensureSignedInOrCreateTestUser,
     // getGlobalSettings
 } from './util/helpers'
 import { getTestTools } from './util/init'
@@ -44,7 +44,7 @@ describe('Core functionality regression test suite', () => {
         resourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,

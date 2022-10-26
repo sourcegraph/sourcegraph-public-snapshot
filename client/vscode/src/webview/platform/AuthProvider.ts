@@ -4,7 +4,7 @@ import {
     AuthenticationProvider,
     AuthenticationProviderAuthenticationSessionsChangeEvent,
     AuthenticationSession,
-    ConfigurationTarget,
+    commands,
     Disposable,
     Event,
     EventEmitter,
@@ -13,10 +13,10 @@ import {
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 
-import { endpointRequestHeadersSetting, endpointSetting } from '../../settings/endpointSetting'
-import { readConfiguration } from '../../settings/readConfiguration'
+import { getProxyAgent } from '../../backend/fetch'
+import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from '../../settings/endpointSetting'
 
-export const scretTokenKey = new URL(endpointSetting()).hostname
+export const scretTokenKey = 'SOURCEGRAPH_AUTH'
 
 class SourcegraphAuthSession implements AuthenticationSession {
     public readonly account = {
@@ -25,6 +25,7 @@ class SourcegraphAuthSession implements AuthenticationSession {
     }
     public readonly id = SourcegraphAuthProvider.id
     public readonly scopes = []
+
     constructor(public readonly accessToken: string) {}
 }
 
@@ -84,7 +85,10 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         await this.cacheTokenFromStorage()
         // Update the polyfillEventSource on token changes
         polyfillEventSource(
-            this.currentToken ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() } : {}
+            this.currentToken
+                ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() }
+                : {},
+            getProxyAgent()
         )
         this._onDidChangeSessions.fire({ added, removed, changed })
     }
@@ -126,14 +130,26 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
     }
 }
 
-// Call this function only once when extention is first activated
-export async function processOldToken(secretStorage: SecretStorage): Promise<void> {
-    // Process the token that lives in user configuration
-    // Move them to secrets and then remove them by setting it as undefined
-    const oldToken = readConfiguration().get<string>('accessToken')
-    if (oldToken && oldToken !== undefined) {
-        await secretStorage.store(scretTokenKey, oldToken)
-        await readConfiguration().update('accessToken', undefined, ConfigurationTarget.Global)
-        await readConfiguration().update('accessToken', undefined, ConfigurationTarget.Workspace)
+export class SourcegraphAuthActions {
+    private currentEndpoint = endpointSetting()
+
+    constructor(private readonly secretStorage: SecretStorage) {}
+
+    public async login(newtoken: string, newuri: string): Promise<void> {
+        try {
+            await this.secretStorage.store(scretTokenKey, newtoken)
+            if (this.currentEndpoint !== newuri) {
+                await setEndpoint(newuri)
+            }
+            return
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(scretTokenKey)
+        await commands.executeCommand('workbench.action.reloadWindow')
+        return
     }
 }

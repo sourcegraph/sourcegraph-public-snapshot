@@ -51,7 +51,7 @@ func TestQuoteEnv(t *testing.T) {
 		},
 		{
 			in:   []string{"FOO=bar foo bar"},
-			want: []string{`FOO="bar foo bar"`},
+			want: []string{`FOO='bar foo bar'`},
 		},
 
 		{
@@ -60,15 +60,15 @@ func TestQuoteEnv(t *testing.T) {
 		},
 		{
 			in:   []string{"HOME=compute r", "FOO=bar foo bar"},
-			want: []string{`HOME="compute r"`, `FOO="bar foo bar"`},
+			want: []string{`HOME='compute r'`, `FOO='bar foo bar'`},
 		},
 		{
 			in:   []string{"FOO=bar -e 31337=H4XX0R"},
-			want: []string{`FOO="bar -e 31337=H4XX0R"`},
+			want: []string{`FOO='bar -e 31337=H4XX0R'`},
 		},
 		{
 			in:   []string{`FOO=bar -e "shell-h4xx0r"`},
-			want: []string{`FOO="bar -e \"shell-h4xx0r\""`},
+			want: []string{`FOO='bar -e "shell-h4xx0r"'`},
 		},
 	}
 

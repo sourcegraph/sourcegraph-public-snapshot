@@ -139,6 +139,7 @@ Foreign-key constraints:
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
+    "batch_spec_resolution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
@@ -1135,6 +1136,52 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 
 **src_cli_version**: The version of src-cli used by the executor.
 
+# Table "public.executor_secret_access_logs"
+```
+       Column       |           Type           | Collation | Nullable |                         Default                         
+--------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                 | integer                  |           | not null | nextval('executor_secret_access_logs_id_seq'::regclass)
+ executor_secret_id | integer                  |           | not null | 
+ user_id            | integer                  |           | not null | 
+ created_at         | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_secret_access_logs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "executor_secret_access_logs_executor_secret_id_fkey" FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE
+    "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+# Table "public.executor_secrets"
+```
+      Column       |           Type           | Collation | Nullable |                   Default                    
+-------------------+--------------------------+-----------+----------+----------------------------------------------
+ id                | integer                  |           | not null | nextval('executor_secrets_id_seq'::regclass)
+ key               | text                     |           | not null | 
+ value             | bytea                    |           | not null | 
+ scope             | text                     |           | not null | 
+ encryption_key_id | text                     |           |          | 
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ creator_id        | integer                  |           |          | 
+Indexes:
+    "executor_secrets_pkey" PRIMARY KEY, btree (id)
+    "executor_secrets_unique_key_global" UNIQUE, btree (key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL
+    "executor_secrets_unique_key_namespace_org" UNIQUE, btree (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL
+    "executor_secrets_unique_key_namespace_user" UNIQUE, btree (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL
+Foreign-key constraints:
+    "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    "executor_secrets_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "executor_secret_access_logs" CONSTRAINT "executor_secret_access_logs_executor_secret_id_fkey" FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE
+
+```
+
+**creator_id**: NULL, if the user has been deleted.
+
 # Table "public.explicit_permissions_bitbucket_projects_jobs"
 ```
        Column        |           Type           | Collation | Nullable |                                 Default                                  
@@ -1359,6 +1406,7 @@ Referenced by:
  cancel            | boolean                  |           | not null | false
 Indexes:
     "gitserver_relocator_jobs_pkey" PRIMARY KEY, btree (id)
+    "gitserver_relocator_jobs_state" btree (state)
 
 ```
 
@@ -1620,6 +1668,7 @@ A lookup table to get all the repository patterns by repository id that apply to
  cancel                | boolean                  |           | not null | false
 Indexes:
     "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
+    "lsif_dependency_indexing_jobs_state" btree (state)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1664,6 +1713,7 @@ Indexes:
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
+    "lsif_dependency_syncing_jobs_state" btree (state)
 Foreign-key constraints:
     "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
@@ -1744,6 +1794,7 @@ Stores the configuration used for code intel index jobs for a repository.
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
+ should_reindex         | boolean                  |           | not null | false
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1961,6 +2012,7 @@ Stores the retention policy of code intellience data for a repository.
  cancel                  | boolean                  |           | not null | false
  uncompressed_size       | bigint                   |           |          | 
  last_referenced_scan_at | timestamp with time zone |           |          | 
+ last_traversal_scan_at  | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2000,6 +2052,8 @@ Stores metadata about an LSIF index uploaded by a user.
 **last_referenced_scan_at**: The last time this upload was known to be referenced by another (possibly expired) index.
 
 **last_retention_scan_at**: The last time this upload was checked against data retention policies.
+
+**last_traversal_scan_at**: The last time this upload was known to be reachable by a non-expired index.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
@@ -2263,6 +2317,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -3015,6 +3070,9 @@ Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "executor_secret_access_logs" CONSTRAINT "executor_secret_access_logs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
+    TABLE "executor_secrets" CONSTRAINT "executor_secrets_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -3086,6 +3144,7 @@ Triggers:
  extsvc_id         | integer                  |           |          | 
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
+    "webhook_build_jobs_state" btree (state)
 
 ```
 
@@ -3100,6 +3159,7 @@ Indexes:
  request             | bytea                    |           | not null | 
  response            | bytea                    |           | not null | 
  encryption_key_id   | text                     |           | not null | 
+ webhook_id          | integer                  |           |          | 
 Indexes:
     "webhook_logs_pkey" PRIMARY KEY, btree (id)
     "webhook_logs_external_service_id_idx" btree (external_service_id)
@@ -3107,6 +3167,7 @@ Indexes:
     "webhook_logs_status_code_idx" btree (status_code)
 Foreign-key constraints:
     "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "webhook_logs_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
 
 ```
 
@@ -3130,6 +3191,8 @@ Indexes:
 Foreign-key constraints:
     "webhooks_created_by_user_id_fkey" FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL
     "webhooks_updated_by_user_id_fkey" FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "webhook_logs" CONSTRAINT "webhook_logs_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
 
 ```
 
@@ -3351,6 +3414,7 @@ Webhooks registered in Sourcegraph instance.
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))

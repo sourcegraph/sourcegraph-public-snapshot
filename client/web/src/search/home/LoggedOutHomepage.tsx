@@ -14,8 +14,8 @@ import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
 import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
-import { SelfHostInstructions } from './SelfHostInstructions'
 import { TipsAndTricks } from './TipsAndTricks'
+import { TrySourcegraphCloudSection } from './TrySourcegraphCloudSection'
 
 import styles from './LoggedOutHomepage.module.scss'
 
@@ -31,13 +31,23 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                     telemetryService={props.telemetryService}
                     isSourcegraphDotCom={true}
                 />
+                <TipsAndTricks
+                    title="Tips and Tricks"
+                    examples={exampleTripsAndTricks}
+                    moreLink={{
+                        label: 'More search features',
+                        href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                        trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
+                    }}
+                    {...props}
+                />
+
                 <div className={styles.videoCard}>
                     <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
                     <ModalVideo
                         id="three-ways-to-search-title"
                         title="Three ways to search"
                         src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                        showCaption={true}
                         thumbnail={{
                             src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
                             alt: 'Watch and learn video thumbnail',
@@ -50,17 +60,10 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                         assetsRoot={window.context?.assetsRoot || ''}
                     />
                 </div>
+            </div>
 
-                <TipsAndTricks
-                    title="Tips and Tricks"
-                    examples={exampleTripsAndTricks}
-                    moreLink={{
-                        label: 'More search features',
-                        href: 'https://docs.sourcegraph.com/code_search/explanations/features',
-                        trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
-                    }}
-                    {...props}
-                />
+            <div className={styles.trySourcegraphCloudSection}>
+                <TrySourcegraphCloudSection />
             </div>
 
             <div className={styles.heroSection}>
@@ -97,10 +100,6 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                         </div>
                     ))}
                 </div>
-            </div>
-
-            <div className={styles.selfHostSection}>
-                <SelfHostInstructions {...props} />
             </div>
 
             <div className={styles.customerSection}>

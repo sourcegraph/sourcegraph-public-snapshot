@@ -95,6 +95,10 @@ func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
 func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
 }
+func (i insightStatusResolver) IsLoadingData() (*bool, error) {
+	loading := i.backfillQueuedAt == nil || i.pendingJobs > 0
+	return &loading, nil
+}
 
 func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
 	return &insightStatusResolver{
@@ -240,6 +244,8 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
+	opts.ID = &definition.InsightSeriesID
+	opts.SupportsAugmentation = definition.SupportsAugmentation
 
 	// Default to last 12 points of data
 	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
@@ -313,6 +319,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	}
 	end = time.Now()
 	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+
 	return points, err
 }
 

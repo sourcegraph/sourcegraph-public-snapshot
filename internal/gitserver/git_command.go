@@ -154,7 +154,7 @@ func (l *LocalGitCommand) EnsureRevision() string { return l.ensureRevision }
 func (l *LocalGitCommand) SetStdin(b []byte) { l.stdin = b }
 
 func (l *LocalGitCommand) StdoutReader(ctx context.Context) (io.ReadCloser, error) {
-	output, err := l.CombinedOutput(ctx)
+	output, err := l.Output(ctx)
 	return io.NopCloser(bytes.NewReader(output)), err
 }
 

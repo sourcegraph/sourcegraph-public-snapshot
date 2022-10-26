@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -34,9 +34,10 @@ type baseInsightResolver struct {
 	timeSeriesStore *store.Store
 	dashboardStore  *store.DBDashboardStore
 	workerBaseStore *basestore.Store
+	scheduler       *scheduler.Scheduler
 
 	// including the DB references for any one off stores that may need to be created.
-	insightsDB dbutil.DB
+	insightsDB edb.InsightsDB
 	postgresDB database.DB
 }
 
@@ -44,6 +45,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
+	scheduler := scheduler.NewScheduler(insightsDB)
 	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
 
 	return &baseInsightResolver{
@@ -51,6 +53,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 		timeSeriesStore: timeSeriesStore,
 		dashboardStore:  dashboardStore,
 		workerBaseStore: workerBaseStore,
+		scheduler:       scheduler,
 		insightsDB:      insightsDB,
 		postgresDB:      primaryDB,
 	}
@@ -62,7 +65,6 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
-	backfiller           *background.ScopedBackfiller
 	insightEnqueuer      *background.InsightEnqueuer
 
 	baseInsightResolver
@@ -83,7 +85,6 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore),
 	}
 }

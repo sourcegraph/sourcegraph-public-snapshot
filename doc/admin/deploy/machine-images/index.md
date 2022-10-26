@@ -6,13 +6,29 @@ All Sourcegraph image instances are deployed into a single K3s server cluster, r
 
 This deployment method is highly recommended for customers who do not wish to spend too much time on looking for the right configurations and maintenance, while still having full control over their instances. The Sourcegraph image instances also provide high-availability and flexibility in resource usage, with the capability for scaling and making additional customizations easy whenever your needs have changed, by simply adjusting the worker/agent nodes, while still being on a single node environment. See the official K3s docs to learn more about [the architecture of a K3s server](https://docs.k3s.io/architecture). 
 
-Most importantly, everything we use to build and publish the images can be found in our [public deployment repository](https://sourcegraph.com/github.com/sourcegraph/deploy) so that you can oversee our image creation and development process. For example, Sourcegraph images for Google Compute Engine and Azure are currently in development, and you are also welcome to check out and follow our progress and updates there.
+Most importantly, everything we use to build and publish the images can be found in our [public deployment repository](https://sourcegraph.com/github.com/sourcegraph/deploy) so that you can oversee our image creation and development process. You are also welcome to check out and follow our progress and updates there.
 
 Our deployment and release process is also documented in the [deployment docs](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/doc/development.md). 
 
-All Sourcegraph machine images are free to download, and we strongly encourage you to spin up a Sourcegraph AMI instance to experiment with.
+All Sourcegraph machine images are free to download, and we strongly encourage you to spin up a Sourcegraph AMI instance to experiment with. They are currently available in the following formats:
 
-## Sourcegraph AWS AMI Instances
+<div class="getting-started">
+  <a class="btn btn-primary text-center" href="aws-ami"><span>AWS AMIs</span></a>
+  <a class="btn btn-primary text-center" href="azure"><span>Azure Images</span></a>
+  <a class="btn btn-primary text-center" href="gce"><span>Google Compute Images</span></a>
+</div>
+
+## Sourcegraph Machine Image Instance Overview
+
+- Self-hosted
+- Single node
+- Preconfigured according to your business size
+- Deployed with our [Helm Charts](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-helm) to a K3s, a highly available lightweight Kubernetes distribution cluster, using the containerd run time with built-in ingress, load balancer provider, and local storage provisioner ([Click here for the full K3s dependency list](https://sourcegraph.com/github.com/k3s-io/k3s#what-is-this))
+- Easy to maintain and configure
+- Supports all Sourcegraph features
+- Ability to perform upgrades easily with or without SSH access
+
+### Sourcegraph AWS AMI Instances
 
 All AMI instances are currently pinned with a Sourcegraph version that the instance is launched with to ensure restarting the instance will not cause upgrades accidentally. The version number is saved into a text file on both the root (file path: /home/ec2-user/.sourcegraph-version) and data volumes (file path: /mnt/data/.sourcegraph-version) where it will be read by the [reboot script](https://sourcegraph.com/github.com/sourcegraph/deploy@v4.0.1/-/blob/install/reboot.sh) on each reboot. Upgrades will only happen on reboot if the version numbers from both volumes are different.
 
@@ -70,7 +86,7 @@ Sourcegraph does not have access to your cluster and data.
 
 #### Network and Security
 
-![ami-diagram](https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png)
+<img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/195904844-9257c7cd-f9b2-4d15-9c7f-a2d66a42c5df.png" alt="ami-diagram"/>
 
 - K3s exposes the kubelet API to the Kubernetes control plane node through a websocket tunnel in order to eliminate the need to expose extra ports on the worker nodes.
 - No ingress requirements which allow cluster owners to restrict inbound traffic to only traffic within their network

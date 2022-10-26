@@ -163,7 +163,7 @@ export const VsCodeSignUpPage: React.FunctionComponent<React.PropsWithChildren<P
                     </small>
                     <hr className={styles.separator} />
                     <div>
-                        Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                        Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                     </div>
                 </div>
             </div>

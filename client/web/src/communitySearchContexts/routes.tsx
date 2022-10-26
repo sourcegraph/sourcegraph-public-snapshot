@@ -25,7 +25,10 @@ const StanfordCommunitySearchContextPage = lazyComponent(
 )
 const CncfCommunitySearchContextPage = lazyComponent(() => import('./cncf'), 'CncfCommunitySearchContextPage')
 const JuliaCommunitySearchContextPage = lazyComponent(() => import('./Julia'), 'JuliaCommunitySearchContextPage')
-const BackstageCommunitySearchContextPage = lazyComponent(() => import('./Backstage'), 'BackstageCommunitySearchContextPage')
+const BackstageCommunitySearchContextPage = lazyComponent(
+    () => import('./Backstage'),
+    'BackstageCommunitySearchContextPage'
+)
 
 // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
 export const communitySearchContextsRoutes: readonly LayoutRouteProps<any>[] = [

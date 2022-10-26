@@ -204,7 +204,7 @@ export class Driver {
         }
     }
 
-    public async ensureLoggedIn({
+    public async ensureSignedIn({
         username,
         password,
         email,

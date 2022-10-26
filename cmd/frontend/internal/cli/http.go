@@ -108,16 +108,12 @@ func newExternalHTTPHandler(
 	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
-	// OverrideAuthMiddleware allows us to inject an authentication token via an
-	// environment variable, for testing. This is true only when a site-config
-	// change is explicitly made, to enable this token.
 	h = middleware.Trace(h)
 	h = gcontext.ClearHandler(h)
 	h = healthCheckMiddleware(h)
 	h = middleware.BlackHole(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("external", h)
 
