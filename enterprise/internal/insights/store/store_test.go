@@ -704,7 +704,7 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 		t.Errorf("expected second series to have id 2")
 	}
 
-	MakeRecordings := func(times []time.Time, snapshot bool) []types.RecordingTime {
+	makeRecordings := func(times []time.Time, snapshot bool) []types.RecordingTime {
 		recordings := make([]types.RecordingTime, 0, len(times))
 		for _, t := range times {
 			recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: t})
@@ -716,11 +716,11 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 	series2Times := []time.Time{now, now.AddDate(0, 1, 1), now.AddDate(0, -1, 1)}
 	series1 := types.InsightSeriesRecordingTimes{
 		1,
-		MakeRecordings(series1Times, false),
+		makeRecordings(series1Times, false),
 	}
 	series2 := types.InsightSeriesRecordingTimes{
 		2,
-		MakeRecordings(series2Times, false),
+		makeRecordings(series2Times, false),
 	}
 
 	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
@@ -755,12 +755,12 @@ func TestInsightSeriesRecordingTimes(t *testing.T) {
 			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{1, MakeRecordings([]time.Time{now}, true)},
+			insert: &types.InsightSeriesRecordingTimes{1, makeRecordings([]time.Time{now}, true)},
 			getFor: 1,
 			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
 		},
 		{
-			insert: &types.InsightSeriesRecordingTimes{2, MakeRecordings([]time.Time{now.Local()}, true)},
+			insert: &types.InsightSeriesRecordingTimes{2, makeRecordings([]time.Time{now.Local()}, true)},
 			getFor: 2,
 			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
 		},

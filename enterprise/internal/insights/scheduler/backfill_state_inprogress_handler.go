@@ -8,7 +8,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
@@ -42,7 +41,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	task := inProgressHandler{
 		workerStore:    workerStore,
 		backfillStore:  backfillStore,
-		seriesReader:   store.NewInsightStore(config.InsightsDB),
+		seriesReader:   store.NewInsightStore(db),
 		insightsStore:  config.InsightStore,
 		backfillRunner: config.BackfillRunner,
 		repoStore:      config.RepoStore,
@@ -126,11 +125,10 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		}
 	}
 
-	recordingTimes := timeseries.GetRecordingTimesFromFrames(frames)
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, []itypes.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  background.MakeRecordings(recordingTimes, false),
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		},
 	}); err != nil {
 		return err

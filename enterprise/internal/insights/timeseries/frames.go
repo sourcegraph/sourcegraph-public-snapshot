@@ -40,3 +40,11 @@ func GetRecordingTimesFromFrames(frames []types.Frame) []time.Time {
 	}
 	return recordingTimes
 }
+
+func MakeRecordingsFromFrames(frames []types.Frame, snapshot bool) []types.RecordingTime {
+	recordings := make([]types.RecordingTime, 0, len(frames))
+	for _, frame := range frames {
+		recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: frame.From})
+	}
+	return recordings
+}
