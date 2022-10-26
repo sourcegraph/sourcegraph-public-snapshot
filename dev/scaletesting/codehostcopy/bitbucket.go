@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/codehostcopy/bitbucket"
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -53,7 +54,7 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 	return nil, errors.New("no https url found")
 }
 
-func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	bt.logger.Info("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
 	if err != nil {
@@ -62,7 +63,7 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 
 	bt.logger.Info("fetched list of repos", log.Int("repos", len(repos)))
 
-	results := make([]*Repo, 0, len(repos))
+	results := make([]*store.Repo, 0, len(repos))
 	for _, r := range repos {
 		cloneUrl, err := getCloneUrl(r)
 		if err != nil {
@@ -71,9 +72,9 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*Repo, error) {
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
-		results = append(results, &Repo{
-			Name:       fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
-			FromGitURL: cloneUrl.String(),
+		results = append(results, &store.Repo{
+			Name:   fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
+			GitURL: cloneUrl.String(),
 		})
 	}
 
