@@ -15,6 +15,9 @@ import (
 )
 
 var (
+	searcherURLsOnce sync.Once
+	searcherURLs     *endpoint.Map
+
 	indexedSearchOnce sync.Once
 	indexedSearch     zoekt.Streamer
 
@@ -28,9 +31,12 @@ var (
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
 
 func SearcherURLs() *endpoint.Map {
-	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-		return conns.Searchers
+	searcherURLsOnce.Do(func() {
+		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+			return conns.Searchers
+		})
 	})
+	return searcherURLs
 }
 
 func Indexed() zoekt.Streamer {
