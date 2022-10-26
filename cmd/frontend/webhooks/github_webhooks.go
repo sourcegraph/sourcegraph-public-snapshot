@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
@@ -59,17 +58,16 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	SetExternalServiceID(r.Context(), extSvc.ID)
 
-	rawConfig, err := extSvc.Config.Decrypt(r.Context())
+	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
 		log15.Error("Could not decode external service config", "error", err)
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-	config := &schema.GitHubConnection{}
-	err = json.Unmarshal([]byte(rawConfig), config)
-	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
+	config, ok := c.(*schema.GitHubConnection)
+	if !ok {
+		log15.Error("External service config is not a GitHub config")
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
