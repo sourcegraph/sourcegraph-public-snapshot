@@ -31,17 +31,23 @@ class LineFocus implements PluginValue {
                         ? Math.max(1, this.lastFocusedLine - 1)
                         : Math.min(this.lastFocusedLine + 1, view.state.doc.lines)
 
-                this.focusLine(nextLine)
+                // Allow scroll behavior here so that the line is always visible
+                this.focusLine({ line: nextLine, preventScroll: false })
+
+                // Update the current selection to easily allow copying the current text
+                view.dispatch({ selection: { anchor: view.state.doc.line(nextLine).from } })
             })
 
         this.subscription.add(
             fromEvent<KeyboardEvent>(view.dom, 'keydown')
                 .pipe(filter(event => event.key === 'Enter'))
                 .subscribe(event => {
-                    const isLink = event.target instanceof HTMLAnchorElement
-                    if (!isLink) {
+                    const hasAction =
+                        event.target instanceof HTMLAnchorElement || event.target instanceof HTMLButtonElement
+                    if (!hasAction) {
                         view.dispatch({
                             effects: setSelectedLines.of({ line: this.lastFocusedLine }),
+                            selection: { anchor: view.state.doc.line(this.lastFocusedLine).from },
                         })
                         onSelection({ line: this.lastFocusedLine })
                     }
@@ -64,9 +70,9 @@ class LineFocus implements PluginValue {
         const currentSelectedLine = update.state.field(selectedLines)?.line
         if (currentSelectedLine && this.lastSelectedLine !== currentSelectedLine) {
             this.lastSelectedLine = currentSelectedLine
-            this.focusLine(currentSelectedLine)
+            this.focusLine({ line: currentSelectedLine })
         } else {
-            this.focusLine(this.lastFocusedLine)
+            this.focusLine({ line: this.lastFocusedLine })
         }
     }
 
@@ -74,13 +80,13 @@ class LineFocus implements PluginValue {
         this.subscription.unsubscribe()
     }
 
-    private focusLine(lineNumber: number): void {
-        const nextLine = this.view.state.doc.line(lineNumber)
+    private focusLine({ line, preventScroll = true }: { line: number; preventScroll?: boolean }): void {
+        const nextLine = this.view.state.doc.line(line)
         const nextLineElement = this.view.domAtPos(nextLine.from).node as HTMLElement | null
         if (nextLineElement) {
-            this.lastFocusedLine = lineNumber
+            this.lastFocusedLine = line
             window.requestAnimationFrame(() => {
-                nextLineElement.focus()
+                nextLineElement.focus({ preventScroll })
             })
         }
     }
