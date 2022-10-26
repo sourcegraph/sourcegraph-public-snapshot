@@ -34,6 +34,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Remove the older `log.gitserver.accessLogs` site config setting. The setting is succeeded by `log.auditLog.gitserverAccess`. [#43174](https://github.com/sourcegraph/sourcegraph/pull/43174)
 - Remove `LOG_ALL_GRAPHQL_REQUESTS` env var. The setting is succeeded by `log.auditLog.graphQL`. [#43181](https://github.com/sourcegraph/sourcegraph/pull/43181)
 
+## 4.1.1
+
+### Fixed
+
+- Fixed a bug with normalizing the `published` draft value for `changeset_specs`. [#43390](https://github.com/sourcegraph/sourcegraph/pull/43390)
+
 ## 4.1.0
 
 ### Added
