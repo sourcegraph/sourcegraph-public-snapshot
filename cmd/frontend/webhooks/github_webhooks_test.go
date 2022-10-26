@@ -31,7 +31,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called = true
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
 	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
@@ -43,7 +43,7 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
-    h := GitHubWebhook{Webhook: &Webhook{}}
+	h := GitHubWebhook{Webhook: &Webhook{}}
 	ctx := context.Background()
 	// no op
 	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
@@ -59,11 +59,11 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
 	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
@@ -76,17 +76,17 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 
 func TestGithubWebhookDispatchError(t *testing.T) {
 	var (
-        h      = GitHubWebhook{Webhook: &Webhook{}}
+		h      = GitHubWebhook{Webhook: &Webhook{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return errors.Errorf("oh no")
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
 	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
@@ -168,7 +168,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		}
 		called = true
 		return nil
-	}, "public")
+	}, extsvc.KindGitHub, "public")
 
 	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 	if err != nil {

@@ -50,7 +50,7 @@ func (h *Webhook) Register(handler WebhookHandler, codeHostKind string, eventTyp
 // and invoking the correct handlers depending on where the webhooks
 // come from.
 func NewHandler(logger log.Logger, db database.DB, gh *Webhook) http.Handler {
-	base := mux.NewRouter().PathPrefix("/webhooks").Subrouter()
+	base := mux.NewRouter().PathPrefix("/.api/webhooks").Subrouter()
 	base.Path("/{webhook_uuid}").Methods("POST").Handler(webhookHandler(logger, db, gh))
 
 	return base
