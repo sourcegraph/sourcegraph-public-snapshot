@@ -94,7 +94,10 @@ func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEnt
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileResolver, bool) {
-	return nil, false
+	fileInfo := graphqlbackend.CreateFileInfo(r.file.Path, false)
+	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
+		return string(r.file.Content), nil
+	}), true
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {

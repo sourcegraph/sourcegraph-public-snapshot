@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -146,14 +145,15 @@ func unmarshalGraphqlID(id graphql.ID) (umarshalledID string, err error) {
 }
 
 func getPathParts(r *http.Request) (string, string, error) {
-	fmt.Println("about to get path parts")
 	rawBatchSpecRandID := mux.Vars(r)["spec"]
 	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
 	batchSpecRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecRandID))
 	if err != nil {
-		return "", "", err
+		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
+		// and it's not a valid graphl.ID.
+		batchSpecRandID = rawBatchSpecRandID
 	}
 
 	rawBatchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
@@ -162,7 +162,9 @@ func getPathParts(r *http.Request) (string, string, error) {
 	}
 	batchSpecWorkspaceFileRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecWorkspaceFileRandID))
 	if err != nil {
-		return "", "", err
+		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
+		// and it's not a valid graphl.ID.
+		batchSpecWorkspaceFileRandID = rawBatchSpecWorkspaceFileRandID
 	}
 
 	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
