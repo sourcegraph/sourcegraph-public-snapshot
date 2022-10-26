@@ -46,7 +46,7 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                             variant="secondary"
                             className={styles.trialButton}
                         >
-                            Get free trial now
+                            Search your code
                         </Button>
                     </div>
                 </div>

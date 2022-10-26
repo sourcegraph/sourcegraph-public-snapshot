@@ -213,7 +213,7 @@ exports[`GlobalNavbar default 1`] = `
             href="https://signup.sourcegraph.com/?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
-            Get free trial
+            Search your code
           </a>
         </div>
       </li>

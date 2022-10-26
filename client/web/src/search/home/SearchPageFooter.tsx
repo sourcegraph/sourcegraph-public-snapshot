@@ -105,7 +105,6 @@ export const SearchPageFooter: React.FunctionComponent<
                         className={styles.discordWrapper}
                         onClick={logDiscordClicked}
                     >
-                        <img src={`${assetsRoot}/img/discord-footer-logo.svg`} alt="" className={styles.discordImage} />
                         <div className={styles.discordText}>
                             <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
                             <div>If you need help or want to share something with the community, join us!</div>
