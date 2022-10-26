@@ -604,6 +604,18 @@ func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types
 	}
 
 	types, _ := b.IncludeExcludeValues(query.FieldType)
+
+	if len(types) == 0 && b.Pattern != nil {
+		if p, ok := b.Pattern.(query.Pattern); ok {
+			annot := p.Annotation
+			if annot.Labels.IsSet(query.IsAlias) {
+				// This query set the pattern via `content:`, so we
+				// imply that only content should be searched.
+				return result.TypeFile
+			}
+		}
+	}
+
 	if len(types) == 0 {
 		return result.TypeFile | result.TypePath | result.TypeRepo
 	}
