@@ -109,7 +109,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    console.log('Code intel enabled', props.codeIntelligenceEnabled)
+
     const enableTokenKeyboardNavigation =
         props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
@@ -273,14 +273,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     )
 
     /**
-     * Fetches formatted, but un-highlighted, blob content.
-     * Intention is to use this whilst we wait for syntax highlighting,
-     * so the user has useful content rather than a loading spinner
+     * Fetches stencil ranges for the current document.
+     * Used to provide keyboard navigation within the blob view.
      */
     const stencil = useObservable(
         useMemo(() => {
-            // Note: Lazy syntax highlighting is currently buggy in CodeMirror.
-            // GitHub issue to fix: https://github.com/sourcegraph/sourcegraph/issues/41413
             if (!enableTokenKeyboardNavigation) {
                 return of(undefined)
             }
@@ -289,7 +286,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 repoName,
                 revision,
                 filePath,
-            }).pipe(map(stencil => stencil))
+            })
         }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
