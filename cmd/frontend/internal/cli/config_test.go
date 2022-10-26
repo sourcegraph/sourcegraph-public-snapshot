@@ -20,6 +20,9 @@ import (
 
 func TestServiceConnections(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	// We override the URLs so service discovery doesn't try and talk to k8s
+	os.Setenv("SEARCHER_URL", "http://searcher:3181")
+	os.Setenv("INDEXED_SEARCH_SERVERS", "rpc://indexed-search:6070")
 
 	// We only test that we get something non-empty back.
 	sc := serviceConnections(logtest.Scoped(t))
