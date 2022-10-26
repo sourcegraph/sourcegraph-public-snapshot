@@ -90,10 +90,14 @@ type statusInfo struct {
 	backfillQueuedAt                                    *time.Time
 	isLoading                                           bool
 }
+
+type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
+type GetSeriesBackfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
 type insightStatusResolver struct {
-	baseResolver *baseInsightResolver
-	statusOnce   sync.Once
-	series       types.InsightViewSeries
+	getQueueStatus     GetSeriesQueueStatusFunc
+	getSeriesBackfills GetSeriesBackfillsFunc
+	statusOnce         sync.Once
+	series             types.InsightViewSeries
 
 	status    statusInfo
 	statusErr error
@@ -128,7 +132,7 @@ func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error
 
 func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
 	i.statusOnce.Do(func() {
-		status, statusErr := queryrunner.QueryJobsStatus(ctx, i.baseResolver.workerBaseStore, i.series.SeriesID)
+		status, statusErr := i.getQueueStatus(ctx, i.series.SeriesID)
 		if statusErr != nil {
 			i.statusErr = errors.Wrap(statusErr, "QueryJobsStatus")
 			return
@@ -138,8 +142,7 @@ func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo
 		i.status.failedJobs = int32(status.Failed)
 		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
 
-		backfillStore := scheduler.NewBackfillStore(i.baseResolver.insightsDB)
-		seriesBackfills, backillErr := backfillStore.LoadSeriesBackfills(ctx, i.series.InsightSeriesID)
+		seriesBackfills, backillErr := i.getSeriesBackfills(ctx, i.series.InsightSeriesID)
 		log15.Error(fmt.Sprintf("backfills found: %d, id:%d", len(seriesBackfills), i.series.InsightSeriesID))
 		if backillErr != nil {
 			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
@@ -157,10 +160,22 @@ func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo
 	return i.status, i.statusErr
 }
 
-func NewStatusResolver(r *baseInsightResolver, series types.InsightViewSeries) *insightStatusResolver {
+func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSeries) *insightStatusResolver {
+	getStatus := func(ctx context.Context, series string) (*queryrunner.JobsStatus, error) {
+		return queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, series)
+	}
+	getBackfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
+		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
+	}
+	return newStatusResolver(getStatus, getBackfills, viewSeries)
+}
+
+func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, series types.InsightViewSeries) *insightStatusResolver {
 	return &insightStatusResolver{
-		baseResolver: r,
-		series:       series,
+		getQueueStatus:     getQueueStatus,
+		getSeriesBackfills: getSeriesBackfills,
+		series:             series,
 	}
 }
 
