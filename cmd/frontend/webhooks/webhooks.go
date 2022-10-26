@@ -24,6 +24,11 @@ type Registerer interface {
 	Register(webhook *Webhook)
 }
 
+type RegistererHandler interface {
+	Registerer
+	http.Handler
+}
+
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
@@ -32,6 +37,9 @@ func (h *Webhook) Register(handler WebhookHandler, codeHostKind string, eventTyp
 	defer h.mu.Unlock()
 	if h.handlers == nil {
 		h.handlers = make(map[string]map[string][]WebhookHandler)
+	}
+	if _, ok := h.handlers[codeHostKind]; !ok {
+		h.handlers[codeHostKind] = make(map[string][]WebhookHandler)
 	}
 	for _, eventType := range eventTypes {
 		h.handlers[codeHostKind][eventType] = append(h.handlers[codeHostKind][eventType], handler)
@@ -65,7 +73,7 @@ type Webhook struct {
 	handlers map[string]map[string][]WebhookHandler
 }
 
-func webhookHandler(logger log.Logger, db database.DB, gh *Webhook) http.HandlerFunc {
+func webhookHandler(logger log.Logger, db database.DB, wh *Webhook) http.HandlerFunc {
 	logger = logger.Scoped("webhookHandler", "handler used to route webhooks")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
@@ -101,7 +109,7 @@ func webhookHandler(logger log.Logger, db database.DB, gh *Webhook) http.Handler
 
 		switch webhook.CodeHostKind {
 		case extsvc.KindGitHub:
-			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, (*GitHubWebhook)(gh))
+			handleGitHubWebHook(w, r, webhook.CodeHostURN, secret, &GitHubWebhook{Webhook: wh})
 			return
 		case extsvc.KindGitLab:
 			if secret != "" {

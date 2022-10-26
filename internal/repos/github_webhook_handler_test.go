@@ -69,10 +69,12 @@ func TestGitHubWebhookHandle(t *testing.T) {
 	}
 
 	handler := repos.GitHubWebhookHandler{}
-	router := &webhooks.Webhook{
-		DB: db,
+	router := &webhooks.GitHubWebhook{
+		Webhook: &webhooks.Webhook{
+			DB: db,
+		},
 	}
-	handler.Register(router)
+	handler.Register(router.Webhook)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {

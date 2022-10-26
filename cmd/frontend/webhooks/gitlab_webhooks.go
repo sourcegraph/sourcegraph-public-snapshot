@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -26,44 +25,6 @@ var (
 	errExternalServiceWrongKind    = errors.New("external service is not of the expected kind")
 	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
 )
-
-func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Look up the external service.
-	extSvc, err := h.getExternalServiceFromRawID(r.Context(), r.FormValue(extsvc.IDParam))
-	if err == errExternalServiceNotFound {
-        http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	} else if err != nil {
-		http.Error(w, errors.Wrap(err, "getting external service").Error(), http.StatusInternalServerError)
-		return
-	}
-
-	SetExternalServiceID(r.Context(), extSvc.ID)
-
-    rawConfig, err := extSvc.Config.Decrypt(r.Context())
-    if err != nil {
-        log15.Error("Could not decode external service config", "error", err)
-        http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-        return
-    }
-
-    config := &schema.GitLabConnection{}
-    err = json.Unmarshal([]byte(rawConfig), config)
-	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
-		return
-	}
-
-    codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
-	if err != nil {
-		log15.Error("Could not parse code host URL from config", "error", err)
-		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
-		return
-	}
-
-    h.HandleWebhook(w, r, codeHostURN)
-}
 
 func (h *GitLabWebhook) HandleWebhook(w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
 

@@ -18,7 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type GitHubWebhook Webhook
+type GitHubWebhook struct {
+    *Webhook
+}
 
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)

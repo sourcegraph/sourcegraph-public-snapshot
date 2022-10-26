@@ -18,7 +18,7 @@ import (
 // enterprise frontend setup hook.
 type Services struct {
 	GitHubWebhook                   webhooks.Registerer
-	GitLabWebhook                   webhooks.Registerer
+	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
@@ -62,7 +62,7 @@ type NewComputeStreamHandler func() http.Handler
 func DefaultServices() Services {
 	return Services{
 		GitHubWebhook:                   registerFunc(func(webhook *webhooks.Webhook) {}),
-		GitLabWebhook:                   registerFunc(func(webhook *webhooks.Webhook) {}),
+        GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
@@ -85,6 +85,15 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 }
 
 type registerFunc func(webhook *webhooks.Webhook)
+
+type emptyWebhookHandler struct {
+    name string
+}
+func (e *emptyWebhookHandler) Register(w *webhooks.Webhook) {}
+
+func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    makeNotFoundHandler(e.name)
+}
 
 func (fn registerFunc) Register(w *webhooks.Webhook) {
 	fn(w)

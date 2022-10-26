@@ -185,10 +185,12 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						handler := webhooks.Webhook{
-							DB: db,
+						handler := webhooks.GitHubWebhook{
+							Webhook: &webhooks.Webhook{
+								DB: db,
+							},
 						}
-						hook.Register(&handler)
+						hook.Register(handler.Webhook)
 
 						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 						if err != nil {
