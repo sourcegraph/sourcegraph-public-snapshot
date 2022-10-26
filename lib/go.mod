@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.9.0
-	github.com/derision-test/go-mockgen v1.1.2
+	github.com/derision-test/go-mockgen v1.3.6
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobwas/glob v0.2.3
@@ -41,7 +41,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
-	github.com/dave/jennifer v1.4.1 // indirect
+	github.com/dave/jennifer v1.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
