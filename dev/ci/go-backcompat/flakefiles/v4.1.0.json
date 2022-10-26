@@ -1,0 +1,12 @@
+[
+  {
+    "path": "internal/codeintel/policies/internal/store",
+    "prefix": "TestSelectPoliciesForRepositoryMembershipUpdate",
+    "reason": "The same policies are returned but in an unexpected order."
+  },
+  {
+    "path": "internal/gitserver",
+    "prefix": "TestLFSSmudge",
+    "reason": "Git config seems to be borked after introduction of https://github.com/sourcegraph/sourcegraph/pull/43227"
+  }
+]
