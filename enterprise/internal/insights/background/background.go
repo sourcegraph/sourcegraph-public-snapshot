@@ -83,6 +83,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
 			config := scheduler.JobMonitorConfig{
 				InsightsDB:     insightsDB,
+				InsightStore:   insightsStore,
 				RepoStore:      mainAppDB.Repos(),
 				BackfillRunner: backfillRunner,
 				ObsContext:     observationContext,
