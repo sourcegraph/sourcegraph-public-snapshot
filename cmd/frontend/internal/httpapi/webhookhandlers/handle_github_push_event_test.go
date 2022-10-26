@@ -1,4 +1,4 @@
-package repos_test
+package webhookhandlers_test
 
 import (
 	"bytes"
@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -68,7 +70,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := repos.GitHubWebhookHandler{}
+	handler := webhookhandlers.GitHubWebhookPushEventHandler{}
 	router := &webhooks.GitHubWebhook{
 		DB: db,
 	}

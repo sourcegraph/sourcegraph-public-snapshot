@@ -1,4 +1,4 @@
-package repos
+package webhookhandlers
 
 import (
 	"context"
@@ -15,16 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitHubWebhookHandler struct {
+type GitHubWebhookPushEventHandler struct {
 	logger log.Logger
 }
 
-func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
-	g.logger = log.Scoped("repos.GitHubWebhookHandler", "github webhook handler")
+func (g *GitHubWebhookPushEventHandler) Register(router *webhooks.GitHubWebhook) {
+	g.logger = log.Scoped("webhookhandlers.GitHubWebhookPushEventHandler", "github webhook push event handler")
 	router.Register(g.handleGitHubWebhook, "push")
 }
 
-func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
+func (g *GitHubWebhookPushEventHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
