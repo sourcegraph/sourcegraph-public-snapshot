@@ -223,12 +223,6 @@ func ConfBased(getter connsGetter) *Map {
 				serviceConnections := conf.Get().ServiceConnections()
 
 				eps := getter(serviceConnections)
-				if eps == nil {
-					disco <- endpoints{
-						Error: errors.New("no service connections found in conf"),
-					}
-				}
-
 				disco <- endpoints{Endpoints: eps}
 			})
 		},
