@@ -360,7 +360,12 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         ]
     }, [node])
 
-    const [isExpanded, setIsExpanded] = useState(false)
+    let runningStatuses = [
+        ExternalServiceSyncJobState.QUEUED,
+        ExternalServiceSyncJobState.PROCESSING,
+        ExternalServiceSyncJobState.CANCELING,
+    ]
+    const [isExpanded, setIsExpanded] = useState(runningStatuses.includes(node.state))
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
     }, [isExpanded])
@@ -373,11 +378,11 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.startedAt === null && 'Not started yet.'}
-                    {node.startedAt !== null && <>Started at {format(Date.parse(node.startedAt), 'pp')}.</>}
+                    {node.startedAt !== null && <>Started at {format(Date.parse(node.startedAt), 'HH:mm:ss')}.</>}
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.finishedAt === null && 'Not finished yet.'}
-                    {node.finishedAt !== null && <>Finished at {format(Date.parse(node.finishedAt), 'pp')}.</>}
+                    {node.finishedAt !== null && <>Finished at {format(Date.parse(node.finishedAt), 'HH:mm:ss')}.</>}
                 </div>
                 <div className="flex-shrink-0 flex-grow-1 mr-1">
                     {node.startedAt && (
@@ -394,11 +399,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         </>
                     )}
                 </div>
-                {[
-                    ExternalServiceSyncJobState.QUEUED,
-                    ExternalServiceSyncJobState.PROCESSING,
-                    ExternalServiceSyncJobState.CANCELING,
-                ].includes(node.state) && (
+                {runningStatuses.includes(node.state) && (
                     <LoaderButton
                         label="Cancel"
                         alwaysShowLabel={true}
