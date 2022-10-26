@@ -19,8 +19,8 @@ import (
 func SetExternalServiceID(ctx context.Context, id int64) {
 	// There's no else case here because it is expected that there's no setter
 	// if logging is disabled.
-	if setter, ok := ctx.Value(setterContextKey).(contextFunc); ok {
-		setter(id, 0)
+	if setter, ok := ctx.Value(extSvcIDSetterContextKey).(contextFuncInt64); ok {
+		setter(id)
 	}
 }
 
@@ -29,8 +29,8 @@ func SetExternalServiceID(ctx context.Context, id int64) {
 func SetWebhookID(ctx context.Context, id int32) {
 	// There's no else case here because it is expected that there's no setter
 	// if logging is disabled.
-	if setter, ok := ctx.Value(setterContextKey).(contextFunc); ok {
-		setter(0, id)
+	if setter, ok := ctx.Value(webhookIDSetterContextKey).(contextFuncInt32); ok {
+		setter(id)
 	}
 }
 
@@ -80,16 +80,15 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		// SetExternalServiceID to receive the external service ID from the
 		// handler.
 		var externalServiceID *int64
-		var webhookID *int32
-		var setter contextFunc = func(extSvcID int64, whID int32) {
-			if extSvcID != 0 {
-				externalServiceID = &extSvcID
-			}
-			if whID != 0 {
-				webhookID = &whID
-			}
+		var extSvcIDSetter contextFuncInt64 = func(extSvcID int64) {
+			externalServiceID = &extSvcID
 		}
-		ctx := context.WithValue(r.Context(), setterContextKey, setter)
+		ctx := context.WithValue(r.Context(), extSvcIDSetterContextKey, extSvcIDSetter)
+		var webhookID *int32
+		var webhookIDSetter contextFuncInt32 = func(whID int32) {
+			webhookID = &whID
+		}
+		ctx = context.WithValue(ctx, webhookIDSetterContextKey, webhookIDSetter)
 
 		// Delegate to the next handler.
 		next.ServeHTTP(writer, r.WithContext(ctx))
@@ -173,6 +172,10 @@ func LoggingEnabled(c *conf.Unified) bool {
 
 type contextKey string
 
-var setterContextKey = contextKey("webhook setter")
+var extSvcIDSetterContextKey = contextKey("webhook external service ID setter")
 
-type contextFunc func(int64, int32)
+type contextFuncInt64 func(int64)
+
+var webhookIDSetterContextKey = contextKey("webhook ID setter")
+
+type contextFuncInt32 func(int32)
