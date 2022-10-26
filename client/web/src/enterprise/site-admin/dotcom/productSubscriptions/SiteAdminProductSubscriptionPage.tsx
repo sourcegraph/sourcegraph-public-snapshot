@@ -269,6 +269,17 @@ function queryProductSubscription(
                                 hasNextPage
                             }
                         }
+                        activeLicense {
+                            id
+                            info {
+                                productNameWithBrand
+                                tags
+                                userCount
+                                expiresAt
+                            }
+                            licenseKey
+                            createdAt
+                        }
                         createdAt
                         isArchived
                         url
