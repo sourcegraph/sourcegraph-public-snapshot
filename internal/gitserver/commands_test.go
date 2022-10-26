@@ -2824,10 +2824,10 @@ func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker)
 }
 
 func TestLFSSmudge(t *testing.T) {
-	t.Skip("Failing, see https://github.com/sourcegraph/sourcegraph/issues/43473")
-
-	// TODO enforce on CI once CI has git-lfs
 	if _, err := exec.LookPath("git-lfs"); err != nil {
+		if os.Getenv("CI") != "" {
+			t.Fatal("git-lfs missing", err)
+		}
 		t.Skip("git-lfs not installed")
 	}
 
@@ -2851,7 +2851,7 @@ func TestLFSSmudge(t *testing.T) {
 		`git lfs install --local`,
 		`git lfs track in-lfs.txt`,
 		`git add .`,
-		`git commit -m "lfs"`,
+		`env GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m "lfs" --author='a <a@a.com>' --date 2006-01-02T15:04:05Z`,
 	)
 
 	// We ensure we test against a bare repo because a lot of LFS stuff only
