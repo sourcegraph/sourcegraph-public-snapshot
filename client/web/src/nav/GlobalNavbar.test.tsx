@@ -70,4 +70,18 @@ describe('GlobalNavbar', () => {
         )
         expect(asFragment()).toMatchSnapshot()
     })
+    test('LoginReturnTo', () => {
+        const currentURL = '/search?q=foo#hash'
+        history.push(currentURL)
+        const props = {
+            ...PROPS,
+            location: createLocation(currentURL),
+        }
+        const { asFragment } = renderWithBrandedContext(
+            <MockedTestProvider>
+                <GlobalNavbar {...props} />
+            </MockedTestProvider>
+        )
+        expect(asFragment()).toMatchSnapshot()
+    })
 })

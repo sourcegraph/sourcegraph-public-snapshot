@@ -321,7 +321,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 <div>
                                     <Button
                                         className="mr-1"
-                                        to="/sign-in"
+                                        to={`/sign-in?returnTo=${encodeURIComponent(location.pathname + location.search + location.hash)}`}
                                         variant="secondary"
                                         outline={true}
                                         size="sm"
