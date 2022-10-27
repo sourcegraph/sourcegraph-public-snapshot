@@ -4,14 +4,13 @@ import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, Link } from '@sourcegraph/wildcard'
+import { Text, Card, Link } from '@sourcegraph/wildcard'
 
 import { SearchExample } from './LoggedOutHomepage.constants'
 
 import styles from './TipsAndTricks.module.scss'
 
 interface TipsAndTricksProps extends TelemetryProps {
-    title: string
     examples: SearchExample[]
     moreLink: {
         href: string
@@ -21,7 +20,6 @@ interface TipsAndTricksProps extends TelemetryProps {
 }
 
 export const TipsAndTricks: React.FunctionComponent<React.PropsWithChildren<TipsAndTricksProps>> = ({
-    title,
     moreLink,
     telemetryService,
     examples,
@@ -32,7 +30,9 @@ export const TipsAndTricks: React.FunctionComponent<React.PropsWithChildren<Tips
     )
     return (
         <div className={classNames(styles.tipsAndTricks)}>
-            <div className={classNames('mb-2', styles.tipsAndTricksTitle)}>{title}</div>
+            <div className="d-flex align-items-center mb-2">
+                <Text className={classNames('mr-2 pr-2', styles.tipsAndTricksTitle)}>Code Search Basics</Text>
+            </div>
             <div className={styles.tipsAndTricksExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.tipsAndTricksExample}>

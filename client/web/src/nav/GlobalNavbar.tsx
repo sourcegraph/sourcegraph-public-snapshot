@@ -352,7 +352,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >
-                                        Get free trial
+                                        Search your code
                                     </ButtonLink>
                                 </div>
                             </NavAction>
