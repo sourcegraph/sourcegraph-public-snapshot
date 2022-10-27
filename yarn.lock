@@ -8210,7 +8210,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/escape-html@npm:^1.0.1":
+"@types/escape-html@npm:1.0.1":
   version: 1.0.1
   resolution: "@types/escape-html@npm:1.0.1"
   checksum: 141d6e44dd514b0bf8a1c5e7730d6b9fa291bb11a52bcc3434d269252b10622f52bd7458553efc2c95ca8341bafab836fe696f8fe72f82c5809204239b8ba791
@@ -8519,7 +8519,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/js-base64@npm:^3.3.1":
+"@types/js-base64@npm:3.3.1":
   version: 3.3.1
   resolution: "@types/js-base64@npm:3.3.1"
   dependencies:
@@ -8613,17 +8613,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lru-cache@npm:7.6.1":
+  version: 7.6.1
+  resolution: "@types/lru-cache@npm:7.6.1"
+  checksum: 8915c0762f4f31e660d4145707f2418c96f8a80e8543fd312c9a7af4c11cdab314f9df9f6168dbe203e81fb6881757f72b5eeacddefe87d028e6c3d55c8bc987
+  languageName: node
+  linkType: hard
+
 "@types/lru-cache@npm:^5.1.0":
   version: 5.1.1
   resolution: "@types/lru-cache@npm:5.1.1"
   checksum: e1d6c0085f61b16ec5b3073ec76ad1be4844ea036561c3f145fc19f71f084b58a6eb600b14128aa95809d057d28f1d147c910186ae51219f58366ffd2ff2e118
-  languageName: node
-  linkType: hard
-
-"@types/lru-cache@npm:^7.6.1":
-  version: 7.6.1
-  resolution: "@types/lru-cache@npm:7.6.1"
-  checksum: 8915c0762f4f31e660d4145707f2418c96f8a80e8543fd312c9a7af4c11cdab314f9df9f6168dbe203e81fb6881757f72b5eeacddefe87d028e6c3d55c8bc987
   languageName: node
   linkType: hard
 
@@ -8689,7 +8689,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/mock-require@npm:^2.0.1":
+"@types/mock-require@npm:2.0.1":
   version: 2.0.1
   resolution: "@types/mock-require@npm:2.0.1"
   dependencies:
@@ -8845,7 +8845,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/puppeteer@npm:^5.4.5":
+"@types/puppeteer@npm:5.4.5":
   version: 5.4.5
   resolution: "@types/puppeteer@npm:5.4.5"
   dependencies:
@@ -8875,7 +8875,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-calendar@npm:^3.5.2":
+"@types/react-calendar@npm:3.5.2":
   version: 3.5.2
   resolution: "@types/react-calendar@npm:3.5.2"
   dependencies:
@@ -8911,7 +8911,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-resizable@npm:^3.0.2":
+"@types/react-resizable@npm:3.0.2":
   version: 3.0.2
   resolution: "@types/react-resizable@npm:3.0.2"
   dependencies:
@@ -8920,7 +8920,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-router-dom@npm:^5.3.3":
+"@types/react-router-dom@npm:5.3.3":
   version: 5.3.3
   resolution: "@types/react-router-dom@npm:5.3.3"
   dependencies:
@@ -8931,7 +8931,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-router@npm:*, @types/react-router@npm:^5.1.18":
+"@types/react-router@npm:*, @types/react-router@npm:5.1.18":
   version: 5.1.18
   resolution: "@types/react-router@npm:5.1.18"
   dependencies:
@@ -9014,7 +9014,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/rimraf@npm:^3.0.2":
+"@types/rimraf@npm:3.0.2":
   version: 3.0.2
   resolution: "@types/rimraf@npm:3.0.2"
   dependencies:
@@ -9142,7 +9142,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/socket.io@npm:^3.0.2":
+"@types/socket.io@npm:3.0.2":
   version: 3.0.2
   resolution: "@types/socket.io@npm:3.0.2"
   dependencies:
@@ -9284,7 +9284,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/vscode@npm:^1.63.1":
+"@types/vscode@npm:1.63.1":
   version: 1.63.1
   resolution: "@types/vscode@npm:1.63.1"
   checksum: 9b40bf77497358d9d4cd646aab39045de9cf7f508d6c92116c6e766f8db38b87b313b3e9e48ecb41d4d81f5b531aa4b257de624eea8bf117b2f28f6b8332394b
@@ -9358,7 +9358,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/webpack-stats-plugin@npm:^0.3.2":
+"@types/webpack-stats-plugin@npm:0.3.2":
   version: 0.3.2
   resolution: "@types/webpack-stats-plugin@npm:0.3.2"
   dependencies:
@@ -9442,7 +9442,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/yauzl@npm:^2.9.1, @types/yauzl@npm:^2.9.2":
+"@types/yauzl@npm:2.10.0, @types/yauzl@npm:^2.9.1":
   version: 2.10.0
   resolution: "@types/yauzl@npm:2.10.0"
   dependencies:
@@ -29304,7 +29304,7 @@ pvutils@latest:
     "@types/d3-selection": 1.4.1
     "@types/d3-shape": 1.3.2
     "@types/d3-time-format": 3.0.0
-    "@types/escape-html": ^1.0.1
+    "@types/escape-html": 1.0.1
     "@types/expect": 24.3.0
     "@types/express": 4.17.11
     "@types/fancy-log": 1.3.1
@@ -29314,35 +29314,35 @@ pvutils@latest:
     "@types/highlight.js": 9.12.4
     "@types/is-absolute-url": 3.0.0
     "@types/jest": 27.4.0
-    "@types/js-base64": ^3.3.1
+    "@types/js-base64": 3.3.1
     "@types/js-cookie": 2.2.6
     "@types/js-yaml": 4.0.3
     "@types/jsdom": 12.2.4
     "@types/lodash": 4.14.167
-    "@types/lru-cache": ^7.6.1
+    "@types/lru-cache": 7.6.1
     "@types/marked": 4.0.3
     "@types/mime-types": 2.1.0
     "@types/mini-css-extract-plugin": 2.0.1
     "@types/mocha": 8.2.0
-    "@types/mock-require": ^2.0.1
+    "@types/mock-require": 2.0.1
     "@types/mockdate": 2.0.0
     "@types/mz": 2.7.3
     "@types/node": 13.13.5
     "@types/node-fetch": 2.5.10
     "@types/pollyjs__core": 4.3.1
     "@types/pollyjs__persister-fs": 2.0.1
-    "@types/puppeteer": ^5.4.5
+    "@types/puppeteer": 5.4.5
     "@types/react": 18.0.8
-    "@types/react-calendar": ^3.5.2
+    "@types/react-calendar": 3.5.2
     "@types/react-circular-progressbar": 1.0.2
     "@types/react-dom": 18.0.2
     "@types/react-grid-layout": 1.3.0
-    "@types/react-resizable": ^3.0.2
-    "@types/react-router": ^5.1.18
-    "@types/react-router-dom": ^5.3.3
+    "@types/react-resizable": 3.0.2
+    "@types/react-router": 5.1.18
+    "@types/react-router-dom": 5.3.3
     "@types/recharts": 1.8.23
     "@types/resize-observer-browser": 0.1.4
-    "@types/rimraf": ^3.0.2
+    "@types/rimraf": 3.0.2
     "@types/sanitize-html": 2.3.0
     "@types/sass": 1.16.1
     "@types/semver": 7.3.1
@@ -29350,7 +29350,7 @@ pvutils@latest:
     "@types/signale": 1.4.1
     "@types/simmerjs": 0.5.1
     "@types/sinon": 9.0.4
-    "@types/socket.io": ^3.0.2
+    "@types/socket.io": 3.0.2
     "@types/socket.io-client": 1.4.33
     "@types/speed-measure-webpack-plugin": 1.3.4
     "@types/svgo": 2.6.0
@@ -29358,12 +29358,12 @@ pvutils@latest:
     "@types/testing-library__jest-dom": 5.9.5
     "@types/textarea-caret": 3.0.0
     "@types/uuid": 8.0.1
-    "@types/vscode": ^1.63.1
+    "@types/vscode": 1.63.1
     "@types/webpack-bundle-analyzer": 4.4.1
     "@types/webpack-dev-server": 4.0.3
     "@types/webpack-manifest-plugin": 3.0.5
-    "@types/webpack-stats-plugin": ^0.3.2
-    "@types/yauzl": ^2.9.2
+    "@types/webpack-stats-plugin": 0.3.2
+    "@types/yauzl": 2.10.0
     "@visx/annotation": ^2.10.0
     "@visx/axis": ^2.11.1
     "@visx/glyph": ^2.10.0
