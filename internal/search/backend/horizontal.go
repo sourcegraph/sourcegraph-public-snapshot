@@ -222,7 +222,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 		siteConfig.maxReorderDuration = 500 * time.Millisecond
 	}
 
-	flushCollectSender, flushAll := newFlushCollectSender(
+	streamer, flushAll := newFlushCollectSender(
 		&collectOpts{
 			maxDocDisplayCount: opts.MaxDocDisplayCount,
 			flushWallTime:      siteConfig.maxReorderDuration,
@@ -254,7 +254,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 				mu.Unlock()
 
-				flushCollectSender.Send(sr)
+				streamer.Send(sr)
 			}))
 
 			if canIgnoreError(ctx, err) {
