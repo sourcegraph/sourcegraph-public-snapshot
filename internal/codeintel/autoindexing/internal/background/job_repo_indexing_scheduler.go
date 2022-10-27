@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -87,11 +86,8 @@ func (b backgroundJob) handleScheduler(
 		return nil
 	}
 
-	fmt.Println("STARTING HANDLE")
-
 	ctx, traceLog, endObservation := b.indexSchedulerOperations.handleIndexScheduler.With(ctx, &err, observation.Args{})
 	defer func() {
-		fmt.Println("FINISHED HANDLE")
 		endObservation(1, observation.Args{})
 	}()
 
@@ -138,7 +134,6 @@ func (b backgroundJob) handleScheduler(
 	)
 
 	for _, repositoryID := range repositories {
-		fmt.Println("STARTING REPO HANDLE")
 		var repositoryErr error
 		ctx, traceLog, endObservation := b.indexSchedulerOperations.handleRepoScheduler.With(ctx, &repositoryErr, observation.Args{
 			LogFields: []log.Field{log.Int("repoID", repositoryID)},
@@ -149,11 +144,10 @@ func (b backgroundJob) handleScheduler(
 			endObservation(1, observation.Args{})
 			return err
 		}
-		traceLog.SetAttributes(attribute.Int64("semaphoreWaitMs", time.Since(semWait).Milliseconds()))
+		traceLog.AddEvent("semAcquire", attribute.Int64("semaphoreWaitMs", time.Since(semWait).Milliseconds()))
 
 		go func(repositoryID int) {
 			defer func() {
-				fmt.Println("FINISHED REPO HANDLE")
 				sema.Release(1)
 				endObservation(1, observation.Args{})
 			}()
@@ -209,6 +203,7 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}
 
+		queueTimer := time.Now()
 		for commit, policyMatches := range commitMap {
 			if len(policyMatches) == 0 {
 				continue
@@ -225,6 +220,8 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 				return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
 			}
 		}
+
+		traceLog.AddEvent("enqueued", attribute.Int64("enqueueDurationMs", time.Since(queueTimer).Milliseconds()))
 
 		if len(policies) == 0 || offset >= totalCount {
 			return nil
