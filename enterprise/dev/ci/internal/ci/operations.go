@@ -119,9 +119,10 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
 		})
 	)
-	var formatCheck string
-	if !runType.Is(runtype.MainBranch) {
-		formatCheck = "-format-check=true "
+
+	formatCheck := ""
+	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
+		formatCheck = "--no-format-check "
 	}
 
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
