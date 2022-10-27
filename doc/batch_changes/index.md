@@ -54,7 +54,7 @@ Create a batch change by specifying a search query to get a list of repositories
    Run through the <b>quickstart guide</b> and create a batch change in less than 10 minutes.
   </a>
 
-  <a href="https://www.youtube.com/watch?v=eOmiyXIWTCw" class="btn" alt="Watch the Batch Changes demo video">
+  <a href="https://www.youtube.com/watch?v=GKyHYqH6ggY" class="btn" alt="Watch the Batch Changes demo video">
    <span>Demo video</span>
    </br>
    Watch the Batch Changes demo video to see what it's capable of.
