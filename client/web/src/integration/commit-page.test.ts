@@ -13,7 +13,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
-describe.only('RepositoryCommitPage', () => {
+describe('RepositoryCommitPage', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
