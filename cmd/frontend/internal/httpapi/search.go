@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,7 +51,8 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
 type searchIndexerServer struct {
-	db database.DB
+	db     database.DB
+	logger log.Logger
 
 	gitserverClient gitserver.Client
 	// ListIndexable returns the repositories to index.
@@ -259,10 +261,10 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
 		if len(opt.IndexedIDs) > 0 {
-			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-				IDs: opt.IndexedIDs,
-			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			opts := database.ReposListOptions{IDs: opt.IndexedIDs}
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), opts, add)
 			if err != nil {
 				return err
 			}
@@ -331,4 +333,31 @@ func serveRank[T []float64 | map[string][]float64](
 
 	_, _ = w.Write(b)
 	return nil
+}
+
+func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
+	var body struct {
+		Repositories []struct {
+			RepoID   uint32
+			Branches []zoekt.RepositoryBranch
+		}
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return errors.Wrap(err, "failed to decode request body")
+	}
+
+	var (
+		ids     = make([]int32, len(body.Repositories))
+		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(body.Repositories))
+	)
+
+	for i, repo := range body.Repositories {
+		ids[i] = int32(repo.RepoID)
+		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+	}
+
+	h.logger.Info("updating index status", log.Int32s("repositories", ids))
+
+	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), minimal)
 }

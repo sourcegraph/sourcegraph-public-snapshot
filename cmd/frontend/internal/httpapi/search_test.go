@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -276,5 +277,47 @@ func TestRepoRankFromConfig(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("got score %v, want %v, repo %q config %v", got, tc.want, tc.name, tc.rankScores)
 		}
+	}
+}
+
+func TestIndexStatusUpdate(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	body := `{"Repositories": [{"RepoID": 1234, "Branches": [{"Name": "main", "Version": "f00b4r"}]}]}`
+	wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
+	called := false
+
+	zoektReposStore := database.NewMockZoektReposStore()
+	zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		entry, ok := indexed[1234]
+		if !ok {
+			t.Fatalf("wrong repo ID")
+		}
+		if d := cmp.Diff(entry.Branches, wantBranches); d != "" {
+			t.Fatalf("ids mismatch (-want +got):\n%s", d)
+		}
+		called = true
+		return nil
+	})
+
+	db := database.NewMockDB()
+	db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
+
+	srv := &searchIndexerServer{db: db, logger: logger}
+
+	req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(body)))
+	w := httptest.NewRecorder()
+
+	if err := srv.handleIndexStatusUpdate(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("got status %v", resp.StatusCode)
+	}
+
+	if !called {
+		t.Fatalf("not called")
 	}
 }
