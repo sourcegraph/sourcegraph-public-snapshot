@@ -7,7 +7,15 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/kballard/go-shellquote"
+	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -20,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -2035,4 +2044,147 @@ func unmarshalBulkOperationBaseArgs(args graphqlbackend.BulkOperationBaseArgs) (
 	}
 
 	return batchChangeID, changesetIDs, nil
+}
+
+func (r *Resolver) RenameField(ctx context.Context, args *graphqlbackend.RenameFieldArgs) (string, error) {
+	// This should check perms, too.
+	repo, err := r.store.DatabaseDB().Repos().GetByName(ctx, api.RepoName(args.Repository))
+	if err != nil {
+		return "", err
+	}
+
+	cs, err := codeintel.GetServices(codeintel.Databases{
+		DB: r.store.DatabaseDB(),
+		// TODO: This doesn't work when the codeintel db is a separate DB.
+		CodeIntelDB: stores.NewCodeIntelDBWith(r.store.DatabaseDB()),
+	})
+	if err != nil {
+		return "", err
+	}
+	uploads, err := cs.CodenavService.GetClosestDumpsForBlob(ctx, int(repo.ID), string(args.Commit), args.File, true, "")
+	if err != nil {
+		return "", err
+	}
+	if len(uploads) == 0 {
+		return "", errors.New("no uploads found for repo, cannot precisely rename")
+	}
+	gs := &gitserverClientShim{
+		Client: r.gitserverClient,
+		store:  r.store,
+	}
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, gs, repo, string(args.Commit), args.File, 500, 1000)
+
+	ra := shared.RequestArgs{
+		RepositoryID: int(repo.ID),
+		Commit:       args.Commit,
+		Path:         args.File,
+		Line:         int(args.Line),
+		Character:    int(args.Character),
+		Limit:        50,
+	}
+	type repoRefLoc struct {
+		path      string
+		line      int
+		character int
+	}
+	repoIDs := map[int32]repoRefLoc{}
+	var (
+		refs []types.UploadLocation
+		next shared.ReferencesCursor = shared.ReferencesCursor{Phase: "local"}
+	)
+	for {
+		refs, next, err = cs.CodenavService.GetReferences(ctx, ra, reqState, next)
+		fmt.Printf("Getting references %v\nlen=%d\n", reqState, len(refs))
+		if err != nil {
+			return "", err
+		}
+		for _, ref := range refs {
+			if _, ok := repoIDs[int32(ref.Dump.RepositoryID)]; !ok {
+				repoIDs[int32(ref.Dump.RepositoryID)] = repoRefLoc{
+					path:      ref.Path,
+					line:      ref.TargetRange.Start.Line,
+					character: ref.TargetRange.Start.Character,
+				}
+			}
+		}
+		// TODO: No idea how this works :D
+		if next.Phase != "local" && next.Phase != "remote" {
+			fmt.Printf("next.Phase=%q\n", next.Phase)
+			break
+		}
+	}
+
+	if len(repoIDs) == 0 {
+		return "", errors.New("no repos found matching")
+	}
+
+	idList := make([]api.RepoID, 0, len(repoIDs))
+	for id := range repoIDs {
+		idList = append(idList, api.RepoID(id))
+	}
+	visibleConnectedRepos, err := r.store.DatabaseDB().Repos().ListMinimalRepos(ctx, database.ReposListOptions{IDs: idList})
+	if err != nil {
+		return "", err
+	}
+	if len(visibleConnectedRepos) == 0 {
+		return "", errors.New("no matching repos found")
+	}
+	on := []batcheslib.OnQueryOrRepository{}
+	for _, r := range visibleConnectedRepos {
+		on = append(on, batcheslib.OnQueryOrRepository{
+			Repository: string(r.Name),
+			// TODO: Branch as well, and revision ideally
+		})
+	}
+	steps := []batcheslib.Step{}
+	for _, r := range visibleConnectedRepos {
+		steps = append(steps, batcheslib.Step{
+			Container: "sourcegraph/lsp-renamer:latest",
+			// Only run this step in this repo.
+			If:  fmt.Sprintf("${{ equal repository.name %q }}", r.Name),
+			Run: shellquote.Join("renamer", "-file", args.File, "-"),
+		})
+	}
+	batchSpec := batcheslib.BatchSpec{
+		Name:        "erik-does-things",
+		Description: "And they are nice",
+		On:          on,
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{
+			Title:  "Best changeset in town",
+			Body:   "At least this town",
+			Branch: "rename-the-symbol",
+			Commit: batcheslib.ExpandedGitCommitDescription{
+				Message: "Renaming a symbol",
+			},
+		},
+		Steps: steps,
+	}
+	out, err := yaml.Marshal(batchSpec)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("Generated batch spec:\n\n%#+v\n\n", batchSpec)
+
+	return string(out), nil
+}
+
+type gitserverClientShim struct {
+	gitserver.Client
+	store *store.Store
+}
+
+func (g *gitserverClientShim) CommitsExist(ctx context.Context, commits []codeintelgitserver.RepositoryCommit) ([]bool, error) {
+	compat := []api.RepoCommit{}
+	for _, c := range commits {
+		r, err := g.store.DatabaseDB().Repos().Get(ctx, api.RepoID(c.RepositoryID))
+		if err != nil {
+			return nil, err
+		}
+		compat = append(compat, api.RepoCommit{
+			Repo:     r.Name,
+			CommitID: api.CommitID(c.Commit),
+		})
+	}
+	return g.Client.CommitsExist(ctx, []api.RepoCommit{}, authz.DefaultSubRepoPermsChecker)
 }

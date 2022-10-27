@@ -373,6 +373,16 @@ export function registerHoverContributions({
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
                     },
+                    {
+                        id: 'batches.renameField',
+                        title: 'Rename',
+                        command: 'batches.renameField',
+                        commandArguments: [
+                            /* eslint-disable no-template-curly-in-string */
+                            '${json(hoverPosition)}',
+                            /* eslint-enable no-template-curly-in-string */
+                        ],
+                    },
                 ],
                 menus: {
                     hover: [
@@ -387,6 +397,10 @@ export function registerHoverContributions({
                             action: 'goToDefinition.preloaded',
                             when: 'goToDefinition.url',
                             disabledWhen: 'hoveredOnDefinition',
+                        },
+                        {
+                            action: 'batches.renameField',
+                            // when: 'batches.renameField.error || batches.renameField.showLoading',
                         },
                     ],
                 },
@@ -524,6 +538,24 @@ export function registerHoverContributions({
                     }
                 }
             }
+
+            subscriptions.add(
+                extensionsController.registerCommand({
+                    command: 'batches.renameField',
+                    run: async (parametersString: string) => {
+                        const parameters: TextDocumentPositionParameters & URLToFileContext = JSON.parse(
+                            parametersString
+                        )
+
+                        const result = await wrapRemoteObservable(extensionHostAPI.renameField(parameters))
+                            .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
+                            .toPromise()
+
+                        alert(`generated the following spec:
+${result}`)
+                    },
+                })
+            )
 
             return Promise.all([
                 definitionContributionsPromise,

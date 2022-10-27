@@ -63,6 +63,7 @@ export interface FlatExtensionHostAPI {
         id: string,
         parameters: TextDocumentPositionParameters
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
+    renameField: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<string>>
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
 

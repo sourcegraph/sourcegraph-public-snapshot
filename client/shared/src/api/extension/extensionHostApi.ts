@@ -31,8 +31,10 @@ import {
     property,
 } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Context } from '@sourcegraph/template-parser'
 
+import { requestGraphQL } from '../../codeintel/legacy-extensions/api'
 import { getModeFromPath } from '../../languages'
 import { parseRepoURI } from '../../util/url'
 import { match } from '../client/types/textDocument'
@@ -249,6 +251,48 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                           )
                       )
             ),
+
+        renameField: (textParameters: TextDocumentPositionParameters) => {
+            const parsedURI = parseRepoURI(textParameters.textDocument.uri)
+            const position = toPosition(textParameters.position)
+
+            return proxySubscribable(
+                from(
+                    requestGraphQL<RenameFieldResult, RenameFieldVariables>(
+                        gql`
+                            mutation RenameField(
+                                $repository: String!
+                                $commit: String!
+                                $file: String!
+                                $line: Int!
+                                $character: Int!
+                                $replacement: String!
+                            ) {
+                                renameField(
+                                    repository: $repository
+                                    commit: $commit
+                                    file: $file
+                                    line: $line
+                                    character: $character
+                                    replacement: $replacement
+                                )
+                            }
+                        `,
+                        {
+                            repository: parsedURI.repoName,
+                            commit: parsedURI.commitID!,
+                            file: parsedURI.filePath!,
+                            line: position.line,
+                            character: position.character,
+                            replacement: 'asdf',
+                        }
+                    )
+                ).pipe(
+                    map(dataOrThrowErrors),
+                    map(({ renameField }) => renameField)
+                )
+            )
+        },
 
         // MODELS
 

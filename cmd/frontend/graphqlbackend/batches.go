@@ -243,6 +243,15 @@ type BatchSpecWorkspaceStepArgs struct {
 	Index int32
 }
 
+type RenameFieldArgs struct {
+	Repository  string
+	Commit      string
+	File        string
+	Line        int32
+	Character   int32
+	Replacement string
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -279,6 +288,8 @@ type BatchChangesResolver interface {
 	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
+
+	RenameField(ctx context.Context, args *RenameFieldArgs) (string, error)
 
 	// Queries
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)

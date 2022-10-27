@@ -3563,3 +3563,14 @@ type BatchSpecWorkspaceFile implements File2 & Node {
         format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedFile!
 }
+
+extend type Mutation {
+    renameField(
+        repository: String!
+        commit: String!
+        file: String!
+        line: Int!
+        character: Int!
+        replacement: String!
+    ): String!
+}
