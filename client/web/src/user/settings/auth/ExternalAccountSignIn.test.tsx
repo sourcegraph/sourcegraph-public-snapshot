@@ -1,28 +1,23 @@
-import {Attribute, getUsernameOrEmail, SamlExternalData} from './ExternalAccountsSignIn'
+import { Attribute, getUsernameOrEmail, SamlExternalData } from './ExternalAccountsSignIn'
 
 function toAttribute(value: string): Attribute {
     return {
-        Name: 'test',
         Values: [
             {
                 Value: value,
-            }
-        ]
+            },
+        ],
     }
 }
 
 function samlDataObject(keysValues: object): SamlExternalData {
     // Add some other fields to make sure we are getting the right ones
-    Object.assign(keysValues, {'any field':'false'})
-    Object.assign(keysValues, {'random field':'Mon Oct 10 2022 13:07:34 GMT+0000 (Coordinated Universal Time)'})
-    Object.assign(keysValues, {'one more random field':'banana'})
+    Object.assign(keysValues, { 'any field': 'false' })
+    Object.assign(keysValues, { 'random field': 'Mon Oct 10 2022 13:07:34 GMT+0000 (Coordinated Universal Time)' })
+    Object.assign(keysValues, { 'one more random field': 'banana' })
 
     const testData: unknown = {
-        'Values': Object.fromEntries(
-            Object.entries(keysValues).map(([key, value]) =>
-                [key, toAttribute(value)]
-            )
-        )
+        Values: Object.fromEntries(Object.entries(keysValues).map(([key, value]) => [key, toAttribute(value)])),
     }
 
     return testData as SamlExternalData
@@ -35,11 +30,11 @@ describe('getUsernameOrEmail', () => {
                 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress': 'mary@boole.com',
             }),
             samlDataObject({
-                'emailaddress': 'mary@boole.com',
+                emailaddress: 'mary@boole.com',
             }),
             samlDataObject({
                 'http://schemas.xmlsoap.org/claims/EmailAddress': 'mary@boole.com',
-            })
+            }),
         ]
 
         for (const testCase of testCases) {
@@ -50,13 +45,13 @@ describe('getUsernameOrEmail', () => {
     test('saml account data has email and username - username should be used', () => {
         const testCases = [
             samlDataObject({
-                'emailaddress': 'emmy@noether.com',
-                'username': 'emmynoether',
+                emailaddress: 'emmy@noether.com',
+                username: 'emmynoether',
             }),
             samlDataObject({
                 'http://schemas.xmlsoap.org/claims/EmailAddress': 'emmy@noether.com',
-                'username': 'emmynoether',
-            })
+                username: 'emmynoether',
+            }),
         ]
 
         for (const testCase of testCases) {
@@ -70,14 +65,14 @@ describe('getUsernameOrEmail', () => {
                 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name': 'adalovelace',
             }),
             samlDataObject({
-                'nickname': 'adalovelace',
+                nickname: 'adalovelace',
             }),
             samlDataObject({
-                'login': 'adalovelace',
+                login: 'adalovelace',
             }),
             samlDataObject({
-                'username': 'adalovelace',
-            })
+                username: 'adalovelace',
+            }),
         ]
 
         for (const testCase of testCases) {

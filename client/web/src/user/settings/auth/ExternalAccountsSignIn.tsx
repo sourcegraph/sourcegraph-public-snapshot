@@ -1,14 +1,14 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import {AuthProvider} from 'src/jscontext'
+import { AuthProvider } from 'src/jscontext'
 
-import {ErrorLike} from '@sourcegraph/common'
+import { ErrorLike } from '@sourcegraph/common'
 
-import {defaultExternalAccounts, ExternalAccountKind} from '../../../components/externalAccounts/externalAccounts'
+import { defaultExternalAccounts } from '../../../components/externalAccounts/externalAccounts'
 
-import {ExternalAccount} from './ExternalAccount'
-import {AccountByServiceID, UserExternalAccount} from './UserSettingsSecurityPage'
+import { ExternalAccount } from './ExternalAccount'
+import { AccountByServiceID, UserExternalAccount } from './UserSettingsSecurityPage'
 
 import styles from './ExternalAccountsSignIn.module.scss'
 
@@ -25,11 +25,19 @@ interface GitLabExternalData {
 }
 
 export interface SamlExternalData {
-    Values: object
+    Values: {
+        emailaddress?: Attribute
+        'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'?: Attribute
+        'http://schemas.xmlsoap.org/claims/EmailAddress'?: Attribute
+        username?: Attribute
+        nickname?: Attribute
+        login?: Attribute
+        'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: Attribute
+        any?: Attribute
+    }
 }
 
 export interface Attribute {
-    Name: string
     Values: AttributeValue[]
 }
 
@@ -56,42 +64,35 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-// The data stored in user_external_account has this structure: "Values"["<attribute names for email or username>"] > "Values"[0] > "Value": string
-const emailAttrs = new Set(['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress', 'emailaddress', 'http://schemas.xmlsoap.org/claims/EmailAddress'])
-const usernameAttrs = new Set(['nickname', 'login', 'username', 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
-
 export function getUsernameOrEmail(data: SamlExternalData): string {
-    let userNameOrEmail = ''
-    if (data.Values) {
-        const entries = Object.entries(data.Values)
-        for (const [name, att] of entries) {
-            const attribute = att as Attribute
-            if (usernameAttrs.has(name)) {
-                userNameOrEmail = attribute.Values.length > 0 && attribute.Values[0].Value || ''
-                break
-            }
-            if (emailAttrs.has(name)) {
-                userNameOrEmail = attribute.Values.find((val: AttributeValue) =>
-                    val.Value.includes('@')
-                )?.Value || ''
-            }
-        }
-    }
-
-    return userNameOrEmail
+    return (
+        data.Values.nickname?.Values[0].Value ||
+        data.Values.login?.Values[0].Value ||
+        data.Values.username?.Values[0].Value ||
+        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']?.Values[0].Value ||
+        data.Values.emailaddress?.Values[0].Value ||
+        data.Values['http://schemas.xmlsoap.org/claims/EmailAddress']?.Values[0].Value ||
+        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']?.Values[0].Value ||
+        ''
+    )
 }
 
 const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
     authProvider: AuthProvider
-): NormalizedMinAccount => {
-    // kind and type match except for the casing
-    const kind = authProvider.serviceType as ExternalAccountKind
+): NormalizedMinAccount | null => {
+    if (
+        authProvider.serviceType === 'builtin' ||
+        authProvider.serviceType === 'http-header' ||
+        authProvider.serviceType === 'openidconnect'
+    ) {
+        return null
+    }
 
     const account = accounts[authProvider.serviceID]
     const accountExternalData = account?.accountData
 
-    const {icon, title: name} = defaultExternalAccounts[kind]
+    const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
     let normalizedAccount: NormalizedMinAccount = {
         icon,
@@ -100,47 +101,50 @@ const getNormalizedAccount = (
 
     // if external account exists - add user specific data to normalizedAccount
     if (account && accountExternalData) {
-        switch (kind) {
-            case 'github': {
-                const githubExternalData = accountExternalData as GitHubExternalData
-                normalizedAccount = {
-                    ...normalizedAccount,
-                    external: {
-                        id: account.id,
-                        // map GitHub fields
-                        userName: githubExternalData.name,
-                        userLogin: githubExternalData.login,
-                        userUrl: githubExternalData.html_url,
-                    },
+        switch (authProvider.serviceType) {
+            case 'github':
+                {
+                    const githubExternalData = accountExternalData as GitHubExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            // map GitHub fields
+                            userName: githubExternalData.name,
+                            userLogin: githubExternalData.login,
+                            userUrl: githubExternalData.html_url,
+                        },
+                    }
                 }
-            }
                 break
-            case 'gitlab': {
-                const gitlabExternalData = accountExternalData as GitLabExternalData
-                normalizedAccount = {
-                    ...normalizedAccount,
-                    external: {
-                        id: account.id,
-                        // map gitlab fields
-                        userName: gitlabExternalData.name,
-                        userLogin: gitlabExternalData.username,
-                        userUrl: gitlabExternalData.web_url,
-                    },
+            case 'gitlab':
+                {
+                    const gitlabExternalData = accountExternalData as GitLabExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            // map gitlab fields
+                            userName: gitlabExternalData.name,
+                            userLogin: gitlabExternalData.username,
+                            userUrl: gitlabExternalData.web_url,
+                        },
+                    }
                 }
-            }
                 break
-            case 'saml': {
-                const samlExternalData = accountExternalData as SamlExternalData
-                // In case the SAML values don't have a username, we get the user email.
-                const userNameOrEmail = getUsernameOrEmail(samlExternalData)
-                normalizedAccount = {
-                    ...normalizedAccount,
-                    external: {
-                        id: account.id,
-                        userName: userNameOrEmail
-                    },
+            case 'saml':
+                {
+                    const samlExternalData = accountExternalData as SamlExternalData
+                    // In case the SAML values don't have a username, we get the user email.
+                    const userNameOrEmail = getUsernameOrEmail(samlExternalData)
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            userName: userNameOrEmail,
+                        },
+                    }
                 }
-            }
                 break
         }
     }
@@ -160,9 +164,9 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                 {authProviders.map(authProvider => {
                     // if auth provider for this account doesn't exist -
                     // don't display the account as an option
-                    if (authProvider && authProvider.serviceType !== 'builtin') {
-                        const normAccount = getNormalizedAccount(accounts, authProvider)
-
+                    // if (authProvider && authProvider.serviceType !== 'builtin') {
+                    const normAccount = getNormalizedAccount(accounts, authProvider)
+                    if (normAccount) {
                         return (
                             <li
                                 key={authProvider.serviceID}

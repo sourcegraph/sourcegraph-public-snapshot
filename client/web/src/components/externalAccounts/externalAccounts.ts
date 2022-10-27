@@ -1,10 +1,10 @@
-import React from 'react';
+import React from 'react'
 
-import AccountCircleIcon from 'mdi-react/AccountCircleIcon';
-import GithubIcon from 'mdi-react/GithubIcon';
-import GitLabIcon from 'mdi-react/GitlabIcon';
+import AccountCircleIcon from 'mdi-react/AccountCircleIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitLabIcon from 'mdi-react/GitlabIcon'
 
-import {AuthProvider} from '../../jscontext';
+import { AuthProvider } from '../../jscontext'
 
 export type ExternalAccountKind = Exclude<AuthProvider['serviceType'], 'http-header' | 'builtin'>
 

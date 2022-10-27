@@ -57,9 +57,8 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
                 <div className="text-muted">
-                    {authProvider.serviceType === 'saml' && (
-                        <>{account.external ? <>{account.external.userName}</> : 'Not connected'}</>
-                    )}
+                    {authProvider.serviceType === 'saml' &&
+                        (account.external ? account.external.userName : 'Not connected')}
                     {authProvider.serviceType !== 'saml' && (
                         <>
                             {account.external?.userUrl ? (
@@ -74,7 +73,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                                 'Not connected'
                             )}
                         </>
-                        )}
+                    )}
                 </div>
             </div>
             <div className="align-self-center">
