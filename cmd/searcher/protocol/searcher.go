@@ -45,12 +45,6 @@ type Request struct {
 	// the fetch will still happen in the background so future requests don't have to wait.
 	FetchTimeout string
 
-	// Endpoint(s) for reaching Zoekt. See description in
-	// endpoint.go:Static(...)
-	//
-	// Deprecated: no longer read, searcher uses ServiceConnections now.
-	IndexerEndpoints []string
-
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
