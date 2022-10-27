@@ -322,7 +322,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 <div>
                                     <Button
                                         className="mr-1"
-                                        to="/sign-in"
+                                        to={
+                                            '/sign-in?returnTo=' +
+                                            encodeURI(history.location.pathname + history.location.search)
+                                        }
                                         variant="secondary"
                                         outline={true}
                                         size="sm"
