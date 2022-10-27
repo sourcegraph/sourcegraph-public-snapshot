@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { format } from 'date-fns'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
@@ -11,7 +13,7 @@ import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2, H3, Badge, Container } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
@@ -28,7 +30,6 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 import { Duration } from '../time/Duration'
-import { Timestamp } from '../time/Timestamp'
 
 import {
     useSyncExternalService,
@@ -359,13 +360,40 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         ]
     }, [node])
 
+    const runningStatuses = new Set<ExternalServiceSyncJobState> ([
+        ExternalServiceSyncJobState.QUEUED,
+        ExternalServiceSyncJobState.PROCESSING,
+        ExternalServiceSyncJobState.CANCELING,
+    ])
+    const [isExpanded, setIsExpanded] = useState(runningStatuses.has(node.state))
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
+        setIsExpanded(!isExpanded)
+    }, [isExpanded])
+
     return (
         <li className="list-group-item py-3">
-            <div className="d-flex align-items-center justify-content-between">
-                <div className="flex-shrink-0 mr-2">
+            <div className="d-flex justify-content-left">
+                <div className="d-flex mr-2 justify-content-left">
+                    <Button
+                        variant="icon"
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        onClick={toggleIsExpanded}
+                    >
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                    </Button>
+                </div>
+                <div className="d-flex mr-2 justify-content-left">
                     <Badge>{node.state}</Badge>
                 </div>
-                <div className="flex-shrink-0 flex-grow-1 mr-2">
+                <div className="flex-shrink-1 flex-grow-0 mr-1">
+                    {node.startedAt === null && 'Not started yet.'}
+                    {node.startedAt !== null && <>Started at {format(Date.parse(node.startedAt), 'HH:mm:ss')}.</>}
+                </div>
+                <div className="flex-shrink-1 flex-grow-0 mr-1">
+                    {node.finishedAt === null && 'Not finished yet.'}
+                    {node.finishedAt !== null && <>Finished at {format(Date.parse(node.finishedAt), 'HH:mm:ss')}.</>}
+                </div>
+                <div className="flex-shrink-0 flex-grow-1 mr-1">
                     {node.startedAt && (
                         <>
                             {node.finishedAt === null && <>Running for </>}
@@ -380,11 +408,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         </>
                     )}
                 </div>
-                {[
-                    ExternalServiceSyncJobState.QUEUED,
-                    ExternalServiceSyncJobState.PROCESSING,
-                    ExternalServiceSyncJobState.CANCELING,
-                ].includes(node.state) && (
+                {runningStatuses.has(node.state) && (
                     <LoaderButton
                         label="Cancel"
                         alwaysShowLabel={true}
@@ -397,26 +421,8 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         className={styles.cancelButton}
                     />
                 )}
-                <div className="text-right flex-shrink-0">
-                    <div>
-                        {node.startedAt === null && 'Not started yet'}
-                        {node.startedAt !== null && (
-                            <>
-                                Started <Timestamp date={node.startedAt} />
-                            </>
-                        )}
-                    </div>
-                    <div>
-                        {node.finishedAt === null && 'Not finished yet'}
-                        {node.finishedAt !== null && (
-                            <>
-                                Finished <Timestamp date={node.finishedAt} />
-                            </>
-                        )}
-                    </div>
-                </div>
             </div>
-            {legends && <ValueLegendList className="mb-1" items={legends} />}
+            {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
             {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
         </li>
     )

@@ -61,6 +61,14 @@ export const FUZZY_FILES_QUERY = gql`
     }
 `
 
+function fileIcon(filename: string): JSX.Element {
+    return (
+        <span className="fuzzy-repos-result-icon">
+            <Icon aria-label={filename} svgPath={mdiFileDocumentOutline} className="fuzzy-repos-result-icon" />
+        </span>
+    )
+}
+
 export async function loadFilesFSM(
     apolloClient: ApolloClient<object> | undefined,
     repoRevision: FuzzyRepoRevision,
@@ -87,9 +95,9 @@ export async function loadFilesFSM(
 
 export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {
     return newFuzzyFSMFromValues(
-        filenames.map(file => ({
-            text: file,
-            icon: <Icon aria-label={file} svgPath={mdiFileDocumentOutline} />,
+        filenames.map(text => ({
+            text,
+            icon: fileIcon(text),
         })),
         createUrl
     )
@@ -125,7 +133,10 @@ export class FuzzyRepoFiles {
             },
         })
         const filenames = response.data.repository?.commit?.fileNames || []
-        const values = filenames.map(name => ({ text: name }))
+        const values: SearchValue[] = filenames.map(text => ({
+            text,
+            icon: fileIcon(text),
+        }))
         this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
         this.loopIndexing()
         return values
@@ -168,7 +179,7 @@ export class FuzzyFiles extends FuzzyQuery {
         return [...this.queryResults.values()].map(({ text, url }) => ({
             text,
             url,
-            icon: <Icon aria-label={text} svgPath={mdiFileDocumentOutline} />,
+            icon: fileIcon(text),
         }))
     }
 

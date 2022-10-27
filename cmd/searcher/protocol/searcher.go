@@ -47,6 +47,8 @@ type Request struct {
 
 	// Endpoint(s) for reaching Zoekt. See description in
 	// endpoint.go:Static(...)
+	//
+	// Deprecated: no longer read, searcher uses ServiceConnections now.
 	IndexerEndpoints []string
 
 	// Whether the revision to be searched is indexed or unindexed. This matters for

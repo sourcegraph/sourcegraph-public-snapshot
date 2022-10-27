@@ -113,6 +113,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_gitserver_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\nINSERT INTO gitserver_repos\n(repo_id, shard_id)\nVALUES (NEW.id, '');\nRETURN NULL;\nEND;\n$function$\n"
     },
     {
+      "Name": "func_insert_zoekt_repo",
+      "Definition": "CREATE OR REPLACE FUNCTION public.func_insert_zoekt_repo()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);\n\n  RETURN NULL;\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_lsif_uploads_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_lsif_uploads_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE lsif_uploads_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE upload_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -16883,6 +16887,10 @@
       ],
       "Triggers": [
         {
+          "Name": "trig_create_zoekt_repo_on_repo_insert",
+          "Definition": "CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()"
+        },
+        {
           "Name": "trig_delete_repo_ref_on_external_service_repos",
           "Definition": "CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()"
         },
@@ -20259,6 +20267,109 @@
           "RefTableName": "users",
           "IsDeferrable": false,
           "ConstraintDefinition": "FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "zoekt_repos",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "branches",
+          "Index": 2,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'[]'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "index_status",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'not_indexed'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "zoekt_repos_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX zoekt_repos_pkey ON zoekt_repos USING btree (repo_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repo_id)"
+        },
+        {
+          "Name": "zoekt_repos_index_status",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "zoekt_repos_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []

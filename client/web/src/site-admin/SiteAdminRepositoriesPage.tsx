@@ -189,6 +189,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have not been cloned yet.',
+                filter: { name: 'status', value: 'not-cloned' },
             },
             {
                 value: data.repositoryStats.cloning,
@@ -196,6 +197,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
+                filter: { name: 'status', value: 'cloning' },
             },
             {
                 value: data.repositoryStats.cloned,
@@ -203,6 +205,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
+                filter: { name: 'status', value: 'cloned' },
             },
             {
                 value: data.repositoryStats.indexed,
@@ -217,6 +220,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+                filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
     }, [data])
