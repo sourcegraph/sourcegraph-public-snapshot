@@ -4,7 +4,7 @@ A CLI tool to generate blank repositories (containing a single commit with a REA
 
 ## Usage
 
-`go run dev/scaletesting/bulkrepocreate [flags...]`
+`go run ./dev/scaletesting/bulkrepocreate [flags...]`
 
 Flags:
 
