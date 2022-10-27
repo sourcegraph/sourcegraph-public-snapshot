@@ -337,17 +337,27 @@ func serveRank[T []float64 | map[string][]float64](
 
 func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
 	var body struct {
-		RepoID   uint32
-		Branches []zoekt.RepositoryBranch
+		Repositories []struct {
+			RepoID   uint32
+			Branches []zoekt.RepositoryBranch
+		}
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		return err
+		return errors.Wrap(err, "failed to decode request body")
 	}
 
-	h.logger.Info("updating index status", log.Uint32("repo", body.RepoID))
+	var (
+		ids     = make([]int32, len(body.Repositories))
+		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(body.Repositories))
+	)
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), map[uint32]*zoekt.MinimalRepoListEntry{
-		body.RepoID: {Branches: body.Branches},
-	})
+	for i, repo := range body.Repositories {
+		ids[i] = int32(repo.RepoID)
+		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+	}
+
+	h.logger.Info("updating index status", log.Int32s("repositories", ids))
+
+	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), minimal)
 }

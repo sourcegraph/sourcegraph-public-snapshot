@@ -283,7 +283,7 @@ func TestRepoRankFromConfig(t *testing.T) {
 func TestIndexStatusUpdate(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	body := `{"RepoID": 1234, "Branches": [{"Name": "main", "Version": "f00b4r"}]}`
+	body := `{"Repositories": [{"RepoID": 1234, "Branches": [{"Name": "main", "Version": "f00b4r"}]}]}`
 	wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
 	called := false
 
