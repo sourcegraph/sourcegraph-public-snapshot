@@ -35,7 +35,7 @@ var lintFormatCheck = &cli.BoolFlag{
 	Name:    "format-check",
 	Aliases: []string{"fc"},
 	Usage:   "Check file formatting and fail if changes are detected",
-	Value:   true,
+	Value:   false,
 }
 
 var lintCommand = &cli.Command{
@@ -82,9 +82,7 @@ sg lint --help
 			// If no args provided, run all
 			lintTargets = linters.Targets
 			for _, t := range lintTargets {
-				if t.Name != "clientformatting" { // only part of defaults if format-check flag is enabled
-					targets = append(targets, t.Name)
-				}
+				targets = append(targets, t.Name)
 			}
 		} else {
 			// Otherwise run requested set
@@ -114,7 +112,8 @@ sg lint --help
 		}
 		runner.FailFast = lintFailFast.Get(cmd)
 		if lintFormatCheck.Get(cmd) {
-			targets = append(targets, "clientformatting")
+			lintTargets = append(lintTargets, linters.FormattingTarget)
+			targets = append(targets, linters.FormattingTarget.Name)
 		}
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)

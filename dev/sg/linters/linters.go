@@ -73,13 +73,6 @@ var Targets = []Target{
 		},
 	},
 	{
-		Name:        "clientformatting",
-		Description: "Check client code and docs for formatting errors",
-		Checks: []*linter{
-			prettier,
-		},
-	},
-	{
 		Name:        "svg",
 		Description: "Check svg assets",
 		Enabled:     disabled("reported as unreliable"),
@@ -95,6 +88,14 @@ var Targets = []Target{
 			shellCheck,
 			bashSyntax,
 		},
+	},
+}
+
+var FormattingTarget = Target{
+	Name:        "format",
+	Description: "Check client code and docs for formatting errors",
+	Checks: []*linter{
+		prettier,
 	},
 }
 
