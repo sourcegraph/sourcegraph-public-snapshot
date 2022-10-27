@@ -16,7 +16,6 @@ import (
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
 	// Queries
-	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
@@ -87,6 +86,7 @@ type InsightStatusResolver interface {
 	CompletedJobs() int32
 	FailedJobs() int32
 	BackfillQueuedAt() *gqlutil.DateTime
+	IsLoadingData() (*bool, error)
 }
 
 type InsightsPointsArgs struct {

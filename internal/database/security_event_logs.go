@@ -42,6 +42,8 @@ const (
 	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
+
+	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -143,6 +145,10 @@ func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*Sec
 			names[i] = string(e.Name)
 		}
 		j, _ := json.Marshal(&events)
-		trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		if errors.Is(err, context.Canceled) {
+			trace.Logger(ctx, s.logger).Warn(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		} else {
+			trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		}
 	}
 }

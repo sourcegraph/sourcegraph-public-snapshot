@@ -27,7 +27,6 @@ require (
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
-	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -35,7 +34,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.3.4
+	github.com/derision-test/go-mockgen v1.3.6
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -107,7 +106,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.9.3
-	github.com/montanaflynn/stats v0.6.6
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opencontainers/go-digest v1.0.0
@@ -199,11 +197,13 @@ require github.com/XSAM/otelsql v0.15.0
 
 require (
 	github.com/cloudflare/circl v1.2.0 // indirect
+	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
+	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
@@ -213,17 +213,20 @@ require (
 )
 
 require (
+	cuelang.org/go v0.4.3
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
+	github.com/frankban/quicktest v1.14.3
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
+	github.com/xanzy/go-gitlab v0.73.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221017155433-cc0ca865f592
+	github.com/sourcegraph/zoekt v0.0.0-20221024111948-0ec03e4b8885
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -402,7 +405,6 @@ require (
 	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect

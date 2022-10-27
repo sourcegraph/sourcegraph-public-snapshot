@@ -129,16 +129,6 @@ func RepoUpdater() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerRepoManagement,
 							NextSteps:   "Check network connectivity to code hosts",
 						},
-						{
-							Name:        "user_added_repos",
-							Description: "total number of user added repos",
-							Query:       `max(src_repoupdater_user_repos_total)`,
-							// 90% of our enforced limit
-							Critical:  monitoring.Alert().GreaterOrEqual(800000 * 0.9).For(5 * time.Minute),
-							Panel:     monitoring.Panel().Unit(monitoring.Number),
-							Owner:     monitoring.ObservableOwnerRepoManagement,
-							NextSteps: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.",
-						},
 					},
 					{
 						{
@@ -159,7 +149,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Warning:     monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
-							NextSteps:   "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
+							NextSteps:   "Check repo-updater logs.",
 						},
 						{
 							Name:        "sched_manual_fetch",
@@ -340,15 +330,6 @@ func RepoUpdater() *monitoring.Dashboard {
 							Description: "the total number of external services",
 							Query:       `max(src_repoupdater_external_services_total)`,
 							Critical:    monitoring.Alert().GreaterOrEqual(20000).For(1 * time.Hour),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
-							NextSteps:   "Check for spikes in external services, could be abuse",
-						},
-						{
-							Name:        "src_repoupdater_user_external_services_total",
-							Description: "the total number of user added external services",
-							Query:       `max(src_repoupdater_user_external_services_total)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(20000).For(1 * time.Hour),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerRepoManagement,
 							NextSteps:   "Check for spikes in external services, could be abuse",

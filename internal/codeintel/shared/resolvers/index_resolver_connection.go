@@ -45,7 +45,6 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]LSIFIndexResolve
 
 	resolvers := make([]LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
-		// index := convertSharedIndexToDBStoreIndex(r.indexesResolver.Indexes[i])
 		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.indexesResolver.Indexes[i], r.prefetcher, r.errTracer))
 	}
 	return resolvers, nil

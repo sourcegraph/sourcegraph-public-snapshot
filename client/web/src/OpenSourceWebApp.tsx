@@ -7,6 +7,8 @@ import { extensionsAreaRoutes } from './extensions/routes'
 import './SourcegraphWebApp.scss'
 import { orgAreaHeaderNavItems } from './org/area/navitems'
 import { orgAreaRoutes } from './org/area/routes'
+import { orgSettingsAreaRoutes } from './org/settings/routes'
+import { orgSettingsSideBarItems } from './org/settings/sidebaritems'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { repoContainerRoutes, repoRevisionContainerRoutes } from './repo/routes'
 import { repoSettingsAreaRoutes } from './repo/settings/routes'
@@ -38,6 +40,8 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
         userAreaHeaderNavItems={userAreaHeaderNavItems}
         userSettingsSideBarItems={userSettingsSideBarItems}
         userSettingsAreaRoutes={userSettingsAreaRoutes}
+        orgSettingsSideBarItems={orgSettingsSideBarItems}
+        orgSettingsAreaRoutes={orgSettingsAreaRoutes}
         orgAreaRoutes={orgAreaRoutes}
         orgAreaHeaderNavItems={orgAreaHeaderNavItems}
         repoContainerRoutes={repoContainerRoutes}

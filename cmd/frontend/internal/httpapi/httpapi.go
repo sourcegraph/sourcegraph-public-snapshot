@@ -83,20 +83,25 @@ func NewHandler(
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
-
 	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
-	gh := webhooks.GitHubWebhook{
-		ExternalServices: db.ExternalServices(),
-	}
-
-	webhookhandlers.Init(db, &gh)
 	webhookMiddleware := webhooks.NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
+	gh := webhooks.GitHubWebhook{
+		DB: db,
+	}
+	webhookhandlers.Init(db, &gh)
 	handlers.GitHubWebhook.Register(&gh)
+	ghSync := repos.GitHubWebhookHandler{}
+	ghSync.Register(&gh)
 
+	// 🚨 SECURITY: This handler implements its own secret-based auth
+	// TODO: Integrate with webhookMiddleware.Logger
+	webhookHandler := webhooks.NewHandler(logger, db, &gh)
+
+	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
@@ -106,9 +111,6 @@ func NewHandler(
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
-
-	ghSync := repos.GitHubWebhookHandler{}
-	ghSync.Register(&gh)
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
@@ -167,6 +169,7 @@ func NewInternalHandler(
 	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
 		db:              db,
+		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
 		gitserverClient: gsClient,
 		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
 		RepoStore:       db.Repos(),
@@ -183,6 +186,7 @@ func NewInternalHandler(
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 	m.Get(apirouter.RepoRank).Handler(trace.Route(handler(indexer.serveRepoRank)))
 	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
+	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))

@@ -11819,25 +11819,6 @@ Query: `max(rate(src_repoupdater_source_repos_total[1m]))`
 
 <br />
 
-#### repo-updater: user_added_repos
-
-<p class="subtitle">Total number of user added repos</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-user-added-repos) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100022` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_repoupdater_user_repos_total)`
-
-</details>
-
-<br />
-
 #### repo-updater: purge_failed
 
 <p class="subtitle">Repositories purge failed</p>
@@ -12166,25 +12147,6 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <summary>Technical details</summary>
 
 Query: `max(src_repoupdater_external_services_total)`
-
-</details>
-
-<br />
-
-#### repo-updater: src_repoupdater_user_external_services_total
-
-<p class="subtitle">The total number of user added external services</p>
-
-Refer to the [alerts reference](./alerts.md#repo-updater-src-repoupdater-user-external-services-total) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(src_repoupdater_user_external_services_total)`
 
 </details>
 
@@ -16889,7 +16851,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -16916,7 +16878,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -16943,7 +16905,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -16970,7 +16932,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -16998,7 +16960,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))`
+Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))`
 
 </details>
 
@@ -17026,7 +16988,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))`
+Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))`
 
 </details>
 
@@ -17053,7 +17015,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))`
+Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))`
 
 </details>
 
@@ -17080,7 +17042,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])) / (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))`
+Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))`
 
 </details>
 
@@ -17107,7 +17069,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -17134,7 +17096,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 
@@ -17162,7 +17124,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])`
+Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m]))`
 
 </details>
 

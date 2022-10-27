@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -388,5 +389,20 @@ func TestWebhookURL(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, externalURL+"/.api/bitbucket-cloud-webhooks?externalServiceID=42&secret=foo+bar", have)
 		})
+	})
+}
+
+func TestCodeHostURN(t *testing.T) {
+	t.Run("normalize URL", func(t *testing.T) {
+		const url = "https://github.com"
+		urn, err := NewCodeHostBaseURL(url)
+		require.NoError(t, err)
+
+		assert.Equal(t, "https://github.com/", urn.String())
+	})
+
+	t.Run(`empty CodeHostURN.String() returns ""`, func(t *testing.T) {
+		urn := CodeHostBaseURL{}
+		assert.Equal(t, "", urn.String())
 	})
 }

@@ -536,6 +536,7 @@ type EncryptionKeys struct {
 	CacheSize int `json:"cacheSize,omitempty"`
 	// EnableCache description: enable LRU cache for decryption APIs
 	EnableCache            bool           `json:"enableCache,omitempty"`
+	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -1130,8 +1131,6 @@ type JVMPackagesConnection struct {
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
-	// GitserverAccessLogs description: DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.
-	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1910,6 +1909,8 @@ type SettingsExperimentalFeatures struct {
 	HomepageUserInvitation *bool `json:"homepageUserInvitation,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// PreloadGoToDefinition description: Preload definitions for available tokens in the visible viewport.
+	PreloadGoToDefinition bool `json:"preloadGoToDefinition,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
@@ -2048,6 +2049,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies *bool `json:"codeIntelAutoIndexing.allowGlobalPolicies,omitempty"`
 	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto-indexing feature. Currently experimental.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
+	// CodeIntelAutoIndexingIndexerMap description: Overrides the default Docker images used by auto-indexing.
+	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
 	// CodeIntelLockfileIndexingEnabled description: DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.
@@ -2084,6 +2087,10 @@ type SiteConfiguration struct {
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
+	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
+	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
+	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsSrcCLIImageTag string `json:"executors.srcCLIImageTag,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`

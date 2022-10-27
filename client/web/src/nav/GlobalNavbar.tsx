@@ -38,6 +38,7 @@ import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
+import { eventLogger } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
@@ -321,15 +322,23 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 <div>
                                     <Button
                                         className="mr-1"
-                                        to="/sign-in"
+                                        to={
+                                            '/sign-in?returnTo=' +
+                                            encodeURI(history.location.pathname + history.location.search)
+                                        }
                                         variant="secondary"
                                         outline={true}
                                         size="sm"
                                         as={Link}
                                     >
-                                        Log in
+                                        Sign in
                                     </Button>
-                                    <ButtonLink className={styles.signUp} to={buildGetStartedURL('nav')} size="sm">
+                                    <ButtonLink
+                                        className={styles.signUp}
+                                        to={buildGetStartedURL('nav')}
+                                        size="sm"
+                                        onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
+                                    >
                                         Get free trial
                                     </ButtonLink>
                                 </div>

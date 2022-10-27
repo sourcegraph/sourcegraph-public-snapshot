@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -155,8 +156,9 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				// We pass in a nil sub-repo permissions checker here since searcher needs access
-				// to all data in the archive
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  gitserver.ArchiveFormatTar,
@@ -167,8 +169,9 @@ func run(logger log.Logger) error {
 				for i, p := range paths {
 					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				// We pass in a nil sub-repo permissions checker here since searcher needs access
-				// to all data in the archive
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
 					Format:    gitserver.ArchiveFormatTar,
@@ -183,7 +186,13 @@ func run(logger log.Logger) error {
 			DB:                 db,
 		},
 
-		GitDiffSymbols:      git.DiffSymbols,
+		Indexed: sharedsearch.Indexed(),
+
+		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+			// As this is an internal service call, we need an internal actor.
+			ctx = actor.WithInternalActor(ctx)
+			return git.DiffSymbols(ctx, repo, commitA, commitB)
+		},
 		MaxTotalPathsLength: maxTotalPathsLength,
 
 		Log: logger,

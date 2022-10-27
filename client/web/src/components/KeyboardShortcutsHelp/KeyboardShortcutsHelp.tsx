@@ -100,6 +100,14 @@ interface KeybindingProps {
     keybindings: Keybinding[]
     uppercaseOrdered?: boolean
 }
+export function plaintextKeybindings(keybindings: Keybinding[]): string {
+    return keybindings
+        .map<string>(keybinding => {
+            const ordered = keybinding.ordered.map(key => key.toUpperCase())
+            return [...(keybinding.held || []), ...ordered].map(key => renderShortcutKey(key)).join('')
+        })
+        .join(' or ')
+}
 export const Keybindings: React.FunctionComponent<KeybindingProps> = ({ keybindings, uppercaseOrdered }) => (
     <>
         {keybindings.map((keybinding, index) => {

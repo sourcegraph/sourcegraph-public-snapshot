@@ -1,42 +1,3 @@
-<style>
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1em;
-    margin-bottom: 1em;
-  }
-  .app-btn {
-    font-size: 0.85rem;
-    cursor: pointer;
-    text-decoration: none;
-    padding-top: 1.5rem !important;
-    width: 100%;
-    border-radius: 1em;
-    border: 2px solid var(--input-focus-border);
-    color: var(--text-color);
-    background-color: var(--sidebar-bg);
-    text-align: center;
-    font-weight: 500;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased;
-  }
-  .app-btn:hover {
-    box-shadow: 0 0 10px var(--link-hover-color);
-  }
-  .app-btn > img {
-    height: 4em;
-  }
-  .app-btn > p {
-    margin-bottom: 0 !important;
-  }
-  .app-btn > h3 {
-    font-size: 1.5em;
-    font-weight: 400;
-    margin-top: .2em;
-    margin-bottom: 1em;
-  }
-</style>
-
 # Sourcegraph Cloud
 
 Sourcegraph Cloud is a single-tenant cloud solution. Cloud instances are private, dedicated instances provisioned and managed by Sourcegraph. Sourcegraph Cloud was formerly known as managed instances.
@@ -47,7 +8,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 
 <div class="grid">
   <!-- Sourcegraph Cloud -->
-  <a class="app-btn btn" href="http://signup.sourcegraph.com">
+  <a class="btn-app btn" href="http://signup.sourcegraph.com">
 			<img alt="sourcegraph-logo" src="https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/logo/versions/Sourcegraph_Logomark_Color.svg"/>
 			<h3>Sourcegraph Cloud</h3>
 		  <p>Sign up for a trial</p>

@@ -283,6 +283,16 @@ RETURN NULL;
 END;
 $$;
 
+CREATE FUNCTION func_insert_zoekt_repo() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);
+
+  RETURN NULL;
+END;
+$$;
+
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1595,6 +1605,12 @@ CREATE TABLE codeintel_path_ranks (
     payload text NOT NULL
 );
 
+CREATE TABLE codeintel_ranking_exports (
+    upload_id integer NOT NULL,
+    graph_key text NOT NULL,
+    locked_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 CREATE TABLE configuration_policies_audit_logs (
     log_timestamp timestamp with time zone DEFAULT clock_timestamp(),
     record_deleted_at timestamp with time zone,
@@ -1827,6 +1843,48 @@ CREATE SEQUENCE executor_heartbeats_id_seq
     CACHE 1;
 
 ALTER SEQUENCE executor_heartbeats_id_seq OWNED BY executor_heartbeats.id;
+
+CREATE TABLE executor_secret_access_logs (
+    id integer NOT NULL,
+    executor_secret_id integer NOT NULL,
+    user_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE executor_secret_access_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secret_access_logs_id_seq OWNED BY executor_secret_access_logs.id;
+
+CREATE TABLE executor_secrets (
+    id integer NOT NULL,
+    key text NOT NULL,
+    value bytea NOT NULL,
+    scope text NOT NULL,
+    encryption_key_id text,
+    namespace_user_id integer,
+    namespace_org_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    creator_id integer
+);
+
+COMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';
+
+CREATE SEQUENCE executor_secrets_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE executor_secrets_id_seq OWNED BY executor_secrets.id;
 
 CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     id integer NOT NULL,
@@ -2374,6 +2432,7 @@ CREATE TABLE lsif_uploads (
     cancel boolean DEFAULT false NOT NULL,
     uncompressed_size bigint,
     last_referenced_scan_at timestamp with time zone,
+    last_traversal_scan_at timestamp with time zone,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2404,6 +2463,8 @@ COMMENT ON COLUMN lsif_uploads.reference_count IS 'The number of references to t
 COMMENT ON COLUMN lsif_uploads.indexer_version IS 'The version of the indexer that produced the index file. If not supplied by the user it will be pulled from the index metadata.';
 
 COMMENT ON COLUMN lsif_uploads.last_referenced_scan_at IS 'The last time this upload was known to be referenced by another (possibly expired) index.';
+
+COMMENT ON COLUMN lsif_uploads.last_traversal_scan_at IS 'The last time this upload was known to be reachable by a non-expired index.';
 
 CREATE VIEW lsif_dumps AS
  SELECT u.id,
@@ -2514,6 +2575,7 @@ CREATE TABLE lsif_indexes (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    should_reindex boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2566,6 +2628,7 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.log_contents,
     u.execution_logs,
     u.local_steps,
+    u.should_reindex,
     r.name AS repository_name
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
@@ -3556,7 +3619,8 @@ CREATE TABLE webhook_logs (
     status_code integer NOT NULL,
     request bytea NOT NULL,
     response bytea NOT NULL,
-    encryption_key_id text NOT NULL
+    encryption_key_id text NOT NULL,
+    webhook_id integer
 );
 
 CREATE SEQUENCE webhook_logs_id_seq
@@ -3602,6 +3666,14 @@ CREATE SEQUENCE webhooks_id_seq
     CACHE 1;
 
 ALTER SEQUENCE webhooks_id_seq OWNED BY webhooks.id;
+
+CREATE TABLE zoekt_repos (
+    repo_id integer NOT NULL,
+    branches jsonb DEFAULT '[]'::jsonb NOT NULL,
+    index_status text DEFAULT 'not_indexed'::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
@@ -3670,6 +3742,10 @@ ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secret_access_logs ALTER COLUMN id SET DEFAULT nextval('executor_secret_access_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_secrets_id_seq'::regclass);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
@@ -3851,6 +3927,9 @@ ALTER TABLE ONLY codeintel_lockfiles
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
 
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
+
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
 
@@ -3880,6 +3959,12 @@ ALTER TABLE ONLY executor_heartbeats
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs
     ADD CONSTRAINT explicit_permissions_bitbucket_projects_jobs_pkey PRIMARY KEY (id);
@@ -4103,6 +4188,9 @@ ALTER TABLE ONLY webhooks
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_uuid_key UNIQUE (uuid);
 
+ALTER TABLE ONLY zoekt_repos
+    ADD CONSTRAINT zoekt_repos_pkey PRIMARY KEY (repo_id);
+
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
@@ -4116,6 +4204,8 @@ CREATE UNIQUE INDEX batch_changes_site_credentials_unique ON batch_changes_site_
 CREATE UNIQUE INDEX batch_changes_unique_org_id ON batch_changes USING btree (name, namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
 CREATE UNIQUE INDEX batch_changes_unique_user_id ON batch_changes USING btree (name, namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
+
+CREATE INDEX batch_spec_resolution_jobs_state ON batch_spec_resolution_jobs USING btree (state);
 
 CREATE INDEX batch_spec_workspace_execution_jobs_batch_spec_workspace_id ON batch_spec_workspace_execution_jobs USING btree (batch_spec_workspace_id);
 
@@ -4227,6 +4317,12 @@ CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezon
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
+CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE ((namespace_user_id IS NULL) AND (namespace_org_id IS NULL));
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE (namespace_org_id IS NOT NULL);
+
+CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_user ON executor_secrets USING btree (key, namespace_user_id, scope) WHERE (namespace_user_id IS NOT NULL);
+
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_project_key_extern ON explicit_permissions_bitbucket_projects_jobs USING btree (project_key, external_service_id, state);
 
 CREATE INDEX explicit_permissions_bitbucket_projects_jobs_queued_at_idx ON explicit_permissions_bitbucket_projects_jobs USING btree (queued_at);
@@ -4259,6 +4355,8 @@ CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btre
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
 
+CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
+
 CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloned'::text);
 
 CREATE INDEX gitserver_repos_cloning_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloning'::text);
@@ -4285,7 +4383,11 @@ CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, c
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
 
+CREATE INDEX lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_jobs USING btree (state);
+
 CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_jobs USING btree (upload_id);
+
+CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
 
@@ -4429,17 +4531,23 @@ CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (delete
 
 CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
 
+CREATE INDEX webhook_build_jobs_state ON webhook_build_jobs USING btree (state);
+
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 
 CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_at);
 
 CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_code);
 
+CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status);
+
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
+CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 
@@ -4642,6 +4750,9 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
 
@@ -4665,6 +4776,21 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_thread_id_fkey FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_executor_secret_id_fkey FOREIGN KEY (executor_secret_id) REFERENCES executor_secrets(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secret_access_logs
+    ADD CONSTRAINT executor_secret_access_logs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_creator_id_fkey FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY executor_secrets
+    ADD CONSTRAINT executor_secrets_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
@@ -4846,11 +4972,17 @@ ALTER TABLE ONLY user_public_repos
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
+ALTER TABLE ONLY webhook_logs
+    ADD CONSTRAINT webhook_logs_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_created_by_user_id_fkey FOREIGN KEY (created_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_updated_by_user_id_fkey FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY zoekt_repos
+    ADD CONSTRAINT zoekt_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);
