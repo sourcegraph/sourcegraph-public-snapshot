@@ -1256,14 +1256,12 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 	}
 
-	if !conf.Get().DisableAutoGitUpdates {
-		for _, rev := range args.Revisions {
-			// TODO add result to trace
-			if rev.RevSpec != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
-			} else if rev.RefGlob != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
-			}
+	for _, rev := range args.Revisions {
+		// TODO add result to trace
+		if rev.RevSpec != "" {
+			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+		} else if rev.RefGlob != "" {
+			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
 		}
 	}
 
@@ -1670,12 +1668,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	if !conf.Get().DisableAutoGitUpdates {
-		// ensureRevision may kick off a git fetch operation which we don't want if we've
-		// configured DisableAutoGitUpdates.
-		if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
-			ensureRevisionStatus = "fetched"
-		}
+	if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+		ensureRevisionStatus = "fetched"
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -2810,6 +2804,12 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
+	if conf.Get().DisableAutoGitUpdates {
+		// ensureRevision may kick off a git fetch operation which we don't want if we've
+		// configured DisableAutoGitUpdates.
+		return false
+	}
+
 	// rev-parse on an OID does not check if the commit actually exists, so it always
 	// works. So we append ^0 to force the check
 	if isAbsoluteRevision(rev) {
