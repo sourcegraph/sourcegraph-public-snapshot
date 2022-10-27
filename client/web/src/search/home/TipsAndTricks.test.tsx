@@ -22,7 +22,6 @@ const renderTipsAndTricks = (): RenderResult =>
     render(
         <MemoryRouter initialEntries={['/']}>
             <TipsAndTricks
-                title="Tips and Tricks"
                 examples={[mockExampleLink]}
                 moreLink={mockMoreLink}
                 telemetryService={{ ...NOOP_TELEMETRY_SERVICE, log: mockLogFunc }}

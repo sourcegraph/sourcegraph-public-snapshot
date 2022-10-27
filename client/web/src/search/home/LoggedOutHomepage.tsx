@@ -2,20 +2,15 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ModalVideo } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { H4, Link } from '@sourcegraph/wildcard'
 
-import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
-import { GettingStartedTour } from '../../tour/GettingStartedTour'
+import { eventLogger } from '../../tracking/eventLogger'
 
-import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
-import { HeroSection } from './HeroSection'
 import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
 import { TipsAndTricks } from './TipsAndTricks'
-import { TrySourcegraphCloudSection } from './TrySourcegraphCloudSection'
 
 import styles from './LoggedOutHomepage.module.scss'
 
@@ -25,14 +20,7 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
-                <GettingStartedTour
-                    height={8}
-                    className={classNames(styles.gettingStartedTour, 'h-100')}
-                    telemetryService={props.telemetryService}
-                    isSourcegraphDotCom={true}
-                />
                 <TipsAndTricks
-                    title="Tips and Tricks"
                     examples={exampleTripsAndTricks}
                     moreLink={{
                         label: 'More search features',
@@ -41,69 +29,16 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                     }}
                     {...props}
                 />
-
-                <div className={styles.videoCard}>
-                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                    <ModalVideo
-                        id="three-ways-to-search-title"
-                        title="Three ways to search"
-                        src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                        thumbnail={{
-                            src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
-                            alt: 'Watch and learn video thumbnail',
-                        }}
-                        onToggle={isOpen =>
-                            props.telemetryService.log(
-                                isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
-                            )
-                        }
-                        assetsRoot={window.context?.assetsRoot || ''}
-                    />
-                </div>
             </div>
-
-            <div className={styles.trySourcegraphCloudSection}>
-                <TrySourcegraphCloudSection />
-            </div>
-
-            <div className={styles.heroSection}>
-                <HeroSection {...props} />
-            </div>
-
-            <div className={styles.communitySearchContextsSection}>
-                <div className="d-block d-md-flex align-items-baseline mb-3">
-                    <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
-                    <div className="font-weight-normal text-muted">
-                        Customized search portals for our open source partners
-                    </div>
-                </div>
-                <div className={styles.loggedOutHomepageCommunitySearchContextListCards}>
-                    {communitySearchContextsList.map(communitySearchContext => (
-                        <div
-                            className={classNames(
-                                styles.loggedOutHomepageCommunitySearchContextListCard,
-                                'd-flex align-items-center'
-                            )}
-                            key={communitySearchContext.spec}
-                        >
-                            <img
-                                className={classNames(styles.loggedOutHomepageCommunitySearchContextListIcon, 'mr-2')}
-                                src={communitySearchContext.homepageIcon}
-                                alt={`${communitySearchContext.spec} icon`}
-                            />
-                            <Link
-                                to={communitySearchContext.url}
-                                className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
-                            >
-                                {communitySearchContext.title}
-                            </Link>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className={styles.customerSection}>
-                <CustomersSection {...props} />
+            
+            <div className="d-flex align-items-center justify-content-lg-center my-5">
+                <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
+                <Link
+                    to="https://signup.sourcegraph.com/"
+                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                >
+                    Use Sourcegraph to search across your team's code.
+                </Link>
             </div>
         </div>
     </DynamicWebFonts>
