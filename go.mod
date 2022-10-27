@@ -27,7 +27,6 @@ require (
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
-	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -107,7 +106,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.21
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/moby/buildkit v0.9.3
-	github.com/montanaflynn/stats v0.6.6
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opencontainers/go-digest v1.0.0
@@ -407,7 +405,6 @@ require (
 	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
