@@ -42,16 +42,13 @@ export const TrySourcegraphCloudSection: FunctionComponent = () => {
                     </div>
 
                     <div className={styles.buttonContainer}>
-                        <Button
-                            variant="secondary"
-                            className={styles.trialButton}
-                        >
+                        <Button variant="secondary" className={styles.trialButton}>
                             Get free trial now
                         </Button>
                     </div>
                 </div>
             </Link>
-            
+
             <Text size="small" className={styles.selfHostedCopy}>
                 Want to deploy yourself?
                 <Link

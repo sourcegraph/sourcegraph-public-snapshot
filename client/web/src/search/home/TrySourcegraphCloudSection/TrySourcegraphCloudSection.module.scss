@@ -11,7 +11,7 @@
         text-decoration: none;
 
         .trial-button {
-            background: #A305E1;
+            background: #a305e1;
             color: #ffffff;
         }
     }
@@ -40,7 +40,7 @@
 }
 
 .try-cloud {
-    color: #D0BFFF;
+    color: #d0bfff;
     font-size: 1.688rem;
     line-height: 31px;
     margin-bottom: 0.125rem;
@@ -55,7 +55,7 @@
     @media (--sm-breakpoint-up) {
         height: 1.563rem;
     }
-    
+
     span {
         display: block;
         @media (--sm-breakpoint-up) {
@@ -89,12 +89,12 @@
 
 .trial-button {
     background: #ffffff;
-    color: #A305E1;
+    color: #a305e1;
     width: 100%;
     margin-bottom: 0.5rem;
     margin-left: auto;
     &:hover {
-        background: #A305E1 !important;
+        background: #a305e1 !important;
         color: #ffffff !important;
     }
 }
@@ -107,29 +107,29 @@
     }
 }
 
-@keyframes spin_words{
-    10%{
+@keyframes spin_words {
+    10% {
         transform: translateY(-112%);
     }
-    25%{
+    25% {
         transform: translateY(-100%);
     }
-    35%{
+    35% {
         transform: translateY(-212%);
     }
-    50%{
+    50% {
         transform: translateY(-200%);
     }
-    60%{
+    60% {
         transform: translateY(-312%);
     }
-    75%{
+    75% {
         transform: translateY(-300%);
     }
-    85%{
+    85% {
         transform: translateY(-412%);
     }
-    100%{
+    100% {
         transform: translateY(-400%);
     }
 }
