@@ -105,16 +105,17 @@ sg lint --help
 			return errors.Wrap(err, "repo.GetState")
 		}
 
+		if lintFormatCheck.Get(cmd) {
+			lintTargets = append(lintTargets, linters.FormattingTarget)
+			targets = append(targets, linters.FormattingTarget.Name)
+		}
+
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 		if cmd.Bool("fix") {
 			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
 			return runner.Fix(cmd.Context, repoState)
 		}
 		runner.FailFast = lintFailFast.Get(cmd)
-		if lintFormatCheck.Get(cmd) {
-			lintTargets = append(lintTargets, linters.FormattingTarget)
-			targets = append(targets, linters.FormattingTarget.Name)
-		}
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
