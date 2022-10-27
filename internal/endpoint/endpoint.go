@@ -6,8 +6,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,7 +22,7 @@ type Map struct {
 	urlspec string
 
 	mu  sync.RWMutex
-	hm  consistentHash
+	hm  *rendezvous.Rendezvous
 	err error
 
 	init      sync.Once
@@ -226,4 +228,8 @@ func ConfBased(getter connsGetter) *Map {
 			})
 		},
 	}
+}
+
+func newConsistentHash(nodes []string) *rendezvous.Rendezvous {
+	return rendezvous.New(nodes, xxhash.Sum64String)
 }

@@ -190,15 +190,15 @@ export const visitorsTasks: TourTaskType[] = [
         steps: [
             {
                 id: 'InstallOrSignUp',
-                label: 'Get powerful code search and other features on your private code.',
+                label: 'Get free trial',
                 action: {
                     type: 'new-tab-link',
                     value:
-                        'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=getting-started-tour&utm_campaign=inproduct-cta&_ga=2.130711115.51352124.1647511547-1994718421.1647511547',
+                        'https://signup.sourcegraph.com?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
                 },
                 // This is done to mimic user creating an account, and signed in there is a different tour
                 completeAfterEvents: ['non-existing-event'],
-            },
+            }
         ],
     },
 ]
@@ -284,14 +284,12 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
     steps: [
         {
             id: 'InstallOrSignUp',
-            label: 'Register for a free account',
-            tooltip:
-                'Registration unlocks additional features like IDE integrations, browser extensions, saved searches and more.',
+            label: 'Get free trial',
             action: {
                 type: 'new-tab-link',
                 variant: 'button-primary',
                 value:
-                    'https://about.sourcegraph.com/get-started?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
+                    'https://signup.sourcegraph.com?utm_medium=inproduct&utm_source=quick-start-tour-notebooks&utm_campaign=inproduct-cta',
             },
             // This is done to mimic user creating an account, and signed in there is a different tour
             completeAfterEvents: ['non-existing-event'],

@@ -136,7 +136,7 @@ type Scheduler struct {
 }
 
 func NewScheduler(db edb.InsightsDB) *Scheduler {
-	return &Scheduler{backfillStore: newBackfillStore(db)}
+	return &Scheduler{backfillStore: NewBackfillStore(db)}
 }
 
 func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, backfill *SeriesBackfill) error {

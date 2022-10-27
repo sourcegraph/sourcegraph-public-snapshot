@@ -1,6 +1,6 @@
 # Bitbucket Server / Bitbucket Data Center
 
-Site admins can sync Git repositories hosted on [Bitbucket Server / Bitbucket Data Center](https://www.atlassian.com/software/bitbucket/server) (and the [Bitbucket Data Center](https://www.atlassian.com/enterprise/data-center/bitbucket) deployment option) with Sourcegraph so that users can search and navigate the repositories.
+Site admins can sync Git repositories hosted on [Bitbucket Server](https://www.atlassian.com/software/bitbucket/server) or [Bitbucket Data Center](https://www.atlassian.com/enterprise/data-center/bitbucket) with Sourcegraph so that users can search and navigate their repositories.
 
 To connect Bitbucket Server / Bitbucket Data Center to Sourcegraph:
 
