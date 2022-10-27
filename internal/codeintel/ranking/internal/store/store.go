@@ -132,14 +132,16 @@ func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, ran
 	}
 	payload := string(serialized)
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, payload, payload))
+	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, payload))
 }
 
 const setDocumentRanksQuery = `
-INSERT INTO codeintel_path_ranks (repository_id, payload)
+INSERT INTO codeintel_path_ranks AS pr (repository_id, payload)
 VALUES (
 	(SELECT id FROM repo WHERE name = %s),
 	%s
 )
-ON CONFLICT (repository_id) DO UPDATE SET payload = %s
+ON CONFLICT (repository_id) DO
+UPDATE
+	SET payload = (pr.payload::jsonb || EXCLUDED.payload::jsonb)::text
 `
