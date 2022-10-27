@@ -119,7 +119,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(linters.Targets).Commands(),
+	Subcommands: lintTargets(append(linters.Targets, linters.FormattingTarget)).Commands(),
 }
 
 type lintTargets []linters.Target
