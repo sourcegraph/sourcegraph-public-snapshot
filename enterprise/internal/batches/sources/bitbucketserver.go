@@ -344,6 +344,8 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
+		fmt.Printf("GetUserFork - Created FORK Name %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
+
 	} else {
 		fmt.Printf("FORK WAS FOUND! %v/%v", fork.Project.Key, fork.Name)
 	}
@@ -372,7 +374,9 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating fork in %q", namespace)
+
 		}
+		fmt.Printf("GetNamepaceFork - Created FORK Name %v", createdFork)
 	}
 
 	return s.copyRepoAsFork(targetRepo, fork, namespace)
