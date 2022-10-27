@@ -5,12 +5,13 @@ import classNames from 'classnames'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { GettingStartedTour } from '../../tour/GettingStartedTour'
+import { H4, Text, Link } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
 import { TipsAndTricks } from './TipsAndTricks'
-import { TrySourcegraphCloudSection } from './TrySourcegraphCloudSection'
 
 import styles from './LoggedOutHomepage.module.scss'
 
@@ -20,14 +21,7 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
-                <GettingStartedTour
-                    height={8}
-                    className={classNames(styles.gettingStartedTour, 'h-100')}
-                    telemetryService={props.telemetryService}
-                    isSourcegraphDotCom={true}
-                />
                 <TipsAndTricks
-                    title="Tips and Tricks"
                     examples={exampleTripsAndTricks}
                     moreLink={{
                         label: 'More search features',
@@ -37,9 +31,17 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                     {...props}
                 />
             </div>
-
-            <div className={styles.trySourcegraphCloudSection}>
-                <TrySourcegraphCloudSection />
+            
+            <div className="d-flex justify-content-center align-items-center my-5">
+                <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
+                <Text className="mb-0">Search on your private repositories.</Text>
+                <Link
+                    to="https://signup.sourcegraph.com/"
+                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                    className="ml-1"
+                >
+                    Sign up for a 30-day trial on Sourcegraph Cloud.
+                </Link>
             </div>
         </div>
     </DynamicWebFonts>

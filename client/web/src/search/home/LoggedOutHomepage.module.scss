@@ -131,8 +131,11 @@
     min-height: 2.375rem;
 }
 
-.try-sourcegraph-cloud-section {
-    margin-top: 4rem;
+.pro-tip-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-right: 1px solid var(--border-color)
 }
 
 .content {
@@ -146,20 +149,5 @@
     }
     @media (--sm-breakpoint-down) {
         flex-direction: column;
-    }
-}
-
-.getting-started-tour {
-    width: 18rem;
-
-    @media (--md-breakpoint-down) {
-        max-width: 40%;
-        flex: 1;
-    }
-
-    @media (--sm-breakpoint-down) {
-        max-width: 100%;
-        width: 100%;
-        flex: initial;
     }
 }
