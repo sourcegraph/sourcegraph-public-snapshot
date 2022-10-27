@@ -164,7 +164,6 @@ export const ExternalAccountsSignIn: React.FunctionComponent<React.PropsWithChil
                 {authProviders.map(authProvider => {
                     // if auth provider for this account doesn't exist -
                     // don't display the account as an option
-                    // if (authProvider && authProvider.serviceType !== 'builtin') {
                     const normAccount = getNormalizedAccount(accounts, authProvider)
                     if (normAccount) {
                         return (
