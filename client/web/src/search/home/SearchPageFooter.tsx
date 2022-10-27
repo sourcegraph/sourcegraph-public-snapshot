@@ -100,16 +100,16 @@ export const SearchPageFooter: React.FunctionComponent<
                     </li>
                 ))}
                 <li>
-                    <Link
-                        to="https://srcgr.ph/discord-server"
-                        className={styles.discordWrapper}
-                        onClick={logDiscordClicked}
-                    >
-                        <div className={styles.discordText}>
+                    <div className={styles.discordText}>
+                        <Link
+                            to="https://srcgr.ph/discord-server"
+                            className={styles.discordWrapper}
+                            onClick={logDiscordClicked}
+                        >
                             <H2 className={styles.linkSectionHeading}>Join our Discord</H2>
-                            <div>If you need help or want to share something with the community, join us!</div>
-                        </div>
-                    </Link>
+                        </Link>
+                        <div>If you need help or want to share something with the community, join us!</div>
+                    </div>
                 </li>
             </ul>
         </footer>
