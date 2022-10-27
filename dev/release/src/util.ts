@@ -154,7 +154,8 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
 export function ensureSrcCliEndpoint(): void {
     const srcEndpoint = process.env.SRC_ENDPOINT
     if (srcEndpoint !== SOURCEGRAPH_RELEASE_INSTANCE_URL) {
-        throw new Error('the $SRC_ENDPOINT provided doesn\'t match what is expected by the release tool')
+        throw new Error(`the $SRC_ENDPOINT provided doesn't match what is expected by the release tool.
+Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
     }
 }
 
