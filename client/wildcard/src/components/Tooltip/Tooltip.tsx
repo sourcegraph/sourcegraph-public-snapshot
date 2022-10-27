@@ -37,13 +37,6 @@ export interface TooltipProps {
  * Renders a Tooltip that will be positioned relative to the wrapped child element. Please
  * reference the examples in Storybook for more details on specific use cases.
  *
- * **NOTE:** The Tooltip implementation currently breaks the behavior of triggers that use
- * `ButtonLink` with no `to` prop. Specifically, the onClick handler of `<ButtonLink>` does
- * not get composed correctly, and the default behavior will not be prevented when that
- * component has an empty href (resulting in a page reload). If the trigger element you are
- * using is not working as expected, please wrap that element with an additional element
- * (such as a `<span>`). That should resolve the issue.
- *
  * To support accessibility, our tooltips should:
  * - Be supplemental to the user journey, not essential.
  * - Use clear and concise text.
@@ -57,14 +50,11 @@ export interface TooltipProps {
  * - If the trigger is an `<Icon>`, it must have an `aria-label` (and NOT be `aria-hidden`).
  * - If the trigger is a `<Button>` with no visible text within it (e.g., only an icon),
  * it must have an `aria-label`.
- *
- * To test for the correct content in test suites where the tooltip won't be opened, please
- * use `data-*` attributes on the trigger element.
  */
 export const Tooltip: FC<TooltipProps> = props => {
     const { children, content, defaultOpen = false, placement = 'bottom' } = props
 
-    const tooltipId = useId()
+    const tooltipId = `tooltip-${useId()}`
     const [target, setTarget] = useState<HTMLElement | null>(null)
     const [tail, setTail] = useState<HTMLDivElement | null>(null)
     const popoverContentRef = useRef<HTMLDivElement>(null)
@@ -122,7 +112,7 @@ export const Tooltip: FC<TooltipProps> = props => {
         }
     }
 
-    const isOpen = useDebounce(open, 100)
+    const isOpen =  useDebounce(open, 100)
 
     return (
         <>
@@ -130,13 +120,13 @@ export const Tooltip: FC<TooltipProps> = props => {
                 {children}
             </TooltipTarget>
 
-            {content && target && (
+            {content && target && isOpen &&(
                 <>
                     <PopoverContent
                         role="tooltip"
                         id={tooltipId}
                         ref={popoverContentRef}
-                        isOpen={isOpen}
+                        isOpen={true}
                         target={target}
                         tail={tail}
                         position={placement}
@@ -149,9 +139,7 @@ export const Tooltip: FC<TooltipProps> = props => {
                         {content}
                     </PopoverContent>
 
-                    {isOpen && (
-                        <PopoverTail ref={setTail} forceRender={true} size="sm" className={styles.tooltipArrow} />
-                    )}
+                    <PopoverTail ref={setTail} forceRender={true} size="sm" className={styles.tooltipArrow} />
                 </>
             )}
         </>
@@ -163,7 +151,7 @@ interface TooltipTargetProps {
     children: React.ReactElement
 }
 
-const TooltipTarget = forwardRef<any, TooltipTargetProps>((props, forwardedRef) => {
+const TooltipTarget = forwardRef<any, TooltipTargetProps>(function TooltipTarget(props, forwardedRef) {
     const { 'aria-describedby': ariaDescribedby, children } = props
 
     const mergedRef = useMergeRefs([forwardedRef, (children as any).ref])
