@@ -39253,9 +39253,9 @@ type MockSubRepoPermsStore struct {
 	// GetByUserAndServiceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByUserAndService.
 	GetByUserAndServiceFunc *SubRepoPermsStoreGetByUserAndServiceFunc
-	// RepoIdSupportedFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoIdSupported.
-	RepoIdSupportedFunc *SubRepoPermsStoreRepoIdSupportedFunc
+	// RepoIDSupportedFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDSupported.
+	RepoIDSupportedFunc *SubRepoPermsStoreRepoIDSupportedFunc
 	// RepoSupportedFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoSupported.
 	RepoSupportedFunc *SubRepoPermsStoreRepoSupportedFunc
@@ -39298,7 +39298,7 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 				return
 			},
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
 				return
 			},
@@ -39356,9 +39356,9 @@ func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
 				panic("unexpected invocation of MockSubRepoPermsStore.GetByUserAndService")
 			},
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: func(context.Context, api.RepoID) (bool, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.RepoIdSupported")
+				panic("unexpected invocation of MockSubRepoPermsStore.RepoIDSupported")
 			},
 		},
 		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
@@ -39406,8 +39406,8 @@ func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
 		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
 			defaultHook: i.GetByUserAndService,
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
-			defaultHook: i.RepoIdSupported,
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
+			defaultHook: i.RepoIDSupported,
 		},
 		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
 			defaultHook: i.RepoSupported,
@@ -39866,37 +39866,37 @@ func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// SubRepoPermsStoreRepoIdSupportedFunc describes the behavior when the
-// RepoIdSupported method of the parent MockSubRepoPermsStore instance is
+// SubRepoPermsStoreRepoIDSupportedFunc describes the behavior when the
+// RepoIDSupported method of the parent MockSubRepoPermsStore instance is
 // invoked.
-type SubRepoPermsStoreRepoIdSupportedFunc struct {
+type SubRepoPermsStoreRepoIDSupportedFunc struct {
 	defaultHook func(context.Context, api.RepoID) (bool, error)
 	hooks       []func(context.Context, api.RepoID) (bool, error)
-	history     []SubRepoPermsStoreRepoIdSupportedFuncCall
+	history     []SubRepoPermsStoreRepoIDSupportedFuncCall
 	mutex       sync.Mutex
 }
 
-// RepoIdSupported delegates to the next hook function in the queue and
+// RepoIDSupported delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) RepoIdSupported(v0 context.Context, v1 api.RepoID) (bool, error) {
-	r0, r1 := m.RepoIdSupportedFunc.nextHook()(v0, v1)
-	m.RepoIdSupportedFunc.appendCall(SubRepoPermsStoreRepoIdSupportedFuncCall{v0, v1, r0, r1})
+func (m *MockSubRepoPermsStore) RepoIDSupported(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.RepoIDSupportedFunc.nextHook()(v0, v1)
+	m.RepoIDSupportedFunc.appendCall(SubRepoPermsStoreRepoIDSupportedFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the RepoIdSupported
+// SetDefaultHook sets function that is called when the RepoIDSupported
 // method of the parent MockSubRepoPermsStore instance is invoked and the
 // hook queue is empty.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoIdSupported method of the parent MockSubRepoPermsStore instance
+// RepoIDSupported method of the parent MockSubRepoPermsStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39904,20 +39904,20 @@ func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushReturn(r0 bool, r1 error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39930,27 +39930,27 @@ func (f *SubRepoPermsStoreRepoIdSupportedFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoIdSupportedFuncCall) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoIDSupportedFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of SubRepoPermsStoreRepoIdSupportedFuncCall
+// History returns a sequence of SubRepoPermsStoreRepoIDSupportedFuncCall
 // objects describing the invocations of this function.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) History() []SubRepoPermsStoreRepoIdSupportedFuncCall {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) History() []SubRepoPermsStoreRepoIDSupportedFuncCall {
 	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreRepoIdSupportedFuncCall, len(f.history))
+	history := make([]SubRepoPermsStoreRepoIDSupportedFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SubRepoPermsStoreRepoIdSupportedFuncCall is an object that describes an
-// invocation of method RepoIdSupported on an instance of
+// SubRepoPermsStoreRepoIDSupportedFuncCall is an object that describes an
+// invocation of method RepoIDSupported on an instance of
 // MockSubRepoPermsStore.
-type SubRepoPermsStoreRepoIdSupportedFuncCall struct {
+type SubRepoPermsStoreRepoIDSupportedFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -39967,13 +39967,13 @@ type SubRepoPermsStoreRepoIdSupportedFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SubRepoPermsStoreRepoIdSupportedFuncCall) Args() []interface{} {
+func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SubRepoPermsStoreRepoIdSupportedFuncCall) Results() []interface{} {
+func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
