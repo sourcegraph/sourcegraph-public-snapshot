@@ -148,7 +148,6 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return runner.Fix(cmd.Context, repoState)
 				}
 				runner.FailFast = lintFailFast.Get(cmd)
-				runner.FormatCheck = lintNoFormatCheck.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
 				return runner.Check(cmd.Context, repoState)
 			},
