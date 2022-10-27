@@ -26,6 +26,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,6 +48,8 @@ const (
 type Service struct {
 	Store *Store
 	Log   log.Logger
+
+	Indexed zoekt.Streamer
 
 	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
 	// --no-renames commitA commitB" against repo.
@@ -157,7 +160,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
 		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.StringSlice("indexerEndpoints", p.IndexerEndpoints),
 		attribute.String("select", p.Select),
 	)
 	defer func(start time.Time) {
@@ -195,14 +197,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("matches", sender.SentCount()),
 			log.String("code", code),
 			log.Duration("duration", time.Since(start)),
-			log.Strings("indexerEndpoints", p.IndexerEndpoints),
 			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
