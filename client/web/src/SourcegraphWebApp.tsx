@@ -54,6 +54,7 @@ import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -63,7 +64,7 @@ import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAr
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
-import { BlockInput } from './notebooks'
+import { BlockInput, NotebookProps } from './notebooks'
 import { createNotebook } from './notebooks/backend'
 import { blockToGQLInput } from './notebooks/serialize'
 import type { OrgAreaRoute } from './org/area/OrgArea'
@@ -77,7 +78,7 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { PageRoutes } from './routes.constants'
+import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -108,7 +109,9 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
@@ -525,7 +528,7 @@ export class SourcegraphWebApp extends React.Component<
                     namespace: this.state.authenticatedUser.id,
                 },
             }).subscribe(createdNotebook => {
-                history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+                history.push(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
             })
         )
     }

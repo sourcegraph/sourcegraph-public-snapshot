@@ -24,6 +24,7 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
+import { CodeMonitoringProps } from '../codeMonitoring'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
@@ -33,6 +34,7 @@ import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
+import { NotebookProps } from '../notebooks'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -59,7 +61,9 @@ export interface GlobalNavbarProps
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
@@ -151,6 +155,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    codeMonitoringEnabled,
+    notebooksEnabled,
     extensionsController,
     enableLegacyExtensions,
     ...props
@@ -164,9 +170,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
-    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
-    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
+    const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -187,11 +193,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
-            searchContextsEnabled &&
-                !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [searchContextsEnabled, showSearchContext])
+    }, [showSearchContext])
 
     const { fuzzyFinderNavbar } = getFuzzyFinderFeatureFlags(props.settingsCascade.final) ?? false
 
@@ -209,28 +214,36 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 }
             >
                 <NavGroup>
-                    <NavDropdown
-                        toggleItem={{
-                            path: PageRoutes.Search,
-                            altPath: PageRoutes.RepoContainer,
-                            icon: MagnifyIcon,
-                            content: 'Code Search',
-                            variant: navLinkVariant,
-                        }}
-                        routeMatch={routeMatch}
-                        mobileHomeItem={{ content: 'Search home' }}
-                        items={searchNavBarItems}
-                    />
+                    {searchNavBarItems.length > 0 ? (
+                        <NavDropdown
+                            toggleItem={{
+                                path: PageRoutes.Search,
+                                altPath: PageRoutes.RepoContainer,
+                                icon: MagnifyIcon,
+                                content: 'Code Search',
+                                variant: navLinkVariant,
+                            }}
+                            routeMatch={routeMatch}
+                            mobileHomeItem={{ content: 'Search home' }}
+                            items={searchNavBarItems}
+                        />
+                    ) : (
+                        <NavItem icon={MagnifyIcon}>
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                                Code Search
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Notebooks}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
                                 Notebooks
                             </NavLink>
                         </NavItem>
                     )}
-                    {enableCodeMonitoring && (
+                    {showCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink variant={navLinkVariant} to="/code-monitoring">
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.CodeMonitoring}>
                                 Monitoring
                             </NavLink>
                         </NavItem>
@@ -243,14 +256,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
-                            <NavLink variant={navLinkVariant} to="/insights">
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Insights}>
                                 Insights
                             </NavLink>
                         </NavItem>
                     )}
                     {enableLegacyExtensions && (
                         <NavItem icon={PuzzleOutlineIcon}>
-                            <NavLink variant={navLinkVariant} to="/extensions">
+                            <NavLink variant={navLinkVariant} to={PageRoutes.Extensions}>
                                 Extensions
                             </NavLink>
                         </NavItem>
