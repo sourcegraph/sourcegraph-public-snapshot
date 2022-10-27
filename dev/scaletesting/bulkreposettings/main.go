@@ -122,15 +122,14 @@ var app = &cli.App{
 									_, _, err = gh.Repositories.Edit(cmd.Context, org, r.Name, settings)
 									if err != nil {
 										r.Failed = err.Error()
-										if err := s.SaveRepo(r); err != nil {
-											logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
-										}
 									} else {
+										r.Failed = ""
 										r.Pushed = true
-										if err := s.SaveRepo(r); err != nil {
-											logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
-										}
+										break
 									}
+								}
+								if err := s.SaveRepo(r); err != nil {
+									logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
 								}
 								atomic.AddInt64(&done, 1)
 								progress.SetValue(0, float64(done))
