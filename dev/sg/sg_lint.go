@@ -31,6 +31,13 @@ var lintFailFast = &cli.BoolFlag{
 	Value:   true,
 }
 
+var lintFormatCheck = &cli.BoolFlag{
+	Name:    "format-check",
+	Aliases: []string{"fc"},
+	Usage:   "Check file formatting and fail if changes are detected",
+	Value:   false,
+}
+
 var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
@@ -57,6 +64,7 @@ sg lint --help
 		generateAnnotations,
 		lintFix,
 		lintFailFast,
+		lintFormatCheck,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -103,6 +111,10 @@ sg lint --help
 			return runner.Fix(cmd.Context, repoState)
 		}
 		runner.FailFast = lintFailFast.Get(cmd)
+		runner.FormatCheck = lintFormatCheck.Get(cmd)
+        if lintFormatCheck.Get(cmd) {
+            targets = append(targets, "format")
+        }
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
@@ -135,6 +147,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return runner.Fix(cmd.Context, repoState)
 				}
 				runner.FailFast = lintFailFast.Get(cmd)
+				runner.FormatCheck = lintFormatCheck.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
 				return runner.Check(cmd.Context, repoState)
 			},

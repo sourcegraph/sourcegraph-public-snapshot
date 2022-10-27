@@ -109,7 +109,12 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations -fail-fast=false " + strings.Join(targets, " ")
+	var formatCheck string
+	if os.Getenv("BUILDKITE_BRANCH") != "main" {
+		formatCheck = "-format-check=true "
+	}
+
+	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",

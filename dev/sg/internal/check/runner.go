@@ -48,6 +48,8 @@ type Runner[Args any] struct {
 	Concurrency int
 	// FailFast indicates if the runner should stop upon encountering the first error.
 	FailFast bool
+	// FormatCheck indicates if the runner should check for formatting errors.
+	FormatCheck bool
 	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
 	// if a check fails. The suggestion string can be in Markdown.
 	SuggestOnCheckFailure SuggestFunc[Args]
@@ -430,7 +432,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					}
 
 					// Write the terminal summary to an indented block
-					var style = output.CombineStyles(output.StyleBold, output.StyleFailure)
+					style := output.CombineStyles(output.StyleBold, output.StyleFailure)
 					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
 					block.Writef("%s\n", check.cachedCheckErr)
 					if check.cachedCheckOutput != "" {

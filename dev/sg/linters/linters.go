@@ -75,6 +75,13 @@ var Targets = []Target{
 		},
 	},
 	{
+		Name:        "clientformatting",
+		Description: "Check client code for formatting errors",
+		Checks: []*linter{
+			prettier,
+		},
+	},
+	{
 		Name:        "svg",
 		Description: "Check svg assets",
 		Enabled:     disabled("reported as unreliable"),
