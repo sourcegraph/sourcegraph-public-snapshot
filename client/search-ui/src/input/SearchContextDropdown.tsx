@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,6 +17,7 @@ import {
     PopoverTrigger,
     Position,
     PopoverOpenEventReason,
+    useIsMounted,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'
@@ -53,6 +54,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
+    const isMounted = useIsMounted()()
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -67,6 +69,13 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         },
         [submitSearch, setSelectedSearchContextSpec]
     )
+    const searchContextDropdownReference = useRef<HTMLButtonElement>(null)
+    useEffect(() => {
+        if (isMounted && !isOpen) {
+            searchContextDropdownReference?.current?.focus()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
 
     const handleMenuClose = useCallback(
         (isEscapeKey?: boolean) => {
@@ -123,6 +132,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                         'test-search-context-dropdown',
                         isOpen && styles.buttonOpen
                     )}
+                    ref={searchContextDropdownReference}
                 >
                     <Code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                         {
