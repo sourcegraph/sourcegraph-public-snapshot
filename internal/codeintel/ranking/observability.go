@@ -57,11 +57,11 @@ func newOperations(observationContext *observation.Context) *operations {
 	)
 	numRepositoriesUpdated := counter(
 		"src_codeintel_ranking_repositories_updated_total",
-		"The number of bytes read from GCS.",
+		"The number of updates to document scores of any repository.",
 	)
 	numInputRowsProcessed := counter(
 		"src_codeintel_ranking_input_rows_processed_total",
-		"The number of input CSV records read from GCS.",
+		"The number of input row records merged into document scores for a single repo.",
 	)
 
 	return &operations{
