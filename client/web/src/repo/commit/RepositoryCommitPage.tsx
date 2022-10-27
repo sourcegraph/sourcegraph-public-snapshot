@@ -8,15 +8,7 @@ import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import {
-    createAggregateError,
-    ErrorLike,
-    isErrorLike,
-    isDefined,
-    memoizeObservable,
-    property,
-    asError,
-} from '@sourcegraph/common'
+import { createAggregateError, isErrorLike, isDefined, memoizeObservable, property, asError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -126,13 +118,6 @@ interface RepositoryCommitPageProps
 }
 
 export type DiffMode = 'split' | 'unified'
-
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
-    /** The commit, undefined while loading, or an error. */
-    commitOrError?: GitCommitFields | ErrorLike
-    /** The visualization mode for file diff */
-    diffMode: DiffMode
-}
 
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
