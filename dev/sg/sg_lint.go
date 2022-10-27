@@ -82,15 +82,15 @@ sg lint --help
 			// If no args provided, run all
 			lintTargets = linters.Targets
 			for _, t := range lintTargets {
-				targets = append(targets, t.Name)
+				if t.Name != "clientformatting" { // only part of defaults if format-check flag is enabled
+					targets = append(targets, t.Name)
+				}
 			}
 		} else {
 			// Otherwise run requested set
 			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))
 			for _, c := range linters.Targets {
-				if c.Name != "clientformatting" {
-					allLintTargetsMap[c.Name] = c
-				}
+				allLintTargetsMap[c.Name] = c
 			}
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
@@ -98,9 +98,7 @@ sg lint --help
 					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
-				if target.Name != "clientformatting" { // only add this if format-check flag is enabled
-					lintTargets = append(lintTargets, target)
-				}
+				lintTargets = append(lintTargets, target)
 			}
 		}
 
