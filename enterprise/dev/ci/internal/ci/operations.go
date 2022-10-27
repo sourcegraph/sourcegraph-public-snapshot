@@ -109,8 +109,18 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
+	var (
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = runtype.Compute(tag, branch, map[string]string{
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+		})
+	)
 	var formatCheck string
-	if os.Getenv("BUILDKITE_BRANCH") != "main" {
+	if !runType.Is(runtype.MainBranch) {
 		formatCheck = "-format-check=true "
 	}
 
