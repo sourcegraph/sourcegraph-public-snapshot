@@ -38,7 +38,7 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', '1')
+            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'tooltip-1')
             expect(rendered.getByTestId('trigger-2')).not.toHaveAttribute('aria-describedby')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
@@ -46,7 +46,7 @@ describe('Tooltip', () => {
 
             expect(tooltip).toBeInTheDocument()
             expect(tooltip).toHaveTextContent('Tooltip 1')
-            expect(tooltip).toHaveAttribute('id', '1')
+            expect(tooltip).toHaveAttribute('id', 'tooltip-1')
         })
 
         fireEvent.pointerLeave(rendered.getByTestId('trigger-1'))
@@ -54,14 +54,14 @@ describe('Tooltip', () => {
 
         await waitFor(() => {
             expect(rendered.getByTestId('trigger-1')).not.toHaveAttribute('aria-describedby')
-            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', '2')
+            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'tooltip-2')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
-            const tooltip = rendered.getByRole('tooltip', { hidden: true })
+            const tooltip = rendered.getByRole('tooltip')
 
             expect(tooltip).toBeInTheDocument()
             expect(tooltip).toHaveTextContent('Tooltip 2')
-            expect(tooltip).toHaveAttribute('id', '2')
+            expect(tooltip).toHaveAttribute('id', 'tooltip-2')
         })
     })
 
@@ -83,7 +83,7 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByRole('tooltip', { hidden: true })).toBeInTheDocument()
+            expect(rendered.getByRole('tooltip')).toBeInTheDocument()
         })
 
         // Not sure why `userEvent.type(rendered.getByTestId('trigger-1'), '{esc}')` doesn't work
@@ -98,13 +98,13 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByRole('tooltip', { hidden: true })).toBeInTheDocument()
+            expect(rendered.getByRole('tooltip')).toBeInTheDocument()
         })
 
         userEvent.click(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByRole('tooltip', { hidden: true })).toBeInTheDocument()
+            expect(rendered.getByRole('tooltip')).toBeInTheDocument()
         })
     })
 })
