@@ -42,8 +42,8 @@ export const PopoverTail = forwardRef<HTMLDivElement, PopoverTailProps>((props, 
     }
 
     return createPortal(
-        <div ref={tailRef} className={classNames(style.tail, sizeClasses[size])} {...attributes}>
-            <div className={classNames(className, style.tailInner)} />
+        <div ref={tailRef} className={classNames(style.tail, className, sizeClasses[size])} {...attributes}>
+            <div className={style.tailInner} />
         </div>,
         renderRoot ?? document.body
     )
