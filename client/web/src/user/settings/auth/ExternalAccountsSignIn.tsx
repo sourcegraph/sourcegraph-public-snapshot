@@ -136,12 +136,11 @@ const getNormalizedAccount = (
                 {
                     const samlExternalData = accountExternalData as SamlExternalData
                     // In case the SAML values don't have a username, we get the user email.
-                    const userNameOrEmail = getUsernameOrEmail(samlExternalData)
                     normalizedAccount = {
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: userNameOrEmail,
+                            userName: getUsernameOrEmail(samlExternalData),
                         },
                     }
                 }
