@@ -31,8 +31,7 @@ export const TipsAndTricks: React.FunctionComponent<React.PropsWithChildren<Tips
     return (
         <div className={classNames(styles.tipsAndTricks)}>
             <div className="d-flex align-items-center mb-2">
-                <Text className={classNames('mr-2 pr-2', styles.tipsAndTricksTitle)}>Get Started</Text>
-                <Text>Try a common query.</Text>
+                <Text className={classNames('mr-2 pr-2', styles.tipsAndTricksTitle)}>Code Search Basics</Text>
             </div>
             <div className={styles.tipsAndTricksExamples}>
                 {examples.map(example => (

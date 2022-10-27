@@ -32,17 +32,13 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                 />
             </div>
             
-            <div className="d-md-flex d-flex-wrap justify-content-lg-center my-5">
-                <div className="d-flex align-items-center">
-                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
-                    <Text className="mb-0">Search on your private repositories.</Text>
-                </div>
+            <div className="d-flex align-items-center justify-content-lg-center my-5">
+                <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
                 <Link
                     to="https://signup.sourcegraph.com/"
                     onClick={() => eventLogger.log('ClickedOnCloudCTA')}
-                    className="ml-md-1"
                 >
-                    Sign up for a 30-day trial on Sourcegraph Cloud.
+                    Use Sourcegraph to search across your team's code.
                 </Link>
             </div>
         </div>
