@@ -21,7 +21,8 @@ import (
 
 const providerType = "openidconnect"
 
-// Provider is an implementation of providers.Provider for an OpenID Connect authentication.
+// Provider is an implementation of providers.Provider for the OpenID Connect
+// authentication.
 type Provider struct {
 	config     schema.OpenIDConnectAuthProvider
 	authPrefix string
