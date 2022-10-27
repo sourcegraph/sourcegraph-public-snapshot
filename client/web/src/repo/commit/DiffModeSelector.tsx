@@ -24,6 +24,7 @@ export const DiffModeSelector: React.FunctionComponent<React.PropsWithChildren<D
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'unified'}
+                className="test-diff-mode-selector-unified"
             >
                 Unified
             </Button>
@@ -32,6 +33,7 @@ export const DiffModeSelector: React.FunctionComponent<React.PropsWithChildren<D
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'split'}
+                className="test-diff-mode-selector-split"
             >
                 Split
             </Button>
