@@ -34,6 +34,8 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
+		RetryAfter:        time.Second * 30,
+		MaxNumRetries:     3,
 	}, config.ObsContext)
 
 	task := inProgressHandler{
