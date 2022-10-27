@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
-import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import { format } from 'date-fns'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
@@ -374,6 +374,15 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         <li className="list-group-item py-3">
             <div className="d-flex justify-content-left">
                 <div className="d-flex mr-2 justify-content-left">
+                    <Button
+                        variant="icon"
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        onClick={toggleIsExpanded}
+                    >
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                    </Button>
+                </div>
+                <div className="d-flex mr-2 justify-content-left">
                     <Badge>{node.state}</Badge>
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
@@ -412,15 +421,6 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         className={styles.cancelButton}
                     />
                 )}
-                <div className="d-flex justify-content-right">
-                    <Button
-                        variant="icon"
-                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
-                        onClick={toggleIsExpanded}
-                    >
-                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronLeft} />
-                    </Button>
-                </div>
             </div>
             {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
             {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
