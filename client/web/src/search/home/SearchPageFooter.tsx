@@ -64,8 +64,6 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
 export const SearchPageFooter: React.FunctionComponent<
     React.PropsWithChildren<ThemeProps & TelemetryProps & { isSourcegraphDotCom: boolean }>
 > = ({ isLightTheme, telemetryService, isSourcegraphDotCom }) => {
-    const assetsRoot = window.context?.assetsRoot || ''
-
     const logLinkClicked = (name: string): void => {
         telemetryService.log('HomepageFooterCTASelected', { name }, { name })
     }
