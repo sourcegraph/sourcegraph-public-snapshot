@@ -228,7 +228,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             items={searchNavBarItems}
                         />
                     ) : (
-                        <NavItem icon={BookOutlineIcon}>
+                        <NavItem icon={MagnifyIcon}>
                             <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                                 Code Search
                             </NavLink>
