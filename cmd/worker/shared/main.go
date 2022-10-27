@@ -45,7 +45,6 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrators),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-crates-syncer":               codeintel.NewCratesSyncerJob(),
-		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),
 		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
@@ -76,6 +75,11 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	// Start debug server
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
+
+	// Register gitserver prometheus collectors here. We want to run them in
+	// `worker` so they're running once instead of in every shard, if we'd do
+	// this in gitserver.
+	gitserver.RegisterPrometheusCollectors(logger)
 
 	// Validate environment variables
 	if err := validateConfigs(jobs); err != nil {

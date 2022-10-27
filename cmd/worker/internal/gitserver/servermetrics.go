@@ -7,34 +7,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type metricsJob struct {
-	Logger log.Logger
-}
-
-func NewMetricsJob() job.Job {
-	return &metricsJob{
-		Logger: log.Scoped("gitserver-metrics", ""),
-	}
-}
-
-func (j *metricsJob) Description() string {
-	return ""
-}
-
-func (j *metricsJob) Config() []env.Config {
-	return nil
-}
-
-func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func RegisterPrometheusCollectors(logger log.Logger) error {
 	db, err := workerdb.Init()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	c := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
@@ -47,7 +26,7 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		var count int64
 		err := db.QueryRowContext(ctx, `SELECT SUM(failed_fetch) FROM gitserver_repos_statistics`).Scan(&count)
 		if err != nil {
-			j.Logger.Error("failed to count repository errors", log.Error(err))
+			logger.Error("failed to count repository errors", log.Error(err))
 			return 0
 		}
 		return float64(count)
@@ -64,12 +43,12 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		var count int64
 		err := db.QueryRowContext(ctx, `SELECT SUM(total) FROM repo_statistics`).Scan(&count)
 		if err != nil {
-			j.Logger.Error("failed to count repositories", log.Error(err))
+			logger.Error("failed to count repositories", log.Error(err))
 			return 0
 		}
 		return float64(count)
 	})
 	prometheus.MustRegister(c)
 
-	return nil, nil
+	return nil
 }
