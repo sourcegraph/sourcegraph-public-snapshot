@@ -48,8 +48,6 @@ type Runner[Args any] struct {
 	Concurrency int
 	// FailFast indicates if the runner should stop upon encountering the first error.
 	FailFast bool
-	// FormatCheck indicates if the runner should check for formatting errors.
-	FormatCheck bool
 	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
 	// if a check fails. The suggestion string can be in Markdown.
 	SuggestOnCheckFailure SuggestFunc[Args]
