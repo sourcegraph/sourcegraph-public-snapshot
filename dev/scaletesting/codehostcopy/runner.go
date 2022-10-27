@@ -69,7 +69,7 @@ func (r *Runner) List(ctx context.Context, limit int) error {
 			return err
 		}
 	}
-	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (from db: %v)", loadedFromDB)))
+	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (db: %v limit: %d total: %d)", loadedFromDB, limit, len(srcRepos))))
 	if limit != 0 && limit < len(srcRepos) {
 		srcRepos = srcRepos[:limit]
 	}
@@ -77,7 +77,6 @@ func (r *Runner) List(ctx context.Context, limit int) error {
 		block.Writef("Name: %s Created: %v Pushed: %v GitURL: %s ToGitURL: %s Failed: %s", r.Name, r.Created, r.Pushed, r.GitURL, r.ToGitURL, r.Failed)
 	}
 	block.Close()
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleBold, "Repo count: %d", len(srcRepos)))
 	return nil
 }
 

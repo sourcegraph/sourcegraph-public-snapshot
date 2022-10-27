@@ -54,6 +54,9 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 	return nil, errors.New("no https url found")
 }
 
+// ListRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
+// url is extracted. Note that the repo name has the following format: <project key>::<repo name>. Thus if you
+// just want the repo name you would have to strip the project key and '::' separator out.
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	bt.logger.Info("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
@@ -81,6 +84,10 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 	return results, nil
 }
 
+// CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>::<repo name>.
+// A repo can only be created under a project in bitbucket, therefore the project is extract from the repo name format and a
+// project is created first, if and only if, the project does not exist already. If the project already exists, the repo
+// will be created and the created repos git clone url will be returned.
 func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	parts := strings.Split(name, "::")
 	if len(parts) != 2 {
