@@ -35,7 +35,7 @@ var lintFormatCheck = &cli.BoolFlag{
 	Name:    "format-check",
 	Aliases: []string{"fc"},
 	Usage:   "Check file formatting and fail if changes are detected",
-	Value:   false,
+	Value:   true,
 }
 
 var lintCommand = &cli.Command{
