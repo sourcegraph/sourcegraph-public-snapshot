@@ -53,7 +53,7 @@ func setBasicAuth(username, password string) SetAuthFunc {
 
 func setTokenAuth(token string) SetAuthFunc {
 	return func(req *http.Request) {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 }
 
@@ -208,6 +208,23 @@ func getAll[T any](ctx context.Context, c *Client, url string) ([]getResult[T], 
 		start = resp.NextPageStart
 	}
 	return items, nil
+}
+
+func (c *Client) GetRepo(ctx context.Context, key string, name string) (*Repo, error) {
+	key = strings.ToUpper(key)
+	u := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos/%s", key, name))
+	respData, err := c.get(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	var repo Repo
+	err = json.Unmarshal(respData, &repo)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshall repo: %s", name)
+	}
+
+	return &repo, nil
 }
 
 func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, error) {

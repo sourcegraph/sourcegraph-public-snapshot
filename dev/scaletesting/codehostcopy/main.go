@@ -126,7 +126,7 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 		logger.Fatal("failed to create from code host", log.Error(err))
 	}
 
-	dest, err := createDestinationCodeHost(ctx, logger, cfg.From)
+	dest, err := createDestinationCodeHost(ctx, logger, cfg.Destination)
 	if err != nil {
 		logger.Fatal("failed to create destination code host", log.Error(err))
 	}

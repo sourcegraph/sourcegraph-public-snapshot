@@ -29,9 +29,11 @@ func NewBitbucketCodeHost(ctx context.Context, logger log.Logger, def *CodeHostD
 	var c *bitbucket.Client
 	if def.Token != "" {
 		c = bitbucket.NewTokenClient(def.Token, u, bitbucket.WithTimeout(15*time.Second))
+		logger.Debug("created token bitbucket client", log.String("host", u.String()))
 
 	} else {
 		c = bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second))
+		logger.Debug("created basic auth bitbucket client", log.String("host", u.String()))
 	}
 
 	return &BitbucketCodeHost{
@@ -96,15 +98,16 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	key := parts[0]
 	repoName := parts[1]
 
+	var apiErr *bitbucket.APIError
 	_, err := bt.c.GetProjectByKey(ctx, key)
 	if err != nil {
-		var apiErr *bitbucket.APIError
 		// if the error is an api error, log it and continue
 		// otherwise something severe is wrong and we must quit
 		// early
 		if errors.As(err, &apiErr) {
 			// if the project was 'not found' create it
 			if apiErr.StatusCode == 404 {
+				bt.logger.Debug("creating project", log.String("key", key))
 				p, err := bt.c.CreateProject(ctx, &bitbucket.Project{Key: key})
 				if err != nil {
 					return nil, err
@@ -118,7 +121,17 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	// project already exists so lets just return the url to use
 	repo, err := bt.c.CreateRepo(ctx, &bitbucket.Project{Key: key}, repoName)
 	if err != nil {
-		return nil, err
+		// If the repo already exists, get it and returns its clone url
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 409 {
+			bt.logger.Warn("repo already exists", log.String("project", key), log.String("repo", repoName))
+			repo, err := bt.c.GetRepo(ctx, key, repoName)
+			if err != nil {
+				return nil, err
+			}
+			return getCloneUrl(repo)
+		} else {
+			return nil, err
+		}
 	}
 	bt.logger.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
 	return getCloneUrl(repo)
