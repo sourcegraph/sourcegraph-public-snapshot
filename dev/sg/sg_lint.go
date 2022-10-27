@@ -88,7 +88,9 @@ sg lint --help
 			// Otherwise run requested set
 			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))
 			for _, c := range linters.Targets {
-				allLintTargetsMap[c.Name] = c
+				if c.Name != "clientformatting" {
+					allLintTargetsMap[c.Name] = c
+				}
 			}
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
@@ -96,7 +98,9 @@ sg lint --help
 					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
-				lintTargets = append(lintTargets, target)
+				if target.Name != "clientformatting" { // only add this if format-check flag is enabled
+					lintTargets = append(lintTargets, target)
+				}
 			}
 		}
 
@@ -111,10 +115,9 @@ sg lint --help
 			return runner.Fix(cmd.Context, repoState)
 		}
 		runner.FailFast = lintFailFast.Get(cmd)
-		runner.FormatCheck = lintFormatCheck.Get(cmd)
-        if lintFormatCheck.Get(cmd) {
-            targets = append(targets, "format")
-        }
+		if lintFormatCheck.Get(cmd) {
+			targets = append(targets, "clientformatting")
+		}
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
