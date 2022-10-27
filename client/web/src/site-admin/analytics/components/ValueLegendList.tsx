@@ -53,14 +53,25 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                 )}
             </Tooltip>
             <Tooltip content={tooltip}>
-                <Text
-                    as="span"
-                    alignment="center"
-                    className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
-                >
-                    {description}
-                    {tooltip && <span className={styles.linkColor}>*</span>}
-                </Text>
+                {filter ? (
+                    <Link
+                        to={`?${searchParams.toString()}`}
+                        alignment="center"
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Link>
+                ) : (
+                    <Text
+                        as="span"
+                        alignment="center"
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Text>
+                )}
             </Tooltip>
         </div>
     )
