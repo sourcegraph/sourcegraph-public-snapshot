@@ -48,7 +48,7 @@ function sortHunkMatches(hunk: Hunk): void {
     })
 }
 
-function mergeHunks(hunks: Hunk[], context: number) : void {
+function mergeHunks(hunks: Hunk[], context: number): void {
     const hunksSortedByLineNumber = hunks.slice().sort((a, b) => {
         if (a.startLine < b.startLine) {
             return -1
@@ -81,8 +81,10 @@ function mergeHunks(hunks: Hunk[], context: number) : void {
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
     // Return true if item and group have overlapping or adjacent context
-    return (item.startLine >= group.endLine && item.startLine - group.endLine - 2 * context <= 1)
-        || (item.endLine <= group.startLine && group.startLine - item.endLine - 2 * context <= 1)
+    return (
+        (item.startLine >= group.endLine && item.startLine - group.endLine - 2 * context <= 1) ||
+        (item.endLine <= group.startLine && group.startLine - item.endLine - 2 * context <= 1)
+    )
 }
 
 function results(matches: MatchItem[], maxResults: number, context: number): RankingResult {
