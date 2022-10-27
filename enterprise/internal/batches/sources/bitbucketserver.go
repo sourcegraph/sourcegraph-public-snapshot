@@ -112,6 +112,9 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
 	pr.FromRef.ID = gitdomain.EnsureRefPrefix(c.HeadRef)
 
+	fmt.Printf("Remote Repo: %v", remoteRepo)
+	fmt.Printf("Target Repo: %v", targetRepo)
+
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
 		var e *bitbucketserver.ErrAlreadyExists
@@ -338,6 +341,7 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 		fmt.Printf("GOING TO CREATE FORK! %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
 		createdFork := parent.Project.Key + "-" + parent.Slug
+		// createdFork := "this-fork-isnt-super-cool"
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork})
 
 		fmt.Printf("FORK CREATED SUCCESSFULLY! Origin ID: %v", fork.Origin.ID)
@@ -369,6 +373,7 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 	if fork == nil {
 		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
 		createdFork := parent.Project.Key + "-" + parent.Slug
+		// createdFork := "this-fork-isnt-super-cool"
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork,
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
 		})
@@ -386,7 +391,7 @@ func (s BitbucketServerSource) copyRepoAsFork(targetRepo *types.Repo, fork *bitb
 	targetMeta := targetRepo.Metadata.(*bitbucketserver.Repo)
 
 	targetNameAndNamespace := targetMeta.Project.Key + "/" + targetMeta.Slug
-	forkNameAndNamespace := forkNamespace + "/" + targetMeta.Slug
+	forkNameAndNamespace := forkNamespace + "/" + fork.Slug
 
 	// Now we make a copy of the target repo, but with its sources and metadata updated to
 	// point to the fork
@@ -405,6 +410,7 @@ var (
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
 	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
+	// repo, err := s.client.Repo(ctx, namespace, "this-fork-isnt-super-cool")
 	// repo, err := s.client.Repo(ctx, namespace, parent.Slug)
 
 	if err != nil {

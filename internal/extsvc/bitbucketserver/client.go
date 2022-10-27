@@ -579,6 +579,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
+	fmt.Printf("PATH  URL %v", path)
 	_, err = c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
@@ -597,6 +598,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 
 // FetchDefaultReviewers loads the suggested default reviewers for the given PR.
 func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
+
 	// Validate input.
 	for _, namedRef := range [...]struct {
 		name string
@@ -605,6 +607,8 @@ func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]
 		{"ToRef", pr.ToRef},
 		{"FromRef", pr.FromRef},
 	} {
+		fmt.Printf("NAMED REF %v", namedRef)
+
 		if namedRef.ref.ID == "" {
 			return nil, errors.Errorf("%s id empty", namedRef.name)
 		}
@@ -624,12 +628,17 @@ func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 	)
+
+	fmt.Printf("PATH %v", path)
+
 	queryParams := url.Values{
 		"sourceRepoId": []string{strconv.Itoa(pr.FromRef.Repository.ID)},
 		"targetRepoId": []string{strconv.Itoa(pr.ToRef.Repository.ID)},
 		"sourceRefId":  []string{pr.FromRef.ID},
 		"targetRefId":  []string{pr.ToRef.ID},
 	}
+
+	fmt.Printf("QUERY PARAMS %v", queryParams)
 
 	var resp []User
 	_, err := c.send(ctx, "GET", path, queryParams, nil, &resp)
@@ -640,6 +649,7 @@ func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]
 	reviewerNames := make([]string, 0, len(resp))
 	for _, r := range resp {
 		reviewerNames = append(reviewerNames, r.Name)
+
 	}
 	return reviewerNames, nil
 }
@@ -938,6 +948,8 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	}
 
 	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	fmt.Printf("send URL: %v", u.String())
+
 	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
 		return nil, err
