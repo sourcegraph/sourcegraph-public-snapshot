@@ -56,7 +56,6 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                 {filter ? (
                     <Link
                         to={`?${searchParams.toString()}`}
-                        alignment="center"
                         className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
                     >
                         {description}
