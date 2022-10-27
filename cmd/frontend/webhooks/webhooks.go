@@ -44,6 +44,7 @@ func NewHandler(logger log.Logger, db database.DB, gh *GitHubWebhook) http.Handl
 			http.Error(w, "Could not find webhook with provided UUID.", http.StatusNotFound)
 			return
 		}
+		SetWebhookID(r.Context(), webhook.ID)
 
 		var secret string
 		if webhook.Secret != nil {
