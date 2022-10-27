@@ -31,6 +31,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 4.1.2
+
+### Fixed
+
+- Fix code navigation on OSS when CodeIntel is unavailable. [#43458](https://github.com/sourcegraph/sourcegraph/pull/43458)
+
 ## 4.1.1
 
 ### Fixed
