@@ -62,14 +62,6 @@ func (c *collectSender) Send(r *zoekt.SearchResult) {
 		}
 	}
 
-	// The priority of our aggregate is the largest priority we collect.
-	if c.aggregate.Priority < r.Priority {
-		c.aggregate.Priority = r.Priority
-	}
-
-	// We receive monotonically decreasing values, so we update on every call.
-	c.aggregate.MaxPendingPriority = r.MaxPendingPriority
-
 	c.sizeBytes += r.SizeBytes()
 }
 
