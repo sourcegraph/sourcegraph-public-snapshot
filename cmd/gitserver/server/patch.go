@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -109,6 +110,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args) {
+			return nil, errors.New("command not on allow list")
+		}
+
 		t := time.Now()
 		out, err := runWith(ctx, cmd, true, nil)
 
@@ -179,9 +184,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
-	if !gitdomain.IsAllowedGitCmd(logger, applyArgs) {
-		return http.StatusInternalServerError, resp
-	}
 
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
