@@ -106,11 +106,15 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 		mu            sync.Mutex
 		collectSender = newCollectSender(opts)
 		timerCancel   = make(chan struct{})
+		earlyFlush    = make(chan string, 1)
 	)
 
 	// stopCollectingAndFlush will send what we have collected and all future
 	// sends will go via sender directly.
 	stopCollectingAndFlush := func(reason string) {
+		mu.Lock()
+		defer mu.Unlock()
+
 		if collectSender == nil {
 			return
 		}
@@ -130,13 +134,13 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 	// Wait flushWallTime to call stopCollecting.
 	go func() {
 		timer := time.NewTimer(opts.flushWallTime)
+		defer timer.Stop()
 		select {
 		case <-timerCancel:
-			timer.Stop()
 		case <-timer.C:
-			mu.Lock()
 			stopCollectingAndFlush("timer_expired")
-			mu.Unlock()
+		case reason := <-earlyFlush:
+			stopCollectingAndFlush(reason)
 		}
 	}()
 
@@ -148,16 +152,16 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 				// Protect against too large aggregates. This should be the exception and only
 				// happen for queries yielding an extreme number of results.
 				if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
-					stopCollectingAndFlush("max_size_reached")
-
+					select {
+					case earlyFlush <- "max_size_reached":
+					default:
+					}
 				}
 			} else {
 				sender.Send(event)
 			}
 			mu.Unlock()
 		}), func() {
-			mu.Lock()
 			stopCollectingAndFlush("final_flush")
-			mu.Unlock()
 		}
 }
