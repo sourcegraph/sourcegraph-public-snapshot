@@ -424,6 +424,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeintel_path_rank_inputs_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "configuration_policies_audit_logs_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -6837,13 +6846,131 @@
       "Triggers": []
     },
     {
+      "Name": "codeintel_path_rank_inputs",
+      "Comment": "Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.",
+      "Columns": [
+        {
+          "Name": "graph_key",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_path_rank_inputs_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "input_filename",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "payload",
+          "Index": 5,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "processed",
+          "Index": 6,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repository_name",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_graph_key_input_filename_reposit_key ON codeintel_path_rank_inputs USING btree (graph_key, input_filename, repository_name)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (graph_key, input_filename, repository_name)"
+        },
+        {
+          "Name": "codeintel_path_rank_inputs_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_rank_inputs_pkey ON codeintel_path_rank_inputs USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_path_rank_graph_key_id_repository_name_processed",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "codeintel_path_ranks",
       "Comment": "",
       "Columns": [
         {
           "Name": "payload",
           "Index": 2,
-          "TypeName": "text",
+          "TypeName": "jsonb",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,

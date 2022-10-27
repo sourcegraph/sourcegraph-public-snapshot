@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,6 +23,7 @@ type Service struct {
 	gitserverClient GitserverClient
 	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
+	resultsBucket   *storage.BucketHandle
 	operations      *operations
 	logger          log.Logger
 }
@@ -32,6 +34,7 @@ func newService(
 	gitserverClient GitserverClient,
 	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
+	resultsBucket *storage.BucketHandle,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
@@ -40,6 +43,7 @@ func newService(
 		gitserverClient: gitserverClient,
 		symbolsClient:   symbolsClient,
 		getConf:         getConf,
+		resultsBucket:   resultsBucket,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,
 	}
