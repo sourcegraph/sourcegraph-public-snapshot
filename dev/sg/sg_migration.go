@@ -109,8 +109,8 @@ var (
 	outputFactory = func() *output.Output { return std.Out.Output }
 
 	schemaFactories = []cliutil.ExpectedSchemaFactory{
-		cliutil.GCSExpectedSchemaFactory,
 		localGitExpectedSchemaFactory,
+		cliutil.GCSExpectedSchemaFactory,
 	}
 
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
@@ -238,20 +238,24 @@ func makeRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []
 // localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
 // (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-func localGitExpectedSchemaFactory(filename, version string) (schemaDescription schemas.SchemaDescription, _ bool, _ error) {
+func localGitExpectedSchemaFactory(filename, version string) (string, schemas.SchemaDescription, error) {
 	ctx := context.Background()
-	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s:%s", version, filename)))
+	path := fmt.Sprintf("%s:%s", version, filename)
+	name := fmt.Sprintf("git://%s", path)
+	output := root.Run(run.Cmd(ctx, "git", "show", path))
 
 	if err := output.Wait(); err != nil {
-		// See if there is an error indicating a missing object, but no other problems
-		return schemas.SchemaDescription{}, false, filterLocalGitErrors(filename, version, err)
+		// Rewrite error if it was a local git error (non-fatal)
+		if err = filterLocalGitErrors(filename, version, err); err == nil {
+			err = errors.New("no such git object")
+		}
+
+		return name, schemas.SchemaDescription{}, err
 	}
 
-	if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
-		return schemas.SchemaDescription{}, false, err
-	}
-
-	return schemaDescription, true, nil
+	var schemaDescription schemas.SchemaDescription
+	err := json.NewDecoder(output).Decode(&schemaDescription)
+	return name, schemaDescription, err
 }
 
 func filterLocalGitErrors(filename, version string, err error) error {

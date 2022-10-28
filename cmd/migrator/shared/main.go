@@ -65,8 +65,8 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 	)
 
 	schemaFactories := []cliutil.ExpectedSchemaFactory{
-		cliutil.GCSExpectedSchemaFactory,
 		cliutil.GitHubExpectedSchemaFactory,
+		cliutil.GCSExpectedSchemaFactory,
 		cliutil.LocalExpectedSchemaFactory,
 	}
 
