@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -275,7 +277,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			if tc.canceled {
 				cancel()
 			}
-			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers)
+			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
+			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
 			_, _, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
 			got := []string{}
 			// sorted jobs to make test stable
@@ -394,7 +397,8 @@ func TestMakeRunSearch(t *testing.T) {
 			if tc.cancled {
 				cancel()
 			}
-			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers)
+			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
+			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
 
 			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
 

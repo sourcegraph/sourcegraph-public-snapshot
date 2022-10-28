@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -72,13 +73,17 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
 		if backfillerV2Enabled {
+			searchRateLimiter := limiter.SearchQueryRate()
+			historicRateLimiter := limiter.HistoricalWorkRate()
 			backfillConfig := pipeline.BackfillerConfig{
 				CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
 				SearchHandlers:          queryrunner.GetSearchHandlers(),
 				InsightStore:            insightsStore,
 				CommitClient:            discovery.NewGitCommitClient(mainAppDB),
 				SearchPlanWorkerLimit:   1,
-				SearchRunnerWorkerLimit: 20,
+				SearchRunnerWorkerLimit: 12,
+				SearchRateLimiter:       searchRateLimiter,
+				HistoricRateLimiter:     historicRateLimiter,
 			}
 			backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
 			config := scheduler.JobMonitorConfig{
@@ -144,11 +149,12 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
 	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+	seachQueryLimiter := limiter.SearchQueryRate()
 
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics),
+		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, seachQueryLimiter),
 		queryrunner.NewResetter(ctx, logger.Scoped("queryrunner.Resetter", ""), workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 	}
