@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const separator = "_-_"
+
 type BitbucketCodeHost struct {
 	logger log.Logger
 	def    *CodeHostDefinition
@@ -57,8 +59,8 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 }
 
 // ListRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
-// url is extracted. Note that the repo name has the following format: <project key>::<repo name>. Thus if you
-// just want the repo name you would have to strip the project key and '::' separator out.
+// url is extracted. Note that the repo name has the following format: <project key>_-_<repo name>. Thus if you
+// just want the repo name you would have to strip the project key and '_-_' separator out.
 func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	bt.logger.Info("fetching repos")
 	repos, err := bt.c.ListRepos(ctx)
@@ -79,7 +81,7 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
 		cloneUrl.User = url.UserPassword(bt.def.Username, bt.def.Password)
 		results = append(results, &store.Repo{
-			Name:   fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
+			Name:   fmt.Sprintf("%s%s%s", r.Project.Key, separator, r.Name),
 			GitURL: cloneUrl.String(),
 		})
 	}
@@ -87,14 +89,14 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 	return results, nil
 }
 
-// CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>::<repo name>.
+// CreateRepo creates a repo on bitbucket. It is assumed that the repo name has the following format: <project key>_-_<repo name>.
 // A repo can only be created under a project in bitbucket, therefore the project is extract from the repo name format and a
 // project is created first, if and only if, the project does not exist already. If the project already exists, the repo
 // will be created and the created repos git clone url will be returned.
 func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
-	parts := strings.Split(name, "::")
+	parts := strings.Split(name, separator)
 	if len(parts) != 2 {
-		return nil, errors.New("invalid name format - expected <project key>::<repo name>")
+		return nil, errors.New("invalid name format - expected <project key>_-_<repo name>")
 	}
 	key := parts[0]
 	repoName := parts[1]
