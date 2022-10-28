@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,12 +53,13 @@ type BackfillerConfig struct {
 
 	SearchPlanWorkerLimit   int
 	SearchRunnerWorkerLimit int
+	SearchRateLimiter       *ratelimit.InstrumentedLimiter
 }
 
 func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	logger := log.Scoped("insightsBackfiller", "")
 	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit)
-	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit)
+	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
 	return newBackfiller(searchJobGenerator, searchRunner, persister)
 
@@ -241,7 +243,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 	}
 }
 
-func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int) SearchRunner {
+func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
 	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 		// early return
@@ -257,6 +259,7 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 			job := jobs[i]
 			g.Go(func(ctx context.Context) error {
 				h := searchHandlers[series.GenerationMethod]
+				rateLimiter.Wait(ctx)
 				searchPoints, err := h(ctx, job, series, *job.RecordTime)
 				if err != nil {
 					return err

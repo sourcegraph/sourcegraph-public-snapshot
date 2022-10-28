@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -384,7 +386,7 @@ func TestMakeRunSearch(t *testing.T) {
 			if tc.cancled {
 				cancel()
 			}
-			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers)
+			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, ratelimit.NewInstrumentedLimiter("", &rate.Limiter{}))
 
 			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
 
