@@ -6,9 +6,9 @@ import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '
 import { Range } from '@sourcegraph/extension-api-types'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
-import { raceWithDelayOffset } from './promise'
-import { SettingsGetter } from './settings'
-import { isDefined } from './util/helpers'
+import { raceWithDelayOffset } from '../../codeintel/promise'
+import { SettingsGetter } from '../../codeintel/settings'
+import { isDefined } from '../../codeintel/util/helpers'
 
 export function definitionQuery({
     searchToken,

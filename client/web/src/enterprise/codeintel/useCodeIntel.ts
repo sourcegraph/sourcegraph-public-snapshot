@@ -6,8 +6,15 @@ import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
-import { ConnectionQueryArguments } from '../components/FilteredConnection'
-import { asGraphQLResult } from '../components/FilteredConnection/utils'
+import { Location, buildPreciseLocation } from '../../codeintel/location'
+import {
+    LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
+    LOAD_ADDITIONAL_REFERENCES_QUERY,
+    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
+} from '../../codeintel/ReferencesPanelQueries'
+import { SettingsGetter } from '../../codeintel/settings'
+import { ConnectionQueryArguments } from '../../components/FilteredConnection'
+import { asGraphQLResult } from '../../components/FilteredConnection/utils'
 import {
     UsePreciseCodeIntelForPositionVariables,
     UsePreciseCodeIntelForPositionResult,
@@ -15,15 +22,8 @@ import {
     LoadAdditionalReferencesVariables,
     LoadAdditionalImplementationsResult,
     LoadAdditionalImplementationsVariables,
-} from '../graphql-operations'
+} from '../../graphql-operations'
 
-import { Location, buildPreciseLocation } from './location'
-import {
-    LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY,
-    LOAD_ADDITIONAL_REFERENCES_QUERY,
-    USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
-} from './ReferencesPanelQueries'
-import { SettingsGetter } from './settings'
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
 interface CodeIntelData {

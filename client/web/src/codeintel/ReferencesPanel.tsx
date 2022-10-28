@@ -58,6 +58,7 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
+import { useCodeIntel } from '../enterprise/codeintel/useCodeIntel'
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
@@ -69,7 +70,6 @@ import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups,
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
-import { useCodeIntel } from './useCodeIntel'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
