@@ -46,7 +46,7 @@ describe('RepositoryCommitPage', () => {
                     body: 'Copy adjustment',
                     author: {
                         person: {
-                            avatarURL: 'https://avatars.githubusercontent.com/u/59381432?v=4',
+                            avatarURL: null,
                             name: 'st0nebraker',
                             email: 'beccasteinbrecher@gmail.com',
                             displayName: 'Becca Steinbrecher',
