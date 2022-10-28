@@ -68,5 +68,4 @@ func TestGetInstallAccessToken(t *testing.T) {
 
 	_, err := getInstallAccessToken(ctx, ghc)
 	require.NoError(t, err)
-
 }
