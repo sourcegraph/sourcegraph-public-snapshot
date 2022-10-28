@@ -126,6 +126,27 @@ func (s *Store) Insert(repos []*Repo) error {
 	return tx.Commit()
 }
 
+func (s *Store) FailedRepos() ([]*Repo, error) {
+	s.Lock()
+	defer s.Unlock()
+	rows, err := s.db.Query(`SELECT name, failed, created, pushed, git_url, to_git_url FROM repos WHERE failed != ""`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*Repo
+	for rows.Next() {
+		var r Repo
+		err := rows.Scan(&r.Name, &r.Failed, &r.Created, &r.Pushed, &r.GitURL, &r.ToGitURL)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, &r)
+	}
+	return repos, nil
+}
+
 func (s *Store) CountCompletedRepos() (int, error) {
 	s.Lock()
 	defer s.Unlock()

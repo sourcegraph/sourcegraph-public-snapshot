@@ -166,6 +166,81 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	return nil
 }
 
+func (r *Runner) Retry(ctx context.Context, concurrency int) error {
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
+
+	// Load existing repositories.
+	srcRepos, err := r.store.Load()
+	if err != nil {
+		r.logger.Error("failed to open state database", log.Error(err))
+		return err
+	}
+
+	// If we're starting fresh, really fetch them.
+	if len(srcRepos) == 0 {
+		r.logger.Info("No failed repos")
+	}
+
+	out.WriteLine(output.Linef(output.EmojiHourglass, output.StyleBold, "Retrying %d repos", len(srcRepos)))
+
+	bars := []output.ProgressBar{
+		{Label: "Copying repos", Max: float64(len(srcRepos))},
+	}
+	progress := out.Progress(bars, nil)
+	defer progress.Destroy()
+
+	var done int64
+	total := len(srcRepos)
+
+	g := group.NewWithResults[error]().WithMaxConcurrency(20)
+	for _, repo := range srcRepos {
+		repo := repo
+		g.Go(func() error {
+			// Create the repo on destination.
+			if !repo.Created {
+				toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
+				if err != nil {
+					repo.Failed = err.Error()
+					r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
+				} else {
+					repo.ToGitURL = toGitURL.String()
+					repo.Created = true
+				}
+				if err := r.store.SaveRepo(repo); err != nil {
+					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+					return err
+				}
+			}
+
+			// Push the repo on destination.
+			if !repo.Pushed && repo.Created {
+				err := pushRepo(ctx, repo)
+				if err != nil {
+					repo.Failed = err.Error()
+					r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
+				} else {
+					repo.Pushed = true
+				}
+				if err := r.store.SaveRepo(repo); err != nil {
+					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+					return err
+				}
+			}
+			atomic.AddInt64(&done, 1)
+			progress.SetValue(0, float64(done))
+			progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, total))
+			return nil
+		})
+	}
+	errs := g.Wait()
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func pushRepo(ctx context.Context, repo *store.Repo) error {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {

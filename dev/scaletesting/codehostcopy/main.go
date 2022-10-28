@@ -17,6 +17,8 @@ import (
 	sgerr "github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const Concurrency = 20
+
 //go:embed config.example.cue
 var exampleConfig string
 
@@ -68,6 +70,13 @@ var app = &cli.App{
 					DefaultText: "limit the amount of repos that gets printed. Use 0 to print all repos",
 					Value:       10,
 				},
+			},
+		},
+		{
+			Name:        "retry",
+			Description: "retry repos that failed",
+			Action: func(cmd *cli.Context) error {
+				return doRetry(cmd.Context, log.Scoped("retry", ""), cmd.String("state"), cmd.String("config"))
 			},
 		},
 	},
@@ -131,7 +140,7 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 		logger.Fatal("failed to create destination code host", log.Error(err))
 	}
 	runner := NewRunner(logger, s, from, dest)
-	return runner.Copy(ctx, 20)
+	return runner.Copy(ctx, Concurrency)
 }
 
 func doList(ctx context.Context, logger log.Logger, state string, config string, limit int) error {
@@ -158,6 +167,29 @@ func doList(ctx context.Context, logger log.Logger, state string, config string,
 
 }
 
+func doRetry(ctx context.Context, logger log.Logger, state string, config string) error {
+	cfg, err := loadConfig(config)
+	if err != nil {
+		var cueErr errors.Error
+		if errors.As(err, &cueErr) {
+			logger.Info(errors.Details(err, nil))
+		}
+		logger.Fatal("failed to load config", log.Error(err))
+	}
+	s, err := store.New(state)
+	if err != nil {
+		logger.Fatal("failed to init state", log.Error(err))
+	}
+
+	from, err := createSourceCodeHost(ctx, logger, cfg.From)
+	if err != nil {
+		logger.Fatal("failed to create from code host", log.Error(err))
+	}
+
+	runner := NewRunner(logger, s, from, nil)
+	return runner.Retry(ctx, Concurrency)
+
+}
 func main() {
 	cb := log.Init(log.Resource{
 		Name: "codehostcopy",
