@@ -36,6 +36,14 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return errors.New("must supply exactly one of -version or -file")
 		}
 
+		if file != "" {
+			expectedSchemaFactories = []ExpectedSchemaFactory{ExplicitFileSchemaFactory(file)}
+		}
+		expectedSchema, err := fetchExpectedSchema(schemaName, version, out, expectedSchemaFactories)
+		if err != nil {
+			return err
+		}
+
 		_, store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
@@ -45,14 +53,6 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 		schema := schemas["public"]
-
-		if file != "" {
-			expectedSchemaFactories = []ExpectedSchemaFactory{ExplicitFileSchemaFactory(file)}
-		}
-		expectedSchema, err := fetchExpectedSchema(schemaName, version, out, expectedSchemaFactories)
-		if err != nil {
-			return err
-		}
 
 		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
