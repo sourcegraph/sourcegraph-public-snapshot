@@ -4,7 +4,6 @@ import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
