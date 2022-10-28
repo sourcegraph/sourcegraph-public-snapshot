@@ -451,6 +451,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint format
+
+Check client code and docs for formatting errors.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg generate
 
 Run code and docs generation tasks.
