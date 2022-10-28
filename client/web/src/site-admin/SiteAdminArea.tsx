@@ -6,7 +6,6 @@ import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -43,7 +42,6 @@ const NotSiteAdminPage: React.ComponentType<React.PropsWithChildren<{}>> = () =>
 export interface SiteAdminAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
     site: Pick<SiteSettingFields, '__typename' | 'id'>
@@ -61,7 +59,6 @@ interface SiteAdminAreaProps
     extends RouteComponentProps<{}>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]

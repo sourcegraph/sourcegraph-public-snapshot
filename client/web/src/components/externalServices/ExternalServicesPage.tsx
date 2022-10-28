@@ -7,7 +7,6 @@ import { Subject } from 'rxjs'
 import { tap } from 'rxjs/operators'
 
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
@@ -21,7 +20,7 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
-interface Props extends ActivationProps, TelemetryProps {
+interface Props extends TelemetryProps {
     history: H.History
     location: H.Location
     routingPrefix: string
