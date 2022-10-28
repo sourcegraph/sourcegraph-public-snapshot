@@ -33,17 +33,6 @@ exports[`Timestamp noAbout 1`] = `
 </DocumentFragment>
 `;
 
-exports[`Timestamp with full time formatting 1`] = `
-<DocumentFragment>
-  <span
-    class="timestamp"
-    data-state="closed"
-  >
-    01:02:00
-  </span>
-</DocumentFragment>
-`;
-
 exports[`Timestamp with time time 1`] = `
 <DocumentFragment>
   <span
