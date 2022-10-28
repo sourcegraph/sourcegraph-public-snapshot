@@ -44,6 +44,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, singleLine } from './codemirror'
+import { searchHistory as searchHistoryFacet } from './codemirror/history'
 import {
     decoratedTokens,
     queryTokens,
@@ -51,7 +52,6 @@ import {
     setQueryParseOptions,
     parsedQuery,
 } from './codemirror/parsedQuery'
-import { searchHistory as searchHistoryFacet } from './codemirror/history'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'

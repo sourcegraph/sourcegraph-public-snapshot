@@ -5,21 +5,21 @@ import classNames from 'classnames'
 import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { IEditor, LazyMonacoQueryInput, LazyMonacoQueryInputProps } from './LazyMonacoQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
+import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
+import { SearchHistoryDropdown } from './SearchHistoryDropdown'
 import { Toggles, TogglesProps } from './toggles'
 
 import styles from './SearchBox.module.scss'
-import { SearchHistoryDropdown } from './SearchHistoryDropdown'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
@@ -71,7 +71,14 @@ export interface SearchBoxProps
 }
 
 export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
-    const { queryState, onEditorCreated: onEditorCreatedCallback, showSearchHistory, hideHelpButton } = props
+    const {
+        queryState,
+        onEditorCreated: onEditorCreatedCallback,
+        showSearchHistory,
+        hideHelpButton,
+        onChange,
+        selectedSearchContextSpec,
+    } = props
 
     const onEditorCreated = useCallback(
         (editor: IEditor) => {
@@ -84,12 +91,12 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         (search: RecentSearch) => {
             const searchContext = getGlobalSearchContextFilter(search.query)
             const query =
-                searchContext && searchContext.spec === props.selectedSearchContextSpec
+                searchContext && searchContext.spec === selectedSearchContextSpec
                     ? omitFilter(search.query, searchContext?.filter)
                     : search.query
-            props.onChange({ query, hint: EditorHint.Focus })
+            onChange({ query, hint: EditorHint.Focus })
         },
-        [props.onChange, props.selectedSearchContextSpec]
+        [onChange, selectedSearchContextSpec]
     )
 
     return (

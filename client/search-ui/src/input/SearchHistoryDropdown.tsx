@@ -7,29 +7,28 @@ import React, {
     MouseEventHandler,
     MouseEvent,
 } from 'react'
+
 import { mdiMagnify, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import classNames from 'classnames'
+
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+// eslint-disable-next-line no-restricted-imports
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import {
     Icon,
     Popover,
     PopoverTrigger,
     PopoverContent,
-    Button,
-    Combobox,
-    ComboboxList,
-    ComboboxOption,
-    ComboboxInput,
     usePopoverContext,
     Flipping,
     Tooltip,
     PopoverOpenEventReason,
     PopoverOpenEvent,
 } from '@sourcegraph/wildcard'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui/src/components'
+
 import styles from './SearchHistoryDropdown.module.scss'
-import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import classNames from 'classnames'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 
 function buttonContent(isOpen: boolean): React.ReactElement {
     return (
@@ -69,7 +68,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
-                    <Tooltip content={'Recent searches'}>
+                    <Tooltip content="Recent searches">
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.triggerButtonOpen : null)}
@@ -136,7 +135,7 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
                     break
             }
         },
-        [setSelectedIndex, recentSearches]
+        [setSelectedIndex, recentSearches, onSelect]
     )
 
     const clickHandler: MouseEventHandler<HTMLElement> = useCallback(
@@ -181,13 +180,12 @@ const SearchHistoryEntry: React.FunctionComponent<{
     index: number
     search: RecentSearch
     selected: boolean
-}> = React.memo(({ index, search, selected }) => {
-    return (
-        <li role="option" data-index={index} aria-selected={selected}>
-            <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
-            <span className="ml-1 text-nowrap text-muted">
-                <Timestamp date={search.timestamp} />
-            </span>
-        </li>
-    )
-})
+}> = React.memo(({ index, search, selected }) => (
+    <li role="option" data-index={index} aria-selected={selected}>
+        <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
+        <span className="ml-1 text-nowrap text-muted">
+            <Timestamp date={search.timestamp} />
+        </span>
+    </li>
+))
+SearchHistoryEntry.displayName = 'SearchHistoryEntry'
