@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -24,7 +26,8 @@ func GCSExpectedSchemaFactory(filename, version string) (schemaDescription descr
 	return fetchSchema(fmt.Sprintf("https://storage.googleapis.com/sourcegraph-assets/migrations/drift/%s-%s", version, strings.ReplaceAll(filename, "/", "_")))
 }
 
-var versionBranchOrVersionTagOrCommitPattern = regexp.MustCompile(fmt.Sprintf(`^(%s)|(%s)|(%s)$`,
+var versionBranchOrVersionTagOrCommitPattern = regexp.MustCompile(fmt.Sprintf(
+	`^(%s)|(%s)|(%s)$`,
 	`\d+\.\d+`,        // Versioned branches in Git have the form `{MAJOR}.{MINOR}`
 	`v\d+\.\d+\.\d+`,  // Versioned tags in Git have the form `v{MAJOR}.{MINOR}.{PATCH}`
 	`[0-9A-Fa-f]{40}`, // Commits must be the full 40 character SHA
@@ -59,6 +62,37 @@ func fetchSchema(url string) (schemaDescription descriptions.SchemaDescription, 
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&schemaDescription); err != nil {
+		return descriptions.SchemaDescription{}, false, err
+	}
+
+	return schemaDescription, true, err
+}
+
+const prefix = "/schema-descriptions"
+
+// LocalExpectedSchemaFactory reads schema definitions from a local directory baked into the migrator image.
+// A false-valued flag is returned if the file does not exist locally for this version.
+func LocalExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
+	return readSchema(filepath.Join(prefix, fmt.Sprintf("%s-%s", version, strings.ReplaceAll(filename, "/", "_"))))
+}
+
+// readSchema reads a schema description from the given filename. If the file does not exist on disk, a
+// false-valued flag is returned.
+func readSchema(filename string) (schemaDescription descriptions.SchemaDescription, _ bool, err error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = nil
+		}
+		return descriptions.SchemaDescription{}, false, err
+	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = errors.Append(err, closeErr)
+		}
+	}()
+
+	if err := json.NewDecoder(f).Decode(&schemaDescription); err != nil {
 		return descriptions.SchemaDescription{}, false, err
 	}
 
