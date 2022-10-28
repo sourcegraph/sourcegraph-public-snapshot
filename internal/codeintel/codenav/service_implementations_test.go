@@ -26,7 +26,7 @@ func TestImplementations(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -89,7 +89,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -164,7 +164,7 @@ func TestImplementationsRemote(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -320,7 +320,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}

@@ -167,7 +167,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
                     {invitedBy ? 'With a Sourcegraph account, you can:' : 'With a Sourcegraph account, you can also:'}
                     <ul className={styles.featureList}>
-                        <li>Search across all your public repositories</li>
+                        <li>Search across 2M+ open source repositories</li>
                         <li>Monitor code for changes</li>
                         <li>Navigate through code with IDE like go to references and definition hovers</li>
                         <li>Integrate data, tooling, and code in a single location </li>

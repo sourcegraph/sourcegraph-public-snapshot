@@ -23,6 +23,7 @@ import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
@@ -40,7 +41,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput } from './notebooks'
+import type { BlockInput, NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -77,7 +78,9 @@ export interface LayoutProps
         HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
@@ -128,8 +131,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
+    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)

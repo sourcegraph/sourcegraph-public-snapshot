@@ -38,7 +38,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           class="featureList"
         >
           <li>
-            Search across all your public repositories
+            Search across 2M+ open source repositories
           </li>
           <li>
             Monitor code for changes

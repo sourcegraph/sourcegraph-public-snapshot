@@ -40,7 +40,6 @@ func Search(
 	indexed bool,
 	p *search.TextPatternInfo,
 	fetchTimeout time.Duration,
-	indexerEndpoints []string,
 	features search.Features,
 	onMatches func([]*protocol.FileMatch),
 ) (limitHit bool, err error) {
@@ -77,10 +76,9 @@ func Search(
 			PatternMatchesContent:        p.PatternMatchesContent,
 			PatternMatchesPath:           p.PatternMatchesPath,
 		},
-		Indexed:          indexed,
-		FetchTimeout:     fetchTimeout.String(),
-		IndexerEndpoints: indexerEndpoints,
-		FeatHybrid:       features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+		Indexed:      indexed,
+		FetchTimeout: fetchTimeout.String(),
+		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}
 
 	body, err := json.Marshal(r)

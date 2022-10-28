@@ -367,7 +367,7 @@
     "@codemirror/lint": "^6.0.0",
     "@codemirror/search": "^6.0.1",
     "@codemirror/state": "^6.1.0",
-    "@codemirror/view": "^6.0.2",
+    "@codemirror/view": "^6.4.0",
     "@lezer/highlight": "^1.0.0",
     "@mdi/js": "^6.7.96",
     "@microsoft/fetch-event-source": "^2.0.1",

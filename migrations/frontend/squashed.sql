@@ -283,6 +283,16 @@ RETURN NULL;
 END;
 $$;
 
+CREATE FUNCTION func_insert_zoekt_repo() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);
+
+  RETURN NULL;
+END;
+$$;
+
 CREATE FUNCTION func_lsif_uploads_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1593,6 +1603,12 @@ ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload text NOT NULL
+);
+
+CREATE TABLE codeintel_ranking_exports (
+    upload_id integer NOT NULL,
+    graph_key text NOT NULL,
+    locked_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE configuration_policies_audit_logs (
@@ -3651,6 +3667,14 @@ CREATE SEQUENCE webhooks_id_seq
 
 ALTER SEQUENCE webhooks_id_seq OWNED BY webhooks.id;
 
+CREATE TABLE zoekt_repos (
+    repo_id integer NOT NULL,
+    branches jsonb DEFAULT '[]'::jsonb NOT NULL,
+    index_status text DEFAULT 'not_indexed'::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
@@ -3902,6 +3926,9 @@ ALTER TABLE ONLY codeintel_lockfiles
 
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
+
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
 
 ALTER TABLE ONLY critical_and_site_config
     ADD CONSTRAINT critical_and_site_config_pkey PRIMARY KEY (id);
@@ -4161,6 +4188,9 @@ ALTER TABLE ONLY webhooks
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_uuid_key UNIQUE (uuid);
 
+ALTER TABLE ONLY zoekt_repos
+    ADD CONSTRAINT zoekt_repos_pkey PRIMARY KEY (repo_id);
+
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
@@ -4286,6 +4316,10 @@ CREATE INDEX event_logs_timestamp ON event_logs USING btree ("timestamp");
 CREATE INDEX event_logs_timestamp_at_utc ON event_logs USING btree (date(timezone('UTC'::text, "timestamp")));
 
 CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
+
+CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name);
+
+CREATE INDEX event_logs_user_id_timestamp ON event_logs USING btree (user_id, "timestamp");
 
 CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE ((namespace_user_id IS NULL) AND (namespace_org_id IS NULL));
 
@@ -4509,11 +4543,15 @@ CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_
 
 CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_code);
 
+CREATE INDEX zoekt_repos_index_status ON zoekt_repos USING btree (index_status);
+
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
+
+CREATE TRIGGER trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 
@@ -4715,6 +4753,9 @@ ALTER TABLE ONLY cm_webhooks
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_monitor_fkey FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY codeintel_ranking_exports
+    ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;
@@ -4943,6 +4984,9 @@ ALTER TABLE ONLY webhooks
 
 ALTER TABLE ONLY webhooks
     ADD CONSTRAINT webhooks_updated_by_user_id_fkey FOREIGN KEY (updated_by_user_id) REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY zoekt_repos
+    ADD CONSTRAINT zoekt_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);

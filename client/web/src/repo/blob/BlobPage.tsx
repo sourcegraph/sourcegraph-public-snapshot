@@ -30,6 +30,7 @@ import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/u
 import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -50,7 +51,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob } from './backend'
+import { fetchBlob, fetchStencil } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -75,7 +76,8 @@ interface BlobPageProps
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -108,6 +110,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
     const enableTokenKeyboardNavigation =
+        props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
         props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
 
@@ -183,16 +186,14 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         repoName,
                         revision,
                         filePath,
-                        stencil: enableTokenKeyboardNavigation,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
                     }).pipe(
-                        map(({ blob, stencil }) => {
+                        map(blob => {
                             if (blob === null) {
                                 return blob
                             }
 
                             const blobInfo: BlobPageInfo = {
-                                stencil,
                                 content: blob.content,
                                 html: blob.highlight.html ?? '',
                                 repoName,
@@ -210,16 +211,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [
-            enableCodeMirror,
-            enableTokenKeyboardNavigation,
-            enableLazyBlobSyntaxHighlighting,
-            filePath,
-            mode,
-            repoName,
-            revision,
-            span,
-        ])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -241,13 +233,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             revision,
                             filePath,
                             disableTimeout,
-                            stencil: enableTokenKeyboardNavigation,
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
                         })
                     ),
-                    map(({ blob, stencil }) => {
+                    map(blob => {
                         if (blob === null) {
                             return blob
                         }
@@ -261,7 +252,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         }
 
                         const blobInfo: BlobPageInfo = {
-                            stencil,
                             content: blob.content,
                             html: blob.highlight.html ?? '',
                             lsif: blob.highlight.lsif ?? '',
@@ -277,8 +267,26 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableTokenKeyboardNavigation, enableCodeMirror, mode]
+            [repoName, revision, filePath, enableCodeMirror, mode]
         )
+    )
+
+    /**
+     * Fetches stencil ranges for the current document.
+     * Used to provide keyboard navigation within the blob view.
+     */
+    const stencil = useObservable(
+        useMemo(() => {
+            if (!enableTokenKeyboardNavigation) {
+                return of(undefined)
+            }
+
+            return fetchStencil({
+                repoName,
+                revision,
+                filePath,
+            })
+        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -490,7 +498,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID }}
+                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}

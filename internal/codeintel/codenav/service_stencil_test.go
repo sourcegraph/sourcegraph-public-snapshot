@@ -23,7 +23,7 @@ func TestStencil(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}
@@ -79,7 +79,7 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
 
 	// Init service
-	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, nil, nil, &observation.TestContext)
 
 	// Set up request state
 	mockRequestState := RequestState{}

@@ -1,6 +1,9 @@
 package conftypes
 
-import "reflect"
+import (
+	"reflect"
+	"time"
+)
 
 // ServiceConnections represents configuration about how the deployment
 // internally connects to services. These are settings that need to be
@@ -24,6 +27,15 @@ type ServiceConnections struct {
 	// code insights database.
 	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
 	CodeInsightsDSN string `json:"codeInsightsPostgresDSN"`
+
+	// Searchers is the addresses of searcher instances that should be talked to.
+	Searchers []string `json:"searchers"`
+	// Zoekts is the addresses of Zoekt instances to talk to.
+	Zoekts []string `json:"zoekts"`
+	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
+	// cache the list of indexed repository. After TTL is over, new list will
+	// get requested from Zoekt shards.
+	ZoektListTTL time.Duration `json:"zoektListTTL"`
 }
 
 // RawUnified is the unparsed variant of conf.Unified.

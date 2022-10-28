@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -21,6 +22,9 @@ type operations struct {
 	getStencil             *observation.Operation
 	getDumpsByIDs          *observation.Operation
 	getClosestDumpsForBlob *observation.Operation
+
+	numUploadsRead   prometheus.Counter
+	numBytesUploaded prometheus.Counter
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -39,6 +43,25 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
+	counter := func(name, help string) prometheus.Counter {
+		counter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		})
+
+		observationContext.Registerer.MustRegister(counter)
+		return counter
+	}
+
+	numUploadsRead := counter(
+		"src_codeintel_codenav_ranking_uploads_read_total",
+		"The number of upload records read.",
+	)
+	numBytesUploaded := counter(
+		"src_codeintel_codenav_ranking_bytes_uploaded_total",
+		"The number of bytes uploaded to GCS.",
+	)
+
 	return &operations{
 		getReferences:          op("getReferences"),
 		getImplementations:     op("getImplementations"),
@@ -49,6 +72,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getStencil:             op("getStencil"),
 		getDumpsByIDs:          op("GetDumpsByIDs"),
 		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
+
+		numUploadsRead:   numUploadsRead,
+		numBytesUploaded: numBytesUploaded,
 	}
 }
 

@@ -892,6 +892,20 @@ Indexes:
 
 ```
 
+# Table "public.codeintel_ranking_exports"
+```
+  Column   |           Type           | Collation | Nullable | Default 
+-----------+--------------------------+-----------+----------+---------
+ upload_id | integer                  |           | not null | 
+ graph_key | text                     |           | not null | 
+ locked_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (upload_id, graph_key)
+Foreign-key constraints:
+    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+
+```
+
 # Table "public.configuration_policies_audit_logs"
 ```
        Column       |           Type           | Collation | Nullable |                          Default                           
@@ -1051,6 +1065,8 @@ Indexes:
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
     "event_logs_user_id" btree (user_id)
+    "event_logs_user_id_name" btree (user_id, name)
+    "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
     "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)
@@ -2025,6 +2041,7 @@ Indexes:
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
+    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2613,7 +2630,9 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "zoekt_repos" CONSTRAINT "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
+    trig_create_zoekt_repo_on_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_zoekt_repo()
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
     trig_recalc_repo_statistics_on_repo_delete AFTER DELETE ON repo REFERENCING OLD TABLE AS oldtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_delete()
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
@@ -3207,6 +3226,23 @@ Webhooks registered in Sourcegraph instance.
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 
 **updated_by_user_id**: ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
+# Table "public.zoekt_repos"
+```
+    Column    |           Type           | Collation | Nullable |       Default       
+--------------+--------------------------+-----------+----------+---------------------
+ repo_id      | integer                  |           | not null | 
+ branches     | jsonb                    |           | not null | '[]'::jsonb
+ index_status | text                     |           | not null | 'not_indexed'::text
+ updated_at   | timestamp with time zone |           | not null | now()
+ created_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "zoekt_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "zoekt_repos_index_status" btree (index_status)
+Foreign-key constraints:
+    "zoekt_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
 
 # View "public.batch_spec_workspace_execution_jobs_with_rank"
 
