@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type finishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
+type FinishFunc func(ctx context.Context, store *basestore.Store, maybeErr error) error
 
 // PersistentRepoIterator represents a durable (persisted) iterator over a set of repositories. This iteration is not
 // concurrency safe and only one consumer should have access to this resource at a time.
@@ -138,7 +138,7 @@ func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock gl
 // finish function will infinitely loop on the current cursor. This iteration for a given repo iterator is not
 // concurrency safe and should only be called from a single thread. Care should be taken to ensure in a distributed
 // environment only one consumer is able to access this resource at a time.
-func (p *PersistentRepoIterator) NextWithFinish() (api.RepoID, bool, finishFunc) {
+func (p *PersistentRepoIterator) NextWithFinish() (api.RepoID, bool, FinishFunc) {
 	current, got := p.peek(p.Cursor)
 	if !p.CompletedAt.IsZero() || !got {
 		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
@@ -209,7 +209,7 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 	return nil
 }
 
-func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, cursorVal int32) (err error) {
+func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32) (err error) {
 	didSucceed := 0
 	didAttempt := 1
 	if maybeErr == nil {
@@ -224,12 +224,12 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	defer func() { err = tx.Done(err) }()
 
 	updateQ := `UPDATE repo_iterator
-SET percent_complete = COALESCE((%s / NULLIF(total_count, 0)), 0),
+SET percent_complete = COALESCE(((%s + success_count)::float / NULLIF(total_count, 0)::float), 0),
     success_count    = success_count + %s,
     repo_cursor      = repo_cursor + %s,
     last_updated_at  = NOW(),
     runtime_duration = runtime_duration + %s
-WHERE Id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_duration;`
+WHERE id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_duration;`
 
 	var pct float64
 	var successCnt int
@@ -246,7 +246,7 @@ WHERE Id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_du
 		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.Id, cursor)
 	}
 	if maybeErr != nil {
-		if err = p.insertIterationError(ctx, tx, cursorVal, maybeErr.Error()); err != nil {
+		if err = p.insertIterationError(ctx, tx, currentRepo, maybeErr.Error()); err != nil {
 			return errors.Wrapf(err, "unable to upsert error iteratorId: %d, new_cursor:%d", p.Id, cursor)
 		}
 	}
