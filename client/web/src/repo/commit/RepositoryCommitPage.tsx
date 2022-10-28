@@ -18,6 +18,7 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -28,7 +29,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -119,8 +120,6 @@ interface RepositoryCommitPageProps
 
 export type DiffMode = 'split' | 'unified'
 
-const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
-
 /** Displays a commit. */
 export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
     const commitOrError = useObservable(
@@ -132,7 +131,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
             [props.match.params.revspec, props.repo.id]
         )
     )
-    const [diffMode, setDiffMode] = useLocalStorage<DiffMode>(DIFF_MODE_VISUALIZER, 'unified')
+    const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
 
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
