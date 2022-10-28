@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { QueryResult } from '@apollo/client'
 
-import { ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, useLazyQuery, useQuery } from '@sourcegraph/http-client'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { Location, buildPreciseLocation } from '../../codeintel/location'
 import {
@@ -12,7 +10,7 @@ import {
     LOAD_ADDITIONAL_REFERENCES_QUERY,
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
 } from '../../codeintel/ReferencesPanelQueries'
-import { SettingsGetter } from '../../codeintel/settings'
+import { CodeIntelData, UseCodeIntelParameters, UseCodeIntelResult } from '../../codeintel/useCodeIntel'
 import { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { asGraphQLResult } from '../../components/FilteredConnection/utils'
 import {
@@ -26,53 +24,10 @@ import {
 
 import { useSearchBasedCodeIntel } from './useSearchBasedCodeIntel'
 
-interface CodeIntelData {
-    references: {
-        endCursor: string | null
-        nodes: Location[]
-    }
-    implementations: {
-        endCursor: string | null
-        nodes: Location[]
-    }
-    definitions: {
-        endCursor: string | null
-        nodes: Location[]
-    }
-}
-
 const EMPTY_CODE_INTEL_DATA = {
     implementations: { endCursor: null, nodes: [] },
     definitions: { endCursor: null, nodes: [] },
     references: { endCursor: null, nodes: [] },
-}
-
-export interface UseCodeIntelResult {
-    data?: CodeIntelData
-    error?: ErrorLike
-    loading: boolean
-
-    referencesHasNextPage: boolean
-    fetchMoreReferences: () => void
-    fetchMoreReferencesLoading: boolean
-
-    implementationsHasNextPage: boolean
-    fetchMoreImplementations: () => void
-    fetchMoreImplementationsLoading: boolean
-}
-
-interface UseCodeIntelParameters {
-    variables: UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
-
-    searchToken: string
-    fileContent: string
-
-    spec: LanguageSpec
-
-    isFork: boolean
-    isArchived: boolean
-
-    getSetting: SettingsGetter
 }
 
 export const useCodeIntel = ({

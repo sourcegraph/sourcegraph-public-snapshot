@@ -26,6 +26,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
+import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
@@ -37,6 +38,7 @@ interface Props
         ActivationProps,
         ThemeProps,
         PlatformContextProps,
+        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
     location: H.Location
     history: H.History
@@ -80,6 +82,7 @@ function useBlobPanelViews({
     settingsCascade,
     isLightTheme,
     platformContext,
+    useCodeIntel,
     telemetryService,
     fetchHighlightedFileLineRanges,
 }: Props): void {
@@ -269,6 +272,7 @@ function useBlobPanelViews({
                                     externalHistory={history}
                                     externalLocation={location}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    useCodeIntel={useCodeIntel}
                                 />
                             ) : (
                                 <></>
@@ -280,16 +284,17 @@ function useBlobPanelViews({
 
             return panelDefinitions
         }, [
-            isTabbedReferencesPanelEnabled,
-            createLocationProvider,
             panelSubjectChanges,
-            preferAbsoluteTimestamps,
-            isLightTheme,
-            settingsCascade,
-            telemetryService,
-            platformContext,
+            isTabbedReferencesPanelEnabled,
             extensionsController,
+            preferAbsoluteTimestamps,
+            createLocationProvider,
+            settingsCascade,
+            platformContext,
+            isLightTheme,
+            telemetryService,
             fetchHighlightedFileLineRanges,
+            useCodeIntel,
         ])
     )
 

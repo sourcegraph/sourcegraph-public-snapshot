@@ -56,6 +56,7 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
         CodeInsightsProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined

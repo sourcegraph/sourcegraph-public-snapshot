@@ -58,7 +58,6 @@ import {
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import { useCodeIntel } from '../enterprise/codeintel/useCodeIntel'
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
 import { Blob } from '../repo/blob/Blob'
 import { Blob as CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
@@ -73,6 +72,8 @@ import { findSearchToken } from './token'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
 
+import { CodeIntelligenceProps } from '.'
+
 import styles from './ReferencesPanel.module.scss'
 
 type Token = HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
@@ -84,6 +85,7 @@ interface HighlightedFileLineRangesProps {
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -157,6 +159,11 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         return <>Nothing found</>
     }
 
+    const useCodeIntel = props.useCodeIntel
+    if (!useCodeIntel) {
+        return <>Code intelligence is not available</>
+    }
+
     const token = {
         repoName: props.repoName,
         line: props.line,
@@ -169,6 +176,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     return (
         <SearchTokenFindingReferencesList
             {...props}
+            useCodeIntel={useCodeIntel}
             token={token}
             isFork={data.isFork}
             isArchived={data.isArchived}
@@ -182,6 +190,7 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     isFork: boolean
     isArchived: boolean
     fileContent: string
+    useCodeIntel: NonNullable<ReferencesPanelProps['useCodeIntel']>
 }
 
 const SearchTokenFindingReferencesList: React.FunctionComponent<
@@ -223,7 +232,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
-export const ReferencesList: React.FunctionComponent<
+const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
             searchToken: string
@@ -251,7 +260,7 @@ export const ReferencesList: React.FunctionComponent<
         fetchMoreImplementations,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
-    } = useCodeIntel({
+    } = props.useCodeIntel({
         variables: {
             repository: props.token.repoName,
             commit: props.token.commitID,
