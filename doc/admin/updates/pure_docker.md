@@ -24,10 +24,6 @@ As a template, perform the same actions as the following diffs in your own deplo
 
 - [`v4.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/88523d785a0a2fcf943fca44f8d7be381209f3d7)
 
-<!-- Add changes changes to this section before release. -->
-
-_Upgrade notes for the next version will appear here._
-
 ## v3.43 ➔ v4.0
 
 As a template, perform the same actions as the following diffs in your own deployment:
