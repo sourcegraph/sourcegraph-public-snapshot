@@ -59,6 +59,7 @@ func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) err
 		webhookLogCreateQueryFmtstr,
 		receivedAt,
 		dbutil.NullInt64{N: log.ExternalServiceID},
+		dbutil.NullInt32{N: log.WebhookID},
 		log.StatusCode,
 		[]byte(rawRequest),
 		[]byte(rawResponse),
@@ -104,6 +105,12 @@ type WebhookLogListOpts struct {
 	// logs will be returned.
 	ExternalServiceID *int64
 
+	// If set and non-zero, this limits the webhook logs to those matched to
+	// that configured webhook. If set and zero, this limits the webhook logs to
+	// those that did not match any webhook. If nil, then all webhook
+	// logs will be returned.
+	WebhookID *int32
+
 	// If set, only webhook logs that resulted in errors will be returned.
 	OnlyErrors bool
 
@@ -118,6 +125,13 @@ func (opts *WebhookLogListOpts) predicates() []*sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("external_service_id IS NULL"))
 		} else {
 			preds = append(preds, sqlf.Sprintf("external_service_id = %s", *id))
+		}
+	}
+	if id := opts.WebhookID; id != nil {
+		if *id == 0 {
+			preds = append(preds, sqlf.Sprintf("webhook_id IS NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("webhook_id = %s", *id))
 		}
 	}
 	if opts.OnlyErrors {
@@ -207,6 +221,7 @@ var webhookLogColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("received_at"),
 	sqlf.Sprintf("external_service_id"),
+	sqlf.Sprintf("webhook_id"),
 	sqlf.Sprintf("status_code"),
 	sqlf.Sprintf("request"),
 	sqlf.Sprintf("response"),
@@ -218,12 +233,14 @@ INSERT INTO
 	webhook_logs (
 		received_at,
 		external_service_id,
+		webhook_id,
 		status_code,
 		request,
 		response,
 		encryption_key_id
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -274,6 +291,7 @@ WHERE
 func (s *webhookLogStore) scanWebhookLog(log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
 		externalServiceID int64 = -1
+		webhookID         int32 = -1
 		request, response []byte
 		keyID             string
 	)
@@ -282,6 +300,7 @@ func (s *webhookLogStore) scanWebhookLog(log *types.WebhookLog, sc dbutil.Scanne
 		&log.ID,
 		&log.ReceivedAt,
 		&dbutil.NullInt64{N: &externalServiceID},
+		&dbutil.NullInt32{N: &webhookID},
 		&log.StatusCode,
 		&request,
 		&response,
@@ -292,6 +311,9 @@ func (s *webhookLogStore) scanWebhookLog(log *types.WebhookLog, sc dbutil.Scanne
 
 	if externalServiceID != -1 {
 		log.ExternalServiceID = &externalServiceID
+	}
+	if webhookID != -1 {
+		log.WebhookID = &webhookID
 	}
 
 	log.Request = types.NewEncryptedWebhookLogMessage(string(request), keyID, s.key)

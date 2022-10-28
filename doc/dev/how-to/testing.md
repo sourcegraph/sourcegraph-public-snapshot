@@ -331,7 +331,7 @@ End-to-end tests need to set up all backend and session state needed for the tes
 This includes signing the user in, setting up external services and syncing repositories.
 Setup should be idempotent, so that tests can be run multiple times without failure or expensive re-setups.
 Prefer using the API for setup over clicking through the UI, because it is less likely to change and faster.
-The [test driver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/testing/driver.ts#L129:17) has some convenience methods for common tasks, e.g. `driver.ensureExternalService()` and `driver.ensureLoggedIn()`.
+The [test driver](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/testing/driver.ts#L129:17) has some convenience methods for common tasks, e.g. `driver.ensureExternalService()` and `driver.ensureSignedIn()`.
 
 ### Writing browser-based tests
 

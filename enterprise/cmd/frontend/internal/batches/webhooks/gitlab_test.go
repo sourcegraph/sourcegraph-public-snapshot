@@ -697,7 +697,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			t.Run("missing merge request", func(t *testing.T) {
 				event := &webhooks.PipelineEvent{}
 
-				if have := h.handlePipelineEvent(ctx, "ignored", event); have != errPipelineMissingMergeRequest {
+				if have := h.handlePipelineEvent(ctx, extsvc.CodeHostBaseURL{}, event); have != errPipelineMissingMergeRequest {
 					t.Errorf("unexpected error: have %+v; want %+v", have, errPipelineMissingMergeRequest)
 				}
 			})
@@ -707,7 +707,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					MergeRequest: &gitlab.MergeRequest{},
 				}
 
-				if err := h.handlePipelineEvent(ctx, "ignored", event); err == nil || err == errPipelineMissingMergeRequest {
+				if err := h.handlePipelineEvent(ctx, extsvc.CodeHostBaseURL{}, event); err == nil || err == errPipelineMissingMergeRequest {
 					t.Errorf("unexpected error: %+v", err)
 				}
 			})

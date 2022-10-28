@@ -58,5 +58,7 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}
+        notebooksEnabled={true}
+        codeMonitoringEnabled={true}
     />
 )

@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link, H3, Icon, Checkbox } from '@sourcegraph/wildcard'
+import { Link, H3, Icon, Checkbox, Tooltip } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -41,10 +41,15 @@ export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeI
         />
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
-            <div className="m-0">
+            <div className="m-0 d-flex flex-row">
                 <H3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
                 </H3>
+                {node.shouldReindex && (
+                    <Tooltip content="This index has been marked for reindexeding.">
+                        <div className={classNames(styles.tag, 'ml-1 rounded')}>(marked for reindexeding)</div>
+                    </Tooltip>
+                )}
             </div>
 
             <div>

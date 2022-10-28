@@ -88,6 +88,10 @@ interface IssueTemplateArguments {
      */
     version: semver.SemVer
     /**
+     * Available as `$ONE_WORKING_WEEK_BEFORE_RELEASE`
+     */
+    oneWorkingWeekBeforeRelease: Date
+    /**
      * Available as `$ONE_WORKING_DAY_BEFORE_RELEASE`
      */
     threeWorkingDaysBeforeRelease: Date
@@ -139,7 +143,13 @@ function dateMarkdown(date: Date, name: string): string {
 async function execTemplate(
     octokit: Octokit,
     template: IssueTemplate,
-    { version, threeWorkingDaysBeforeRelease, releaseDate, oneWorkingDayAfterRelease }: IssueTemplateArguments
+    {
+        version,
+        oneWorkingWeekBeforeRelease,
+        threeWorkingDaysBeforeRelease,
+        releaseDate,
+        oneWorkingDayAfterRelease,
+    }: IssueTemplateArguments
 ): Promise<string> {
     console.log(`Preparing issue from ${JSON.stringify(template)}`)
     const name = releaseName(version)
@@ -148,6 +158,10 @@ async function execTemplate(
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
+        .replace(
+            /\$ONE_WORKING_WEEK_BEFORE_RELEASE/g,
+            dateMarkdown(oneWorkingWeekBeforeRelease, `One working week before ${name} release`)
+        )
         .replace(
             /\$THREE_WORKING_DAY_BEFORE_RELEASE/g,
             dateMarkdown(threeWorkingDaysBeforeRelease, `Three working days before ${name} release`)
@@ -175,6 +189,7 @@ export async function ensureTrackingIssues({
     version,
     assignees,
     releaseDate,
+    oneWorkingWeekBeforeRelease,
     threeWorkingDaysBeforeRelease,
     oneWorkingDayAfterRelease,
     dryRun,
@@ -182,6 +197,7 @@ export async function ensureTrackingIssues({
     version: semver.SemVer
     assignees: string[]
     releaseDate: Date
+    oneWorkingWeekBeforeRelease: Date
     threeWorkingDaysBeforeRelease: Date
     oneWorkingDayAfterRelease: Date
     dryRun: boolean
@@ -218,6 +234,7 @@ export async function ensureTrackingIssues({
         const body = await execTemplate(octokit, template, {
             version,
             releaseDate,
+            oneWorkingWeekBeforeRelease,
             threeWorkingDaysBeforeRelease,
             oneWorkingDayAfterRelease,
         })

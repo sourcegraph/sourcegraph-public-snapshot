@@ -159,8 +159,8 @@ describe('SearchContextMenu', () => {
 
         const items = screen.getAllByTestId('search-context-menu-item')
         expect(items.length).toBe(2)
-        expect(items[0]).toHaveTextContent('@username Your repositories on Sourcegraph')
-        expect(items[1]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username, Your repositories on Sourcegraph')
+        expect(items[1]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
 
         expect(items).toMatchSnapshot()
     })
@@ -224,6 +224,6 @@ describe('SearchContextMenu', () => {
 
         const items = screen.getAllByTestId('search-context-menu-item')
         // With no auto-defined contexts, the first context should be a user-defined context
-        expect(items[0]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
     })
 })

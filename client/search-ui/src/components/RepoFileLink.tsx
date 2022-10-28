@@ -46,7 +46,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     )
 
     useEffect((): void => {
-        if (containerElement.current && pathMatchRanges && fileBase && fileName) {
+        if (containerElement.current && pathMatchRanges && fileName) {
             for (const range of pathMatchRanges) {
                 highlightNode(
                     containerElement.current as HTMLElement,
@@ -55,7 +55,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                 )
             }
         }
-    }, [pathMatchRanges, fileBase, fileName, containerElement])
+    }, [pathMatchRanges, fileName, containerElement])
 
     return repoFileLink()
 }

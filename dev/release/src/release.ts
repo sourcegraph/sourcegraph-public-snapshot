@@ -33,6 +33,7 @@ import {
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
+    ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     getLatestTag,
 } from './util'
@@ -184,6 +185,7 @@ const steps: Step[] = [
             const {
                 releaseDate,
                 captainGitHubUsername,
+                oneWorkingWeekBeforeRelease,
                 threeWorkingDaysBeforeRelease,
                 oneWorkingDayAfterRelease,
                 captainSlackUsername,
@@ -198,6 +200,7 @@ const steps: Step[] = [
                 version: release,
                 assignees: [captainGitHubUsername],
                 releaseDate: date,
+                oneWorkingWeekBeforeRelease: new Date(oneWorkingWeekBeforeRelease),
                 threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 oneWorkingDayAfterRelease: new Date(oneWorkingDayAfterRelease),
                 dryRun: dryRun.trackingIssues || false,
@@ -319,9 +322,9 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             let message: string
             // notify cs team on patch release cut
             if (release.patch !== 0) {
-                message = `:mega: *${release.version} branch has been cut cc: @cs`
+                message = `:mega: *${release.version}* branch has been cut cc: @cs`
             } else {
-                message = `:mega: *${release.version} branch has been cut.`
+                message = `:mega: *${release.version}* branch has been cut.`
             }
             try {
                 // Create and push new release branch from changelog commit
@@ -347,7 +350,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             }
             const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
-            const latestBuildMessage = `Latest release build: ${latestTag}. See the build status [here](${latestBuildURL}) `
+            const latestBuildMessage = `Latest release build: ${latestTag}. See the build status on <${latestBuildURL}|Buildkite>`
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
             const blockingIssues = await listIssues(githubClient, blockingQuery)
             const blockingIssuesURL = `https://github.com/issues?q=${encodeURIComponent(blockingQuery)}`
@@ -413,6 +416,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+            // ensure $SRC_ENDPOINT is set
+            ensureSrcCliEndpoint()
             // ensure src-cli is up to date
             await ensureSrcCliUpToDate()
             // set up batch change config
@@ -494,8 +499,6 @@ cc @${config.captainGitHubUsername}
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version}/g' {} +`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
-                            // Update sourcegraph.com frontpage
-                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'client/web/src/search/home/SelfHostInstructions.tsx'`,
 
                             notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
@@ -876,6 +879,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:srccliensure',
         description: 'test srccli version',
         run: async () => {
+            ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
         },
     },

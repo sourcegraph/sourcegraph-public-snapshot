@@ -64,6 +64,7 @@ pkgs.mkShell {
 
     # Lots of our tooling and go tests rely on git et al.
     git
+    git-lfs
     parallel
     nssTools
 

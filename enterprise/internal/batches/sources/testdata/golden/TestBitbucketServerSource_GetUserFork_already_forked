@@ -14,7 +14,12 @@
    "ServiceType": "",
    "ServiceID": ""
   },
-  "Sources": null,
+  "Sources": {
+   "extsvc:bitbucketcloud:1": {
+    "ID": "extsvc:bitbucketcloud:1",
+    "CloneURL": "https://bitbucket.sgdev.org/~aharvey/read-only"
+   }
+  },
   "Metadata": {
    "slug": "read-only",
    "id": 10144,

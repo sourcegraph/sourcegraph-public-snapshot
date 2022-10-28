@@ -563,7 +563,7 @@ const AWS_CODE_COMMIT: AddExternalServiceOptions = {
                 <li>
                     Obtain your AWS Secret Access Key and key ID:
                     <ul>
-                        <li>Log in to your AWS Management Console.</li>
+                        <li>Sign in to your AWS Management Console.</li>
                         <li>Click your username in the upper right corner of the page.</li>
                         <li>Click on "My Security Credentials".</li>
                         <li>Scroll to the section, "Access keys for CLI, SDK, & API access".</li>

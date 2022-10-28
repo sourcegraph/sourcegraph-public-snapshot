@@ -24,6 +24,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
@@ -245,6 +250,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
@@ -414,6 +424,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
