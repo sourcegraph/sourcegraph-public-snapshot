@@ -62,31 +62,31 @@ export const Tooltip: FC<TooltipProps> = props => {
     const [open, setOpen] = useState(defaultOpen)
 
     useEffect(() => {
-        function handlePointerOver(): void {
+        function handleTargetPointerEnter(): void {
             setOpen(true)
         }
 
-        function handlePointerLeave(): void {
+        function handleTargetPointerLeave(): void {
             setOpen(false)
         }
 
-        target?.addEventListener('pointerover', handlePointerOver)
-        target?.addEventListener('pointerleave', handlePointerLeave)
-        target?.addEventListener('focus', handlePointerOver, true)
-        target?.addEventListener('blur', handlePointerLeave, true)
+        target?.addEventListener('pointerenter', handleTargetPointerEnter)
+        target?.addEventListener('pointerleave', handleTargetPointerLeave)
+        target?.addEventListener('focus', handleTargetPointerEnter, true)
+        target?.addEventListener('blur', handleTargetPointerLeave, true)
 
         return () => {
-            target?.removeEventListener('pointerenter', handlePointerOver)
-            target?.removeEventListener('pointerleave', handlePointerLeave)
-            target?.removeEventListener('focus', handlePointerOver)
-            target?.removeEventListener('blur', handlePointerLeave)
+            target?.removeEventListener('pointerenter', handleTargetPointerEnter)
+            target?.removeEventListener('pointerleave', handleTargetPointerLeave)
+            target?.removeEventListener('focus', handleTargetPointerEnter)
+            target?.removeEventListener('blur', handleTargetPointerLeave)
         }
     }, [target])
 
     useEffect(() => {
         const popoverElement = popoverContentRef.current
 
-        function handlePointerOver(): void {
+        function handlePointerEnter(): void {
             setOpen(true)
         }
 
@@ -94,11 +94,11 @@ export const Tooltip: FC<TooltipProps> = props => {
             setOpen(false)
         }
 
-        popoverElement?.addEventListener('pointerenter', handlePointerOver)
+        popoverElement?.addEventListener('pointerenter', handlePointerEnter)
         popoverElement?.addEventListener('pointerleave', handlePointerLeave)
 
         return () => {
-            popoverElement?.removeEventListener('pointerenter', handlePointerOver)
+            popoverElement?.removeEventListener('pointerenter', handlePointerEnter)
             popoverElement?.removeEventListener('pointerleave', handlePointerLeave)
         }
     }, [open])
@@ -147,7 +147,7 @@ export const Tooltip: FC<TooltipProps> = props => {
 }
 
 interface TooltipTargetProps {
-    'aria-describedby': string | undefined
+    'aria-describedby'?: string | undefined
     children: React.ReactElement
 }
 
