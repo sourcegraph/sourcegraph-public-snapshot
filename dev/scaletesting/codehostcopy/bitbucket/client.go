@@ -64,7 +64,8 @@ func WithTimeout(n time.Duration) ClientOpt {
 }
 
 // NewBasicAuthClient creates a Client that uses Basic Authentication. By default the FetchLimit is set to 150.
-// To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method.
+// To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method. This is the preferred client
+// interacting with the REST API as it has more power. For a more restrictive client, use the Token based client.
 func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
 		apiURL:     url,
@@ -79,7 +80,9 @@ func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientO
 }
 
 // NewTokenClient creates a Client that uses Token based authentication. By default the FetchLimit is set to 150.
-// To set the Timout, use WithTimeout and pass it as a ClientOpt to this method.
+// To set the Timout, use WithTimeout and pass it as a ClientOpt to this method. This client is more restrictive
+// than the BasicAuth client. The restriction is not imposed by the client itself, but by the nature of the Bitbucket
+// REST API. For more power like create projects and repos, use the Basic auth client.
 func NewTokenClient(token string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
 		apiURL:     url,
