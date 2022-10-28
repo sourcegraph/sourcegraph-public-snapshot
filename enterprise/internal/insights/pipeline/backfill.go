@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -25,6 +24,7 @@ import (
 type BackfillRequest struct {
 	Series *types.InsightSeries
 	Repo   *itypes.MinimalRepo
+	Frames []types.Frame
 }
 
 type requestContext struct {
@@ -107,12 +107,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 			return ctx, &reqContext, jobs, err
 		}
 
-		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
-			Unit:  types.IntervalUnit(req.Series.SampleIntervalUnit),
-			Value: req.Series.SampleIntervalValue,
-		}, req.Series.CreatedAt.Truncate(time.Hour*24))
-
-		searchPlan := compressionPlan.FilterFrames(ctx, frames, req.Repo.ID)
+		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
 
 		mu := &sync.Mutex{}
 
@@ -149,7 +144,6 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 
 type buildSeriesContext struct {
 	// The timeframe we're building historical data for.
-
 	execution *compression.QueryExecution
 
 	// The repository we're building historical data for.
@@ -185,7 +179,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		repoName := string(bctx.repoName)
 		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
 			//a.statistics[bctx.seriesID].Preempted += 1
-			return err, nil, bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
+			return err, nil, nil
 
 			// return // success - nothing else to do
 		}
@@ -285,8 +279,7 @@ func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) Result
 			return reqContext, ctx.Err()
 		}
 		logger.Debug("writing search results")
-		// todo(leo): save recording times by parsing from points or passing into function.
-		err := insightStore.RecordSeriesPointsAndRecordingTimes(ctx, points, types.InsightSeriesRecordingTimes{})
+		err := insightStore.RecordSeriesPoints(ctx, points)
 		return reqContext, err
 	}
 
