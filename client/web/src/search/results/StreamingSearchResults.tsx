@@ -23,7 +23,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
@@ -71,8 +70,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const history = useHistory()
     // Feature flags
-    // Log lucky search events. To be removed at latest by 12/2022.
-    const [smartSearchEnabled] = useFeatureFlag('ab-lucky-search')
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
@@ -187,14 +184,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     }, [results, telemetryService])
 
     useEffect(() => {
-        if (smartSearchEnabled && results?.state === 'complete') {
-            telemetryService.log('SearchResultsFetchedAuto')
-            if (results.results.length > 0) {
-                telemetryService.log('SearchResultsNonEmptyAuto')
-            }
-        }
         if (
-            smartSearchEnabled &&
             (results?.alert?.kind === 'smart-search-additional-results' ||
                 results?.alert?.kind === 'smart-search-pure-results') &&
             results?.alert?.title &&
@@ -209,7 +199,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 telemetryService.log(event)
             }
         }
-    }, [results, smartSearchEnabled, telemetryService])
+    }, [results, telemetryService])
 
     // Reset expanded state when new search is started
     useEffect(() => {
@@ -422,7 +412,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
-                            smartSearchEnabled={smartSearchEnabled}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                         />
