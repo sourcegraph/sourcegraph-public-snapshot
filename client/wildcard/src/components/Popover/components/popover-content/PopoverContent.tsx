@@ -41,14 +41,15 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
         PopoverContext
     )
 
-    const targetElement = anchor?.current ?? contextTargetElement ?? propertyTargetElement
+    const targetElement = contextTargetElement ?? propertyTargetElement
+    const anchorOrTargetElement = anchor?.current ?? targetElement
     const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
     const tooltipReferenceCallback = useCallbackRef<HTMLDivElement>(null, setTooltipElement)
     const mergeReference = useMergeRefs([tooltipReferenceCallback, reference])
 
     // Catch any outside click of the popover content element
     useOnClickOutside(mergeReference, event => {
-        if (targetElement?.contains(event.target as Node)) {
+        if (anchorOrTargetElement?.contains(event.target as Node)) {
             return
         }
 
@@ -73,7 +74,7 @@ export const PopoverContent = forwardRef(function PopoverContent(props, referenc
             {...otherProps}
             as={Component}
             ref={mergeReference}
-            target={targetElement}
+            target={anchorOrTargetElement}
             marker={tailElement}
             role={role}
             aria-modal={ariaModal}
@@ -128,7 +129,7 @@ const FloatingPanelContent: FC<PropsWithChildren<FloatingPanelContentProps>> = p
     useEffect(
         () => () => {
             if (returnTargetFocus) {
-                targetElement?.focus()
+                targetElement?.focus({ preventScroll: true })
             }
         },
         [targetElement, returnTargetFocus]
