@@ -9,6 +9,7 @@ import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps, SearchMode } from '@sourcegraph/search'
 import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -303,6 +304,15 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         [caseSensitive, props, submittedURLQuery]
     )
 
+    const prefetchFile: FilePrefetcher = useCallback(
+        params =>
+            fetchBlob({
+                ...params,
+                format: prefetchBlobFormat,
+            }),
+        [prefetchBlobFormat]
+    )
+
     return (
         <div className={classNames(styles.container, sidebarCollapsed && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={submittedURLQuery} />
@@ -416,12 +426,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             executedQuery={location.search}
                             smartSearchEnabled={smartSearchEnabled}
                             prefetchFileEnabled={prefetchFileEnabled}
-                            prefetchFile={params =>
-                                fetchBlob({
-                                    ...params,
-                                    format: prefetchBlobFormat,
-                                })
-                            }
+                            prefetchFile={prefetchFile}
                         />
                     </div>
                 </>
