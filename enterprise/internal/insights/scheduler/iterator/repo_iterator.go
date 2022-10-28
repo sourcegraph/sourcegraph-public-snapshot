@@ -232,10 +232,6 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	}
 	err = p.updateRepoIterator(ctx, tx, didSucceed, cursorOffset, itrDuration)
 	if maybeErr != nil {
-		return errors.Wrap(err, "doFinishRetry.updateRepoIterator")
-	}
-
-	if maybeErr != nil {
 		if err = p.insertIterationError(ctx, tx, currentRepo, maybeErr.Error()); err != nil {
 			return errors.Wrapf(err, "unable to upsert error for repo iterator id: %d", p.Id)
 		}
