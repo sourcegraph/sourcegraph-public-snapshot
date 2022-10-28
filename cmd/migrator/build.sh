@@ -21,6 +21,10 @@ echo "--- go build"
 pkg=${1:-"github.com/sourcegraph/sourcegraph/cmd/migrator"}
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
+echo "--- compile schema descriptions"
+mkdir -p "${OUTPUT}/schema-descriptions"
+# TODO - stream these in
+
 echo "--- docker build"
 docker build -f cmd/migrator/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
