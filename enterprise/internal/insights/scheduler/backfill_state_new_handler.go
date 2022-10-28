@@ -33,7 +33,7 @@ type newBackfillHandler struct {
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
 func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	insightsDB := config.InsightsDB
-	backfillStore := newBackfillStore(insightsDB)
+	backfillStore := NewBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
 
@@ -46,6 +46,8 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
+		RetryAfter:        time.Second * 30,
+		MaxNumRetries:     3,
 	}, config.ObsContext)
 
 	task := newBackfillHandler{

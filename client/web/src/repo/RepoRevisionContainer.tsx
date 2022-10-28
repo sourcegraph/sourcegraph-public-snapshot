@@ -6,7 +6,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -47,7 +46,6 @@ export interface RepoRevisionContainerContext
         ThemeProps,
         TelemetryProps,
         HoverThresholdProps,
-        ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks' | 'repo' | 'resolvedRevisionOrError'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
@@ -84,7 +82,6 @@ interface RepoRevisionContainerProps
         HoverThresholdProps,
         ExtensionsControllerProps,
         ThemeProps,
-        ActivationProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,

@@ -27,6 +27,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store)
 // used for unit testing.
 type MockStore struct {
+	// BulkSetDocumentRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method BulkSetDocumentRanks.
+	BulkSetDocumentRanksFunc *StoreBulkSetDocumentRanksFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
@@ -39,6 +42,12 @@ type MockStore struct {
 	// GetStarRankFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStarRank.
 	GetStarRankFunc *StoreGetStarRankFunc
+	// HasInputFilenameFunc is an instance of a mock function object
+	// controlling the behavior of the method HasInputFilename.
+	HasInputFilenameFunc *StoreHasInputFilenameFunc
+	// MergeDocumentRanksFunc is an instance of a mock function object
+	// controlling the behavior of the method MergeDocumentRanks.
+	MergeDocumentRanksFunc *StoreMergeDocumentRanksFunc
 	// SetDocumentRanksFunc is an instance of a mock function object
 	// controlling the behavior of the method SetDocumentRanks.
 	SetDocumentRanksFunc *StoreSetDocumentRanksFunc
@@ -51,6 +60,11 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
+		BulkSetDocumentRanksFunc: &StoreBulkSetDocumentRanksFunc{
+			defaultHook: func(context.Context, string, string, map[api.RepoName]map[string][]float64) (r0 error) {
+				return
+			},
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
@@ -71,6 +85,16 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		HasInputFilenameFunc: &StoreHasInputFilenameFunc{
+			defaultHook: func(context.Context, string, []string) (r0 []string, r1 error) {
+				return
+			},
+		},
+		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
+			defaultHook: func(context.Context, string, int) (r0 int, r1 int, r2 error) {
+				return
+			},
+		},
 		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
 			defaultHook: func(context.Context, api.RepoName, map[string][]float64) (r0 error) {
 				return
@@ -88,6 +112,11 @@ func NewMockStore() *MockStore {
 // panic on invocation, unless overwritten.
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
+		BulkSetDocumentRanksFunc: &StoreBulkSetDocumentRanksFunc{
+			defaultHook: func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+				panic("unexpected invocation of MockStore.BulkSetDocumentRanks")
+			},
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockStore.Done")
@@ -108,6 +137,16 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetStarRank")
 			},
 		},
+		HasInputFilenameFunc: &StoreHasInputFilenameFunc{
+			defaultHook: func(context.Context, string, []string) ([]string, error) {
+				panic("unexpected invocation of MockStore.HasInputFilename")
+			},
+		},
+		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
+			defaultHook: func(context.Context, string, int) (int, int, error) {
+				panic("unexpected invocation of MockStore.MergeDocumentRanks")
+			},
+		},
 		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
 			defaultHook: func(context.Context, api.RepoName, map[string][]float64) error {
 				panic("unexpected invocation of MockStore.SetDocumentRanks")
@@ -125,6 +164,9 @@ func NewStrictMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
+		BulkSetDocumentRanksFunc: &StoreBulkSetDocumentRanksFunc{
+			defaultHook: i.BulkSetDocumentRanks,
+		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -137,6 +179,12 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetStarRankFunc: &StoreGetStarRankFunc{
 			defaultHook: i.GetStarRank,
 		},
+		HasInputFilenameFunc: &StoreHasInputFilenameFunc{
+			defaultHook: i.HasInputFilename,
+		},
+		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
+			defaultHook: i.MergeDocumentRanks,
+		},
 		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
 			defaultHook: i.SetDocumentRanks,
 		},
@@ -144,6 +192,117 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 			defaultHook: i.Transact,
 		},
 	}
+}
+
+// StoreBulkSetDocumentRanksFunc describes the behavior when the
+// BulkSetDocumentRanks method of the parent MockStore instance is invoked.
+type StoreBulkSetDocumentRanksFunc struct {
+	defaultHook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error
+	hooks       []func(context.Context, string, string, map[api.RepoName]map[string][]float64) error
+	history     []StoreBulkSetDocumentRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// BulkSetDocumentRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) BulkSetDocumentRanks(v0 context.Context, v1 string, v2 string, v3 map[api.RepoName]map[string][]float64) error {
+	r0 := m.BulkSetDocumentRanksFunc.nextHook()(v0, v1, v2, v3)
+	m.BulkSetDocumentRanksFunc.appendCall(StoreBulkSetDocumentRanksFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BulkSetDocumentRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreBulkSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BulkSetDocumentRanks method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreBulkSetDocumentRanksFunc) PushHook(hook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreBulkSetDocumentRanksFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreBulkSetDocumentRanksFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+		return r0
+	})
+}
+
+func (f *StoreBulkSetDocumentRanksFunc) nextHook() func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreBulkSetDocumentRanksFunc) appendCall(r0 StoreBulkSetDocumentRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreBulkSetDocumentRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreBulkSetDocumentRanksFunc) History() []StoreBulkSetDocumentRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreBulkSetDocumentRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreBulkSetDocumentRanksFuncCall is an object that describes an
+// invocation of method BulkSetDocumentRanks on an instance of MockStore.
+type StoreBulkSetDocumentRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 map[api.RepoName]map[string][]float64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreBulkSetDocumentRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreBulkSetDocumentRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreDoneFunc describes the behavior when the Done method of the parent
@@ -567,6 +726,231 @@ func (c StoreGetStarRankFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetStarRankFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreHasInputFilenameFunc describes the behavior when the
+// HasInputFilename method of the parent MockStore instance is invoked.
+type StoreHasInputFilenameFunc struct {
+	defaultHook func(context.Context, string, []string) ([]string, error)
+	hooks       []func(context.Context, string, []string) ([]string, error)
+	history     []StoreHasInputFilenameFuncCall
+	mutex       sync.Mutex
+}
+
+// HasInputFilename delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) HasInputFilename(v0 context.Context, v1 string, v2 []string) ([]string, error) {
+	r0, r1 := m.HasInputFilenameFunc.nextHook()(v0, v1, v2)
+	m.HasInputFilenameFunc.appendCall(StoreHasInputFilenameFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasInputFilename
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreHasInputFilenameFunc) SetDefaultHook(hook func(context.Context, string, []string) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasInputFilename method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreHasInputFilenameFunc) PushHook(hook func(context.Context, string, []string) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreHasInputFilenameFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, []string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreHasInputFilenameFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, string, []string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreHasInputFilenameFunc) nextHook() func(context.Context, string, []string) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreHasInputFilenameFunc) appendCall(r0 StoreHasInputFilenameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreHasInputFilenameFuncCall objects
+// describing the invocations of this function.
+func (f *StoreHasInputFilenameFunc) History() []StoreHasInputFilenameFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreHasInputFilenameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreHasInputFilenameFuncCall is an object that describes an invocation
+// of method HasInputFilename on an instance of MockStore.
+type StoreHasInputFilenameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreHasInputFilenameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreHasInputFilenameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreMergeDocumentRanksFunc describes the behavior when the
+// MergeDocumentRanks method of the parent MockStore instance is invoked.
+type StoreMergeDocumentRanksFunc struct {
+	defaultHook func(context.Context, string, int) (int, int, error)
+	hooks       []func(context.Context, string, int) (int, int, error)
+	history     []StoreMergeDocumentRanksFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeDocumentRanks delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) MergeDocumentRanks(v0 context.Context, v1 string, v2 int) (int, int, error) {
+	r0, r1, r2 := m.MergeDocumentRanksFunc.nextHook()(v0, v1, v2)
+	m.MergeDocumentRanksFunc.appendCall(StoreMergeDocumentRanksFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the MergeDocumentRanks
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreMergeDocumentRanksFunc) SetDefaultHook(hook func(context.Context, string, int) (int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeDocumentRanks method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreMergeDocumentRanksFunc) PushHook(hook func(context.Context, string, int) (int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreMergeDocumentRanksFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, int) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreMergeDocumentRanksFunc) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, string, int) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreMergeDocumentRanksFunc) nextHook() func(context.Context, string, int) (int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreMergeDocumentRanksFunc) appendCall(r0 StoreMergeDocumentRanksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreMergeDocumentRanksFuncCall objects
+// describing the invocations of this function.
+func (f *StoreMergeDocumentRanksFunc) History() []StoreMergeDocumentRanksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreMergeDocumentRanksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreMergeDocumentRanksFuncCall is an object that describes an invocation
+// of method MergeDocumentRanks on an instance of MockStore.
+type StoreMergeDocumentRanksFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreMergeDocumentRanksFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreMergeDocumentRanksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreSetDocumentRanksFunc describes the behavior when the

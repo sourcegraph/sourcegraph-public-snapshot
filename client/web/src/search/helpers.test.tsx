@@ -16,7 +16,6 @@ describe('search/helpers', () => {
                 patternType: SearchPatternType.standard,
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
-                activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })
@@ -32,7 +31,6 @@ describe('search/helpers', () => {
                 patternType: SearchPatternType.standard,
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
-                activation: undefined,
                 source: 'home',
                 searchParameters: undefined,
             })

@@ -178,7 +178,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}, definition.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: definition.ID,
-			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		})
 	}
 
@@ -514,7 +514,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		}, series.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		})
 	}
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
@@ -755,12 +755,4 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	}
 	c.cache[repoName] = entry
 	return entry, nil
-}
-
-func makeRecordings(times []time.Time, snapshot bool) []itypes.RecordingTime {
-	recordings := make([]itypes.RecordingTime, 0, len(times))
-	for _, t := range times {
-		recordings = append(recordings, itypes.RecordingTime{Snapshot: snapshot, Timestamp: t})
-	}
-	return recordings
 }
