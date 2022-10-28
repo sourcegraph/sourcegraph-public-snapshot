@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"log"
-	"math/rand"
+	"math"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -147,28 +147,127 @@ func main() {
 		writeSuccess(out, "resuming team jobs from %s", cfg.resume)
 	}
 
-	//bars := []output.ProgressBar{
-	//	{Label: "Creating users", Max: float64(cfg.userCount)},
-	//	{Label: "Creating orgs", Max: float64(cfg.orgCount)},
-	//	{Label: "Creating teams", Max: float64(cfg.teamCount)},
-	//	{Label: "Adding users for current team", Max: float64(50 * cfg.teamCount)},
-	//}
-	//progress := out.Progress(bars, nil)
-	//var usersDone int64
-	//var orgsDone int64
-	//var teamsDone int64
-	//var teamMembersDone int64
+	start := time.Now()
 
-	outerGroup := group.New().WithMaxConcurrency(50)
-	innerGroup := group.New().WithMaxConcurrency(1000)
-	for _, u := range users {
-		currentUser := u
-		if cfg.action == "create" {
-			outerGroup.Go(func() {
+	g := group.New().WithMaxConcurrency(1000)
+	if cfg.action == "create" {
+		bars := []output.ProgressBar{
+			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
+			{Label: "Creating teams", Max: float64(cfg.teamCount)},
+			{Label: "Creating users", Max: float64(cfg.userCount)},
+			{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
+		}
+		progress := out.Progress(bars, nil)
+		var usersDone int64
+		var orgsDone int64
+		var teamsDone int64
+		var membershipsDone int64
+
+		for _, o := range orgs {
+			currentOrg := o
+			g.Go(func() {
+				if currentOrg.Created && currentOrg.Failed == "" {
+					//writeInfo(out, "skipping created org with login %s", currentOrg.Login)
+					atomic.AddInt64(&orgsDone, 1)
+					progress.SetValue(0, float64(orgsDone))
+					return
+				}
+				existingOrg, resp, oErr := gh.Organizations.Get(ctx, currentOrg.Login)
+				if oErr != nil && resp.StatusCode != 404 {
+					writeFailure(out, "Failed to get org %s, reason: %s", currentOrg.Login, oErr)
+					return
+				}
+				oErr = nil
+				if existingOrg != nil {
+					currentOrg.Created = true
+					currentOrg.Failed = ""
+					if oErr = state.saveOrg(currentOrg); oErr != nil {
+						log.Fatal(oErr)
+					}
+					writeInfo(out, "org with login %s already exists", currentOrg.Login)
+					atomic.AddInt64(&orgsDone, 1)
+					progress.SetValue(0, float64(orgsDone))
+					return
+				}
+				_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &currentOrg.Login}, cfg.orgAdmin)
+
+				if oErr != nil {
+					writeFailure(out, "Failed to create org with login %s, reason: %s", currentOrg.Login, oErr)
+					currentOrg.Failed = oErr.Error()
+					if oErr = state.saveOrg(currentOrg); oErr != nil {
+						log.Fatal(oErr)
+					}
+					return
+				}
+				currentOrg.Created = true
+				currentOrg.Failed = ""
+				if oErr = state.saveOrg(currentOrg); oErr != nil {
+					log.Fatal(oErr)
+				}
+				atomic.AddInt64(&orgsDone, 1)
+				progress.SetValue(0, float64(orgsDone))
+				writeSuccess(out, "Created org with login %s", currentOrg.Login)
+			})
+		}
+		g.Wait()
+
+		for _, t := range teams {
+			currentTeam := t
+			g.Go(func() {
+				if currentTeam.Created && currentTeam.Failed == "" {
+					atomic.AddInt64(&teamsDone, 1)
+					progress.SetValue(1, float64(teamsDone))
+					//writeInfo(out, "skipping completely created team with name %s and members %d", currentTeam.Name, currentTeam.TotalMembers)
+					return
+				}
+
+				existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+				if tErr != nil && resp.StatusCode != 404 {
+					writeFailure(out, "failed to get team with name %s, reason: %s", currentTeam.Name, tErr)
+					return
+				}
+
+				tErr = nil
+				if existingTeam != nil {
+					currentTeam.Created = true
+					currentTeam.Failed = ""
+					//writeInfo(out, "team with name %s already exists", currentTeam.Name)
+					if tErr = state.saveTeam(currentTeam); tErr != nil {
+						log.Fatal(tErr)
+					}
+					atomic.AddInt64(&teamsDone, 1)
+					progress.SetValue(1, float64(teamsDone))
+					return
+				} else {
+					// Create the team if not exists
+					if _, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{Name: currentTeam.Name}); tErr != nil {
+						writeFailure(out, "Failed to create team with name %s, reason: %s", currentTeam.Name, tErr)
+						currentTeam.Failed = tErr.Error()
+						if tErr = state.saveTeam(currentTeam); tErr != nil {
+							log.Fatal(tErr)
+						}
+						return
+					}
+					currentTeam.Created = true
+					currentTeam.Failed = ""
+					if tErr = state.saveTeam(currentTeam); tErr != nil {
+						log.Fatal(tErr)
+					}
+					atomic.AddInt64(&teamsDone, 1)
+					progress.SetValue(1, float64(teamsDone))
+					return
+				}
+			})
+		}
+		g.Wait()
+
+		for _, u := range users {
+			currentUser := u
+			g.Go(func() {
 				if currentUser.Created && currentUser.Failed == "" {
-					writeInfo(out, "skipping created user with login %s", currentUser.Login)
-					//atomic.AddInt64(&usersDone, 1)
-					//progress.SetValue(0, float64(usersDone))
+					//writeInfo(out, "skipping created user with login %s", currentUser.Login)
+					atomic.AddInt64(&usersDone, 1)
+					progress.SetValue(2, float64(usersDone))
 					return
 				}
 				existingUser, resp, uErr := gh.Users.Get(ctx, currentUser.Login)
@@ -184,8 +283,8 @@ func main() {
 						log.Fatal(uErr)
 					}
 					writeInfo(out, "user with login %s already exists", currentUser.Login)
-					//atomic.AddInt64(&usersDone, 1)
-					//progress.SetValue(0, float64(usersDone))
+					atomic.AddInt64(&usersDone, 1)
+					progress.SetValue(2, float64(usersDone))
 					return
 				}
 				_, _, uErr = gh.Admin.CreateUser(ctx, currentUser.Login, currentUser.Email)
@@ -203,12 +302,76 @@ func main() {
 				if uErr = state.saveUser(currentUser); uErr != nil {
 					log.Fatal(uErr)
 				}
-				//atomic.AddInt64(&usersDone, 1)
-				//progress.SetValue(0, float64(usersDone))
-				writeSuccess(out, "Created user with login %s", currentUser.Login)
+				atomic.AddInt64(&usersDone, 1)
+				progress.SetValue(2, float64(usersDone))
+				//writeSuccess(out, "Created user with login %s", currentUser.Login)
 			})
-		} else if cfg.action == "delete" {
-			outerGroup.Go(func() {
+		}
+		g.Wait()
+
+		totalMemberships := len(teams) * 50
+		membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
+		teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
+
+		// users need to be member of the team's parent org to join the team
+		userState := "active"
+		userRole := "member"
+
+		for i, u := range users {
+			currentUser := u
+			currentIter := i
+
+			g.Go(func() {
+				for j := 0; j < membershipsPerUser; j++ {
+					// todo: skip when all created?
+					index := (currentIter + (j * teamsToSkip)) % len(teams)
+					candidateTeam := teams[index]
+
+					// add user to team's parent org first
+					_, _, mErr := gh.Organizations.EditOrgMembership(ctx, currentUser.Login, candidateTeam.Org, &github.Membership{
+						State:        &userState,
+						Role:         &userRole,
+						Organization: &github.Organization{Login: &candidateTeam.Org},
+						User:         &github.User{Login: &currentUser.Login},
+					})
+					if mErr != nil {
+						writeFailure(out, "Failed to add user %s to organization %s, reason: %s", currentUser.Login, candidateTeam.Org, mErr)
+						candidateTeam.Failed = mErr.Error()
+						if mErr = state.saveTeam(candidateTeam); mErr != nil {
+							log.Fatal(mErr)
+						}
+						continue
+					}
+
+					// this is an idempotent operation so no need to check existing membership
+					_, _, mErr = gh.Teams.AddTeamMembershipBySlug(ctx, candidateTeam.Org, candidateTeam.Name, currentUser.Login, nil)
+					if mErr != nil {
+						writeFailure(out, "Failed to add user %s to team %s, reason: %s", currentUser, candidateTeam.Name, mErr)
+						candidateTeam.Failed = mErr.Error()
+						if mErr = state.saveTeam(candidateTeam); mErr != nil {
+							log.Fatal(mErr)
+						}
+						continue
+					}
+					candidateTeam.TotalMembers += 1
+					atomic.AddInt64(&membershipsDone, 1)
+					progress.SetValue(3, float64(membershipsDone))
+					if mErr = state.saveTeam(candidateTeam); mErr != nil {
+						log.Fatal(mErr)
+					}
+
+					//writeSuccess(out, "Added member %s to team %s", currentUser.Login, candidateTeam.Name)
+				}
+			})
+
+			//writeSuccess(out, "Added user %s to teams", currentUser.Login)
+		}
+	}
+
+	if cfg.action == "delete" {
+		for _, u := range users {
+			currentUser := u
+			g.Go(func() {
 				existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
 				if grErr != nil && resp.StatusCode != 404 {
 					writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
@@ -231,174 +394,43 @@ func main() {
 				if grErr = state.saveUser(currentUser); grErr != nil {
 					log.Fatal(grErr)
 				}
+				writeSuccess(out, "Deleted user %s", currentUser.Login)
+			})
+		}
+
+		for _, t := range teams {
+			currentTeam := t
+			g.Go(func() {
+				existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+				if grErr != nil && resp.StatusCode != 404 {
+					writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, grErr)
+				}
+				grErr = nil
+				if existingTeam != nil {
+					_, grErr = gh.Teams.DeleteTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+					if grErr != nil {
+						writeFailure(out, "Failed to delete team %s, reason: %s", currentTeam.Name, grErr)
+						currentTeam.Failed = grErr.Error()
+						if grErr = state.saveTeam(currentTeam); grErr != nil {
+							log.Fatal(grErr)
+						}
+						return
+					}
+				}
+				currentTeam.Created = false
+				currentTeam.Failed = ""
+				currentTeam.TotalMembers = 0
+				if grErr = state.saveTeam(currentTeam); grErr != nil {
+					log.Fatal(grErr)
+				}
+				writeSuccess(out, "Deleted team %s", currentTeam.Name)
 			})
 		}
 	}
+	g.Wait()
 
-	for _, o := range orgs {
-		currentOrg := o
-		outerGroup.Go(func() {
-			if currentOrg.Created && currentOrg.Failed == "" {
-				writeInfo(out, "skipping created org with login %s", currentOrg.Login)
-				//atomic.AddInt64(&orgsDone, 1)
-				//progress.SetValue(1, float64(orgsDone))
-				return
-			}
-			existingOrg, resp, oErr := gh.Organizations.Get(ctx, currentOrg.Login)
-			if oErr != nil && resp.StatusCode != 404 {
-				writeFailure(out, "Failed to get org %s, reason: %s", currentOrg.Login, oErr)
-				return
-			}
-			oErr = nil
-			if existingOrg != nil {
-				currentOrg.Created = true
-				currentOrg.Failed = ""
-				if oErr = state.saveOrg(currentOrg); oErr != nil {
-					log.Fatal(oErr)
-				}
-				writeInfo(out, "org with login %s already exists", currentOrg.Login)
-				//atomic.AddInt64(&orgsDone, 1)
-				//progress.SetValue(1, float64(orgsDone))
-				return
-			}
-			_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &currentOrg.Login}, cfg.orgAdmin)
-
-			if oErr != nil {
-				writeFailure(out, "Failed to create org with login %s, reason: %s", currentOrg.Login, oErr)
-				currentOrg.Failed = oErr.Error()
-				if oErr = state.saveOrg(currentOrg); oErr != nil {
-					log.Fatal(oErr)
-				}
-				return
-			}
-			currentOrg.Created = true
-			currentOrg.Failed = ""
-			if oErr = state.saveOrg(currentOrg); oErr != nil {
-				log.Fatal(oErr)
-			}
-			//atomic.AddInt64(&orgsDone, 1)
-			//progress.SetValue(1, float64(orgsDone))
-			writeSuccess(out, "Created org with login %s", currentOrg.Login)
-		})
-	}
-
-	for _, t := range teams {
-		currentTeam := t
-		outerGroup.Go(func() {
-			if currentTeam.Created && currentTeam.Failed == "" && currentTeam.TotalMembers >= 50 {
-				//atomic.AddInt64(&teamsDone, 1)
-				//progress.SetValue(2, float64(teamsDone))
-				//atomic.AddInt64(&teamMembersDone, int64(currentTeam.TotalMembers))
-				//progress.SetValue(3, float64(teamMembersDone))
-				writeInfo(out, "skipping completely created tean with name %s and members %d", currentTeam.Name, currentTeam.TotalMembers)
-				return
-			}
-			existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
-			if tErr != nil && resp.StatusCode != 404 {
-				writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, tErr)
-				return
-			}
-			tErr = nil
-			if existingTeam != nil {
-				currentTeam.Created = true
-				currentTeam.Failed = ""
-
-				existingMembers, resp, tErr := gh.Teams.ListTeamMembersBySlug(ctx, currentTeam.Org, currentTeam.Name, nil)
-				if tErr != nil && resp.StatusCode != 404 {
-					writeFailure(out, "Failed to get members of team %s, reason: %s", currentTeam.Name, tErr)
-					return
-				}
-				// Members have been randomly selected before, so save to state
-				if len(existingMembers) >= 50 {
-					currentTeam.TotalMembers = len(existingMembers)
-					if tErr = state.saveTeam(currentTeam); tErr != nil {
-						log.Fatal(tErr)
-					}
-					writeInfo(out, "team with members and name %s and already exists", currentTeam.Name)
-					//atomic.AddInt64(&teamsDone, 1)
-					//progress.SetValue(2, float64(teamsDone))
-					//atomic.AddInt64(&teamMembersDone, int64(len(existingMembers)))
-					//progress.SetValue(3, float64(teamMembersDone))
-					return
-				}
-			}
-
-			// Create the team if not exists
-			if existingTeam == nil {
-				if _, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{Name: currentTeam.Name}); tErr != nil {
-					writeFailure(out, "Failed to create team with name %s, reason: %s", currentTeam.Name, tErr)
-					currentTeam.Failed = tErr.Error()
-					if tErr = state.saveTeam(currentTeam); tErr != nil {
-						log.Fatal(tErr)
-					}
-					return
-				}
-				currentTeam.Created = true
-				if tErr = state.saveTeam(currentTeam); tErr != nil {
-					log.Fatal(tErr)
-				}
-			}
-
-			// get 50 random users to be member of this team (as per https://sourcegraph.slack.com/archives/C03GMM0F2BA/p1665658367720609)
-			// users need to be member of the team's parent org to join the team
-			userState := "active"
-			userRole := "member"
-			rand.Seed(time.Now().Unix())
-			var failedAdditions int64
-			for i := 0; i < 50-currentTeam.TotalMembers; i++ {
-				writeInfo(out, "starting goroutine %d for team %s", i, currentTeam.Name)
-				innerGroup.Go(func() {
-					// there is a slight chance of a collision with a user that is already a member of the team,
-					// but that margin of error is acceptable within the test boundaries in return for no additional API calls or space complexity
-					randomUser := users[rand.Intn(len(users))]
-					_, _, tErr = gh.Organizations.EditOrgMembership(ctx, randomUser.Login, t.Org, &github.Membership{
-						State:        &userState,
-						Role:         &userRole,
-						Organization: &github.Organization{Login: &t.Org},
-						User:         &github.User{Login: &randomUser.Login},
-					})
-					if tErr != nil {
-						writeFailure(out, "Failed to add user %s to organization %s, reason: %s", randomUser, currentTeam.Org, tErr)
-						currentTeam.Failed = tErr.Error()
-						atomic.AddInt64(&failedAdditions, 1)
-						if tErr = state.saveTeam(currentTeam); tErr != nil {
-							log.Fatal(tErr)
-						}
-						return
-					}
-
-					_, _, tErr := gh.Teams.AddTeamMembershipBySlug(ctx, currentTeam.Org, currentTeam.Name, randomUser.Login, nil)
-					if tErr != nil {
-						writeFailure(out, "Failed to add user %s to team %s, reason: %s", randomUser, currentTeam.Name, tErr)
-						currentTeam.Failed = tErr.Error()
-						atomic.AddInt64(&failedAdditions, 1)
-						if tErr = state.saveTeam(currentTeam); tErr != nil {
-							log.Fatal(tErr)
-						}
-						return
-					}
-					if tErr = state.saveTeam(currentTeam); tErr != nil {
-						log.Fatal(tErr)
-					}
-					//atomic.AddInt64(&teamMembersDone, 1)
-					//progress.SetValue(3, float64(teamMembersDone))
-					writeSuccess(out, "Added member %d %s to team %s", i, randomUser.Login, currentTeam.Name)
-				})
-			}
-			innerGroup.Wait()
-
-			currentTeam.Created = true
-			currentTeam.Failed = ""
-			currentTeam.TotalMembers = 50 - int(failedAdditions)
-			if tErr = state.saveTeam(currentTeam); tErr != nil {
-				log.Fatal(tErr)
-			}
-			writeSuccess(out, "Added team %s successfully", currentTeam.Name)
-			//atomic.AddInt64(&teamsDone, 1)
-			//progress.SetValue(2, float64(teamsDone))
-		})
-	}
-	outerGroup.Wait()
+	end := time.Now()
+	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
 
 	allUsers, err := state.countAllUsers()
 	if err != nil {
