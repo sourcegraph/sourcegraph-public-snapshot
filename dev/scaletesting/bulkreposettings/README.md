@@ -1,8 +1,8 @@
 # Bulkreposettings
 
-A CLI tool to update an organization repositories settings in batch. 
+A CLI tool to update an organization repositories settings in batch.
 
-Supported operations: 
+Supported operations:
 
 - set visibility to _private_.
 
@@ -10,13 +10,13 @@ Supported codehosts:
 
 - GitHub and GitHub enterprise.
 
-## Usage 
+## Usage
 
 `go run ./dev/scaletesting/bulkreposettings [flags...]`
 
-Flags: 
+Flags:
 
-- Authenticating: 
+- Authenticating:
   - `github.token`: GHE Token to create the repositories (required).
   - `github.url`: Base URL to the GHE instance (ex: `https://ghe.sgdev.org`) (required).
   - `github.org`: Existing organization to create the repositories in (required).
