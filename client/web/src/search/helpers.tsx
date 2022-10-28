@@ -25,7 +25,6 @@ export function submitSearch({
     patternType,
     caseSensitive,
     selectedSearchContextSpec,
-    activation,
     source,
     searchParameters,
     addRecentSearch,
@@ -64,9 +63,6 @@ export function submitSearch({
     )
     addRecentSearch?.(queryWithContext)
     history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
-    if (activation) {
-        activation.update({ DidSearch: true })
-    }
 }
 
 /**
