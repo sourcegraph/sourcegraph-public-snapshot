@@ -40,8 +40,9 @@ const focusSelectedLine = ViewPlugin.fromClass(
 
                 if (line) {
                     window.requestAnimationFrame(() => {
-                        const element = this.view.domAtPos(line.from).node as HTMLElement
-                        element.focus()
+                        const element = this.view.domAtPos(line.from).node.parentElement
+                        const lineElement = element?.closest<HTMLElement>('[data-line-focusable]')
+                        lineElement?.focus()
                     })
                 }
             }
