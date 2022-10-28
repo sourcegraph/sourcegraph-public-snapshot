@@ -24,7 +24,7 @@ type ExpectedSchemaFactory func(filename, version string) (string, descriptions.
 func GitHubExpectedSchemaFactory(filename, version string) (string, descriptions.SchemaDescription, error) {
 	path, err := makeRepoRevPath(filename, version)
 	if err != nil {
-		return "", descriptions.SchemaDescription{}, err
+		return "github://{UNSUPPORTED_VERSION}", descriptions.SchemaDescription{}, err
 	}
 
 	schemaDescription, err := fetchSchema(fmt.Sprintf("https://raw.githubusercontent.com/%s", path))
@@ -33,7 +33,7 @@ func GitHubExpectedSchemaFactory(filename, version string) (string, descriptions
 
 func makeRepoRevPath(filename, version string) (string, error) {
 	if !versionBranchOrVersionTagOrCommitPattern.MatchString(version) {
-		return "", errors.Newf("failed to parse %q - expected a version of the form `vX.Y.Z` or a 40-character commit hash", version)
+		return "", errors.Newf("failed to parse %q - expected a version matching a Git revlike", version)
 	}
 
 	return fmt.Sprintf("sourcegraph/sourcegraph/%s/%s", version, filename), nil
@@ -47,7 +47,7 @@ func makeRepoRevPath(filename, version string) (string, error) {
 func GCSExpectedSchemaFactory(filename, version string) (string, descriptions.SchemaDescription, error) {
 	path, err := makeFilePath(filename, version)
 	if err != nil {
-		return "", descriptions.SchemaDescription{}, err
+		return "gcs://{UNSUPPORTED_VERSION}", descriptions.SchemaDescription{}, err
 	}
 
 	schemaDescription, err := fetchSchema(fmt.Sprintf("https://storage.googleapis.com/sourcegraph-assets/migrations/drift/%s", path))
@@ -60,7 +60,7 @@ const migratorImageDescriptionPrefix = "/schema-descriptions"
 func LocalExpectedSchemaFactory(filename, version string) (string, descriptions.SchemaDescription, error) {
 	path, err := makeFilePath(filename, version)
 	if err != nil {
-		return "", descriptions.SchemaDescription{}, err
+		return "{file://{UNSUPPORTED_VERSION}", descriptions.SchemaDescription{}, err
 	}
 
 	schemaDescription, err := readSchemaFromFile(filepath.Join(migratorImageDescriptionPrefix, path))

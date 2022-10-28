@@ -91,7 +91,7 @@ func fetchExpectedSchema(
 				suffix = " Will attempt a fallback source."
 			}
 
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking for schema definition at %s... Schema not found (%s).%s", name, err, suffix))
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition from %s... Schema not found (%s).%s", name, err, suffix))
 			continue
 		}
 
