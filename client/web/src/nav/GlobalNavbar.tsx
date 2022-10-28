@@ -10,7 +10,6 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import { SearchContextInputProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -24,7 +23,6 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
-import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
@@ -55,7 +53,6 @@ export interface GlobalNavbarProps
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
@@ -84,7 +81,6 @@ export interface GlobalNavbarProps
  */
 function useCalculatedNavLinkVariant(
     containerReference: React.MutableRefObject<HTMLDivElement | null>,
-    activation: GlobalNavbarProps['activation'],
     authenticatedUser: GlobalNavbarProps['authenticatedUser']
 ): 'compact' | undefined {
     const [navLinkVariant, setNavLinkVariant] = useState<'compact'>()
@@ -102,9 +98,9 @@ function useCalculatedNavLinkVariant(
         } else if (savedWindowWidth && width > savedWindowWidth) {
             setNavLinkVariant(undefined)
         }
-        // Listen for change in `authenticatedUser` and `activation` to re-calculate with new dimensions,
+        // Listen for change in `authenticatedUser` to re-calculate with new dimensions,
         // based on change in navbar's content.
-    }, [containerReference, savedWindowWidth, width, authenticatedUser, activation])
+    }, [containerReference, savedWindowWidth, width, authenticatedUser])
 
     return navLinkVariant
 }
@@ -178,7 +174,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     }, [showSearchBox, onNavbarQueryChange])
 
     const navbarReference = useRef<HTMLDivElement | null>(null)
-    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.activation, props.authenticatedUser)
+    const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
@@ -252,11 +248,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             <NavLink variant={navLinkVariant} to="/extensions">
                                 Extensions
                             </NavLink>
-                        </NavItem>
-                    )}
-                    {props.activation && (
-                        <NavItem>
-                            <ActivationDropdown activation={props.activation} history={history} />
                         </NavItem>
                     )}
                 </NavGroup>

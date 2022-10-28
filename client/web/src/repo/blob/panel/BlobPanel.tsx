@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
@@ -16,7 +16,6 @@ import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,7 +33,6 @@ interface Props
         ModeSpec,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ActivationProps,
         ThemeProps,
         PlatformContextProps,
         TelemetryProps {
@@ -68,7 +66,6 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
  */
 function useBlobPanelViews({
     extensionsController,
-    activation,
     repoName,
     commitID,
     revision,
@@ -84,10 +81,6 @@ function useBlobPanelViews({
     fetchHighlightedFileLineRanges,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
-
-    // Activation props are not stable
-    const activationReference = useRef<Activation | undefined>(activation)
-    activationReference.current = activation
 
     // Keep active code editor position subscription active to prevent empty loading state
     // (for main thread -> ext host -> main thread roundtrip for editor position)
@@ -143,13 +136,7 @@ function useBlobPanelViews({
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                         locationProvider: provideLocations({
                             ...textDocumentPositionParameters,
-                        } as P).pipe(
-                            tap(({ result: locations }) => {
-                                if (activationReference.current && id === 'references' && locations.length > 0) {
-                                    activationReference.current.update({ FoundReferences: true })
-                                }
-                            })
-                        ),
+                        } as P),
                     }
                 })
             ),

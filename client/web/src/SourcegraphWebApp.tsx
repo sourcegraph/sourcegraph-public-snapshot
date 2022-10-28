@@ -91,11 +91,10 @@ import {
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
-import { withActivation } from './tracking/withActivation'
-import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import type { UserAreaRoute } from './user/area/UserArea'
+import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -171,8 +170,6 @@ const WILDCARD_THEME: WildcardTheme = {
 }
 
 setLinkComponent(RouterLink)
-
-const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
 const history = createBrowserHistory()
 
@@ -388,7 +385,7 @@ export class SourcegraphWebApp extends React.Component<
                                                             <CodeHostScopeProvider
                                                                 authenticatedUser={authenticatedUser}
                                                             >
-                                                                <LayoutWithActivation
+                                                                <Layout
                                                                     {...props}
                                                                     {...routeComponentProps}
                                                                     authenticatedUser={authenticatedUser}

@@ -93,7 +93,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
-                activation: undefined,
             })
         },
         [caseSensitive, patternType, submitSearch]

@@ -8,7 +8,6 @@ import { Observable } from 'rxjs'
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -44,7 +43,6 @@ import styles from './StreamingSearchResults.module.scss'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
-        Pick<ActivationProps, 'activation'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -252,14 +250,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         (updates: QueryUpdate[]) =>
             submitQuerySearch(
                 {
-                    activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     history,
                     source: 'filter',
                 },
                 updates
             ),
-        [submitQuerySearch, props.activation, props.selectedSearchContextSpec, history]
+        [submitQuerySearch, props.selectedSearchContextSpec, history]
     )
 
     const onSearchAgain = useCallback(
