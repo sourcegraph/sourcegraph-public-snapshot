@@ -19,23 +19,23 @@ type state struct {
 var createUserTableStmt = `CREATE TABLE IF NOT EXISTS users (
   login STRING PRIMARY KEY,
   email STRING,
-  failed STRING DEFAULT "",
+  failed STRING DEFAULT '',
   created BOOLEAN DEFAULT FALSE
 )`
 
 var createOrgTableStmt = `CREATE TABLE IF NOT EXISTS orgs (
   login STRING PRIMARY KEY,
   adminLogin STRING,
-  failed STRING DEFAULT "",
+  failed STRING DEFAULT '',
   created BOOLEAN DEFAULT FALSE
 )`
 
 var createTeamTableStmt = `CREATE TABLE IF NOT EXISTS teams (
   name STRING PRIMARY KEY,
   org STRING,
-  failed STRING DEFAULT "",
+  failed STRING DEFAULT '',
   created BOOLEAN DEFAULT FALSE,
-  hasMembers BOOLEAN DEFAULT FALSE
+  totalMembers INTEGER DEFAULT 0
 )`
 
 func newState(path string) (*state, error) {
@@ -69,11 +69,11 @@ type user struct {
 }
 
 type team struct {
-	Name       string
-	Org        string
-	Failed     string
-	Created    bool
-	HasMembers bool
+	Name         string
+	Org          string
+	Failed       string
+	Created      bool
+	TotalMembers int
 }
 
 type org struct {
@@ -128,7 +128,7 @@ func (s *state) getRandomUsers(limit int) ([]string, error) {
 func (s *state) loadTeams() ([]*team, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT name, org, failed, created, hasMembers FROM teams`)
+	rows, err := s.db.Query(`SELECT name, org, failed, created, totalMembers FROM teams`)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *state) loadTeams() ([]*team, error) {
 	var teams []*team
 	for rows.Next() {
 		var t team
-		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created, &t.HasMembers)
+		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created, &t.TotalMembers)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,7 @@ func (s *state) saveUser(u *user) error {
 var saveTeamStmt = `UPDATE teams SET
 failed = ?,
 created = ?,
-hasMembers = ?,
+totalMembers = ?
 WHERE name = ?`
 
 func (s *state) saveTeam(t *team) error {
@@ -241,7 +241,7 @@ func (s *state) saveTeam(t *team) error {
 		saveTeamStmt,
 		t.Failed,
 		t.Created,
-		t.HasMembers,
+		t.TotalMembers,
 		t.Name)
 
 	if err != nil {
@@ -342,7 +342,7 @@ func (s *state) countCompletedTeams() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams WHERE created = TRUE AND hasMembers = true AND failed == ""`)
+	row := s.db.QueryRow(`SELECT COUNT(name) FROM teams WHERE created = TRUE AND totalMembers >= 50 AND failed == ""`)
 	var count int
 	err := row.Scan(&count)
 	return count, err
