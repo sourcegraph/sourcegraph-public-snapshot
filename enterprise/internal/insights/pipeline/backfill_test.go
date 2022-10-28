@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -73,7 +74,6 @@ type testRunCounts struct {
 }
 
 func TestBackfillStepsConnected(t *testing.T) {
-
 	testCases := []struct {
 		numJobs int
 		want    autogold.Value
@@ -129,16 +129,24 @@ func TestMakeSearchJobs(t *testing.T) {
 	recentFirstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}, Author: gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}}
 	recentCommits := []*gitdomain.Commit{{ID: "1", Committer: &gitdomain.Signature{}}, {ID: "2", Committer: &gitdomain.Signature{}}}
 
+	series := &types.InsightSeries{
+		ID:                  1,
+		SeriesID:            "abc",
+		Query:               "test query",
+		CreatedAt:           createdDate,
+		SampleIntervalUnit:  string(types.Week),
+		SampleIntervalValue: 1,
+	}
+	// All the series in this test reuse the same time data, so we will reuse these frames across all request objects.
+	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}, series.CreatedAt.Truncate(time.Hour*24))
+
 	backfillReq := &BackfillRequest{
-		Series: &types.InsightSeries{
-			ID:                  1,
-			SeriesID:            "abc",
-			Query:               "test query",
-			CreatedAt:           createdDate,
-			SampleIntervalUnit:  string(types.Week),
-			SampleIntervalValue: 1,
-		},
-		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Series: series,
+		Frames: frames,
+		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqInvalidQuery := &BackfillRequest{
@@ -150,7 +158,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Frames: frames,
+		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	backfillReqRepoQuery := &BackfillRequest{
@@ -162,7 +171,8 @@ func TestMakeSearchJobs(t *testing.T) {
 			SampleIntervalUnit:  string(types.Week),
 			SampleIntervalValue: 1,
 		},
-		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Frames: frames,
+		Repo:   &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
 	}
 
 	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)
@@ -186,7 +196,7 @@ func TestMakeSearchJobs(t *testing.T) {
 		commitClient GitCommitClient
 		backfillReq  *BackfillRequest
 		workers      int
-		cancled      bool
+		canceled     bool
 		want         autogold.Value
 	}{
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1,
@@ -203,7 +213,7 @@ func TestMakeSearchJobs(t *testing.T) {
 				"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 				"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 				"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"error occured: false",
+				"error occurred: false",
 			})},
 		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, want: autogold.Want("Base case multiple workers", []string{
 			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
@@ -218,51 +228,51 @@ func TestMakeSearchJobs(t *testing.T) {
 			"job recordtime:2022-01-28T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-01-21T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-01-14T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"error occured: false",
+			"error occurred: false",
 		})},
 		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit during backfill period", []string{
 			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"error occured: false",
+			"error occurred: false",
 		})},
 		{commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 5, want: autogold.Want("First commit during backfill period multiple workers", []string{
 			"job recordtime:2022-04-01T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-03-25T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
 			"job recordtime:2022-03-18T00:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-			"error occured: false",
+			"error occurred: false",
 		})},
-		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1, cancled: true, want: autogold.Want("Cancled case single worker", []string{"error occured: true"})},
-		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, cancled: true, want: autogold.Want("Cancled case multiple workers", []string{"error occured: true"})},
+		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1, canceled: true, want: autogold.Want("Canceled case single worker", []string{"error occurred: true"})},
+		{commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, canceled: true, want: autogold.Want("Canceled case multiple workers", []string{"error occurred: true"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 				return nil, errors.New("somethings wrong")
 			},
 			recentCommits: basicCommitClient.RecentCommits,
-		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit error", []string{"error occured: true"})},
+		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("First commit error", []string{"error occurred: true"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 				return nil, discovery.EmptyRepoErr
 			},
 			recentCommits: basicCommitClient.RecentCommits,
-		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Empty repo", []string{"error occured: false"})},
+		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Empty repo", []string{"error occurred: false"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit:   basicCommitClient.FirstCommit,
 			recentCommits: recentsErrorAfter(6, recentCommits),
-		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Error in some jobs single worker", []string{"error occured: true"})},
+		}, backfillReq: backfillReq, workers: 1, want: autogold.Want("Error in some jobs single worker", []string{"error occurred: true"})},
 		{commitClient: &fakeCommitClient{
 			firstCommit:   basicCommitClient.FirstCommit,
 			recentCommits: recentsErrorAfter(6, recentCommits),
-		}, backfillReq: backfillReq, workers: 5, want: autogold.Want("Error in some jobs multiple worker", []string{"error occured: true"})},
-		{commitClient: basicCommitClient, backfillReq: backfillReqInvalidQuery, workers: 1, want: autogold.Want("Invalid query", []string{"error occured: true"})},
-		{commitClient: basicCommitClient, backfillReq: backfillReqRepoQuery, workers: 1, want: autogold.Want("Query with repo: in it ", []string{"error occured: false"})},
+		}, backfillReq: backfillReq, workers: 5, want: autogold.Want("Error in some jobs multiple worker", []string{"error occurred: true"})},
+		{commitClient: basicCommitClient, backfillReq: backfillReqInvalidQuery, workers: 1, want: autogold.Want("Invalid query", []string{"error occurred: true"})},
+		{commitClient: basicCommitClient, backfillReq: backfillReqRepoQuery, workers: 1, want: autogold.Want("Query with repo: in it ", []string{"error occurred: false"})},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			testCtx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-			if tc.cancled {
+			if tc.canceled {
 				cancel()
 			}
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers)
@@ -275,7 +285,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			for _, j := range jobs {
 				got = append(got, fmt.Sprintf("job recordtime:%s query:%s", j.RecordTime.Format(time.RFC3339Nano), j.SearchQuery))
 			}
-			got = append(got, fmt.Sprintf("error occured: %v", err != nil))
+			got = append(got, fmt.Sprintf("error occurred: %v", err != nil))
 			tc.want.Equal(t, got)
 		})
 	}
@@ -329,7 +339,7 @@ func TestMakeRunSearch(t *testing.T) {
 				"point pointtime:2022-04-14T00:00:00Z value:10",
 				"point pointtime:2022-04-07T00:00:00Z value:10",
 				"point pointtime:2022-04-01T00:00:00Z value:10",
-				"error occured: false",
+				"error occurred: false",
 			}),
 		},
 		{
@@ -342,7 +352,7 @@ func TestMakeRunSearch(t *testing.T) {
 				"point pointtime:2022-04-14T00:00:00Z value:10",
 				"point pointtime:2022-04-07T00:00:00Z value:10",
 				"point pointtime:2022-04-01T00:00:00Z value:10",
-				"error occured: false",
+				"error occurred: false",
 			}),
 		},
 		{
@@ -351,7 +361,7 @@ func TestMakeRunSearch(t *testing.T) {
 			handlers:    defaultHandlers,
 			cancled:     true,
 			jobs:        jobs,
-			want:        autogold.Want("cancled context", []string{"error occured: false"}),
+			want:        autogold.Want("canceled context", []string{"error occurred: false"}),
 		},
 		{
 			backfillReq: backfillReq,
@@ -359,21 +369,21 @@ func TestMakeRunSearch(t *testing.T) {
 			handlers:    defaultHandlers,
 			incomingErr: errors.New("earlier error"),
 			jobs:        jobs,
-			want:        autogold.Want("incoming error", []string{"error occured: true"}),
+			want:        autogold.Want("incoming error", []string{"error occurred: true"}),
 		},
 		{
 			backfillReq: backfillReq,
 			workers:     1,
 			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
 			jobs:        jobs,
-			want:        autogold.Want("some search fail single worker", []string{"error occured: true"}),
+			want:        autogold.Want("some search fail single worker", []string{"error occurred: true"}),
 		},
 		{
 			backfillReq: backfillReq,
 			workers:     2,
 			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
 			jobs:        jobs,
-			want:        autogold.Want("some search fail multiple worker", []string{"error occured: true"}),
+			want:        autogold.Want("some search fail multiple worker", []string{"error occurred: true"}),
 		},
 	}
 
@@ -396,7 +406,7 @@ func TestMakeRunSearch(t *testing.T) {
 			for _, p := range points {
 				got = append(got, fmt.Sprintf("point pointtime:%s value:%d", p.Point.Time.Format(time.RFC3339Nano), int(p.Point.Value)))
 			}
-			got = append(got, fmt.Sprintf("error occured: %v", err != nil))
+			got = append(got, fmt.Sprintf("error occurred: %v", err != nil))
 			tc.want.Equal(t, got)
 		})
 	}
