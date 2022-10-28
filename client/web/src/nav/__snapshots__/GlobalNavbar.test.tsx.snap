@@ -190,7 +190,7 @@ exports[`GlobalNavbar default 1`] = `
           class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
-          About 
+          About
           <span
             class="d-none d-sm-inline"
           >
@@ -213,7 +213,7 @@ exports[`GlobalNavbar default 1`] = `
             href="https://signup.sourcegraph.com/?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
             tabindex="0"
           >
-            Search your code
+            Sign up
           </a>
         </div>
       </li>
