@@ -228,7 +228,7 @@ func newHtmlRow(row int32, includeLineNumbers bool) (htmlRow, htmlCode *html.Nod
 	tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 
 	if includeLineNumbers {
-		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Th, Data: atom.Th.String()}
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
 		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
 		tr.AppendChild(tdLineNumber)

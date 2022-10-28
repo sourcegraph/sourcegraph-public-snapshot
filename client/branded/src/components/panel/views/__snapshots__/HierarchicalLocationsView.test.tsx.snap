@@ -100,7 +100,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -111,7 +111,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -122,7 +122,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />
@@ -328,7 +328,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -339,7 +339,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -350,7 +350,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />
@@ -361,7 +361,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="4"
                                   />
@@ -372,7 +372,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="5"
                                   />
@@ -500,7 +500,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -511,7 +511,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -522,7 +522,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />
