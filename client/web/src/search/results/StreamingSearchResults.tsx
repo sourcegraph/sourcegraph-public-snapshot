@@ -83,6 +83,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
@@ -105,10 +106,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : SearchMode.Precise,
+            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
             chunkMatches: true,
         }),
-        [caseSensitive, patternType, trace]
+        [caseSensitive, patternType, searchMode, trace]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
