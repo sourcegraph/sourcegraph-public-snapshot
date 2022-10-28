@@ -211,8 +211,9 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 
 func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32) (err error) {
 	didSucceed := 0
-	didAttempt := 1
+	cursorOffset := 1
 	if maybeErr == nil {
+		// if this was for a success then we will want to update
 		didSucceed = 1
 	}
 	itrDuration := p.itrEnd.Sub(p.itrStart)
@@ -223,38 +224,85 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	}
 	defer func() { err = tx.Done(err) }()
 
-	updateQ := `UPDATE repo_iterator
-SET percent_complete = COALESCE(((%s + success_count)::float / NULLIF(total_count, 0)::float), 0),
-    success_count    = success_count + %s,
-    repo_cursor      = repo_cursor + %s,
-    last_updated_at  = NOW(),
-    runtime_duration = runtime_duration + %s
-WHERE id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_duration;`
-
-	var pct float64
-	var successCnt int
-	var cursor int
-	var runtime time.Duration
-	q := sqlf.Sprintf(updateQ, didSucceed, didSucceed, didAttempt, itrDuration, p.Id)
-	row := tx.QueryRow(ctx, q)
-	if err = row.Scan(
-		&pct,
-		&successCnt,
-		&cursor,
-		&runtime,
-	); err != nil {
-		return errors.Wrapf(err, "unable to update cursor on iteration success iteratorId: %d, new_cursor:%d", p.Id, cursor)
-	}
-	if maybeErr != nil {
-		if err = p.insertIterationError(ctx, tx, currentRepo, maybeErr.Error()); err != nil {
-			return errors.Wrapf(err, "unable to upsert error iteratorId: %d, new_cursor:%d", p.Id, cursor)
-		}
-	}
 	if p.StartedAt.IsZero() {
 		if err = stampStartedAt(ctx, tx, p.Id, p.itrStart); err != nil {
 			return errors.Wrap(err, "stampStartedAt")
 		}
 		p.StartedAt = p.itrStart
+	}
+	err = p.updateRepoIterator(ctx, tx, didSucceed, cursorOffset, itrDuration)
+	if maybeErr != nil {
+		return errors.Wrap(err, "doFinishRetry.updateRepoIterator")
+	}
+
+	if maybeErr != nil {
+		if err = p.insertIterationError(ctx, tx, currentRepo, maybeErr.Error()); err != nil {
+			return errors.Wrapf(err, "unable to upsert error for repo iterator id: %d", p.Id)
+		}
+	}
+	return nil
+}
+
+func (p *PersistentRepoIterator) doFinishRetry(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32) (err error) {
+	didSucceed := 0
+	cursorOffset := 0
+	if maybeErr == nil {
+		// if we suceeded
+		didSucceed = 1
+		cursorOffset = 1
+	}
+	itrDuration := p.itrEnd.Sub(p.itrStart)
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	err = p.updateRepoIterator(ctx, tx, didSucceed, cursorOffset, itrDuration)
+	if maybeErr != nil {
+		return errors.Wrap(err, "doFinishRetry.updateRepoIterator")
+	}
+
+	if maybeErr != nil {
+
+	} else {
+		// this means the current repo was successful, so we should treat it like a normal success
+	}
+
+	if maybeErr != nil {
+		if err = p.insertIterationError(ctx, tx, currentRepo, maybeErr.Error()); err != nil {
+			return errors.Wrapf(err, "unable to upsert error for repo iterator id: %d", p.Id)
+		}
+	}
+
+	return nil
+}
+
+func (p *PersistentRepoIterator) updateRepoIterator(ctx context.Context, store *basestore.Store, successCount, cursorOffset int, duration time.Duration) error {
+	updateQ := `UPDATE repo_iterator 
+    SET percent_complete = COALESCE(((%s + success_count)::float / NULLIF(total_count, 0)::float), 0),
+    success_count    = success_count + %s,
+    repo_cursor      = repo_cursor + %s,
+    last_updated_at  = NOW(),
+    runtime_duration = runtime_duration + %s
+    WHERE id = %s RETURNING percent_complete, success_count, repo_cursor, runtime_duration;`
+
+	q := sqlf.Sprintf(updateQ, successCount, successCount, cursorOffset, duration, p.Id)
+
+	var pct float64
+	var successCnt int
+	var cursor int
+	var runtime time.Duration
+
+	row := store.QueryRow(ctx, q)
+	if err := row.Scan(
+		&pct,
+		&successCnt,
+		&cursor,
+		&runtime,
+	); err != nil {
+		return errors.Wrapf(err, "unable to update repo iterator id: %d", p.Id)
 	}
 
 	p.Cursor = cursor
