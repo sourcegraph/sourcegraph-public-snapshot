@@ -8077,6 +8077,16 @@
           "IndexDefinition": "CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "event_logs_user_id_name",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
