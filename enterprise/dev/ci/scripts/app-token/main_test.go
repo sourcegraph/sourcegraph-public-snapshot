@@ -19,8 +19,14 @@ import (
 
 var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
 
-func TestGenJwtToken(t *testing.T) {
+func skipCI(t *testing.T) {
+	if os.Getenv("BUILDKITE") == "true" {
+		t.Skip("Skipping testing in CI environment")
+	}
+}
 
+func TestGenJwtToken(t *testing.T) {
+	skipCI(t)
 	appID := os.Getenv("GITHUB_APP_ID")
 	require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
 	keyPath := os.Getenv("KEY_PATH")

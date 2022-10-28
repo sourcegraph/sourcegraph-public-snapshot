@@ -21,11 +21,10 @@ import (
 func main() {
 	appID := flag.String("appid", os.Getenv("GITHUB_APP_ID"), "(required) github application id.")
 	keyPath := flag.String("keypath", os.Getenv("KEY_PATH"), "(required) path to private key file for github app.")
-	help := flag.Bool("help", false, "Show help.")
 
 	flag.Parse()
 
-	if *help || len(*appID) == 0 || len(*keyPath) == 0 {
+	if len(*appID) == 0 || len(*keyPath) == 0 {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
@@ -53,13 +52,16 @@ func main() {
 func genJwtToken(appID string, keyPath string) (string, error) {
 	rawPem, err := ioutil.ReadFile(keyPath)
 	if err != nil {
-		return "", errors.Wrap(err, "ReadKeyFile")
+		return "", errors.Wrap(err, "Failed to read key file.")
 	}
 
 	privPem, _ := pem.Decode(rawPem)
+	if privPem == nil {
+		return "", errors.Wrap(nil, "failed to decode PEM block containing public key")
+	}
 	priv, err := x509.ParsePKCS1PrivateKey(privPem.Bytes)
 	if err != nil {
-		return "", errors.Wrap(err, "ParseKey")
+		return "", errors.Wrap(err, "Failed to parse key.")
 	}
 	// Create new JWT token with 10 minute (max duration) expiry
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
@@ -70,9 +72,8 @@ func genJwtToken(appID string, keyPath string) (string, error) {
 
 	jwtString, err := token.SignedString(priv)
 	if err != nil {
-		return "", errors.Wrap(err, "TokenString")
+		return "", errors.Wrap(err, "Failed to create token.")
 	}
-
 	return jwtString, nil
 
 }
@@ -94,5 +95,4 @@ func getInstallAccessToken(ctx context.Context, ghc *github.Client) (*string, er
 	}
 
 	return token.Token, nil
-
 }
