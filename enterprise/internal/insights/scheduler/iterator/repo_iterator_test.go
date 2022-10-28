@@ -163,7 +163,7 @@ func TestForNextAndFinish(t *testing.T) {
 			t.Fatal(err)
 		}
 		jsonify, _ := json.Marshal(reloaded)
-		autogold.Want("iterate twice and verify progress", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Want("iterate twice and verify progress", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 
