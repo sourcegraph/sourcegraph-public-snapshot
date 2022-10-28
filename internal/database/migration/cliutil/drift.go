@@ -81,7 +81,7 @@ func fetchExpectedSchema(
 		return descriptions.SchemaDescription{}, err
 	}
 
-	out.WriteLine(output.Line(output.EmojiHourglass, output.StyleReset, "Locating schema description"))
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locating schema description"))
 
 	for i, factory := range expectedSchemaFactories {
 		name, expectedSchema, err := factory(filename, version)
@@ -91,7 +91,7 @@ func fetchExpectedSchema(
 				suffix = " Will attempt a fallback source."
 			}
 
-			out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleReset, "Checking for schema definition at %s... Schema not found (%s).%s", name, err, suffix))
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Checking for schema definition at %s... Schema not found (%s).%s", name, err, suffix))
 			continue
 		}
 
