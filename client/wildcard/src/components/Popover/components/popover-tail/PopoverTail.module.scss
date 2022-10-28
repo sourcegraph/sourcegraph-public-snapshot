@@ -3,6 +3,7 @@
     top: 0;
     left: 0;
     overflow: hidden;
+    pointer-events: none;
 
     --tail-width: 24px;
     --tail-background: var(--dropdown-bg);
