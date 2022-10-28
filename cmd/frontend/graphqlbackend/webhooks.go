@@ -40,7 +40,7 @@ func (r *webhookResolver) URL() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "could not parse site config external URL")
 	}
-	externalURL.Path = fmt.Sprintf("webhooks/%v", r.hook.UUID)
+	externalURL.Path = fmt.Sprintf(".api/webhooks/%v", r.hook.UUID)
 	return externalURL.String(), nil
 }
 

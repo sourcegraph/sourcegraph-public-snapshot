@@ -113,45 +113,6 @@ export const commonWebGraphQlResults: Partial<
         statusMessages: [],
     }),
 
-    SiteAdminActivationStatus: () => ({
-        externalServices: { totalCount: 3 },
-        repositoryStats: {
-            gitDirBytes: '1825299556',
-            indexedLinesCount: '2616264',
-        },
-        repositories: { totalCount: 9 },
-        viewerSettings: {
-            __typename: 'SettingsCascade',
-            subjects: [],
-            final: JSON.stringify({}),
-        },
-        users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
-    // Note this is the response not for the admin
-    ActivationStatus: () => ({
-        // externalServices: { totalCount: 3 },
-        // repositories: { totalCount: 9 },
-        // viewerSettings: {
-        //     __typename: 'SettingsCascade',
-        //     subjects: [],
-        //     final: JSON.stringify({}),
-        // },
-        // users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
     EventLogsData: () => ({
         node: {
             __typename: 'User',

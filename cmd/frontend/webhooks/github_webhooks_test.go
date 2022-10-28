@@ -7,11 +7,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	gh "github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -121,14 +123,30 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-			Url:      "https://github.com",
-			Token:    "fake",
-			Repos:    []string{"sourcegraph/sourcegraph"},
-			Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
+			Authorization: &schema.GitHubAuthorization{},
+			Url:           "https://github.com",
+			Token:         "fake",
+			Repos:         []string{"sourcegraph/sourcegraph"},
+			Webhooks:      []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 		})),
 	}
 
 	err := esStore.Upsert(ctx, extSvc)
+	externalServiceConfig := fmt.Sprintf(`
+{
+    // Some comment to mess with json decoding
+    "url": "https://github.com",
+    "token": "fake",
+    "repos": ["sourcegraph/sourcegraph"],
+    "webhooks": [
+        {
+            "org": "sourcegraph",
+            "secret": %q
+        }
+    ]
+}
+`, secret)
+	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig}))
 	if err != nil {
 		t.Fatal(err)
 	}

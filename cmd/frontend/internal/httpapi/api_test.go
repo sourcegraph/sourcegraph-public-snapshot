@@ -11,11 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -30,14 +27,6 @@ func newTest(t *testing.T) *httptestutil.Client {
 	rateLimiter := graphqlbackend.NewRateLimiteWatcher(logger, rateLimitStore)
 
 	db := database.NewMockDB()
-	gh := webhooks.GitHubWebhook{
-		DB: db,
-	}
-	webhookhandlers.Init(db, &gh)
-	enterpriseServices.GitHubWebhook.Register(&gh)
-
-	ghSync := repos.GitHubWebhookHandler{}
-	ghSync.Register(&gh)
 
 	return httptestutil.NewTest(NewHandler(db,
 		router.New(mux.NewRouter()),
@@ -51,6 +40,5 @@ func newTest(t *testing.T) *httptestutil.Client {
 			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
 		},
-		&gh,
 	))
 }

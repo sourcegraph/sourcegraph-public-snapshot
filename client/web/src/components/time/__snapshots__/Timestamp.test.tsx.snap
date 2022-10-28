@@ -1,5 +1,16 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Timestamp absolute time with formatting 1`] = `
+<DocumentFragment>
+  <span
+    class="timestamp"
+    data-state="closed"
+  >
+    01:02:00
+  </span>
+</DocumentFragment>
+`;
+
 exports[`Timestamp mocked current time 1`] = `
 <DocumentFragment>
   <span

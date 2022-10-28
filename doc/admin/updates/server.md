@@ -23,7 +23,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 _Upgrade notes for the next version will appear here._
 
-## v4.0 ➔ v4.1
+## v4.0 ➔ v4.1.1
 
 <!-- Add changes changes to this section before release. -->
 

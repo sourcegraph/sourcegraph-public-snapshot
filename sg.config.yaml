@@ -773,7 +773,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - web
+      - oss-web
       - caddy
       - docsite
       - syntax-highlighter
