@@ -4,7 +4,6 @@ exports[`Timestamp absolute time with formatting 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-state="closed"
   >
     01:02:00
   </span>
