@@ -76,10 +76,11 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 			return err
 		}
 
-		lastOffset := int64(0)
 		ranks := map[api.RepoName]map[string][]float64{}
 
-		reader := csv.NewReader(r)
+		lastOffset := 0
+		cr := &countingReader{r: r}
+		reader := csv.NewReader(cr)
 		for {
 			line, err := reader.Read()
 			if err != nil {
@@ -90,7 +91,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 				return err
 			}
 
-			offset := reader.InputOffset()
+			offset := cr.n
 			s.operations.numCSVBytesRead.Add(float64(offset - lastOffset))
 			lastOffset = offset
 
@@ -143,4 +144,17 @@ func (s *Service) mergeRanks(ctx context.Context) (err error) {
 	s.operations.numRepositoriesUpdated.Add(float64(numRepositoriesUpdated))
 	s.operations.numInputRowsProcessed.Add(float64(numInputRowsProcessed))
 	return nil
+}
+
+// countingReader is an io.Reader that counts the number of bytes sent
+// back to the caller.
+type countingReader struct {
+	r io.Reader
+	n int
+}
+
+func (r *countingReader) Read(p []byte) (n int, err error) {
+	n, err = r.r.Read(p)
+	r.n += n
+	return n, err
 }
