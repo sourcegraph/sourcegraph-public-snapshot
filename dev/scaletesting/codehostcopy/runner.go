@@ -177,7 +177,7 @@ func pushRepo(ctx context.Context, repo *store.Repo) error {
 
 	// we add the repo name so that we ensure we cd to the right repo directory
 	// if we don't do this, there is no guarantee that the repo name and the git url are the same
-	err = run.Bash(ctx, "git clone", repo.GitURL, repo.Name).Dir(tmpDir).Run().Wait()
+	err = run.Bash(ctx, "git clone --mirror", repo.GitURL, repo.Name).Dir(tmpDir).Run().Wait()
 	if err != nil {
 		return err
 	}
@@ -192,7 +192,7 @@ func pushRepo(ctx context.Context, repo *store.Repo) error {
 func gitPushWithRetry(ctx context.Context, dir string, retry int) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		err = run.Bash(ctx, "git push destination").Dir(dir).Run().Wait()
+		err = run.Bash(ctx, "git push --mirror destination").Dir(dir).Run().Wait()
 		if err != nil {
 			if strings.Contains(err.Error(), "timed out") {
 				continue
