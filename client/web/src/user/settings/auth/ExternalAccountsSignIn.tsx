@@ -33,7 +33,6 @@ export interface SamlExternalData {
         nickname?: Attribute
         login?: Attribute
         'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: Attribute
-        any?: Attribute
     }
 }
 
@@ -66,13 +65,13 @@ interface Props {
 
 export function getUsernameOrEmail(data: SamlExternalData): string {
     return (
-        data.Values.nickname?.Values[0].Value ||
-        data.Values.login?.Values[0].Value ||
-        data.Values.username?.Values[0].Value ||
-        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']?.Values[0].Value ||
-        data.Values.emailaddress?.Values[0].Value ||
-        data.Values['http://schemas.xmlsoap.org/claims/EmailAddress']?.Values[0].Value ||
-        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']?.Values[0].Value ||
+        data.Values.nickname?.Values[0]?.Value ||
+        data.Values.login?.Values[0]?.Value ||
+        data.Values.username?.Values[0]?.Value ||
+        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name']?.Values[0]?.Value ||
+        data.Values.emailaddress?.Values[0]?.Value ||
+        data.Values['http://schemas.xmlsoap.org/claims/EmailAddress']?.Values[0]?.Value ||
+        data.Values['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']?.Values[0]?.Value ||
         ''
     )
 }
