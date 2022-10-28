@@ -77,6 +77,7 @@ func (bt *BitbucketCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, erro
 		}
 
 		// to be able to push this repo we need to project key, incase we need to create the project before pushing
+		cloneUrl.User = url.UserPassword(bt.def.Username, bt.def.Password)
 		results = append(results, &store.Repo{
 			Name:   fmt.Sprintf("%s::%s", r.Project.Key, r.Name),
 			GitURL: cloneUrl.String(),
@@ -121,19 +122,22 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	// project already exists so lets just return the url to use
 	repo, err := bt.c.CreateRepo(ctx, &bitbucket.Project{Key: key}, repoName)
 	if err != nil {
-		// If the repo already exists, get it and returns its clone url
+		// If the repo already exists, get it and assign it to repo
 		if errors.As(err, &apiErr) && apiErr.StatusCode == 409 {
 			bt.logger.Warn("repo already exists", log.String("project", key), log.String("repo", repoName))
-			repo, err := bt.c.GetRepo(ctx, key, repoName)
+			repo, err = bt.c.GetRepo(ctx, key, repoName)
 			if err != nil {
 				return nil, err
 			}
-			return getCloneUrl(repo)
 		} else {
 			return nil, err
 		}
 	}
 	bt.logger.Info("created repo", log.String("project", repo.Project.Key), log.String("repo", repo.Name))
-	return getCloneUrl(repo)
-
+	gitURL, err := getCloneUrl(repo)
+	if err != nil {
+		return nil, err
+	}
+	gitURL.User = url.UserPassword(bt.def.Username, bt.def.Password)
+	return gitURL, err
 }
