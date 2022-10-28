@@ -3,7 +3,6 @@ import React from 'react'
 import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchButton.module.scss'

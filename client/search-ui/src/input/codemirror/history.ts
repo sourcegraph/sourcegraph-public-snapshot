@@ -1,5 +1,6 @@
 import { Facet } from '@codemirror/state'
 import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 /**
@@ -40,7 +41,7 @@ const historyView = ViewPlugin.fromClass(
             }
         }
 
-        public destroy() {
+        public destroy(): void {
             this.view.dom.removeEventListener('keydown', this.onKeyDown)
         }
 
@@ -54,7 +55,7 @@ const historyView = ViewPlugin.fromClass(
             })
         }
 
-        onKeyDown = (event: KeyboardEvent) => {
+        private onKeyDown = (event: KeyboardEvent): void => {
             switch (event.key) {
                 case 'ArrowUp':
                     {

@@ -18,14 +18,13 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { StandardSuggestionSource } from './extensions'
 import { IEditor } from './LazyMonacoQueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,

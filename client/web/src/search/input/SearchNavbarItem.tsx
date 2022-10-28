@@ -17,7 +17,6 @@ import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity 
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
 import { useRecentSearches } from './useRecentSearches'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 interface Props
     extends ActivationProps,
