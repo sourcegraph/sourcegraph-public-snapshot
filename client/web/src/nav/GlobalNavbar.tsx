@@ -375,18 +375,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">
-                        <SearchNavbarItem
-                            {...props}
-                            location={location}
-                            history={history}
-                            isLightTheme={isLightTheme}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            searchContextsEnabled={searchContextsEnabled}
-                            isRepositoryRelatedPage={isRepositoryRelatedPage}
-                        />
-                    </div>
+                <div className="w-100 px-3 py-2 border-bottom">
+                    <SearchNavbarItem
+                        {...props}
+                        location={location}
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        searchContextsEnabled={searchContextsEnabled}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    />
                 </div>
             )}
         </>
