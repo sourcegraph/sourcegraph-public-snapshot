@@ -71,13 +71,12 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             submitSearch({
                 history: props.history,
                 source: 'nav',
-                activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec, addRecentSearch]
+        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(

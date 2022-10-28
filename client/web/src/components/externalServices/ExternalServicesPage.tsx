@@ -43,7 +43,6 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     history,
     location,
     routingPrefix,
-    activation,
     userID,
     telemetryService,
     authenticatedUser,
@@ -63,16 +62,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 first: args.first ?? null,
                 after: args.after ?? null,
                 namespace: userID ?? null,
-            }).pipe(
-                tap(externalServices => {
-                    if (activation && externalServices.totalCount > 0) {
-                        activation.update({ ConnectedCodeHost: true })
-                    }
-                })
-            ),
-        // Activation changes in here, so we cannot recreate the callback on change,
-        // or queryConnection will constantly change, resulting in infinite refetch loops.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            }),
         [userID, queryExternalServices]
     )
 

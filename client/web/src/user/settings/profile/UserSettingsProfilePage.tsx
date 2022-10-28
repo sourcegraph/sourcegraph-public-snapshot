@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
 

@@ -252,14 +252,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         (updates: QueryUpdate[]) =>
             submitQuerySearch(
                 {
-                    activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     history,
                     source: 'filter',
                 },
                 updates
             ),
-        [submitQuerySearch, props.activation, props.selectedSearchContextSpec, history]
+        [submitQuerySearch, props.selectedSearchContextSpec, history]
     )
 
     const onSearchAgain = useCallback(

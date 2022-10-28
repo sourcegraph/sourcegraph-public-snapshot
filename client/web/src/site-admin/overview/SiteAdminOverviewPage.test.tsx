@@ -1,7 +1,6 @@
 import { waitFor } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
-import sinon from 'sinon'
 
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
