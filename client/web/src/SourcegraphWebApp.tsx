@@ -28,15 +28,12 @@ import {
     SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
-import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -202,23 +199,6 @@ export class SourcegraphWebApp extends React.Component<
 
         if (this.extensionsController !== null) {
             this.subscriptions.add(this.extensionsController)
-
-            // Preload extensions whenever user enabled extensions or the viewed language changes.
-            this.subscriptions.add(
-                combineLatest([
-                    getEnabledExtensions(this.platformContext),
-                    observeLocation(history).pipe(
-                        startWith(location),
-                        map(location => getModeFromPath(location.pathname)),
-                        distinctUntilChanged()
-                    ),
-                ]).subscribe(([extensions, languageID]) => {
-                    preloadExtensions({
-                        extensions,
-                        languages: new Set([languageID]),
-                    })
-                })
-            )
         }
 
         this.state = {
