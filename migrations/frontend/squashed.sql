@@ -4319,6 +4319,8 @@ CREATE INDEX event_logs_user_id ON event_logs USING btree (user_id);
 
 CREATE INDEX event_logs_user_id_name ON event_logs USING btree (user_id, name);
 
+CREATE INDEX event_logs_user_id_timestamp ON event_logs USING btree (user_id, "timestamp");
+
 CREATE UNIQUE INDEX executor_secrets_unique_key_global ON executor_secrets USING btree (key, scope) WHERE ((namespace_user_id IS NULL) AND (namespace_org_id IS NULL));
 
 CREATE UNIQUE INDEX executor_secrets_unique_key_namespace_org ON executor_secrets USING btree (key, namespace_org_id, scope) WHERE (namespace_org_id IS NOT NULL);
