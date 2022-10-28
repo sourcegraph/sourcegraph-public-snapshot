@@ -50,7 +50,9 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 	keyPath := os.Getenv("KEY_PATH")
 	require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
 	jwt, err := genJwtToken(appID, keyPath)
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	if *updateRecordings {
 		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: jwt},
