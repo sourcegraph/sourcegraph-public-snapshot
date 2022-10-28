@@ -175,7 +175,9 @@ func pushRepo(ctx context.Context, repo *store.Repo) error {
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	err = run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir).Run().Wait()
+	// we add the repo name so that we ensure we cd to the right repo directory
+	// if we don't do this, there is no guarantee that the repo name and the git url are the same
+	err = run.Bash(ctx, "git clone", repo.GitURL, repo.Name).Dir(tmpDir).Run().Wait()
 	if err != nil {
 		return err
 	}
