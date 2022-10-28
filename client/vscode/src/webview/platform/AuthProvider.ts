@@ -13,6 +13,7 @@ import {
 
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 
+import { getProxyAgent } from '../../backend/fetch'
 import { endpointRequestHeadersSetting, endpointSetting, setEndpoint } from '../../settings/endpointSetting'
 
 export const scretTokenKey = 'SOURCEGRAPH_AUTH'
@@ -24,6 +25,7 @@ class SourcegraphAuthSession implements AuthenticationSession {
     }
     public readonly id = SourcegraphAuthProvider.id
     public readonly scopes = []
+
     constructor(public readonly accessToken: string) {}
 }
 
@@ -83,7 +85,10 @@ export class SourcegraphAuthProvider implements AuthenticationProvider, Disposab
         await this.cacheTokenFromStorage()
         // Update the polyfillEventSource on token changes
         polyfillEventSource(
-            this.currentToken ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() } : {}
+            this.currentToken
+                ? { Authorization: `token ${this.currentToken}`, ...endpointRequestHeadersSetting() }
+                : {},
+            getProxyAgent()
         )
         this._onDidChangeSessions.fire({ added, removed, changed })
     }

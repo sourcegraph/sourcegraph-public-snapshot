@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -184,6 +185,8 @@ func run(logger log.Logger) error {
 			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
+
+		Indexed: sharedsearch.Indexed(),
 
 		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
 			// As this is an internal service call, we need an internal actor.

@@ -19,6 +19,8 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../stores'
+
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
@@ -38,6 +40,10 @@ const staticExtensions: Extension = [
         // triggering the in-document search (see below) work when Mod-f is
         // pressed
         tabindex: '0',
+        // CodeMirror defaults to role="textbox" which does not produce the
+        // desired screenreader behavior we want for this component.
+        // See https://github.com/sourcegraph/sourcegraph/issues/43375
+        role: 'generic',
     }),
     editorHeight({ height: '100%' }),
     EditorView.theme({
@@ -118,18 +124,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
-    const tokenLinks = useMemo(() => {
-        if (!blobInfo.stencil) {
-            return []
-        }
-
-        return blobInfo.stencil.map(range => ({
-            range,
-            url: `?${toPositionOrRangeQueryParameter({
-                position: { line: range.start.line + 1, character: range.start.character + 1 },
-            })}#tab=references`,
-        }))
-    }, [blobInfo.stencil])
+    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -181,7 +176,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
+            tokenKeyboardNavigation
+                ? tokensAsLinks({
+                      history,
+                      blobInfo,
+                      preloadGoToDefinition,
+                  })
+                : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -209,7 +210,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, tokenLinks]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
     )
 
     const editorRef = useRef<EditorView>()
