@@ -25,6 +25,7 @@ import { IEditor } from './LazyMonacoQueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     readOnly: false,
@@ -109,7 +110,7 @@ export interface MonacoQueryInputProps
     /**
      * Additional sources to use for autocompletion.
      */
-    suggestionSources?: StandardSuggestionSource[]
+    searchHistory?: RecentSearch[]
     /**
      * Show suggestions from default sources when query is empty. Defaults to
      * true.

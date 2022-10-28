@@ -11,12 +11,12 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
 import { useRecentSearches } from './useRecentSearches'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 
 interface Props
     extends SettingsCascadeProps,
@@ -48,10 +48,8 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const autoFocus = props.isSearchAutoFocusRequired ?? true
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
         selectQueryState,
         shallow
@@ -64,7 +62,8 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const { addRecentSearch } = useRecentSearches()
+    const [showSearchHistory] = [true] // FIXME: uncomment useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -94,6 +93,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         >
             <SearchBox
                 {...props}
+                autoFocus={false}
                 editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
@@ -107,10 +107,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                autoFocus={autoFocus}
-                hideHelpButton={isSearchPage}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                showSearchHistory={showSearchHistory}
+                showCopyQueryButton={!showSearchHistory}
+                recentSearches={recentSearches}
             />
         </Form>
     )

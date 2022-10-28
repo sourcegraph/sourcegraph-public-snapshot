@@ -43,14 +43,15 @@ import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@source
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, singleLine } from './extensions'
+import { createDefaultSuggestions, singleLine } from './codemirror'
 import {
     decoratedTokens,
     queryTokens,
     parseInputAsQuery,
     setQueryParseOptions,
     parsedQuery,
-} from './extensions/parsedQuery'
+} from './codemirror/parsedQuery'
+import { searchHistory as searchHistoryFacet } from './codemirror/history'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
@@ -86,9 +87,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     ariaLabel = 'Search query',
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
-    suggestionSources,
     defaultSuggestionsShowWhenEmpty = true,
     showSuggestionsOnFocus = false,
+    searchHistory,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
@@ -123,7 +124,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
-                additionalSources: suggestionSources,
                 showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
         [
@@ -132,7 +132,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             isSourcegraphDotCom,
             fetchStreamSuggestions,
             applySuggestionsOnEnter,
-            suggestionSources,
             defaultSuggestionsShowWhenEmpty,
         ]
     )
@@ -203,8 +202,12 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 })
             )
         }
+
+        if (searchHistory) {
+            extensions.push(searchHistoryFacet.of(searchHistory))
+        }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus, searchHistory])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.

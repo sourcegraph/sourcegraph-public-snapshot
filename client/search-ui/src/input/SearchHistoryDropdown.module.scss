@@ -1,0 +1,36 @@
+.list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: var(--code-font-size);
+
+    li {
+        padding: 0.25rem 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+
+        &:hover {
+            background-color: var(--body-bg);
+        }
+
+        &[aria-selected='true'] {
+            background-color: var(--dropdown-link-hover-bg);
+        }
+    }
+}
+
+.triggerButton {
+    background-color: transparent;
+    border: none;
+    color: var(--link-color);
+    margin: 0 0.25rem;
+    border-radius: var(--border-radius);
+    padding: 0.125rem 0.25rem;
+
+    &__open,
+    &:focus,
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+}

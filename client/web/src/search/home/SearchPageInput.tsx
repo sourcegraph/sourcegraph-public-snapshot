@@ -72,33 +72,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const [showSearchHistory] = [true] // FIXME: uncomment useFeatureFlag('search-input-show-history')
     const { recentSearches, addRecentSearch } = useRecentSearches()
-
-    const suggestionSources = useMemo(
-        () =>
-            props.authenticatedUser && showSearchHistory
-                ? [
-                      searchHistorySource({
-                          recentSearches,
-                          selectedSearchContext: props.selectedSearchContextSpec,
-                          onSelection: index => {
-                              props.telemetryService.log('SearchSuggestionItemClicked', {
-                                  type: 'SearchHistory',
-                                  index,
-                              })
-                          },
-                      }),
-                  ]
-                : [],
-        [
-            props.authenticatedUser,
-            props.selectedSearchContextSpec,
-            props.telemetryService,
-            recentSearches,
-            showSearchHistory,
-        ]
-    )
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -162,9 +137,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
-                        suggestionSources={suggestionSources}
-                        defaultSuggestionsShowWhenEmpty={!showSearchHistory}
-                        showSuggestionsOnFocus={showSearchHistory}
+                        showCopyQueryButton={!showSearchHistory}
+                        showSearchHistory={showSearchHistory}
+                        recentSearches={recentSearches}
                     />
                 </div>
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
