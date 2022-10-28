@@ -165,6 +165,9 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
@@ -334,6 +337,10 @@ type Features struct {
 	// When true lucky search runs by default. Adding for A/B testing in
 	// 08/2022. To be removed at latest by 12/2022.
 	AbLuckySearch bool `json:"ab-lucky-search"`
+
+	// Ranking when true will use a our new #ranking signals and code paths
+	// for ranking results from Zoekt.
+	Ranking bool `json:"ranking"`
 }
 
 func (f *Features) String() string {
