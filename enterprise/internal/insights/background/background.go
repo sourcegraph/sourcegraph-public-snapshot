@@ -74,6 +74,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	if !disableHistorical {
 		if backfillerV2Enabled {
 			searchRateLimiter := limiter.SearchQueryRate()
+			historicRateLimiter := limiter.HistoricalWorkRate()
 			backfillConfig := pipeline.BackfillerConfig{
 				CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
 				SearchHandlers:          queryrunner.GetSearchHandlers(),
@@ -82,6 +83,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 				SearchPlanWorkerLimit:   1,
 				SearchRunnerWorkerLimit: 12,
 				SearchRateLimiter:       searchRateLimiter,
+				HistoricRateLimiter:     historicRateLimiter,
 			}
 			backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
 			config := scheduler.JobMonitorConfig{

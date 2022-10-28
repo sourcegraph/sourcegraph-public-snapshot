@@ -54,11 +54,12 @@ type BackfillerConfig struct {
 	SearchPlanWorkerLimit   int
 	SearchRunnerWorkerLimit int
 	SearchRateLimiter       *ratelimit.InstrumentedLimiter
+	HistoricRateLimiter     *ratelimit.InstrumentedLimiter
 }
 
 func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	logger := log.Scoped("insightsBackfiller", "")
-	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit)
+	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
 	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
 	return newBackfiller(searchJobGenerator, searchRunner, persister)
@@ -88,7 +89,7 @@ func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 
 // Implementation of steps for Backfill process
 
-func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int) SearchJobGenerator {
+func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, 12)
 		if reqContext.backfillRequest == nil {
@@ -120,6 +121,10 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 			execution := searchPlan.Executions[i]
 			g.Go(func(ctx context.Context) error {
 				// Build historical data for this unique timeframe+repo+series.
+				err := rateLimit.Wait(ctx)
+				if err != nil {
+					return errors.Wrap(err, "limiter.Wait")
+				}
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       execution,
 					repoName:        req.Repo.Name,
@@ -253,7 +258,10 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 			job := jobs[i]
 			g.Go(func(ctx context.Context) error {
 				h := searchHandlers[series.GenerationMethod]
-				rateLimiter.Wait(ctx)
+				err := rateLimiter.Wait(ctx)
+				if err != nil {
+					return errors.Wrap(err, "rateLimiter.Wait")
+				}
 				searchPoints, err := h(ctx, job, series, *job.RecordTime)
 				if err != nil {
 					return err
