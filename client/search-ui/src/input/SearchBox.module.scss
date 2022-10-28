@@ -40,6 +40,13 @@
             border-bottom-left-radius: 3px;
             border-left-color: var(--input-border-color);
         }
+
+        &__withoutSearchButton {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+            border-radius: 3px;
+            border: 1px solid var(--input-border-color);
+        }
     }
 
     &__focus-container {
@@ -55,6 +62,10 @@
         padding-left: 0.75rem;
         border-top-left-radius: var(--border-radius);
         border-bottom-left-radius: var(--border-radius);
+
+        &__withoutSearchButton {
+            border-radius: var(--border-radius);
+        }
 
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
@@ -144,4 +155,8 @@
             float: right;
         }
     }
+}
+
+.help-button {
+    margin-left: 0.25rem;
 }

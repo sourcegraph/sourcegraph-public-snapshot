@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -15,6 +15,11 @@ import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles'
 
 import styles from './SearchBox.module.scss'
+import { SearchHistoryDropdown } from './SearchHistoryDropdown'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
@@ -33,7 +38,6 @@ export interface SearchBoxProps
             | 'onChange'
             | 'onCompletionItemSelected'
             | 'applySuggestionsOnEnter'
-            | 'suggestionSources'
             | 'defaultSuggestionsShowWhenEmpty'
             | 'showSuggestionsOnFocus'
         > {
@@ -56,10 +60,18 @@ export interface SearchBoxProps
 
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
+
+    /** Whether or not to show the search history button. Also disables the
+     * search button. Does not affect history in the search input itself (via
+     * arrow up/down)
+     */
+    showSearchHistory?: boolean
+
+    recentSearches?: RecentSearch[]
 }
 
 export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
-    const { queryState, onEditorCreated: onEditorCreatedCallback } = props
+    const { queryState, onEditorCreated: onEditorCreatedCallback, showSearchHistory, hideHelpButton } = props
 
     const [editor, setEditor] = useState<IEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
@@ -70,6 +82,18 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
             onEditorCreatedCallback?.(editor)
         },
         [onEditorCreatedCallback]
+    )
+
+    const onSearchHistorySelect = useCallback(
+        (search: RecentSearch) => {
+            const searchContext = getGlobalSearchContextFilter(search.query)
+            const query =
+                searchContext && searchContext.spec === props.selectedSearchContextSpec
+                    ? omitFilter(search.query, searchContext?.filter)
+                    : search.query
+            props.onChange({ query, hint: EditorHint.Focus })
+        },
+        [props.onChange, props.selectedSearchContextSpec]
     )
 
     return (
@@ -84,10 +108,21 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
             <div
                 className={classNames(
                     styles.searchBoxBackgroundContainer,
+                    props.showSearchHistory ? styles.searchBoxBackgroundContainerWithoutSearchButton : null,
                     props.className,
                     'flex-shrink-past-contents'
                 )}
             >
+                {showSearchHistory && (
+                    <>
+                        <SearchHistoryDropdown
+                            recentSearches={props.recentSearches ?? []}
+                            onSelect={onSearchHistorySelect}
+                            onClose={focusEditor}
+                        />
+                        <div className={styles.searchBoxSeparator} />
+                    </>
+                )}
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
@@ -104,11 +139,18 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     To fix Rule: "region" (All page content should be contained by landmarks)
                     Added role attribute to the following element to satisfy the rule.
                 */}
-                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
+                <div
+                    className={classNames(
+                        styles.searchBoxFocusContainer,
+                        showSearchHistory ? styles.searchBoxFocusContainerWithoutSearchButton : null,
+                        'flex-shrink-past-contents'
+                    )}
+                    role="search"
+                >
                     <LazyMonacoQueryInput
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
-                        placeholder="Enter search query..."
+                        placeholder="Search for code and files"
                         preventNewLine={true}
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
@@ -126,9 +168,9 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
-                        suggestionSources={props.suggestionSources}
                         defaultSuggestionsShowWhenEmpty={props.defaultSuggestionsShowWhenEmpty}
                         showSuggestionsOnFocus={props.showSuggestionsOnFocus}
+                        searchHistory={props.recentSearches}
                     />
                     <Toggles
                         patternType={props.patternType}
@@ -145,12 +187,14 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     />
                 </div>
             </div>
-            <SearchButton
-                hideHelpButton={props.hideHelpButton}
-                className={styles.searchBoxButton}
-                telemetryService={props.telemetryService}
-                isSourcegraphDotCom={props.isSourcegraphDotCom}
-            />
+            {!showSearchHistory && <SearchButton className={styles.searchBoxButton} />}
+            {!hideHelpButton && (
+                <SearchHelpDropdownButton
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    className={styles.helpButton}
+                    telemetryService={props.telemetryService}
+                />
+            )}
         </div>
     )
 }
