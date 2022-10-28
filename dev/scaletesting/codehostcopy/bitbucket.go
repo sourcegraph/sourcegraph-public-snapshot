@@ -140,6 +140,7 @@ func (bt *BitbucketCodeHost) CreateRepo(ctx context.Context, name string) (*url.
 	if err != nil {
 		return nil, err
 	}
-	gitURL.User = url.UserPassword(bt.def.Username, bt.def.Password)
+	// for bitbucket, you can't use the account password to git push - you actually need to use the Token ...
+	gitURL.User = url.UserPassword(bt.def.Username, bt.def.Token)
 	return gitURL, err
 }
