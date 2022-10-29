@@ -39,16 +39,12 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 
 #### Step 1: Upload the Sourcegraph instance image to your Google Cloud Storage
 
-<img class="screenshot" src="./assets/gcp-bucket.png"/>
-
 1. Download the image (`tar.gz`) file that matches your deployment size from the [instance size chart](#instance-size-chart)
 2. Navigate to [Google Cloud Storage](https://console.cloud.google.com/storage) and select a project where you will store the image and deploy the instance in
 3. **Upload** the `tar.gz` file to a bucket (create one if needed)
 4. Copy the **URL**
    
 #### Step 2: Create a new custom image
-
-<img class="screenshot" src="./assets/gcp-custom-image.png"/>
 
 1. Click **CREATE IMAGE** on top of the [GCE Images Console](https://console.cloud.google.com/compute/images)
    - Name: [Any]
@@ -59,8 +55,6 @@ If you fall between two sizes, choose the larger of the two. For example, if you
 2. Click **CREATE** to create your custom image of Sourcegraph
 
 #### Step 3: Launch a new instance
-
-<img class="screenshot" src="./assets/gcp-launch.png"/>
 
 1. Create a new VM instance from your [GCE Console](https://console.cloud.google.com/compute)
 2. Name the instance
@@ -130,8 +124,6 @@ helm upgrade -i -f /home/sourcegraph/deploy/install/override.yaml --version 4.1.
 #### Option 2
 
 ##### Step 1: Stop the current instance
-
-<img class="screenshot" src="./assets/gcp-edit.png"/>
 
 1. *Stop* your current Sourcegraph GCP Image instance from the [GCE Console](https://console.cloud.google.com/compute)
 2. Navigate to your instance console after your instance is stopped
