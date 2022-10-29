@@ -25,17 +25,16 @@ func getProvider(id string) *Provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := providers.GetProviderByConfigID(
+	return providers.GetProviderByConfigID(
 		providers.ConfigID{
 			Type: providerType,
 			ID:   id,
 		},
 	).(*Provider)
-	return p
 }
 
 // GetProviderAndRefresh retrieves the authentication provider with the given
-// type and ID, and refreshes the provider.
+// type and ID, and refreshes the token used by the provider.
 func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, safeErrMsg string, err error) {
 	p = getProvider(id)
 	if p == nil {
