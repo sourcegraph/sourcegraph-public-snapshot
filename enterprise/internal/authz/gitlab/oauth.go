@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,7 +55,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauth
 		tokenType: op.TokenType,
 
 		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, tokenRefresher),
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		db:             op.DB,
@@ -107,8 +108,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	tokenRefresher := database.ExternalAccountTokenRefresher(p.db, account.ID, tok.RefreshToken)
-	client := p.clientProvider.NewClientWithTokenRefresher(&auth.OAuthBearerToken{Token: tok.AccessToken}, tokenRefresher)
+	token := &auth.OAuthBearerToken{
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		NeedsRefreshBuffer: 5,
+	}
+	client := p.clientProvider.NewClient(token)
 	return listProjects(ctx, client)
 }
 

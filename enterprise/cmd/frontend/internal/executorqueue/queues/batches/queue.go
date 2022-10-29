@@ -16,7 +16,7 @@ import (
 
 func QueueOptions(db database.DB, _ func() string, observationContext *observation.Context) handler.QueueOptions {
 	logger := log.Scoped("executor-queue.batches", "The executor queue handlers for the batches queue")
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ handler.ResourceMetadata) (apiclient.Job, error) {
 		batchesStore := store.New(db, observationContext, nil)
 		return transformRecord(ctx, logger, batchesStore, record.(*btypes.BatchSpecWorkspaceExecutionJob))
 	}

@@ -1,205 +1,288 @@
-import React, { useEffect, useState } from 'react'
+import { ButtonHTMLAttributes, ChangeEvent, FC, forwardRef, useMemo, useState } from 'react'
 
-import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
-import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-
-import { Input, H3, Text } from '@sourcegraph/wildcard'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
 import {
-    CustomInsightDashboard,
+    Button,
+    Combobox,
+    ComboboxInput,
+    ComboboxList,
+    ComboboxOption,
+    ComboboxOptionGroup,
+    ComboboxOptionText,
+    createRectangle,
+    Flipping,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    usePopoverContext,
+    Strategy,
+    Badge,
+    PopoverOpenEvent,
+    Link,
+    Text,
+    H3,
+} from '@sourcegraph/wildcard'
+
+import { TruncatedText } from '../../../../../components'
+import {
     InsightDashboard,
     isCustomDashboard,
     isGlobalDashboard,
-    isOrganizationDashboard,
     isPersonalDashboard,
     isVirtualDashboard,
 } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
-import { MenuButton, SelectDashboardOption, SelectOption } from './components'
+import { getDashboardOwnerName, getDashboardOrganizationsGroups } from './helpers'
 
 import styles from './DashboardSelect.module.scss'
 
-const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
-    // ReachUI intercepts the space key to use for selecting menu items
-    // This prevents that from happening if the search input is focused
-    // so that the user can enter a space character in the search input
-    if (document.activeElement === event.currentTarget && event.code === 'Space') {
-        event.stopPropagation()
-    }
-}
+const POPOVER_PADDING = createRectangle(0, 0, 5, 5)
 
-export interface DashboardSelectProps {
-    value: string | undefined
+export interface DashboardSelectProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onSelect'> {
+    dashboard: InsightDashboard | undefined
     dashboards: InsightDashboard[]
-    className?: string
     onSelect: (dashboard: InsightDashboard) => void
 }
 
-/**
- * Renders dashboard select component for the code insights dashboard page selection UI.
- */
-export const DashboardSelect: React.FunctionComponent<React.PropsWithChildren<DashboardSelectProps>> = props => {
-    const { value, dashboards: rawDashboards, onSelect, className } = props
-    const [filter, setFilter] = useState('')
-    const [dashboards, setDashboards] = useState(rawDashboards)
-    const { licensed } = useUiFeatures()
+export const DashboardSelect: FC<DashboardSelectProps> = props => {
+    const { dashboard, dashboards, onSelect, ...attributes } = props
 
-    const handleChange = (value: string): void => {
-        const dashboard = dashboards.find(dashboard => dashboard.id === value)
+    const [isOpen, setOpen] = useState(false)
+
+    const handleOpenChange = (event: PopoverOpenEvent): void => {
+        setOpen(event.isOpen)
+    }
+
+    const handleSelect = (dashboard: InsightDashboard): void => {
+        setOpen(false)
+        onSelect(dashboard)
+    }
+
+    return (
+        <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
+            <PopoverTrigger
+                {...attributes}
+                as={DashboardSelectButton}
+                title={dashboard?.title}
+                badge={getDashboardOwnerName(dashboard)}
+            />
+
+            <PopoverContent
+                targetPadding={POPOVER_PADDING}
+                flipping={Flipping.opposite}
+                strategy={Strategy.Absolute}
+                className={styles.popover}
+            >
+                <DashboardSelectContent dashboard={dashboard} dashboards={dashboards} onSelect={handleSelect} />
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+interface DashboardSelectButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    title: string | undefined
+    badge: string | undefined
+}
+
+const DashboardSelectButton = forwardRef<HTMLButtonElement, DashboardSelectButtonProps>((props, ref) => {
+    const { title, badge, className, ...attributes } = props
+    const { isOpen } = usePopoverContext()
+
+    const Icon = isOpen ? ChevronUpIcon : ChevronDownIcon
+
+    return (
+        <Button
+            {...attributes}
+            ref={ref}
+            variant="secondary"
+            outline={true}
+            aria-label={`Choose a dashboard, ${title}`}
+            className={classNames(className, styles.triggerButton)}
+        >
+            <span className={styles.triggerButtonText}>
+                <TruncatedText title={title}>{title ?? 'Unknown dashboard'}</TruncatedText>
+                {badge && <InsightBadge value={badge} />}
+            </span>
+
+            <Icon className={styles.triggerButtonIcon} />
+        </Button>
+    )
+})
+
+interface DashboardSelectContentProps {
+    dashboard: InsightDashboard | undefined
+    dashboards: InsightDashboard[]
+    onSelect: (dashboard: InsightDashboard) => void
+}
+
+const DashboardSelectContent: FC<DashboardSelectContentProps> = props => {
+    const { dashboard: currentDashboard, dashboards, onSelect } = props
+
+    const { licensed } = useUiFeatures()
+    const [state, setState] = useState(() => ({
+        value: currentDashboard && isVirtualDashboard(currentDashboard) ? '' : currentDashboard?.title ?? '',
+        changed: false,
+    }))
+
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        const inputValue = event.target.value
+
+        setState({ value: inputValue, changed: true })
+    }
+
+    const handleSelect = (value: string): void => {
+        const dashboard = dashboards.find(dashboard => dashboard.title === value)
 
         if (dashboard) {
-            setFilter('')
-            setDashboards(rawDashboards)
             onSelect(dashboard)
         }
     }
 
-    const handleFilter: React.ChangeEventHandler<HTMLInputElement> = event => {
-        setFilter(event.target.value)
-    }
-
-    useEffect(() => {
-        if (filter === '') {
-            setDashboards(rawDashboards)
-            return
+    const filteredDashboards = useMemo(() => {
+        if (state.changed) {
+            return dashboards.filter(({ title }) => title.toLowerCase().includes(state.value.trim().toLowerCase()))
         }
-        setDashboards(rawDashboards.filter(({ title }) => title.toLowerCase().includes(filter.toLowerCase())))
-    }, [filter, rawDashboards])
 
-    const customDashboards = dashboards.filter(isCustomDashboard)
-    const organizationGroups = getDashboardOrganizationsGroups(customDashboards)
+        return dashboards
+    }, [dashboards, state])
+
+    const filteredCustomDashboards = useMemo(() => filteredDashboards.filter(isCustomDashboard), [filteredDashboards])
+    const organizationGroups = useMemo(() => getDashboardOrganizationsGroups(filteredCustomDashboards), [
+        filteredCustomDashboards,
+    ])
 
     return (
-        <div className={className}>
-            <VisuallyHidden id="insights-dashboards--select">Choose a dashboard</VisuallyHidden>
+        <Combobox
+            openOnFocus={true}
+            className={classNames(styles.combobox, { [styles.comboboxUnchanged]: !state.changed })}
+            onSelect={handleSelect}
+        >
+            <ComboboxInput
+                value={state.value}
+                variant="small"
+                autoFocus={true}
+                spellCheck={false}
+                placeholder="Find a dashboard..."
+                aria-label="Find a dashboard"
+                inputClassName={styles.comboboxInput}
+                className={styles.comboboxInputContainer}
+                onChange={handleInputChange}
+            />
 
-            <ListboxInput
-                aria-labelledby="insights-dashboards--select"
-                value={value ?? 'unknown'}
-                onChange={handleChange}
-            >
-                <MenuButton dashboards={rawDashboards} data-testid="dashboard-select-button" />
+            <ComboboxList persistSelection={true} className={styles.comboboxList}>
+                {filteredDashboards.filter(isVirtualDashboard).map(dashboard => (
+                    <DashboardOption
+                        key={dashboard.id}
+                        name={dashboard.title}
+                        selected={dashboard.id === currentDashboard?.id}
+                        badgeText={getDashboardOwnerName(dashboard)}
+                    />
+                ))}
 
-                <ListboxPopover className={classNames(styles.popover)} portal={true}>
-                    <ListboxList
-                        id="insights-dashboard-select-content"
-                        className={classNames(styles.list, 'dropdown-menu')}
-                    >
-                        <Input
-                            name="filter"
-                            value={filter}
-                            placeholder="Find dashboard..."
-                            className="mx-1"
-                            onChange={handleFilter}
-                            onKeyDown={handleKeyDown}
-                        />
-                        {dashboards.filter(isVirtualDashboard).map(dashboard => (
-                            <SelectOption
+                {filteredCustomDashboards.some(isPersonalDashboard) && (
+                    <ComboboxOptionGroup heading="Private" className={styles.comboboxOptionGroup}>
+                        {filteredCustomDashboards.filter(isPersonalDashboard).map(dashboard => (
+                            <DashboardOption
                                 key={dashboard.id}
-                                value={dashboard.id}
-                                label={dashboard.title}
-                                filter={filter}
-                                className={styles.option}
+                                name={dashboard.title}
+                                selected={dashboard.id === currentDashboard?.id}
+                                badgeText={getDashboardOwnerName(dashboard)}
                             />
                         ))}
+                    </ComboboxOptionGroup>
+                )}
 
-                        {customDashboards.some(isPersonalDashboard) && (
-                            <ListboxGroup>
-                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
-                                    Private
-                                </ListboxGroupLabel>
-
-                                {customDashboards.filter(isPersonalDashboard).map(dashboard => (
-                                    <SelectDashboardOption
-                                        key={dashboard.id}
-                                        dashboard={dashboard}
-                                        filter={filter}
-                                        className={styles.option}
-                                    />
-                                ))}
-                            </ListboxGroup>
-                        )}
-
-                        {customDashboards.some(isGlobalDashboard) && (
-                            <ListboxGroup>
-                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
-                                    Global
-                                </ListboxGroupLabel>
-
-                                {customDashboards.filter(isGlobalDashboard).map(dashboard => (
-                                    <SelectDashboardOption
-                                        key={dashboard.id}
-                                        dashboard={dashboard}
-                                        filter={filter}
-                                        className={styles.option}
-                                    />
-                                ))}
-                            </ListboxGroup>
-                        )}
-
-                        {organizationGroups.map(group => (
-                            <ListboxGroup key={group.id}>
-                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
-                                    {group.name}
-                                </ListboxGroupLabel>
-
-                                {group.dashboards.map(dashboard => (
-                                    <SelectDashboardOption
-                                        key={dashboard.id}
-                                        dashboard={dashboard}
-                                        filter={filter}
-                                        className={styles.option}
-                                    />
-                                ))}
-                            </ListboxGroup>
+                {filteredCustomDashboards.some(isGlobalDashboard) && (
+                    <ComboboxOptionGroup heading="Global" className={styles.comboboxOptionGroup}>
+                        {filteredCustomDashboards.filter(isGlobalDashboard).map(dashboard => (
+                            <DashboardOption
+                                key={dashboard.id}
+                                name={dashboard.title}
+                                selected={dashboard.id === currentDashboard?.id}
+                                badgeText={getDashboardOwnerName(dashboard)}
+                            />
                         ))}
+                    </ComboboxOptionGroup>
+                )}
 
-                        {!licensed && (
-                            <ListboxGroup>
-                                <hr />
+                {organizationGroups.map(group => (
+                    <ComboboxOptionGroup key={group.id} heading={group.name} className={styles.comboboxOptionGroup}>
+                        {group.dashboards.map(dashboard => (
+                            <DashboardOption
+                                key={dashboard.id}
+                                name={dashboard.title}
+                                selected={dashboard.id === currentDashboard?.id}
+                                badgeText={getDashboardOwnerName(dashboard)}
+                            />
+                        ))}
+                    </ComboboxOptionGroup>
+                ))}
 
-                                <div className={classNames(styles.limitedAccess)}>
-                                    <H3>Limited access</H3>
-                                    <Text>Unlock for unlimited custom dashboards.</Text>
-                                </div>
-                            </ListboxGroup>
-                        )}
-                    </ListboxList>
-                </ListboxPopover>
-            </ListboxInput>
-        </div>
+                {filteredDashboards.length === 0 && (
+                    <div className={styles.noResultsFound}>
+                        <Text as="span" className="text-muted">
+                            No dashboards found.
+                        </Text>
+                        <Button as={Link} variant="link" to="/insights/add-dashboard">
+                            Create a dashboard
+                        </Button>
+                    </div>
+                )}
+
+                {!licensed && (
+                    <div>
+                        <hr />
+
+                        <div className={classNames(styles.limitedAccess)}>
+                            <H3>Limited access</H3>
+                            <Text>Unlock for unlimited custom dashboards.</Text>
+                        </div>
+                    </div>
+                )}
+            </ComboboxList>
+        </Combobox>
     )
 }
 
-interface DashboardOrganizationGroup {
-    id: string
+interface DashboardOptionProps {
     name: string
-    dashboards: CustomInsightDashboard[]
+    selected: boolean
+    badgeText?: string
 }
 
-/**
- * Returns organization dashboards grouped by dashboard owner id
- */
-const getDashboardOrganizationsGroups = (dashboards: CustomInsightDashboard[]): DashboardOrganizationGroup[] => {
-    const groupsDictionary = dashboards
-        .filter(isOrganizationDashboard)
-        .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            for (const owner of dashboard.owners) {
-                if (!store[owner.id]) {
-                    store[owner.id] = {
-                        id: owner.id,
-                        name: owner.title,
-                        dashboards: [],
-                    }
-                }
+const DashboardOption: FC<DashboardOptionProps> = props => {
+    const { name, selected, badgeText } = props
 
-                store[owner.id].dashboards.push(dashboard)
-            }
+    return (
+        <ComboboxOption
+            value={name}
+            selected={selected}
+            data-value={name}
+            className={classNames(styles.comboboxOption, { [styles.comboboxOptionSelected]: selected })}
+        >
+            <TruncatedText title={name}>
+                <ComboboxOptionText />
+            </TruncatedText>
+            {badgeText && <InsightBadge value={badgeText} />}
+        </ComboboxOption>
+    )
+}
 
-            return store
-        }, {})
+interface BadgeProps {
+    value: string
+    className?: string
+}
 
-    return Object.values(groupsDictionary)
+const InsightBadge: FC<BadgeProps> = props => {
+    const { value, className } = props
+
+    return (
+        <TruncatedText as={Badge} title={value} variant="secondary" className={classNames(styles.badge, className)}>
+            {value}
+        </TruncatedText>
+    )
 }

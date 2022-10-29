@@ -94,11 +94,18 @@ func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy 
 		repositoryMatchLimit = &val
 	}
 
-	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+	if err := s.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
 }
 
 func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error) {
@@ -141,7 +148,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 		return nil, 0, err
 	}
 
-	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, upload.RepositoryID, configPolicies, time.Now(), visibleCommits...)
+	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicy(ctx, upload.RepositoryID, configPolicies, time.Now(), visibleCommits...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -203,7 +210,7 @@ func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID in
 	defer endObservation(1, observation.Args{})
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
-	policyMatches, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
 	if err != nil {
 		return nil, err
 	}

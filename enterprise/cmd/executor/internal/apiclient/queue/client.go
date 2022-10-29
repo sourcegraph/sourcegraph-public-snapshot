@@ -40,6 +40,22 @@ type Options struct {
 
 	// TelemetryOptions captures additional parameters sent in heartbeat requests.
 	TelemetryOptions TelemetryOptions
+
+	// ResourceOptions inform the frontend how large of a VM the job will be executed in.
+	// This can be used to replace magic variables in the job payload indicating how much
+	// the task should be able to comfortably consume.
+	ResourceOptions ResourceOptions
+}
+
+type ResourceOptions struct {
+	// NumCPUs is the number of virtual CPUs a job can safely utilize.
+	NumCPUs int
+
+	// Memory is the maximum amount of memory a job can safely utilize.
+	Memory string
+
+	// DiskSpace is the maximum amount of disk a job can safely utilize.
+	DiskSpace string
 }
 
 func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) (*Client, error) {
@@ -64,6 +80,9 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
 		ExecutorName: c.options.ExecutorName,
+		NumCPUs:      c.options.ResourceOptions.NumCPUs,
+		Memory:       c.options.ResourceOptions.Memory,
+		DiskSpace:    c.options.ResourceOptions.DiskSpace,
 	})
 	if err != nil {
 		return false, err

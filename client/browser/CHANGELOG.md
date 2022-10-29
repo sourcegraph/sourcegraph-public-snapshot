@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome 22.10.18.1144, Firefox 22.10.18.1133, Safari v1.17
+
 - Updated the info text when accessing an unindexed repository [pull/42509](https://github.com/sourcegraph/sourcegraph/pull/42509)
 - Fix an issue that caused the native code host integration to not work on gitlab.com [pull/42748](https://github.com/sourcegraph/sourcegraph/pull/42748)
 

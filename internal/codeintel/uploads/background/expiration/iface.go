@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type UploadService interface {
+type UploadServiceBackgroundJobs interface {
 	NewUploadExpirer(
 		interval time.Duration,
 		repositoryProcessDelay time.Duration,
@@ -15,10 +15,5 @@ type UploadService interface {
 		uploadBatchSize int,
 		commitBatchSize int,
 		policyBatchSize int,
-	) goroutine.BackgroundRoutine
-
-	NewReferenceCountUpdater(
-		interval time.Duration,
-		batchSize int,
 	) goroutine.BackgroundRoutine
 }

@@ -78,17 +78,14 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
             }
             setIsCreating(true)
             try {
-                const service = await addExternalService(
-                    { input: { ...getExternalServiceInput(), namespace: userID ?? null } },
-                    telemetryService
-                )
+                const service = await addExternalService({ input: { ...getExternalServiceInput() } }, telemetryService)
                 setIsCreating(false)
                 setCreatedExternalService(service)
             } catch (error) {
                 setIsCreating(asError(error))
             }
         },
-        [getExternalServiceInput, telemetryService, userID]
+        [getExternalServiceInput, telemetryService]
     )
 
     useEffect(() => {

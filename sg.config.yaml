@@ -66,7 +66,6 @@ env:
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
-  OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
   SITE_CONFIG_FILE: ./dev/site-config.json
   SITE_CONFIG_ALLOW_EDITS: true
@@ -729,7 +728,7 @@ commands:
 
       docker container rm otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
         -e JAEGER_HOST=$JAEGER_HOST \
         -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
@@ -774,7 +773,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - web
+      - oss-web
       - caddy
       - docsite
       - syntax-highlighter

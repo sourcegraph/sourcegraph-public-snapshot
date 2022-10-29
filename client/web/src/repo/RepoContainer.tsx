@@ -13,7 +13,6 @@ import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, repeat
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -68,7 +67,6 @@ export interface RepoContainerContext
         ThemeProps,
         HoverThresholdProps,
         TelemetryProps,
-        ActivationProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -109,7 +107,6 @@ interface RepoContainerProps
         PlatformContextProps,
         TelemetryProps,
         ExtensionsControllerProps,
-        ActivationProps,
         ThemeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
@@ -354,9 +351,10 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     }
 
     const perforceCodeHostUrlToSwarmUrlMap =
-        props.settingsCascade.final &&
-        !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade.final?.['perforce.codeHostToSwarmMap'] || {}
+        (props.settingsCascade.final &&
+            !isErrorLike(props.settingsCascade.final) &&
+            props.settingsCascade.final?.['perforce.codeHostToSwarmMap']) ||
+        {}
 
     return (
         <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>

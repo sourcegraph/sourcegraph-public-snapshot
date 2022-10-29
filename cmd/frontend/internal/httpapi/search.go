@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -50,7 +50,8 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
 type searchIndexerServer struct {
-	db database.DB
+	db     database.DB
+	logger log.Logger
 
 	gitserverClient gitserver.Client
 	// ListIndexable returns the repositories to index.
@@ -112,7 +113,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	if len(indexedIDs) == 0 {
-		http.Error(w, "atleast one repoID required", http.StatusBadRequest)
+		http.Error(w, "at least one repoID required", http.StatusBadRequest)
 		return nil
 	}
 
@@ -177,30 +178,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 			return string(commitID), err
 		}
 
-		var priority float64
-
-		// We have to enable experimental ranking either for all or none of the repos.
-		// We cannot mix star-based priorities [0, inf] with ranks [0, 1], because in
-		// Zoekt, shards are sorted and searched based on their priority, and the rank
-		// and star-count are in principle not comparable.
-		if rankingEnabled, _ := strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING")); rankingEnabled {
-			rankVec, err := h.codeIntelServices.RankingService.GetRepoRank(ctx, repo.Name)
-			if err != nil {
-				return nil, errors.Wrapf(err, "serveConfiguration: error getting repo rank")
-			}
-			// Hack: we take the first non-zero rank as priority. This is fine for now
-			// because, unlike documents, repos don't have categorical ranks like
-			// "generated" or "test" (yet). In the future we can persist the full ranking
-			// vector in the Zoekt shard.
-			for _, r := range rankVec {
-				if r > 0 {
-					priority = r
-					break
-				}
-			}
-		} else {
-			priority = float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
-		}
+		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
@@ -259,10 +237,10 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
 		if len(opt.IndexedIDs) > 0 {
-			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-				IDs: opt.IndexedIDs,
-			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			opts := database.ReposListOptions{IDs: opt.IndexedIDs}
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), opts, add)
 			if err != nil {
 				return err
 			}
@@ -331,4 +309,31 @@ func serveRank[T []float64 | map[string][]float64](
 
 	_, _ = w.Write(b)
 	return nil
+}
+
+func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
+	var body struct {
+		Repositories []struct {
+			RepoID   uint32
+			Branches []zoekt.RepositoryBranch
+		}
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return errors.Wrap(err, "failed to decode request body")
+	}
+
+	var (
+		ids     = make([]int32, len(body.Repositories))
+		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(body.Repositories))
+	)
+
+	for i, repo := range body.Repositories {
+		ids[i] = int32(repo.RepoID)
+		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+	}
+
+	h.logger.Info("updating index status", log.Int32s("repositories", ids))
+
+	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), minimal)
 }

@@ -1,0 +1,69 @@
+name: Growth Marketing issue
+description: Create an issue that is automatically added to the Growth Marketing team's project board
+labels:
+  - 'team/growth-marketing'
+body:
+  - type: textarea
+    id: brief-description
+    attributes:
+      label: Problem description
+      description: At a high level, what is the problem that needs solving?
+    validations:
+      required: true
+  - type: textarea
+    id: detailed-description
+    attributes:
+      label: Context
+      description: What background or detail do we need in order to begin this project?
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: User journey stage
+      description: What stage of the user journey does this project support?
+      options:
+        - Awareness
+        - Consideration
+        - Trial start
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: What level of impact do we expect this project to have on driving qualified trial starts?
+      options:
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: Effort
+    attributes:
+      label: Effort
+      description: What's our best guess on level of effort?
+      options:
+        - 3 hours
+        - 1 day
+        - 3 days
+        - 5 days
+        - 10 days
+        - 30+ days
+    validations:
+      required: true
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: Success criteria
+      description: What metrics are we attaching to this project, how will we track them, and what does success look like?
+    validations:
+      required: true
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Assigning labels
+      options:
+        - label: If this issue will require input from designers in order to complete, please assign the label `needs-design`.

@@ -22,7 +22,7 @@ import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegra
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -30,6 +30,7 @@ import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/u
 import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -50,7 +51,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob } from './backend'
+import { fetchBlob, fetchStencil } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -75,7 +76,8 @@ interface BlobPageProps
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -107,6 +109,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
+    const enableTokenKeyboardNavigation =
+        props.codeIntelligenceEnabled &&
+        isSettingsValid(props.settingsCascade) &&
+        props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -176,7 +182,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 reactManualTracer,
                 { name: 'formattedBlobInfoOrError', parentSpan: span },
                 fetchSpan =>
-                    fetchBlob({ repoName, revision, filePath, format: HighlightResponseFormat.HTML_PLAINTEXT }).pipe(
+                    fetchBlob({
+                        repoName,
+                        revision,
+                        filePath,
+                        format: HighlightResponseFormat.HTML_PLAINTEXT,
+                    }).pipe(
                         map(blob => {
                             if (blob === null) {
                                 return blob
@@ -256,8 +267,26 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, mode, enableCodeMirror]
+            [repoName, revision, filePath, enableCodeMirror, mode]
         )
+    )
+
+    /**
+     * Fetches stencil ranges for the current document.
+     * Used to provide keyboard navigation within the blob view.
+     */
+    const stencil = useObservable(
+        useMemo(() => {
+            if (!enableTokenKeyboardNavigation) {
+                return of(undefined)
+            }
+
+            return fetchStencil({
+                repoName,
+                revision,
+                filePath,
+            })
+        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -469,7 +498,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID }}
+                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}
@@ -486,6 +515,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
+                        tokenKeyboardNavigation={enableTokenKeyboardNavigation}
                     />
                 </TraceSpanProvider>
             )}

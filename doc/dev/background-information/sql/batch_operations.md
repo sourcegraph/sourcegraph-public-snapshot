@@ -7,7 +7,7 @@ If a large number of rows are being inserted into the same table, use of a [batc
 The package provides many convenience functions, but basic usage is as follows. An inserter is created with a table name and a list of column names for which values will be supplied. Then, the `Insert` method is called for each row to be inserted. It is expected that the number of values supplied to each call to `Insert` matches the number of columns supplied at construction of the inserter. On each call to `Insert`, if the current batch is full, it will be prepared and sent to the database, leaving an empty batch for future operations. A final call to `Flush` will ensure that any remaining batched rows are sent to the database.
 
 ```go
-inserter := batch.NewInserter(ctx, db, "table", "col1", "col2", "col3" /* , ... */)
+inserter := batch.NewInserter(ctx, db, batch.MaxNumPostgresParameters, "table", "col1", "col2", "col3" /* , ... */)
 
 for /* ... */ {
     if err := inserter.Insert(ctx, val1, val2, val3 /* , ... */); err != nil {
@@ -54,7 +54,7 @@ Here, we defined the temporary table with the clause `ON COMMIT DROP`, which wil
 Next, create and use a batch inserter instance just as described in the previous section, but target the newly created temporary table. Only the columns that are defined on the temporary table need to be supplied when calling the `Insert` method.
 
 ```go
-inserter := batch.NewInserter(ctx, db, "temp_table", "col3", "col4")
+inserter := batch.NewInserter(ctx, db, batch.MaxNumPostgresParameters, "temp_table", "col3", "col4")
 
 for /* ... */ {
     if err := inserter.Insert(ctx, val3, val4); err != nil {

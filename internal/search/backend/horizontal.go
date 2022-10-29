@@ -68,6 +68,12 @@ type HorizontalSearcher struct {
 
 // StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+	// We check for nil opts for convenience in tests. Must fix once we rely
+	// on this.
+	if opts != nil && opts.FlushWallTime > 0 {
+		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
+	}
+
 	clients, err := s.searchers()
 	if err != nil {
 		return err
@@ -189,6 +195,75 @@ type rankingSiteConfig struct {
 	maxMatchCount      int
 	maxSizeBytes       int
 	maxReorderDuration time.Duration
+}
+
+func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+	clients, err := s.searchers()
+	if err != nil {
+		return err
+	}
+
+	endpoints := make([]string, 0, len(clients))
+	for endpoint := range clients {
+		endpoints = append(endpoints, endpoint)
+	}
+
+	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
+
+	streamer, flushAll := newFlushCollectSender(
+		&collectOpts{
+			maxDocDisplayCount: opts.MaxDocDisplayCount,
+			flushWallTime:      opts.FlushWallTime,
+			maxSizeBytes:       siteConfig.maxSizeBytes,
+		},
+		streamer,
+	)
+	defer flushAll()
+
+	// We give each zoekt a little less time to flush so the frontend has a
+	// chance to collect them before flushing.
+	childOpts := *opts
+	childOpts.FlushWallTime -= childOpts.FlushWallTime / 5
+
+	// During re-balancing a repository can appear on more than one replica.
+	var mu sync.Mutex
+	dedupper := dedupper{}
+
+	// GobCache exists, so we only pay the cost of marshalling a query once
+	// when we aggregate it out over all the replicas. Zoekt's RPC layers
+	// unwrap this before passing it on to the Zoekt evaluation layers.
+	q = &query.GobCache{Q: q}
+
+	ch := make(chan error, len(clients))
+	for endpoint, c := range clients {
+		go func(endpoint string, c zoekt.Streamer) {
+			err := c.StreamSearch(ctx, q, &childOpts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+				// This shouldn't happen, but skip event if sr is nil.
+				if sr == nil {
+					return
+				}
+
+				mu.Lock()
+				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+				mu.Unlock()
+
+				streamer.Send(sr)
+			}))
+
+			if canIgnoreError(ctx, err) {
+				err = nil
+			}
+
+			ch <- err
+		}(endpoint, c)
+	}
+
+	var errs errors.MultiError
+	for i := 0; i < cap(ch); i++ {
+		errs = errors.Append(errs, <-ch)
+	}
+
+	return errs
 }
 
 func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {

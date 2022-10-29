@@ -444,6 +444,11 @@
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
           "type": "boolean",
           "default": false
+        },
+        "preloadGoToDefinition": {
+          "description": "Preload definitions for available tokens in the visible viewport.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"
@@ -610,6 +615,11 @@
     "codeIntel.disableSearchBased": {
       "description": "Never fall back to search-based code intelligence.",
       "type": "boolean"
+    },
+    "codeIntel.blobKeyboardNavigation": {
+      "description": "Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available",
+      "type": "string",
+      "enum": ["none", "token"]
     },
     "codeIntel.traceExtension": {
       "description": "Whether to enable trace logging on the extension.",

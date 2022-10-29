@@ -55,7 +55,7 @@ func (a *accessLogConf) SiteConfig() schema.SiteConfiguration {
 			AuditLog: &schema.AuditLog{
 				GitserverAccess: !a.disabled,
 				GraphQL:         false,
-				BackgroundJobs:  false,
+				InternalTraffic: false,
 			},
 		},
 	}
@@ -143,61 +143,4 @@ func TestHTTPMiddleware(t *testing.T) {
 		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
 		assert.Contains(t, logs[1].Message, accessEventMessage)
 	})
-}
-
-func Test_shouldLog(t *testing.T) {
-	tests := []struct {
-		name   string
-		logCfg *schema.Log
-		want   bool
-	}{
-		{
-			name:   "shouldn't log if 'log' property is missing",
-			logCfg: nil,
-			want:   false,
-		},
-		{
-			name: "should log if GitServerAccessLogs is true",
-			logCfg: &schema.Log{
-				GitserverAccessLogs: true,
-			},
-			want: true,
-		},
-		{
-			name: "should log if AuditLog.GitserverAccess is true",
-			logCfg: &schema.Log{
-				AuditLog: &schema.AuditLog{
-					GitserverAccess: true,
-				},
-				GitserverAccessLogs: false,
-			},
-			want: true,
-		},
-		{
-			name: "should log if both settings are true",
-			logCfg: &schema.Log{
-				AuditLog: &schema.AuditLog{
-					GitserverAccess: true,
-				},
-				GitserverAccessLogs: true,
-			},
-			want: true,
-		},
-		{
-			name: "shouldn't log if both settings are false",
-			logCfg: &schema.Log{
-				AuditLog: &schema.AuditLog{
-					GitserverAccess: false,
-				},
-				GitserverAccessLogs: false,
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := schema.SiteConfiguration{Log: tt.logCfg}
-			assert.Equalf(t, tt.want, shouldLog(cfg), "shouldLog(%v)", cfg)
-		})
-	}
 }

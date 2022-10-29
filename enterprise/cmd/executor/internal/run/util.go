@@ -157,6 +157,11 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 		ExecutorName:      c.WorkerHostname,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
+		ResourceOptions: queue.ResourceOptions{
+			NumCPUs:   c.JobNumCPUs,
+			Memory:    c.JobMemory,
+			DiskSpace: c.FirecrackerDiskSpace,
+		},
 	}
 }
 

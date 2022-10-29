@@ -175,7 +175,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 	)
 }
 
-// InternalDoer is a shared client for external communication. This is a
+// InternalDoer is a shared client for internal communication. This is a
 // convenience for existing uses of http.DefaultClient.
 var InternalDoer, _ = InternalClientFactory.Doer()
 

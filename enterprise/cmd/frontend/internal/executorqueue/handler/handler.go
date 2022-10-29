@@ -31,7 +31,7 @@ type QueueOptions struct {
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, record workerutil.Record, resourceMetadata ResourceMetadata) (apiclient.Job, error)
 }
 
 func newHandler(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions) *handler {
@@ -45,12 +45,23 @@ func newHandler(executorStore database.ExecutorStore, metricsStore metricsstore.
 
 var ErrUnknownJob = errors.New("unknown job")
 
+type ResourceMetadata struct {
+	NumCPUs   int
+	Memory    string
+	DiskSpace string
+}
+
+type executorMetadata struct {
+	Name      string
+	Resources ResourceMetadata
+}
+
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
+func (h *handler) dequeue(ctx context.Context, metadata executorMetadata) (_ apiclient.Job, dequeued bool, _ error) {
 	// executorName is supposed to be unique.
-	record, dequeued, err := h.Store.Dequeue(ctx, executorName, nil)
+	record, dequeued, err := h.Store.Dequeue(ctx, metadata.Name, nil)
 	if err != nil {
 		return apiclient.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
 	}
@@ -59,7 +70,7 @@ func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient
 	}
 
 	logger := log.Scoped("dequeue", "Select a job record from the database.")
-	job, err := h.RecordTransformer(ctx, record)
+	job, err := h.RecordTransformer(ctx, record, metadata.Resources)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
 			logger.Error("Failed to mark record as failed",

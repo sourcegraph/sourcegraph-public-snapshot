@@ -221,7 +221,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				parts = append(parts, "slow http request")
 			}
 			if m.Code >= minCode {
-				parts = append(parts, "unexpected status code")
+				parts = append(parts, fmt.Sprintf("unexpected status code %d", m.Code))
 			}
 
 			msg := strings.Join(parts, ", ")

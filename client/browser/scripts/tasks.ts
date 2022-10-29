@@ -22,7 +22,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
 
 export type BuildEnvironment = 'dev' | 'prod'
 
-type Browser = 'firefox' | 'chrome' | 'safari'
+type Browser = 'firefox' | 'chrome' | 'safari' | 'edge'
 
 const BUILDS_DIR = 'build'
 
@@ -52,6 +52,7 @@ function ensurePaths(browser?: Browser): void {
         shelljs.mkdir('-p', `build/${browser}`)
     } else {
         shelljs.mkdir('-p', 'build/chrome')
+        shelljs.mkdir('-p', 'build/edge')
         shelljs.mkdir('-p', 'build/firefox')
         shelljs.mkdir('-p', 'build/safari')
     }
@@ -133,6 +134,7 @@ export function copyIntegrationAssets(): void {
 const BROWSER_TITLES = {
     firefox: 'Firefox',
     chrome: 'Chrome',
+    edge: 'Edge',
     safari: 'Safari',
 } as const
 
@@ -142,6 +144,7 @@ const BROWSER_TITLES = {
 const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
     firefox: 'firefox-bundle.xpi',
     chrome: 'chrome-bundle.zip',
+    edge: 'edge-bundle.zip',
 }
 
 /**
@@ -149,6 +152,7 @@ const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
  */
 const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
+    edge: ['applications'] as const,
     firefox: ['key'] as const,
     safari: [] as const,
 }
@@ -241,4 +245,5 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
+export const buildEdge = buildForBrowser('edge')
 export const buildSafari = buildForBrowser('safari')

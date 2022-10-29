@@ -26,7 +26,11 @@ This step will control the scheduling of indexing jobs which are made available 
 
 ## Configure auto-indexing policies
 
-Once auto-indexing has been enabled, [create auto-indexing policies](configure_auto_indexing.md) to control the set of repositories and commits that are eligible for indexing.
+Once auto-indexing has been enabled, [create auto-indexing policies](configure_auto_indexing.md) to control the set of repositories and commits that are eligible for indexing. Note that policies only select repositories and branches/tags/commits that _can_ be indexed, not _how_ they are indexed. The _how_ is handled in the next section.
+
+## Configure auto-indexing jobs
+
+For repository and commit pairs that are marked as eligible for indexing, the index job is either [inferred from the project](../explanations/auto_indexing_inference.md), or [explicitly configured](./configure_auto_indexing.md#explicit-index-job-configuration) on a per-repository basis.
 
 ## Tune the index scheduler
 

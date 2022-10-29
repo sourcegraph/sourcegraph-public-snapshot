@@ -19,6 +19,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/log"
@@ -293,7 +294,7 @@ func lookupMatcher(language string) string {
 	return ".generic"
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -315,7 +316,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, p.Repo, sender)
+	err = zoektSearch(ctx, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
