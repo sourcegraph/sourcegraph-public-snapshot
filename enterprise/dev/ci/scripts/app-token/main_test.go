@@ -19,21 +19,18 @@ import (
 
 var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
 
-func skipCI(t *testing.T) {
+func TestGenJwtToken(t *testing.T) {
 	if os.Getenv("BUILDKITE") == "true" {
 		t.Skip("Skipping testing in CI environment")
+	} else {
+		appID := os.Getenv("GITHUB_APP_ID")
+		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
+		keyPath := os.Getenv("KEY_PATH")
+		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
+
+		_, err := genJwtToken(appID, keyPath)
+		require.NoError(t, err)
 	}
-}
-
-func TestGenJwtToken(t *testing.T) {
-	skipCI(t)
-	appID := os.Getenv("GITHUB_APP_ID")
-	require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
-	keyPath := os.Getenv("KEY_PATH")
-	require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-
-	_, err := genJwtToken(appID, keyPath)
-	require.NoError(t, err)
 }
 
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
@@ -45,21 +42,22 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 		t.Fatal(err)
 	}
 
-	appID := os.Getenv("GITHUB_APP_ID")
-	require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
-	keyPath := os.Getenv("KEY_PATH")
-	require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-	jwt, err := genJwtToken(appID, keyPath)
-	if err != nil {
-		t.Fatal(err)
-	}
 	if *updateRecordings {
-		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: jwt},
-		))
-		recorder.SetTransport(httpClient.Transport)
+		appID := os.Getenv("GITHUB_APP_ID")
+		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
+		keyPath := os.Getenv("KEY_PATH")
+		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
+		jwt, err := genJwtToken(appID, keyPath)
+		if err != nil {
+			t.Fatal(err)
+			httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: jwt},
+			))
+			recorder.SetTransport(httpClient.Transport)
+		}
 	}
 	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
+
 }
 
 func TestGetInstallAccessToken(t *testing.T) {
