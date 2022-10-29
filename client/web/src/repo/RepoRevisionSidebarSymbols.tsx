@@ -22,7 +22,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import { Scalars, SymbolKind, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
@@ -203,7 +203,12 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                     render={args =>
                         typeof args.symbol === 'string' ? (
                             // eslint-disable-next-line react/forbid-dom-props
-                            <div style={padding(args.symbol)}>{args.symbol}</div>
+                            <li className={styles.repoRevisionSidebarSymbolsNode} style={padding(args.symbol)}>
+                                <span className={styles.link}>
+                                    <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
+                                    {args.symbol}
+                                </span>
+                            </li>
                         ) : (
                             <SymbolNode
                                 node={args.symbol}
