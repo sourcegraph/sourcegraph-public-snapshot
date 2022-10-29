@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Code, Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -14,9 +14,18 @@ export interface RangePosition {
      */
     isExact: boolean
 }
-export interface HighlightedLinkProps {
+
+export const highlightedSectionStyles = {
+    muted: styles.mutedSection,
+}
+
+export interface HighlightedLinkSection {
     text: string
     positions: RangePosition[]
+    style?: keyof typeof highlightedSectionStyles
+}
+export interface HighlightedLinkProps {
+    sections: HighlightedLinkSection[]
     url?: string
     icon?: JSX.Element
     textSuffix?: JSX.Element
@@ -25,8 +34,10 @@ export interface HighlightedLinkProps {
 
 export function offsetSum(props: HighlightedLinkProps): number {
     let sum = 0
-    for (const position of props.positions) {
-        sum += position.startOffset
+    for (const section of props.sections) {
+        for (const position of section.positions) {
+            sum += position.startOffset
+        }
     }
     return sum
 }
@@ -39,13 +50,17 @@ export function offsetSum(props: HighlightedLinkProps): number {
  * 'Documentation/README.md`.
  */
 export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<HighlightedLinkProps>> = props => {
-    const spans: JSX.Element[] = []
-    let start = 0
-    function pushElement(kind: 'mark' | 'span', startOffset: number, endOffset: number): void {
+    function pushElement(
+        spans: JSX.Element[],
+        section: HighlightedLinkSection,
+        kind: 'mark' | 'span',
+        startOffset: number,
+        endOffset: number
+    ): void {
         if (startOffset >= endOffset) {
             return
         }
-        const text = props.text.slice(startOffset, endOffset)
+        const text = section.text.slice(startOffset, endOffset)
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
@@ -57,30 +72,36 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
             spans.push(<span key={key}>{text}</span>)
         }
     }
-    for (const [index, position] of props.positions.entries()) {
-        if (index > 0) {
-            const previous = props.positions[index - 1]
-            if (
-                previous.startOffset === position.startOffset &&
-                previous.endOffset === position.endOffset &&
-                previous.isExact === position.isExact
-            ) {
-                continue
+    const sections: JSX.Element[] = []
+    for (const section of props.sections) {
+        const spans: JSX.Element[] = []
+        let start = 0
+        for (const [index, position] of section.positions.entries()) {
+            if (index > 0) {
+                const previous = section.positions[index - 1]
+                if (
+                    previous.startOffset === position.startOffset &&
+                    previous.endOffset === position.endOffset &&
+                    previous.isExact === position.isExact
+                ) {
+                    continue
+                }
             }
+            if (position.startOffset > start) {
+                pushElement(spans, section, 'span', start, position.startOffset)
+            }
+            start = position.endOffset
+            pushElement(spans, section, 'mark', position.startOffset, position.endOffset)
         }
-        if (position.startOffset > start) {
-            pushElement('span', start, position.startOffset)
-        }
-        start = position.endOffset
-        pushElement('mark', position.startOffset, position.endOffset)
+        pushElement(spans, section, 'span', start, section.text.length)
+        sections.push(<span className={section.style ? highlightedSectionStyles[section.style] : ''}>{spans}</span>)
     }
-    pushElement('span', start, props.text.length)
 
     return props.url ? (
         <Code>
             <Link key="link" tabIndex={-1} className={styles.link} to={props.url} onClick={props.onClick}>
                 {props.icon && <span key="icon">{props.icon}</span>}
-                {spans}
+                {sections}
                 {props.textSuffix}
             </Link>
         </Code>
@@ -89,14 +110,14 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
             key="link"
             tabIndex={-1}
             className={styles.link}
-            to={`/commands/${props.text}`}
+            to={`/commands/${props.sections.map(({ text }) => text).join('')}`}
             onClick={event => {
                 event.preventDefault()
                 props.onClick?.()
             }}
         >
             {props.icon && <span key="icon">{props.icon}</span>}
-            {spans}
+            {sections}
         </Link>
     )
 }

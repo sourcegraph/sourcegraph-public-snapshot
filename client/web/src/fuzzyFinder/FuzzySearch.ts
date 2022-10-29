@@ -19,7 +19,9 @@ export enum SearchIconKind {
 
 export interface SearchValue {
     text: string
+    rotationOffset?: number
     ranking?: number
+    textSuffix?: JSX.Element
     url?: string
     icon?: JSX.Element
     onClick?: () => void

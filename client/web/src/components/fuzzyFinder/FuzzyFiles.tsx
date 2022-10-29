@@ -95,10 +95,7 @@ export async function loadFilesFSM(
 
 export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {
     return newFuzzyFSMFromValues(
-        filenames.map(text => ({
-            text,
-            icon: fileIcon(text),
-        })),
+        filenames.map(text => newSearchValue(text)),
         createUrl
     )
 }
@@ -133,10 +130,7 @@ export class FuzzyRepoFiles {
             },
         })
         const filenames = response.data.repository?.commit?.fileNames || []
-        const values: SearchValue[] = filenames.map(text => ({
-            text,
-            icon: fileIcon(text),
-        }))
+        const values: SearchValue[] = filenames.map(text => newSearchValue(text))
         this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
         this.loopIndexing()
         return values
@@ -176,11 +170,7 @@ export class FuzzyFiles extends FuzzyQuery {
     }
 
     /* override */ protected searchValues(): SearchValue[] {
-        return [...this.queryResults.values()].map(({ text, url }) => ({
-            text,
-            url,
-            icon: fileIcon(text),
-        }))
+        return [...this.queryResults.values()].map(({ text, url }) => newSearchValue(text, url))
     }
 
     /* override */ protected rawQuery(query: string): string {
@@ -205,5 +195,16 @@ export class FuzzyFiles extends FuzzyQuery {
             }
         }
         return queryResults
+    }
+}
+
+function newSearchValue(text: string, url?: string): SearchValue {
+    const slashIndex = text.lastIndexOf('/')
+    const rotationOffset = slashIndex < 0 ? undefined : text.length - slashIndex - 1
+    return {
+        text,
+        rotationOffset,
+        url,
+        icon: fileIcon(text),
     }
 }

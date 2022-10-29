@@ -1,6 +1,6 @@
 import * as fzy from 'fzy.js'
 
-import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
+import { HighlightedLinkProps, HighlightedLinkSection, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
 import { createUrlFunction } from './WordSensitiveFuzzySearch'
@@ -93,17 +93,46 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         candidates.slice(0, parameters.maxResults)
 
         const links: HighlightedLinkProps[] = candidates.map(candidate => {
+            const { rotationOffset } = candidate
             const offsets = new Set<number>()
             for (const queryPart of queryParts) {
                 for (const offset of fzy.positions(queryPart, candidate.text)) {
-                    offsets.add(offset)
+                    offsets.add((offset + (rotationOffset || 0)) % candidate.text.length)
                 }
             }
-            const positions = compressedRangePositions([...offsets])
+            const sections: HighlightedLinkSection[] = []
+            if (rotationOffset) {
+                const firstSectionOffsets: number[] = []
+                const secondSectionOffsets: number[] = []
+                for (const offset of offsets) {
+                    if (offset < rotationOffset) {
+                        firstSectionOffsets.push(offset)
+                    } else {
+                        secondSectionOffsets.push(offset - rotationOffset)
+                    }
+                }
+                const cutoffIndex = candidate.text.length - rotationOffset
+                sections.push({
+                    text: candidate.text.slice(cutoffIndex),
+                    positions: compressedRangePositions(firstSectionOffsets),
+                })
+                sections.push({
+                    text: candidate.text.slice(0, cutoffIndex),
+                    positions: compressedRangePositions(secondSectionOffsets),
+                    style: 'muted',
+                })
+            } else {
+                sections.push({
+                    text: candidate.text,
+                    positions: compressedRangePositions([...offsets]),
+                })
+            }
             return {
-                ...candidate,
-                positions,
+                icon: candidate.icon,
+                onClick: candidate.onClick,
+                textSuffix: candidate.textSuffix,
                 url: candidate.url || this.createUrl?.(candidate.text),
+                sections,
             }
         })
         return {

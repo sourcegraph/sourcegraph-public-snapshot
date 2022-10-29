@@ -137,17 +137,26 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
 
     private sorted(result: FuzzySearchResult): FuzzySearchResult {
         result.links.sort((a, b) => {
-            const byLength = a.text.length - b.text.length
-            if (byLength !== 0) {
-                return byLength
+            const bySectionLength = a.sections.length - b.sections.length
+            if (bySectionLength !== 0) {
+                return bySectionLength
             }
+            for (let index = 0; index < a.sections.length; index++) {
+                const byLength = a.sections[index].text.length - b.sections[index].text.length
+                if (byLength !== 0) {
+                    return byLength
+                }
 
-            const byEarliestMatch = offsetSum(a) - offsetSum(b)
-            if (byEarliestMatch !== 0) {
-                return byEarliestMatch
+                const byEarliestMatch = offsetSum(a) - offsetSum(b)
+                if (byEarliestMatch !== 0) {
+                    return byEarliestMatch
+                }
+                const byCompareText = a.sections[index].text.localeCompare(b.sections[index].text)
+                if (byCompareText !== 0) {
+                    return byCompareText
+                }
             }
-
-            return a.text.localeCompare(b.text)
+            return 0
         })
         return result
     }
@@ -163,7 +172,7 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
             for (const value of bucket.files) {
                 result.push({
                     ...value,
-                    positions: [],
+                    sections: [{ text: value.text, positions: [] }],
                     url: value.url || bucket.createUrl?.(value.text),
                 })
                 if (result.length > query.maxResults) {
@@ -449,8 +458,7 @@ class Bucket {
             const positions = fuzzyMatches(queryParts, file.text)
             if (positions.length > 0) {
                 result.push({
-                    text: file.text,
-                    positions,
+                    sections: [{ text: file.text, positions }],
                     url: this.createUrl?.(file.text),
                     onClick: file.onClick,
                 })
