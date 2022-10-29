@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { escapeRegExp, isEqual } from 'lodash'
+import { sortBy } from 'lodash'
+import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual, map } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -14,7 +15,6 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionForm,
-    ConnectionList,
     ConnectionContainer,
     ConnectionLoading,
     ConnectionSummary,
@@ -31,16 +31,19 @@ interface SymbolNodeProps {
     node: SymbolNodeFields
     onHandleClick: () => void
     isActive: boolean
+    style: React.CSSProperties
 }
 
 const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProps>> = ({
     node,
     onHandleClick,
     isActive,
+    style,
 }) => {
     const isActiveFunc = (): boolean => isActive
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode}>
+        // eslint-disable-next-line react/forbid-dom-props
+        <li className={styles.repoRevisionSidebarSymbolsNode} style={style}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -52,11 +55,6 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                 <span className={styles.name} data-testid="symbol-name">
                     {node.name}
                 </span>
-                {node.containerName && (
-                    <span className={styles.containerName}>
-                        <small>{node.containerName}</small>
-                    </span>
-                )}
             </NavLink>
         </li>
     )
@@ -200,16 +198,22 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             </div>
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
-                <ConnectionList compact={true}>
-                    {connection.nodes.map((node, index) => (
-                        <SymbolNode
-                            key={index}
-                            node={node}
-                            onHandleClick={onHandleSymbolClick}
-                            isActive={isSymbolActive(node.url)}
-                        />
-                    ))}
-                </ConnectionList>
+                <HierarchicalSymbols
+                    symbols={connection.nodes}
+                    render={args =>
+                        typeof args.symbol === 'string' ? (
+                            // eslint-disable-next-line react/forbid-dom-props
+                            <div style={padding(args.symbol)}>{args.symbol}</div>
+                        ) : (
+                            <SymbolNode
+                                node={args.symbol}
+                                onHandleClick={onHandleSymbolClick}
+                                isActive={isSymbolActive(args.symbol.url)}
+                                style={padding(args.symbol)}
+                            />
+                        )
+                    }
+                />
             )}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
@@ -221,3 +225,41 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         </ConnectionContainer>
     )
 }
+
+interface HierarchicalSymbolsProps {
+    symbols: SymbolNodeFields[]
+    render: (props: { symbol: SymbolNodeFields | string }) => React.ReactElement
+}
+
+const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = props => (
+    <ul className={styles.hierarchicalSymbolsContainer}>
+        {flow(
+            groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
+            entries,
+            flatMap(([, symbols]) => hierarchyOf(symbols)),
+            map(symbol => <props.render key={typeof symbol === 'string' ? symbol : symbol.url} symbol={symbol} />)
+        )(props.symbols)}
+    </ul>
+)
+
+const hierarchyOf = (symbols: SymbolNodeFields[]): (SymbolNodeFields | string)[] => {
+    const map1 = new Map<string, SymbolNodeFields | string>(
+        symbols.map(symbol => [`${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`, symbol])
+    )
+
+    for (const missing of symbols
+        .map(symbol => symbol.containerName ?? '')
+        .filter(containerName => !map1.has(containerName))) {
+        map1.set(missing, missing)
+    }
+
+    return sortBy([...map1.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
+}
+
+const depthOf = (symbol: SymbolNodeFields | string): number =>
+    (typeof symbol === 'string' ? symbol : fullName(symbol)).split('.').length - 1
+
+const fullName = (symbol: SymbolNodeFields): string =>
+    `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+
+const padding = (symbol: SymbolNodeFields | string): React.CSSProperties => ({ paddingLeft: `${depthOf(symbol)}rem` })
