@@ -253,6 +253,7 @@ const hierarchyOf = (symbols: SymbolNodeFields[]): (SymbolNodeFields | string)[]
     )
 
     for (const missing of symbols
+        .filter(symbol => symbol.containerName)
         .map(symbol => symbol.containerName ?? '')
         .filter(containerName => !map1.has(containerName))) {
         map1.set(missing, missing)
