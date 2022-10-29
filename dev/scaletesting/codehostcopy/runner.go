@@ -145,6 +145,8 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 					r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
 				} else {
 					repo.Pushed = true
+					// If we resumed and this repo previously failed, we need to clear the failed status as it succeeded now
+					repo.Failed = ""
 				}
 				if err := r.store.SaveRepo(repo); err != nil {
 					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
