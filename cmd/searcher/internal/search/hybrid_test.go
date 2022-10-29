@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -106,6 +107,15 @@ Hello world example in go
 		return fetchTarPaths(ctx, repo, commit, paths)
 	}
 
+	zoektURL := newZoekt(t, &zoekt.Repository{
+		Name: "foo",
+		ID:   123,
+		Branches: []zoekt.RepositoryBranch{{
+			Name:    "HEAD",
+			Version: "indexedfdeadbeefdeadbeefdeadbeefdeadbeef",
+		}},
+	}, filesIndexed)
+
 	// we expect one command against git, lets just fake it.
 	ts := httptest.NewServer(&search.Service{
 		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
@@ -119,29 +129,20 @@ Hello world example in go
 		},
 		MaxTotalPathsLength: 100_000,
 
-		Store: s,
-		Log:   logtest.Scoped(t),
+		Store:   s,
+		Indexed: backend.ZoektDial(zoektURL),
+		Log:     logtest.Scoped(t),
 	})
 	defer ts.Close()
 
-	zoektURL := newZoekt(t, &zoekt.Repository{
-		Name: "foo",
-		ID:   123,
-		Branches: []zoekt.RepositoryBranch{{
-			Name:    "HEAD",
-			Version: "indexedfdeadbeefdeadbeefdeadbeefdeadbeef",
-		}},
-	}, filesIndexed)
-
 	req := protocol.Request{
-		Repo:             "foo",
-		RepoID:           123,
-		URL:              "u",
-		Commit:           "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-		PatternInfo:      pattern,
-		FetchTimeout:     fetchTimeoutForCI(t),
-		IndexerEndpoints: []string{zoektURL},
-		FeatHybrid:       true,
+		Repo:         "foo",
+		RepoID:       123,
+		URL:          "u",
+		Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		PatternInfo:  pattern,
+		FetchTimeout: fetchTimeoutForCI(t),
+		FeatHybrid:   true,
 	}
 	m, err := doSearch(ts.URL, &req)
 	if err != nil {

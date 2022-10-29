@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { QueryState, SearchContextInputProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -33,7 +32,6 @@ export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
@@ -82,7 +80,6 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
                 {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
                     <TipsAndTricks
-                        title="Tips and Tricks"
                         examples={exampleTripsAndTricks}
                         moreLink={{
                             label: 'More search features',

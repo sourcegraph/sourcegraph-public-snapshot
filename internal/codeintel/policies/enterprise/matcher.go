@@ -106,10 +106,6 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	return context.commitMap, nil
 }
 
-func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
-	return m.CommitsDescribedByPolicy(ctx, repositoryID, policies, now, filterCommits...)
-}
-
 type matcherContext struct {
 	// repositoryID is the repository identifier used in requests to gitserver.
 	repositoryID int

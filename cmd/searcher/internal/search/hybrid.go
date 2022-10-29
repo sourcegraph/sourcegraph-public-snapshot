@@ -35,9 +35,9 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
 		log.String("repo", string(p.Repo)),
 		log.String("commit", string(p.Commit)),
-		log.Int("endpoints", len(p.IndexerEndpoints)))
+	)
 
-	client := getZoektClient(p.IndexerEndpoints)
+	client := s.Indexed
 
 	// There is a race condition between asking zoekt what is indexed vs
 	// actually searching since the index may update. If the index changes,
