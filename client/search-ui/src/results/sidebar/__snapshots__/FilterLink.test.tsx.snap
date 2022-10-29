@@ -34,7 +34,6 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       500+
     </span>
@@ -71,7 +70,6 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       241
     </span>
@@ -123,7 +121,6 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       1
     </span>
@@ -149,7 +146,6 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <svg
           aria-label="gitlab.com"
           class="mdi-icon iconInline sidebarSectionIcon"
-          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -165,7 +161,6 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       5
     </span>
@@ -186,7 +181,6 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <svg
           aria-label="github.com"
           class="mdi-icon iconInline sidebarSectionIcon"
-          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -202,7 +196,6 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       201+
     </span>
@@ -259,7 +252,6 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <svg
           aria-label="gitlab.com"
           class="mdi-icon iconInline sidebarSectionIcon"
-          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -275,7 +267,6 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       5
     </span>
@@ -296,7 +287,6 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <svg
           aria-label="github.com"
           class="mdi-icon iconInline sidebarSectionIcon"
-          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -312,7 +302,6 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      data-state="closed"
     >
       201+
     </span>

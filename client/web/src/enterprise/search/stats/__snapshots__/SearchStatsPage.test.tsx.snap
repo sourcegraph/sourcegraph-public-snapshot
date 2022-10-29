@@ -27,7 +27,6 @@ exports[`SearchStatsPage limitHit 1`] = `
          Code statistics 
         <small
           class="text-uppercase ml-2"
-          data-state="closed"
         >
           Experimental
         </small>
@@ -103,7 +102,6 @@ exports[`SearchStatsPage renders 1`] = `
          Code statistics 
         <small
           class="text-uppercase ml-2"
-          data-state="closed"
         >
           Experimental
         </small>
