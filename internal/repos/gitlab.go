@@ -42,7 +42,6 @@ type GitLabSource struct {
 
 var _ Source = &GitLabSource{}
 var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
 var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
@@ -374,31 +373,4 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil
-}
-
-func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
-	queryURL, err := projectQueryToURL("projects?membership=true&archived=no", 40) // first page URL
-	if err != nil {
-		return nil, err
-	}
-	var (
-		projects    []*gitlab.Project
-		nextPageURL = &queryURL
-	)
-
-	out := []types.CodeHostRepository{}
-	for nextPageURL != nil {
-		projects, nextPageURL, err = s.client.ListProjects(ctx, *nextPageURL)
-		if err != nil {
-			return nil, err
-		}
-		for _, p := range projects {
-			out = append(out, types.CodeHostRepository{
-				Name:       p.PathWithNamespace,
-				Private:    p.Visibility == "private",
-				CodeHostID: s.svc.ID,
-			})
-		}
-	}
-	return out, nil
 }

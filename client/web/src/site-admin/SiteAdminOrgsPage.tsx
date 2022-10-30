@@ -8,12 +8,11 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip, PageHeader, ButtonLink, Container } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { OrganizationFields } from '../graphql-operations'
-import { orgURL } from '../org'
 
 import { deleteOrganization, fetchAllOrganizations } from './backend'
 
@@ -55,7 +54,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
         <li className="list-group-item py-2">
             <div className="d-flex align-items-center justify-content-between">
                 <div>
-                    <Link to={orgURL(node.name)}>
+                    <Link to={node.url}>
                         <strong>{node.name}</strong>
                     </Link>
                     <br />
@@ -63,18 +62,14 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                 </div>
                 <div>
                     <Tooltip content="Organization settings">
-                        <Button to={`${orgURL(node.name)}/settings`} variant="secondary" size="sm" as={Link}>
+                        <Button to={`${node.url}/settings`} variant="secondary" size="sm" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content="Organization members">
-                        <Button to={`${orgURL(node.name)}/settings/members`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
-                            {node.members && (
-                                <>
-                                    {node.members.totalCount} {pluralize('member', node.members.totalCount)}
-                                </>
-                            )}
+                        <Button to={`${node.url}/settings/members`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiAccount} /> {node.members.totalCount}{' '}
+                            {pluralize('member', node.members.totalCount)}
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content="Delete organization">
@@ -115,31 +110,45 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="site-admin-orgs-page">
             <PageTitle title="Organizations - Admin" />
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <H2 className="mb-0">Organizations</H2>
-                <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create organization
-                </Button>
-            </div>
-            <Text>
-                An organization is a set of users with associated configuration. See{' '}
-                <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
-                organizations.
-            </Text>
-            <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
-                noun="organization"
-                pluralNoun="organizations"
-                queryConnection={fetchAllOrganizations}
-                nodeComponent={OrgNode}
-                nodeComponentProps={{
-                    onDidUpdate: onDidUpdateOrg,
-                    history,
-                }}
-                updates={orgUpdates}
-                history={history}
-                location={location}
+
+            <PageHeader
+                headingElement="h2"
+                path={[
+                    {
+                        text: <>Organizations</>,
+                    },
+                ]}
+                description={
+                    <>
+                        An organization is a set of users with associated configuration. See{' '}
+                        <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
+                        configuring organizations.
+                    </>
+                }
+                className="mb-3"
+                actions={
+                    <ButtonLink to="/organizations/new" className="test-create-org-button" variant="primary">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create organization
+                    </ButtonLink>
+                }
             />
+
+            <Container className="mb-3">
+                <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
+                    className="list-group list-group-flush"
+                    noun="organization"
+                    pluralNoun="organizations"
+                    queryConnection={fetchAllOrganizations}
+                    nodeComponent={OrgNode}
+                    nodeComponentProps={{
+                        onDidUpdate: onDidUpdateOrg,
+                        history,
+                    }}
+                    updates={orgUpdates}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </div>
     )
 }

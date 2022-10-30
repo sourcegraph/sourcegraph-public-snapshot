@@ -56,7 +56,7 @@ func (r *Resolver) SearchContextsToResolvers(searchContexts []*types.SearchConte
 }
 
 func (r *Resolver) AutoDefinedSearchContexts(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	searchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx, r.db)
+	searchContexts, err := searchcontexts.GetAutoDefinedSearchContexts(ctx)
 	if err != nil {
 		return nil, err
 	}

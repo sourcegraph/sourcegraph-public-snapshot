@@ -109,7 +109,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
-                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
         </Form>

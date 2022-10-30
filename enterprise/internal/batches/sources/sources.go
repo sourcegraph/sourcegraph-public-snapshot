@@ -280,12 +280,6 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 		return nil, err
 	}
 
-	// Sort the external services so user owned external service go last.
-	// This also retains the initial ORDER BY ID DESC.
-	sort.SliceStable(es, func(i, j int) bool {
-		return es[i].NamespaceUserID == 0 && es[i].ID > es[j].ID
-	})
-
 	for _, e := range es {
 		cfg, err := e.Configuration(ctx)
 		if err != nil {

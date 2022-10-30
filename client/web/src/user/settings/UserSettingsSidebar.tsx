@@ -18,7 +18,7 @@ import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin'>
     isSourcegraphDotCom: boolean
 }
 
@@ -81,19 +81,13 @@ export const UserSettingsSidebar: React.FunctionComponent<
                             <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                         </SidebarNavItem>
                     ))}
-                    {!siteAdminViewingOtherUser &&
-                        (window.context.sourcegraphDotComMode &&
-                        !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
-                            <SidebarNavItem to={`${props.match.path}/about-organizations`}>
-                                About organizations
-                            </SidebarNavItem>
-                        ) : (
-                            <div className={styles.newOrgBtnWrapper}>
-                                <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
-                                </Button>
-                            </div>
-                        ))}
+                    {!siteAdminViewingOtherUser && (
+                        <div className={styles.newOrgBtnWrapper}>
+                            <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
+                            </Button>
+                        </div>
+                    )}
                 </SidebarGroup>
             )}
             <SidebarGroup>

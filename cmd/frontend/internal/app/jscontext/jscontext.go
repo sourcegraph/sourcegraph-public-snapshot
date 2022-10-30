@@ -90,8 +90,6 @@ type JSContext struct {
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
-	ExternalServicesUserMode string `json:"externalServicesUserMode"`
-
 	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
@@ -223,8 +221,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
-
-		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 

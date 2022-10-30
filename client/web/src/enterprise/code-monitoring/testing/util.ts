@@ -13,7 +13,6 @@ export const mockUser: AuthenticatedUser = {
     email: 'user@me.com',
     siteAdmin: true,
     databaseID: 0,
-    tags: [],
     url: '',
     avatarURL: '',
     displayName: 'display name',

@@ -9216,36 +9216,10 @@
           "Comment": ""
         },
         {
-          "Name": "org_id",
-          "Index": 5,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "repo_id",
           "Index": 2,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "user_id",
-          "Index": 4,
-          "TypeName": "integer",
-          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -9285,26 +9259,6 @@
           "IndexDefinition": "CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_repos_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_service_user_repos_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -9316,25 +9270,11 @@
           "ConstraintDefinition": "FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
-          "Name": "external_service_repos_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE"
-        },
-        {
           "Name": "external_service_repos_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_service_repos_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -9775,32 +9715,6 @@
           "Comment": ""
         },
         {
-          "Name": "namespace_org_id",
-          "Index": 14,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "namespace_user_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "next_sync_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
@@ -9865,26 +9779,6 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "external_services_unique_kind_org_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_unique_kind_user_id",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE deleted_at IS NULL AND namespace_org_id IS NULL AND namespace_user_id IS NOT NULL",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "kind_cloud_default",
           "IsPrimaryKey": false,
           "IsUnique": true,
@@ -9903,26 +9797,6 @@
           "IndexDefinition": "CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree (has_webhooks)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_org_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "external_services_namespace_user_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -9932,27 +9806,6 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (btrim(config) \u003c\u003e ''::text)"
-        },
-        {
-          "Name": "external_services_max_1_namespace",
-          "ConstraintType": "c",
-          "RefTableName": "",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) \u003c\u003e (namespace_org_id IS NULL))"
-        },
-        {
-          "Name": "external_services_namepspace_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE"
-        },
-        {
-          "Name": "external_services_namespace_org_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "orgs",
-          "IsDeferrable": true,
-          "ConstraintDefinition": "FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -19403,80 +19256,6 @@
       "Triggers": []
     },
     {
-      "Name": "user_public_repos",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "repo_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "repo_uri",
-          "Index": 2,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "user_id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "user_public_repos_user_id_repo_id_key",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX user_public_repos_user_id_repo_id_key ON user_public_repos USING btree (user_id, repo_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (user_id, repo_id)"
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "user_public_repos_repo_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "repo",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
-        },
-        {
-          "Name": "user_public_repos_user_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "users",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
-        }
-      ],
-      "Triggers": []
-    },
-    {
       "Name": "users",
       "Comment": "",
       "Columns": [
@@ -19668,19 +19447,6 @@
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "tags",
-          "Index": 15,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "'{}'::text[]",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

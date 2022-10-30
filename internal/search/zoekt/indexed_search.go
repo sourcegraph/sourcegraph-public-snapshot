@@ -14,7 +14,6 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -734,29 +733,16 @@ func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
 func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
 
-// Get all private repos for the the current actor. On sourcegraph.com, those are
-// only the repos directly added by the user. Otherwise it's all repos the user has
+// Get all private repos for the the current actor. That is all repos the user has
 // access to on all connected code hosts / external services.
 func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "privateReposForActor", "")
 	defer tr.Finish()
 
-	userID := int32(0)
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			userID = a.UID
-		} else {
-			tr.LazyPrintf("skipping private repo resolution for unauthed user")
-			return nil
-		}
-	}
-	tr.LogFields(otlog.Int32("userID", userID))
-
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
 	// best to address that first.
 	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		UserID:         userID, // Zero valued when not in sourcegraph.com mode
 		OnlyPrivate:    true,
 		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
@@ -767,7 +753,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 	})
 
 	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
+		logger.Error("doResults: failed to list user private repos", log.Error(err))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

@@ -49,9 +49,3 @@
 
     position: relative;
 }
-
-.panels-container-with-collaborators {
-    @media (--xl-breakpoint-up) {
-        width: calc(var(--max-homepage-container-width) + 30rem);
-    }
-}

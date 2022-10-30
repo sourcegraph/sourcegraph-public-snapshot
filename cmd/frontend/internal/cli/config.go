@@ -208,11 +208,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 		}
 
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{
-			// NOTE: External services loaded from config file do not have namespace specified.
-			// Therefore, we only need to load those from database.
-			NoNamespace: true,
-		})
+		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
 		if err != nil {
 			return errors.Wrap(err, "ExternalServices.List")
 		}

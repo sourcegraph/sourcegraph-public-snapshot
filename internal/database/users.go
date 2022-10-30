@@ -16,7 +16,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/log"
@@ -57,7 +56,6 @@ type UserStore interface {
 	Create(context.Context, NewUser) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
-	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
 	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
@@ -71,7 +69,6 @@ type UserStore interface {
 	GetByVerifiedEmail(context.Context, string) (*types.User, error)
 	HardDelete(context.Context, int32) error
 	HardDeleteList(context.Context, []int32) error
-	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
@@ -81,12 +78,9 @@ type UserStore interface {
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
-	SetTag(ctx context.Context, userID int32, tag string, present bool) error
-	Tags(context.Context, int32) (map[string]bool, error)
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UserAllowedExternalServices(context.Context, int32) (conf.ExternalServiceMode, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -946,7 +940,7 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
+	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.invalidated_sessions_at, u.tos_accepted, u.searchable FROM users u %s", query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -957,7 +951,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable)
 		if err != nil {
 			return nil, err
 		}
@@ -1190,119 +1184,6 @@ func validPassword(hash, password string) bool {
 		return MockValidPassword(hash, password)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-}
-
-const (
-	// TagAllowUserExternalServicePrivate if set on a user, allows them to add
-	// private code through external services they own.
-	TagAllowUserExternalServicePrivate = "AllowUserExternalServicePrivate"
-	// TagAllowUserExternalServicePublic if set on a user, allows them to add
-	// public code through external services they own.
-	TagAllowUserExternalServicePublic = "AllowUserExternalServicePublic"
-)
-
-// SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
-// error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
-// not an error.
-func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
-	var q *sqlf.Query
-	if present {
-		// Add tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=CASE WHEN NOT %s::text = ANY(tags) THEN (tags || %s::text) ELSE tags END WHERE id=%s`, tag, tag, userID)
-	} else {
-		// Remove tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=array_remove(tags, %s::text) WHERE id=%s`, tag, userID)
-	}
-
-	res, err := u.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []any{userID}}
-	}
-	return nil
-}
-
-// HasTag reports whether the context actor has the given tag.
-// If not, it returns false and a nil error.
-func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]any{userID}}
-		}
-		return false, err
-	}
-
-	for _, t := range tags {
-		if t == tag {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// Tags returns a map with all the tags currently belonging to the user.
-func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]any{userID}}
-		}
-		return nil, err
-	}
-
-	tagMap := make(map[string]bool, len(tags))
-	for _, t := range tags {
-		tagMap[t] = true
-	}
-	return tagMap, nil
-}
-
-// UserAllowedExternalServices returns whether the supplied user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	// If site level already allows all code then no need to check user
-	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
-		return siteMode, nil
-	}
-
-	tags, err := u.Tags(ctx, userID)
-	if err != nil {
-		return siteMode, err
-	}
-
-	// The user may have a tag that opts them in
-	if tags[TagAllowUserExternalServicePrivate] {
-		return conf.ExternalServiceModeAll, nil
-	}
-	if tags[TagAllowUserExternalServicePublic] {
-		return conf.ExternalServiceModePublic, nil
-	}
-
-	return siteMode, nil
-}
-
-// CurrentUserAllowedExternalServices returns whether the current user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

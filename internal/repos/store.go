@@ -56,15 +56,6 @@ type Store interface {
 	// and the repo itself if there are no more associations to that repo by any
 	// other external service.
 	DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error)
-	// ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
-	// given repository. These users have proven that they have read access to the
-	// repository given records are present in the "external_service_repos" table.
-	ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error)
-	// ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
-	// associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
-	// user has already proven that they have read access to the repositories since
-	// records are present in the "external_service_repos" table.
-	ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error)
 	// CreateExternalServiceRepo inserts a single repo and its association to an
 	// external service, respectively in the repo and "external_service_repos" table.
 	// The associated external service must already exist.
@@ -324,75 +315,6 @@ WHERE id = %s AND NOT EXISTS (
 )
 `
 
-const listExternalServiceUserIDsByRepoIDQuery = `
-SELECT user_id FROM external_service_repos
-WHERE repo_id = %s AND user_id IS NOT NULL
-`
-
-func (s *store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
-	tr.LogFields(
-		otlog.Int32("repo_id", int32(repoID)),
-	)
-	logger := trace.Logger(ctx, s.Logger).With(log.Int("repoID", int(repoID)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		s.Metrics.ListExternalServiceUserIDsByRepoID.Observe(secs, 1, &err)
-
-		if err != nil {
-			logger.Error("store.list-external-service-user-ids-by-repo-id", log.Error(err))
-		}
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	q := sqlf.Sprintf(listExternalServiceUserIDsByRepoIDQuery, repoID)
-	return basestore.ScanInt32s(s.Query(ctx, q))
-}
-
-const listExternalServiceRepoIDsByUserIDQuery = `
-SELECT repo_id
-FROM external_service_repos esr
-JOIN repo ON repo.id = esr.repo_id
-WHERE
-	user_id = %s
-AND repo.private
-`
-
-func (s *store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")
-	tr.LogFields(
-		otlog.Int32("user_id", userID),
-	)
-	logger := trace.Logger(ctx, s.Logger).With(log.Int("userID", int(userID)))
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		s.Metrics.ListExternalServiceRepoIDsByUserID.Observe(secs, 1, &err)
-
-		if err != nil {
-			logger.Error("store.list-external-service-private-repo-id-by-user-id", log.Error(err))
-		}
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	q := sqlf.Sprintf(listExternalServiceRepoIDsByUserIDQuery, userID)
-	ids, err := basestore.ScanInt32s(s.Query(ctx, q))
-	if err != nil {
-		return nil, err
-	}
-
-	repoIDs = make([]api.RepoID, len(ids))
-	for i := range ids {
-		repoIDs[i] = api.RepoID(ids[i])
-	}
-	return repoIDs, nil
-}
-
 func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
 	tr.LogFields(
@@ -462,8 +384,6 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -491,20 +411,14 @@ const upsertExternalServiceRepoQuery = `
 INSERT INTO external_service_repos (
 	external_service_id,
 	repo_id,
-	user_id,
-	org_id,
 	clone_url
 )
-VALUES (%s, %s, NULLIF(%s, 0), NULLIF(%s, 0), %s)
+VALUES (%s, %s, %s)
 ON CONFLICT (external_service_id, repo_id)
 DO UPDATE SET
-	clone_url = excluded.clone_url,
-	user_id   = excluded.user_id,
-	org_id    =  excluded.org_id
+	clone_url = excluded.clone_url
 WHERE
-	external_service_repos.clone_url != excluded.clone_url OR
-	external_service_repos.user_id   != excluded.user_id OR
-	external_service_repos.org_id    != excluded.org_id
+	external_service_repos.clone_url != excluded.clone_url
 `
 
 func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
@@ -633,8 +547,6 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
 		svc.ID,
 		r.ID,
-		svc.NamespaceUserID,
-		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }

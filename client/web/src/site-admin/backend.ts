@@ -40,8 +40,6 @@ import {
     OutOfBandMigrationFields,
     OutOfBandMigrationsResult,
     OutOfBandMigrationsVariables,
-    SetUserTagResult,
-    SetUserTagVariables,
     FeatureFlagsResult,
     FeatureFlagsVariables,
     FeatureFlagFields,
@@ -94,7 +92,6 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                         name
                     }
                 }
-                tags
             }
         `,
         args
@@ -104,6 +101,36 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
     )
 }
 
+export const ORGANIZATIONS = gql`
+    query Organizations($first: Int, $query: String) {
+        organizations(first: $first, query: $query) {
+            ...OrganizationsConnectionFields
+        }
+    }
+
+    fragment OrganizationsConnectionFields on OrgConnection {
+        nodes {
+            ...OrganizationFields
+        }
+        totalCount
+    }
+
+    fragment OrganizationFields on Org {
+        id
+        name
+        url
+        displayName
+        createdAt
+        latestSettings {
+            createdAt
+            contents
+        }
+        members {
+            totalCount
+        }
+    }
+`
+
 /**
  * Fetches all organizations.
  */
@@ -111,40 +138,10 @@ export function fetchAllOrganizations(args: {
     first?: number
     query?: string
 }): Observable<OrganizationsConnectionFields> {
-    return requestGraphQL<OrganizationsResult, OrganizationsVariables>(
-        gql`
-            query Organizations($first: Int, $query: String) {
-                organizations(first: $first, query: $query) {
-                    ...OrganizationsConnectionFields
-                }
-            }
-
-            fragment OrganizationsConnectionFields on OrgConnection {
-                nodes {
-                    ...OrganizationFields
-                }
-                totalCount
-            }
-
-            fragment OrganizationFields on Org {
-                id
-                name
-                displayName
-                createdAt
-                latestSettings {
-                    createdAt
-                    contents
-                }
-                members {
-                    totalCount
-                }
-            }
-        `,
-        {
-            first: args.first ?? null,
-            query: args.query ?? null,
-        }
-    ).pipe(
+    return requestGraphQL<OrganizationsResult, OrganizationsVariables>(ORGANIZATIONS, {
+        first: args.first ?? null,
+        query: args.query ?? null,
+    }).pipe(
         map(dataOrThrowErrors),
         map(data => data.organizations)
     )
@@ -652,26 +649,6 @@ export function createUser(username: string, email: string | undefined): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createUser)
-    )
-}
-
-export function setUserTag(node: string, tag: string, present: boolean = true): Observable<void> {
-    return requestGraphQL<SetUserTagResult, SetUserTagVariables>(
-        gql`
-            mutation SetUserTag($node: ID!, $tag: String!, $present: Boolean!) {
-                setTag(node: $node, tag: $tag, present: $present) {
-                    alwaysNil
-                }
-            }
-        `,
-        { node, tag, present }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.setTag) {
-                throw createInvalidGraphQLMutationResponseError('SetUserTag')
-            }
-        })
     )
 }
 

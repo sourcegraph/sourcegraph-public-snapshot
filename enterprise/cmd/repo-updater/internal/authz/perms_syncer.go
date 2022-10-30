@@ -618,13 +618,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-	//  table, the user has proven that they have read access to the repository.
-	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
-	if err != nil {
-		return errors.Wrap(err, "list external service repo IDs by user ID")
-	}
-
 	// We call this when there are errors communicating with external services so
 	// that we don't have the same user stuck at the front of the queue.
 	tryTouchUserPerms := func() {
@@ -645,9 +638,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
 		IDs:    map[int32]struct{}{},
-	}
-	for i := range repoIDs {
-		p.IDs[int32(repoIDs[i])] = struct{}{}
 	}
 
 	// Looping over two slices individually in order to avoid unnecessary memory allocation.
@@ -700,29 +690,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 		return errors.Wrap(err, "get repository")
 	}
-	var userIDs []int32
-	var provider authz.Provider
-
-	// Only check authz provider for private repositories because we only need to
-	// fetch permissions for private repositories.
-	if repo.Private {
-		// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-		//  table, the user has proven that they have read access to the repository.
-		userIDs, err = s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
-		if err != nil {
-			return errors.Wrap(err, "list external service user IDs by repo ID")
-		}
-
-		// Loop over repository's sources and see if matching any authz provider's URN.
-		providers := s.providersByURNs()
-		for urn := range repo.Sources {
-			p, ok := providers[urn]
-			if ok {
-				provider = p
-				break
-			}
-		}
-	}
 
 	logger := s.logger.Scoped("syncRepoPerms", "processes permissions syncing request in a repo-centric way").With(
 		log.Object("repo",
@@ -734,13 +701,24 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// For non-private repositories, we rely on the fact that the `provider` is
 	// always nil and no user IDs here because we don't restrict access to
 	// non-private repositories.
-	if provider == nil && len(userIDs) == 0 {
+	if !repo.Private {
 		logger.Debug("skipFetchPerms")
 
 		// We have no authz provider configured for the repository.
 		// However, we need to upsert the dummy record in order to
 		// prevent scheduler keep scheduling this repository.
 		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+	}
+
+	var provider authz.Provider
+	// Loop over repository's sources and see if matching any authz provider's URN.
+	providers := s.providersByURNs()
+	for urn := range repo.Sources {
+		p, ok := providers[urn]
+		if ok {
+			provider = p
+			break
+		}
 	}
 
 	pendingAccountIDsSet := make(map[string]struct{})
@@ -837,9 +815,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		UserIDs: map[int32]struct{}{},
 	}
 
-	for i := range userIDs {
-		p.UserIDs[userIDs[i]] = struct{}{}
-	}
 	for aid, uid := range accountIDsToUserIDs {
 		// Add existing user to permissions
 		p.UserIDs[uid] = struct{}{}

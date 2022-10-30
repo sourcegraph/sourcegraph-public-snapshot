@@ -132,10 +132,6 @@ type UserSource interface {
 	ValidateAuthenticator(ctx context.Context) error
 }
 
-type AffiliatedRepositorySource interface {
-	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
-}
-
 // A VersionSource is a source that can query the version of the code host.
 type VersionSource interface {
 	Version(context.Context) (string, error)

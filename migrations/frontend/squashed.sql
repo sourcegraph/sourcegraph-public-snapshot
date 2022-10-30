@@ -1958,8 +1958,6 @@ CREATE TABLE external_service_repos (
     external_service_id bigint NOT NULL,
     repo_id integer NOT NULL,
     clone_url text NOT NULL,
-    user_id integer,
-    org_id integer,
     created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL
 );
 
@@ -2016,15 +2014,12 @@ CREATE TABLE external_services (
     deleted_at timestamp with time zone,
     last_sync_at timestamp with time zone,
     next_sync_at timestamp with time zone,
-    namespace_user_id integer,
     unrestricted boolean DEFAULT false NOT NULL,
     cloud_default boolean DEFAULT false NOT NULL,
     encryption_key_id text DEFAULT ''::text NOT NULL,
-    namespace_org_id integer,
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
-    CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
-    CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
+    CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text))
 );
 
 CREATE VIEW external_service_sync_jobs_with_next_sync_at AS
@@ -3161,7 +3156,6 @@ CREATE TABLE users (
     site_admin boolean DEFAULT false NOT NULL,
     page_views integer DEFAULT 0 NOT NULL,
     search_queries integer DEFAULT 0 NOT NULL,
-    tags text[] DEFAULT '{}'::text[],
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,
@@ -3598,12 +3592,6 @@ CREATE TABLE user_permissions (
     updated_at timestamp with time zone NOT NULL,
     synced_at timestamp with time zone,
     object_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
-);
-
-CREATE TABLE user_public_repos (
-    user_id integer NOT NULL,
-    repo_uri text NOT NULL,
-    repo_id integer NOT NULL
 );
 
 CREATE SEQUENCE users_id_seq
@@ -4212,9 +4200,6 @@ ALTER TABLE ONLY user_pending_permissions
 ALTER TABLE ONLY user_permissions
     ADD CONSTRAINT user_permissions_perm_object_unique UNIQUE (user_id, permission, object_type);
 
-ALTER TABLE ONLY user_public_repos
-    ADD CONSTRAINT user_public_repos_user_id_repo_id_key UNIQUE (user_id, repo_id);
-
 ALTER TABLE ONLY users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 
@@ -4385,21 +4370,9 @@ CREATE INDEX external_service_repos_clone_url_idx ON external_service_repos USIN
 
 CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (external_service_id, repo_id);
 
-CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
-
 CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
-CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
-
 CREATE INDEX external_services_has_webhooks_idx ON external_services USING btree (has_webhooks);
-
-CREATE INDEX external_services_namespace_org_id_idx ON external_services USING btree (namespace_org_id);
-
-CREATE INDEX external_services_namespace_user_id_idx ON external_services USING btree (namespace_user_id);
-
-CREATE UNIQUE INDEX external_services_unique_kind_org_id ON external_services USING btree (kind, namespace_org_id) WHERE ((deleted_at IS NULL) AND (namespace_user_id IS NULL) AND (namespace_org_id IS NOT NULL));
-
-CREATE UNIQUE INDEX external_services_unique_kind_user_id ON external_services USING btree (kind, namespace_user_id) WHERE ((deleted_at IS NULL) AND (namespace_org_id IS NULL) AND (namespace_user_id IS NOT NULL));
 
 CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree (namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
@@ -4850,22 +4823,10 @@ ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY external_service_repos
-    ADD CONSTRAINT external_service_repos_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY external_service_repos
-    ADD CONSTRAINT external_service_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY external_service_sync_jobs
     ADD CONSTRAINT external_services_id_fk FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY external_services
-    ADD CONSTRAINT external_services_namepspace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
-
-ALTER TABLE ONLY external_services
-    ADD CONSTRAINT external_services_namespace_org_id_fkey FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_flag_name_fkey FOREIGN KEY (flag_name) REFERENCES feature_flags(flag_name) ON UPDATE CASCADE ON DELETE CASCADE;
@@ -5016,12 +4977,6 @@ ALTER TABLE ONLY user_emails
 
 ALTER TABLE ONLY user_external_accounts
     ADD CONSTRAINT user_external_accounts_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id);
-
-ALTER TABLE ONLY user_public_repos
-    ADD CONSTRAINT user_public_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY user_public_repos
-    ADD CONSTRAINT user_public_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;

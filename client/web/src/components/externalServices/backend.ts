@@ -13,13 +13,10 @@ import {
     Scalars,
     AddExternalServiceVariables,
     AddExternalServiceResult,
-    ExternalServiceFields,
     DeleteExternalServiceVariables,
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    AffiliatedRepositoriesVariables,
-    AffiliatedRepositoriesResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
@@ -43,12 +40,6 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
-        grantedScopes
-        namespace {
-            id
-            namespaceName
-            url
-        }
     }
 `
 
@@ -119,34 +110,6 @@ export const FETCH_EXTERNAL_SERVICE = gql`
     ${externalServiceFragment}
 `
 
-export function listAffiliatedRepositories(
-    args: AffiliatedRepositoriesVariables
-): Observable<NonNullable<AffiliatedRepositoriesResult>> {
-    return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
-        gql`
-            query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
-                affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
-                    nodes {
-                        name
-                        codeHost {
-                            kind
-                            id
-                            displayName
-                        }
-                        private
-                    }
-                    codeHostErrors
-                }
-            }
-        `,
-        {
-            namespace: args.namespace,
-            codeHost: args.codeHost ?? null,
-            query: args.query ?? null,
-        }
-    ).pipe(map(dataOrThrowErrors))
-}
-
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(
         gql`
@@ -175,17 +138,11 @@ export const listExternalServiceFragment = gql`
         updatedAt
         createdAt
         webhookURL
-        namespace {
-            id
-            namespaceName
-            url
-        }
-        grantedScopes
     }
 `
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
+    query ExternalServices($first: Int, $after: String) {
+        externalServices(first: $first, after: $after) {
             nodes {
                 ...ListExternalServiceFields
             }
@@ -204,46 +161,6 @@ export function queryExternalServices(
     variables: ExternalServicesVariables
 ): Observable<ExternalServicesResult['externalServices']> {
     return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
-}
-
-interface ExternalServicesScopeVariables {
-    namespace: Scalars['ID']
-}
-
-interface ExternalServicesScopeResult {
-    externalServices: {
-        nodes: {
-            id: ExternalServiceFields['id']
-            kind: ExternalServiceFields['kind']
-            grantedScopes: string[]
-        }[]
-    }
-}
-
-export function queryExternalServicesScope(
-    variables: ExternalServicesScopeVariables
-): Observable<ExternalServicesScopeResult['externalServices']> {
-    return requestGraphQL<ExternalServicesScopeResult, ExternalServicesScopeVariables>(
-        gql`
-            query ExternalServicesScopes($namespace: ID!) {
-                externalServices(first: null, after: null, namespace: $namespace) {
-                    nodes {
-                        id
-                        kind
-                        grantedScopes
-                    }
-                }
-            }
-        `,
-        variables
-    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.externalServices || errors) {
                 throw createAggregateError(errors)

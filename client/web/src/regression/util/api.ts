@@ -30,15 +30,15 @@ import {
     SearchPatternType,
     UpdateSiteConfigurationResult,
     SiteResult,
-    OrganizationsConnectionFields,
-    OrganizationsResult,
+    OrganizationsRegressionConnectionFields,
+    OrganizationsRegressionResult,
     CreateOrganizationResult,
     CreateUserResult,
     UpdateExternalServiceResult,
     UpdateExternalServiceVariables,
     ResolveRevResult,
     ResolveRevVariables,
-    OrganizationsVariables,
+    OrganizationsRegressionVariables,
     SettingsCascadeFields,
     ViewerSettingsResult,
     addExternalServiceVariables,
@@ -584,23 +584,23 @@ export function deleteOrganization(
 export function fetchAllOrganizations(
     { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     args: { first?: number; query?: string }
-): Observable<OrganizationsConnectionFields> {
-    return requestGraphQL<OrganizationsResult, OrganizationsVariables>({
+): Observable<OrganizationsRegressionConnectionFields> {
+    return requestGraphQL<OrganizationsRegressionResult, OrganizationsRegressionVariables>({
         request: gql`
-            query Organizations($first: Int, $query: String) {
+            query OrganizationsRegression($first: Int, $query: String) {
                 organizations(first: $first, query: $query) {
-                    ...OrganizationsConnectionFields
+                    ...OrganizationsRegressionConnectionFields
                 }
             }
 
-            fragment OrganizationsConnectionFields on OrgConnection {
+            fragment OrganizationsRegressionConnectionFields on OrgConnection {
                 nodes {
-                    ...OrganizationFields
+                    ...OrganizationRegressionFields
                 }
                 totalCount
             }
 
-            fragment OrganizationFields on Org {
+            fragment OrganizationRegressionFields on Org {
                 id
                 name
                 displayName

@@ -70,7 +70,6 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
         ] as GQL.IOrg[],
     },
-    tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,

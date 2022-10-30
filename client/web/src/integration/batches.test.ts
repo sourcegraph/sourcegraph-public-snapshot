@@ -305,8 +305,6 @@ function mockCommonGraphQLResponses(
                 url: namespaceURL,
                 viewerCanAdminister: true,
                 viewerIsMember: false,
-                viewerPendingInvitation: null,
-                viewerNeedsCodeHostUpdate: false,
             },
         }),
         UserAreaUserProfile: () => ({
@@ -320,7 +318,6 @@ function mockCommonGraphQLResponses(
                 avatarURL: '',
                 viewerCanAdminister: true,
                 builtinAuth: true,
-                tags: [],
             },
         }),
         UserSettingsAreaUserProfile: () => ({
@@ -340,7 +337,6 @@ function mockCommonGraphQLResponses(
                 emails: [{ email: 'alice@example.com', verified: true }],
                 organizations: { nodes: [] },
                 permissionsInfo: null,
-                tags: [],
             },
         }),
         BatchChangeByNamespace: () => ({

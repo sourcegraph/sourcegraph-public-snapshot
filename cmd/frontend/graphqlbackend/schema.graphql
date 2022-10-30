@@ -87,7 +87,7 @@ type Mutation {
 
     Only authenticated users may perform this mutation.
     """
-    createOrganization(name: String!, displayName: String, statsID: ID): Org!
+    createOrganization(name: String!, displayName: String): Org!
     """
     Updates an organization.
 
@@ -343,31 +343,7 @@ type Mutation {
     Only site admins and any member of the organization may perform this mutation.
     """
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
-    """
-    Adds or removes a tag on a user.
 
-    Tags are used internally by Sourcegraph as feature flags for experimental features.
-
-    Only site admins may perform this mutation.
-    """
-    setTag(
-        """
-        The ID of the user whose tags to set.
-
-        (This parameter is named "node" to make it easy to support tagging other types of nodes
-        other than users in the future.)
-        """
-        node: ID!
-        """
-        The tag to set.
-        """
-        tag: String!
-        """
-        The desired state of the tag on the user (whether to add or remove): true to add, false to
-        remove.
-        """
-        present: Boolean!
-    ): EmptyResponse!
     """
     Adds a Phabricator repository to Sourcegraph.
     """
@@ -614,11 +590,6 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    Set the repos synced by an external service
-    """
-    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
     Updates an out-of-band migration to run in a particular direction.
 
     Applied in the forward direction, an out-of-band migration migrates data into a format that
@@ -630,12 +601,6 @@ type Mutation {
     should be applied in reverse prior to downgrading the instance.
     """
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
-
-    """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
-    """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
@@ -771,14 +736,14 @@ type Mutation {
     """
     Enqueues a sync for the external service. It will be picked up in the background.
 
-    Site-admin or owner of the external service only.
+    Site-admin only.
     """
     syncExternalService(id: ID!): EmptyResponse!
 
     """
     Cancels an external service sync job. Must be in queued or processing state.
 
-    Site-admin or owner of the external service only.
+    Site-admin only.
     """
     cancelExternalServiceSync(id: ID!): EmptyResponse!
 
@@ -892,11 +857,6 @@ input AddExternalServiceInput {
     The JSON configuration of the external service.
     """
     config: String!
-    """
-    The namespace this external service belongs to.
-    This can be used both for a user and an organization.
-    """
-    namespace: ID
 }
 
 """
@@ -1227,11 +1187,6 @@ type Query {
     """
     externalServices(
         """
-        The namespace to scope returned external services.
-        Currently, this can only be used for a user.
-        """
-        namespace: ID
-        """
         Returns the first n external services from the list.
         """
         first: Int
@@ -1362,6 +1317,10 @@ type Query {
         """
         first: Int
         """
+        Returns organizations from the given opaque cursor on.
+        """
+        after: String
+        """
         Return organizations whose names or display names match the query.
         """
         query: String
@@ -1489,17 +1448,6 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
-    but ones that the configured code hosts are able to see.
-    """
-    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
-
-    """
-    Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
-    """
-    codeHostSyncDue(ids: [ID!]!, seconds: Int!): Boolean!
-
-    """
     Retrieve all registered out-of-band migrations.
     """
     outOfBandMigrations: [OutOfBandMigration!]!
@@ -1613,16 +1561,6 @@ type Query {
         """
         query: String!
     ): [AutocompleteMemberSearchItem!]!
-
-    """
-    Get started organization summary
-    """
-    orgMembersSummary(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): OrgMembersSummary!
 
     """
     Lists webhooks. Only available to site admins.
@@ -2411,11 +2349,6 @@ type ExternalService implements Node {
     updatedAt: DateTime!
 
     """
-    The namespace this external service belongs to.
-    """
-    namespace: Namespace
-
-    """
     The number of repos synced by the external service.
     """
     repoCount: Int!
@@ -2452,15 +2385,6 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
-    Returns a list of scopes granted by the code host. It is based on the token used
-    when configuring the external service.
-
-    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
-    so it should be used sparingly.
-    """
-    grantedScopes: [String!]
-
-    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
@@ -2491,20 +2415,6 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
-
-    """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories included by this external service, and is derived from commit history (because that
-    for example gives more accurate collaborator work email addresses than the contributors API which
-    often returns personal emails.
-
-    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
-    inviting collaborators while repositories are cloning.
-
-    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
-    reaches out to the code host directly which is wasteful if repositories are already cloned.
-    """
-    invitableCollaborators: [Person!]!
 
     """
     The list of recent sync jobs for this external service.
@@ -5112,11 +5022,6 @@ type User implements Node & SettingsSubject & Namespace {
     """
     organizationMemberships: OrganizationMembershipConnection!
     """
-    Tags associated with the user. These are used for internal site management and feature selection.
-    Only the user and site admins can access this field.
-    """
-    tags: [String!]!
-    """
     Whether the user has already accepted the terms of service or not.
     """
     tosAccepted: Boolean!
@@ -5198,17 +5103,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-
-    """
-    publicRepositories returns the repos listed in user_public_repos for this user
-    """
-    publicRepositories: [Repository!]!
-
-    """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories this user has access to, and is derived from recent commit history of those.
-    """
-    invitableCollaborators: [Person!]!
 }
 
 """
@@ -5474,6 +5368,7 @@ type OrgConnection {
     than the number of nodes in this object when the result is paginated.
     """
     totalCount: Int!
+    pageInfo: PageInfo!
 }
 
 """
@@ -5535,10 +5430,6 @@ type Org implements Node & SettingsSubject & Namespace {
     Whether the viewer is a member of this organization.
     """
     viewerIsMember: Boolean!
-    """
-    Whether the viewer needs to update their code host connection.
-    """
-    viewerNeedsCodeHostUpdate: Boolean!
     """
     The URL to the organization.
     """
@@ -5650,24 +5541,6 @@ type AutocompleteMemberSearchItem {
     If the user belongs to current Organization.
     """
     inOrg: Boolean
-}
-
-"""
-Result organization members count and pending invitations count.
-"""
-type OrgMembersSummary {
-    """
-    The unique ID for the Org.
-    """
-    id: ID!
-    """
-    Total number of members for the org.
-    """
-    membersCount: Int!
-    """
-    Total number of pending invites for the org.
-    """
-    invitesCount: Int!
 }
 
 """

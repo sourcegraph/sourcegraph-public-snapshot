@@ -2,8 +2,6 @@ import { AuthenticatedUser } from '../../auth'
 import { SavedSearchesPanelFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
-import { InvitableCollaborator } from './CollaboratorsPanel'
-
 type SavedSearchPanelFields = NonNullable<SavedSearchesPanelFragment['savedSearches']>[number]
 type NameSpaceOrg = Extract<SavedSearchPanelFields['namespace'], { __typename: 'Org' }>
 type NameSpaceUser = Extract<SavedSearchPanelFields['namespace'], { __typename: 'User' }>
@@ -25,7 +23,6 @@ export const authUser: AuthenticatedUser & NameSpaceUser = {
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
         ] as AuthenticatedUser['organizations']['nodes'],
     },
-    tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
     tosAccepted: true,
@@ -316,42 +313,3 @@ export const recentFilesPayload = (): EventLogResult => ({
     totalCount: 500,
     pageInfo: { hasNextPage: true },
 })
-
-export const collaboratorsPayload: () => InvitableCollaborator[] = () => [
-    {
-        email: 'hello@philippspiess.com',
-        displayName: 'Philipp Spiess',
-        name: 'Philipp Spiess',
-        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-    },
-    {
-        email: 'hello@philippspiess.com',
-        displayName: 'Philipp Spiess',
-        name: 'Philipp Spiess',
-        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-    },
-    {
-        email: 'hello@philippspiess.com',
-        displayName: 'Philipp Spiess',
-        name: 'Philipp Spiess',
-        avatarURL: 'https://avatars.githubusercontent.com/u/458591?v=4',
-    },
-    {
-        email: 'hello@nicolasdular.com',
-        displayName: 'Nicolas Dular',
-        name: 'Nicolas Dular',
-        avatarURL: 'https://avatars.githubusercontent.com/u/890544?v=4',
-    },
-    {
-        email: 'mario.telesklav@gmx.at',
-        displayName: 'Mario Telesklav',
-        name: 'Mario Telesklav',
-        avatarURL: 'https://avatars.githubusercontent.com/u/3846403?v=4',
-    },
-    {
-        email: 'gluastoned@gmail.com',
-        displayName: 'Gregor Steiner',
-        name: 'Gregor Steiner',
-        avatarURL: 'https://avatars.githubusercontent.com/u/173158?v=4',
-    },
-]

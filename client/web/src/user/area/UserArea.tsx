@@ -45,12 +45,11 @@ export const UserAreaGQLFragment = gql`
         avatarURL
         viewerCanAdminister
         builtinAuth
-        tags @include(if: $siteAdmin)
     }
 `
 
 export const USER_AREA_USER_PROFILE = gql`
-    query UserAreaUserProfile($username: String!, $siteAdmin: Boolean!) {
+    query UserAreaUserProfile($username: String!) {
         user(username: $username) {
             ...UserAreaUserFields
         }
@@ -136,7 +135,7 @@ export const UserArea: React.FunctionComponent<React.PropsWithChildren<UserAreaP
     const { data, error, loading, previousData } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(
         USER_AREA_USER_PROFILE,
         {
-            variables: { username, siteAdmin: Boolean(props.authenticatedUser?.siteAdmin) },
+            variables: { username },
         }
     )
 

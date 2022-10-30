@@ -6,17 +6,6 @@ import { gql } from '@sourcegraph/http-client'
 //  - https://blackdeerdev.com/graphqlerror-syntax-error-unexpected-name-undefined/
 //  - https://spectrum.chat/apollo/general/fragments-not-working-cross-files-in-mutation~c4e90568-f89a-458f-9810-0730846fc5f0
 
-export const collaboratorsFragment = gql`
-    fragment CollaboratorsFragment on User {
-        collaborators: invitableCollaborators @include(if: $enableCollaborators) {
-            name
-            email
-            displayName
-            avatarURL
-        }
-    }
-`
-
 export const recentFilesFragment = gql`
     fragment RecentFilesFragment on User {
         recentFilesLogs: eventLogs(first: $firstRecentFiles, eventName: "ViewBlob") {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -19,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -96,18 +93,6 @@ func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
 
 func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
-}
-
-func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.externalService.NamespaceUserID == 0 {
-		return nil, nil
-	}
-	userID := MarshalUserID(r.externalService.NamespaceUserID)
-	n, err := NamespaceByID(ctx, r.db, userID)
-	if err != nil {
-		return nil, err
-	}
-	return &NamespaceResolver{n}, nil
 }
 
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
@@ -187,22 +172,6 @@ func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
 		return nil
 	}
 	return &gqlutil.DateTime{Time: r.externalService.NextSyncAt}
-}
-
-var scopeCache = rcache.New("extsvc_token_scope")
-
-func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, r.logger.Scoped("GrantedScopes", ""), scopeCache, r.db, r.externalService)
-	if err != nil {
-		// It's possible that we fail to fetch scope from the code host, in this case we
-		// don't want the entire resolver to fail.
-		log15.Error("Getting service scope", "id", r.externalService.ID, "error", err)
-		return nil, nil
-	}
-	if scopes == nil {
-		return nil, nil
-	}
-	return &scopes, nil
 }
 
 func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {

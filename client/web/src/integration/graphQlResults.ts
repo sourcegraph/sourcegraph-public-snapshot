@@ -72,7 +72,6 @@ export const commonWebGraphQlResults: Partial<
             email: 'felix@sourcegraph.com',
             displayName: null,
             siteAdmin: true,
-            tags: [],
             tosAccepted: true,
             url: '/users/test',
             settingsURL: '/users/test/settings',
@@ -187,16 +186,8 @@ export const commonWebGraphQlResults: Partial<
             pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
-    ExternalServicesScopes: () => ({
-        externalServices: {
-            nodes: [],
-        },
-    }),
     EvaluateFeatureFlag: () => ({
         evaluateFeatureFlag: false,
-    }),
-    OrgFeatureFlagValue: () => ({
-        organizationFeatureFlagValue: false,
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],

@@ -23,27 +23,16 @@ import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumb
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import {
-    OrganizationResult,
-    OrganizationVariables,
-    OrgAreaOrganizationFields,
-    OrgFeatureFlagValueResult,
-    OrgFeatureFlagValueVariables,
-} from '../../graphql-operations'
+import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteDescriptor } from '../../util/contributions'
-import { ORG_CODE_FEATURE_FLAG_EMAIL_INVITE } from '../backend'
 import { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
 import { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: {
-    name: string
-    // id: string
-    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-}): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -71,7 +60,6 @@ function queryOrganization(args: {
                 }
                 viewerIsMember
                 viewerCanAdminister
-                viewerNeedsCodeHostUpdate
                 createdAt
             }
         `,
@@ -84,20 +72,6 @@ function queryOrganization(args: {
             }
             return data.organization
         })
-    )
-}
-
-function queryMembersFFlag(args: { orgID: string; flagName: string }): Observable<boolean> {
-    return requestGraphQL<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        gql`
-            query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
-                organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.organizationFeatureFlagValue)
     )
 }
 
@@ -137,7 +111,6 @@ interface State extends BreadcrumbSetters {
      * The fetched org or an error if an error occurred; undefined while loading.
      */
     orgOrError?: OrgAreaOrganizationFields | ErrorLike
-    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -166,8 +139,6 @@ export interface OrgAreaRouteContext
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
-
-    newMembersInviteEnabled: boolean
 }
 
 /**
@@ -185,7 +156,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
         this.state = {
             setBreadcrumb: props.setBreadcrumb,
             useBreadcrumb: props.useBreadcrumb,
-            newMembersInviteEnabled: false,
         }
     }
 
@@ -211,25 +181,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                         )
                     })
                 )
-                .pipe(
-                    switchMap(state => {
-                        const flagObservable =
-                            state.orgOrError && !isErrorLike(state.orgOrError)
-                                ? queryMembersFFlag({
-                                      orgID: state.orgOrError.id,
-                                      flagName: ORG_CODE_FEATURE_FLAG_EMAIL_INVITE,
-                                  })
-                                : of(false)
-                        return flagObservable.pipe(
-                            catchError((): [boolean] => [false]), // set flag to false in case of error reading it
-                            map(newMembersInviteEnabled =>
-                                !state.orgOrError
-                                    ? { newMembersInviteEnabled }
-                                    : { orgOrError: state.orgOrError, newMembersInviteEnabled }
-                            )
-                        )
-                    })
-                )
                 .subscribe(
                     stateUpdate => {
                         if (stateUpdate.orgOrError && !isErrorLike(stateUpdate.orgOrError)) {
@@ -242,7 +193,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
                                 useBreadcrumb: childBreadcrumbSetters.useBreadcrumb,
                                 setBreadcrumb: childBreadcrumbSetters.setBreadcrumb,
                                 orgOrError: stateUpdate.orgOrError,
-                                newMembersInviteEnabled: stateUpdate.newMembersInviteEnabled,
                             })
                         } else {
                             this.setState(stateUpdate)
@@ -294,7 +244,6 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
-            newMembersInviteEnabled: this.state.newMembersInviteEnabled,
             orgSettingsAreaRoutes: this.props.orgSettingsAreaRoutes,
             orgSettingsSideBarItems: this.props.orgSettingsSideBarItems,
         }

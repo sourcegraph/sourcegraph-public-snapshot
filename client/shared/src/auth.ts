@@ -13,7 +13,6 @@ export const currentAuthStateQuery = gql`
             email
             displayName
             siteAdmin
-            tags
             url
             settingsURL
             organizations {
@@ -29,7 +28,6 @@ export const currentAuthStateQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
-            tags
             tosAccepted
             searchable
             emails {

@@ -108,11 +108,6 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     public render(): JSX.Element | null {
-        const orgCreationLabel =
-            window.context.sourcegraphDotComMode && this.props.node.tags?.includes(CREATE_ORG_TAG)
-                ? 'Disable'
-                : 'Enable'
-
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
@@ -128,31 +123,14 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
                     <div>
-                        {window.context.sourcegraphDotComMode && (
-                            <>
-                                <Tooltip content={`${orgCreationLabel} user tag to allow user to create organizations`}>
-                                    <Button
-                                        onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
-                                        disabled={this.state.loading}
-                                        variant="secondary"
-                                        size="sm"
-                                    >
-                                        {orgCreationLabel} org creation
-                                    </Button>
-                                </Tooltip>{' '}
-                            </>
-                        )}
-                        {!window.context.sourcegraphDotComMode && (
-                                <Button
-                                    to={`${userURL(this.props.node.username)}/settings`}
-                                    variant="secondary"
-                                    size="sm"
-                                    as={Link}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                                </Button>
-                            ) &&
-                            ' '}
+                        <Button
+                            to={`${userURL(this.props.node.username)}/settings`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
                             <Tooltip content="Force the user to re-authenticate on their next request">
                                 <Button

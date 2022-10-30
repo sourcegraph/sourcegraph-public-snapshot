@@ -279,7 +279,6 @@ Policies.args = {
         email: 'string',
         displayName: 'string',
         siteAdmin: true,
-        tags: [],
         url: 'string',
         settingsURL: 'string',
         viewerCanAdminister: true,

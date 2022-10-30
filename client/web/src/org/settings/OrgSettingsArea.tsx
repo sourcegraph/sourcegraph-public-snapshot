@@ -4,7 +4,6 @@ import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { useQuery } from '@sourcegraph/http-client'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -12,14 +11,9 @@ import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import {
-    OrgAreaOrganizationFields,
-    OrgFeatureFlagValueResult,
-    OrgFeatureFlagValueVariables,
-} from '../../graphql-operations'
+import { OrgAreaOrganizationFields } from '../../graphql-operations'
 import { RouteDescriptor } from '../../util/contributions'
 import { OrgAreaRouteContext } from '../area/OrgArea'
-import { GET_ORG_FEATURE_FLAG_VALUE, ORG_DELETION_FEATURE_FLAG_NAME } from '../backend'
 
 import { OrgSettingsSidebar, OrgSettingsSidebarItems } from './OrgSettingsSidebar'
 
@@ -43,7 +37,6 @@ export interface OrgSettingsAreaProps extends OrgAreaRouteContext, RouteComponen
 
 export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
     org: OrgAreaOrganizationFields
-    showOrgDeletion: boolean
 }
 
 /**
@@ -53,18 +46,8 @@ export interface OrgSettingsAreaRouteContext extends OrgSettingsAreaProps {
 export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
     React.PropsWithChildren<OrgSettingsAreaProps>
 > = props => {
-    const orgDeletionFlag = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
-        GET_ORG_FEATURE_FLAG_VALUE,
-        {
-            variables: { orgID: props.org.id, flagName: ORG_DELETION_FEATURE_FLAG_NAME },
-            fetchPolicy: 'cache-and-network',
-            skip: !props.authenticatedUser || !props.org.id,
-        }
-    )
-
     const context: OrgSettingsAreaRouteContext = {
         ...props,
-        showOrgDeletion: orgDeletionFlag.data?.organizationFeatureFlagValue || false,
     }
 
     return (

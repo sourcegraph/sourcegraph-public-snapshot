@@ -5,12 +5,12 @@ import * as H from 'history'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
+import { ListExternalServiceFields, ExternalServicesResult } from '../../graphql-operations'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { PageTitle } from '../PageTitle'
 
@@ -24,7 +24,6 @@ interface Props extends TelemetryProps {
     location: H.Location
     routingPrefix: string
     afterDeleteRoute: string
-    userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
 
     externalServicesFromFile: boolean
@@ -42,9 +41,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     history,
     location,
     routingPrefix,
-    userID,
     telemetryService,
-    authenticatedUser,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
@@ -60,9 +57,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
             queryExternalServices({
                 first: args.first ?? null,
                 after: args.after ?? null,
-                namespace: userID ?? null,
             }),
-        [userID, queryExternalServices]
+        [queryExternalServices]
     )
 
     const [noExternalServices, setNoExternalServices] = useState<boolean>(false)
@@ -76,11 +72,10 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
 
     const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
 
-    const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
-
-    if (!isManagingOtherUser && noExternalServices) {
+    if (noExternalServices) {
         return <Redirect to={`${routingPrefix}/external-services/new`} />
     }
+
     return (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
@@ -89,19 +84,15 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 description="Manage code host connections to sync repositories."
                 headingElement="h2"
                 actions={
-                    <>
-                        {!isManagingOtherUser && (
-                            <ButtonLink
-                                className="test-goto-add-external-service-page"
-                                to={`${routingPrefix}/external-services/new`}
-                                variant="primary"
-                                as={Link}
-                                disabled={editingDisabled}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                            </ButtonLink>
-                        )}
-                    </>
+                    <ButtonLink
+                        className="test-goto-add-external-service-page"
+                        to={`${routingPrefix}/external-services/new`}
+                        variant="primary"
+                        as={Link}
+                        disabled={editingDisabled}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                    </ButtonLink>
                 }
                 className="mb-3"
             />

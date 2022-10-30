@@ -57,10 +57,9 @@ type GitHubSource struct {
 }
 
 var (
-	_ Source                     = &GitHubSource{}
-	_ UserSource                 = &GitHubSource{}
-	_ AffiliatedRepositorySource = &GitHubSource{}
-	_ VersionSource              = &GitHubSource{}
+	_ Source        = &GitHubSource{}
+	_ UserSource    = &GitHubSource{}
+	_ VersionSource = &GitHubSource{}
 )
 
 // NewGithubSource returns a new GitHubSource from the given external service.
@@ -198,26 +197,24 @@ func newGithubSource(
 		useGitHubApp = true
 	}
 
-	if svc.IsSiteOwned() {
-		for resource, monitor := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			// Copy the resource or funcs below will use the last one seen while iterating
-			// the map
-			resource := resource
-			// Copy displayName so that the funcs below don't capture the svc pointer
-			displayName := svc.DisplayName
-			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
-				},
-				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
-				},
-			})
-		}
+	for resource, monitor := range map[string]*ratelimit.Monitor{
+		"rest":    v3Client.RateLimitMonitor(),
+		"graphql": v4Client.RateLimitMonitor(),
+		"search":  searchClient.RateLimitMonitor(),
+	} {
+		// Copy the resource or funcs below will use the last one seen while iterating
+		// the map
+		resource := resource
+		// Copy displayName so that the funcs below don't capture the svc pointer
+		displayName := svc.DisplayName
+		monitor.SetCollector(&ratelimit.MetricsCollector{
+			Remaining: func(n float64) {
+				githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
+			},
+			WaitDuration: func(n time.Duration) {
+				githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
+			},
+		})
 	}
 
 	return &GitHubSource{
@@ -969,53 +966,4 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 	}
 
 	return nil
-}
-
-func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
-	var (
-		repos []*github.Repository
-		page  = 1
-		cost  int
-		err   error
-	)
-	defer func() {
-		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-		s.logger.Debug(
-			"github sync: ListAffiliated",
-			log.Int("repos", len(repos)),
-			log.Int("rateLimitCost", cost),
-			log.Int("rateLimitRemaining", remaining),
-			log.Duration("rateLimitReset", reset),
-			log.Duration("retryAfter", retry),
-		)
-	}()
-	out := make([]types.CodeHostRepository, 0)
-	hasNextPage := true
-	for hasNextPage {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-
-		var repos []*github.Repository
-		if s.useGitHubApp {
-			repos, hasNextPage, _, err = s.v3Client.ListInstallationRepositories(ctx, page)
-		} else {
-			repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page)
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		for _, repo := range repos {
-			out = append(out, types.CodeHostRepository{
-				Name:       repo.NameWithOwner,
-				Private:    repo.IsPrivate,
-				CodeHostID: s.svc.ID,
-			})
-		}
-		page++
-	}
-	return out, nil
 }

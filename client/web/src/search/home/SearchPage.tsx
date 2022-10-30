@@ -53,8 +53,6 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchPageProps>> = props => {
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
-    const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
-    const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -72,11 +70,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
-            <div
-                className={classNames(styles.panelsContainer, {
-                    [styles.panelsContainerWithCollaborators]: showCollaborators,
-                })}
-            >
+            <div className={styles.panelsContainer}>
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
                 {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
                     <TipsAndTricks
@@ -90,9 +84,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     />
                 )}
 
-                {showEnterpriseHomePanels && props.authenticatedUser && (
-                    <HomePanels showCollaborators={showCollaborators} {...props} />
-                )}
+                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
 
                 {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
                     <QueryExamplesHomepage

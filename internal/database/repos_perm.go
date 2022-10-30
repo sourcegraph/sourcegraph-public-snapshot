@@ -99,17 +99,6 @@ OR  (                             -- Restricted repositories require checking pe
 		SELECT
 		FROM external_service_repos
 		WHERE repo_id = repo.id
-		AND (
-				(user_id IS NULL AND org_id IS NULL)  -- The repository was added at the instance level
-			OR  user_id = %s                          -- The authenticated user added this repository
-			OR  EXISTS (                              -- The authenticated user is a member of an organization that added this repository
-				SELECT
-				FROM org_members
-				WHERE
-					external_service_repos.org_id = org_members.org_id
-				AND org_members.user_id = %s
-			)
-		)
 	)
 )
 )
@@ -120,7 +109,5 @@ OR  (                             -- Restricted repositories require checking pe
 		usePermissionsUserMapping,
 		authenticatedUserID,
 		perms.String(),
-		authenticatedUserID,
-		authenticatedUserID,
 	)
 }
