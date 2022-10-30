@@ -60,7 +60,7 @@ const migratorImageDescriptionPrefix = "/schema-descriptions"
 func LocalExpectedSchemaFactory(filename, version string) (string, descriptions.SchemaDescription, error) {
 	path, err := makeFilePath(filename, version)
 	if err != nil {
-		return "{file://{UNSUPPORTED_VERSION}", descriptions.SchemaDescription{}, err
+		return "file://{UNSUPPORTED_VERSION}", descriptions.SchemaDescription{}, err
 	}
 
 	schemaDescription, err := readSchemaFromFile(filepath.Join(migratorImageDescriptionPrefix, path))
