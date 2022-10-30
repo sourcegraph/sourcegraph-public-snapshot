@@ -14,7 +14,7 @@ function fuzzyMatches(query: string, values: string[]): string[] {
     }
 
     const results = fuzzy.search({ query, maxResults: 100 })
-    return results.links.map(link => link.text)
+    return results.links.flatMap(({ sections }) => sections).map(section => section.text)
 }
 
 function checkFuzzyMatches(name: string, query: string, inputs: string[], expected: string[]): void {
