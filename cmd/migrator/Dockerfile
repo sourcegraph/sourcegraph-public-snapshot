@@ -15,3 +15,4 @@ RUN apk update && apk add --no-cache \
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/migrator"]
 COPY migrator /usr/local/bin/
+COPY schema-descriptions /schema-descriptions

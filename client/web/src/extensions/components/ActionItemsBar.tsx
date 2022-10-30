@@ -392,42 +392,36 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} ${panelName} panel`}>
-                        {/*
-                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
-                         * break its onClick handler, and it will no longer prevent the default page reload (with no href).
-                         */}
-                        <span>
-                            <ButtonLink
-                                aria-label={
-                                    isOpen
-                                        ? `Close ${panelName} panel. Press the down arrow key to enter the ${panelName} panel.`
-                                        : `Open ${panelName} panel`
-                                }
-                                className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
-                                onSelect={toggle}
-                                ref={toggleReference}
-                            >
-                                {!haveExtensionsLoaded ? (
-                                    <LoadingSpinner />
-                                ) : isOpen ? (
-                                    <Icon
-                                        data-testid="action-items-toggle-open"
-                                        aria-hidden={true}
-                                        svgPath={mdiChevronDoubleUp}
-                                    />
-                                ) : (
-                                    <Icon
-                                        aria-hidden={true}
-                                        svgPath={
-                                            window.context.enableLegacyExtensions
-                                                ? mdiPuzzleOutline
-                                                : mdiChevronDoubleDown
-                                        }
-                                    />
-                                )}
-                                {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
-                            </ButtonLink>
-                        </span>
+                        <ButtonLink
+                            aria-label={
+                                isOpen
+                                    ? `Close ${panelName} panel. Press the down arrow key to enter the ${panelName} panel.`
+                                    : `Open ${panelName} panel`
+                            }
+                            className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
+                            onSelect={toggle}
+                            ref={toggleReference}
+                        >
+                            {!haveExtensionsLoaded ? (
+                                <LoadingSpinner />
+                            ) : isOpen ? (
+                                <Icon
+                                    data-testid="action-items-toggle-open"
+                                    aria-hidden={true}
+                                    svgPath={mdiChevronDoubleUp}
+                                />
+                            ) : (
+                                <Icon
+                                    aria-hidden={true}
+                                    svgPath={
+                                        window.context.enableLegacyExtensions
+                                            ? mdiPuzzleOutline
+                                            : mdiChevronDoubleDown
+                                    }
+                                />
+                            )}
+                            {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
+                        </ButtonLink>
                     </Tooltip>
                 </div>
             </li>

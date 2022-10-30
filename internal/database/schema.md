@@ -881,12 +881,31 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 **updated_at**: Time when lockfile index was updated
 
+# Table "public.codeintel_path_rank_inputs"
+```
+     Column      |  Type   | Collation | Nullable |                        Default                         
+-----------------+---------+-----------+----------+--------------------------------------------------------
+ id              | bigint  |           | not null | nextval('codeintel_path_rank_inputs_id_seq'::regclass)
+ graph_key       | text    |           | not null | 
+ input_filename  | text    |           | not null | 
+ repository_name | text    |           | not null | 
+ payload         | jsonb   |           | not null | 
+ processed       | boolean |           | not null | false
+Indexes:
+    "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
+    "codeintel_path_rank_graph_key_id_repository_name_processed" btree (graph_key, id, repository_name) WHERE NOT processed
+
+```
+
+Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.
+
 # Table "public.codeintel_path_ranks"
 ```
     Column     |  Type   | Collation | Nullable | Default 
 ---------------+---------+-----------+----------+---------
  repository_id | integer |           | not null | 
- payload       | text    |           | not null | 
+ payload       | jsonb   |           | not null | 
 Indexes:
     "codeintel_path_ranks_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
 
@@ -1065,6 +1084,8 @@ Indexes:
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
     "event_logs_user_id" btree (user_id)
+    "event_logs_user_id_name" btree (user_id, name)
+    "event_logs_user_id_timestamp" btree (user_id, "timestamp")
 Check constraints:
     "event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "event_logs_check_name_not_empty" CHECK (name <> ''::text)

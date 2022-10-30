@@ -6,7 +6,6 @@ import shallow from 'zustand/shallow'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -20,8 +19,7 @@ import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearc
 import { useRecentSearches } from './useRecentSearches'
 
 interface Props
-    extends ActivationProps,
-        SettingsCascadeProps,
+    extends SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -73,13 +71,12 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             submitSearch({
                 history: props.history,
                 source: 'nav',
-                activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec, addRecentSearch]
+        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(

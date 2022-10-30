@@ -97,7 +97,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    smartSearchEnabled: smartSearchEnabled,
     prefetchFile,
     prefetchFileEnabled,
 }) => {
@@ -114,7 +113,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
             if (
-                smartSearchEnabled &&
                 !(
                     results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results'
@@ -124,7 +122,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             }
 
             if (
-                smartSearchEnabled &&
                 (results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
@@ -139,7 +136,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, smartSearchEnabled]
+        [telemetryService, results]
     )
 
     const renderResult = useCallback(

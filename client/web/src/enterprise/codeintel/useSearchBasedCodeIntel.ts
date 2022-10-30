@@ -11,11 +11,13 @@ import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extension
 import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { getWebGraphQLClient } from '../backend/graphql'
-import { CodeIntelSearch2Variables } from '../graphql-operations'
+import { getWebGraphQLClient } from '../../backend/graphql'
+import { Location, buildSearchBasedLocation, split } from '../../codeintel/location'
+import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from '../../codeintel/ReferencesPanelQueries'
+import { SettingsGetter } from '../../codeintel/settings'
+import { isDefined } from '../../codeintel/util/helpers'
+import { CodeIntelSearch2Variables } from '../../graphql-operations'
 
-import { Location, buildSearchBasedLocation, split } from './location'
-import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from './ReferencesPanelQueries'
 import {
     definitionQuery,
     isExternalPrivateSymbol,
@@ -25,9 +27,7 @@ import {
     searchResultToResults,
     searchWithFallback,
 } from './searchBased'
-import { SettingsGetter } from './settings'
 import { sortByProximity } from './sort'
-import { isDefined } from './util/helpers'
 
 type LocationHandler = (locations: Location[]) => void
 
