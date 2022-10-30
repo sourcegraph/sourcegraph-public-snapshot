@@ -121,6 +121,9 @@ type OrgsListOptions struct {
 	// Query specifies a search query for organizations.
 	Query string
 
+	// UserID, if set, filters the result set to orgs the user is part of.
+	UserID int32
+
 	*LimitOffset
 }
 
@@ -134,6 +137,9 @@ func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
 		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
+	}
+	if opt.UserID != 0 {
+		// todo: implement.
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
@@ -178,7 +184,7 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 	newOrg.UpdatedAt = newOrg.CreatedAt
 	err = tx.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
+		sqlf.Sprintf("INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES(%s, %s, %s, %s) RETURNING id",
 			newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt)).Scan(&newOrg.ID)
 	if err != nil {
 		var e *pgconn.PgError

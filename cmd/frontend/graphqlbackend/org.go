@@ -2,20 +2,17 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -25,44 +22,13 @@ import (
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
 	org, err := r.db.Orgs().GetByName(ctx, args.Name)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
-		hasAccess := func() error {
-			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
-				return nil
-			}
 
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
-				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
-				if err == nil {
-					return nil
-				}
-			}
-
-			// NOTE: We want to present a unified error to unauthorized users to prevent
-			// them from differentiating service states by different error messages.
-			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
-		}
-		if err := hasAccess(); err != nil {
-			// site admin can access org ID
-			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-				onlyOrgID := &types.Org{ID: org.ID}
-				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
-			}
-			return nil, err
-		}
-	}
 	return &OrgResolver{db: r.db, org: org}, nil
-}
-
-// Deprecated: Org is only in use by sourcegraph/src. Use Node to look up an
-// org by its graphql.ID instead.
-func (r *schemaResolver) Org(ctx context.Context, args *struct {
-	ID graphql.ID
-}) (*OrgResolver, error) {
-	return OrgByID(ctx, r.db, args.ID)
 }
 
 func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, error) {
@@ -74,30 +40,12 @@ func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, 
 }
 
 func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
-	return orgByIDInt32WithForcedAccess(ctx, db, orgID, false)
-}
-
-func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	//              And all invited users by email
-	if !forceAccess && envvar.SourcegraphDotComMode() {
-		err := auth.CheckOrgAccess(ctx, db, orgID)
-		if err != nil {
-			hasAccess := false
-			// allow invited user to view org details
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
-				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
-				if err == nil {
-					hasAccess = true
-				}
-			}
-			if !hasAccess {
-				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
-			}
-		}
-	}
 	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
+		// TODO: Validate this doesn't break anything.
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &OrgResolver{db, org}, nil
@@ -155,6 +103,7 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	}
 	users := make([]*types.User, len(memberships))
 	for i, membership := range memberships {
+		// TODO: N+1.
 		user, err := o.db.Users().GetByID(ctx, membership.UserID)
 		if err != nil {
 			return nil, err
@@ -169,7 +118,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
+	// 🚨 SECURITY: Only organization members and site admins may access the settings,
 	// because they may contain secrets or other sensitive data.
 	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
@@ -190,25 +139,6 @@ func (o *OrgResolver) SettingsCascade() *settingsCascade {
 }
 
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
-
-func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
-		if errcode.IsNotFound(err) {
-			return nil, nil
-		}
-		if err != nil {
-			// ignore expired invitations, otherwise error is returned
-			// for all users who have an expired invitation on record
-			if _, ok := err.(database.OrgInvitationExpiredErr); ok {
-				return nil, nil
-			}
-			return nil, err
-		}
-		return &organizationInvitationResolver{o.db, orgInvitation}, nil
-	}
-	return nil, nil
-}
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == auth.ErrNotAuthenticated || err == auth.ErrNotAnOrgMember {
@@ -233,48 +163,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return false, nil
-	}
-	enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
-	if err != nil {
-		return false, err
-	} else if !enabled {
-		return false, nil
-	}
-	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
-		return false, nil
-	}
-	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
-	if err != nil {
-		return false, err
-	}
-	if len(orgServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: actor.UID})
-	if err != nil {
-		return false, err
-	}
-	if len(userServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	for _, os := range orgServices {
-		for _, us := range userServices {
-			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
-				if os.CreatedAt.After(us.UpdatedAt) {
-					return true, nil
-				}
-			}
-		}
-	}
-	return false, nil
-}
-
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -286,7 +174,6 @@ func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesAr
 func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
-	StatsID     *string
 }) (*OrgResolver, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
@@ -299,15 +186,6 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
 	if err != nil {
 		return nil, err
-	}
-
-	// Write the org_id into orgs open beta stats table on Cloud
-	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
-		// we do not throw errors here as this is best effort
-		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
-		if err != nil {
-			log15.Warn("Cannot update orgs open beta stats", "id", *args.StatsID, "orgID", newOrg.ID, "error", err)
-		}
 	}
 
 	// Add the current user as the first member of the new org.
@@ -402,12 +280,6 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, errors.Errorf("Must be a member of the organization to add members", err)
-		}
-	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

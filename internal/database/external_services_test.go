@@ -41,18 +41,14 @@ import (
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name                 string
-		noNamespace          bool
-		excludeNamespaceUser bool
-		namespaceUserID      int32
-		namespaceOrgID       int32
-		kinds                []string
-		afterID              int64
-		updatedAfter         time.Time
-		wantQuery            string
-		onlyCloudDefault     bool
-		includeDeleted       bool
-		wantArgs             []any
+		name             string
+		kinds            []string
+		afterID          int64
+		updatedAfter     time.Time
+		wantQuery        string
+		onlyCloudDefault bool
+		includeDeleted   bool
+		wantArgs         []any
 	}{
 		{
 			name:      "no condition",
@@ -69,30 +65,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
 			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
 			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub, extsvc.KindGitLab})},
-		},
-		{
-			name:            "has namespace user ID",
-			namespaceUserID: 1,
-			wantQuery:       "deleted_at IS NULL AND namespace_user_id = $1",
-			wantArgs:        []any{int32(1)},
-		},
-		{
-			name:           "has namespace org ID",
-			namespaceOrgID: 1,
-			wantQuery:      "deleted_at IS NULL AND namespace_org_id = $1",
-			wantArgs:       []any{int32(1)},
-		},
-		{
-			name:            "want no namespace",
-			noNamespace:     true,
-			namespaceUserID: 1,
-			namespaceOrgID:  42,
-			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NULL",
-		},
-		{
-			name:                 "want exclude namespace user",
-			excludeNamespaceUser: true,
-			wantQuery:            "deleted_at IS NULL AND namespace_user_id IS NULL",
 		},
 		{
 			name:      "has after ID",
@@ -120,15 +92,11 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
-				NoNamespace:          test.noNamespace,
-				ExcludeNamespaceUser: test.excludeNamespaceUser,
-				NamespaceUserID:      test.namespaceUserID,
-				NamespaceOrgID:       test.namespaceOrgID,
-				Kinds:                test.kinds,
-				AfterID:              test.afterID,
-				UpdatedAfter:         test.updatedAfter,
-				OnlyCloudDefault:     test.onlyCloudDefault,
-				IncludeDeleted:       test.includeDeleted,
+				Kinds:            test.kinds,
+				AfterID:          test.afterID,
+				UpdatedAfter:     test.updatedAfter,
+				OnlyCloudDefault: test.onlyCloudDefault,
+				IncludeDeleted:   test.includeDeleted,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -144,13 +112,11 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name            string
-		kind            string
-		config          string
-		namespaceUserID int32
-		namespaceOrgID  int32
-		listFunc        func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-		wantErr         string
+		name     string
+		kind     string
+		config   string
+		listFunc func(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+		wantErr  string
 	}{
 		{
 			name:    "0 errors - GitHub.com",
@@ -192,48 +158,6 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "<nil>",
 		},
 		{
-			name:            "prevent code hosts that are not allowed",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceUserID: 1,
-			wantErr:         `external service only allowed for https://github.com/ and https://gitlab.com/`,
-		},
-		{
-			name:           "prevent code hosts that are not allowed for organizations",
-			kind:           extsvc.KindGitHub,
-			config:         `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			namespaceOrgID: 1,
-			wantErr:        `external service only allowed for https://github.com/ and https://gitlab.com/`,
-		},
-		{
-			name:            "gjson handles comments",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
-			namespaceUserID: 1,
-			wantErr:         "<nil>",
-		},
-		{
-			name:            "prevent disallowed repositoryPathPattern field",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "repositoryPathPattern": "github/{nameWithOwner}"}`,
-			namespaceUserID: 1,
-			wantErr:         `field "repositoryPathPattern" is not allowed in a user-added external service`,
-		},
-		{
-			name:            "prevent disallowed nameTransformations field",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "nameTransformations": [{"regex": "\\.d/","replacement": "/"},{"regex": "-git$","replacement": ""}]}`,
-			namespaceUserID: 1,
-			wantErr:         `field "nameTransformations" is not allowed in a user-added external service`,
-		},
-		{
-			name:            "prevent disallowed rateLimit field",
-			kind:            extsvc.KindGitHub,
-			config:          `{"url": "https://github.com", "rateLimit": {}}`,
-			namespaceUserID: 1,
-			wantErr:         `field "rateLimit" is not allowed in a user-added external service`,
-		},
-		{
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
@@ -253,10 +177,8 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				ess.ListFunc.SetDefaultHook(test.listFunc)
 			}
 			_, err := ValidateExternalServiceConfig(context.Background(), ess, ValidateExternalServiceConfigOptions{
-				Kind:            test.kind,
-				Config:          test.config,
-				NamespaceUserID: test.namespaceUserID,
-				NamespaceOrgID:  test.namespaceOrgID,
+				Kind:   test.kind,
+				Config: test.config,
 			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
@@ -277,24 +199,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
-	user, err := db.Users().Create(ctx,
-		NewUser{
-			Email:           "alice@example.com",
-			Username:        "alice",
-			Password:        "password",
-			EmailIsVerified: true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	displayName := "Acme org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -310,10 +214,9 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "with webhooks",
 			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
-				NamespaceUserID: user.ID,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
 			wantUnrestricted: false,
 			wantHasWebhooks:  true,
@@ -321,10 +224,9 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "without authorization",
 			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-				NamespaceUserID: user.ID,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
@@ -332,10 +234,9 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "with authorization",
 			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #2",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-				NamespaceUserID: user.ID,
+				Kind:        extsvc.KindGitHub,
+				DisplayName: "GITHUB #2",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 			},
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
@@ -352,53 +253,8 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	"token": "abc",
 	// "authorization": {}
 }`),
-				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
-		},
-		{
-			name: "Cloud: auto-add authorization to code host connections for GitHub",
-			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #4",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-				NamespaceUserID: user.ID,
-			},
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
-		},
-		{
-			name: "Cloud: auto-add authorization to code host connections for GitLab",
-			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitLab,
-				DisplayName:     "GITLAB #1",
-				Config:          extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
-				NamespaceUserID: user.ID,
-			},
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
-		},
-		{
-			name: "Cloud: support org namespace on code host connections for GitHub",
-			externalService: &types.ExternalService{
-				Kind:           extsvc.KindGitHub,
-				DisplayName:    "GITHUB #4",
-				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-				NamespaceOrgID: org.ID,
-			},
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
-		},
-		{
-			name: "Cloud: support org namespace on code host connections for GitLab",
-			externalService: &types.ExternalService{
-				Kind:           extsvc.KindGitLab,
-				DisplayName:    "GITLAB #1",
-				Config:         extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
-				NamespaceOrgID: org.ID,
-			},
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
 		},
 		{
 			name: "Empty config not allowed",
@@ -444,14 +300,6 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatal("has_webhooks must not be null")
 			} else if *got.HasWebhooks != test.wantHasWebhooks {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
-			}
-
-			// Adding it another service with the same kind and owner should fail
-			if test.externalService.NamespaceUserID != 0 || test.externalService.NamespaceOrgID != 0 {
-				err := db.ExternalServices().Create(ctx, confGet, test.externalService)
-				if err == nil {
-					t.Fatal("Should not be able to create two services of same kind with same owner")
-				}
 			}
 
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
@@ -1507,35 +1355,16 @@ func TestExternalServicesStore_List(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create test user
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:           "alice@example.com",
-		Username:        "alice",
-		Password:        "password",
-		EmailIsVerified: true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Create test org
-	displayName := "Acme Org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// Create new external services
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
 	ess := []*types.ExternalService{
 		{
-			Kind:            extsvc.KindGitHub,
-			DisplayName:     "GITHUB #1",
-			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-			NamespaceUserID: user.ID,
-			CloudDefault:    true,
+			Kind:         extsvc.KindGitHub,
+			DisplayName:  "GITHUB #1",
+			Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+			CloudDefault: true,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
@@ -1543,10 +1372,9 @@ func TestExternalServicesStore_List(t *testing.T) {
 			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 		},
 		{
-			Kind:           extsvc.KindGitHub,
-			DisplayName:    "GITHUB #3",
-			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
-			NamespaceOrgID: org.ID,
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #3",
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
 		},
 	}
 
@@ -1563,7 +1391,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		DisplayName: "GITHUB #4",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
-	err = db.ExternalServices().Create(ctx, confGet, deletedES)
+	err := db.ExternalServices().Create(ctx, confGet, deletedES)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1620,77 +1448,6 @@ func TestExternalServicesStore_List(t *testing.T) {
 
 		if diff := cmp.Diff(ess[1:2], got, et.CompareEncryptable); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("list external services with no namespace", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NoNamespace: true,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(got) != 1 {
-			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[1], got[0], et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("list only test user's external services", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NamespaceUserID: user.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(got) != 1 {
-			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[0], got[0], et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("list non-exist user's external services", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NamespaceUserID: 404,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(ess) != 0 {
-			t.Fatalf("Want 0 external service but got %d", len(ess))
-		}
-	})
-
-	t.Run("list only test org's external services", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NamespaceOrgID: org.ID,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(got) != 1 {
-			t.Fatalf("Want 1 external service but got %d", len(ess))
-		} else if diff := cmp.Diff(ess[2], got[0], et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
-	})
-
-	t.Run("list non-existing org external services", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NamespaceOrgID: 404,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if len(ess) != 0 {
-			t.Fatalf("Want 0 external service but got %d", len(ess))
 		}
 	})
 
@@ -1908,17 +1665,6 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-		org, err := db.Orgs().Create(ctx, "acme", nil)
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-
-		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
-
 		tx, err := db.ExternalServices().Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
@@ -1930,8 +1676,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		services := append(svcs, namespacedSvcs...)
-		want := typestest.GenerateExternalServices(11, services...)
+		want := typestest.GenerateExternalServices(11, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -1947,7 +1692,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		sort.Sort(want)
 
 		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: services.Kinds(),
+			Kinds: svcs.Kinds(),
 		})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
@@ -2419,81 +2164,6 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	})
 }
 
-func TestExternalServiceStore_SyncDue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	now := time.Now()
-
-	makeService := func() *types.ExternalService {
-		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
-		svc := &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      extsvc.NewUnencryptedConfig(cfg),
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-		return svc
-	}
-	svc1 := makeService()
-	svc2 := makeService()
-	err := db.ExternalServices().Upsert(ctx, svc1, svc2)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertDue := func(d time.Duration, want bool) {
-		t.Helper()
-		ids := []int64{svc1.ID, svc2.ID}
-		due, err := db.ExternalServices().SyncDue(ctx, ids, d)
-		if err != nil {
-			t.Error(err)
-		}
-		if due != want {
-			t.Errorf("Want %v, got %v", want, due)
-		}
-	}
-
-	makeSyncJob := func(svcID int64, state string) {
-		_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state)
-VALUES ($1,$2)
-`, svcID, state)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// next_sync_at is null, so we expect a sync soon
-	assertDue(1*time.Second, true)
-
-	// next_sync_at in the future
-	_, err = db.Handle().ExecContext(ctx, "UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertDue(1*time.Second, false)
-	assertDue(11*time.Minute, true)
-
-	// With sync jobs
-	makeSyncJob(svc1.ID, "queued")
-	makeSyncJob(svc2.ID, "completed")
-	assertDue(1*time.Minute, true)
-
-	// Sync jobs not running
-	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'completed'")
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertDue(1*time.Minute, false)
-}
-
 func TestConfigurationHasWebhooks(t *testing.T) {
 	t.Run("supported kinds with webhooks", func(t *testing.T) {
 		for _, cfg := range []any{
@@ -2574,38 +2244,16 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create new user
-	user, err := db.Users().Create(ctx,
-		NewUser{
-			Email:           "alice@example.com",
-			Username:        "alice",
-			Password:        "password",
-			EmailIsVerified: true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// create new org
-	displayName := "Acme org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	const repoId = 1
 	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, $2, $3)",
 		es.ID,
 		repoId,
 		"cloneUrl",
-		user.ID,
-		org.ID,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -2626,8 +2274,6 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
 	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
 	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
-	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
-	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
 
 	// check that repos are found with given externalServiceID
 	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})

@@ -9,8 +9,7 @@ import (
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,12 +29,15 @@ func (b *backgroundJob) NewCrateSyncer() goroutine.BackgroundRoutine {
 		panic("illegal service construction - NewCrateSyncer called without a registered gitClient")
 	}
 
+	// Run all operations as an interal actor to make sure we can access all required resources.
+	ctx := actor.WithInternalActor(context.Background())
+
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), b.extSvcStore)
+	_, externalService, _ := singleRustExternalService(ctx, b.extSvcStore)
 	if externalService != nil {
-		config, err := rustPackagesConfig(context.Background(), externalService)
+		config, err := rustPackagesConfig(ctx, externalService)
 		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
 			if err == nil { // silently ignore duration decoding error.
@@ -45,7 +46,7 @@ func (b *backgroundJob) NewCrateSyncer() goroutine.BackgroundRoutine {
 		}
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+	return goroutine.NewPeriodicGoroutine(ctx, interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		return b.handleCrateSyncer(ctx, interval)
 	}))
 }
@@ -154,19 +155,14 @@ func (b *backgroundJob) handleCrateSyncer(ctx context.Context, interval time.Dur
 
 // rustPackagesConfig returns the configuration for the provided RUSTPACKAGES code host.
 func rustPackagesConfig(ctx context.Context, externalService *dbtypes.ExternalService) (*schema.RustPackagesConnection, error) {
-	rawConfig, err := externalService.Config.Decrypt(ctx)
+	c, err := externalService.Configuration(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	config := &schema.RustPackagesConnection{}
-	normalized, err := jsonc.Parse(rawConfig)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse JSON config for Rust external service %s", rawConfig)
-	}
-
-	if err = jsoniter.Unmarshal(normalized, config); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal Rust external service config %s", rawConfig)
+	config, ok := c.(*schema.RustPackagesConnection)
+	if !ok {
+		return nil, errors.Newf("external service config is not a *schema.RustPackagesConnection, found: %T", c)
 	}
 	return config, nil
 }

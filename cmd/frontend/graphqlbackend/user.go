@@ -19,9 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -292,29 +290,14 @@ func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 	return NewUserResolver(db, user), nil
 }
 
-func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
+func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// organisations.
+	// organizations.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
-	for i, org := range orgs {
-		c.nodes[i] = &OrgResolver{r.db, org}
-	}
-	return &c, nil
-}
 
-func (r *UserResolver) Tags(ctx context.Context) ([]string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	return r.user.Tags, nil
+	return &orgConnectionResolver{db: r.db, opt: database.OrgsListOptions{UserID: r.user.ID}}, nil
 }
 
 func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
@@ -510,30 +493,4 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 		return nil, err
 	}
 	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
-}
-
-func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error) {
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-	repos, err := r.db.UserPublicRepos().ListByUser(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	var out []*RepositoryResolver
-	for _, repo := range repos {
-		out = append(out, &RepositoryResolver{
-			logger: r.logger,
-			RepoMatch: result.RepoMatch{
-				ID:   repo.RepoID,
-				Name: api.RepoName(repo.RepoURI),
-			},
-			db:              r.db,
-			gitserverClient: gitserver.NewClient(r.db),
-			innerRepo: &types.Repo{
-				ID: repo.RepoID,
-			},
-		})
-	}
-	return out, nil
 }

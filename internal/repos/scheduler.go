@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -106,10 +105,11 @@ const (
 // A worker continuously dequeues repos and sends updates to gitserver, but its concurrency
 // is limited by the gitMaxConcurrentClones site configuration.
 type UpdateScheduler struct {
-	db          database.DB
-	updateQueue *updateQueue
-	schedule    *schedule
-	logger      log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	updateQueue     *updateQueue
+	schedule        *schedule
+	logger          log.Logger
 }
 
 // A configuredRepo represents the configuration data for a given repo from
@@ -130,7 +130,8 @@ func NewUpdateScheduler(logger log.Logger, db database.DB) *UpdateScheduler {
 	updateSchedLogger := logger.Scoped("UpdateScheduler", "repo update scheduler")
 
 	return &UpdateScheduler{
-		db: db,
+		db:              db,
+		gitserverClient: gitserver.NewClient(db),
 		updateQueue: &updateQueue{
 			index:         make(map[api.RepoID]*repoUpdate),
 			notifyEnqueue: make(chan struct{}, notifyChanBuffer),
@@ -213,7 +214,7 @@ func (s *UpdateScheduler) runUpdateLoop(ctx context.Context) {
 				// if it doesn't exist or update it if it does. The timeout of this request depends
 				// on the value of conf.GitLongCommandTimeout() or if the passed context has a set
 				// deadline shorter than the value of this config.
-				resp, err := requestRepoUpdate(ctx, s.db, repo, 1*time.Second)
+				resp, err := s.gitserverClient.RequestRepoUpdate(ctx, repo.Name, 1*time.Second)
 				if err != nil {
 					schedError.WithLabelValues("requestRepoUpdate").Inc()
 					subLogger.Error("error requesting repo update", log.Error(err), log.String("uri", string(repo.Name)))
@@ -263,11 +264,6 @@ func getCustomInterval(logger log.Logger, c *conf.Unified, repoName string) time
 		}
 	}
 	return 0
-}
-
-// requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
-	return gitserver.NewClient(db).RequestRepoUpdate(ctx, repo.Name, since)
 }
 
 // configuredLimiter returns a mutable limiter that is

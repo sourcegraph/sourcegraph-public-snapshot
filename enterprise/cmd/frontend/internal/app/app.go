@@ -15,15 +15,11 @@ import (
 	"time"
 
 	gogithub "github.com/google/go-github/v41/github"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -79,16 +75,6 @@ func Init(
 
 	enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 		return newGitHubAppSetupHandler(db, apiURL, client)
-	}
-	return nil
-}
-
-func checkIfOrgCanInstallGitHubApp(ctx context.Context, db database.DB, orgID int32) error {
-	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "github-app-cloud")
-	if err != nil {
-		return err
-	} else if !enabled {
-		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the organization")
 	}
 	return nil
 }
@@ -160,8 +146,10 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 			log15.Error(msg, "error", err)
 		}
 
-		a := actor.FromContext(r.Context())
-		if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
+		// TODO: Don't register this for dotcom at all.
+		// TODO: Make sure this is still all correct. I don't fully understand this
+		// codes purpose.
+		if !envvar.SourcegraphDotComMode() {
 			if setupAction == "install" {
 				var privateKey []byte
 				var err error
@@ -262,137 +250,5 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 				return
 			}
 		}
-
-		state := r.URL.Query().Get("state")
-		if state == "" && setupAction == "install" {
-			http.Redirect(w, r, "/settings", http.StatusFound)
-			return
-		}
-
-		orgID, err := graphqlbackend.UnmarshalOrgID(graphql.ID(state))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`The "state" is not a valid graphql.ID of an organization`))
-			return
-		}
-
-		org, err := db.Orgs().GetByID(r.Context(), orgID)
-		if err != nil {
-			responseServerError("Failed to get organization", err)
-			return
-		}
-
-		externalServices := db.ExternalServices()
-		svcs, err := externalServices.List(r.Context(),
-			database.ExternalServicesListOptions{
-				NamespaceOrgID: org.ID,
-				Kinds:          []string{extsvc.KindGitHub},
-			},
-		)
-		if err != nil {
-			responseServerError("Failed to list organization code host connections", err)
-			return
-		}
-
-		err = checkIfOrgCanInstallGitHubApp(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			_, _ = w.Write([]byte(err.Error()))
-			return
-		}
-
-		err = auth.CheckOrgAccess(r.Context(), db, orgID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("the authenticated user does not belong to the organization requested"))
-			return
-		}
-
-		var svc *types.ExternalService
-		displayName := "GitHub"
-		now := time.Now()
-
-		if len(svcs) == 0 {
-			svc = &types.ExternalService{
-				Kind:        extsvc.KindGitHub,
-				DisplayName: displayName,
-				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "repos": []
-}
-`, apiURL.String())),
-				NamespaceOrgID: org.ID,
-				CreatedAt:      now,
-				UpdatedAt:      now,
-			}
-		} else if len(svcs) == 1 {
-			// We have an existing github service, update it
-			svc = svcs[0]
-			svc.DisplayName = displayName
-		} else {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("Multiple code host connections of same kind found"))
-			return
-		}
-
-		if setupAction == "request" {
-			rawConfig, err := svc.Config.Decrypt(r.Context())
-			if err != nil {
-				responseServerError("Failed to retrieve config", err)
-				return
-			}
-
-			rawConfig, err = jsonc.Edit(rawConfig, true, "pending")
-			if err != nil {
-				responseServerError("Failed to edit config", err)
-				return
-			}
-			svc.Config.Set(rawConfig)
-		} else if setupAction == "install" {
-			installationID, err := strconv.ParseInt(r.URL.Query().Get("installation_id"), 10, 64)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				_, _ = w.Write([]byte(`The "installation_id" is not a valid integer`))
-				return
-			}
-
-			ins, err := client.GetAppInstallation(r.Context(), installationID)
-			if err != nil {
-				responseServerError(`Failed to get the installation information using the "installation_id"`, err)
-				return
-			}
-
-			if ins.Account.Login != nil {
-				displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
-			}
-			svc.DisplayName = displayName
-
-			rawConfig, err := svc.Config.Decrypt(r.Context())
-			if err != nil {
-				responseServerError("Failed to retrieve config", err)
-				return
-			}
-
-			rawConfig, err = jsonc.Edit(rawConfig, strconv.FormatInt(installationID, 10), "githubAppInstallationID")
-			if err != nil {
-				responseServerError("Failed to edit config", err)
-				return
-			}
-			rawConfig, err = jsonc.Edit(rawConfig, false, "pending")
-			if err != nil {
-				responseServerError("Failed to edit config", err)
-			}
-			svc.Config.Set(rawConfig)
-			svc.UpdatedAt = now
-		}
-
-		err = db.ExternalServices().Upsert(r.Context(), svc)
-		if err != nil {
-			responseServerError("Failed to upsert code host connection", err)
-			return
-		}
-
-		http.Redirect(w, r, fmt.Sprintf("/organizations/%s/settings/code-hosts", org.Name), http.StatusFound)
 	})
 }

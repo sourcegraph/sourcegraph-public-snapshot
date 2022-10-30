@@ -32,7 +32,6 @@ func TestAddExternalService(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -152,7 +151,6 @@ func TestUpdateExternalService(t *testing.T) {
 		}
 	})
 
-	userID := int32(1)
 	var cachedUpdate *database.ExternalServiceUpdate
 
 	users := database.NewMockUserStore()
@@ -166,18 +164,16 @@ func TestUpdateExternalService(t *testing.T) {
 	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		if cachedUpdate == nil {
 			return &types.ExternalService{
-				ID:              id,
-				NamespaceUserID: userID,
-				Kind:            extsvc.KindGitHub,
-				Config:          extsvc.NewEmptyConfig(),
+				ID:     id,
+				Kind:   extsvc.KindGitHub,
+				Config: extsvc.NewEmptyConfig(),
 			}, nil
 		}
 		return &types.ExternalService{
-			ID:              id,
-			Kind:            extsvc.KindGitHub,
-			DisplayName:     *cachedUpdate.DisplayName,
-			Config:          extsvc.NewUnencryptedConfig(*cachedUpdate.Config),
-			NamespaceUserID: userID,
+			ID:          id,
+			Kind:        extsvc.KindGitHub,
+			DisplayName: *cachedUpdate.DisplayName,
+			Config:      extsvc.NewUnencryptedConfig(*cachedUpdate.Config),
 		}, nil
 	})
 
@@ -251,9 +247,8 @@ func TestDeleteExternalService(t *testing.T) {
 	externalServices.DeleteFunc.SetDefaultReturn(nil)
 	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		return &types.ExternalService{
-			ID:              id,
-			NamespaceUserID: 1,
-			Config:          extsvc.NewEmptyConfig(),
+			ID:     id,
+			Config: extsvc.NewEmptyConfig(),
 		}, nil
 	})
 
@@ -285,44 +280,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 func TestExternalServices(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("cannot read users external services", func(t *testing.T) {
-			users := database.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-				return &types.User{ID: id}, nil
-			})
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := backend.ErrNoAccessExternalService; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("read orgs external services", func(t *testing.T) {
-			users := database.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-
-			orgMembers := database.NewMockOrgMemberStore()
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
-			db := database.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := backend.ErrNoAccessExternalService; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
-			}
-			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
-			}
-		})
-
-		t.Run("cannot read site-level external services", func(t *testing.T) {
+		t.Run("cannot read external services", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
@@ -365,12 +323,6 @@ func TestExternalServices(t *testing.T) {
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if opt.NamespaceUserID > 0 {
-			return []*types.ExternalService{
-				{ID: 1, Config: extsvc.NewEmptyConfig()},
-			}, nil
-		}
-
 		if opt.AfterID > 0 {
 			return []*types.ExternalService{
 				{ID: 2, Config: extsvc.NewEmptyConfig()},
@@ -387,10 +339,6 @@ func TestExternalServices(t *testing.T) {
 		return ess, nil
 	})
 	externalServices.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
-		if opt.NamespaceUserID > 0 || opt.AfterID > 0 {
-			return 1, nil
-		}
-
 		return 2, nil
 	})
 	externalServices.GetLastSyncErrorFunc.SetDefaultReturn("Oops", nil)

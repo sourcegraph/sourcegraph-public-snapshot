@@ -102,15 +102,8 @@ func TestLoadExternalService(t *testing.T) {
 		DisplayName: "GitHub global",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 	}
-	userOwnedES := types.ExternalService{
-		ID:              2,
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "GitHub user owned",
-		NamespaceUserID: 1234,
-		Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
-	}
 	newerGlobalES := types.ExternalService{
-		ID:          3,
+		ID:          2,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub global newer",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
@@ -130,10 +123,6 @@ func TestLoadExternalService(t *testing.T) {
 				ID:       globalES.URN(),
 				CloneURL: "https://github.com/sourcegraph/sourcegraph",
 			},
-			userOwnedES.URN(): {
-				ID:       userOwnedES.URN(),
-				CloneURL: "https://123@github.com/sourcegraph/sourcegraph",
-			},
 			newerGlobalES.URN(): {
 				ID:       newerGlobalES.URN(),
 				CloneURL: "https://123456@github.com/sourcegraph/sourcegraph",
@@ -146,9 +135,6 @@ func TestLoadExternalService(t *testing.T) {
 		sources := make([]*types.ExternalService, 0)
 		if _, ok := repo.Sources[globalES.URN()]; ok {
 			sources = append(sources, &globalES)
-		}
-		if _, ok := repo.Sources[userOwnedES.URN()]; ok {
-			sources = append(sources, &userOwnedES)
 		}
 		if _, ok := repo.Sources[newerGlobalES.URN()]; ok {
 			sources = append(sources, &newerGlobalES)
