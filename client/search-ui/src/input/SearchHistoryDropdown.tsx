@@ -65,7 +65,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
-                    <Tooltip content="Recent searches">
+                    <Tooltip content="Recent searches ⌘↓">
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.triggerButtonOpen : null)}
