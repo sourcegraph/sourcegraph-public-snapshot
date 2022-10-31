@@ -146,7 +146,16 @@ func TestMiddleware(t *testing.T) {
 		}, nil
 	})
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
-	userExternalAccountsStore.CountFunc.SetDefaultReturn(1, nil)
+	userExternalAccountsStore.ListFunc.SetDefaultReturn(
+		[]*extsvc.Account{
+			{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: providerType,
+				},
+			},
+		},
+		nil,
+	)
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(usersStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
@@ -266,6 +275,45 @@ func TestMiddleware(t *testing.T) {
 		}
 		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+	})
+
+	t.Run("lifetime expired", func(t *testing.T) {
+		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:        id,
+				CreatedAt: time.Now().Add(-61 * time.Minute),
+			}, nil
+		})
+
+		state := &openidconnect.AuthnState{
+			CSRFToken:  "good",
+			Redirect:   "https://evil.com",
+			ProviderID: mockProvider.ConfigID().ID,
+		}
+		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+			require.Equal(t, testIDToken, rawIDToken)
+			return &oidc.IDToken{
+				Issuer:  oidcIDServer.URL,
+				Subject: testOIDCUser,
+				Expiry:  time.Now().Add(time.Hour),
+				Nonce:   state.Encode(),
+			}
+		}
+		defer func() { openidconnect.MockVerifyIDToken = nil }()
+
+		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		cookies := []*http.Cookie{
+			{
+				Name:  stateCookieName,
+				Value: state.Encode(),
+			},
+		}
+		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
 	})
 
 	t.Run("no open redirection", func(t *testing.T) {

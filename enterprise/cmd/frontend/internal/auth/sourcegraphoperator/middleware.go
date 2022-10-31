@@ -103,18 +103,26 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			count, err := db.UserExternalAccounts().Count(r.Context(), database.ExternalAccountsListOptions{UserID: result.User.ID})
+			extAccts, err := db.UserExternalAccounts().List(
+				r.Context(),
+				database.ExternalAccountsListOptions{
+					UserID: result.User.ID,
+					LimitOffset: &database.LimitOffset{
+						Limit: 2,
+					},
+				},
+			)
 			if err != nil {
-				logger.Error("Failed count user external accounts", log.Error(err))
-				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not count user external accounts.", http.StatusInternalServerError)
+				logger.Error("Failed list user external accounts", log.Error(err))
+				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not list user external accounts.", http.StatusInternalServerError)
 				return
 			}
 
 			var expiry time.Duration
-			// Having count==1 indicates the SOAP is the only external account that the
-			// authenticated user has associated with, thus we should set aggressive session
-			// expiry.
-			if count == 1 {
+			// If the "sourcegraph-operator" is the only external account associated with the
+			// user, that means the user is a pure Sourcegraph Operator which should have
+			// designated and aggressive session expiry.
+			if len(extAccts) == 1 && extAccts[0].ServiceType == providerType {
 				// The user session will only live at most for the remaining duration from the
 				// "users.created_at" compared to the current time.
 				//
