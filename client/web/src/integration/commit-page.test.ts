@@ -332,10 +332,8 @@ describe('RepositoryCommitPage', () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
         await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
-        await testContext.waitForGraphQLRequest(async () => {
-            const splitRadioButton = await driver.page.$('aria/Split[role="radio"]')
-            await driver.page.evaluate(element => element.click(), splitRadioButton)
-        }, 'EditTemporarySettings')
+        const splitRadioButton = await driver.page.$('aria/Split[role="radio"]')
+        await driver.page.evaluate(element => element.click(), splitRadioButton)
 
         await driver.page.waitForSelector('[data-split-mode="split"]', { visible: true })
 
