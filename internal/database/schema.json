@@ -193,6 +193,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.soft_deleted_repository_name(name text)\n RETURNS text\n LANGUAGE plpgsql\n STRICT\nAS $function$\nBEGIN\n    RETURN 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || name;\nEND;\n$function$\n"
     },
     {
+      "Name": "update_codeintel_path_ranks_updated_at_column",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_path_ranks_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$function$\n"
+    },
+    {
       "Name": "versions_insert_row_trigger",
       "Definition": "CREATE OR REPLACE FUNCTION public.versions_insert_row_trigger()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\nBEGIN\n    NEW.first_version = NEW.version;\n    RETURN NEW;\nEND $function$\n"
     }
@@ -7018,6 +7022,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
@@ -7030,10 +7047,25 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, \"precision\")",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_path_ranks_updated_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "update_codeintel_path_ranks_updated_at",
+          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"
+        }
+      ]
     },
     {
       "Name": "codeintel_ranking_exports",

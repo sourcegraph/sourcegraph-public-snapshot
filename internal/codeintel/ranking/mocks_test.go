@@ -10,6 +10,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,6 +46,9 @@ type MockStore struct {
 	// HasInputFilenameFunc is an instance of a mock function object
 	// controlling the behavior of the method HasInputFilename.
 	HasInputFilenameFunc *StoreHasInputFilenameFunc
+	// LastUpdatedAtFunc is an instance of a mock function object
+	// controlling the behavior of the method LastUpdatedAt.
+	LastUpdatedAtFunc *StoreLastUpdatedAtFunc
 	// MergeDocumentRanksFunc is an instance of a mock function object
 	// controlling the behavior of the method MergeDocumentRanks.
 	MergeDocumentRanksFunc *StoreMergeDocumentRanksFunc
@@ -54,6 +58,9 @@ type MockStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
+	// UpdatedAfterFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdatedAfter.
+	UpdatedAfterFunc *StoreUpdatedAfterFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -90,6 +97,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
+			defaultHook: func(context.Context, []api.RepoName) (r0 map[api.RepoName]time.Time, r1 error) {
+				return
+			},
+		},
 		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
 			defaultHook: func(context.Context, string, int) (r0 int, r1 int, r2 error) {
 				return
@@ -102,6 +114,11 @@ func NewMockStore() *MockStore {
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (r0 store.Store, r1 error) {
+				return
+			},
+		},
+		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
+			defaultHook: func(context.Context, time.Time) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -142,6 +159,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.HasInputFilename")
 			},
 		},
+		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
+			defaultHook: func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+				panic("unexpected invocation of MockStore.LastUpdatedAt")
+			},
+		},
 		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
 			defaultHook: func(context.Context, string, int) (int, int, error) {
 				panic("unexpected invocation of MockStore.MergeDocumentRanks")
@@ -155,6 +177,11 @@ func NewStrictMockStore() *MockStore {
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (store.Store, error) {
 				panic("unexpected invocation of MockStore.Transact")
+			},
+		},
+		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
+			defaultHook: func(context.Context, time.Time) ([]api.RepoName, error) {
+				panic("unexpected invocation of MockStore.UpdatedAfter")
 			},
 		},
 	}
@@ -182,6 +209,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		HasInputFilenameFunc: &StoreHasInputFilenameFunc{
 			defaultHook: i.HasInputFilename,
 		},
+		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
+			defaultHook: i.LastUpdatedAt,
+		},
 		MergeDocumentRanksFunc: &StoreMergeDocumentRanksFunc{
 			defaultHook: i.MergeDocumentRanks,
 		},
@@ -190,6 +220,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdatedAfterFunc: &StoreUpdatedAfterFunc{
+			defaultHook: i.UpdatedAfter,
 		},
 	}
 }
@@ -842,6 +875,113 @@ func (c StoreHasInputFilenameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// StoreLastUpdatedAtFunc describes the behavior when the LastUpdatedAt
+// method of the parent MockStore instance is invoked.
+type StoreLastUpdatedAtFunc struct {
+	defaultHook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)
+	hooks       []func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)
+	history     []StoreLastUpdatedAtFuncCall
+	mutex       sync.Mutex
+}
+
+// LastUpdatedAt delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) LastUpdatedAt(v0 context.Context, v1 []api.RepoName) (map[api.RepoName]time.Time, error) {
+	r0, r1 := m.LastUpdatedAtFunc.nextHook()(v0, v1)
+	m.LastUpdatedAtFunc.appendCall(StoreLastUpdatedAtFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LastUpdatedAt method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreLastUpdatedAtFunc) SetDefaultHook(hook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LastUpdatedAt method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreLastUpdatedAtFunc) PushHook(hook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreLastUpdatedAtFunc) SetDefaultReturn(r0 map[api.RepoName]time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreLastUpdatedAtFunc) PushReturn(r0 map[api.RepoName]time.Time, r1 error) {
+	f.PushHook(func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreLastUpdatedAtFunc) nextHook() func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreLastUpdatedAtFunc) appendCall(r0 StoreLastUpdatedAtFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreLastUpdatedAtFuncCall objects
+// describing the invocations of this function.
+func (f *StoreLastUpdatedAtFunc) History() []StoreLastUpdatedAtFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreLastUpdatedAtFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreLastUpdatedAtFuncCall is an object that describes an invocation of
+// method LastUpdatedAt on an instance of MockStore.
+type StoreLastUpdatedAtFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[api.RepoName]time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreLastUpdatedAtFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreLastUpdatedAtFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreMergeDocumentRanksFunc describes the behavior when the
 // MergeDocumentRanks method of the parent MockStore instance is invoked.
 type StoreMergeDocumentRanksFunc struct {
@@ -1168,6 +1308,113 @@ func (c StoreTransactFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreUpdatedAfterFunc describes the behavior when the UpdatedAfter method
+// of the parent MockStore instance is invoked.
+type StoreUpdatedAfterFunc struct {
+	defaultHook func(context.Context, time.Time) ([]api.RepoName, error)
+	hooks       []func(context.Context, time.Time) ([]api.RepoName, error)
+	history     []StoreUpdatedAfterFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdatedAfter delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) UpdatedAfter(v0 context.Context, v1 time.Time) ([]api.RepoName, error) {
+	r0, r1 := m.UpdatedAfterFunc.nextHook()(v0, v1)
+	m.UpdatedAfterFunc.appendCall(StoreUpdatedAfterFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdatedAfter method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreUpdatedAfterFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]api.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdatedAfter method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreUpdatedAfterFunc) PushHook(hook func(context.Context, time.Time) ([]api.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreUpdatedAfterFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreUpdatedAfterFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context, time.Time) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreUpdatedAfterFunc) nextHook() func(context.Context, time.Time) ([]api.RepoName, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreUpdatedAfterFunc) appendCall(r0 StoreUpdatedAfterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreUpdatedAfterFuncCall objects
+// describing the invocations of this function.
+func (f *StoreUpdatedAfterFunc) History() []StoreUpdatedAfterFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreUpdatedAfterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreUpdatedAfterFuncCall is an object that describes an invocation of
+// method UpdatedAfter on an instance of MockStore.
+type StoreUpdatedAfterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreUpdatedAfterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreUpdatedAfterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
