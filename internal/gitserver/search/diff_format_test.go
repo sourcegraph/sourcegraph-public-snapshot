@@ -44,8 +44,8 @@ index dbace57d5f..53357b4971 100644
 		require.Equal(t, expectedFormatted, formatted)
 
 		expectedRanges := result.Ranges{{
-			Start: result.Location{Offset: 142, Line: 3, Column: 1},
-			End:   result.Location{Offset: 148, Line: 3, Column: 7},
+			Start: result.Location{Offset: 167, Line: 3, Column: 1},
+			End:   result.Location{Offset: 173, Line: 3, Column: 7},
 		}}
 		require.Equal(t, expectedRanges, ranges)
 	})
