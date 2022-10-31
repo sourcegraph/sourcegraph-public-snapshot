@@ -1,20 +1,78 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
+import { mdiOpenInNew } from '@mdi/js'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2 } from '@sourcegraph/wildcard'
+import { Button, H2, Icon, Link } from '@sourcegraph/wildcard'
 
 import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
+const dotComExamples = [
+    [
+        {
+            title: 'Scope search to specific repos',
+            queryExamples: [
+                { id: 'single-repo', query: 'repo:sourcegraph/webloop' },
+                { id: 'org-repos', query: 'repo:sourcegraph/*'},
+            ],
+        },
+        {
+            title: 'Jump into code navigation',
+            queryExamples: [
+                { id: 'file-filter', query: 'file:README.md' },
+                { id: 'type-symbol', query: 'type:symbol SymbolName' },
+            ],
+        },
+        {
+            title: 'Explore code history',
+            queryExamples: [
+                { id: 'type-diff-author', query: 'type:diff author:Linus Torvalds' },
+                { id: 'type-commit-message', query: 'type:commit some message' },
+                { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
+            ],
+        },
+    ],
+    [
+        {
+            title: 'Find content or patterns',
+            queryExamples: [
+                { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
+                { id: 'regex-pattern', query: '/regex.*pattern/' },
+            ],
+        },
+        {
+            title: 'Get logical',
+            queryExamples: [
+                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
+                { id: 'and-operator', query: 'hello AND world' },
+                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
+            ],
+        },
+        {
+            title: 'Get advanced',
+            queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
+            footer: (
+                <small className="d-block mt-3">
+                    <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                        Complete query reference{' '}
+                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                    </Link>
+                </small>
+            ),
+        },
+    ],
+]
+
 export interface QueryExamplesHomepageProps extends TelemetryProps {
     selectedSearchContextSpec?: string
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
+    isDotCom?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -40,11 +98,12 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     telemetryService,
     queryState,
     setQueryState,
+    isDotCom = false,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
 
-    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global')
+    const queryExampleSectionsColumns = isDotCom ? dotComExamples : useQueryExamples(selectedSearchContextSpec ?? 'global')
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {

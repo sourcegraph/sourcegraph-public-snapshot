@@ -3,31 +3,35 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { QueryState } from '@sourcegraph/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { H4, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { DynamicWebFonts } from './DynamicWebFonts'
-import { exampleTripsAndTricks, fonts } from './LoggedOutHomepage.constants'
-import { TipsAndTricks } from './TipsAndTricks'
+import { fonts } from './LoggedOutHomepage.constants'
+import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 
 import styles from './LoggedOutHomepage.module.scss'
 
-export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps {}
+export interface LoggedOutHomepageProps
+    extends TelemetryProps,
+    ThemeProps {
+        isSourcegraphDotCom: boolean
+        queryState: QueryState
+        setQueryState: (newState: QueryState) => void
+}
 
 export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<LoggedOutHomepageProps>> = props => (
     <DynamicWebFonts fonts={fonts}>
         <div className={styles.loggedOutHomepage}>
             <div className={styles.content}>
-                <TipsAndTricks
-                    examples={exampleTripsAndTricks}
-                    moreLink={{
-                        label: 'More search features',
-                        href: 'https://docs.sourcegraph.com/code_search/explanations/features',
-                        trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
-                    }}
-                    {...props}
+                <QueryExamplesHomepage
+                    telemetryService={props.telemetryService}
+                    queryState={props.queryState}
+                    setQueryState={props.setQueryState}
+                    isDotCom={props.isSourcegraphDotCom}
                 />
             </div>
 

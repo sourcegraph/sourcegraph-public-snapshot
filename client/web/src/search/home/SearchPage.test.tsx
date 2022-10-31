@@ -40,7 +40,6 @@ jest.mock('./SearchPageInput', () => ({
 // CommonJS).
 jest.mock('./LoggedOutHomepage.constants', () => ({
     fonts: [],
-    exampleTripsAndTricks: [],
 }))
 
 function getMocks({
