@@ -13,7 +13,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
-describe('RepositoryCommitPage', () => {
+describe.only('RepositoryCommitPage', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -332,11 +332,14 @@ describe('RepositoryCommitPage', () => {
         await accessibilityAudit(driver.page)
     })
 
-    it('Displays diff in split mode', async () => {
+    it.only('Displays diff in split mode', async () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
         await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
-        await driver.page.click('.test-diff-mode-selector-split')
+        const splitRadioButton = await driver.page.$('aria/Split[role="radio"]')
+        await driver.page.evaluate(element => element.click(), splitRadioButton)
+
+        await driver.page.waitForSelector('[data-split-mode="split"]', { visible: true })
 
         await percySnapshotWithVariants(driver.page, 'Commit page - Split mode')
         await accessibilityAudit(driver.page)
