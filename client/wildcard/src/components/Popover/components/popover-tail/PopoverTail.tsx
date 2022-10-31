@@ -18,6 +18,7 @@ enum PopoverSize {
 
 const sizeClasses: Partial<Record<PopoverSize, string>> = {
     [PopoverSize.sm]: style.tailSizeSm,
+    [PopoverSize.md]: style.tailSizeMd,
     [PopoverSize.lg]: style.tailSizeLg,
 }
 
