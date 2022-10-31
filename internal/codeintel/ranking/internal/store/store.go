@@ -165,6 +165,7 @@ func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, pre
 	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized))
 }
 
+// TODO - overwrite this
 const setDocumentRanksQuery = `
 INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
 VALUES (
@@ -238,6 +239,9 @@ func (s *store) MergeDocumentRanks(ctx context.Context, graphKey string, inputFi
 
 	return numRepositoriesUpdated, numInputsProcessed, nil
 }
+
+//
+// TODO - overwrite old key if graph key does not match
 
 const mergeDocumentRanksQuery = `
 WITH
