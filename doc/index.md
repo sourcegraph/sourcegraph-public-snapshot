@@ -14,8 +14,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ### Recommended
 
-<div class="grid">
-  <!-- Sourcegraph Cloud -->
+<div>
   <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
