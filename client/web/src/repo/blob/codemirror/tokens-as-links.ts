@@ -1,8 +1,8 @@
 import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { concatMap, debounceTime, map } from 'rxjs/operators'
+import { Observable, of, Subject, Subscription } from 'rxjs'
+import { concatMap, debounceTime, distinctUntilChanged, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -12,10 +12,13 @@ import { BlobInfo } from '../Blob'
 import { DefinitionResponse, fetchDefinitionsFromRanges } from '../definitions'
 
 import { SelectedLineRange, selectedLines } from './linenumbers'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import { setHoverHovercard, tokenRangeToHovercard } from './hovercard'
+import { preciseWordAtCoords } from './utils'
 
 interface TokenLink {
     range: UIRange
-    url: string
+    url?: string
 }
 
 /**
@@ -165,14 +168,28 @@ function tokenLinksToRangeSet(view: EditorView, links: TokenLink[]): DecorationS
         for (const { range, url } of links) {
             const from = view.state.doc.line(range.start.line + 1).from + range.start.character
             const to = view.state.doc.line(range.end.line + 1).from + range.end.character
-            const decoration = Decoration.mark({
-                attributes: {
-                    class: 'sourcegraph-token-link',
-                    href: url,
-                    'data-token-link': '',
-                },
-                tagName: 'a',
-            })
+
+            let decoration: Decoration
+
+            if (url) {
+                decoration = Decoration.mark({
+                    attributes: {
+                        class: 'sourcegraph-token-link',
+                        'data-token-link': '',
+                        href: url,
+                    },
+                    tagName: 'a',
+                })
+            } else {
+                decoration = Decoration.mark({
+                    attributes: {
+                        class: 'sourcegraph-token-button',
+                        'data-token-button': '',
+                    },
+                    tagName: 'button',
+                })
+            }
+
             builder.add(from, to, decoration)
         }
     } catch (error) {
@@ -235,21 +252,69 @@ interface TokensAsLinksConfiguration {
     preloadGoToDefinition: boolean
 }
 
+/**
+ * All occurrences that can be interactive
+ */
+const INTERACTIVE_OCCURRENCE_KINDS = new Set([
+    SyntaxKind.Identifier,
+    SyntaxKind.IdentifierBuiltin,
+    SyntaxKind.IdentifierConstant,
+    SyntaxKind.IdentifierMutableGlobal,
+    SyntaxKind.IdentifierParameter,
+    SyntaxKind.IdentifierLocal,
+    SyntaxKind.IdentifierShadowed,
+    SyntaxKind.IdentifierModule,
+    SyntaxKind.IdentifierFunction,
+    SyntaxKind.IdentifierFunctionDefinition,
+    SyntaxKind.IdentifierMacro,
+    SyntaxKind.IdentifierMacroDefinition,
+    SyntaxKind.IdentifierType,
+    SyntaxKind.IdentifierBuiltinType,
+    SyntaxKind.IdentifierAttribute,
+])
+
+const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
+    if (!occurence.kind) {
+        return false
+    }
+
+    // TODO: Update this to check for list of valid interactive occurrences
+    return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
+}
+
 export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
-    const referencesLinks =
-        blobInfo.stencil?.map(range => ({
-            range,
-            url: `?${toPositionOrRangeQueryParameter({
-                position: { line: range.start.line + 1, character: range.start.character + 1 },
-            })}#tab=references`,
-        })) ?? []
+    /**
+     * Prefer precise code intelligence ranges, fall back to making certain Occurences interactive.
+     */
+    const ranges =
+        blobInfo.stencil && blobInfo.stencil.length > 0
+            ? blobInfo.stencil.map(range => ({ range }))
+            : Occurrence.fromInfo(blobInfo)
+                  .filter(isInteractiveOccurrence)
+                  .map(({ range }) => ({ range }))
+
+    const nextHovercardRange = new Subject<{ x: number; y: number }>()
 
     return [
-        // focusSelectedLine,
-        tokenLinks.init(() => referencesLinks),
+        tokenLinks.init(() => ranges),
         preloadGoToDefinition ? ViewPlugin.define(view => new DefinitionManager(view, blobInfo)) : [],
         EditorView.domEventHandlers({
-            click(event: MouseEvent) {
+            hover(event: MouseEvent) {
+                const target = event.target as HTMLElement
+
+                if (target.matches('[data-token-button]')) {
+                    nextHovercardRange.next({ x: event.x, y: event.y })
+                }
+            },
+            focus(event: FocusEvent) {
+                const target = event.target as HTMLElement
+
+                if (target.matches('[data-token-button]')) {
+                    const position = target.getClientRects()[0]
+                    nextHovercardRange.next({ x: position.x, y: position.y })
+                }
+            },
+            click(event: MouseEvent, view: EditorView) {
                 const target = event.target as HTMLElement
 
                 // Check to see if the clicked target is a token link.
@@ -257,6 +322,24 @@ export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: Toke
                 if (target.matches('[data-token-link]')) {
                     event.preventDefault()
                     history.push(target.getAttribute('href')!)
+                }
+
+                if (target.matches('[data-token-button]')) {
+                    const position = target.getClientRects()[0]
+                    of(preciseWordAtCoords(view, { x: position.x, y: position.y }))
+                        .pipe(
+                            tokenRangeToHovercard(view),
+                            map(hovercard => ({ position, hovercard }))
+                        )
+                        .toPromise()
+                        .then(({ hovercard }) => {
+                            view.dispatch({
+                                effects: setHoverHovercard.of(hovercard),
+                            })
+                        })
+                        .catch(() => {
+                            // noop
+                        })
                 }
             },
         }),

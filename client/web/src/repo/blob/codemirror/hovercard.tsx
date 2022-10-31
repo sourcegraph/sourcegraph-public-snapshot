@@ -220,7 +220,7 @@ const showHovercard = Facet.define<Hovercard>({
 /**
  * Effect for setting the hovercard for the currently hovered token.
  */
-const setHoverHovercard = StateEffect.define<Hovercard | null>()
+export const setHoverHovercard = StateEffect.define<Hovercard | null>()
 /**
  * Effect for setting the hovercard for the pinned token/range.
  */
@@ -733,7 +733,7 @@ const hoverdataCache = ViewPlugin.fromClass(
  * Helper operator for requesting hover information and creating a {@link Hovercard}
  * object.
  */
-function tokenRangeToHovercard(
+export function tokenRangeToHovercard(
     view: EditorView,
     pinned: boolean = false
 ): OperatorFunction<{ from: number; to: number } | null, Hovercard | null> {

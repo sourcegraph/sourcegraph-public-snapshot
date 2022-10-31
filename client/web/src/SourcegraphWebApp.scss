@@ -40,6 +40,28 @@ body,
     }
 }
 
+.sourcegraph-token-button {
+    border: none;
+    margin: 0;
+    padding: 0;
+    width: auto;
+    overflow: visible;
+
+    background: transparent;
+
+    /* inherit font & color from ancestor */
+    color: inherit;
+    font: inherit;
+
+    /* Normalize `line-height`. Cannot be changed from `normal` in Firefox 4+. */
+    line-height: normal;
+
+    &:focus {
+        outline: none;
+        background-color: rgba($blue, 0.1);
+    }
+}
+
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
 // or identifying the token the references panel is toggled for.
