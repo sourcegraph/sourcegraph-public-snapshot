@@ -157,7 +157,6 @@ const getNormalizedAccount = (
             case 'openidconnect':
             {
                 const oidcExternalData = accountExternalData as OpenidConnectExternalData
-                // In case the SAML values don't have a username, we get the user email.
                 normalizedAccount = {
                     ...normalizedAccount,
                     external: {
