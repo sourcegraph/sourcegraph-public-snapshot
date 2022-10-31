@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -393,17 +392,12 @@ var (
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
 	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
-	// repo, err := s.client.Repo(ctx, namespace, "this-fork-isnt-super-cool")
-	// repo, err := s.client.Repo(ctx, namespace, parent.Slug)
-
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-
-	fmt.Printf("Origin ID: %v, parent ID: %v", repo.Origin.ID, parent.ID)
 
 	// Sanity check: is the returned repo _actually_ a fork of the original?
 	if repo.Origin == nil {

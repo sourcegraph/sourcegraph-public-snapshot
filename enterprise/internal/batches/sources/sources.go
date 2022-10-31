@@ -423,15 +423,11 @@ func GetRemoteRepo(
 	ch *btypes.Changeset,
 	spec *btypes.ChangesetSpec,
 ) (*types.Repo, error) {
-	fmt.Printf("EXTERNAL FORK NAMESPACE: %v\n\n", ch.ExternalForkNamespace)
-	fmt.Printf("IS FORK??: %t\n\n", spec.IsFork())
-
 	// If the changeset spec doesn't expect a fork _and_ we're not updating a
 	// changeset that was previously created using a fork, then we don't need to
 	// even check if the changeset source is forkable, let alone set up the
 	// remote repo: we can just return the target repo and be done with it.
 	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
-		fmt.Printf("NOT USING FORK AT ALL?!?!?!?!?!?!?!?!?!?!?!?")
 		return targetRepo, nil
 	}
 
@@ -444,7 +440,6 @@ func GetRemoteRepo(
 	var err error
 
 	if ch.ExternalForkNamespace != "" {
-		fmt.Printf("SHOULD USE EXTERNAL NAMESPACE FORK")
 		// If we're updating an existing changeset, we should push/modify the
 		// same fork, even if the user credential would now fork into a
 		// different namespace.
@@ -454,7 +449,6 @@ func GetRemoteRepo(
 		}
 		return repo, nil
 	} else if namespace := spec.GetForkNamespace(); namespace != nil {
-		fmt.Printf("SHOULD USE NAMESPACE FORK")
 		// If the changeset spec requires a specific fork namespace, then we
 		// should handle that here.
 		repo, err = fss.GetNamespaceFork(ctx, targetRepo, *namespace)
@@ -463,8 +457,6 @@ func GetRemoteRepo(
 		}
 		return repo, nil
 	}
-
-	fmt.Printf("SHOULD USE USER FORK!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 	// Otherwise, we're pushing to a user fork.
 	repo, err = fss.GetUserFork(ctx, targetRepo)
