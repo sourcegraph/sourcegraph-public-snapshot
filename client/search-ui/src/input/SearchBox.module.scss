@@ -6,6 +6,7 @@
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
+    min-height: 32px;
 
     @media (--xs-breakpoint-down) {
         background-color: var(--color-bg-1);
@@ -42,8 +43,6 @@
         }
 
         &__withoutSearchButton {
-            padding-top: 0.25rem;
-            padding-bottom: 0.25rem;
             border-radius: 3px;
             border: 1px solid var(--input-border-color);
         }
@@ -69,7 +68,7 @@
 
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
-            margin-left: 0.0625rem;
+            //margin-left: 0.0625rem;
 
             @media (--xs-breakpoint-down) {
                 padding-left: 0;
@@ -108,7 +107,7 @@
     &__separator {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: 1px;
-        height: 1.125rem;
+        height: 1rem;
         background-color: var(--border-color-2);
 
         @media (--xs-breakpoint-down) {

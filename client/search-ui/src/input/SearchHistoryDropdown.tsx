@@ -34,7 +34,7 @@ function buttonContent(isOpen: boolean): React.ReactElement {
     return (
         <span className="text-nowrap">
             <Icon svgPath={mdiMagnify} aria-label="Open search history" />
-            <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-label="" />
+            <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} className={styles.chevron} aria-label="" />
         </span>
     )
 }
@@ -68,7 +68,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
-                    <Tooltip content="Recent searches">
+                    <Tooltip content="Recent searches ⌘↓">
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.triggerButtonOpen : null)}
