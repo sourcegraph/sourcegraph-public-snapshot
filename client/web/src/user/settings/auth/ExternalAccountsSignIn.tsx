@@ -123,9 +123,6 @@ const getNormalizedAccount = (
                             userUrl: githubExternalData.html_url,
                         },
                     }
-
-                    {            console.log("==github==", githubExternalData.login)}
-
                 }
                 break
             case 'gitlab':
@@ -141,9 +138,6 @@ const getNormalizedAccount = (
                             userUrl: gitlabExternalData.web_url,
                         },
                     }
-
-                    {            console.log("==lab==", gitlabExternalData.username)}
-
                 }
                 break
             case 'saml':
@@ -163,15 +157,12 @@ const getNormalizedAccount = (
             case 'openidconnect':
             {
                 const oidcExternalData = accountExternalData as OpenidConnectExternalData
-                console.log("blaaa =", oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email)
-
-                const usernameOrEmail =  oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || ''
                 // In case the SAML values don't have a username, we get the user email.
                 normalizedAccount = {
                     ...normalizedAccount,
                     external: {
                         id: account.id,
-                        userName: usernameOrEmail
+                        userName: oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || ''
                     },
                 }
             }
