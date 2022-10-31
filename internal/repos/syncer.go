@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -483,6 +484,10 @@ type SyncProgress struct {
 // function to decide whether to drop some intermediate calls.
 type progressRecorderFunc func(ctx context.Context, progress SyncProgress, final bool) error
 
+type syncWriterContextKey string
+
+const SyncWriterKey = syncWriterContextKey("sync-writer")
+
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
@@ -492,6 +497,14 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 	progressRecorder progressRecorderFunc,
 ) (err error) {
+
+	// TODO: Detect that this was a manual trigger
+	// TODO: Instead of Stdout, use a temporary file or a file in a known location
+	//  and defer closing the file
+	// TODO: Add a common "token" method to the extsvc package that allows us to get the
+	//  token. We'll also pass that into the context so that we can redact it in the dump.
+	ctx = context.WithValue(ctx, SyncWriterKey, os.Stdout)
+
 	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
 

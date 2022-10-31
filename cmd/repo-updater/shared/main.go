@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"time"
 
@@ -48,6 +50,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const port = "3182"
@@ -132,6 +135,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
 	cf := httpcli.NewExternalClientFactory(
+		newFullRequestLoggerMiddleWare(),
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
 
@@ -581,5 +585,34 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		case <-ctx.Done():
 		case <-time.After(30 * time.Second):
 		}
+	}
+}
+
+func newFullRequestLoggerMiddleWare() httpcli.Middleware {
+	return func(doer httpcli.Doer) httpcli.Doer {
+		return httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			resp, err := doer.Do(r)
+
+			// Try and grab a writer from the context, we'll only supply this in certain
+			// situations.
+			w, ok := r.Context().Value(repos.SyncWriterKey).(io.Writer)
+			if !ok {
+				return resp, err
+			}
+
+			requestDump, err := httputil.DumpRequestOut(r, true)
+			if err != nil {
+				return nil, errors.Wrap(err, "dumping request")
+			}
+			fmt.Fprintln(w, string(requestDump))
+
+			responseDump, err := httputil.DumpResponse(resp, true)
+			if err != nil {
+				return nil, errors.Wrap(err, "dumping response")
+			}
+			fmt.Fprintln(w, string(responseDump))
+
+			return resp, err
+		})
 	}
 }
