@@ -215,8 +215,6 @@ func main() {
 					},
 					membershipsDone)
 			})
-
-			//writeSuccess(out, "Added user %s to teams", currentUser.Login)
 		}
 		g.Wait()
 	}
@@ -301,7 +299,7 @@ func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 	if grErr = store.saveTeam(currentTeam); grErr != nil {
 		log.Fatal(grErr)
 	}
-	
+
 	writeSuccess(out, "Deleted team %s", currentTeam.Name)
 }
 
@@ -350,9 +348,12 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 	userRole := "member"
 
 	for j := 0; j < opts.membershipsPerUser; j++ {
-		// todo: skip when all created?
 		index := (opts.teamIndex + (j * opts.teamIncrement)) % len(opts.teams)
 		candidateTeam := opts.teams[index]
+
+		if candidateTeam.TotalMembers >= 50 {
+			continue
+		}
 
 		// add user to team's parent org first
 		_, _, mErr := gh.Organizations.EditOrgMembership(ctx, opts.currentUser.Login, candidateTeam.Org, &github.Membership{
