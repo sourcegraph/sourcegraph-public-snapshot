@@ -90,11 +90,15 @@ func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
 
-func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
+func decodeSendEmail(r *http.Request) (txtypes.InternalAPIMessage, error) {
 	var msg txtypes.InternalAPIMessage
-	err := json.NewDecoder(r.Body).Decode(&msg)
+	return msg, json.NewDecoder(r.Body).Decode(&msg)
+}
+
+func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
+	msg, err := decodeSendEmail(r)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "decode request")
 	}
 	return txemail.Send(r.Context(), msg.Source, msg.Message)
 }
