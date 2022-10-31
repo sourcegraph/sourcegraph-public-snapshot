@@ -140,8 +140,11 @@ function renderFuzzyResults(
                 // decision to place the number here, as long as the number is
                 // recorded as a dependency to `renderFuzzyResults` then it
                 // should work OK.
-                <Text data-fsm-generation={props.fsmGeneration} className={styles.results}>
-                    No matches for '{props.query}'
+                <Text
+                    data-fsm-generation={props.fsmGeneration}
+                    className={classNames(styles.results, styles.emptyResults, 'text-muted')}
+                >
+                    No matches
                 </Text>
             ),
         }
@@ -161,15 +164,6 @@ function renderFuzzyResults(
                     <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
                 </li>
             ))}
-            {!props.isComplete && (
-                <Button
-                    className={styles.showMore}
-                    onClick={() => setMaxResults(maxResults + initialMaxResults)}
-                    variant="secondary"
-                >
-                    Show more
-                </Button>
-            )}
         </ul>
     )
     return {
@@ -333,7 +327,12 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
     )
 
     return (
-        <Modal position="center" className={styles.modal} onDismiss={() => onClose()} aria-label="Fuzzy finder">
+        <Modal
+            position="center"
+            className={styles.modal}
+            onDismiss={() => onClose()}
+            aria-label={tabs.underlying[activeTab].title}
+        >
             <div className={styles.content}>
                 <div className={styles.header} data-testid="fuzzy-modal-header">
                     {tabs.isOnlyFilesEnabled() ? (

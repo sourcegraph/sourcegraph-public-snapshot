@@ -28,7 +28,7 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/WebHoverOverlay'
 import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
@@ -506,7 +506,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+            return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
         }
 
         return (

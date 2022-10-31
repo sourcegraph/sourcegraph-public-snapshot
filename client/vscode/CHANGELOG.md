@@ -12,6 +12,14 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Fixes
 
+## 2.2.14
+
+### Changes
+
+- Implement proxy support in the process that has access to node APIs [issues/41181](https://github.com/sourcegraph/sourcegraph/issues/41181)
+
+### Fixes
+
 ## 2.2.13
 
 ### Changes

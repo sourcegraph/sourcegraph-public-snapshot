@@ -98,10 +98,9 @@ func NewHandler(
 	ghSync.Register(&gh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &gh)
 
-	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookHandler))
+	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
@@ -169,6 +168,7 @@ func NewInternalHandler(
 	gsClient := gitserver.NewClient(db)
 	indexer := &searchIndexerServer{
 		db:              db,
+		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
 		gitserverClient: gsClient,
 		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
 		RepoStore:       db.Repos(),
@@ -185,6 +185,7 @@ func NewInternalHandler(
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 	m.Get(apirouter.RepoRank).Handler(trace.Route(handler(indexer.serveRepoRank)))
 	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
+	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))

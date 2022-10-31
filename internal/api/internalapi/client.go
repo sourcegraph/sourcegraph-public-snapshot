@@ -50,8 +50,8 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &message, nil)
+func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
+	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{}, nil)
 }
 
 // MockClientConfiguration mocks (*internalClient).Configuration.

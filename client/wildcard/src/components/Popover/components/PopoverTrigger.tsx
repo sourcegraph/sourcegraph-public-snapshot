@@ -5,7 +5,7 @@ import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
 import { ForwardReferenceComponent } from '../../../types'
 import { PopoverContext } from '../contexts/internal-context'
-import { PopoverOpenEventReason } from '../Popover'
+import { PopoverOpenEventReason } from '../types'
 
 export interface PopoverTriggerProps {
     children?: ReactNode | ((isOpen: boolean) => ReactNode)
