@@ -98,7 +98,6 @@ func NewHandler(
 	ghSync.Register(&gh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &gh)
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
