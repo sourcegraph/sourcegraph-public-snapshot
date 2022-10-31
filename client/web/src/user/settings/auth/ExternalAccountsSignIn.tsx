@@ -36,7 +36,7 @@ export interface SamlExternalData {
     }
 }
 
-interface OpenidConnectExternalData {
+interface OpenIDConnectExternalData {
     userInfo?: {
         email?: string
     }
@@ -74,12 +74,12 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-export function getOpenIDUsernameOrEmail(data: OpenidConnectExternalData): string {
+export function getOpenIDUsernameOrEmail(data: OpenIDConnectExternalData): string {
     return (
-        data.userInfo?.email ||
         data.userClaims?.preferred_username ||
         data.userClaims?.given_name ||
         data.userClaims?.name ||
+        data.userInfo?.email ||
         ''
     )
 }
@@ -164,7 +164,7 @@ const getNormalizedAccount = (
 
             case 'openidconnect':
                 {
-                    const oidcExternalData = accountExternalData as OpenidConnectExternalData
+                    const oidcExternalData = accountExternalData as OpenIDConnectExternalData
                     normalizedAccount = {
                         ...normalizedAccount,
                         external: {

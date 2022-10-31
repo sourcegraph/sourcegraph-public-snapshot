@@ -1,4 +1,10 @@
-import { Attribute, getSamlUsernameOrEmail, SamlExternalData } from './ExternalAccountsSignIn'
+import {
+    Attribute,
+    getSamlUsernameOrEmail,
+    SamlExternalData,
+    OpenIDConnectExternalData,
+    getOpenIDUsernameOrEmail,
+} from './ExternalAccountsSignIn'
 
 function toAttribute(value: string): Attribute {
     return {
@@ -23,7 +29,7 @@ function samlDataObject(keysValues: object): SamlExternalData {
     return testData as SamlExternalData
 }
 
-describe('getUsernameOrEmail', () => {
+describe('getSamlUsernameOrEmail', () => {
     test('saml account data has only email', () => {
         const testCases = [
             samlDataObject({
@@ -77,6 +83,35 @@ describe('getUsernameOrEmail', () => {
 
         for (const testCase of testCases) {
             expect(getSamlUsernameOrEmail(testCase)).toEqual('adalovelace')
+        }
+    })
+})
+
+describe('getOpenIDUsernameOrEmail', () => {
+    test('opendid account data has only email', () => {
+        const testCase = { randomField: 'random', userInfo: { email: 'ada@lovelace.com' } }
+        expect(getOpenIDUsernameOrEmail(testCase)).toEqual('ada@lovelace.com')
+    })
+
+    test('opendid account data has only username', () => {
+        const testCases = [
+            { randomField: 'random', userClaims: { name: 'adalovelace' } },
+            { randomField: 'random', userClaims: { given_name: 'adalovelace' } },
+            { randomField: 'random', userClaims: { preferred_username: 'adalovelace' } },
+        ]
+
+        for (const testCase of testCases) {
+            expect(getOpenIDUsernameOrEmail(testCase)).toBe('adalovelace')
+        }
+    })
+
+    test('opendid account has both email and username - username takes precedence', () => {
+        const testCases = [
+            { userInfo: { email: 'ada@lovelace.com' }, userClaims: { preferred_username: 'adalovelace' } },
+        ]
+
+        for (const testCase of testCases) {
+            expect(getOpenIDUsernameOrEmail(testCase)).toBe('adalovelace')
         }
     })
 })
