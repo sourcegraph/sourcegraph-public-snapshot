@@ -36,6 +36,16 @@ export interface SamlExternalData {
     }
 }
 
+interface OpenidConnectExternalData {
+    userInfo?: {
+        email?: string
+    }
+    userClaims?: {
+        name?: string
+        preferred_username?:string
+    }
+}
+
 export interface Attribute {
     Values: AttributeValue[]
 }
@@ -82,8 +92,7 @@ const getNormalizedAccount = (
 ): NormalizedMinAccount | null => {
     if (
         authProvider.serviceType === 'builtin' ||
-        authProvider.serviceType === 'http-header' ||
-        authProvider.serviceType === 'openidconnect'
+        authProvider.serviceType === 'http-header'
     ) {
         return null
     }
@@ -114,6 +123,9 @@ const getNormalizedAccount = (
                             userUrl: githubExternalData.html_url,
                         },
                     }
+
+                    {            console.log("==github==", githubExternalData.login)}
+
                 }
                 break
             case 'gitlab':
@@ -129,6 +141,9 @@ const getNormalizedAccount = (
                             userUrl: gitlabExternalData.web_url,
                         },
                     }
+
+                    {            console.log("==lab==", gitlabExternalData.username)}
+
                 }
                 break
             case 'saml':
@@ -139,10 +154,27 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: getUsernameOrEmail(samlExternalData),
+                            userName:  getUsernameOrEmail(samlExternalData),
                         },
                     }
                 }
+                break
+
+            case 'openidconnect':
+            {
+                const oidcExternalData = accountExternalData as OpenidConnectExternalData
+                console.log("blaaa =", oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email)
+
+                const usernameOrEmail =  oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || ''
+                // In case the SAML values don't have a username, we get the user email.
+                normalizedAccount = {
+                    ...normalizedAccount,
+                    external: {
+                        id: account.id,
+                        userName: usernameOrEmail
+                    },
+                }
+            }
                 break
         }
     }
