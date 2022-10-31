@@ -43,6 +43,7 @@ Here's a sample audit log entry:
 ```
 
 Here's a word-by-word breakout to demonstrate how the captured entry aligns with the design mantra:
+
 - **Actor** - `Attributes.audit.actor` field carries essential information about the actor who performed the action.
 - **Action** - `Body` field carries the action description. This action is suffixed with a "sampling immunity token," which carries the unique audit log entry ID. The audit entry ID must be present in the `Body` so that the message is always unique and never gets dropped by the sampling mechanism (hence the sampling immunity token string).
 - **Entity** - `Attributes.audit.entity` describes the audited entity. `Resource` field contains additional information about the audited resource as well.
@@ -76,6 +77,7 @@ The audit log is currently configured using the site config. Here's the correspo
 ```
 
 We believe the individual settings are self-explanatory, but here are a couple of notes:
+
 - Security events are non-configurable; they're _always_ a part of the audit log so that the customers always have at least some kind of minimal log.
 - We recommend using `INFO` level severity, but beware, if your instance sets the base logging level above, the audit log will be lost.
 
@@ -86,6 +88,7 @@ Audit logs are structured logs. As long as one can ingest logs, we assume one ca
 ### On Premises
 
 There are two easy approaches to filtering the audit logs:
+
 - JSON-based: look for the presence of the `Attributes.audit` node.
 - Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following Body string: `sampling immunity token`.
 
