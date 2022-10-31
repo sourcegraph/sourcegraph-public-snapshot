@@ -139,12 +139,6 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	usersStore := database.NewMockUserStore()
-	usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-		return &types.User{
-			ID:        id,
-			CreatedAt: time.Now(),
-		}, nil
-	})
 	userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 	userExternalAccountsStore.ListFunc.SetDefaultReturn(
 		[]*extsvc.Account{
@@ -227,6 +221,12 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
+		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:        id,
+				CreatedAt: time.Now(),
+			}, nil
+		})
 		userExternalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (int32, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
 			return 1, nil
@@ -277,6 +277,43 @@ func TestMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
+	t.Run("no open redirection", func(t *testing.T) {
+		state := &openidconnect.AuthnState{
+			CSRFToken:  "good",
+			Redirect:   "https://evil.com",
+			ProviderID: mockProvider.ConfigID().ID,
+		}
+		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+			require.Equal(t, testIDToken, rawIDToken)
+			return &oidc.IDToken{
+				Issuer:  oidcIDServer.URL,
+				Subject: testOIDCUser,
+				Expiry:  time.Now().Add(time.Hour),
+				Nonce:   state.Encode(),
+			}
+		}
+		defer func() { openidconnect.MockVerifyIDToken = nil }()
+
+		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:        id,
+				CreatedAt: time.Now(),
+			}, nil
+		})
+		
+		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		cookies := []*http.Cookie{
+			{
+				Name:  stateCookieName,
+				Value: state.Encode(),
+			},
+		}
+		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
+		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		assert.Equal(t, "/", resp.Header.Get("Location"))
+		mockrequire.Called(t, usersStore.SetIsSiteAdminFunc)
+	})
+
 	t.Run("lifetime expired", func(t *testing.T) {
 		usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
@@ -315,35 +352,4 @@ func TestMiddleware(t *testing.T) {
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
 	})
-
-	t.Run("no open redirection", func(t *testing.T) {
-		state := &openidconnect.AuthnState{
-			CSRFToken:  "good",
-			Redirect:   "https://evil.com",
-			ProviderID: mockProvider.ConfigID().ID,
-		}
-		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-			require.Equal(t, testIDToken, rawIDToken)
-			return &oidc.IDToken{
-				Issuer:  oidcIDServer.URL,
-				Subject: testOIDCUser,
-				Expiry:  time.Now().Add(time.Hour),
-				Nonce:   state.Encode(),
-			}
-		}
-		defer func() { openidconnect.MockVerifyIDToken = nil }()
-
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
-		cookies := []*http.Cookie{
-			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
-			},
-		}
-		resp := doRequest(http.MethodGet, urlStr, "", cookies, false)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/", resp.Header.Get("Location"))
-		mockrequire.Called(t, usersStore.SetIsSiteAdminFunc)
-	})
-
 }
