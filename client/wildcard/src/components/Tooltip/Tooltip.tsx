@@ -112,7 +112,7 @@ export const Tooltip: FC<TooltipProps> = props => {
         }
     }
 
-    const isOpen =  useDebounce(open, 100)
+    const isOpen = useDebounce(open, 100)
 
     return (
         <>
@@ -120,7 +120,7 @@ export const Tooltip: FC<TooltipProps> = props => {
                 {children}
             </TooltipTarget>
 
-            {content && target && isOpen &&(
+            {content && target && isOpen && (
                 <>
                     <PopoverContent
                         role="tooltip"
