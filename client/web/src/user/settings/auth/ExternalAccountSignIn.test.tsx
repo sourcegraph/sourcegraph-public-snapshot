@@ -88,16 +88,16 @@ describe('getSamlUsernameOrEmail', () => {
 })
 
 describe('getOpenIDUsernameOrEmail', () => {
-    test('opendid account data has only email', () => {
+    test('openid account data has only email', () => {
         const testCase = { randomField: 'random', userInfo: { email: 'ada@lovelace.com' } }
         expect(getOpenIDUsernameOrEmail(testCase)).toEqual('ada@lovelace.com')
     })
 
-    test('opendid account data has only username', () => {
+    test('openid account data has only username', () => {
         const testCases = [
             { randomField: 'random', userClaims: { name: 'adalovelace' } },
-            { randomField: 'random', userClaims: { given_name: 'adalovelace' } },
-            { randomField: 'random', userClaims: { preferred_username: 'adalovelace' } },
+            { anotherField: 'another', userClaims: { given_name: 'adalovelace' } },
+            { testField: 'test', userClaims: { preferred_username: 'adalovelace' } },
         ]
 
         for (const testCase of testCases) {
@@ -105,7 +105,7 @@ describe('getOpenIDUsernameOrEmail', () => {
         }
     })
 
-    test('opendid account has both email and username - username takes precedence', () => {
+    test('openid account has both email and username - username takes precedence', () => {
         const testCases = [
             { userInfo: { email: 'ada@lovelace.com' }, userClaims: { preferred_username: 'adalovelace' } },
         ]
