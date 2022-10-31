@@ -165,7 +165,6 @@ func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, pre
 	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized))
 }
 
-// TODO - overwrite this
 const setDocumentRanksQuery = `
 INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
 VALUES (
@@ -175,7 +174,7 @@ VALUES (
 )
 ON CONFLICT (repository_id, precision) DO
 UPDATE
-	SET payload = pr.payload || EXCLUDED.payload
+	SET payload = EXCLUDED.payload
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {

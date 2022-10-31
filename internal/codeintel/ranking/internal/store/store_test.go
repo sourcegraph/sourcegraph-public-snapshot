@@ -78,10 +78,10 @@ func TestDocumentRanks(t *testing.T) {
 	}
 
 	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
-		"cmd/main.go":        2,
+		"cmd/main.go":        2, // no longer referenced
 		"internal/secret.go": 3,
 		"internal/util.go":   4,
-		"README.md":          5,
+		"README.md":          5, // no longer referenced
 	}); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
@@ -98,8 +98,6 @@ func TestDocumentRanks(t *testing.T) {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 	expectedRanks := map[string][2]float64{
-		"cmd/main.go":        {0.25, 2},
-		"README.md":          {0.25, 5},
 		"cmd/args.go":        {0.25, 8},
 		"internal/secret.go": {0.25, 7},
 		"internal/util.go":   {0.25, 6},
