@@ -248,9 +248,7 @@ const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = p
 )
 
 const hierarchyOf = (symbols: SymbolNodeFields[]): (SymbolNodeFields | string)[] => {
-    const map1 = new Map<string, SymbolNodeFields | string>(
-        symbols.map(symbol => [`${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`, symbol])
-    )
+    const map1 = new Map<string, SymbolNodeFields | string>(symbols.map(symbol => [fullName(symbol), symbol]))
 
     for (const missing of symbols
         .filter(symbol => symbol.containerName)
