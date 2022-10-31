@@ -12,11 +12,11 @@ import (
 
 // bulkProcessorMaxNumRetries is the maximum number of attempts the bulkProcessor
 // makes to process a changeset job when it fails.
-const bulkProcessorMaxNumRetries = 1
+const bulkProcessorMaxNumRetries = 10
 
 // bulkProcessorMaxNumResets is the maximum number of attempts the bulkProcessor
 // makes to process a changeset job when it stalls (process crashes, etc.).
-const bulkProcessorMaxNumResets = 1
+const bulkProcessorMaxNumResets = 60
 
 var bulkOperationWorkerStoreOpts = dbworkerstore.Options{
 	Name:              "batches_bulk_worker_store",

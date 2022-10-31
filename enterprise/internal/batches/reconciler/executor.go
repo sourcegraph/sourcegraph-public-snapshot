@@ -174,9 +174,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	}
 	remoteRepo, err := e.remoteRepo(ctx)
 
-	fmt.Printf("GOT REMOTE REPO FOR COMMIT: %v", remoteRepo.Metadata)
-	fmt.Printf("sources: %v", remoteRepo.Sources)
-
 	if err != nil {
 		return err
 	}
@@ -191,13 +188,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("pushConf: %v", pushConf)
 
 	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("opts: %v", opts)
 
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
@@ -232,9 +227,6 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
 		return err
-	} else {
-		fmt.Printf("REMOTE REPO METADATA: %v", remoteRepo.Metadata)
-
 	}
 
 	cs := &sources.Changeset{
@@ -266,9 +258,6 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		exists, err = css.CreateChangeset(ctx, cs)
 		if err != nil {
 			return errors.Wrap(err, "creating changeset")
-		} else {
-			fmt.Printf("CREATED CHANGESET: %v", cs)
-
 		}
 	}
 

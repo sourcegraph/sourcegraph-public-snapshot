@@ -117,7 +117,6 @@ func (r *Repo) CloneURLs() []string {
 	urls := make([]string, 0, len(r.Sources))
 	for _, src := range r.Sources {
 		if src != nil && src.CloneURL != "" {
-			fmt.Printf("clone url 2: %v", src.CloneURL)
 			urls = append(urls, src.CloneURL)
 		}
 	}

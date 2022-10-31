@@ -112,9 +112,6 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
 	pr.FromRef.ID = gitdomain.EnsureRefPrefix(c.HeadRef)
 
-	fmt.Printf("Remote Repo: %v", remoteRepo)
-	fmt.Printf("Target Repo: %v", targetRepo)
-
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
 		var e *bitbucketserver.ErrAlreadyExists
@@ -337,23 +334,13 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
-
-		fmt.Printf("GOING TO CREATE FORK! %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
 		createdFork := parent.Project.Key + "-" + parent.Slug
-		// createdFork := "this-fork-isnt-super-cool"
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork})
 
-		fmt.Printf("FORK CREATED SUCCESSFULLY! Origin ID: %v", fork.Origin.ID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
-		fmt.Printf("GetUserFork - Created FORK Name %v-%v ID: %v", parent.Project.Key, parent.Slug, parent.ID)
-
-	} else {
-		fmt.Printf("FORK WAS FOUND! %v/%v", fork.Project.Key, fork.Name)
 	}
-
 	return s.copyRepoAsFork(targetRepo, fork, forkNamespace)
 }
 
@@ -371,17 +358,13 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		// fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
 		createdFork := parent.Project.Key + "-" + parent.Slug
-		// createdFork := "this-fork-isnt-super-cool"
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork,
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating fork in %q", namespace)
-
 		}
-		fmt.Printf("GetNamepaceFork - Created FORK Name %v", createdFork)
 	}
 
 	return s.copyRepoAsFork(targetRepo, fork, namespace)
@@ -424,10 +407,8 @@ func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketser
 
 	// Sanity check: is the returned repo _actually_ a fork of the original?
 	if repo.Origin == nil {
-		fmt.Printf("DOES NOT HAVE ORIGIN")
 		return nil, errNotAFork
 	} else if repo.Origin.ID != parent.ID {
-		fmt.Printf("WRONG ORIGIN")
 		return nil, errNotForkedFromParent
 	}
 
