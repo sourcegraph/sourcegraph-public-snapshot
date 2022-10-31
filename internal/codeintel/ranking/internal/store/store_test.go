@@ -117,8 +117,10 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('r1'), ('r2'), ('r3'), ('r4'), ('r5'), ('r6'), ('r7'), ('r8'), ('r9'), ('r10'), ('r11'), ('r12'), ('r13'), ('r14'), ('r15')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	for i := 1; i <= 15; i++ {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`INSERT INTO repo (name) VALUES ('r%d')`, i)); err != nil {
+			t.Fatalf("failed to insert repos: %s", err)
+		}
 	}
 
 	for i := 0; i < 10; i++ {
