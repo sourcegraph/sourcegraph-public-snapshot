@@ -90,24 +90,23 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 ### Local machine
 
-Spin up a local Sourcegraph instance
-
 <div class="grid">
-  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
-    <img alt="k3s-logo" src="https://cncf-branding.netlify.app/img/projects/k3s/icon/color/k3s-icon-color.png"/>
-    <h3>K3s</h3>
-    <p>Deploy with kubernetes</p>
-  </a>
-  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
-    <img alt="k3s-logo" src="https://miro.medium.com/max/400/0*KzqL3xqmXzV5PPjX.png"/>
-    <h3>Minikube</h3>
-    <p>Deploy with kubernetes</p>
-  </a>
   <a class="btn-app btn" href="/admin/deploy/docker-single-container">
     <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Container</h3>
-    <p>Deploy with pure docker</p>
-  </a><div></div>
+    <p>Spin up a local Sourcegraph instance with pure docker</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
+    <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
+    <h3>K3s</h3>
+    <p>Spin up a local Sourcegraph instance with kubernetes</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
+    <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
+    <h3>Minikube</h3>
+    <p>Spin up a local Sourcegraph instance with kubernetes</p>
+  </a>
+  <div></div>
 </div>
 
 ---
