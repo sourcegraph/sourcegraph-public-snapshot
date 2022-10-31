@@ -10,6 +10,8 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/log/logtest"
+
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -21,6 +23,7 @@ func TestGitServiceHandlers(t *testing.T) {
 		Gitserver: mockAddrForRepo{},
 	}
 	handler := jsonMiddleware(&errorHandler{
+		Logger: logtest.Scoped(t),
 		// Internal endpoints can expose sensitive errors
 		WriteErrBody: true,
 	})
