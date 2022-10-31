@@ -2,6 +2,12 @@
 # Gitpod config reference: https://www.gitpod.io/docs/config-gitpod-file
 
 tasks:
-  - init: ./dev/sg/bootstrap.sh -f -p=false
+  - init: |
+      (
+        set -e
+
+        ./dev/sg/bootstrap.sh -f -p=false
+        sg setup --oss --fix
+      )
     #init: curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh -s -- -f -p=false
     command: gp top
