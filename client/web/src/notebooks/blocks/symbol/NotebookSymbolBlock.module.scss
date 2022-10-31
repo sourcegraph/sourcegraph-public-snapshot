@@ -3,21 +3,13 @@
 }
 
 .highlighted-file-wrapper {
-    padding: 0.25rem 1rem 1rem 1rem;
-
-    :global(.is-read-only-notebook) & {
-        padding-bottom: 0.25rem;
-    }
+    padding: 0.25rem 1rem 0.25rem 1rem;
 }
 
 .header {
     display: flex;
     align-items: center;
-    padding: 1rem 1rem 0.25rem 1rem;
-
-    :global(.is-read-only-notebook) & {
-        padding-top: 0.25rem;
-    }
+    padding: 0.25rem 1rem 0.25rem 1rem;
 }
 
 .separator {

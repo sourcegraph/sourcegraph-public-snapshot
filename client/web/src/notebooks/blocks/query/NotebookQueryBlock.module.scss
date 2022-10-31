@@ -1,9 +1,5 @@
 .block {
-    padding: 1rem;
-
-    :global(.is-read-only-notebook) & {
-        padding: 0.25rem 1rem;
-    }
+    padding: 0.25rem 1rem;
 }
 
 .content {
@@ -29,4 +25,9 @@
         border: 1px solid var(--border-active-color) !important;
         box-shadow: 0 0 0 0.125rem var(--primary-2);
     }
+}
+
+.code-mirror-wrapper {
+    display: inline-block;
+    padding-left: 0.5em;
 }
