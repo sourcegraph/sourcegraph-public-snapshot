@@ -265,7 +265,8 @@ upserted AS (
 	FROM locked_candidates c
 	JOIN repo r ON r.name = c.repository_name
 	GROUP BY r.id, c.precision, c.graph_key
-	ON CONFLICT (repository_id, precision) DO UPDATE SET payload = CASE
+	ON CONFLICT (repository_id, precision) DO UPDATE SET payload =
+	 CASE
 		WHEN pr.graph_key != EXCLUDED.graph_key
 			THEN EXCLUDED.payload
 		ELSE

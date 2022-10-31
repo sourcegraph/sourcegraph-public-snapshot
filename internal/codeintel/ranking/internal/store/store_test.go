@@ -123,6 +123,25 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 		}
 	}
 
+	{
+		for i := 0; i < 10; i++ {
+			fi := float64(i)
+
+			if err := store.BulkSetDocumentRanks(ctx, "old-scores", fmt.Sprintf("f-%02d.csv", i+1), 0.25, map[api.RepoName]map[string]float64{
+				api.RepoName(fmt.Sprintf("r%d", i+1)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+				api.RepoName(fmt.Sprintf("r%d", i+2)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+				api.RepoName(fmt.Sprintf("r%d", i+3)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+			}); err != nil {
+				t.Fatalf("unexpected error setting document ranks: %s", err)
+			}
+		}
+
+		// Create scores that will need to be overwritten with a newer graph key
+		if _, _, err := store.MergeDocumentRanks(ctx, "old-scores", 500); err != nil {
+			t.Fatalf("Unexpected error merging document ranks: %s", err)
+		}
+	}
+
 	for i := 0; i < 10; i++ {
 		fi := float64(i)
 
