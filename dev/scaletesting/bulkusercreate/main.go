@@ -174,7 +174,7 @@ func main() {
 		for _, o := range orgs {
 			currentOrg := o
 			g.Go(func() {
-				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, orgsDone)
+				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
 			})
 		}
 		g.Wait()
@@ -182,7 +182,7 @@ func main() {
 		for _, t := range teams {
 			currentTeam := t
 			g.Go(func() {
-				executeCreateTeam(ctx, currentTeam, teamsDone)
+				executeCreateTeam(ctx, currentTeam, &teamsDone)
 			})
 		}
 		g.Wait()
@@ -190,7 +190,7 @@ func main() {
 		for _, u := range users {
 			currentUser := u
 			g.Go(func() {
-				executeCreateUser(ctx, currentUser, usersDone)
+				executeCreateUser(ctx, currentUser, &usersDone)
 			})
 		}
 		g.Wait()
@@ -213,7 +213,7 @@ func main() {
 						teamIndex:          currentIter,
 						teamIncrement:      teamsToSkip,
 					},
-					membershipsDone)
+					&membershipsDone)
 			})
 		}
 		g.Wait()
@@ -342,7 +342,7 @@ type teamMembershipOpts struct {
 	teamIncrement      int
 }
 
-func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembershipOpts, membershipsDone int64) {
+func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembershipOpts, membershipsDone *int64) {
 	// users need to be member of the team's parent org to join the team
 	userState := "active"
 	userRole := "member"
@@ -385,8 +385,8 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 		}
 
 		candidateTeam.TotalMembers += 1
-		atomic.AddInt64(&membershipsDone, 1)
-		progress.SetValue(3, float64(membershipsDone))
+		atomic.AddInt64(membershipsDone, 1)
+		progress.SetValue(3, float64(*membershipsDone))
 
 		if mErr = store.saveTeam(candidateTeam); mErr != nil {
 			log.Fatal(mErr)
@@ -396,10 +396,10 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 	}
 }
 
-func executeCreateUser(ctx context.Context, currentUser *user, usersDone int64) {
+func executeCreateUser(ctx context.Context, currentUser *user, usersDone *int64) {
 	if currentUser.Created && currentUser.Failed == "" {
-		atomic.AddInt64(&usersDone, 1)
-		progress.SetValue(2, float64(usersDone))
+		atomic.AddInt64(usersDone, 1)
+		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
@@ -417,8 +417,8 @@ func executeCreateUser(ctx context.Context, currentUser *user, usersDone int64) 
 			log.Fatal(uErr)
 		}
 		writeInfo(out, "user with login %s already exists", currentUser.Login)
-		atomic.AddInt64(&usersDone, 1)
-		progress.SetValue(2, float64(usersDone))
+		atomic.AddInt64(usersDone, 1)
+		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
@@ -434,8 +434,8 @@ func executeCreateUser(ctx context.Context, currentUser *user, usersDone int64) 
 
 	currentUser.Created = true
 	currentUser.Failed = ""
-	atomic.AddInt64(&usersDone, 1)
-	progress.SetValue(2, float64(usersDone))
+	atomic.AddInt64(usersDone, 1)
+	progress.SetValue(2, float64(*usersDone))
 	if uErr = store.saveUser(currentUser); uErr != nil {
 		log.Fatal(uErr)
 	}
@@ -443,10 +443,10 @@ func executeCreateUser(ctx context.Context, currentUser *user, usersDone int64) 
 	//writeSuccess(out, "Created user with login %s", currentUser.Login)
 }
 
-func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone int64) {
+func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone *int64) {
 	if currentTeam.Created && currentTeam.Failed == "" {
-		atomic.AddInt64(&teamsDone, 1)
-		progress.SetValue(1, float64(teamsDone))
+		atomic.AddInt64(teamsDone, 1)
+		progress.SetValue(1, float64(*teamsDone))
 		return
 	}
 
@@ -461,8 +461,8 @@ func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone int64) 
 	if existingTeam != nil {
 		currentTeam.Created = true
 		currentTeam.Failed = ""
-		atomic.AddInt64(&teamsDone, 1)
-		progress.SetValue(1, float64(teamsDone))
+		atomic.AddInt64(teamsDone, 1)
+		progress.SetValue(1, float64(*teamsDone))
 
 		if tErr = store.saveTeam(currentTeam); tErr != nil {
 			log.Fatal(tErr)
@@ -479,8 +479,8 @@ func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone int64) 
 
 		currentTeam.Created = true
 		currentTeam.Failed = ""
-		atomic.AddInt64(&teamsDone, 1)
-		progress.SetValue(1, float64(teamsDone))
+		atomic.AddInt64(teamsDone, 1)
+		progress.SetValue(1, float64(*teamsDone))
 
 		if tErr = store.saveTeam(currentTeam); tErr != nil {
 			log.Fatal(tErr)
@@ -488,10 +488,10 @@ func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone int64) 
 	}
 }
 
-func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, orgsDone int64) {
+func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, orgsDone *int64) {
 	if currentOrg.Created && currentOrg.Failed == "" {
-		atomic.AddInt64(&orgsDone, 1)
-		progress.SetValue(0, float64(orgsDone))
+		atomic.AddInt64(orgsDone, 1)
+		progress.SetValue(0, float64(*orgsDone))
 		return
 	}
 
@@ -505,8 +505,8 @@ func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, org
 	if existingOrg != nil {
 		currentOrg.Created = true
 		currentOrg.Failed = ""
-		atomic.AddInt64(&orgsDone, 1)
-		progress.SetValue(0, float64(orgsDone))
+		atomic.AddInt64(orgsDone, 1)
+		progress.SetValue(0, float64(*orgsDone))
 
 		if oErr = store.saveOrg(currentOrg); oErr != nil {
 			log.Fatal(oErr)
@@ -525,8 +525,8 @@ func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, org
 		return
 	}
 
-	atomic.AddInt64(&orgsDone, 1)
-	progress.SetValue(0, float64(orgsDone))
+	atomic.AddInt64(orgsDone, 1)
+	progress.SetValue(0, float64(*orgsDone))
 
 	currentOrg.Created = true
 	currentOrg.Failed = ""
