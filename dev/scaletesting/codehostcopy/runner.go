@@ -194,7 +194,8 @@ func pushRepo(ctx context.Context, repo *store.Repo) error {
 func gitPushWithRetry(ctx context.Context, dir string, retry int) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		err = run.Bash(ctx, "git push --mirror destination").Dir(dir).Run().Wait()
+        // --force, with mirror we want the remote to look exactly as we have it
+		err = run.Bash(ctx, "git push --mirror --force destination").Dir(dir).Run().Wait()
 		if err != nil {
 			if strings.Contains(err.Error(), "timed out") {
 				continue
