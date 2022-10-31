@@ -50,6 +50,26 @@ func NewVersionAndPatchFromString(v string) (Version, int, bool) {
 	return NewVersion(major, minor), patch, true
 }
 
+// MustNewVersionAndPatchFromString parses the major, minor and patch version
+// from the given string. It's similar to NewVersionAndPatchFromString but
+// returns a false-valued flag if no patch version was given.
+func MustNewVersionAndPatchFromString(v string) (Version, int, bool) {
+	matches := versionPattern.FindStringSubmatch(v)
+	if len(matches) < 4 {
+		return Version{}, 0, false
+	}
+
+	if matches[1] == "" || matches[2] == "" || matches[3] == "" {
+		return Version{}, 0, false
+	}
+
+	major, _ := strconv.Atoi(matches[1])
+	minor, _ := strconv.Atoi(matches[2])
+	patch, _ := strconv.Atoi(matches[3])
+
+	return NewVersion(major, minor), patch, true
+}
+
 func (v Version) String() string {
 	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
 }
