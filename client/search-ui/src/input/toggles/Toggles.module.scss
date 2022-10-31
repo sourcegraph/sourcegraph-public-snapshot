@@ -75,4 +75,24 @@
             background-color: transparent;
         }
     }
+
+    &[aria-label='Case sensitivity toggle'] {
+        svg {
+            transform: scale(1.234); // Override to set precisely
+            margin-top: -1px; // Override to set precisely
+        }
+    }
+
+    &[aria-label='Regular expression toggle'] {
+        svg {
+            transform: scale(1.125); // Override to set precisely
+            margin-top: -1px; // Override to set precisely
+        }
+    }
+
+    &[aria-label='Structural search toggle'] {
+        svg {
+            transform: scale(1.125); // Override to set precisely
+        }
+    }
 }
