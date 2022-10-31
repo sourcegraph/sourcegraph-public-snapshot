@@ -66,7 +66,10 @@ class LineFocus implements PluginValue {
 
     public update(update: ViewUpdate): void {
         const currentSelectedLine = update.state.field(selectedLines)?.line
-        if (currentSelectedLine && this.lastSelectedLine !== currentSelectedLine) {
+        // Problem:
+        // Last selected line is 9:
+        // Focus event tries to move to line 9 but won't focus as it's the same
+        if (currentSelectedLine !== undefined && this.lastSelectedLine !== currentSelectedLine) {
             this.lastSelectedLine = currentSelectedLine
             this.focusLine({ line: currentSelectedLine })
         } else {
@@ -80,19 +83,25 @@ class LineFocus implements PluginValue {
 
     private focusLine({ line, preventScroll = true }: { line: number; preventScroll?: boolean }): void {
         const nextLine = this.view.state.doc.line(line)
-        const nextLineElement = this.view.domAtPos(nextLine.from).node
-        if (nextLineElement instanceof HTMLElement) {
+        const node = this.view.domAtPos(nextLine.from).node
+        const closestElement = node instanceof HTMLElement ? node : node.parentElement
+
+        const target = closestElement?.hasAttribute('data-line-focusable')
+            ? closestElement
+            : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+
+        if (target) {
             this.lastFocusedLine = line
             window.requestAnimationFrame(() => {
-                if (document.activeElement !== nextLineElement && !this.view.dom.contains(document.activeElement)) {
-                    nextLineElement.focus({ preventScroll })
+                if (document.activeElement !== target && !this.view.dom.contains(document.activeElement)) {
+                    target.focus({ preventScroll })
                 }
             })
         }
     }
 }
 
-const focusableLineDecoration = Decoration.line({ attributes: { tabIndex: '-1' } })
+const focusableLineDecoration = Decoration.line({ attributes: { tabIndex: '-1', 'data-line-focusable': '' } })
 
 export function focusableLines({ initialLine = 1, onSelection }: FocusableLinesConfig): Extension {
     return [

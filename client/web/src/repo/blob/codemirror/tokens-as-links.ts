@@ -38,10 +38,16 @@ const focusSelectedLine = ViewPlugin.fromClass(
             if (selection) {
                 const line = this.view.state.doc.line(selection.line)
 
-                if (line) {
+                const node = this.view.domAtPos(line.from).node
+                const closestElement = node instanceof HTMLElement ? node : node.parentElement
+
+                const target = closestElement?.hasAttribute('data-line-focusable')
+                    ? closestElement
+                    : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+
+                if (target) {
                     window.requestAnimationFrame(() => {
-                        const element = this.view.domAtPos(line.from).node as HTMLElement
-                        element.focus()
+                        target.focus()
                     })
                 }
             }
@@ -239,7 +245,7 @@ export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: Toke
         })) ?? []
 
     return [
-        focusSelectedLine,
+        // focusSelectedLine,
         tokenLinks.init(() => referencesLinks),
         preloadGoToDefinition ? ViewPlugin.define(view => new DefinitionManager(view, blobInfo)) : [],
         EditorView.domEventHandlers({
