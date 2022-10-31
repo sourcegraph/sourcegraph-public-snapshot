@@ -17,6 +17,12 @@ func NewJanitor(backgroundJobs UploadServiceBackgroundJobs) []goroutine.Backgrou
 	}
 }
 
+func NewReconciler(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		backgroundJobs.NewReconciler(ConfigInst.Interval, ConfigInst.ReconcilerBatchSize),
+	}
+}
+
 func NewResetters(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		backgroundJobs.NewUploadResetter(ConfigInst.Interval),

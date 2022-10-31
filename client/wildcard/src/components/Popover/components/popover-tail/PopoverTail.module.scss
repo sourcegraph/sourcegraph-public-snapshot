@@ -1,19 +1,19 @@
+
 .tail {
     position: fixed;
     top: 0;
     left: 0;
+    width: var(--tail-width);
+    height: calc(var(--tail-width) / 2);
     overflow: hidden;
     pointer-events: none;
 
-    --tail-width: 24px;
-    --tail-background: var(--dropdown-bg);
-    --tail-border: 1px solid var(--dropdown-border-color);
-
-    width: var(--tail-width);
-    height: calc(var(--tail-width) / 2);
-
     &--size-sm {
         --tail-width: 16px;
+    }
+
+    &--size-md {
+        --tail-width: 24px;
     }
 
     &--size-lg {
@@ -70,7 +70,7 @@
         height: 70%;
         transform: translate(0%, -70%) rotate(45deg);
 
-        background-color: var(--tail-background);
-        border: var(--tail-border);
+        background-color: var(--tail-background, var(--dropdown-bg));
+        border: var(--tail-border, 1px solid var(--dropdown-border-color));
     }
 }
