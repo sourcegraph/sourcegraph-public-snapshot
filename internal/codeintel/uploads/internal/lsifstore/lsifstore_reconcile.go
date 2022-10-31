@@ -17,7 +17,7 @@ WITH candidates AS (
 	SELECT m.dump_id
 	FROM lsif_data_metadata m
 	LEFT JOIN codeintel_last_reconcile lr ON lr.dump_id = m.dump_id
-	ORDER BY lr.last_reconcile_at DESC NULLS LAST
+	ORDER BY lr.last_reconcile_at DESC NULLS FIRST
 	LIMIT %s
 )
 INSERT INTO codeintel_last_reconcile
