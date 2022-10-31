@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -30,6 +31,8 @@ type Store interface {
 	HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error)
 	BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error
 	MergeDocumentRanks(ctx context.Context, graphKey string, inputFileBatchSize int) (numRepositoriesUpdated int, numInputsProcessed int, _ error)
+	LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (map[api.RepoName]time.Time, error)
+	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
 }
 
 // store manages the ranking store.
@@ -273,4 +276,49 @@ processed AS (
 SELECT
 	(SELECT COUNT(*) FROM upserted) AS num_updated,
 	(SELECT COUNT(*) FROM processed) AS num_processed
+`
+
+func (s *store) LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (map[api.RepoName]time.Time, error) {
+	pairs, err := scanLastUpdatedAtPairs(s.db.Query(ctx, sqlf.Sprintf(lastUpdatedAtQuery, pq.Array(repoNames))))
+	if err != nil {
+		return nil, err
+	}
+
+	return pairs, nil
+}
+
+const lastUpdatedAtQuery = `
+SELECT
+	r.name,
+	pr.updated_at
+FROM codeintel_path_ranks pr
+JOIN repo r ON r.id = pr.repository_id
+WHERE r.name = ANY(%s)
+`
+
+var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoName api.RepoName, t time.Time, _ error) {
+	err := s.Scan(&repoName, &t)
+	return repoName, t, err
+})
+
+func (s *store) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {
+	names, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(updatedAfterQuery, t)))
+	if err != nil {
+		return nil, err
+	}
+
+	repoNames := make([]api.RepoName, 0, len(names))
+	for _, name := range names {
+		repoNames = append(repoNames, api.RepoName(name))
+	}
+
+	return repoNames, nil
+}
+
+const updatedAfterQuery = `
+SELECT r.name
+FROM codeintel_path_ranks pr
+JOIN repo r ON r.id = pr.repository_id
+WHERE pr.updated_at >= %s
+ORDER BY r.name
 `

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -229,5 +230,90 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedRanks, allRanks); diff != "" {
 		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
+	}
+}
+
+func TestLastUpdatedAt(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
+		t.Fatalf("unexpected error setting document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
+		t.Fatalf("unexpected error setting document ranks: %s", err)
+	}
+
+	pairs, err := store.LastUpdatedAt(ctx, []api.RepoName{"foo", "bar", "bonk"})
+	if err != nil {
+		t.Fatalf("unexpected error getting repo last update times: %s", err)
+	}
+
+	fooUpdatedAt, ok := pairs["foo"]
+	if !ok {
+		t.Fatalf("expected 'foo' in result: %v", pairs)
+	}
+	barUpdatedAt, ok := pairs["bar"]
+	if !ok {
+		t.Fatalf("expected 'bar' in result: %v", pairs)
+	}
+	if _, ok := pairs["bonk"]; ok {
+		t.Fatalf("unexpected 'bonk' in result: %v", pairs)
+	}
+
+	if !fooUpdatedAt.Before(barUpdatedAt) {
+		t.Errorf("unexpected timestamp ordering: %v and %v", fooUpdatedAt, barUpdatedAt)
+	}
+}
+
+func TestUpdatedAfter(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+		t.Fatalf("failed to insert repos: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
+		t.Fatalf("unexpected error setting document ranks: %s", err)
+	}
+	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
+		t.Fatalf("unexpected error setting document ranks: %s", err)
+	}
+
+	// past
+	{
+		repoNames, err := store.UpdatedAfter(ctx, time.Now().Add(-time.Hour*24))
+		if err != nil {
+			t.Fatalf("unexpected error getting updated repos: %s", err)
+		}
+		if diff := cmp.Diff([]api.RepoName{"bar", "foo"}, repoNames); diff != "" {
+			t.Errorf("unexpected repository names (-want +got):\n%s", diff)
+		}
+	}
+
+	// future
+	{
+		repoNames, err := store.UpdatedAfter(ctx, time.Now().Add(time.Hour*24))
+		if err != nil {
+			t.Fatalf("unexpected error getting updated repos: %s", err)
+		}
+		if len(repoNames) != 0 {
+			t.Fatal("expected no repos")
+		}
 	}
 }

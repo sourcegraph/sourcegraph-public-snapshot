@@ -749,6 +749,14 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION versions_insert_row_trigger() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1630,7 +1638,8 @@ ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_in
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
-    "precision" double precision NOT NULL
+    "precision" double precision NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE codeintel_ranking_exports (
@@ -4322,6 +4331,8 @@ CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codei
 
 CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
 
+CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
+
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
 CREATE INDEX configuration_policies_audit_logs_timestamp ON configuration_policies_audit_logs USING brin (log_timestamp);
@@ -4623,6 +4634,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
 CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger();
 
