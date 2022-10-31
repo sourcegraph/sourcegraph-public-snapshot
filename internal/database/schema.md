@@ -883,14 +883,15 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 # Table "public.codeintel_path_rank_inputs"
 ```
-     Column      |  Type   | Collation | Nullable |                        Default                         
------------------+---------+-----------+----------+--------------------------------------------------------
- id              | bigint  |           | not null | nextval('codeintel_path_rank_inputs_id_seq'::regclass)
- graph_key       | text    |           | not null | 
- input_filename  | text    |           | not null | 
- repository_name | text    |           | not null | 
- payload         | jsonb   |           | not null | 
- processed       | boolean |           | not null | false
+     Column      |       Type       | Collation | Nullable |                        Default                         
+-----------------+------------------+-----------+----------+--------------------------------------------------------
+ id              | bigint           |           | not null | nextval('codeintel_path_rank_inputs_id_seq'::regclass)
+ graph_key       | text             |           | not null | 
+ input_filename  | text             |           | not null | 
+ repository_name | text             |           | not null | 
+ payload         | jsonb            |           | not null | 
+ processed       | boolean          |           | not null | false
+ precision       | double precision |           | not null | 
 Indexes:
     "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
@@ -902,12 +903,13 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
 
 # Table "public.codeintel_path_ranks"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- repository_id | integer |           | not null | 
- payload       | jsonb   |           | not null | 
+    Column     |       Type       | Collation | Nullable | Default 
+---------------+------------------+-----------+----------+---------
+ repository_id | integer          |           | not null | 
+ payload       | jsonb            |           | not null | 
+ precision     | double precision |           | not null | 
 Indexes:
-    "codeintel_path_ranks_repository_id_key" UNIQUE CONSTRAINT, btree (repository_id)
+    "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
 
 ```
 

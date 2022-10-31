@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -24,10 +25,10 @@ type Store interface {
 
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetRepos(ctx context.Context) ([]api.RepoName, error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][]float64, bool, error)
-	SetDocumentRanks(ctx context.Context, repoName api.RepoName, ranks map[string][]float64) error
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error)
+	SetDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64) error
 	HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error)
-	BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, ranks map[api.RepoName]map[string][]float64) error
+	BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error
 	MergeDocumentRanks(ctx context.Context, graphKey string, inputFileBatchSize int) (numRepositoriesUpdated int, numInputsProcessed int, _ error)
 }
 
@@ -107,22 +108,43 @@ WHERE
 ORDER BY r.name
 `
 
-func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][]float64, bool, error) {
-	serialized, ok, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName)))
-	if err != nil {
-		return nil, false, err
-	}
-	if !ok {
-		return nil, false, nil
+func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string][2]float64, bool, error) {
+	pathRanksWithPrecision := map[string][2]float64{}
+	scanner := func(s dbutil.Scanner) error {
+		var (
+			precision  float64
+			serialized string
+		)
+		if err := s.Scan(&precision, &serialized); err != nil {
+			return err
+		}
+
+		pathRanks := map[string]float64{}
+		if err := json.Unmarshal([]byte(serialized), &pathRanks); err != nil {
+			return err
+		}
+
+		for path, newRank := range pathRanks {
+			if oldRank, ok := pathRanksWithPrecision[path]; ok && oldRank[0] <= precision {
+				continue
+			}
+
+			pathRanksWithPrecision[path] = [2]float64{precision, newRank}
+		}
+
+		return nil
 	}
 
-	m := map[string][]float64{}
-	err = json.Unmarshal([]byte(serialized), &m)
-	return m, true, err
+	if err := basestore.NewCallbackScanner[any](scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
+		return nil, false, err
+	}
+	return pathRanksWithPrecision, true, nil
 }
 
 const getDocumentRanksQuery = `
-SELECT payload
+SELECT
+	precision,
+	payload
 FROM codeintel_path_ranks pr
 JOIN repo r ON r.id = pr.repository_id
 WHERE
@@ -131,24 +153,25 @@ WHERE
 	r.blocked IS NULL
 `
 
-func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, ranks map[string][]float64) error {
+func (s *store) SetDocumentRanks(ctx context.Context, repoName api.RepoName, precision float64, ranks map[string]float64) error {
 	serialized, err := json.Marshal(ranks)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, serialized))
+	return s.db.Exec(ctx, sqlf.Sprintf(setDocumentRanksQuery, repoName, precision, serialized))
 }
 
 const setDocumentRanksQuery = `
-INSERT INTO codeintel_path_ranks AS pr (repository_id, payload)
+INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
 VALUES (
 	(SELECT id FROM repo WHERE name = %s),
+	%s,
 	%s
 )
-ON CONFLICT (repository_id) DO
+ON CONFLICT (repository_id, precision) DO
 UPDATE
-	SET payload = ((pr.payload::jsonb || EXCLUDED.payload::jsonb)::text)::jsonb
+	SET payload = pr.payload || EXCLUDED.payload
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {
@@ -164,7 +187,7 @@ WHERE
 ORDER BY pr.input_filename
 `
 
-func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, ranks map[api.RepoName]map[string][]float64) error {
+func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error {
 	inserter := batch.NewInserterWithConflict(
 		ctx,
 		s.db.Handle(),
@@ -174,6 +197,7 @@ func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename str
 		"graph_key",
 		"input_filename",
 		"repository_name",
+		"precision",
 		"payload",
 	)
 	for repoName, ranks := range ranks {
@@ -182,7 +206,7 @@ func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename str
 			return err
 		}
 
-		if err := inserter.Insert(ctx, graphKey, filename, repoName, serialized); err != nil {
+		if err := inserter.Insert(ctx, graphKey, filename, repoName, precision, serialized); err != nil {
 			return err
 		}
 	}
@@ -218,6 +242,7 @@ locked_candidates AS (
 	SELECT
 		pr.id,
 		pr.graph_key,
+		pr.precision,
 		pr.input_filename,
 		pr.repository_name,
 		pr.payload
@@ -228,14 +253,15 @@ locked_candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 upserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
 	SELECT
 		r.id,
+		c.precision,
 		sg_jsonb_concat_agg(c.payload)
 	FROM locked_candidates c
 	JOIN repo r ON r.name = c.repository_name
-	GROUP BY r.id
-	ON CONFLICT (repository_id) DO UPDATE SET payload = pr.payload || EXCLUDED.payload
+	GROUP BY r.id, c.precision
+	ON CONFLICT (repository_id, precision) DO UPDATE SET payload = pr.payload || EXCLUDED.payload
 	RETURNING 1
 ),
 processed AS (

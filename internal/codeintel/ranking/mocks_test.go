@@ -61,7 +61,7 @@ type MockStore struct {
 func NewMockStore() *MockStore {
 	return &MockStore{
 		BulkSetDocumentRanksFunc: &StoreBulkSetDocumentRanksFunc{
-			defaultHook: func(context.Context, string, string, map[api.RepoName]map[string][]float64) (r0 error) {
+			defaultHook: func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) (r0 error) {
 				return
 			},
 		},
@@ -71,7 +71,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 map[string][]float64, r1 bool, r2 error) {
+			defaultHook: func(context.Context, api.RepoName) (r0 map[string][2]float64, r1 bool, r2 error) {
 				return
 			},
 		},
@@ -96,7 +96,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName, map[string][]float64) (r0 error) {
+			defaultHook: func(context.Context, api.RepoName, float64, map[string]float64) (r0 error) {
 				return
 			},
 		},
@@ -113,7 +113,7 @@ func NewMockStore() *MockStore {
 func NewStrictMockStore() *MockStore {
 	return &MockStore{
 		BulkSetDocumentRanksFunc: &StoreBulkSetDocumentRanksFunc{
-			defaultHook: func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+			defaultHook: func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error {
 				panic("unexpected invocation of MockStore.BulkSetDocumentRanks")
 			},
 		},
@@ -123,7 +123,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+			defaultHook: func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
 				panic("unexpected invocation of MockStore.GetDocumentRanks")
 			},
 		},
@@ -148,7 +148,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SetDocumentRanksFunc: &StoreSetDocumentRanksFunc{
-			defaultHook: func(context.Context, api.RepoName, map[string][]float64) error {
+			defaultHook: func(context.Context, api.RepoName, float64, map[string]float64) error {
 				panic("unexpected invocation of MockStore.SetDocumentRanks")
 			},
 		},
@@ -197,24 +197,24 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 // StoreBulkSetDocumentRanksFunc describes the behavior when the
 // BulkSetDocumentRanks method of the parent MockStore instance is invoked.
 type StoreBulkSetDocumentRanksFunc struct {
-	defaultHook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error
-	hooks       []func(context.Context, string, string, map[api.RepoName]map[string][]float64) error
+	defaultHook func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error
+	hooks       []func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error
 	history     []StoreBulkSetDocumentRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // BulkSetDocumentRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) BulkSetDocumentRanks(v0 context.Context, v1 string, v2 string, v3 map[api.RepoName]map[string][]float64) error {
-	r0 := m.BulkSetDocumentRanksFunc.nextHook()(v0, v1, v2, v3)
-	m.BulkSetDocumentRanksFunc.appendCall(StoreBulkSetDocumentRanksFuncCall{v0, v1, v2, v3, r0})
+func (m *MockStore) BulkSetDocumentRanks(v0 context.Context, v1 string, v2 string, v3 float64, v4 map[api.RepoName]map[string]float64) error {
+	r0 := m.BulkSetDocumentRanksFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.BulkSetDocumentRanksFunc.appendCall(StoreBulkSetDocumentRanksFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the BulkSetDocumentRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreBulkSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error) {
+func (f *StoreBulkSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error) {
 	f.defaultHook = hook
 }
 
@@ -222,7 +222,7 @@ func (f *StoreBulkSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context
 // BulkSetDocumentRanks method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreBulkSetDocumentRanksFunc) PushHook(hook func(context.Context, string, string, map[api.RepoName]map[string][]float64) error) {
+func (f *StoreBulkSetDocumentRanksFunc) PushHook(hook func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -231,19 +231,19 @@ func (f *StoreBulkSetDocumentRanksFunc) PushHook(hook func(context.Context, stri
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreBulkSetDocumentRanksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+	f.SetDefaultHook(func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreBulkSetDocumentRanksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+	f.PushHook(func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error {
 		return r0
 	})
 }
 
-func (f *StoreBulkSetDocumentRanksFunc) nextHook() func(context.Context, string, string, map[api.RepoName]map[string][]float64) error {
+func (f *StoreBulkSetDocumentRanksFunc) nextHook() func(context.Context, string, string, float64, map[api.RepoName]map[string]float64) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -287,7 +287,10 @@ type StoreBulkSetDocumentRanksFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 map[api.RepoName]map[string][]float64
+	Arg3 float64
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 map[api.RepoName]map[string]float64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -296,7 +299,7 @@ type StoreBulkSetDocumentRanksFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreBulkSetDocumentRanksFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -409,15 +412,15 @@ func (c StoreDoneFuncCall) Results() []interface{} {
 // StoreGetDocumentRanksFunc describes the behavior when the
 // GetDocumentRanks method of the parent MockStore instance is invoked.
 type StoreGetDocumentRanksFunc struct {
-	defaultHook func(context.Context, api.RepoName) (map[string][]float64, bool, error)
-	hooks       []func(context.Context, api.RepoName) (map[string][]float64, bool, error)
+	defaultHook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)
+	hooks       []func(context.Context, api.RepoName) (map[string][2]float64, bool, error)
 	history     []StoreGetDocumentRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // GetDocumentRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[string][]float64, bool, error) {
+func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[string][2]float64, bool, error) {
 	r0, r1, r2 := m.GetDocumentRanksFunc.nextHook()(v0, v1)
 	m.GetDocumentRanksFunc.appendCall(StoreGetDocumentRanksFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -426,7 +429,7 @@ func (m *MockStore) GetDocumentRanks(v0 context.Context, v1 api.RepoName) (map[s
 // SetDefaultHook sets function that is called when the GetDocumentRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (map[string][]float64, bool, error)) {
+func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -434,7 +437,7 @@ func (f *StoreGetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, ap
 // GetDocumentRanks method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName) (map[string][]float64, bool, error)) {
+func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName) (map[string][2]float64, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -442,20 +445,20 @@ func (f *StoreGetDocumentRanksFunc) PushHook(hook func(context.Context, api.Repo
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetDocumentRanksFunc) SetDefaultReturn(r0 map[string][]float64, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) SetDefaultReturn(r0 map[string][2]float64, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetDocumentRanksFunc) PushReturn(r0 map[string][]float64, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) PushReturn(r0 map[string][2]float64, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreGetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName) (map[string][]float64, bool, error) {
+func (f *StoreGetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -496,7 +499,7 @@ type StoreGetDocumentRanksFuncCall struct {
 	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[string][]float64
+	Result0 map[string][2]float64
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -956,24 +959,24 @@ func (c StoreMergeDocumentRanksFuncCall) Results() []interface{} {
 // StoreSetDocumentRanksFunc describes the behavior when the
 // SetDocumentRanks method of the parent MockStore instance is invoked.
 type StoreSetDocumentRanksFunc struct {
-	defaultHook func(context.Context, api.RepoName, map[string][]float64) error
-	hooks       []func(context.Context, api.RepoName, map[string][]float64) error
+	defaultHook func(context.Context, api.RepoName, float64, map[string]float64) error
+	hooks       []func(context.Context, api.RepoName, float64, map[string]float64) error
 	history     []StoreSetDocumentRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // SetDocumentRanks delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) SetDocumentRanks(v0 context.Context, v1 api.RepoName, v2 map[string][]float64) error {
-	r0 := m.SetDocumentRanksFunc.nextHook()(v0, v1, v2)
-	m.SetDocumentRanksFunc.appendCall(StoreSetDocumentRanksFuncCall{v0, v1, v2, r0})
+func (m *MockStore) SetDocumentRanks(v0 context.Context, v1 api.RepoName, v2 float64, v3 map[string]float64) error {
+	r0 := m.SetDocumentRanksFunc.nextHook()(v0, v1, v2, v3)
+	m.SetDocumentRanksFunc.appendCall(StoreSetDocumentRanksFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the SetDocumentRanks
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName, map[string][]float64) error) {
+func (f *StoreSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, api.RepoName, float64, map[string]float64) error) {
 	f.defaultHook = hook
 }
 
@@ -981,7 +984,7 @@ func (f *StoreSetDocumentRanksFunc) SetDefaultHook(hook func(context.Context, ap
 // SetDocumentRanks method of the parent MockStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreSetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName, map[string][]float64) error) {
+func (f *StoreSetDocumentRanksFunc) PushHook(hook func(context.Context, api.RepoName, float64, map[string]float64) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -990,19 +993,19 @@ func (f *StoreSetDocumentRanksFunc) PushHook(hook func(context.Context, api.Repo
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreSetDocumentRanksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, map[string][]float64) error {
+	f.SetDefaultHook(func(context.Context, api.RepoName, float64, map[string]float64) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreSetDocumentRanksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, api.RepoName, map[string][]float64) error {
+	f.PushHook(func(context.Context, api.RepoName, float64, map[string]float64) error {
 		return r0
 	})
 }
 
-func (f *StoreSetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName, map[string][]float64) error {
+func (f *StoreSetDocumentRanksFunc) nextHook() func(context.Context, api.RepoName, float64, map[string]float64) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1043,7 +1046,10 @@ type StoreSetDocumentRanksFuncCall struct {
 	Arg1 api.RepoName
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 map[string][]float64
+	Arg2 float64
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 map[string]float64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1052,7 +1058,7 @@ type StoreSetDocumentRanksFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c StoreSetDocumentRanksFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

@@ -1612,7 +1612,8 @@ CREATE TABLE codeintel_path_rank_inputs (
     input_filename text NOT NULL,
     repository_name text NOT NULL,
     payload jsonb NOT NULL,
-    processed boolean DEFAULT false NOT NULL
+    processed boolean DEFAULT false NOT NULL,
+    "precision" double precision NOT NULL
 );
 
 COMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';
@@ -1628,7 +1629,8 @@ ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_in
 
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
-    payload jsonb NOT NULL
+    payload jsonb NOT NULL,
+    "precision" double precision NOT NULL
 );
 
 CREATE TABLE codeintel_ranking_exports (
@@ -3958,9 +3960,6 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 ALTER TABLE ONLY codeintel_path_rank_inputs
     ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY codeintel_path_ranks
-    ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
-
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
 
@@ -4320,6 +4319,8 @@ CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_ref
 CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
 
 CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE (NOT processed);
+
+CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
