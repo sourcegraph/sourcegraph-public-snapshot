@@ -93,10 +93,17 @@ func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs
 	if err != nil {
 		return nil, err
 	}
+
+	isBinary, err := r.Binary(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	timer := prometheus.NewTimer(highlightHistogram)
 	defer timer.ObserveDuration()
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		// TODO: Use `CanonicalURL` here for where to retrieve the file content, once we have a backend to retrieve such files.
 		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
+		IsBinary: isBinary,
 	})
 }

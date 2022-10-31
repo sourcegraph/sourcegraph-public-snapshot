@@ -66,7 +66,8 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {
-	return false, errors.New("not implemented")
+	vfr, _ := r.ToVirtualFile()
+	return vfr.Binary(ctx)
 }
 
 func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, error) {
@@ -86,7 +87,8 @@ func (r *batchSpecWorkspaceFileResolver) ExternalURLs(ctx context.Context) ([]*e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
-	return nil, errors.New("not implemented")
+	vfr, _ := r.ToVirtualFile()
+	return vfr.Highlight(ctx, args)
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {
