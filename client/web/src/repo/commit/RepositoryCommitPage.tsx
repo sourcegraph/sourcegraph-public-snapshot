@@ -1,24 +1,14 @@
-import * as React from 'react'
+import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
 import { RouteComponentProps } from 'react-router'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { Observable, ReplaySubject, Subject } from 'rxjs'
+import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import {
-    asError,
-    createAggregateError,
-    ErrorLike,
-    isErrorLike,
-    isDefined,
-    memoizeObservable,
-    property,
-    logger,
-} from '@sourcegraph/common'
+import { createAggregateError, isErrorLike, isDefined, memoizeObservable, property, asError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -38,7 +28,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -129,72 +119,72 @@ interface RepositoryCommitPageProps
 
 export type DiffMode = 'split' | 'unified'
 
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
-    /** The commit, undefined while loading, or an error. */
-    commitOrError?: GitCommitFields | ErrorLike
-    /** The visualization mode for file diff */
-    diffMode: DiffMode
-}
-
 const DIFF_MODE_VISUALIZER = 'diff-mode-visualizer'
 
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.Component<RepositoryCommitPageProps, State> {
-    private componentUpdates = new Subject<RepositoryCommitPageProps>()
+export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const commitOrError = useObservable(
+        useMemo(
+            () =>
+                queryCommit({ repo: props.repo.id, revspec: props.match.params.revspec }).pipe(
+                    catchError(error => [asError(error)])
+                ),
+            [props.match.params.revspec, props.repo.id]
+        )
+    )
+    const [diffMode, setDiffMode] = useLocalStorage<DiffMode>(DIFF_MODE_VISUALIZER, 'unified')
 
     /** Emits whenever the ref callback for the hover element is called */
-    private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
+    const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
+        hoverOverlayElements,
+    ])
 
     /** Emits whenever the ref callback for the hover element is called */
-    private repositoryCommitPageElements = new Subject<HTMLElement | null>()
-    private nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
-        this.repositoryCommitPageElements.next(element)
-    private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<
+    const repositoryCommitPageElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextRepositoryCommitPageElement = useCallback(
+        (element: HTMLElement | null): void => repositoryCommitPageElements.next(element),
+        [repositoryCommitPageElements]
+    )
+
+    // Subject that emits on every render. Source for `hoverOverlayRerenders`, used to
+    // reposition hover overlay if needed when `Blob` rerenders
+    const rerenders = useMemo(() => new ReplaySubject(1), [])
+    useEffect(() => {
+        rerenders.next()
+    })
+
+    const hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
         HoverMerged,
         ActionItemAction
-    >
+    > = useMemo(
+        () =>
+            createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
+                hoverOverlayElements,
+                hoverOverlayRerenders: rerenders.pipe(
+                    withLatestFrom(hoverOverlayElements, repositoryCommitPageElements),
+                    map(([, hoverOverlayElement, repositoryCommitPageElement]) => ({
+                        hoverOverlayElement,
+                        // The root component element is guaranteed to be rendered after a componentDidUpdate
+                        relativeElement: repositoryCommitPageElement!,
+                    })),
+                    // Can't reposition HoverOverlay if it wasn't rendered
+                    filter(property('hoverOverlayElement', isDefined))
+                ),
+                getHover: hoveredToken => getHover(getLSPTextDocumentPositionParams(hoveredToken), props),
+                getDocumentHighlights: hoveredToken =>
+                    getDocumentHighlights(getLSPTextDocumentPositionParams(hoveredToken), props),
+                getActions: context => getHoverActions(props, context),
+            }),
+        [hoverOverlayElements, props, repositoryCommitPageElements, rerenders]
+    )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
-    constructor(props: RepositoryCommitPageProps) {
-        super(props)
-        this.hoverifier = createHoverifier<
-            RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
-            HoverMerged,
-            ActionItemAction
-        >({
-            hoverOverlayElements: this.hoverOverlayElements,
-            hoverOverlayRerenders: this.componentUpdates.pipe(
-                withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
-                map(([, hoverOverlayElement, repositoryCommitPageElement]) => ({
-                    hoverOverlayElement,
-                    // The root component element is guaranteed to be rendered after a componentDidUpdate
-                    relativeElement: repositoryCommitPageElement!,
-                })),
-                // Can't reposition HoverOverlay if it wasn't rendered
-                filter(property('hoverOverlayElement', isDefined))
-            ),
-            getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            getDocumentHighlights: hoveredToken =>
-                getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            getActions: context => getHoverActions(this.props, context),
-        })
-        this.subscriptions.add(this.hoverifier)
-        this.onHandleDiffMode = this.onHandleDiffMode.bind(this)
-        this.state = {
-            ...this.hoverifier.hoverState,
-            diffMode: (localStorage.getItem(DIFF_MODE_VISUALIZER) as DiffMode | null) || 'unified',
-        }
+    const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
+        useObservable(hoverifier.hoverStateUpdates) || {}
 
-        this.subscriptions.add(
-            this.hoverifier.hoverStateUpdates.subscribe(update => {
-                this.setState(update)
-            })
-        )
-    }
-
-    private getLSPTextDocumentPositionParams(
+    function getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec
     ): RepoSpec & RevisionSpec & ResolvedRevisionSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
@@ -207,153 +197,117 @@ export class RepositoryCommitPage extends React.Component<RepositoryCommitPagePr
         }
     }
 
-    private onHandleDiffMode = (mode: DiffMode): void => {
-        localStorage.setItem(DIFF_MODE_VISUALIZER, mode)
-        this.setState({ diffMode: mode })
-    }
+    useEffect(() => {
+        props.telemetryService.logViewEvent('RepositoryCommit')
+    }, [props.telemetryService])
 
-    public componentDidMount(): void {
-        this.props.telemetryService.logViewEvent('RepositoryCommit')
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    distinctUntilChanged(
-                        (a, b) => a.repo.id === b.repo.id && a.match.params.revspec === b.match.params.revspec
-                    ),
-                    switchMap(({ repo, match }) =>
-                        merge(
-                            of({ commitOrError: undefined }),
-                            queryCommit({ repo: repo.id, revspec: match.params.revspec }).pipe(
-                                catchError(error => [asError(error)]),
-                                map(commitOrError => ({ commitOrError })),
-                                tap(({ commitOrError }) => {
-                                    if (isErrorLike(commitOrError)) {
-                                        this.props.onDidUpdateExternalLinks(undefined)
-                                    } else {
-                                        this.props.onDidUpdateExternalLinks(commitOrError.externalURLs)
-                                    }
-                                })
-                            )
-                        )
-                    )
-                )
-                .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
-                    error => logger.error(error)
-                )
-        )
-        this.componentUpdates.next(this.props)
-    }
+    useEffect(() => {
+        if (commitOrError && !isErrorLike(commitOrError)) {
+            props.onDidUpdateExternalLinks(commitOrError.externalURLs)
+        }
 
-    public shouldComponentUpdate(nextProps: Readonly<RepositoryCommitPageProps>, nextState: Readonly<State>): boolean {
-        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
-    }
+        return () => {
+            props.onDidUpdateExternalLinks(undefined)
+        }
+    }, [commitOrError, props])
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
+    const queryDiffs = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<GQL.IFileDiffConnection> =>
+            queryRepositoryComparisonFileDiffs({
+                ...args,
+                repo: props.repo.id,
+                base: commitParentOrEmpty(commitOrError as GitCommitFields),
+                head: (commitOrError as GitCommitFields).oid,
+            }),
+        [commitOrError, props.repo.id]
+    )
 
-    public componentWillUnmount(): void {
-        this.props.onDidUpdateExternalLinks(undefined)
-        this.subscriptions.unsubscribe()
-    }
+    const { extensionsController } = props
 
-    public render(): JSX.Element | null {
-        const { extensionsController } = this.props
-
-        return (
-            <div
-                data-testid="repository-commit-page"
-                className={classNames('p-3', styles.repositoryCommitPage)}
-                ref={this.nextRepositoryCommitPageElement}
-            >
-                <PageTitle
-                    title={
-                        this.state.commitOrError && !isErrorLike(this.state.commitOrError)
-                            ? this.state.commitOrError.subject
-                            : `Commit ${this.props.match.params.revspec}`
-                    }
-                />
-                {this.state.commitOrError === undefined ? (
-                    <LoadingSpinner className="mt-2" />
-                ) : isErrorLike(this.state.commitOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.commitOrError} />
-                ) : (
-                    <>
-                        <div className="border-bottom pb-2">
-                            <div>
-                                <GitCommitNode
-                                    node={this.state.commitOrError}
-                                    expandCommitMessageBody={true}
-                                    showSHAAndParentsRow={true}
-                                    diffMode={this.state.diffMode}
-                                    onHandleDiffMode={this.onHandleDiffMode}
-                                    className={styles.gitCommitNode}
-                                />
-                            </div>
+    return (
+        <div
+            data-testid="repository-commit-page"
+            className={classNames('p-3', styles.repositoryCommitPage)}
+            ref={nextRepositoryCommitPageElement}
+        >
+            <PageTitle
+                title={
+                    commitOrError && !isErrorLike(commitOrError)
+                        ? commitOrError.subject
+                        : `Commit ${props.match.params.revspec}`
+                }
+            />
+            {commitOrError === undefined ? (
+                <LoadingSpinner className="mt-2" />
+            ) : isErrorLike(commitOrError) ? (
+                <ErrorAlert className="mt-2" error={commitOrError} />
+            ) : (
+                <>
+                    <div className="border-bottom pb-2">
+                        <div>
+                            <GitCommitNode
+                                node={commitOrError}
+                                expandCommitMessageBody={true}
+                                showSHAAndParentsRow={true}
+                                diffMode={diffMode}
+                                onHandleDiffMode={setDiffMode}
+                                className={styles.gitCommitNode}
+                            />
                         </div>
-                        <FileDiffConnection
-                            listClassName="list-group list-group-flush"
-                            noun="changed file"
-                            pluralNoun="changed files"
-                            queryConnection={this.queryDiffs}
-                            nodeComponent={FileDiffNode}
-                            nodeComponentProps={{
-                                ...this.props,
-                                extensionInfo:
-                                    extensionsController !== null
-                                        ? {
-                                              base: {
-                                                  repoName: this.props.repo.name,
-                                                  repoID: this.props.repo.id,
-                                                  revision: commitParentOrEmpty(this.state.commitOrError),
-                                                  commitID: commitParentOrEmpty(this.state.commitOrError),
-                                              },
-                                              head: {
-                                                  repoName: this.props.repo.name,
-                                                  repoID: this.props.repo.id,
-                                                  revision: this.state.commitOrError.oid,
-                                                  commitID: this.state.commitOrError.oid,
-                                              },
-                                              hoverifier: this.hoverifier,
-                                              extensionsController,
-                                          }
-                                        : undefined,
-                                lineNumbers: true,
-                                diffMode: this.state.diffMode,
-                            }}
-                            updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
-                            defaultFirst={15}
-                            hideSearch={true}
-                            noSummaryIfAllNodesVisible={true}
-                            history={this.props.history}
-                            location={this.props.location}
-                            cursorPaging={true}
-                        />
-                    </>
-                )}
-                {this.state.hoverOverlayProps && extensionsController !== null && (
-                    <WebHoverOverlay
-                        {...this.props}
-                        extensionsController={extensionsController}
-                        {...this.state.hoverOverlayProps}
-                        nav={url => this.props.history.push(url)}
-                        hoveredTokenElement={this.state.hoveredTokenElement}
-                        telemetryService={this.props.telemetryService}
-                        hoverRef={this.nextOverlayElement}
+                    </div>
+                    <FileDiffConnection
+                        listClassName="list-group list-group-flush"
+                        noun="changed file"
+                        pluralNoun="changed files"
+                        queryConnection={queryDiffs}
+                        nodeComponent={FileDiffNode}
+                        nodeComponentProps={{
+                            ...props,
+                            extensionInfo:
+                                extensionsController !== null
+                                    ? {
+                                          base: {
+                                              repoName: props.repo.name,
+                                              repoID: props.repo.id,
+                                              revision: commitParentOrEmpty(commitOrError),
+                                              commitID: commitParentOrEmpty(commitOrError),
+                                          },
+                                          head: {
+                                              repoName: props.repo.name,
+                                              repoID: props.repo.id,
+                                              revision: commitOrError.oid,
+                                              commitID: commitOrError.oid,
+                                          },
+                                          hoverifier,
+                                          extensionsController,
+                                      }
+                                    : undefined,
+                            lineNumbers: true,
+                            diffMode,
+                        }}
+                        updateOnChange={`${props.repo.id}:${commitOrError.oid}`}
+                        defaultFirst={15}
+                        hideSearch={true}
+                        noSummaryIfAllNodesVisible={true}
+                        history={props.history}
+                        location={props.location}
+                        cursorPaging={true}
                     />
-                )}
-            </div>
-        )
-    }
-
-    private queryDiffs = (args: FilteredConnectionQueryArguments): Observable<GQL.IFileDiffConnection> =>
-        queryRepositoryComparisonFileDiffs({
-            ...args,
-            repo: this.props.repo.id,
-            base: commitParentOrEmpty(this.state.commitOrError as GitCommitFields),
-            head: (this.state.commitOrError as GitCommitFields).oid,
-        })
+                </>
+            )}
+            {hoverState.hoverOverlayProps && extensionsController !== null && (
+                <WebHoverOverlay
+                    {...props}
+                    extensionsController={extensionsController}
+                    {...hoverState.hoverOverlayProps}
+                    nav={url => props.history.push(url)}
+                    hoveredTokenElement={hoverState.hoveredTokenElement}
+                    telemetryService={props.telemetryService}
+                    hoverRef={nextOverlayElement}
+                />
+            )}
+        </div>
+    )
 }
 
 function commitParentOrEmpty(commit: GitCommitFields): string {
