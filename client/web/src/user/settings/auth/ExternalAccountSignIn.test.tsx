@@ -1,4 +1,4 @@
-import { Attribute, getUsernameOrEmail, SamlExternalData } from './ExternalAccountsSignIn'
+import { Attribute, getSamlUsernameOrEmail, SamlExternalData } from './ExternalAccountsSignIn'
 
 function toAttribute(value: string): Attribute {
     return {
@@ -38,7 +38,7 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('mary@boole.com')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('mary@boole.com')
         }
     })
 
@@ -55,7 +55,7 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('emmynoether')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('emmynoether')
         }
     })
 
@@ -76,7 +76,7 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('adalovelace')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('adalovelace')
         }
     })
 })

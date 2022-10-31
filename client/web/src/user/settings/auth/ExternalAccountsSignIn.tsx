@@ -41,8 +41,9 @@ interface OpenidConnectExternalData {
         email?: string
     }
     userClaims?: {
-        name?: string
         preferred_username?: string
+        given_name?: string
+        name?: string
     }
 }
 
@@ -73,7 +74,17 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-export function getUsernameOrEmail(data: SamlExternalData): string {
+export function getOpenIDUsernameOrEmail(data: OpenidConnectExternalData): string {
+    return (
+        data.userInfo?.email ||
+        data.userClaims?.preferred_username ||
+        data.userClaims?.given_name ||
+        data.userClaims?.name ||
+        ''
+    )
+}
+
+export function getSamlUsernameOrEmail(data: SamlExternalData): string {
     return (
         data.Values.nickname?.Values[0]?.Value ||
         data.Values.login?.Values[0]?.Value ||
@@ -145,7 +156,7 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: getUsernameOrEmail(samlExternalData),
+                            userName: getSamlUsernameOrEmail(samlExternalData),
                         },
                     }
                 }
@@ -158,7 +169,7 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || '',
+                            userName: getOpenIDUsernameOrEmail(oidcExternalData),
                         },
                     }
                 }
