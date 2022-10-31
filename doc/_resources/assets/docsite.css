@@ -1060,13 +1060,17 @@ a.cloud-cta {
 }
 .cloud-cta .visual-btn {
     background: #ffffff;
-    color: #A305E1;
+    color: #5033E1;
     width: 100%;
     padding: 6px 8px;
     border-radius: 3px;
     text-align: center;
     font-weight: 700;
     font-size: 14px;
+}
+.cloud-cta:hover .visual-btn {
+    background: #5033E1;
+    color: #ffffff;
 }
 @media only screen and (min-width: 640px /* --breakpoint-sm */) {
     .cloud-cta {
