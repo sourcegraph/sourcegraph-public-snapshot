@@ -5672,17 +5672,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sourcegraph/extension-api-stubs@npm:^1.6.1":
-  version: 1.6.1
-  resolution: "@sourcegraph/extension-api-stubs@npm:1.6.1"
+"@sourcegraph/extension-api-stubs@npm:^1.6.2":
+  version: 1.6.2
+  resolution: "@sourcegraph/extension-api-stubs@npm:1.6.2"
   dependencies:
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@types/sinon": 10.0.4
     graphql: ^15.4.0
     rxjs: ^6.5.1
     sinon: ^10.0.0
-    sourcegraph: ^25.5.0
-  checksum: 89e7005d543560c0aa79570ba302e9cd5fce7d49fc8a89966843caa882ab90eb172490649e069f66f0ca44431dbba24bc9184d23114379455e28956e75567bc0
+    sourcegraph: ^25.7.0
+  checksum: 6cad7034694ead449151b2e22e0d531f582392b37b0bec119383426487c5f968017f5478182fd3c2f018f18565aa3080d5bb8a9ed69760329d9aad66362eb493
   languageName: node
   linkType: hard
 
@@ -28974,7 +28974,7 @@ pvutils@latest:
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
     "@sourcegraph/eslint-plugin-wildcard": 1.0.0
     "@sourcegraph/extension-api-classes": ^1.1.0
-    "@sourcegraph/extension-api-stubs": ^1.6.1
+    "@sourcegraph/extension-api-stubs": ^1.6.2
     "@sourcegraph/prettierrc": ^3.0.3
     "@sourcegraph/stylelint-config": ^1.4.0
     "@sourcegraph/stylelint-plugin-sourcegraph": ^1.0.1
@@ -30246,7 +30246,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"sourcegraph@^25.5.0, sourcegraph@workspace:client/extension-api":
+"sourcegraph@^25.7.0, sourcegraph@workspace:client/extension-api":
   version: 0.0.0-use.local
   resolution: "sourcegraph@workspace:client/extension-api"
   dependencies:
