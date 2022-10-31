@@ -13,7 +13,7 @@ import { createWebIntegrationTestContext, WebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
-describe.only('RepositoryCommitPage', () => {
+describe('RepositoryCommitPage', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -332,7 +332,7 @@ describe.only('RepositoryCommitPage', () => {
         await accessibilityAudit(driver.page)
     })
 
-    it.only('Displays diff in split mode', async () => {
+    it('Displays diff in split mode', async () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
         await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
