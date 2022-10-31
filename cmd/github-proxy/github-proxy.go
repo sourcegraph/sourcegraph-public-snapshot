@@ -17,6 +17,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/handlers"
+	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,6 +43,14 @@ const port = "3180"
 var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "github_proxy_waiting_requests",
 	Help: "Number of proxy requests waiting on the mutex",
+})
+var metricUncachedRestRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "github_proxy_uncached_rest_requests",
+	Help: "Number of rest requests that had no cache hit",
+})
+var metricCachedRestRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
+	Name: "github_proxy_cached_rest_requests",
+	Help: "Number of rest requests that had a cache hit",
 })
 
 // list obtained from httputil of headers not to forward.
@@ -82,15 +92,22 @@ func main() {
 
 	logger := log.Scoped("server", "the github-proxy service")
 
+	// Warning: The cache includes the authorization header.
+	// TODO: Use redis instead.
+	transport := httpcache.NewTransport(diskcache.New("/Users/erik/Code/sourcegraph/sourcegraph/githubcache"))
+	// Use a custom client/transport because GitHub closes keep-alive
+	// connections after 60s. In order to avoid running into EOF errors, we use
+	// a IdleConnTimeout of 30s, so connections are only kept around for <30s
+	transport.Transport = &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		IdleConnTimeout: 30 * time.Second,
+	}
+
 	p := &githubProxy{
 		logger: logger,
-		// Use a custom client/transport because GitHub closes keep-alive
-		// connections after 60s. In order to avoid running into EOF errors, we use
-		// a IdleConnTimeout of 30s, so connections are only kept around for <30s
-		client: &http.Client{Transport: &http.Transport{
-			Proxy:           http.ProxyFromEnvironment,
-			IdleConnTimeout: 30 * time.Second,
-		}},
+		client: &http.Client{
+			Transport: transport,
+		},
 	}
 
 	h := http.Handler(p)
@@ -217,6 +234,22 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricWaitingRequestsGauge.Dec()
 	resp, err := p.client.Do(req2)
 	lock.Unlock()
+
+	if r.URL.Path != "/graphql" {
+		fromCache := resp.Header.Get("X-From-Cache") != ""
+
+		rateLimitLimit := resp.Header.Get("x-ratelimit-limit")
+		rateLimitRemaining := resp.Header.Get("x-ratelimit-remaining")
+		rateLimitReset := resp.Header.Get("x-ratelimit-reset")
+
+		if fromCache {
+			metricCachedRestRequestsGauge.Inc()
+			p.logger.Warn("got response from cache", log.String("url", r.URL.Path), log.String("rateLimitLimit", rateLimitLimit), log.String("rateLimitRemaining", rateLimitRemaining), log.String("rateLimitReset", rateLimitReset))
+		} else {
+			metricUncachedRestRequestsGauge.Inc()
+			p.logger.Warn("did uncached request", log.String("url", r.URL.Path), log.String("rateLimitLimit", rateLimitLimit), log.String("rateLimitRemaining", rateLimitRemaining), log.String("rateLimitReset", rateLimitReset))
+		}
+	}
 
 	if err != nil {
 		p.logger.Warn("proxy error", log.Error(err))

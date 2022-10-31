@@ -202,11 +202,13 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/google/btree v1.0.1 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
+	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect

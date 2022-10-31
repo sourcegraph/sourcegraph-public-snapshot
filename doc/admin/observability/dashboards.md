@@ -6418,6 +6418,48 @@ Query: `max(github_proxy_waiting_requests)`
 
 <br />
 
+#### github-proxy: github_proxy_uncached_rest_requests
+
+<p class="subtitle">Number of requests uncached</p>
+
+do it
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `increase(github_proxy_uncached_rest_requests[5m])`
+
+</details>
+
+<br />
+
+#### github-proxy: github_proxy_cached_rest_requests
+
+<p class="subtitle">Number of requests cached</p>
+
+do it
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `increase(github_proxy_cached_rest_requests[5m])`
+
+</details>
+
+<br />
+
 ### GitHub Proxy: Container monitoring (not available on server)
 
 #### github-proxy: container_missing
