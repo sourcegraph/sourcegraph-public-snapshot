@@ -109,14 +109,14 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	ranks := map[string][]float64{}
 	documentRanks, ok, err := s.store.GetDocumentRanks(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
 	if ok {
-		paddedDocumentRanks := map[string][]float64{}
 		for path, rank := range documentRanks {
-			paddedDocumentRanks[path] = []float64{
+			ranks[path] = []float64{
 				rank[0], // precise
 				rank[1], // global document rank
 				0,       // generated
@@ -126,8 +126,6 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 				0,       // lexicographic order in repo
 			}
 		}
-
-		return paddedDocumentRanks, nil
 	}
 
 	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern.Re())
@@ -136,10 +134,12 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	}
 	sort.Strings(paths)
 
-	n := float64(len(paths))
-	ranks := make(map[string][]float64, len(paths))
 	for i, path := range paths {
-		impreciseDocumentRank := rank(path, 1.0-float64(i)/n)
+		if _, ok := ranks[path]; ok {
+			continue
+		}
+
+		impreciseDocumentRank := rank(path, 1.0-float64(i)/float64(len(paths)))
 
 		ranks[path] = []float64{
 			1,                        // imprecise
