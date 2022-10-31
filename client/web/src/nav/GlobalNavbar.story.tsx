@@ -12,7 +12,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { baseActivation } from '../components/ActivationDropdown/ActivationDropdown.fixtures'
 import { WebStory } from '../components/WebStory'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
@@ -43,7 +42,6 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
-    activation: undefined,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
@@ -66,7 +64,6 @@ const allNavItemsProps: Partial<GlobalNavbarProps> = {
 }
 
 const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
-    activation: { ...baseActivation(), completed: { ConnectedCodeHost: true, DidSearch: false } },
     authenticatedUser: {
         username: 'alice',
         organizations: { nodes: [{ id: 'acme', name: 'acme' }] },

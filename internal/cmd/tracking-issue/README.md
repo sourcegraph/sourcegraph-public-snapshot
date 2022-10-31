@@ -14,8 +14,6 @@ Usage of ./tracking-issue:
         GitHub organization to list issues from (default "sourcegraph")
   -token string
         GitHub personal access token (default "$GITHUB_TOKEN")
-  -verbose
-        If true, print the resulting tracking issue bodies to stdout
 ```
 
 ## Deployment
@@ -28,4 +26,4 @@ In order to deploy a new version, first run `docker build -t sourcegraph/trackin
 
 Run the tests with `go test`, update fixtures (i.e. GitHub issues and PRs data) with `go test -update.fixture` and update the generated tracking issue golden file with `go test -update`.
 
-You can also run the tool manually in `-dry` mode with `-verbose` output to visualize the resulting tracking issues without updating them on GitHub.
+You can also run the tool manually in `-dry` mode to visualize the resulting tracking issues without updating them on GitHub.

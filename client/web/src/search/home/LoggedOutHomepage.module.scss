@@ -18,48 +18,9 @@
     --home-marketing-drop: 0 4px 16px -6px rgba(46, 34, 119, 0.1);
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 
-    &__community-search-context-list {
-        &-cards {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-
-            @media (--md-breakpoint-down) {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-                grid-auto-rows: minmax(4rem, auto);
-                gap: calc(var(--spacer) * 0.75);
-            }
-
-            @media (--sm-breakpoint-down) {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: unset;
-            }
-        }
-
-        &-card {
-            max-width: 13.5rem;
-
-            @media (--sm-breakpoint-down) {
-                margin-right: 0.75rem;
-            }
-        }
-
-        &-icon {
-            width: 2rem;
-            height: 2rem;
-            object-fit: contain;
-        }
-    }
-
     &__cta {
         max-width: 38rem;
         background-color: var(--color-bg-1);
-    }
-
-    &__community-search-contexts-listing-title {
-        margin-bottom: 0.25rem;
     }
 }
 
@@ -78,12 +39,6 @@
         align-items: stretch;
         flex-direction: column;
     }
-}
-
-.title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
 }
 
 .search-examples-wrapper {
@@ -176,11 +131,12 @@
     min-height: 2.375rem;
 }
 
-.hero-section,
-.community-search-contexts-section,
-.try-sourcegraph-cloud-section,
-.customer-section {
-    margin-top: 4rem;
+.pro-tip-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-right: 1px solid var(--border-color);
+    min-width: 60px;
 }
 
 .content {
@@ -194,32 +150,5 @@
     }
     @media (--sm-breakpoint-down) {
         flex-direction: column;
-    }
-}
-
-.video-card {
-    max-width: 15rem;
-    @media (--md-breakpoint-down) {
-        min-width: 100%;
-        order: 3;
-    }
-
-    @media (--sm-breakpoint-down) {
-        order: initial;
-    }
-}
-
-.getting-started-tour {
-    width: 18rem;
-
-    @media (--md-breakpoint-down) {
-        max-width: 40%;
-        flex: 1;
-    }
-
-    @media (--sm-breakpoint-down) {
-        max-width: 100%;
-        width: 100%;
-        flex: initial;
     }
 }

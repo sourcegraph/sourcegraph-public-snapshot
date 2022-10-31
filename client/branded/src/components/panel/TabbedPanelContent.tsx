@@ -18,7 +18,6 @@ import { match } from '@sourcegraph/shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -49,7 +48,6 @@ interface TabbedPanelContentProps
     extends ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         TelemetryProps,
         ThemeProps {
     repoName?: string

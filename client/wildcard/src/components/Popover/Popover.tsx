@@ -11,19 +11,7 @@ import {
 import { noop } from 'lodash'
 
 import { PopoverContext } from './contexts/internal-context'
-
-export enum PopoverOpenEventReason {
-    TriggerClick = 'TriggerClick',
-    TriggerFocus = 'TriggerFocus',
-    TriggerBlur = 'TriggerBlur',
-    ClickOutside = 'ClickOutside',
-    Esc = 'Esc',
-}
-
-export interface PopoverOpenEvent {
-    isOpen: boolean
-    reason: PopoverOpenEventReason
-}
+import { PopoverOpenEvent } from './types'
 
 type PopoverControlledProps =
     | { isOpen?: undefined; onOpenChange?: never }
@@ -43,7 +31,7 @@ export const Popover: FunctionComponent<PropsWithChildren<PopoverProps>> = props
     const { children, anchor, isOpen, onOpenChange = noop } = props
 
     const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
-    const [tailElement, setTailElement] = useState<SVGGElement | null>(null)
+    const [tailElement, setTailElement] = useState<HTMLElement | null>(null)
 
     const [isInternalOpen, setInternalOpen] = useState<boolean>(false)
     const isControlled = isOpen !== undefined

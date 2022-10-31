@@ -19,10 +19,33 @@
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
     user-select: text;
     word-wrap: break-word;
+    border: none;
+    min-width: 0;
 }
 
 .tooltip-arrow {
-    fill: var(--tooltip-bg);
+    --tail-background: var(--tooltip-bg);
+    --tail-border: none;
+
+    // Override tail border translation shift due to wrong floor calculations
+    // that introduces slightly wrong but noticeable visual regression in case of
+    // tooltip tail UI.
+    // see https://github.com/sourcegraph/sourcegraph/pull/43336#pullrequestreview-1157228460
+    &[data-side='top'] {
+        top: -2px;
+    }
+
+    &[data-side='left'] {
+        left: -2px;
+    }
+
+    &[data-side='right'] {
+        left: 2px;
+    }
+
+    &[data-side='bottom'] {
+        top: 2px;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////

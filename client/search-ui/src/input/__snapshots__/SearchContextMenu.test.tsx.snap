@@ -14,7 +14,6 @@ Array [
   >
     <small
       class="itemName"
-      data-state="closed"
       data-testid="search-context-menu-item-name"
     >
       <span
@@ -44,7 +43,6 @@ Array [
      
     <small
       class="itemDescription"
-      data-state="closed"
     >
       Your repositories on Sourcegraph
     </small>
@@ -61,7 +59,6 @@ Array [
   >
     <small
       class="itemName"
-      data-state="closed"
       data-testid="search-context-menu-item-name"
     >
       <span
@@ -91,7 +88,6 @@ Array [
      
     <small
       class="itemDescription"
-      data-state="closed"
     >
       Only code in version 1.5
     </small>

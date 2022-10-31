@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
-import { format } from 'date-fns'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
@@ -30,6 +29,7 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 import { Duration } from '../time/Duration'
+import { Timestamp, TimestampFormat } from '../time/Timestamp'
 
 import {
     useSyncExternalService,
@@ -360,7 +360,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         ]
     }, [node])
 
-    const runningStatuses = new Set<ExternalServiceSyncJobState> ([
+    const runningStatuses = new Set<ExternalServiceSyncJobState>([
         ExternalServiceSyncJobState.QUEUED,
         ExternalServiceSyncJobState.PROCESSING,
         ExternalServiceSyncJobState.CANCELING,
@@ -387,11 +387,31 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.startedAt === null && 'Not started yet.'}
-                    {node.startedAt !== null && <>Started at {format(Date.parse(node.startedAt), 'HH:mm:ss')}.</>}
+                    {node.startedAt !== null && (
+                        <>
+                            Started at{' '}
+                            <Timestamp
+                                date={node.startedAt}
+                                preferAbsolute={true}
+                                timestampFormat={TimestampFormat.FULL_TIME}
+                            />
+                            .
+                        </>
+                    )}
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.finishedAt === null && 'Not finished yet.'}
-                    {node.finishedAt !== null && <>Finished at {format(Date.parse(node.finishedAt), 'HH:mm:ss')}.</>}
+                    {node.finishedAt !== null && (
+                        <>
+                            Finished at{' '}
+                            <Timestamp
+                                date={node.finishedAt}
+                                preferAbsolute={true}
+                                timestampFormat={TimestampFormat.FULL_TIME}
+                            />
+                            .
+                        </>
+                    )}
                 </div>
                 <div className="flex-shrink-0 flex-grow-1 mr-1">
                     {node.startedAt && (

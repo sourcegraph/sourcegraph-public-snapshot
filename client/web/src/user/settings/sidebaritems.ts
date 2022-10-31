@@ -37,13 +37,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         condition: showAccountSecurityPage,
     },
     {
-        label: 'Your organizations',
-        to: '/organizations',
-        condition: context => context.openBetaEnabled,
-        status: 'new',
-        exact: true,
-    },
-    {
         label: 'Product research',
         to: '/product-research',
         condition: () => window.context.productResearchPageEnabled,
