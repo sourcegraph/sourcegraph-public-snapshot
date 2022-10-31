@@ -6902,6 +6902,19 @@
           "Comment": ""
         },
         {
+          "Name": "precision",
+          "Index": 7,
+          "TypeName": "double precision",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "processed",
           "Index": 6,
           "TypeName": "boolean",
@@ -6981,6 +6994,19 @@
           "Comment": ""
         },
         {
+          "Name": "precision",
+          "Index": 3,
+          "TypeName": "double precision",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "repository_id",
           "Index": 1,
           "TypeName": "integer",
@@ -6996,14 +7022,14 @@
       ],
       "Indexes": [
         {
-          "Name": "codeintel_path_ranks_repository_id_key",
+          "Name": "codeintel_path_ranks_repository_id_precision",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_key ON codeintel_path_ranks USING btree (repository_id)",
-          "ConstraintType": "u",
-          "ConstraintDefinition": "UNIQUE (repository_id)"
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, \"precision\")",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,

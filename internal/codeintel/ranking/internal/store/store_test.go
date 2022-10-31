@@ -76,18 +76,18 @@ func TestDocumentRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	if err := store.SetDocumentRanks(ctx, repoName, map[string][]float64{
-		"cmd/main.go":        {1, 2, 3},
-		"internal/secret.go": {2, 3, 4},
-		"internal/util.go":   {3, 4, 5},
-		"README.md":          {4, 5, 6},
+	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
+		"cmd/main.go":        2,
+		"internal/secret.go": 3,
+		"internal/util.go":   4,
+		"README.md":          5,
 	}); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, repoName, map[string][]float64{
-		"cmd/args.go":        {7, 8, 9}, // new
-		"internal/secret.go": {6, 7, 8}, // edited
-		"internal/util.go":   {5, 6, 7}, // edited
+	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
+		"cmd/args.go":        8, // new
+		"internal/secret.go": 7, // edited
+		"internal/util.go":   6, // edited
 	}); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
@@ -96,12 +96,12 @@ func TestDocumentRanks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	expectedRanks := map[string][]float64{
-		"cmd/main.go":        {1, 2, 3},
-		"README.md":          {4, 5, 6},
-		"cmd/args.go":        {7, 8, 9},
-		"internal/secret.go": {6, 7, 8},
-		"internal/util.go":   {5, 6, 7},
+	expectedRanks := map[string][2]float64{
+		"cmd/main.go":        {0.25, 2},
+		"README.md":          {0.25, 5},
+		"cmd/args.go":        {0.25, 8},
+		"internal/secret.go": {0.25, 7},
+		"internal/util.go":   {0.25, 6},
 	}
 	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
 		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
@@ -125,10 +125,10 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		fi := float64(i)
 
-		if err := store.BulkSetDocumentRanks(ctx, "test", fmt.Sprintf("f-%02d.csv", i+1), map[api.RepoName]map[string][]float64{
-			api.RepoName(fmt.Sprintf("r%d", i+1)): {fmt.Sprintf("foo-%d.go", i): {fi + 1, fi + 2, fi + 3}, fmt.Sprintf("bar-%d.go", i): {fi + 3, fi + 4, fi + 5}},
-			api.RepoName(fmt.Sprintf("r%d", i+2)): {fmt.Sprintf("foo-%d.go", i): {fi + 1, fi + 2, fi + 3}, fmt.Sprintf("bar-%d.go", i): {fi + 3, fi + 4, fi + 5}},
-			api.RepoName(fmt.Sprintf("r%d", i+3)): {fmt.Sprintf("foo-%d.go", i): {fi + 1, fi + 2, fi + 3}, fmt.Sprintf("bar-%d.go", i): {fi + 3, fi + 4, fi + 5}},
+		if err := store.BulkSetDocumentRanks(ctx, "test", fmt.Sprintf("f-%02d.csv", i+1), 0.25, map[api.RepoName]map[string]float64{
+			api.RepoName(fmt.Sprintf("r%d", i+1)): {fmt.Sprintf("foo-%d.go", i): fi + 2, fmt.Sprintf("bar-%d.go", i): fi + 4},
+			api.RepoName(fmt.Sprintf("r%d", i+2)): {fmt.Sprintf("foo-%d.go", i): fi + 2, fmt.Sprintf("bar-%d.go", i): fi + 4},
+			api.RepoName(fmt.Sprintf("r%d", i+3)): {fmt.Sprintf("foo-%d.go", i): fi + 2, fmt.Sprintf("bar-%d.go", i): fi + 4},
 		}); err != nil {
 			t.Fatalf("unexpected error setting document ranks: %s", err)
 		}
@@ -160,7 +160,7 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 		t.Fatalf("unexpected numInputsProcessed. want=%d have=%d", expected, numInputsProcessed)
 	}
 
-	allRanks := map[string]map[string][]float64{}
+	allRanks := map[string]map[string][2]float64{}
 	for i := 0; i < 12; i++ {
 		repoName := fmt.Sprintf("r%d", i+1)
 		ranks, _, err := store.GetDocumentRanks(ctx, api.RepoName(repoName))
@@ -171,60 +171,60 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 		allRanks[repoName] = ranks
 	}
 
-	expectedRanks := map[string]map[string][]float64{
+	expectedRanks := map[string]map[string][2]float64{
 		"r1": {
-			"foo-0.go": {1, 2, 3}, "bar-0.go": {3, 4, 5},
+			"foo-0.go": {0.25, 2}, "bar-0.go": {0.25, 4},
 		},
 		"r2": {
-			"foo-0.go": {1, 2, 3}, "bar-0.go": {3, 4, 5},
-			"foo-1.go": {2, 3, 4}, "bar-1.go": {4, 5, 6},
+			"foo-0.go": {0.25, 2}, "bar-0.go": {0.25, 4},
+			"foo-1.go": {0.25, 3}, "bar-1.go": {0.25, 5},
 		},
 		"r3": {
-			"foo-0.go": {1, 2, 3}, "bar-0.go": {3, 4, 5},
-			"foo-1.go": {2, 3, 4}, "bar-1.go": {4, 5, 6},
-			"foo-2.go": {3, 4, 5}, "bar-2.go": {5, 6, 7},
+			"foo-0.go": {0.25, 2}, "bar-0.go": {0.25, 4},
+			"foo-1.go": {0.25, 3}, "bar-1.go": {0.25, 5},
+			"foo-2.go": {0.25, 4}, "bar-2.go": {0.25, 6},
 		},
 		"r4": {
-			"foo-1.go": {2, 3, 4}, "bar-1.go": {4, 5, 6},
-			"foo-2.go": {3, 4, 5}, "bar-2.go": {5, 6, 7},
-			"foo-3.go": {4, 5, 6}, "bar-3.go": {6, 7, 8},
+			"foo-1.go": {0.25, 3}, "bar-1.go": {0.25, 5},
+			"foo-2.go": {0.25, 4}, "bar-2.go": {0.25, 6},
+			"foo-3.go": {0.25, 5}, "bar-3.go": {0.25, 7},
 		},
 		"r5": {
-			"foo-2.go": {3, 4, 5}, "bar-2.go": {5, 6, 7},
-			"foo-3.go": {4, 5, 6}, "bar-3.go": {6, 7, 8},
-			"foo-4.go": {5, 6, 7}, "bar-4.go": {7, 8, 9},
+			"foo-2.go": {0.25, 4}, "bar-2.go": {0.25, 6},
+			"foo-3.go": {0.25, 5}, "bar-3.go": {0.25, 7},
+			"foo-4.go": {0.25, 6}, "bar-4.go": {0.25, 8},
 		},
 		"r6": {
-			"foo-3.go": {4, 5, 6}, "bar-3.go": {6, 7, 8},
-			"foo-4.go": {5, 6, 7}, "bar-4.go": {7, 8, 9},
-			"foo-5.go": {6, 7, 8}, "bar-5.go": {8, 9, 10},
+			"foo-3.go": {0.25, 5}, "bar-3.go": {0.25, 7},
+			"foo-4.go": {0.25, 6}, "bar-4.go": {0.25, 8},
+			"foo-5.go": {0.25, 7}, "bar-5.go": {0.25, 9},
 		},
 		"r7": {
-			"foo-4.go": {5, 6, 7}, "bar-4.go": {7, 8, 9},
-			"foo-5.go": {6, 7, 8}, "bar-5.go": {8, 9, 10},
-			"foo-6.go": {7, 8, 9}, "bar-6.go": {9, 10, 11},
+			"foo-4.go": {0.25, 6}, "bar-4.go": {0.25, 8},
+			"foo-5.go": {0.25, 7}, "bar-5.go": {0.25, 9},
+			"foo-6.go": {0.25, 8}, "bar-6.go": {0.25, 10},
 		},
 		"r8": {
-			"foo-5.go": {6, 7, 8}, "bar-5.go": {8, 9, 10},
-			"foo-6.go": {7, 8, 9}, "bar-6.go": {9, 10, 11},
-			"foo-7.go": {8, 9, 10}, "bar-7.go": {10, 11, 12},
+			"foo-5.go": {0.25, 7}, "bar-5.go": {0.25, 9},
+			"foo-6.go": {0.25, 8}, "bar-6.go": {0.25, 10},
+			"foo-7.go": {0.25, 9}, "bar-7.go": {0.25, 11},
 		},
 		"r9": {
-			"foo-6.go": {7, 8, 9}, "bar-6.go": {9, 10, 11},
-			"foo-7.go": {8, 9, 10}, "bar-7.go": {10, 11, 12},
-			"foo-8.go": {9, 10, 11}, "bar-8.go": {11, 12, 13},
+			"foo-6.go": {0.25, 8}, "bar-6.go": {0.25, 10},
+			"foo-7.go": {0.25, 9}, "bar-7.go": {0.25, 11},
+			"foo-8.go": {0.25, 10}, "bar-8.go": {0.25, 12},
 		},
 		"r10": {
-			"foo-7.go": {8, 9, 10}, "bar-7.go": {10, 11, 12},
-			"foo-8.go": {9, 10, 11}, "bar-8.go": {11, 12, 13},
-			"foo-9.go": {10, 11, 12}, "bar-9.go": {12, 13, 14},
+			"foo-7.go": {0.25, 9}, "bar-7.go": {0.25, 11},
+			"foo-8.go": {0.25, 10}, "bar-8.go": {0.25, 12},
+			"foo-9.go": {0.25, 11}, "bar-9.go": {0.25, 13},
 		},
 		"r11": {
-			"foo-8.go": {9, 10, 11}, "bar-8.go": {11, 12, 13},
-			"foo-9.go": {10, 11, 12}, "bar-9.go": {12, 13, 14},
+			"foo-8.go": {0.25, 10}, "bar-8.go": {0.25, 12},
+			"foo-9.go": {0.25, 11}, "bar-9.go": {0.25, 13},
 		},
 		"r12": {
-			"foo-9.go": {10, 11, 12}, "bar-9.go": {12, 13, 14},
+			"foo-9.go": {0.25, 11}, "bar-9.go": {0.25, 13},
 		},
 	}
 	if diff := cmp.Diff(expectedRanks, allRanks); diff != "" {
