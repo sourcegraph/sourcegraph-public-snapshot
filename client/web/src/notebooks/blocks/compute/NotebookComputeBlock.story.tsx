@@ -22,6 +22,7 @@ const noopBlockCallbacks = {
     onSelectBlock: noop,
     onMoveBlockSelection: noop,
     onDeleteBlock: noop,
+    onNewBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
 }
