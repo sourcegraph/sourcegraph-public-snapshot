@@ -84,7 +84,7 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                                 width={16}
                             />
                         </MenuButton>
-                        <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>
+                        <MenuList position={Position.bottomStart} data-testid={`context-menu.${insightID}`}>
                             <MenuLink
                                 as={Link}
                                 data-testid="InsightContextMenuEditLink"
@@ -105,17 +105,16 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             {menuPermissions.showYAxis && (
                                 <MenuItem
                                     role="menuitemcheckbox"
-                                    data-testid="InsightContextMenuEditLink"
-                                    className={classNames('d-flex align-items-center justify-content-end', styles.item)}
-                                    onSelect={onToggleZeroYAxisMin}
                                     aria-checked={zeroYAxisMin}
+                                    data-testid="InsightContextMenuEditLink"
+                                    className={styles.item}
+                                    onSelect={onToggleZeroYAxisMin}
                                 >
                                     <Checkbox
+                                        id="InsightContextMenuEditInput"
                                         aria-hidden="true"
                                         checked={zeroYAxisMin}
-                                        onChange={noop}
                                         tabIndex={-1}
-                                        id="InsightContextMenuEditInput"
                                         label={<span className="font-weight-normal">Start Y Axis at 0</span>}
                                     />
                                 </MenuItem>

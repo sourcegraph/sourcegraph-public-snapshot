@@ -757,6 +757,12 @@ BEGIN
     RETURN NEW;
 END $$;
 
+CREATE AGGREGATE sg_jsonb_concat_agg(jsonb) (
+    SFUNC = jsonb_concat,
+    STYPE = jsonb,
+    INITCOND = '{}'
+);
+
 CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
     SFUNC = merge_audit_log_transitions,
     STYPE = hstore,
@@ -1600,9 +1606,29 @@ CREATE SEQUENCE codeintel_lockfiles_id_seq
 
 ALTER SEQUENCE codeintel_lockfiles_id_seq OWNED BY codeintel_lockfiles.id;
 
+CREATE TABLE codeintel_path_rank_inputs (
+    id bigint NOT NULL,
+    graph_key text NOT NULL,
+    input_filename text NOT NULL,
+    repository_name text NOT NULL,
+    payload jsonb NOT NULL,
+    processed boolean DEFAULT false NOT NULL
+);
+
+COMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';
+
+CREATE SEQUENCE codeintel_path_rank_inputs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_inputs.id;
+
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
-    payload text NOT NULL
+    payload jsonb NOT NULL
 );
 
 CREATE TABLE codeintel_ranking_exports (
@@ -3725,6 +3751,8 @@ ALTER TABLE ONLY codeintel_lockfile_references ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_lockfiles ALTER COLUMN id SET DEFAULT nextval('codeintel_lockfiles_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_path_rank_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_path_rank_inputs_id_seq'::regclass);
+
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
 
 ALTER TABLE ONLY critical_and_site_config ALTER COLUMN id SET DEFAULT nextval('critical_and_site_config_id_seq'::regclass);
@@ -3923,6 +3951,12 @@ ALTER TABLE ONLY codeintel_lockfile_references
 
 ALTER TABLE ONLY codeintel_lockfiles
     ADD CONSTRAINT codeintel_lockfiles_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_path_rank_inputs
+    ADD CONSTRAINT codeintel_path_rank_inputs_graph_key_input_filename_reposit_key UNIQUE (graph_key, input_filename, repository_name);
+
+ALTER TABLE ONLY codeintel_path_rank_inputs
+    ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_path_ranks
     ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
@@ -4284,6 +4318,8 @@ CREATE INDEX codeintel_lockfiles_codeintel_lockfile_reference_ids ON codeintel_l
 CREATE INDEX codeintel_lockfiles_references_depends_on ON codeintel_lockfile_references USING gin (depends_on gin__int_ops);
 
 CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON codeintel_lockfiles USING btree (repository_id, commit_bytea, lockfile);
+
+CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE (NOT processed);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 

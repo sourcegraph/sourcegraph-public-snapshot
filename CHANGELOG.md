@@ -41,6 +41,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fix code navigation on OSS when CodeIntel is unavailable. [#43458](https://github.com/sourcegraph/sourcegraph/pull/43458)
 
+### Removed
+
+- Removed the onboarding checklist for new users that showed up in the top navigation bar, on user profiles, and in the site-admin overview page. After changes to the underlying user statistics system, the checklist caused severe performance issues for customers with large and heavily-used instances. [#43591](https://github.com/sourcegraph/sourcegraph/pull/43591)
+
 ## 4.1.1
 
 ### Fixed

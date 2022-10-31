@@ -20,6 +20,9 @@
             // stylelint-disable-next-line declaration-property-unit-allowed-list
             margin: 0 calc((100% - 100vw) / 2);
             border-bottom: 1px solid var(--border-color-2);
+            background-color: var(--body-bg);
+            height: 100%;
+            z-index: -1;
         }
     }
 }

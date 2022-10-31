@@ -8,7 +8,6 @@ import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/Ta
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -73,7 +72,6 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        ActivationProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,

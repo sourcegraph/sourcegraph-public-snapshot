@@ -1,8 +1,11 @@
+import { useState } from 'react'
+
 import { render, RenderResult, within, fireEvent } from '@testing-library/react'
 import * as H from 'history'
 import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
+import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
@@ -12,8 +15,15 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
+import { ConnectionQueryArguments } from '../components/FilteredConnection'
+import { asGraphQLResult } from '../components/FilteredConnection/utils'
+import { UsePreciseCodeIntelForPositionResult, UsePreciseCodeIntelForPositionVariables } from '../graphql-operations'
+
+import { buildPreciseLocation } from './location'
 import { ReferencesPanelProps, ReferencesPanelWithMemoryRouter } from './ReferencesPanel'
 import { buildReferencePanelMocks, highlightedLinesDiffGo, highlightedLinesGoDiffGo } from './ReferencesPanel.mocks'
+import { USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY } from './ReferencesPanelQueries'
+import { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
 
 const NOOP_SETTINGS_CASCADE = {
     subjects: null,
@@ -62,6 +72,57 @@ const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLoca
         }
         logger.error('attempt to fetch highlighted lines for file without mocks', args.filePath)
         return of([])
+    },
+    useCodeIntel: ({ variables }: UseCodeIntelParameters): UseCodeIntelResult => {
+        const [result, setResult] = useState<UseCodeIntelResult>({
+            data: {
+                implementations: { endCursor: '', nodes: [] },
+                references: { endCursor: '', nodes: [] },
+                definitions: { endCursor: '', nodes: [] },
+            },
+            loading: true,
+            referencesHasNextPage: false,
+            fetchMoreReferences: () => {},
+            fetchMoreReferencesLoading: false,
+            implementationsHasNextPage: false,
+            fetchMoreImplementationsLoading: false,
+            fetchMoreImplementations: () => {},
+        })
+        useQuery<
+            UsePreciseCodeIntelForPositionResult,
+            UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+        >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
+            variables,
+            notifyOnNetworkStatusChange: false,
+            fetchPolicy: 'no-cache',
+            skip: !result.loading,
+            onCompleted: result => {
+                const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
+                if (!data || !data.repository?.commit?.blob?.lsif) {
+                    return
+                }
+                const lsif = data.repository.commit.blob.lsif
+                setResult(prevResult => ({
+                    ...prevResult,
+                    loading: false,
+                    data: {
+                        implementations: {
+                            endCursor: lsif.implementations.pageInfo.endCursor,
+                            nodes: lsif.implementations.nodes.map(buildPreciseLocation),
+                        },
+                        references: {
+                            endCursor: lsif.references.pageInfo.endCursor,
+                            nodes: lsif.references.nodes.map(buildPreciseLocation),
+                        },
+                        definitions: {
+                            endCursor: lsif.definitions.pageInfo.endCursor,
+                            nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+                        },
+                    },
+                }))
+            },
+        })
+        return result
     },
 }
 
