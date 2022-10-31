@@ -71,7 +71,7 @@ func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 // the count of everything that would have been returned, without performing two separate queries:
 // SELECT u.id, COUNT(*) OVER() as count FROM users LIMIT 10
 func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) func(rows *sql.Rows, queryErr error) ([]T, int, error) {
-	return func(rows *sql.Rows, queryErr error) (values []T, totalCOunt int, _ error) {
+	return func(rows *sql.Rows, queryErr error) (values []T, totalCount int, _ error) {
 		scanner := func(s dbutil.Scanner) error {
 			value, count, err := f(s)
 			if err != nil {
