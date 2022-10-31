@@ -59,6 +59,7 @@ main() {
   fi
 
   printf 'running "%s %s"\n' 'sg install' "$*" 1>&2
+  # shellcheck disable=SC2048,SC2086
   "$_file" install $* </dev/tty
 }
 
