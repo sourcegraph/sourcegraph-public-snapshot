@@ -100,7 +100,7 @@ func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
 		var err error
 		switch {
 		case p.Openidconnect != nil:
-			_, err = openidconnect.SignOut(w, r)
+			_, err = openidconnect.SignOut(w, r, openidconnect.SessionKey)
 		case p.Saml != nil:
 			_, err = saml.SignOut(w, r)
 		}
