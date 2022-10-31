@@ -256,7 +256,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [effectiveRevision])
     return (
         <>
-            <SymbolIcon kind={symbolKind} />
+            <SymbolIcon kind={symbolKind} inheritColor={true} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}
