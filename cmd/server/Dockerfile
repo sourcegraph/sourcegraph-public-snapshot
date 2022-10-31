@@ -41,8 +41,7 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
-    # We require git 2.34.1 because we use git-repack with flag --write-midx. \
-    # We require git 2.35.2 to fix this vulnerability:
+    # We require git 2.35.2 because we need a fix for this vulnerability to be included:
     # https://github.blog/2022-04-12-git-security-vulnerability-announced/
     'git>=2.38.1' \
     git-lfs \
