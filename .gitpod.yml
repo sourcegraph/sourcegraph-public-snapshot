@@ -2,12 +2,18 @@
 # Gitpod config reference: https://www.gitpod.io/docs/config-gitpod-file
 
 tasks:
-  - init: |
+  - name: sg
+    init: |
       (
         set -e
 
         ./dev/sg/bootstrap.sh -f -p=false
-        sg setup --oss --fix
       )
-    #init: curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh -s -- -f -p=false
-    command: gp top
+    command: |
+      (
+        set -e
+    
+        echo "Run `sg setup` to setup development environment"
+        echo "https://docs.sourcegraph.com/dev/setup/quickstart"
+      )
+        
