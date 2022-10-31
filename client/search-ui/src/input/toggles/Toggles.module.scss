@@ -78,21 +78,20 @@
 
     &[aria-label='Case sensitivity toggle'] {
         svg {
-            transform: scale(1.234); // Override to set precisely
-            margin-top: -1px; // Override to set precisely
+            transform: scale(1.172); // Override to set precisely
         }
     }
 
     &[aria-label='Regular expression toggle'] {
         svg {
-            transform: scale(1.125); // Override to set precisely
+            transform: scale(1.031); // Override to set precisely
             margin-top: -1px; // Override to set precisely
         }
     }
 
     &[aria-label='Structural search toggle'] {
         svg {
-            transform: scale(1.125); // Override to set precisely
+            transform: scale(1.031); // Override to set precisely
         }
     }
 }
