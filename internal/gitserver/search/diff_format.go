@@ -36,6 +36,8 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 		fileCount++
 
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
+		// NOTE(@camdencheek): this does not correctly update the highlight ranges of files with spaces in the name.
+		// Doing so would require a smarter replacer.
 		escaped := escaper.Replace(fileDiff.OrigName)
 		buf.WriteString(escaped)
 		buf.WriteByte(' ')
