@@ -1,0 +1,7 @@
+# Sourcegraph quickStart: https://docs.sourcegraph.com/dev/setup/quickstart
+# Gitpod config reference: https://www.gitpod.io/docs/config-gitpod-file
+
+tasks:
+  - init: curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh -s -- -f -p=false 
+    command: gp top
+
