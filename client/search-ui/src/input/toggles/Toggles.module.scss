@@ -22,7 +22,9 @@
     justify-content: center;
     cursor: pointer;
     border-radius: 4px;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     width: 22px;
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     height: 22px;
 
     &:not(:last-child) {
@@ -85,6 +87,7 @@
     &[aria-label='Regular expression toggle'] {
         svg {
             transform: scale(1.031); // Override to set precisely
+            /* stylelint-disable-next-line declaration-property-unit-allowed-list */
             margin-top: -1px; // Override to set precisely
         }
     }
