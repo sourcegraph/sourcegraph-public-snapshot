@@ -2,7 +2,6 @@ import {
     Attribute,
     getSamlUsernameOrEmail,
     SamlExternalData,
-    OpenIDConnectExternalData,
     getOpenIDUsernameOrEmail,
 } from './ExternalAccountsSignIn'
 
