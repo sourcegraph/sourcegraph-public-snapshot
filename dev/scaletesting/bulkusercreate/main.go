@@ -225,58 +225,14 @@ func main() {
 		for _, u := range users {
 			currentUser := u
 			g.Go(func() {
-				existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
-				if grErr != nil && resp.StatusCode != 404 {
-					writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
-				}
-				grErr = nil
-				if existingUser != nil {
-					_, grErr = gh.Admin.DeleteUser(ctx, currentUser.Login)
-
-					if grErr != nil {
-						writeFailure(out, "Failed to delete user with login %s, reason: %s", currentUser.Login, grErr)
-						currentUser.Failed = grErr.Error()
-						if grErr = store.saveUser(currentUser); grErr != nil {
-							log.Fatal(grErr)
-						}
-						return
-					}
-				}
-				currentUser.Created = false
-				currentUser.Failed = ""
-				if grErr = store.saveUser(currentUser); grErr != nil {
-					log.Fatal(grErr)
-				}
-				writeSuccess(out, "Deleted user %s", currentUser.Login)
+				executeDeleteUser(ctx, currentUser)
 			})
 		}
 
 		for _, t := range teams {
 			currentTeam := t
 			g.Go(func() {
-				existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
-				if grErr != nil && resp.StatusCode != 404 {
-					writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, grErr)
-				}
-				grErr = nil
-				if existingTeam != nil {
-					_, grErr = gh.Teams.DeleteTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
-					if grErr != nil {
-						writeFailure(out, "Failed to delete team %s, reason: %s", currentTeam.Name, grErr)
-						currentTeam.Failed = grErr.Error()
-						if grErr = store.saveTeam(currentTeam); grErr != nil {
-							log.Fatal(grErr)
-						}
-						return
-					}
-				}
-				currentTeam.Created = false
-				currentTeam.Failed = ""
-				currentTeam.TotalMembers = 0
-				if grErr = store.saveTeam(currentTeam); grErr != nil {
-					log.Fatal(grErr)
-				}
-				writeSuccess(out, "Deleted team %s", currentTeam.Name)
+				executeDeleteTeam(ctx, currentTeam)
 			})
 		}
 	}
@@ -317,6 +273,66 @@ func main() {
 	} else if cfg.action == "delete" {
 		writeSuccess(out, "Successfully deleted %d users (%d failures)", allUsers-completedUsers, completedUsers)
 	}
+}
+
+func executeDeleteTeam(ctx context.Context, currentTeam *team) {
+	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+
+	if grErr != nil && resp.StatusCode != 404 {
+		writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, grErr)
+	}
+
+	grErr = nil
+	if existingTeam != nil {
+		_, grErr = gh.Teams.DeleteTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+		if grErr != nil {
+			writeFailure(out, "Failed to delete team %s, reason: %s", currentTeam.Name, grErr)
+			currentTeam.Failed = grErr.Error()
+			if grErr = store.saveTeam(currentTeam); grErr != nil {
+				log.Fatal(grErr)
+			}
+			return
+		}
+	}
+
+	currentTeam.Created = false
+	currentTeam.Failed = ""
+	currentTeam.TotalMembers = 0
+	if grErr = store.saveTeam(currentTeam); grErr != nil {
+		log.Fatal(grErr)
+	}
+	
+	writeSuccess(out, "Deleted team %s", currentTeam.Name)
+}
+
+func executeDeleteUser(ctx context.Context, currentUser *user) {
+	existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
+
+	if grErr != nil && resp.StatusCode != 404 {
+		writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
+	}
+
+	grErr = nil
+	if existingUser != nil {
+		_, grErr = gh.Admin.DeleteUser(ctx, currentUser.Login)
+
+		if grErr != nil {
+			writeFailure(out, "Failed to delete user with login %s, reason: %s", currentUser.Login, grErr)
+			currentUser.Failed = grErr.Error()
+			if grErr = store.saveUser(currentUser); grErr != nil {
+				log.Fatal(grErr)
+			}
+			return
+		}
+	}
+
+	currentUser.Created = false
+	currentUser.Failed = ""
+	if grErr = store.saveUser(currentUser); grErr != nil {
+		log.Fatal(grErr)
+	}
+
+	writeSuccess(out, "Deleted user %s", currentUser.Login)
 }
 
 type teamMembershipOpts struct {
