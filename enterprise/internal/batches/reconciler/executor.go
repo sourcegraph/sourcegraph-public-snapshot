@@ -173,7 +173,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 		return err
 	}
 	remoteRepo, err := e.remoteRepo(ctx)
-
 	if err != nil {
 		return err
 	}
@@ -188,7 +187,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-
 	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 	if err != nil {
 		return err

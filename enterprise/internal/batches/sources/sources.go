@@ -391,6 +391,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 // preferring HTTPS over SSH.
 func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	cloneURLs := repo.CloneURLs()
+
 	if len(cloneURLs) == 0 {
 		return nil, errors.New("no clone URLs found for repo")
 	}

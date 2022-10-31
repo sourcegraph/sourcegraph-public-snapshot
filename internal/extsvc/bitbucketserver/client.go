@@ -597,7 +597,6 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 
 // FetchDefaultReviewers loads the suggested default reviewers for the given PR.
 func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
-
 	// Validate input.
 	for _, namedRef := range [...]struct {
 		name string
@@ -625,7 +624,6 @@ func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 	)
-
 	queryParams := url.Values{
 		"sourceRepoId": []string{strconv.Itoa(pr.FromRef.Repository.ID)},
 		"targetRepoId": []string{strconv.Itoa(pr.ToRef.Repository.ID)},
@@ -642,7 +640,6 @@ func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]
 	reviewerNames := make([]string, 0, len(resp))
 	for _, r := range resp {
 		reviewerNames = append(reviewerNames, r.Name)
-
 	}
 	return reviewerNames, nil
 }
