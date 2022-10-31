@@ -14,22 +14,8 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
 describe('RepositoryCommitPage', () => {
-    let driver: Driver
-    before(async () => {
-        driver = await createDriverForTest()
-    })
-    after(() => driver?.close())
-    let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
-        testContext = await createWebIntegrationTestContext({
-            driver,
-            currentTest: this.currentTest!,
-            directory: __dirname,
-        })
-    })
-    afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEach(() => testContext?.dispose())
-
+    const repositoryName = 'github.com/sourcegraph/sourcegraph'
+    const commitID = '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416'
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
         RepositoryCommit: () => ({
@@ -317,12 +303,22 @@ describe('RepositoryCommitPage', () => {
         }),
     }
 
-    beforeEach(() => {
+    let driver: Driver
+    before(async () => {
+        driver = await createDriverForTest()
+    })
+    after(() => driver?.close())
+    let testContext: WebIntegrationTestContext
+    beforeEach(async function () {
+        testContext = await createWebIntegrationTestContext({
+            driver,
+            currentTest: this.currentTest!,
+            directory: __dirname,
+        })
         testContext.overrideGraphQL(commonBlobGraphQlResults)
     })
-
-    const repositoryName = 'github.com/sourcegraph/sourcegraph'
-    const commitID = '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416'
+    afterEachSaveScreenshotIfFailed(() => driver.page)
+    afterEach(() => testContext?.dispose())
 
     it('Display diff in unified mode', async () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
