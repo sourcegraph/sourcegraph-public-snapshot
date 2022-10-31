@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -34,6 +35,13 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 
 		if (version == "" && file == "") || (version != "" && file != "") {
 			return errors.New("must supply exactly one of -version or -file")
+		}
+
+		if version != "" {
+			_, _, ok := oobmigration.MustNewVersionAndPatchFromString(version)
+			if !ok {
+				return errors.New("bad format for -version. -version must start with 'v' and contain major.minor.patch. example: v4.1.2")
+			}
 		}
 
 		if file != "" {
