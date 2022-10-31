@@ -493,7 +493,7 @@ export const WithVirtualTarget: Story = () => {
     )
 }
 
-export const WithTail: Story = (args= {}) => (
+export const WithTail: Story = (args = {}) => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -513,7 +513,7 @@ export const WithTail: Story = (args= {}) => (
                     </div>
                 </PopoverContent>
 
-                <PopoverTail size={args.size}/>
+                <PopoverTail size={args.size} />
             </Popover>
         </div>
     </ScrollCenterBox>
@@ -523,8 +523,8 @@ WithTail.argTypes = {
     size: {
         control: 'radio',
         options: ['sm', 'md', 'lg'],
-        defaultValue: 'sm'
-    }
+        defaultValue: 'sm',
+    },
 }
 
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -75,6 +75,8 @@ export enum Position {
     bottomEnd = 'bottomEnd',
 }
 
+export type ElementPosition = Position | `${Position}`
+
 export enum Strategy {
     /**
      * This strategy renders the element outside of DOM hierarchy in the designated

@@ -544,7 +544,7 @@ func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *typ
 		orgName = org.Name
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "org_invite", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {
