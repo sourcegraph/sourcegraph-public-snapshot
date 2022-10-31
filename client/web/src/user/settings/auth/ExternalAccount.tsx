@@ -41,27 +41,29 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     const { icon: AccountIcon } = account
 
     let accountConnection: JSX.Element | string
-    switch(authProvider.serviceType) {
+    switch (authProvider.serviceType) {
         case 'openidconnect':
-            accountConnection = (account.external ? account.external.userName : 'Not connected')
+            accountConnection = account.external ? account.external.userName : 'Not connected'
             break
         case 'saml':
-            accountConnection = (account.external ? account.external.userName : 'Not connected')
+            accountConnection = account.external ? account.external.userName : 'Not connected'
             break
         default:
-            accountConnection = (<>
-                {account.external?.userUrl ? (
-                    <>
-                        {account.external.userName} (
-                        <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                            @{account.external.userLogin}
-                        </Link>
-                        )
-                    </>
-                ) : (
-                    'Not connected'
-                )}
-            </>)
+            accountConnection = (
+                <>
+                    {account.external?.userUrl ? (
+                        <>
+                            {account.external.userName} (
+                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                                @{account.external.userLogin}
+                            </Link>
+                            )
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
     }
 
     return (
@@ -80,9 +82,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             </div>
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
-                <div className="text-muted">
-                    {accountConnection}
-                </div>
+                <div className="text-muted">{accountConnection}</div>
             </div>
             <div className="align-self-center">
                 {account.external ? (

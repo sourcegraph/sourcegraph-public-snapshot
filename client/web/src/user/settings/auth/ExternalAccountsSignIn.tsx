@@ -42,7 +42,7 @@ interface OpenidConnectExternalData {
     }
     userClaims?: {
         name?: string
-        preferred_username?:string
+        preferred_username?: string
     }
 }
 
@@ -90,10 +90,7 @@ const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
     authProvider: AuthProvider
 ): NormalizedMinAccount | null => {
-    if (
-        authProvider.serviceType === 'builtin' ||
-        authProvider.serviceType === 'http-header'
-    ) {
+    if (authProvider.serviceType === 'builtin' || authProvider.serviceType === 'http-header') {
         return null
     }
 
@@ -148,23 +145,23 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName:  getUsernameOrEmail(samlExternalData),
+                            userName: getUsernameOrEmail(samlExternalData),
                         },
                     }
                 }
                 break
 
             case 'openidconnect':
-            {
-                const oidcExternalData = accountExternalData as OpenidConnectExternalData
-                normalizedAccount = {
-                    ...normalizedAccount,
-                    external: {
-                        id: account.id,
-                        userName: oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || ''
-                    },
+                {
+                    const oidcExternalData = accountExternalData as OpenidConnectExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            userName: oidcExternalData.userClaims?.name || oidcExternalData.userInfo?.email || '',
+                        },
+                    }
                 }
-            }
                 break
         }
     }
