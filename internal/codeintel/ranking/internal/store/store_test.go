@@ -246,10 +246,10 @@ func TestLastUpdatedAt(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "foo", nil); err != nil {
+	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "bar", nil); err != nil {
+	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
@@ -288,10 +288,10 @@ func TestUpdatedAfter(t *testing.T) {
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "foo", nil); err != nil {
+	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
-	if err := store.SetDocumentRanks(ctx, "bar", nil); err != nil {
+	if err := store.SetDocumentRanks(ctx, "bar", 0.25, nil); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
