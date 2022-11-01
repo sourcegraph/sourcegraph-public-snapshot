@@ -77,6 +77,21 @@ Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 <a class="btn" href="references/features">Features</a>
 </div>
 
+## Recommended
+
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
+  </a>
+</div>
+
 ## [How-tos](how-tos/index.md)
 - [Install across all Google Workspace users](how-tos/google_workspace.md)
 - [Add browser search engine shortcuts](how-tos/browser_search_engine.md)
@@ -84,4 +99,3 @@ Enterprise, GitLab, Phabricator, Bitbucket Server and Bitbucket Data Center.
 
 ## [References](references/index.md)
 - [Privacy](references/privacy.md)
-

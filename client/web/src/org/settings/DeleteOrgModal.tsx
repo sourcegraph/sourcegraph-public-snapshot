@@ -8,9 +8,9 @@ import { RouteComponentProps } from 'react-router-dom'
 import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
-interface DeleteOrgModalProps extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface DeleteOrgModalProps extends OrgAreaRouteContext, RouteComponentProps<{}> {
     isOpen: boolean
     toggleDeleteModal: () => void
 }

@@ -7,17 +7,17 @@ import { catchError, map } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { LoadingSpinner, useObservable, Link, CardFooter, Alert, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
+import { ProductLicenseInfoResult } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 
 const queryProductLicenseInfo = (): Observable<{
-    productSubscription: GQL.IProductSubscriptionStatus
+    productSubscription: ProductLicenseInfoResult['site']['productSubscription']
     currentUserCount: number
 }> =>
     queryGraphQL(gql`

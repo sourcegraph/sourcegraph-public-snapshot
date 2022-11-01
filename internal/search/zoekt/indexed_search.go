@@ -244,6 +244,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 	searchOpts := (&Options{
 		Selector:       args.Select,
 		FileMatchLimit: args.FileMatchLimit,
+		Features:       args.Features,
 		GlobalSearch:   true,
 	}).ToSearch(ctx)
 
@@ -276,7 +277,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, feat search.Features, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -292,6 +293,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 		Selector:       selector,
 		NumRepos:       len(repos.RepoRevs),
 		FileMatchLimit: fileMatchLimit,
+		Features:       feat,
 	}).ToSearch(ctx)
 
 	// Start event stream.
@@ -630,6 +632,7 @@ type RepoSubsetTextSearchJob struct {
 	Typ               search.IndexedRequestType
 	FileMatchLimit    int32
 	Select            filter.SelectPath
+	Features          search.Features
 	Since             func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -650,7 +653,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {

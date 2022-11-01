@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -32,76 +34,6 @@ import (
 )
 
 var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
-
-// TODO(insights): remove insightSeriesResolver when `insights` is removed from graphql query schema
-type insightSeriesResolver struct {
-	insightsStore   store.Interface
-	workerBaseStore *basestore.Store
-	series          types.InsightViewSeries
-	metadataStore   store.InsightMetadataStore
-
-	filters types.InsightViewFilters
-	logger  log.Logger
-}
-
-func (r *insightSeriesResolver) SeriesId() string { return r.series.SeriesID }
-
-func (r *insightSeriesResolver) Label() string { return r.series.Label }
-
-func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
-	var opts store.SeriesPointsOpts
-
-	// Query data points only for the series we are representing.
-	seriesID := r.series.SeriesID
-	opts.SeriesID = &seriesID
-
-	// Default to last 12 frames of data
-	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
-		Value: r.series.SampleIntervalValue,
-	}, time.Now())
-	oldest := time.Now().AddDate(-1, 0, 0)
-	if len(frames) != 0 {
-		possibleOldest := frames[0].From
-		if possibleOldest.Before(oldest) {
-			oldest = possibleOldest
-		}
-	}
-	opts.From = &oldest
-
-	includeRepo := func(regex ...string) {
-		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
-	}
-	excludeRepo := func(regex ...string) {
-		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
-	}
-
-	if r.filters.IncludeRepoRegex != nil {
-		includeRepo(*r.filters.IncludeRepoRegex)
-	}
-	if r.filters.ExcludeRepoRegex != nil {
-		excludeRepo(*r.filters.ExcludeRepoRegex)
-	}
-
-	scLoader := &scLoader{primary: database.NewDBWith(r.logger, r.workerBaseStore)}
-	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
-	if err != nil {
-		return nil, errors.Wrap(err, "unwrapSearchContexts")
-	}
-	includeRepo(inc...)
-	excludeRepo(exc...)
-
-	points, err := r.insightsStore.SeriesPoints(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(points))
-	for _, point := range points {
-		resolvers = append(resolvers, insightsDataPointResolver{point})
-	}
-	return resolvers, nil
-}
 
 // SearchContextLoader loads search contexts just from the full name of the
 // context. This will not verify that the calling context owns the context, it
@@ -143,29 +75,6 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 	return include, exclude, nil
 }
 
-func (r *insightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
-	seriesID := r.series.SeriesID
-
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, seriesID)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewStatusResolver(status, r.series.BackfillQueuedAt), nil
-}
-
-func (r *insightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	data, err := r.metadataStore.GetDirtyQueriesAggregated(ctx, r.series.SeriesID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
-	for _, dqa := range data {
-		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
-	}
-	return resolvers, nil
-}
-
 var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
 
 type insightsDataPointResolver struct{ p store.SeriesPoint }
@@ -176,29 +85,96 @@ func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
 
-type insightStatusResolver struct {
+type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time
+	isLoading                                           bool
 }
 
-func (i insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
-func (i insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
-func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
-func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
-func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
+type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
+type GetSeriesBackfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
+type insightStatusResolver struct {
+	getQueueStatus     GetSeriesQueueStatusFunc
+	getSeriesBackfills GetSeriesBackfillsFunc
+	statusOnce         sync.Once
+	series             types.InsightViewSeries
+
+	status    statusInfo
+	statusErr error
 }
 
-func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
+func (i *insightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.totalPoints, err
+}
+func (i *insightStatusResolver) PendingJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.pendingJobs, err
+}
+func (i *insightStatusResolver) CompletedJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.completedJobs, err
+}
+func (i *insightStatusResolver) FailedJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.failedJobs, err
+}
+func (i *insightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(i.series.BackfillQueuedAt)
+}
+func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error) {
+	status, err := i.calculateStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &status.isLoading, nil
+}
+
+func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
+	i.statusOnce.Do(func() {
+		status, statusErr := i.getQueueStatus(ctx, i.series.SeriesID)
+		if statusErr != nil {
+			i.statusErr = errors.Wrap(statusErr, "QueryJobsStatus")
+			return
+		}
+		i.status.backfillQueuedAt = i.series.BackfillQueuedAt
+		i.status.completedJobs = int32(status.Completed)
+		i.status.failedJobs = int32(status.Failed)
+		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
+
+		seriesBackfills, backillErr := i.getSeriesBackfills(ctx, i.series.InsightSeriesID)
+		if backillErr != nil {
+			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
+			return
+		}
+		backfillInProgress := false
+		for n := range seriesBackfills {
+			if seriesBackfills[n].SeriesId == i.series.InsightSeriesID && !seriesBackfills[n].IsTerminalState() {
+				backfillInProgress = true
+				break
+			}
+		}
+		i.status.isLoading = i.status.backfillQueuedAt == nil || i.status.pendingJobs > 0 || backfillInProgress
+	})
+	return i.status, i.statusErr
+}
+
+func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSeries) *insightStatusResolver {
+	getStatus := func(ctx context.Context, series string) (*queryrunner.JobsStatus, error) {
+		return queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, series)
+	}
+	getBackfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
+		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
+	}
+	return newStatusResolver(getStatus, getBackfills, viewSeries)
+}
+
+func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, series types.InsightViewSeries) *insightStatusResolver {
 	return &insightStatusResolver{
-		totalPoints: 0,
-
-		// Include errored because they'll be retried before becoming failures
-		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
-
-		completedJobs:    int32(status.Completed),
-		failedJobs:       int32(status.Failed),
-		backfillQueuedAt: queuedAt,
+		getQueueStatus:     getQueueStatus,
+		getSeriesBackfills: getSeriesBackfills,
+		series:             series,
 	}
 }
 
@@ -333,6 +309,8 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 	// Query data points only for the series we are representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
+	opts.ID = &definition.InsightSeriesID
+	opts.SupportsAugmentation = definition.SupportsAugmentation
 
 	// Default to last 12 points of data
 	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
@@ -406,6 +384,7 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 	}
 	end = time.Now()
 	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+
 	return points, err
 }
 
@@ -415,11 +394,7 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 		return nil, err
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+	statusResolver := NewStatusResolver(&r, definition)
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 
@@ -453,11 +428,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+	statusResolver := NewStatusResolver(&r, definition)
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 	for capturedValue, points := range groupedByCapture {

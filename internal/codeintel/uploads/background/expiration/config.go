@@ -16,9 +16,6 @@ type config struct {
 	RepositoryProcessDelay time.Duration
 	UploadBatchSize        int
 	UploadProcessDelay     time.Duration
-
-	ReferenceCountUpdaterInterval  time.Duration
-	ReferenceCountUpdaterBatchSize int
 }
 
 var ConfigInst = &config{}
@@ -38,6 +35,4 @@ func (c *config) Load() {
 	c.RepositoryProcessDelay = c.GetInterval(repositoryProcessDelay, "24h", "The minimum frequency that the same repository's uploads can be considered for expiration.")
 	c.UploadBatchSize = c.GetInt(uploadBatchSize, "100", "The number of uploads to consider for expiration at a time.")
 	c.UploadProcessDelay = c.GetInterval(uploadProcessDelay, "24h", "The minimum frequency that the same upload record can be considered for expiration.")
-	c.ReferenceCountUpdaterInterval = c.GetInterval("CODEINTEL_UPLOAD_REFERENCE_COUNT_UPDATER_INTERVAL", "1m", "How frequently to run the reference count updater routine.")
-	c.ReferenceCountUpdaterBatchSize = c.GetInt("CODEINTEL_UPLOAD_REFERENCE_COUNT_UPDATER_BATCH_SIZE", "100", "How many upload reference counts to backfill per batch.")
 }

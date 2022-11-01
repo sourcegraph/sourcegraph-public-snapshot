@@ -9,7 +9,6 @@ import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Button,
     LoadingSpinner,
@@ -27,7 +26,13 @@ import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables } from '../../../../graphql-operations'
+import {
+    ArchiveProductSubscriptionResult,
+    ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    ProductLicensesResult,
+    ProductLicenseFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
@@ -51,7 +56,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
 }
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
+    ProductLicenseFields,
     Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
 > {}
 
@@ -235,7 +240,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
+function queryProductSubscription(
+    uuid: string
+): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
     return queryGraphQL(
         gql`
             query DotComProductSubscription($uuid: String!) {
@@ -261,6 +268,17 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                             pageInfo {
                                 hasNextPage
                             }
+                        }
+                        activeLicense {
+                            id
+                            info {
+                                productNameWithBrand
+                                tags
+                                userCount
+                                expiresAt
+                            }
+                            licenseKey
+                            createdAt
                         }
                         createdAt
                         isArchived
@@ -293,7 +311,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.IProductLicenseConnection> {
+): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
     return queryGraphQL(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {

@@ -30,7 +30,7 @@ func TestDequeue(t *testing.T) {
 
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		if tr, ok := record.(testRecord); !ok {
 			t.Errorf("mismatched record type.")
 		} else if tr.Payload != "secret" {
@@ -45,7 +45,7 @@ func TestDequeue(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -66,7 +66,7 @@ func TestDequeueNoRecord(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: workerstoremocks.NewMockStore()})
 
-	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	_, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -78,7 +78,7 @@ func TestDequeueNoRecord(t *testing.T) {
 func TestAddExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 	fakeEntryID := 99
@@ -89,7 +89,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -140,7 +140,7 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 func TestUpdateExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -149,7 +149,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -201,7 +201,7 @@ func TestMarkComplete(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -210,7 +210,7 @@ func TestMarkComplete(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -260,7 +260,7 @@ func TestMarkErrored(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -269,7 +269,7 @@ func TestMarkErrored(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -322,7 +322,7 @@ func TestMarkFailed(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkFailedFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -331,7 +331,7 @@ func TestMarkFailed(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -382,7 +382,7 @@ func TestMarkFailedStoreError(t *testing.T) {
 
 func TestHeartbeat(t *testing.T) {
 	s := workerstoremocks.NewMockStore()
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, record workerutil.Record, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 	testKnownID := 10

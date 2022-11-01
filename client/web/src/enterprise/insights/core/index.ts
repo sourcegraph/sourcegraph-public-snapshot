@@ -1,4 +1,3 @@
-export * from './constants'
 export * from './types'
 
 export * from './backend/code-insights-backend-context'

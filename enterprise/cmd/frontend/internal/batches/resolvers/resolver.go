@@ -41,8 +41,8 @@ type Resolver struct {
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(store *store.Store) graphqlbackend.BatchChangesResolver {
-	return &Resolver{store: store}
+func New(store *store.Store, gitserverClient gitserver.Client) graphqlbackend.BatchChangesResolver {
+	return &Resolver{store: store, gitserverClient: gitserverClient}
 }
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
@@ -1509,6 +1509,10 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 
 	if args.IncludeLocallyExecutedSpecs != nil {
 		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	}
+
+	if args.ExcludeEmptySpecs != nil {
+		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
 	}
 
 	// 🚨 SECURITY: If the user is not an admin, we don't want to include

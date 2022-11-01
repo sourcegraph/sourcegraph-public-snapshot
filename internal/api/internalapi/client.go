@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -49,8 +50,11 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &message, nil)
+func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
+	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
+		Source:  source,
+		Message: message,
+	}, nil)
 }
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
@@ -119,6 +123,13 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	// Check if we have an actor, if not, ensure that we use our internal actor since
+	// this is an internal request.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() && !a.IsInternal() {
+		ctx = actor.WithInternalActor(ctx)
+	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {

@@ -51,6 +51,11 @@ export enum InitialParametersSource {
     URL,
 }
 
+export enum SearchMode {
+    Precise = 0,
+    SmartSearch = 1 << 0,
+}
+
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
     /**
@@ -73,6 +78,7 @@ export interface SearchQueryState {
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
     searchQueryFromURL: string
+    searchMode: SearchMode
 
     // ACTIONS
     /**

@@ -386,6 +386,7 @@ Flags:
 * `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Try to fix any lint issues
+* `--no-format-check, --nfc`: Don't check file formatting
 
 ### sg lint urls
 
@@ -450,6 +451,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint format
+
+Check client code and docs for formatting errors.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg generate
 
 Run code and docs generation tasks.
@@ -479,6 +489,9 @@ Flags:
 Interact with local Sourcegraph databases for development.
 
 ```sh
+# Delete test databases
+$ sg db delete-test-dbs
+
 # Reset the Sourcegraph 'frontend' database
 $ sg db reset-pg
 
@@ -494,6 +507,15 @@ $ sg db reset-redis
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -name=foo
 ```
+
+### sg db delete-test-dbs
+
+Drops all databases that have the prefix `sourcegraph-test-`.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg db reset-pg
 

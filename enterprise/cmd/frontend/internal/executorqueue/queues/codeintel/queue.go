@@ -12,8 +12,8 @@ import (
 )
 
 func QueueOptions(autoIndexingSvc *autoindexing.Service, accessToken func() string, observationContext *observation.Context) handler.QueueOptions {
-	recordTransformer := func(ctx context.Context, record workerutil.Record) (apiclient.Job, error) {
-		return transformRecord(record.(types.Index), accessToken())
+	recordTransformer := func(ctx context.Context, record workerutil.Record, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
+		return transformRecord(record.(types.Index), resourceMetadata, accessToken())
 	}
 
 	return handler.QueueOptions{

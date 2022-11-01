@@ -793,8 +793,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	// always having ID in ORDER BY helps Postgres create a more performant query plan
-	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
+	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
@@ -1017,6 +1016,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM codeintel_path_ranks pr WHERE pr.repository_id = repo.id AND pr.updated_at >= %s)", opt.MinLastChanged),
 			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
 			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
 		}
@@ -1170,9 +1170,6 @@ type ListIndexableReposOptions struct {
 	// status.
 	CloneStatus types.CloneStatus
 
-	// IncludePrivate when true will include user added private repos.
-	IncludePrivate bool
-
 	*LimitOffset
 }
 
@@ -1183,7 +1180,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars.
 func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1200,10 +1197,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf(
 			"gr.clone_status = %s", opts.CloneStatus,
 		))
-	}
-
-	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT repo.private"))
 	}
 
 	if len(where) == 0 {

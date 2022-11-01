@@ -65,8 +65,9 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 	)
 
 	schemaFactories := []cliutil.ExpectedSchemaFactory{
-		cliutil.GCSExpectedSchemaFactory,
 		cliutil.GitHubExpectedSchemaFactory,
+		cliutil.GCSExpectedSchemaFactory,
+		cliutil.LocalExpectedSchemaFactory,
 	}
 
 	command := &cli.App{
@@ -87,7 +88,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 		},
 	}
 
-	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator %s", version.Version()))
 
 	args := os.Args
 	if len(args) == 1 {

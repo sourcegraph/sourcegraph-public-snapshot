@@ -172,12 +172,6 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, errors.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
 
-	if problems, err := conf.ValidateSite(args.Input); err != nil {
-		return false, errors.Errorf("failed to validate site configuration: %w", err)
-	} else if len(problems) > 0 {
-		return false, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
-	}
-
 	prev := conf.Raw()
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
@@ -196,7 +190,6 @@ func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
 }
 
-func (r *siteResolver) EnableLegacyExtensions(ctx context.Context) bool {
-	c := conf.Get()
-	return *c.ExperimentalFeatures.EnableLegacyExtensions
+func (r *siteResolver) EnableLegacyExtensions() bool {
+	return conf.ExperimentalFeatures().EnableLegacyExtensions
 }

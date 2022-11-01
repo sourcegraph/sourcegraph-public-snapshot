@@ -82,6 +82,10 @@ func (s *Service) GetWorkerutilStore() dbworkerstore.Store {
 	return s.workerutilStore
 }
 
+func (s *Service) ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error) {
+	return s.lsifstore.ReconcileCandidates(ctx, batchSize)
+}
+
 func (s *Service) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
 	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -230,13 +234,6 @@ func (s *Service) BuildCommitMap(ctx context.Context, repositoryID int, cfg back
 
 	// Get the set of commits within this repository that match a data retention policy
 	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
-}
-
-func (s *Service) BackfillReferenceCountBatch(ctx context.Context, batchSize int) error {
-	ctx, _, endObservation := s.operations.backfillReferenceCountBatch.With(ctx, nil, observation.Args{LogFields: []log.Field{log.Int("batchSize", batchSize)}})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.BackfillReferenceCountBatch(ctx, batchSize)
 }
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -444,11 +441,18 @@ func (s *Service) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefor
 	return s.store.DeleteUploadsStuckUploading(ctx, uploadedBefore)
 }
 
-func (s *Service) SoftDeleteExpiredUploads(ctx context.Context) (int, error) {
+func (s *Service) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error) {
 	ctx, _, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, nil, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.SoftDeleteExpiredUploads(ctx)
+	return s.store.SoftDeleteExpiredUploads(ctx, batchSize)
+}
+
+func (s *Service) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error) {
+	ctx, _, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, nil, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SoftDeleteExpiredUploadsViaTraversal(ctx, maxTraversal)
 }
 
 // BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have

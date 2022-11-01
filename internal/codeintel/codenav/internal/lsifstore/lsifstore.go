@@ -40,7 +40,13 @@ type LsifStore interface {
 	// Ranges
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
 
+	// Paths
 	GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error)
+
+	// Stream
+	ScanDocuments(ctx context.Context, id int, f func(path string, ranges map[precise.ID]precise.RangeData) error) (err error)
+	ScanResultChunks(ctx context.Context, id int, f func(idx int, resultChunk precise.ResultChunkData) error) (err error)
+	ScanLocations(ctx context.Context, id int, f func(scheme, identifier, monikerType string, locations []precise.LocationData) error) (err error)
 }
 
 type store struct {

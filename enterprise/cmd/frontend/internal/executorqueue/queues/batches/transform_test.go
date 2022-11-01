@@ -125,6 +125,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			CliSteps: []apiclient.CliStep{
 				{
+					Key: "batch-exec",
 					Commands: []string{
 						"batch",
 						"exec",
@@ -172,6 +173,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			CliSteps: []apiclient.CliStep{
 				{
+					Key: "batch-exec",
 					Commands: []string{
 						"batch",
 						"exec",
@@ -238,6 +240,7 @@ func TestTransformRecord(t *testing.T) {
 			},
 			CliSteps: []apiclient.CliStep{
 				{
+					Key: "batch-exec",
 					Commands: []string{
 						"batch",
 						"exec",

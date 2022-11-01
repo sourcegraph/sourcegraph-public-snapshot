@@ -545,8 +545,7 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
+          "default": false
         },
         "insightsAlternateLoadingStrategy": {
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
@@ -678,6 +677,15 @@
       "!go": { "pointer": true },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelAutoIndexing.indexerMap": {
+      "description": "Overrides the default Docker images used by auto-indexing.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "group": "Code intelligence",
+      "default": null
     },
     "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
       "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
@@ -1126,6 +1134,16 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "executors.srcCLIImage": {
+      "description": "The image to use for src-cli in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/src-cli"
+    },
+    "executors.srcCLIImageTag": {
+      "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1211,18 +1229,13 @@
             }
           }
         },
-        "gitserver.accessLogs": {
-          "description": "DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.",
-          "type": "boolean",
-          "default": false
-        },
         "auditLog": {
           "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "backgroundJobs": {
-              "description": "Capture security events performed by the background jobs (adds significant noise).",
+            "internalTraffic": {
+              "description": "Capture security events performed by the internal traffic (adds significant noise).",
               "type": "boolean",
               "default": false
             },
@@ -1235,14 +1248,21 @@
               "description": "Capture gitserver access logs as part of the audit log.",
               "type": "boolean",
               "default": false
+            },
+            "severityLevel": {
+              "description": "Severity logging level for the audit log.",
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+              "default": "INFO"
             }
           },
-          "required": ["backgroundJobs", "graphQL", "gitserverAccess"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
           "examples": [
             {
-              "backgroundJobs": false,
+              "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false
+              "gitserverAccess": false,
+              "severityLevel": "INFO"
             }
           ]
         }
@@ -1677,13 +1697,15 @@
       "description": "The site wide maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 200000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "userRepos.maxPerUser": {
       "description": "The per user maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 2000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
@@ -1719,6 +1741,9 @@
           "$ref": "#/definitions/EncryptionKey"
         },
         "webhookKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "executorSecretKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
       }

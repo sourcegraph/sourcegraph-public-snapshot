@@ -5,6 +5,7 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
@@ -434,6 +435,7 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
@@ -450,6 +452,7 @@ function initiateSearchStream(
         trace,
         decorationKinds,
         decorationContextLines,
+        searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
         chunkMatches = false,
@@ -463,6 +466,7 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['sm', searchMode.toString()],
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],

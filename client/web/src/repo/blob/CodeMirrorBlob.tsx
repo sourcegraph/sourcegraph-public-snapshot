@@ -17,6 +17,9 @@ import {
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { useLocalStorage } from '@sourcegraph/wildcard'
+
+import { useExperimentalFeatures } from '../../stores'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
@@ -37,6 +40,10 @@ const staticExtensions: Extension = [
         // triggering the in-document search (see below) work when Mod-f is
         // pressed
         tabindex: '0',
+        // CodeMirror defaults to role="textbox" which does not produce the
+        // desired screenreader behavior we want for this component.
+        // See https://github.com/sourcegraph/sourcegraph/issues/43375
+        role: 'generic',
     }),
     editorHeight({ height: '100%' }),
     EditorView.theme({
@@ -65,9 +72,6 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
-    // Note that these only work out-of-the-box because the editor is
-    // *focusable* by setting `tab-index: 0`.
-    search,
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
@@ -102,6 +106,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         'data-testid': dataTestId,
     } = props
 
+    const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
+
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
@@ -118,18 +124,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
 
-    const tokenLinks = useMemo(() => {
-        if (!blobInfo.stencil) {
-            return []
-        }
-
-        return blobInfo.stencil.map(range => ({
-            range,
-            url: `?${toPositionOrRangeQueryParameter({
-                position: { line: range.start.line + 1, character: range.start.character + 1 },
-            })}#tab=references`,
-        }))
-    }, [blobInfo.stencil])
+    const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -181,7 +176,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation ? tokensAsLinks.of({ history, links: tokenLinks }) : [],
+            tokenKeyboardNavigation
+                ? tokensAsLinks({
+                      history,
+                      blobInfo,
+                      preloadGoToDefinition,
+                  })
+                : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -196,13 +197,20 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
             settingsCompartment.of(settings),
+            search({
+                // useFileSearch is not a dependency because the search
+                // extension manages its own state. This is just the initial
+                // value
+                overrideBrowserFindInPageShortcut: useFileSearch,
+                onOverrideBrowserFindInPageToggle: setUseFileSearch,
+            }),
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
         // further below. However they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, tokenLinks]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
     )
 
     const editorRef = useRef<EditorView>()
@@ -297,7 +305,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 className={`${className} overflow-hidden test-editor`}
                 data-editor="codemirror6"
             />
-            {overrideBrowserSearchKeybinding && (
+            {overrideBrowserSearchKeybinding && useFileSearch && (
                 <Shortcut ordered={['f']} held={['Mod']} onMatch={openSearch} ignoreInput={true} />
             )}
         </>

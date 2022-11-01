@@ -1,6 +1,6 @@
 import assert from 'assert'
 
-import { ElementHandle } from 'puppeteer'
+import { ElementHandle, MouseButton } from 'puppeteer'
 import type * as sourcegraph from 'sourcegraph'
 
 import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
@@ -177,6 +177,18 @@ describe('CodeMirror blob view', () => {
             // URL is updated
             await driver.assertWindowLocation(`${filePaths['test.ts']}?L1`)
         })
+
+        // This should also test the "back' button, but that test passed with
+        // puppeteer regardless of the implementation.
+        for (const button of ['forward', 'middle', 'right'] as MouseButton[]) {
+            it(`does not select a line on ${button} button click`, async () => {
+                await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
+                await waitForView()
+
+                await driver.page.click(lineAt(1), { button })
+                await driver.page.waitForSelector(lineAt(1) + '.selected-line', { hidden: true, timeout: 5000 })
+            })
+        }
 
         it('does not select a line when clicking on content in the line', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}${filePaths['test.ts']}`)
@@ -842,7 +854,7 @@ describe('CodeMirror blob view', () => {
             // Focus file view and trigger in-document search
             await driver.page.click(blobSelector)
             await pressCtrlF()
-            await driver.page.waitForSelector('.search-container')
+            await driver.page.waitForSelector('.cm-sg-search-container')
 
             // Start searching (which implies that the search input has focus)
             await driver.page.keyboard.type('line')
@@ -851,7 +863,7 @@ describe('CodeMirror blob view', () => {
 
             // Enable case sensitive search. This should update the matches
             // immediately.
-            await driver.page.click('[data-testid="blob-view-search-case-sensitive"]')
+            await driver.page.click('.test-blob-view-search-case-sensitive')
             assert.strictEqual(await getMatchCount(), 2, 'finds two matches')
 
             // Pressing CTRL+f again focuses the search input again and selects
@@ -860,13 +872,13 @@ describe('CodeMirror blob view', () => {
             await driver.page.keyboard.type('line\\d')
             assert.strictEqual(
                 await driver.page.evaluate<() => string | null | undefined>(
-                    () => document.querySelector<HTMLInputElement>('.search-container [name="search"]')?.value
+                    () => document.querySelector<HTMLInputElement>('.cm-sg-search-container [name="search"]')?.value
                 ),
                 'line\\d'
             )
 
             // Enabling regexp search.
-            await driver.page.click('[data-testid="blob-view-search-regexp"]')
+            await driver.page.click('.test-blob-view-search-regexp')
             assert.strictEqual(await getMatchCount(), 2, 'finds two matches')
 
             // Pressing previous / next buttons focuses next/previous match
@@ -880,7 +892,7 @@ describe('CodeMirror blob view', () => {
             // Pressing Esc closes the search form
             await driver.page.keyboard.press('Escape')
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector('.search-container')),
+                await driver.page.evaluate(() => document.querySelector('.cm-sg-search-container')),
                 null,
                 'search form is not presetn'
             )
@@ -895,7 +907,7 @@ describe('CodeMirror blob view', () => {
             // Focus file view and trigger in-document search
             await driver.page.click('body')
             await pressCtrlF()
-            await driver.page.waitForSelector('.search-container')
+            await driver.page.waitForSelector('.cm-sg-search-container')
         })
     })
 })

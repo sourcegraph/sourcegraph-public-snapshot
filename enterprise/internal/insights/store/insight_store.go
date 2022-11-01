@@ -341,6 +341,7 @@ group by for_time, reason;
 
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+	ID                  int
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
 	IncludeDeleted      bool
@@ -375,6 +376,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
+	if args.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
+	}
 	if args.GlobalOnly {
 		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
 	}
@@ -384,6 +388,21 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
 	return scanDataSeries(s.Query(ctx, q))
+}
+
+func (s *InsightStore) GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error) {
+	matchingSeries, err := s.GetDataSeries(ctx, GetDataSeriesArgs{ID: id, IncludeDeleted: false})
+	if err != nil {
+		return nil, err
+	}
+	switch len(matchingSeries) {
+	case 0:
+		return nil, errors.New("series not found")
+	case 1:
+		return &matchingSeries[0], nil
+	default:
+		return nil, errors.New("multiple series match id")
+	}
 }
 
 // GetScopedSearchSeriesNeedBackfill Is a special purpose func to get only just in time series that should
@@ -459,6 +478,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			pq.Array(&temp.Repositories),
 			&temp.GroupBy,
 			&temp.BackfillAttempts,
+			&temp.SupportsAugmentation,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -503,6 +523,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.Description,
 			&temp.Label,
 			&temp.LineColor,
+			&temp.InsightSeriesID,
 			&temp.SeriesID,
 			&temp.Query,
 			&temp.CreatedAt,
@@ -529,6 +550,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.SeriesLimit,
 			&temp.GroupBy,
 			&temp.BackfillAttempts,
+			&temp.SupportsAugmentation,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -780,6 +802,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	series.ID = id
 	series.Enabled = true
+	series.SupportsAugmentation = true
 	return series, nil
 }
 
@@ -1014,11 +1037,12 @@ RETURNING id;`
 
 const getInsightByViewSql = `
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts, 
+i.supports_augmentation
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -1028,11 +1052,12 @@ ORDER BY iv.id, i.series_id
 
 const getInsightsByDashboardSql = `
 SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts,
+i.supports_augmentation
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -1046,7 +1071,7 @@ const getInsightDataSeriesSql = `
 SELECT id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method, repositories, group_by, backfill_attempts
+just_in_time, generation_method, repositories, group_by, backfill_attempts, supports_augmentation
 FROM insight_series
 WHERE %s
 `
@@ -1068,11 +1093,11 @@ ORDER BY iv.unique_id
 
 const getInsightsWithSeriesSql = `
 SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-       i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+       i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts, i.supports_augmentation
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
