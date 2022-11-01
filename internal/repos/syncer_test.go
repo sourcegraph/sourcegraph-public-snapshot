@@ -2018,7 +2018,6 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 }
 
 func TestEnqueueWebhookBuildJob(t *testing.T) {
-	t.Parallel()
 	store := getTestRepoStore(t)
 
 	ctx := context.Background()

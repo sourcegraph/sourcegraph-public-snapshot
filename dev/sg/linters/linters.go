@@ -52,7 +52,6 @@ var Targets = []Target{
 		Description: "Documentation checks",
 		Checks: []*linter{
 			runScript("Docsite lint", "dev/docsite.sh check"),
-			prettier,
 		},
 	},
 	{
@@ -71,7 +70,6 @@ var Targets = []Target{
 			inlineTemplates,
 			runScript("Yarn duplicate", "dev/check/yarn-deduplicate.sh"),
 			checkUnversionedDocsLinks(),
-			prettier,
 		},
 	},
 	{
@@ -90,6 +88,14 @@ var Targets = []Target{
 			shellCheck,
 			bashSyntax,
 		},
+	},
+}
+
+var FormattingTarget = Target{
+	Name:        "format",
+	Description: "Check client code and docs for formatting errors",
+	Checks: []*linter{
+		prettier,
 	},
 }
 

@@ -12,26 +12,18 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 )
 
 //go:embed config.example.cue
 var exampleConfig string
 
 type CodeHostSource interface {
-	ListRepos(ctx context.Context) ([]*Repo, error)
+	ListRepos(ctx context.Context) ([]*store.Repo, error)
 }
 
 type CodeHostDestination interface {
 	CreateRepo(ctx context.Context, name string) (*url.URL, error)
-}
-
-type Repo struct {
-	FromGitURL string
-	ToGitURL   string
-	Name       string
-	Failed     string
-	Created    bool
-	Pushed     bool
 }
 
 var app = &cli.App{
@@ -75,7 +67,7 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 		logger.Fatal("failed to load config", log.Error(err))
 	}
 
-	s, err := newState(state)
+	s, err := store.New(state)
 	if err != nil {
 		logger.Fatal("failed to init state", log.Error(err))
 	}

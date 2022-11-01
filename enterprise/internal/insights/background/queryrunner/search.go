@@ -54,8 +54,8 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 }
 
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
+// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking.
+// It returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
 // Note that repo ID is received untyped and being cast to api.RepoID
 // err is an upstream error to which any new occurring error is appended
 func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {

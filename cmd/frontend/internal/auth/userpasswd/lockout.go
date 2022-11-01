@@ -127,7 +127,7 @@ func (s *lockoutStore) SendUnlockAccountEmail(ctx context.Context, userID int32,
 		return err
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "account_unlock", txemail.Message{
 		To:       []string{recipientEmail},
 		Template: emailTemplates,
 		Data: struct {

@@ -91,7 +91,6 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
-                activation: undefined,
             })
         },
         [caseSensitive, patternType, submitSearch]

@@ -76,7 +76,12 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     const newState: Partial<
         Pick<
             NavbarQueryState,
-            'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+            | 'queryState'
+            | 'searchPatternType'
+            | 'searchCaseSensitivity'
+            | 'searchQueryFromURL'
+            | 'parametersSource'
+            | 'searchMode'
         >
     > = {}
 
@@ -89,6 +94,7 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query
+        newState.searchMode = parsedSearchURL.searchMode
     }
 
     // The way Zustand is designed makes it difficult to build up a partial new

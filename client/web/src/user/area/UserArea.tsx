@@ -4,7 +4,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -71,7 +70,6 @@ interface UserAreaProps
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
-        ActivationProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps {
@@ -98,7 +96,6 @@ export interface UserAreaRouteContext
         SettingsCascadeProps,
         ThemeProps,
         TelemetryProps,
-        ActivationProps,
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,

@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/run"
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -17,24 +18,26 @@ import (
 type Runner struct {
 	source      CodeHostSource
 	destination CodeHostDestination
-	state       *state
+	store       *store.Store
 	logger      log.Logger
 }
 
-func logRepo(r *Repo, fields ...log.Field) []log.Field {
+func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
 	return append([]log.Field{
-		log.String("repo", r.Name),
-		log.String("from", r.FromGitURL),
-		log.String("to", r.ToGitURL),
+		log.Object("repo",
+			log.String("name", r.Name),
+			log.String("from", r.GitURL),
+			log.String("to", r.ToGitURL),
+		),
 	}, fields...)
 }
 
-func NewRunner(logger log.Logger, state *state, source CodeHostSource, dest CodeHostDestination) *Runner {
+func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest CodeHostDestination) *Runner {
 	return &Runner{
 		logger:      logger,
 		source:      source,
 		destination: dest,
-		state:       state,
+		store:       s,
 	}
 }
 
@@ -43,7 +46,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	r.logger.Info("test")
 
 	// Load existing repositories.
-	srcRepos, err := r.state.load()
+	srcRepos, err := r.store.Load()
 	if err != nil {
 		r.logger.Error("failed to open state database", log.Error(err))
 		return err
@@ -58,7 +61,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 			return err
 		}
 		srcRepos = repos
-		if err := r.state.insert(repos); err != nil {
+		if err := r.store.Insert(repos); err != nil {
 			r.logger.Error("failed to insert repositories from source", log.Error(err))
 			return err
 		}
@@ -90,7 +93,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 					repo.ToGitURL = toGitURL.String()
 					repo.Created = true
 				}
-				if err := r.state.saveRepo(repo); err != nil {
+				if err := r.store.SaveRepo(repo); err != nil {
 					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
 					return err
 				}
@@ -105,7 +108,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 				} else {
 					repo.Pushed = true
 				}
-				if err := r.state.saveRepo(repo); err != nil {
+				if err := r.store.SaveRepo(repo); err != nil {
 					r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
 					return err
 				}
@@ -125,7 +128,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	return nil
 }
 
-func pushRepo(ctx context.Context, repo *Repo) error {
+func pushRepo(ctx context.Context, repo *store.Repo) error {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {
 		return err
@@ -134,7 +137,7 @@ func pushRepo(ctx context.Context, repo *Repo) error {
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	err = run.Bash(ctx, "git clone", repo.FromGitURL).Dir(tmpDir).Run().Wait()
+	err = run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir).Run().Wait()
 	if err != nil {
 		return err
 	}
