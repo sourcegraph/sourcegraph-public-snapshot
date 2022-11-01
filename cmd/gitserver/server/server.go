@@ -2557,18 +2557,18 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("failed to update last changed time", log.Error(err), log.String("repo", string(repo)))
+		logger.Warn("failed to update last changed time", log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed to set last_fetched in DB", log.Error(err), log.String("repo", string(repo)))
+		logger.Warn("failed to set last_fetched in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed to repo size", log.Error(err), log.String("repo", string(repo)))
+		logger.Warn("failed to repo size", log.Error(err))
 	}
 
 	return nil
