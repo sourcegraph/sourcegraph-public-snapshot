@@ -4,7 +4,7 @@ Welcome to Sourcegraph!
 
 ## What is Sourcegraph?
 
-Sourcegraph is a code intelligence platform that helps devs answer questions in their code by searching and understanding across their organization's code base.
+Sourcegraph is a code intelligence platform that helps devs answer questions in their code by searching and understanding across their organization's codebase.
 
 ## Who should use Sourcegraph?
 
