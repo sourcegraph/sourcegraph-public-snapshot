@@ -16869,20 +16869,14 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-### Zoekt: Disk I/O metrics (only available on Sourcegraph internal instances)
+### Zoekt: Data Disk I/O metrics (only available on Sourcegraph internal instances)
 
 #### zoekt: data_disk_reads_sec
 
-<p class="subtitle">Data disk read request rate over 2m (per instance)</p>
+<p class="subtitle">Read request rate over 2m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
-
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16893,23 +16887,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_writes_sec
+#### zoekt: data_disk_writes_sec)
 
-<p class="subtitle">Data disk write request rate over 2m (per instance)</p>
+<p class="subtitle">Write request rate over 2m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16920,23 +16909,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_read_throughput
+#### zoekt: data_disk_read_throughput)
 
-<p class="subtitle">Data disk read throughput over 2m (per instance)</p>
+<p class="subtitle">Read throughput over 2m (per instance)</p>
 
 The amount of data that was read from the device per second.
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16947,23 +16931,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_write_throughput
+#### zoekt: data_disk_write_throughput)
 
-<p class="subtitle">Data disk write throughput over 2m (per instance)</p>
+<p class="subtitle">Write throughput over 2m (per instance)</p>
 
 The amount of data that was written to the device per second.
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16974,24 +16953,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_read_duration
+#### zoekt: data_disk_read_duration)
 
-<p class="subtitle">Data disk average read duration over 2m (per instance)</p>
+<p class="subtitle">Average read duration over 2m (per instance)</p>
 
-The average time for read requests issued to the device to be served. This includes the time spent
-by the requests in queue and the time spent servicing them.
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17002,24 +16975,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m]))))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_write_duration
+#### zoekt: data_disk_write_duration)
 
-<p class="subtitle">Data disk average write duration over 2m (per instance)</p>
+<p class="subtitle">Average write duration over 2m (per instance)</p>
 
-The average time for write requests issued to the device to be served. This includes the time spent
-by the requests in queue and the time spent servicing them.
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17030,23 +16997,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m]))))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_read_request_size
+#### zoekt: data_disk_read_request_size)
 
-<p class="subtitle">Data disk average read request size over 2m (per instance)</p>
+<p class="subtitle">Average read request size over 2m (per instance)</p>
 
-	The average size of read requests that were issued to the device.
-
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+The average size of read requests that were issued to the device.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17057,23 +17019,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_write_request_size
+#### zoekt: data_disk_write_request_size)
 
-<p class="subtitle">Data disk average write request size over 2m (per instance)</p>
+<p class="subtitle">Average write request size over 2m (per instance)</p>
 
-	The average size of write requests that were issued to the device.
-
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+The average size of write requests that were issued to the device.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17084,23 +17041,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_reads_merged_sec
+#### zoekt: data_disk_reads_merged_sec)
 
-<p class="subtitle">Data disk merged read request rate over 2m (per instance)</p>
+<p class="subtitle">Merged read request rate over 2m (per instance)</p>
 
-	The number of read requests merged per second that were queued to the device.
-
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+The number of read requests merged per second that were queued to the device.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17111,23 +17063,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_writes_merged_sec
+#### zoekt: data_disk_writes_merged_sec)
 
-<p class="subtitle">Data disk merged writes request rate over 2m (per instance)</p>
+<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
 
-	The number of write requests merged per second that were queued to the device.
-
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+The number of write requests merged per second that were queued to the device.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17138,24 +17085,18 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_average_queue_size
+#### zoekt: data_disk_average_queue_size)
 
-<p class="subtitle">Data disk average queue size over 2m (per instance)</p>
+<p class="subtitle">Average queue size over 2m (per instance)</p>
 
-							The number of I/O operations that were being queued or being serviced. See
-							https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
-
-							Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-							as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-							These statistics are best interpreted as the load experienced by the device Zoekt is
-							using, not the load Zoekt is solely responsible for causing.
+The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17166,7 +17107,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
