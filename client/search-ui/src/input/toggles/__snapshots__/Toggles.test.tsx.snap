@@ -6,7 +6,7 @@ Array [
     aria-checked="false"
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
-    class="btn btnIcon toggle test-case-sensitivity-toggle disabled"
+    class="btn btnIcon toggle test-case-sensitivity-toggle caseSensitivityToggle disabled"
     role="checkbox"
     tabindex="0"
   >
@@ -33,7 +33,7 @@ Array [
     aria-checked="false"
     aria-disabled="true"
     aria-label="Case sensitivity toggle"
-    class="btn btnIcon toggle test-case-sensitivity-toggle disabled"
+    class="btn btnIcon toggle test-case-sensitivity-toggle caseSensitivityToggle disabled"
     role="checkbox"
     tabindex="0"
   >
@@ -60,7 +60,7 @@ Array [
     aria-checked="false"
     aria-disabled="true"
     aria-label="Regular expression toggle"
-    class="btn btnIcon toggle test-regexp-toggle disabled"
+    class="btn btnIcon toggle test-regexp-toggle regularExpressionToggle disabled"
     role="checkbox"
     tabindex="0"
   >
