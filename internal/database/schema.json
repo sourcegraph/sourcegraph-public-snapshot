@@ -14312,6 +14312,16 @@
       ],
       "Indexes": [
         {
+          "Name": "lsif_uploads_visible_at_tip_is_default_branch",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_uploads_visible_at_tip_repository_id_upload_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
