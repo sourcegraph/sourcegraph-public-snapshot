@@ -208,6 +208,7 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-04, 0.5)};
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
+    --collapse-results-color: var(--gray-08);
 }
 
 .theme-dark {
@@ -300,6 +301,7 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-08, 0.5)};
     --sidebar-bg: var(--black);
     --sidebar-border-color: var(--color-bg-2);
+    --collapse-results-color: var(--gray-05);
 }
 
 // Additional colors global colors.

@@ -656,17 +656,15 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 
 	t.Run("TouchRepoPermissions is called when no authz provider", func(t *testing.T) {
-		mockRepos.ListFunc.SetDefaultReturn(
-			[]*types.Repo{
-				{
-					ID:      1,
-					Private: true,
-					ExternalRepo: api.ExternalRepoSpec{
-						ServiceID: "https://gitlab.com/",
-					},
-					Sources: map[string]*types.SourceInfo{
-						extsvc.URN(extsvc.TypeGitLab, 0): {},
-					},
+		mockRepos.GetFunc.SetDefaultReturn(
+			&types.Repo{
+				ID:      1,
+				Private: true,
+				ExternalRepo: api.ExternalRepoSpec{
+					ServiceID: "https://gitlab.com/",
+				},
+				Sources: map[string]*types.SourceInfo{
+					extsvc.URN(extsvc.TypeGitLab, 0): {},
 				},
 			},
 			nil,

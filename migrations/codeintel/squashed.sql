@@ -123,6 +123,13 @@ CREATE FUNCTION update_lsif_data_references_schema_versions_insert() RETURNS tri
     RETURN NULL;
 END $$;
 
+CREATE TABLE codeintel_last_reconcile (
+    dump_id integer NOT NULL,
+    last_reconcile_at timestamp with time zone NOT NULL
+);
+
+COMMENT ON TABLE codeintel_last_reconcile IS 'Stores the last time processed LSIF data was reconciled with the other database.';
+
 CREATE TABLE lsif_data_definitions (
     dump_id integer NOT NULL,
     scheme text NOT NULL,
@@ -367,6 +374,9 @@ ALTER TABLE ONLY rockskip_repos ALTER COLUMN id SET DEFAULT nextval('rockskip_re
 
 ALTER TABLE ONLY rockskip_symbols ALTER COLUMN id SET DEFAULT nextval('rockskip_symbols_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_last_reconcile
+    ADD CONSTRAINT codeintel_last_reconcile_dump_id_key UNIQUE (dump_id);
+
 ALTER TABLE ONLY lsif_data_definitions
     ADD CONSTRAINT lsif_data_definitions_pkey PRIMARY KEY (dump_id, scheme, identifier);
 
@@ -411,6 +421,8 @@ ALTER TABLE ONLY rockskip_repos
 
 ALTER TABLE ONLY rockskip_symbols
     ADD CONSTRAINT rockskip_symbols_pkey PRIMARY KEY (id);
+
+CREATE INDEX codeintel_last_reconcile_last_reconcile_at_dump_id ON codeintel_last_reconcile USING btree (last_reconcile_at, dump_id);
 
 CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version);
 

@@ -31,9 +31,15 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const [nextClick, copied] = useEventObservable(
         useCallback(
-            (clicks: Observable<React.MouseEvent>) =>
+            (clicks: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 clicks.pipe(
                     tap(copyFullQuery),
+                    // There is an issue in copyFullQuery where the focus 
+                    // is removed from the button; this patches it.
+                    tap(event => {
+                        event.preventDefault()
+                        event.currentTarget.focus()
+                    }),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
                     startWith(false)
                 ),

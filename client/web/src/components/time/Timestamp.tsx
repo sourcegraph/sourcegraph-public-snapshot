@@ -21,6 +21,15 @@ interface Props {
 
     /** Whether to show absolute timestamp and show relative one in tooltip */
     preferAbsolute?: boolean
+
+    /** Optional semantic timestamp format */
+    timestampFormat?: TimestampFormat
+}
+
+export enum TimestampFormat {
+    FULL_TIME = 'HH:mm:ss',
+    FULL_DATE = 'yyyy-MM-dd',
+    FULL_DATE_TIME = 'yyyy-MM-dd pp',
 }
 
 const RERENDER_INTERVAL_MSEC = 7000
@@ -35,6 +44,7 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
     strict = false,
     now = Date.now,
     preferAbsolute = false,
+    timestampFormat,
 }) => {
     const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout))
     useEffect(() => {
@@ -50,8 +60,9 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
     const tooltip = useMemo(() => {
         const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
         const dateHasTime = date.toString().includes('T')
-        return format(parsedDate, `yyyy-MM-dd${dateHasTime ? ' pp' : ''}`)
-    }, [date])
+        const defaultFormat = dateHasTime ? TimestampFormat.FULL_DATE_TIME : TimestampFormat.FULL_DATE
+        return format(parsedDate, timestampFormat ?? defaultFormat)
+    }, [date, timestampFormat])
 
     return (
         <Tooltip content={preferAbsolute ? label : tooltip}>

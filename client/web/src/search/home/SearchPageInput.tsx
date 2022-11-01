@@ -14,7 +14,6 @@ import {
     QueryState,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -41,7 +40,6 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
@@ -113,7 +111,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
-                    activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     addRecentSearch,
                     ...parameters,
@@ -124,7 +121,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.queryState.query,
             props.selectedSearchContextSpec,
             props.history,
-            props.activation,
             addRecentSearch,
             patternType,
             caseSensitive,
