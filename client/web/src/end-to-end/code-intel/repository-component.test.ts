@@ -313,6 +313,9 @@ describe('Repository component', () => {
                     'constant',
                     'constant',
                     'function',
+                    'unknown',
+                    'unknown',
+                    'unknown',
                 ],
             },
             {
