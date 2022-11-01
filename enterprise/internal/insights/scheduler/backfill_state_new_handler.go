@@ -47,7 +47,7 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		ViewName:          "insights_jobs_backfill_new",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
+		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
