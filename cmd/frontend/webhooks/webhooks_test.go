@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -60,28 +62,31 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	gh := GitHubWebhook{
-		DB: db,
-	}
+	gh := GitHubWebhook{WebhookRouter: &WebhookRouter{DB: db}}
 
 	webhookMiddleware := NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, &gh)))
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gh.WebhookRouter)))
 	srv := httptest.NewServer(base)
 
-	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
+	t.Run("found GitLab webhook with correct secret returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
 
-		req, err := http.NewRequest("POST", requestURL, nil)
+		event := webhooks.EventCommon{
+			ObjectKind: "pipeline",
+		}
+		payload, err := json.Marshal(event)
+		require.NoError(t, err)
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Add("X-GitLab-Token", "somesecret")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("not-found webhook returns 404", func(t *testing.T) {
