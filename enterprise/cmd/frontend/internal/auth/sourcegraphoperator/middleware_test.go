@@ -300,7 +300,7 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		
+
 		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
