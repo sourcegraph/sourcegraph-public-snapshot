@@ -58,11 +58,12 @@ You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a p
 
 Sourcegraph code search is fast, works across all your repositories at any commit, and has minimal indexing delay. Code search also includes advanced features, including:
 
-- Powerful, flexible query syntax
-- Commit diff search
-- Commit message search
-- Custom search scopes
-- Saved search monitoring
+- [Powerful, flexible query syntax](../code_search/reference/queries.md)
+- [Commit diff search](../code_search/explanations/features.md#commit-diff-search)
+- [Commit message search](../code_search/explanations/features.md#commit-message-search)
+- [Saved search scopes](../code_search/explanations/features.md#search-scopes)
+- [Search contexts to search across a set of repositories at specific revisions](../code_search/explanations/features.md#search-contexts)
+- [Saved search monitoring](../code_monitoring/index.md)
 
 Read the [code search documentation](../code_search/index.md) to learn more and discover the full feature set. Here are both written and video resources to help you get started:
 - [Search cheat sheet and syntax guide](https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet)
