@@ -23,7 +23,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
@@ -71,8 +70,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const history = useHistory()
     // Feature flags
-    // Log lucky search events. To be removed at latest by 12/2022.
-    const [smartSearchEnabled] = useFeatureFlag('ab-lucky-search')
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
@@ -83,6 +80,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
     const liveQuery = useNavbarQueryState(state => state.queryState.query)
     const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
     const setQueryState = useNavbarQueryState(state => state.setQueryState)
@@ -105,10 +103,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : SearchMode.Precise,
+            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
             chunkMatches: true,
         }),
-        [caseSensitive, patternType, trace]
+        [caseSensitive, patternType, searchMode, trace]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)
@@ -186,14 +184,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     }, [results, telemetryService])
 
     useEffect(() => {
-        if (smartSearchEnabled && results?.state === 'complete') {
-            telemetryService.log('SearchResultsFetchedAuto')
-            if (results.results.length > 0) {
-                telemetryService.log('SearchResultsNonEmptyAuto')
-            }
-        }
         if (
-            smartSearchEnabled &&
             (results?.alert?.kind === 'smart-search-additional-results' ||
                 results?.alert?.kind === 'smart-search-pure-results') &&
             results?.alert?.title &&
@@ -208,7 +199,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                 telemetryService.log(event)
             }
         }
-    }, [results, smartSearchEnabled, telemetryService])
+    }, [results, telemetryService])
 
     // Reset expanded state when new search is started
     useEffect(() => {
@@ -421,7 +412,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             showSearchContext={showSearchContext}
                             assetsRoot={window.context?.assetsRoot || ''}
                             executedQuery={location.search}
-                            smartSearchEnabled={smartSearchEnabled}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
                         />

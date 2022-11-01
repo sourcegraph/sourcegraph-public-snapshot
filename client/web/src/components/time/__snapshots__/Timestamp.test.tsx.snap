@@ -4,7 +4,6 @@ exports[`Timestamp absolute time with formatting 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-state="closed"
   >
     01:02:00
   </span>
@@ -15,7 +14,6 @@ exports[`Timestamp mocked current time 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-state="closed"
   >
     about 22 hours ago
   </span>
@@ -26,7 +24,6 @@ exports[`Timestamp noAbout 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-state="closed"
   >
     22 hours ago
   </span>
@@ -37,7 +34,6 @@ exports[`Timestamp with time time 1`] = `
 <DocumentFragment>
   <span
     class="timestamp"
-    data-state="closed"
   >
     about 21 hours ago
   </span>

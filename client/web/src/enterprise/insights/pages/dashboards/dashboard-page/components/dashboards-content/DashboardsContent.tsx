@@ -99,7 +99,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <DashboardSelect
                     dashboard={currentDashboard}
                     dashboards={dashboards}
-                    className={classNames(styles.dashboardSelect, 'mr-2')}
+                    className={styles.dashboardSelect}
                     onSelect={handleDashboardSelect}
                 />
 

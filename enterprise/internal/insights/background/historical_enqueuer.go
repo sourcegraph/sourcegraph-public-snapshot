@@ -11,12 +11,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/ksuid"
-	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
@@ -104,14 +103,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
 	enq.featureFlagStore = ffs
-
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	go conf.Watch(func() {
-		val := getRateLimit()
-		observationContext.Logger.Info("Updating insights/historical-worker rate limit", sglog.Int("value", int(val)))
-		enq.analyzer.limiter.SetLimit(val)
-	})
 
 	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
@@ -230,9 +221,8 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 }
 
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
+
+	limiter := limiter.HistoricalWorkRate()
 
 	return backfillAnalyzer{
 		statistics:         statistics,
@@ -265,21 +255,6 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 	}
 
 	return historicalEnqueuer
-}
-
-func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsHistoricalWorkerRateLimit
-
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
-		} else {
-			result = rate.Limit(*val)
-		}
-
-		return result
-	}
 }
 
 type statistics map[string]*repoBackfillStatistics

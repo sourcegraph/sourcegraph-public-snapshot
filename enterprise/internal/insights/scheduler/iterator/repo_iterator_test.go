@@ -215,7 +215,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 			return true
 		})
 		jsonify, _ := json.Marshal(got)
-		autogold.Want("iterate retry with one error after retry iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Want("iterate retry with one error after retry iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
 	})
 
 	t.Run("ensure retries are reloaded", func(t *testing.T) {
@@ -263,10 +263,11 @@ func TestForNextRetryAndFinish(t *testing.T) {
 			currentErrors = append(currentErrors, *v)
 		}
 		require.Equal(t, 1, len(currentErrors))
-		require.Equal(t, 5, currentErrors[0])
+		require.Equal(t, int32(5), currentErrors[0].RepoId)
+		require.Equal(t, 2, currentErrors[0].FailureCount)
 
 		jsonify, _ := json.Marshal(reloaded)
-		autogold.Want("iterate retry with one error after reload", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Want("ensure retries are reloaded after reload", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 	t.Run("ensure retries complete", func(t *testing.T) {
 		clock := glock.NewMockClock()
@@ -296,7 +297,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 		require.Equal(t, 0, len(itr.errors))
 
 		jsonify, _ := json.Marshal(itr)
-		autogold.Want("ensure retries complete", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":1,"TotalCount":2,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
+		autogold.Want("ensure retries complete", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":1,"TotalCount":2,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 

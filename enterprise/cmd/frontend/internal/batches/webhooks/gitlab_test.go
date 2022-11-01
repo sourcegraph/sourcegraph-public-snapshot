@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -40,6 +41,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		gsClient := gitserver.NewMockClient()
+		gitLabURL, err := extsvc.NewCodeHostBaseURL("https://gitlab.com/")
+		require.NoError(t, err)
 
 		t.Run("ServeHTTP", func(t *testing.T) {
 			t.Run("missing external service", func(t *testing.T) {
@@ -518,9 +521,9 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			t.Run("unknown event type", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, gsClient)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+				createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				err := h.handleEvent(ctx, es, nil)
+				err := h.handleEvent(ctx, store.DatabaseDB(), gitLabURL, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
@@ -529,7 +532,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			t.Run("error from enqueueChangesetSyncFromEvent", func(t *testing.T) {
 				store := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(store, gsClient)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+				createGitLabExternalService(t, ctx, store.ExternalServices())
 
 				// We can induce an error with an incomplete merge request
 				// event that's missing a project.
@@ -539,18 +542,14 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 					},
 				}
 
-				err := h.handleEvent(ctx, es, event)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if want := http.StatusInternalServerError; err.code != want {
-					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
-				}
+				err := h.handleEvent(ctx, store.DatabaseDB(), gitLabURL, event)
+				require.Error(t, err)
 			})
 
 			t.Run("error from handleMergeRequestStateEvent", func(t *testing.T) {
 				s := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(s, gsClient)
-				es := createGitLabExternalService(t, ctx, s.ExternalServices())
+				createGitLabExternalService(t, ctx, s.ExternalServices())
 
 				event := &webhooks.MergeRequestCloseEvent{
 					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
@@ -562,18 +561,14 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
 				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
-				err := h.handleEvent(ctx, es, event)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if want := http.StatusInternalServerError; err.code != want {
-					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
-				}
+				err := h.handleEvent(ctx, db, gitLabURL, event)
+				require.Error(t, err)
 			})
 
 			t.Run("error from handlePipelineEvent", func(t *testing.T) {
 				s := gitLabTestSetup(t, db)
 				h := NewGitLabWebhook(s, gsClient)
-				es := createGitLabExternalService(t, ctx, s.ExternalServices())
+				createGitLabExternalService(t, ctx, s.ExternalServices())
 
 				event := &webhooks.PipelineEvent{
 					MergeRequest: &gitlab.MergeRequest{IID: 42},
@@ -583,12 +578,8 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
 				h.Store = store.NewWithClock(db, &observation.TestContext, nil, s.Clock())
 
-				err := h.handleEvent(ctx, es, event)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if want := http.StatusInternalServerError; err.code != want {
-					t.Errorf("unexpected status code: have %d; want %d", err.code, want)
-				}
+				err := h.handleEvent(ctx, db, gitLabURL, event)
+				require.Error(t, err)
 			})
 		})
 

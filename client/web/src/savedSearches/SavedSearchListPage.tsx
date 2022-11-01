@@ -11,11 +11,11 @@ import { useCallbackRef } from 'use-callback-ref'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
+import { SavedSearchFields } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
@@ -24,7 +24,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import styles from './SavedSearchListPage.module.scss'
 
 interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
-    savedSearch: GQL.ISavedSearch
+    savedSearch: SavedSearchFields
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
 }
@@ -40,7 +40,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
 
     private subscriptions = new Subscription()
-    private delete = new Subject<GQL.ISavedSearch>()
+    private delete = new Subject<SavedSearchFields>()
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -123,7 +123,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
 }
 
 interface State {
-    savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
+    savedSearchesOrError?: SavedSearchFields[] | ErrorLike
 }
 
 interface Props extends RouteComponentProps, NamespaceProps {}

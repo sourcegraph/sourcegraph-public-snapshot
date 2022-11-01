@@ -33,7 +33,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		ViewName:          "insights_jobs_backfill_in_progress",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
+		OrderByExpression: sqlf.Sprintf("cost_bucket, id"), // take the oldest item in the group of least work
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
@@ -50,10 +50,11 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
+		Name:              name,
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
