@@ -206,7 +206,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                             <li className={styles.repoRevisionSidebarSymbolsNode} style={padding(args.symbol)}>
                                 <span className={styles.link}>
                                     <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
-                                    {args.symbol}
+                                    {displayName(args.symbol)}
                                 </span>
                             </li>
                         ) : (
@@ -248,16 +248,25 @@ const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = p
 )
 
 const hierarchyOf = (symbols: SymbolNodeFields[]): (SymbolNodeFields | string)[] => {
-    const map1 = new Map<string, SymbolNodeFields | string>(symbols.map(symbol => [fullName(symbol), symbol]))
+    const fullNameToSymbol = new Map<string, SymbolNodeFields | string>(
+        symbols.map(symbol => [fullName(symbol), symbol])
+    )
 
-    for (const missing of symbols
-        .filter(symbol => symbol.containerName)
-        .map(symbol => symbol.containerName ?? '')
-        .filter(containerName => !map1.has(containerName))) {
-        map1.set(missing, missing)
+    for (const container of symbols.map(symbol => symbol.containerName)) {
+        if (!container) {
+            continue
+        }
+        const components = container.split('.')
+        for (let index = components.length; index > 0; index--) {
+            const prefix = components.slice(0, index + 1).join('.')
+            if (fullNameToSymbol.has(prefix)) {
+                break
+            }
+            fullNameToSymbol.set(prefix, prefix)
+        }
     }
 
-    return sortBy([...map1.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
+    return sortBy([...fullNameToSymbol.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
 }
 
 const depthOf = (symbol: SymbolNodeFields | string): number =>
@@ -267,3 +276,5 @@ const fullName = (symbol: SymbolNodeFields): string =>
     `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
 
 const padding = (symbol: SymbolNodeFields | string): React.CSSProperties => ({ paddingLeft: `${depthOf(symbol)}rem` })
+
+const displayName = (symbol: string): string => symbol.split('.').pop() ?? symbol
