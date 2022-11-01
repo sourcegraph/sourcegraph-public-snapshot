@@ -64,7 +64,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
         output,
         telemetryService,
         isSelected,
-        isOtherBlockSelected,
+        showMenu,
         isReadOnly,
         hoverifier,
         extensionsController,
@@ -172,7 +172,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 focusInput={focusInput}
                 isReadOnly={isReadOnly}
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
+                showMenu={showMenu}
                 actions={isSelected ? menuActions : linkMenuAction}
                 {...props}
             >

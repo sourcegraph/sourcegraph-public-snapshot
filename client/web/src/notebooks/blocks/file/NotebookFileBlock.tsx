@@ -55,7 +55,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         output,
         telemetryService,
         isSelected,
-        isOtherBlockSelected,
+        showMenu,
         isReadOnly,
         hoverifier,
         extensionsController,
@@ -185,7 +185,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 id={id}
                 aria-label="Notebook file block"
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
+                showMenu={showMenu}
                 isReadOnly={isReadOnly}
                 isInputVisible={showInputs}
                 setIsInputVisible={setShowInputs}
