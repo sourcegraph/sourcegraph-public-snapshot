@@ -8,16 +8,16 @@ Sourcegraph is a code intelligence platform that helps devs answer questions in 
 
 ## Who should use Sourcegraph?
 
-All developers, except:
+In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily.
 
-- Sourcegraph is more useful to developers working with larger codebases or teams (15+ developers).
-- If you rarely search, read, or review code, you probably won't find Sourcegraph useful. (But you should start reading and reviewing more code!)
+More specifically, Sourcegraph is great for all developers, except:
 
-## Who else uses Sourcegraph?
+- those on smaller teams with a small amount of code
+- those that rarely search, read, or review code
 
-In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily."
+## Why do I need code search?
 
-Also, both Facebook and Google provide an in-house Sourcegraph-like code search and intelligence tool to their employees. A [published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers surveyed consider their Sourcegraph-like internal tool to be critical. Developers use it on average for 5.3 sessions each day. (Facebook's and Google's in-house tools are not available to other companies; use Sourcegraph instead.)
+Both Facebook and Google provide an in-house Sourcegraph-like code search and intelligence tool to their employees. A [published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers surveyed consider their Sourcegraph-like internal tool to be critical. Developers use it on average for 5.3 sessions each day. (Facebook's and Google's in-house tools are not available to other companies; use Sourcegraph instead.)
 
 ## What do I use Sourcegraph for?
 
@@ -38,8 +38,8 @@ Sourcegraph's main features are:
 
 - [Code navigation](#code-navigation): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
 - [Code search](#code-search): fast, up-to-date, and scalable, with regexp support on any branch or commit without an indexing delay (and diff search)
-- [Notebooks](#notebooks): pair code and markdown to create powerful live–and persistent–documentation
-- [Code Insights](#code-insights): reveal high-level information about your codebase at it's current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and anything else you can search in Sourcegraph
+- [Notebooks](#notebooks): pair code and markdown to create powerful live and persistent documentation
+- [Code Insights](#code-insights): reveal high-level information about your codebase at its current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and anything else you can search in Sourcegraph
 - [Batch Changes](#batch-changes): make large-scale code changes across many repositories and code hosts
 - [Integrations](#integrations) with code hosts, code review tools, editors, web browsers, etc.
 
@@ -56,7 +56,7 @@ You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a p
 
 ## Code search
 
-Sourcegraph code search is fast, works across all your repositories at any commit, and has no indexing delay. Code search also includes advanced features, including:
+Sourcegraph code search is fast, works across all your repositories at any commit, and has minimal indexing delay. Code search also includes advanced features, including:
 
 - Powerful, flexible query syntax
 - Commit diff search
