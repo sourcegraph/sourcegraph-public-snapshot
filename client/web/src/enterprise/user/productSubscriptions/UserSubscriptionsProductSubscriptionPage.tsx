@@ -94,9 +94,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     )
 }
 
-function queryProductSubscription(
-    uuid: string
-): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
+function queryProductSubscription(uuid: string): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
     return queryGraphQL(
         gql`
             query ProductSubscription($uuid: String!) {

@@ -49,7 +49,7 @@ describe('SiteAdminProductSubscriptionPage', () => {
                             totalCount: 1,
                             pageInfo: { hasNextPage: false },
                         },
-                        activeLicense: null
+                        activeLicense: null,
                     })
                 }
                 _queryProductLicenses={() =>
