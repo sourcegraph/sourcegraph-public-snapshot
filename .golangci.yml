@@ -14,7 +14,6 @@ linters:
     # this is flakey: https://github.com/sourcegraph/sourcegraph/issues/34304
     # - nolintlint
     - staticcheck
-    - typecheck
     - unconvert
     #- unused
     #- unparam
@@ -67,9 +66,6 @@ issues:
         - unparam
         - gosimple
         - unused
-
-severity:
-  default-severity: info
 
 run:
   timeout: 5m
