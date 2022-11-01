@@ -16,7 +16,6 @@ import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -48,7 +47,7 @@ import {
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
 import styles from './RepositoryCommitPage.module.scss'
 
@@ -211,7 +210,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     }, [commitOrError, props])
 
     const queryDiffs = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IFileDiffConnection> =>
+        (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
             queryRepositoryComparisonFileDiffs({
                 ...args,
                 repo: props.repo.id,
