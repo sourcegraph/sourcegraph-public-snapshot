@@ -4,7 +4,7 @@ import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import { SearchContextFields, SearchContextRepositoryRevisisonsFields } from '@sourcegraph/search'
+import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import {
     mockFetchAutoDefinedSearchContexts,
@@ -77,7 +77,7 @@ const authUser: AuthenticatedUser = {
     emails: [],
 }
 
-const repositories: SearchContextRepositoryRevisisonsFields[] = [
+const repositories: SearchContextFields['repositories'] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
