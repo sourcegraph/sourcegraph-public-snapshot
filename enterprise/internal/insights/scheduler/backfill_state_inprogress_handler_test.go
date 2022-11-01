@@ -11,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -48,6 +49,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		InsightStore:   seriesStore,
 		ObsContext:     &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	monitor := NewBackgroundJobMonitor(ctx, config)
 
