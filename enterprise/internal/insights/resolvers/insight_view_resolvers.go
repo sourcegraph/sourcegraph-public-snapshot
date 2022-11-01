@@ -1248,7 +1248,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(resolvers, func(i, j int) bool {
 		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-		if hasSemVar == true {
+		if hasSemVar {
 			return result
 		}
 		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
@@ -1272,7 +1272,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		} else {
 			sort.SliceStable(resolvers, func(i, j int) bool {
 				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-				if hasSemVar == true {
+				if hasSemVar {
 					return !result
 				}
 				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0
