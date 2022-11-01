@@ -115,8 +115,7 @@ _Note: Enterprise Feature_
 
 Automate changes to your codebase. Reduce effort, reduce errors and enable developers to focus on high value work.
 
-Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out:
-- [Batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
+Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
 
 ---
 
@@ -125,7 +124,7 @@ _Note: Enterprise Feature_
 
 Sourcegraph lets you understand and analyze code trends by visualizing how the codebase is changing over time. Measure and act on engineering goals such as migration and component deprecation.
 
-Read the [code insights documentation](../code_insights/index.md)) to learn more, including useful how-to guides.
+Read the [code insights documentation](../code_insights/index.md) to learn more, including useful how-to guides.
 
 ---
 
@@ -133,6 +132,8 @@ Read the [code insights documentation](../code_insights/index.md)) to learn more
 
 Sourcegraph allows you to get code navigation and code search on code files and code review diffs in your code host and review tool or from your IDE. 
 
+### IDE integration
 Sourcegraph’s editor integrations allow you search and navigate across all of your repositories without ever leaving your IDE or checking them out locally. Learn more about how to set them up [here](../integration/editor.md).
 
+### Browser extension
 Our browser extension add code navigation within your code hosts (GitHub, Gitlab, Bitbucket, and Phabricator) directly via Chrome, Safari, and Firefox browsers. Learn more about how to set up the browser extension [here](../integration/browser_extension/index.md).
