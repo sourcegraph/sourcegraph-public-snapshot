@@ -22,3 +22,4 @@ export { WildcardThemeContext, useWildcardTheme } from './useWildcardTheme'
 // Export type is required to avoid Webpack warnings.
 export type { WildcardTheme } from './useWildcardTheme'
 export { useWindowSize } from './useWindowSize'
+export { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
