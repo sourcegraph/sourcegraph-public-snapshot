@@ -357,7 +357,8 @@ CREATE VIEW insights_jobs_backfill_in_progress AS
     jobs.cancel,
     jobs.backfill_id,
     isb.state AS backfill_state,
-    isb.estimated_cost
+    isb.estimated_cost,
+    width_bucket(isb.estimated_cost, (0)::double precision, max((isb.estimated_cost + (1)::double precision)) OVER (), 4) AS cost_bucket
    FROM (insights_background_jobs jobs
      JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
   WHERE (isb.state = 'processing'::text);
