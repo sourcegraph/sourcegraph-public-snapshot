@@ -98,7 +98,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
-			defaultHook: func(context.Context, []api.RepoName) (r0 map[api.RepoName]time.Time, r1 error) {
+			defaultHook: func(context.Context, []api.RepoID) (r0 map[api.RepoID]time.Time, r1 error) {
 				return
 			},
 		},
@@ -160,7 +160,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
-			defaultHook: func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+			defaultHook: func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error) {
 				panic("unexpected invocation of MockStore.LastUpdatedAt")
 			},
 		},
@@ -878,15 +878,15 @@ func (c StoreHasInputFilenameFuncCall) Results() []interface{} {
 // StoreLastUpdatedAtFunc describes the behavior when the LastUpdatedAt
 // method of the parent MockStore instance is invoked.
 type StoreLastUpdatedAtFunc struct {
-	defaultHook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)
-	hooks       []func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)
+	defaultHook func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error)
+	hooks       []func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error)
 	history     []StoreLastUpdatedAtFuncCall
 	mutex       sync.Mutex
 }
 
 // LastUpdatedAt delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) LastUpdatedAt(v0 context.Context, v1 []api.RepoName) (map[api.RepoName]time.Time, error) {
+func (m *MockStore) LastUpdatedAt(v0 context.Context, v1 []api.RepoID) (map[api.RepoID]time.Time, error) {
 	r0, r1 := m.LastUpdatedAtFunc.nextHook()(v0, v1)
 	m.LastUpdatedAtFunc.appendCall(StoreLastUpdatedAtFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -894,7 +894,7 @@ func (m *MockStore) LastUpdatedAt(v0 context.Context, v1 []api.RepoName) (map[ap
 
 // SetDefaultHook sets function that is called when the LastUpdatedAt method
 // of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreLastUpdatedAtFunc) SetDefaultHook(hook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)) {
+func (f *StoreLastUpdatedAtFunc) SetDefaultHook(hook func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error)) {
 	f.defaultHook = hook
 }
 
@@ -902,7 +902,7 @@ func (f *StoreLastUpdatedAtFunc) SetDefaultHook(hook func(context.Context, []api
 // LastUpdatedAt method of the parent MockStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreLastUpdatedAtFunc) PushHook(hook func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error)) {
+func (f *StoreLastUpdatedAtFunc) PushHook(hook func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -910,20 +910,20 @@ func (f *StoreLastUpdatedAtFunc) PushHook(hook func(context.Context, []api.RepoN
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreLastUpdatedAtFunc) SetDefaultReturn(r0 map[api.RepoName]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+func (f *StoreLastUpdatedAtFunc) SetDefaultReturn(r0 map[api.RepoID]time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreLastUpdatedAtFunc) PushReturn(r0 map[api.RepoName]time.Time, r1 error) {
-	f.PushHook(func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+func (f *StoreLastUpdatedAtFunc) PushReturn(r0 map[api.RepoID]time.Time, r1 error) {
+	f.PushHook(func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreLastUpdatedAtFunc) nextHook() func(context.Context, []api.RepoName) (map[api.RepoName]time.Time, error) {
+func (f *StoreLastUpdatedAtFunc) nextHook() func(context.Context, []api.RepoID) (map[api.RepoID]time.Time, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -961,10 +961,10 @@ type StoreLastUpdatedAtFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []api.RepoName
+	Arg1 []api.RepoID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[api.RepoName]time.Time
+	Result0 map[api.RepoID]time.Time
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
