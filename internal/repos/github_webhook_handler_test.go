@@ -47,7 +47,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	conn := *&schema.GitHubConnection{
+	conn := schema.GitHubConnection{
 		Url:      "https://github.com",
 		Token:    "token",
 		Repos:    []string{"owner/name"},
