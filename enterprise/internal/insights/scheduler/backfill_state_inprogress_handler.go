@@ -88,7 +88,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		return errors.Wrap(err, "repoIterator")
 	}
 
-	for true {
+	for {
 		repoId, more, finish := itr.NextWithFinish()
 		if !more {
 			break
