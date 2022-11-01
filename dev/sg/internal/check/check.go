@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/semver"
@@ -52,11 +53,28 @@ func CommandOutputContains(cmd, contains string) CheckFunc {
 	}
 }
 
-func FileContains(fileName, content string) func(context.Context) error {
+func FileExists(path string) func(context.Context) error {
+	return func(_ context.Context) error {
+		if filepath.HasPrefix(path, "~/") {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return err
+			}
+			path = filepath.Join(home, path[2:])
+		}
+		if _, err := os.Stat(os.ExpandEnv(path)); os.IsNotExist(err) {
+			return errors.Newf("file %q does not exist", path)
+		} else {
+			return err
+		}
+	}
+}
+
+func FileContains(filename, content string) func(context.Context) error {
 	return func(context.Context) error {
-		file, err := os.Open(fileName)
+		file, err := os.Open(filename)
 		if err != nil {
-			return errors.Wrapf(err, "failed to check that %q contains %q", fileName, content)
+			return errors.Wrapf(err, "failed to check that %q contains %q", filename, content)
 		}
 		defer file.Close()
 
@@ -72,7 +90,7 @@ func FileContains(fileName, content string) func(context.Context) error {
 			return err
 		}
 
-		return errors.Newf("file %q did not contain %q", fileName, content)
+		return errors.Newf("file %q did not contain %q", filename, content)
 	}
 }
 

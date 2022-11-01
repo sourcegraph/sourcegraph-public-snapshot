@@ -4,7 +4,6 @@ exports[`PersonLink no user account 1`] = `
 <DocumentFragment>
   <span
     class="a"
-    data-state="closed"
   >
     alice
   </span>
@@ -15,7 +14,6 @@ exports[`PersonLink with user account 1`] = `
 <DocumentFragment>
   <a
     class="a b"
-    data-state="closed"
     href="u"
   >
     alice

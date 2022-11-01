@@ -38,13 +38,17 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
 	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
-	if len(rawOrDockerCommand.Env) > 0 {
-		// If we have env vars that are arguments to the command we need to escape them
-		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(quotedEnv, " "), innerCommand)
+
+	// Note: src-cli run commands don't receive env vars in firecracker so we
+	// have to prepend them inline to the script.
+	// TODO: This branch should disappear when we make src-cli a non-special cased
+	// thing.
+	if spec.Image == "" && len(rawOrDockerCommand.Env) > 0 {
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(rawOrDockerCommand.Env), " "), innerCommand)
 	}
+
 	if rawOrDockerCommand.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)
+		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(rawOrDockerCommand.Dir), innerCommand)
 	}
 
 	return command{

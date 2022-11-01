@@ -411,6 +411,11 @@ type Client interface {
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
+	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
+	// at path. If the path is not an LFS pointer, the file contents from git
+	// are returned instead.
+	LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 	// their associated repository or commit are unresolvable.
@@ -614,6 +619,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
+		Stdin:          c.stdin,
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.execFn(ctx, repoName, "exec", req)
@@ -1142,6 +1148,17 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
+	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
+	// signature prevents us from doing that.
+	//
+	// We should consolidate into a single method for creating requests so that we are
+	// setting all the required properties like headers, trace spans in a central place.
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -1247,6 +1264,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {

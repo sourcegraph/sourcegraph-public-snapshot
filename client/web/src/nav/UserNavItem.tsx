@@ -19,11 +19,9 @@ import {
     AnchorLink,
     Select,
     Icon,
-    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
@@ -72,7 +70,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
 
     return (
@@ -115,14 +112,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
-                            {isOpenBetaEnabled && (
-                                <MenuLink
-                                    as={Link}
-                                    to={`/users/${props.authenticatedUser.username}/settings/organizations`}
-                                >
-                                    Your organizations <Badge variant="info">NEW</Badge>
-                                </MenuLink>
-                            )}
                             <MenuDivider />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">
@@ -156,7 +145,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     </div>
                                 )}
                             </div>
-                            {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
+                            {props.authenticatedUser.organizations.nodes.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>

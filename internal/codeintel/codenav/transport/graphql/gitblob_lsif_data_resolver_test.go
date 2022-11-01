@@ -5,22 +5,33 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestRanges(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
+	mockCodeNavService := NewMockCodeNavService()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
+
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	args := &LSIFRangesArgs{StartLine: 10, EndLine: 20}
@@ -28,29 +39,37 @@ func TestRanges(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.RangesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.RangesFunc.History()))
+	if len(mockCodeNavService.GetRangesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetRangesFunc.History()))
 	}
-	if val := mockGitBlobResolver.RangesFunc.History()[0].Arg1; val != 10 {
+	if val := mockCodeNavService.GetRangesFunc.History()[0].Arg3; val != 10 {
 		t.Fatalf("unexpected start line. want=%d have=%d", 10, val)
 	}
-	if val := mockGitBlobResolver.RangesFunc.History()[0].Arg2; val != 20 {
+	if val := mockCodeNavService.GetRangesFunc.History()[0].Arg4; val != 20 {
 		t.Fatalf("unexpected end line. want=%d have=%d", 20, val)
 	}
 }
 
 func TestDefinitions(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	args := &LSIFQueryPositionArgs{Line: 10, Character: 15}
@@ -58,33 +77,43 @@ func TestDefinitions(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.DefinitionsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.DefinitionsFunc.History()))
+	if len(mockCodeNavService.GetDefinitionsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDefinitionsFunc.History()))
 	}
-	if val := mockGitBlobResolver.DefinitionsFunc.History()[0].Arg1; val != 10 {
-		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
+	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Line != 10 {
+		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
 	}
-	if val := mockGitBlobResolver.DefinitionsFunc.History()[0].Arg2; val != 15 {
-		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
+	if val := mockCodeNavService.GetDefinitionsFunc.History()[0].Arg1; val.Character != 15 {
+		t.Fatalf("unexpected character. want=%d have=%v", 15, val)
 	}
 }
 
 func TestReferences(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	offset := int32(25)
-	cursor := base64.StdEncoding.EncodeToString([]byte("test-cursor"))
+	mockRefCursor := shared.ReferencesCursor{Phase: "local"}
+	encodedCursor := encodeReferencesCursor(mockRefCursor)
+	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
 	args := &LSIFPagedQueryPositionArgs{
 		LSIFQueryPositionArgs: LSIFQueryPositionArgs{
@@ -92,42 +121,50 @@ func TestReferences(t *testing.T) {
 			Character: 15,
 		},
 		ConnectionArgs: ConnectionArgs{First: &offset},
-		After:          &cursor,
+		After:          &mockCursor,
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.ReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.ReferencesFunc.History()))
+	if len(mockCodeNavService.GetReferencesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetReferencesFunc.History()))
 	}
-	if val := mockGitBlobResolver.ReferencesFunc.History()[0].Arg1; val != 10 {
-		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
+	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Line != 10 {
+		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
 	}
-	if val := mockGitBlobResolver.ReferencesFunc.History()[0].Arg2; val != 15 {
-		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
+	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Character != 15 {
+		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
 	}
-	if val := mockGitBlobResolver.ReferencesFunc.History()[0].Arg3; val != 25 {
-		t.Fatalf("unexpected character. want=%d have=%d", 25, val)
+	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Limit != 25 {
+		t.Fatalf("unexpected character. want=%v have=%v", 25, val)
 	}
-	if val := mockGitBlobResolver.ReferencesFunc.History()[0].Arg4; val != "test-cursor" {
-		t.Fatalf("unexpected character. want=%s have=%s", "test-cursor", val)
+	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.RawCursor != encodedCursor {
+		t.Fatalf("unexpected character. want=%v have=%v", "test-cursor", val)
 	}
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	args := &LSIFPagedQueryPositionArgs{
@@ -142,26 +179,34 @@ func TestReferencesDefaultLimit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.ReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.DiagnosticsFunc.History()))
+	if len(mockCodeNavService.GetReferencesFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
 	}
-	if val := mockGitBlobResolver.ReferencesFunc.History()[0].Arg3; val != DefaultReferencesPageSize {
-		t.Fatalf("unexpected limit. want=%d have=%d", DefaultReferencesPageSize, val)
+	if val := mockCodeNavService.GetReferencesFunc.History()[0].Arg1; val.Limit != DefaultReferencesPageSize {
+		t.Fatalf("unexpected limit. want=%v have=%v", DefaultReferencesPageSize, val)
 	}
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	offset := int32(-1)
@@ -179,47 +224,64 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
-	mockGitBlobResolver.HoverFunc.SetDefaultReturn("text", types.Range{}, true, nil)
+
+	mockCodeNavService.GetHoverFunc.SetDefaultReturn("text", types.Range{}, true, nil)
 	args := &LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.HoverFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.HoverFunc.History()))
+	if len(mockCodeNavService.GetHoverFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetHoverFunc.History()))
 	}
-	if val := mockGitBlobResolver.HoverFunc.History()[0].Arg1; val != 10 {
-		t.Fatalf("unexpected line. want=%d have=%d", 10, val)
+	if val := mockCodeNavService.GetHoverFunc.History()[0].Arg1; val.Line != 10 {
+		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
 	}
-	if val := mockGitBlobResolver.HoverFunc.History()[0].Arg2; val != 15 {
-		t.Fatalf("unexpected character. want=%d have=%d", 15, val)
+	if val := mockCodeNavService.GetHoverFunc.History()[0].Arg1; val.Character != 15 {
+		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
 	}
 }
 
 func TestDiagnostics(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	offset := int32(25)
@@ -231,26 +293,34 @@ func TestDiagnostics(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.DiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.DiagnosticsFunc.History()))
+	if len(mockCodeNavService.GetDiagnosticsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
 	}
-	if val := mockGitBlobResolver.DiagnosticsFunc.History()[0].Arg1; val != 25 {
-		t.Fatalf("unexpected limit. want=%d have=%d", 25, val)
+	if val := mockCodeNavService.GetDiagnosticsFunc.History()[0].Arg1; val.Limit != 25 {
+		t.Fatalf("unexpected limit. want=%v have=%v", 25, val)
 	}
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	args := &LSIFDiagnosticsArgs{
@@ -261,26 +331,34 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	if len(mockGitBlobResolver.DiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockGitBlobResolver.DiagnosticsFunc.History()))
+	if len(mockCodeNavService.GetDiagnosticsFunc.History()) != 1 {
+		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
 	}
-	if val := mockGitBlobResolver.DiagnosticsFunc.History()[0].Arg1; val != DefaultDiagnosticsPageSize {
-		t.Fatalf("unexpected limit. want=%d have=%d", DefaultDiagnosticsPageSize, val)
+	if val := mockCodeNavService.GetDiagnosticsFunc.History()[0].Arg1; val.Limit != DefaultDiagnosticsPageSize {
+		t.Fatalf("unexpected limit. want=%v have=%v", DefaultDiagnosticsPageSize, val)
 	}
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockGitBlobResolver := NewMockGitBlobResolver()
 	mockAutoIndexingSvc := NewMockAutoIndexingService()
 	mockUploadsService := NewMockUploadsService()
 	mockPolicyService := NewMockPolicyService()
+	mockCodeNavService := NewMockCodeNavService()
+	mockRequestState := codenav.RequestState{
+		RepositoryID: 1,
+		Commit:       "deadbeef1",
+		Path:         "/src/main",
+	}
+	mockOperations := newOperations(&observation.TestContext)
 
-	resolver := NewGitBlobLSIFDataResolverQueryResolver(
+	resolver := NewGitBlobLSIFDataResolver(
+		mockCodeNavService,
 		mockAutoIndexingSvc,
 		mockUploadsService,
 		mockPolicyService,
-		mockGitBlobResolver,
+		mockRequestState,
 		observation.NewErrorCollector(),
+		mockOperations,
 	)
 
 	offset := int32(-1)

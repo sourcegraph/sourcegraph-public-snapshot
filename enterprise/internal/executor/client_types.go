@@ -232,6 +232,9 @@ type CliStep struct {
 
 type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
+	NumCPUs      int    `json:"numCPUs,omitempty"`
+	Memory       string `json:"memory,omitempty"`
+	DiskSpace    string `json:"diskSpace,omitempty"`
 }
 
 type AddExecutionLogEntryRequest struct {

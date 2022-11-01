@@ -6,11 +6,13 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -125,22 +127,23 @@ type AccessTokenStore interface {
 
 type accessTokenStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
 
 // AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
-func AccessTokensWith(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
+func AccessTokensWith(other basestore.ShareableStore, logger log.Logger) AccessTokenStore {
+	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
 }
 
 func (s *accessTokenStore) With(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: s.Store.With(other)}
+	return &accessTokenStore{Store: s.Store.With(other), logger: s.logger}
 }
 
 func (s *accessTokenStore) Transact(ctx context.Context) (AccessTokenStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &accessTokenStore{Store: txBase}, err
+	return &accessTokenStore{Store: txBase, logger: s.logger}, err
 }
 
 func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
@@ -184,6 +187,34 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
+
+	// only log access tokens created by users
+	if !internal {
+		arg, err := json.Marshal(struct {
+			SubjectUserId int32    `json:"subject_user_id"`
+			CreatorUserId int32    `json:"creator_user_id"`
+			Scopes        []string `json:"scopes"`
+			Note          string   `json:"note"`
+		}{
+			SubjectUserId: subjectUserID,
+			CreatorUserId: creatorUserID,
+			Scopes:        scopes,
+			Note:          note,
+		})
+		if err != nil {
+			s.logger.Error("failed to marshall the access token argument")
+		}
+
+		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
+		securityEventStore.LogEvent(ctx, &SecurityEvent{
+			Name:      SecurityEventAccessTokenCreated,
+			UserID:    uint32(creatorUserID),
+			Argument:  arg,
+			Source:    "BACKEND",
+			Timestamp: time.Now(),
+		})
+	}
+
 	return id, token, nil
 }
 

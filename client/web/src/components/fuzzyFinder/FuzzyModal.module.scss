@@ -6,6 +6,9 @@
     // It can be removed after addressing the following issue:
     // https://github.com/sourcegraph/sourcegraph/issues/42217
     width: 80vw !important;
+    background-color: var(--body-bg);
+    padding: 0;
+    border-radius: 4px;
 }
 
 .content {
@@ -18,36 +21,107 @@
 .header {
     display: flex;
     justify-content: space-between;
-    padding-bottom: 0.25rem;
+    align-items: center;
+    padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
+    margin-bottom: -1px;
+    z-index: 1;
+}
+
+.divider {
+    width: 100%; // stylelint-disable-next-line declaration-property-unit-allowed-list
+    height: 1px;
+    background-color: var(--border-color);
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
+    z-index: 0;
+
+    &.mb-0 {
+        margin-bottom: 0;
+    }
+}
+
+.shortcut {
+    color: var(--text-muted);
+    font-weight: normal;
+    margin-left: 0.125rem;
 }
 
 .input {
-    margin-bottom: 0.75rem;
+    margin: 0.25rem 1rem 0.5rem 1rem;
+    box-shadow: var(--search-input-shadow);
+}
+
+.empty-results {
+    text-align: center;
 }
 
 .results {
     overflow: auto;
     flex: 1;
-    text-align: left;
-    list-style-type: none;
-    padding: unset;
+    padding: 0.25rem 0;
+    margin-bottom: 0;
+    // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
+    & p {
+        padding: 1rem;
+    }
+
+    li {
+        padding: 0.325rem 1rem;
+        border-radius: 0;
+        display: flex;
+        align-items: center;
+
+        a {
+            max-height: initial;
+
+            span:global(.fuzzy-repos-result-icon) {
+                margin-right: 0.25rem;
+            }
+            span:global(.fuzzy-repos-star) {
+                margin-left: 0.25rem;
+            }
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+
+        &:hover {
+            background-color: var(--color-bg-2);
+        }
+    }
 }
 
 .focused {
     border-radius: var(--border-radius);
-    background-color: var(--color-bg-2);
+    background-color: var(--color-bg-3);
+}
+
+.footer {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: space-between;
+    padding: 0 1rem 0.75rem;
+}
+
+.keyboard-explanation {
+    color: var(--text-muted);
+    font-size: 0.75rem;
 }
 
 .summary {
     display: flex;
-    margin-bottom: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0 1rem;
 
     @media (--xs-breakpoint-down) {
         flex-direction: column;
         gap: 0.5rem;
     }
+}
+.summary > * {
+    flex: 1;
 }
 
 .search-query {
@@ -57,26 +131,55 @@
 
 .result-count {
     flex: 1;
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
-.close-icon {
-    color: var(--icon-color);
+.close-button {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: -0.5rem;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        svg {
+            color: var(--icon-color);
+        }
+    }
 }
 
 .show-more {
     align-self: center;
 }
 
-.tab:hover {
-    cursor: pointer;
+.tab-list {
+    gap: 0.75rem;
+    display: flex;
+    flex-direction: row;
+    background: transparent;
 }
+
 .tab {
-    flex: 2 1 auto;
-    padding-top: 0.5rem;
+    gap: 0.5rem;
+}
+
+.right-aligned {
+    text-align: right;
 }
 .tab-centered-text {
     text-align: center;
 }
 .active-tab {
     background-color: var(--color-bg-2);
+}
+
+.fuzzy-scope-selector {
+    width: fit-content;
+    margin-left: auto;
+    margin-bottom: 0;
+
+    select {
+        background-color: transparent;
+    }
 }

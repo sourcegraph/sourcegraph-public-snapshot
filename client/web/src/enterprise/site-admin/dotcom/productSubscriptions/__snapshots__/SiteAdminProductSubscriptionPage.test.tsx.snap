@@ -127,7 +127,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             >
               <span
                 class="timestamp"
-                data-state="closed"
               >
                 in almost 14 years
               </span>
@@ -189,7 +188,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 </span>
                 <div
                   class="d-inline-block mr-3"
-                  data-state="closed"
                 >
                   <strong
                     class="text-success"
@@ -204,7 +202,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   Created 
                   <span
                     class="timestamp"
-                    data-state="closed"
                   >
                     in almost 14 years
                   </span>
@@ -215,7 +212,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               Tags: 
               <div
                 class="badge secondary mr-1"
-                data-state="closed"
               >
                 a
               </div>

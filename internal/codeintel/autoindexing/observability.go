@@ -18,6 +18,8 @@ type operations struct {
 	deleteIndexes                  *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
 	expireFailedRecords            *observation.Operation
+	reindexIndexByID               *observation.Operation
+	reindexIndexes                 *observation.Operation
 	queueRepoRev                   *observation.Operation
 	queueIndex                     *observation.Operation
 	queueIndexForPackage           *observation.Operation
@@ -68,6 +70,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		deleteIndexByID:                op("DeleteIndexByID"),
 		deleteIndexes:                  op("DeleteIndexes"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
+		reindexIndexByID:               op("ReindexIndexByID"),
+		reindexIndexes:                 op("ReindexIndexes"),
 		expireFailedRecords:            op("ExpireFailedRecords"),
 		queueRepoRev:                   op("QueueRepoRev"),
 		queueIndex:                     op("QueueIndex"),

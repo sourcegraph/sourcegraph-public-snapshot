@@ -109,14 +109,14 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	for _, dateRange := range dateRanges {
 		for _, groupBy := range groupBys {
 			stores := []CacheAll{
-				&Search{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Users{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Notebooks{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&CodeIntel{DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Search{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Users{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&Notebooks{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
+				&CodeIntel{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
 				&Repos{DB: db, Cache: true},
-				&BatchChanges{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
-				&Extensions{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
-				&CodeInsights{Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&BatchChanges{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&Extensions{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+				&CodeInsights{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
 			}
 			for _, store := range stores {
 				if err := store.CacheAll(ctx); err != nil {

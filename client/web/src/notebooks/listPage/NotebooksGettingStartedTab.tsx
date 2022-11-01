@@ -7,7 +7,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -199,7 +199,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     <div className="mb-2">
                         Notebooks can be used for onboarding, documentation, incident response, and more.
                     </div>
-                    <Link to={PageRoutes.NotebookCreate}>Create a notebook</Link>
+                    <Link to={EnterprisePageRoutes.NotebookCreate}>Create a notebook</Link>
                 </div>
                 <div className="col-12 col-md-6">
                     <div className="mb-2">

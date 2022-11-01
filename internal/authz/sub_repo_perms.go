@@ -53,8 +53,8 @@ type SubRepoPermissionChecker interface {
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
 
-	// EnabledForRepoId indicates whether sub-repo permissions are enabled for the given repoID
-	EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error)
+	// EnabledForRepoID indicates whether sub-repo permissions are enabled for the given repoID
+	EnabledForRepoID(ctx context.Context, repoID api.RepoID) (bool, error)
 
 	// EnabledForRepo indicates whether sub-repo permissions are enabled for the given repo
 	EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error)
@@ -82,7 +82,7 @@ func (*noopPermsChecker) Enabled() bool {
 	return false
 }
 
-func (*noopPermsChecker) EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error) {
+func (*noopPermsChecker) EnabledForRepoID(ctx context.Context, repoID api.RepoID) (bool, error) {
 	return false, nil
 }
 
@@ -97,8 +97,8 @@ type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 
-	// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
-	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
+	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions
+	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 
 	// RepoSupported returns true if repo with the given name has sub-repo permissions
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
@@ -407,8 +407,8 @@ func (s *SubRepoPermsClient) Enabled() bool {
 	return s.enabled.Load()
 }
 
-func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
-	return s.permissionsGetter.RepoIdSupported(ctx, id)
+func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID) (bool, error) {
+	return s.permissionsGetter.RepoIDSupported(ctx, id)
 }
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
@@ -458,7 +458,7 @@ func NewSimpleChecker(repo api.RepoName, paths []string) (SubRepoPermissionCheck
 		}, nil
 	})
 	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
-	getter.RepoIdSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoIDSupportedFunc.SetDefaultReturn(true, nil)
 	return NewSubRepoPermsClient(getter)
 }
 
@@ -511,7 +511,7 @@ func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionCheck
 	if !SubRepoEnabled(checker) {
 		return false, nil
 	}
-	return checker.EnabledForRepoId(ctx, repoID)
+	return checker.EnabledForRepoID(ctx, repoID)
 }
 
 // SubRepoEnabledForRepo takes a SubRepoPermissionChecker and repo name and returns true if sub-repo

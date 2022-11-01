@@ -15,9 +15,5 @@ func NewExpirationTasks(backgroundJobs UploadServiceBackgroundJobs) []goroutine.
 			ConfigInst.CommitBatchSize,
 			ConfigInst.PolicyBatchSize,
 		),
-		backgroundJobs.NewReferenceCountUpdater(
-			ConfigInst.ReferenceCountUpdaterInterval,
-			ConfigInst.ReferenceCountUpdaterBatchSize,
-		),
 	}
 }

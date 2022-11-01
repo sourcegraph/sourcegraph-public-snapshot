@@ -10,12 +10,14 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -119,7 +122,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 		}
 		raw.Site = string(site)
 
-		err = cs.Write(ctx, raw, raw.ID)
+		err = cs.WriteWithOverride(ctx, raw, raw.ID, true)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -452,6 +455,10 @@ func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, e
 }
 
 func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32) error {
+	return c.WriteWithOverride(ctx, input, lastID, false)
+}
+
+func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, isOverride bool) error {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		return errors.Wrap(err, "ConfStore.SiteGetLatest")
@@ -459,8 +466,9 @@ func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnif
 	if site.ID != lastID {
 		return errors.New("site config has been modified by another request, write not allowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site, isOverride)
 	if err != nil {
+		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
 		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
@@ -498,15 +506,97 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		}
 	})
 
-	addrs, err := gitservers.Endpoints()
+	gitAddrs, err := gitservers.Endpoints()
 	if err != nil {
 		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
 	}
 
+	searcherMap := computeSearcherEndpoints()
+	searcherAddrs, err := searcherMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
+	}
+
+	zoektMap := computeIndexedEndpoints()
+	zoektAddrs, err := zoektMap.Endpoints()
+	if err != nil {
+		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
+	}
+
 	return conftypes.ServiceConnections{
-		GitServers:           addrs,
+		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
 		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
 		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
+		Searchers:            searcherAddrs,
+		Zoekts:               zoektAddrs,
+		ZoektListTTL:         indexedListTTL,
 	}
+}
+
+var (
+	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
+
+	searcherURLsOnce sync.Once
+	searcherURLs     *endpoint.Map
+
+	indexedEndpointsOnce sync.Once
+	indexedEndpoints     *endpoint.Map
+
+	indexedListTTL = func() time.Duration {
+		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+		if ttl == 0 {
+			if envvar.SourcegraphDotComMode() {
+				ttl = 30 * time.Second
+			} else {
+				ttl = 5 * time.Second
+			}
+		}
+		return ttl
+	}()
+)
+
+func computeSearcherEndpoints() *endpoint.Map {
+	searcherURLsOnce.Do(func() {
+		if len(strings.Fields(searcherURL)) == 0 {
+			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
+		} else {
+			searcherURLs = endpoint.New(searcherURL)
+		}
+	})
+	return searcherURLs
+}
+
+func computeIndexedEndpoints() *endpoint.Map {
+	indexedEndpointsOnce.Do(func() {
+		if addr := zoektAddr(os.Environ()); addr != "" {
+			indexedEndpoints = endpoint.New(addr)
+		}
+	})
+	return indexedEndpoints
+}
+
+func zoektAddr(environ []string) string {
+	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		return addr
+	}
+
+	// Backwards compatibility: We used to call this variable ZOEKT_HOST
+	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
+		return addr
+	}
+
+	// Not set, use the default (service discovery on the indexed-search
+	// statefulset)
+	return "k8s+rpc://indexed-search:6070?kind=sts"
+}
+
+func getEnv(environ []string, key string) (string, bool) {
+	key = key + "="
+	for _, env := range environ {
+		if strings.HasPrefix(env, key) {
+			return env[len(key):], true
+		}
+	}
+	return "", false
 }

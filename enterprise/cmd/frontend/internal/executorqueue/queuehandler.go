@@ -8,8 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +19,6 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
-	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -41,7 +38,11 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
 
-		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
+		// Make sure requests to these endpoints are treated as an internal actor.
+		// We treat executors as internal and the executor secret is an internal actor
+		// access token.
+		// Also ensure that proper executor authentication is provided.
+		return authMiddleware(accessToken, withInternalActor(base))
 	}
 
 	return factory, nil
@@ -93,4 +94,13 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 
 	return true
+}
+
+// withInternalActor ensures that the request handling is running as an internal actor.
+func withInternalActor(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
+	})
 }

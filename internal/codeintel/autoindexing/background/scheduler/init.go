@@ -11,6 +11,7 @@ func NewSchedulers(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine
 			ConfigInst.RepositoryProcessDelay,
 			ConfigInst.RepositoryBatchSize,
 			ConfigInst.PolicyBatchSize,
+			ConfigInst.InferenceConcurrency,
 		),
 
 		backgroundJobs.NewOnDemandScheduler(
