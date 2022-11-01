@@ -19,7 +19,7 @@ type GitHubWebhookHandler struct {
 	logger log.Logger
 }
 
-func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
+func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
 	g.logger = log.Scoped("repos.GitHubWebhookHandler", "github webhook handler")
 	router.Register(g.handleGitHubWebhook, "push")
 }

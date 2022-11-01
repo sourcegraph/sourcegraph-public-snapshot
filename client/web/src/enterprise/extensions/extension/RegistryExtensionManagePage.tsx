@@ -12,7 +12,6 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, LoadingSpinner, Link, CardHeader, CardBody, Card, Alert, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -22,6 +21,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { toExtensionID } from '../../../extensions/extension/extension'
 import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { UpdateRegistryExtensionVariables, UpdateRegistryExtensionResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
@@ -29,12 +29,9 @@ import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './Re
 
 import styles from './RegistryExtensionManagePage.module.scss'
 
-function updateExtension(
-    args: Pick<
-        GQL.IUpdateExtensionOnExtensionRegistryMutationArguments,
-        Exclude<keyof GQL.IUpdateExtensionOnExtensionRegistryMutationArguments, 'manifest'>
-    >
-): Observable<GQL.IExtensionRegistryUpdateExtensionResult> {
+type UpdateExtensionResult = UpdateRegistryExtensionResult['extensionRegistry']['updateExtension']
+
+function updateExtension(args: UpdateRegistryExtensionVariables): Observable<UpdateExtensionResult> {
     return mutateGraphQL(
         gql`
             mutation UpdateRegistryExtension($extension: ID!, $name: String) {
@@ -72,7 +69,7 @@ interface State {
     name?: string
 
     /** The update result, undefined if not triggered, 'loading', or an error. */
-    updateOrError?: 'loading' | GQL.IExtensionRegistryUpdateExtensionResult | ErrorLike
+    updateOrError?: 'loading' | UpdateExtensionResult | ErrorLike
 }
 
 /** A page for managing an extension in the extension registry. */
@@ -96,7 +93,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                 [{ updateOrError: 'loading' }],
                                 updateExtension({
                                     extension: this.props.extension.registryExtension!.id,
-                                    name: this.state.name,
+                                    name: this.state.name ?? null,
                                 }).pipe(
                                     tap(result => {
                                         // Redirect to the extension's new URL (if it changed).

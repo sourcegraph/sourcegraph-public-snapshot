@@ -1639,7 +1639,8 @@ CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
     "precision" double precision NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    graph_key text
 );
 
 CREATE TABLE codeintel_ranking_exports (
@@ -4480,6 +4481,8 @@ CREATE UNIQUE INDEX lsif_uploads_repository_id_commit_root_indexer ON lsif_uploa
 CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 
 CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at);
+
+CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch;
 
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
