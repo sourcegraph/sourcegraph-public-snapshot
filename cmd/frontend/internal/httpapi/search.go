@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -78,11 +77,16 @@ type searchIndexerServer struct {
 		Enabled() bool
 	}
 
+	// Ranking is a subset of codeintel.ranking.Service methods we use.
+	Ranking interface {
+		LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
+		GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
+		GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+	}
+
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
 	MinLastChangedDisabled bool
-
-	codeIntelServices internalcodeintel.Services
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -154,7 +158,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		indexedIDs = filtered
 	}
 
-	rankingLastUpdatedAt, err := h.codeIntelServices.RankingService.LastUpdatedAt(ctx, indexedIDs)
+	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, indexedIDs)
 	if err != nil {
 		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no rankingx",
 			log.Int("repos", len(indexedIDs)),
@@ -293,11 +297,11 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.codeIntelServices.RankingService.GetRepoRank, w, r)
+	return serveRank(h.Ranking.GetRepoRank, w, r)
 }
 
 func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.codeIntelServices.RankingService.GetDocumentRanks, w, r)
+	return serveRank(h.Ranking.GetDocumentRanks, w, r)
 }
 
 func serveRank[T []float64 | map[string][]float64](
