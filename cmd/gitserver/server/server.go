@@ -2568,7 +2568,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed to repo size", log.Error(err))
+		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
 	return nil
