@@ -414,9 +414,7 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={
-                                        window.context.enableLegacyExtensions
-                                            ? mdiPuzzleOutline
-                                            : mdiChevronDoubleDown
+                                        window.context.enableLegacyExtensions ? mdiPuzzleOutline : mdiChevronDoubleDown
                                     }
                                 />
                             )}

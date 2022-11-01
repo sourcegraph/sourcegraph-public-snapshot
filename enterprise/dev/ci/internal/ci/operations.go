@@ -109,7 +109,23 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations -fail-fast=false " + strings.Join(targets, " ")
+	var (
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = runtype.Compute(tag, branch, map[string]string{
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+		})
+	)
+
+	formatCheck := ""
+	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
+		formatCheck = "--no-format-check "
+	}
+
+	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",

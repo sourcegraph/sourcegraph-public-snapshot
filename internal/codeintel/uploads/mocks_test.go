@@ -7029,6 +7029,9 @@ type MockLsifStore struct {
 	// object controlling the behavior of the method
 	// GetUploadDocumentsForPath.
 	GetUploadDocumentsForPathFunc *LsifStoreGetUploadDocumentsForPathFunc
+	// ReconcileCandidatesFunc is an instance of a mock function object
+	// controlling the behavior of the method ReconcileCandidates.
+	ReconcileCandidatesFunc *LsifStoreReconcileCandidatesFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *LsifStoreTransactFunc
@@ -7068,6 +7071,11 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: func(context.Context, int, string) (r0 []string, r1 int, r2 error) {
+				return
+			},
+		},
+		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -7128,6 +7136,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.GetUploadDocumentsForPath")
 			},
 		},
+		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) ([]int, error) {
+				panic("unexpected invocation of MockLsifStore.ReconcileCandidates")
+			},
+		},
 		TransactFunc: &LsifStoreTransactFunc{
 			defaultHook: func(context.Context) (lsifstore.LsifStore, error) {
 				panic("unexpected invocation of MockLsifStore.Transact")
@@ -7178,6 +7191,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		GetUploadDocumentsForPathFunc: &LsifStoreGetUploadDocumentsForPathFunc{
 			defaultHook: i.GetUploadDocumentsForPath,
+		},
+		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
+			defaultHook: i.ReconcileCandidates,
 		},
 		TransactFunc: &LsifStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -7534,6 +7550,115 @@ func (c LsifStoreGetUploadDocumentsForPathFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreGetUploadDocumentsForPathFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LsifStoreReconcileCandidatesFunc describes the behavior when the
+// ReconcileCandidates method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreReconcileCandidatesFunc struct {
+	defaultHook func(context.Context, int) ([]int, error)
+	hooks       []func(context.Context, int) ([]int, error)
+	history     []LsifStoreReconcileCandidatesFuncCall
+	mutex       sync.Mutex
+}
+
+// ReconcileCandidates delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) ReconcileCandidates(v0 context.Context, v1 int) ([]int, error) {
+	r0, r1 := m.ReconcileCandidatesFunc.nextHook()(v0, v1)
+	m.ReconcileCandidatesFunc.appendCall(LsifStoreReconcileCandidatesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ReconcileCandidates
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreReconcileCandidatesFunc) SetDefaultHook(hook func(context.Context, int) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReconcileCandidates method of the parent MockLsifStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LsifStoreReconcileCandidatesFunc) PushHook(hook func(context.Context, int) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreReconcileCandidatesFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreReconcileCandidatesFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreReconcileCandidatesFunc) nextHook() func(context.Context, int) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreReconcileCandidatesFunc) appendCall(r0 LsifStoreReconcileCandidatesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreReconcileCandidatesFuncCall
+// objects describing the invocations of this function.
+func (f *LsifStoreReconcileCandidatesFunc) History() []LsifStoreReconcileCandidatesFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreReconcileCandidatesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreReconcileCandidatesFuncCall is an object that describes an
+// invocation of method ReconcileCandidates on an instance of MockLsifStore.
+type LsifStoreReconcileCandidatesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreReconcileCandidatesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreReconcileCandidatesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreTransactFunc describes the behavior when the Transact method of
