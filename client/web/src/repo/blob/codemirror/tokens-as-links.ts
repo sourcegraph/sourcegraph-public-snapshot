@@ -39,19 +39,20 @@ const focusSelectedLine = ViewPlugin.fromClass(
                 const line = this.view.state.doc.line(selection.line)
 
                 if (line) {
-                    const closestNode = this.view.domAtPos(line.from).node
+                    window.requestAnimationFrame(() => {
+                        const closestNode = this.view.domAtPos(line.from).node
 
-                    // Loosely find closest element. Note: This is usually only be `closestNode` if the line is empty.
-                    const closestElement = closestNode instanceof HTMLElement ? closestNode : closestNode.parentElement
-                    const target = closestElement?.hasAttribute('data-line-focusable')
-                        ? closestElement
-                        : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+                        // Loosely find closest element.
+                        // Note: This is usually only be `closestNode` if the line is empty.
+                        const closestElement =
+                            closestNode instanceof HTMLElement ? closestNode : closestNode.parentElement
 
-                    if (target) {
-                        window.requestAnimationFrame(() => {
-                            target.focus()
-                        })
-                    }
+                        const target = closestElement?.hasAttribute('data-line-focusable')
+                            ? closestElement
+                            : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+
+                        target?.focus()
+                    })
                 }
             }
         }
