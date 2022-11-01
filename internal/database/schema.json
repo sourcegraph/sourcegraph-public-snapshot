@@ -6985,6 +6985,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "graph_key",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "payload",
           "Index": 2,
           "TypeName": "jsonb",
