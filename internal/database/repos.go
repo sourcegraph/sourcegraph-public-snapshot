@@ -81,15 +81,15 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	// ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-	// This includes all non-forked, non-archived repos with >= listIndexableReposMinStars stars,
+	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
+	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
 	// plus all repos from the following data sources:
 	// - src.fedoraproject.org
 	// - maven
 	// - NPM
 	// - JDK
 	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
@@ -1173,17 +1173,17 @@ const userPublicReposCTEFmtstr = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
-type ListIndexableReposOptions struct {
+type ListSourcegraphDotComIndexableReposOptions struct {
 	// CloneStatus if set will only return indexable repos of that clone
 	// status.
 	CloneStatus types.CloneStatus
 }
 
-// listIndexableReposMinStars is the minimum number of stars needed for a public
+// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
 // repo to be indexed on sourcegraph.com.
-const listIndexableReposMinStars = 5
+const listSourcegraphDotComIndexableReposMinStars = 5
 
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
+func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1206,9 +1206,9 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	}
 
 	q := sqlf.Sprintf(
-		listIndexableReposQuery,
+		listSourcegraphDotComIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
-		listIndexableReposMinStars,
+		listSourcegraphDotComIndexableReposMinStars,
 		sqlf.Join(where, "\nAND"),
 	)
 
@@ -1232,7 +1232,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	return results, nil
 }
 
-const listIndexableReposQuery = `
+const listSourcegraphDotComIndexableReposQuery = `
 SELECT
 	repo.id, repo.name, repo.stars
 FROM repo

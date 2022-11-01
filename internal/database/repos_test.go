@@ -2702,7 +2702,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListIndexableRepos(t *testing.T) {
+func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2787,7 +2787,7 @@ func TestListIndexableRepos(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		opts ListIndexableReposOptions
+		opts ListSourcegraphDotComIndexableReposOptions
 		want []api.RepoID
 	}{
 		{
@@ -2796,20 +2796,15 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			name: "only uncloned",
-			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
+			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
-		},
-		{
-			name: "limit 1",
-			opts: ListIndexableReposOptions{LimitOffset: &LimitOffset{Limit: 1}},
-			want: []api.RepoID{2},
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}

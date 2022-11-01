@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestListIndexableRepos(t *testing.T) {
+func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
