@@ -201,12 +201,12 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                 <HierarchicalSymbols
                     symbols={connection.nodes}
                     render={args =>
-                        typeof args.symbol === 'string' ? (
+                        args.symbol.__typename === 'IntermediateSymbol' ? (
                             // eslint-disable-next-line react/forbid-dom-props
                             <li className={styles.repoRevisionSidebarSymbolsNode} style={padding(args.symbol)}>
                                 <span className={styles.link}>
                                     <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
-                                    {displayName(args.symbol)}
+                                    {args.symbol.name}
                                 </span>
                             </li>
                         ) : (
@@ -233,7 +233,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
 
 interface HierarchicalSymbolsProps {
     symbols: SymbolNodeFields[]
-    render: (props: { symbol: SymbolNodeFields | string }) => React.ReactElement
+    render: (props: { symbol: Sym }) => React.ReactElement
 }
 
 const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = props => (
@@ -242,39 +242,64 @@ const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = p
             groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
             entries,
             flatMap(([, symbols]) => hierarchyOf(symbols)),
-            map(symbol => <props.render key={typeof symbol === 'string' ? symbol : symbol.url} symbol={symbol} />)
+            map(symbol => <props.render key={'url' in symbol ? symbol.url : fullName(symbol)} symbol={symbol} />)
         )(props.symbols)}
     </ul>
 )
 
-const hierarchyOf = (symbols: SymbolNodeFields[]): (SymbolNodeFields | string)[] => {
-    const fullNameToSymbol = new Map<string, SymbolNodeFields | string>(
-        symbols.map(symbol => [fullName(symbol), symbol])
-    )
-
-    for (const container of symbols.map(symbol => symbol.containerName)) {
-        if (!container) {
-            continue
-        }
-        const components = container.split('.')
-        for (let index = components.length; index > 0; index--) {
-            const prefix = components.slice(0, index + 1).join('.')
-            if (fullNameToSymbol.has(prefix)) {
-                break
-            }
-            fullNameToSymbol.set(prefix, prefix)
-        }
-    }
-
-    return sortBy([...fullNameToSymbol.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
+interface IntermediateSymbol {
+    __typename: 'IntermediateSymbol'
+    name: string
+    language: string
 }
 
-const depthOf = (symbol: SymbolNodeFields | string): number =>
-    (typeof symbol === 'string' ? symbol : fullName(symbol)).split('.').length - 1
+type Sym = (SymbolNodeFields | IntermediateSymbol) & { containers: string[] }
 
-const fullName = (symbol: SymbolNodeFields): string =>
-    `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+const hierarchyOf = (symbols: SymbolNodeFields[]): Sym[] => {
+    const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))
+    const fullNameToSym = new Map<string, Sym>()
 
-const padding = (symbol: SymbolNodeFields | string): React.CSSProperties => ({ paddingLeft: `${depthOf(symbol)}rem` })
+    const visit = (fullName: string, language: string): string[] => {
+        if (fullName === '') {
+            return []
+        }
 
-const displayName = (symbol: string): string => symbol.split('.').pop() ?? symbol
+        const sym = fullNameToSym.get(fullName)
+        if (sym) {
+            return [...sym.containers, sym.name]
+        }
+
+        const symbol = fullNameToSymbol.get(fullName)
+        if (symbol) {
+            const containers = symbol.containerName ? visit(fullName.split('.').slice(0, -1).join('.'), language) : []
+            fullNameToSym.set(fullName, { ...symbol, containers })
+            return [...containers, symbol.name]
+        }
+
+        const containers = visit(fullName.split('.').slice(0, -1).join('.'), language)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const name = fullName.split('.').pop()!
+        fullNameToSym.set(fullName, {
+            __typename: 'IntermediateSymbol',
+            containers,
+            name,
+            language,
+        })
+        return [...containers, name]
+    }
+
+    for (const symbol of symbols) {
+        visit(fullName(symbol), symbol.language)
+    }
+
+    return sortBy([...fullNameToSym.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
+}
+
+const fullName = (symbol: SymbolNodeFields | Sym): string => {
+    if ('containers' in symbol) {
+        return [...symbol.containers, symbol.name].join('.')
+    }
+    return `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+}
+
+const padding = (symbol: Sym): React.CSSProperties => ({ paddingLeft: `${symbol.containers.length}rem` })
