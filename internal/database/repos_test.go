@@ -2724,9 +2724,9 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 		},
 		{
 			ID:      api.RepoID(3),
-			Name:    "github.com/foo/bar3",
+			Name:    "github.com/baz/bar3",
+			Stars:   15,
 			Private: true,
-			Stars:   0, // Will still be returned because it gets added by a user.
 		},
 		{
 			ID:    api.RepoID(4),
@@ -2753,9 +2753,6 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO users(id, username) VALUES (1, 'bob')`); err != nil {
-		t.Fatal(err)
-	}
 	for _, r := range reposToAdd {
 		blocked, err := json.Marshal(r.Blocked)
 		if err != nil {
@@ -2770,7 +2767,7 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 		}
 
 		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2, 1);`, r.ID, r.Name); err != nil {
+			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
 				t.Fatal(err)
 			}
 		}
