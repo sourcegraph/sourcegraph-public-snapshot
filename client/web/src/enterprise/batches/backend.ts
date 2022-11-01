@@ -133,7 +133,7 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
                 name
                 binary
                 highlight(disableTimeout: false) {
-                  html
+                    html
                 }
             }
         }

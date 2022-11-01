@@ -17,16 +17,7 @@ import { upperFirst } from 'lodash'
 
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {
-    Code,
-    Link,
-    Icon,
-    H3,
-    H4,
-    Tooltip,
-    Text,
-    Button,
-} from '@sourcegraph/wildcard'
+import { Code, Link, Icon, H3, H4, Tooltip, Text, Button } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -128,7 +119,6 @@ interface ExpandedBatchSpecProps {
     isLightTheme: boolean
 }
 
-
 const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ spec, isLightTheme }) => {
     const [selectedFile, setSelectedFile] = useState<{
         isBinary: boolean
@@ -139,21 +129,32 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
         isBinary: false,
         content: spec.originalInput,
         isSpecFile: true,
-        name: 'spec_file.yaml'
+        name: 'spec_file.yaml',
     })
 
-    const onClick = (isBinary: boolean, content: string, isSpecFile: boolean, name: string): void => setSelectedFile({ isBinary, content, isSpecFile, name })
+    const onClick = (isBinary: boolean, content: string, isSpecFile: boolean, name: string): void =>
+        setSelectedFile({ isBinary, content, isSpecFile, name })
 
     if (spec.files && spec.files.totalCount > 0) {
         return (
             <div className={styles.specFilesContainer}>
                 <ul className={styles.specFilesList}>
                     <li className={styles.specFilesListNode}>
-                        <Button className={styles.specFilesListNodeButton} onClick={() => onClick(false, spec.originalInput, true, 'spec_file.yaml')}>spec_file.yaml</Button>
+                        <Button
+                            className={styles.specFilesListNodeButton}
+                            onClick={() => onClick(false, spec.originalInput, true, 'spec_file.yaml')}
+                        >
+                            spec_file.yaml
+                        </Button>
                     </li>
                     {spec.files.nodes.map(file => (
                         <li key={file.id} className={styles.specFilesListNode}>
-                            <Button className={styles.specFilesListNodeButton} onClick={() => onClick(file.binary, file.highlight.html, false, file.name)}>{file.name}</Button>
+                            <Button
+                                className={styles.specFilesListNodeButton}
+                                onClick={() => onClick(file.binary, file.highlight.html, false, file.name)}
+                            >
+                                {file.name}
+                            </Button>
                         </li>
                     ))}
                 </ul>
@@ -166,7 +167,13 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
                             originalInput={spec.originalInput}
                             className={classNames(styles.batchSpec, 'mb-0')}
                         />
-                    ) : <BatchSpecWorkspaceFileContent name={selectedFile.name} content={selectedFile.content} isBinary={selectedFile.isBinary} />}
+                    ) : (
+                        <BatchSpecWorkspaceFileContent
+                            name={selectedFile.name}
+                            content={selectedFile.content}
+                            isBinary={selectedFile.isBinary}
+                        />
+                    )}
                 </div>
             </div>
         )
@@ -191,14 +198,17 @@ interface BatchSpecWorkspaceFileContentProps {
     name: string
 }
 
-const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({ content, isBinary, name }) => {
+const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({
+    content,
+    isBinary,
+    name,
+}) => {
     if (isBinary) {
         return (
             <div className={styles.specFileBinary}>
                 <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
                 <Text className={styles.specFileBinaryName}>
-                    {name}{' '}
-                    <span className={styles.specFileBinarySize}>4.5mb</span>
+                    {name} <span className={styles.specFileBinarySize}>4.5mb</span>
                 </Text>
                 <Button className={styles.specFileBinaryBtn}>
                     <Icon aria-hidden={true} svgPath={mdiFileDownload} />
