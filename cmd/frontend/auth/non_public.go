@@ -124,6 +124,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// Authentication is performed in the webhook handler itself.
 	for _, prefix := range []string{
+		"/.api/webhooks",
 		"/.api/github-webhooks",
 		"/.api/gitlab-webhooks",
 		"/.api/bitbucket-server-webhooks",

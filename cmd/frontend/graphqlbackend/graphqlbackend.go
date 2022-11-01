@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -57,11 +56,6 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
-	// TODO(4.2)
-	// DEPRECATED - LOG_ALL_GRAPHQL_REQUESTS env variable, and the associated handler logic, will be removed in favor of log.auditLog.graphQL site config setting
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
-
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
 	var currentUserID int32
@@ -76,31 +70,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
 	// it and the user issuing it.
 	requestName := sgtrace.GraphQLRequestName(ctx)
-	lvl := log15.Debug
-	if requestName == "unknown" {
-		lvl = log15.Info
-	}
 	requestSource := sgtrace.RequestSource(ctx)
-
-	if !disableLog {
-		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" || logAllRequests {
-			reason := ""
-			if requestName == "unknown" {
-				reason = "for unnamed GraphQL request above "
-			}
-			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
-QUERY
------
-%s
-
-VARIABLES
----------
-%v
-
-`, reason, requestName, currentUserID, requestSource, queryString, variables)
-		}
-	}
 
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {

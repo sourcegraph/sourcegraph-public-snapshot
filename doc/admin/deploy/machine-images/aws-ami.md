@@ -1,12 +1,10 @@
-# Sourcegraph AWS AMI instances
-
 <style>
-img.doc-screenshot {
-    margin-top: 1em;
-    margin-bottom: 1em;
-    border: 1px solid lightgray;
-}
+  .screenshot {
+      min-width: 100%
+  }
 </style>
+
+# Sourcegraph AWS AMI instances
 
 Sourcegraph [Amazon Machine Images (AMIs)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instances-and-amis.html) allow you to quickly deploy a production-ready Sourcegraph instance tuned to your organization's scale in just a few clicks.
 
@@ -15,6 +13,27 @@ Following these docs will provision the following resources:
 - An EC2 node running Sourcegraph
 - A root EBS volume with 50GB of storage
 - An additional EBS volume with 500GB of storage for storing code and search indices
+
+### Instance size chart
+
+Select an AMI according and instance type to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
+
+For example, if you have 8,000 users with 80,000 repositories, your instance size would be **L**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
+
+|                  | **XS**     | **S**       | **M**       | **L**       | **XL**      |
+|------------------|------------|-------------|-------------|-------------|-------------|
+| **Users**        | _<=_ 500   | _<=_ 1,000  | _<=_ 5,000  | _<=_ 10,000 | _<=_ 20,000 |
+| **Repositories** | _<=_ 5,000 | _<=_ 10,000 | _<=_ 50,000 | _<=_ 100,000| _<=_ 250,000|
+| **Recommended Type**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
+| **Minimum Type**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
+| **AMIs List** | [size-XS AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XS) | [size-S AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-S) | [size-M AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-M) | [size-L AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-L) | [size-XL AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XL) |
+
+Click [here](https://github.com/sourcegraph/deploy#amazon-ec2-amis) to see the completed list of AMI IDs published in each region.
+
+<span class="badge badge-critical">IMPORTANT</span> The default AMI user name is **ec2-user**.
+
+> NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
+
 
 ---
 
@@ -44,26 +63,6 @@ To configure SSL, and lock down the instance from the public internet, see the [
 
 > NOTE: If you cannot access the Sourcegraph homepage after 10 minutes, please try reboot your instance.
 
-### Instance size chart
-
-Select an AMI according to the number of users and repositories you have using this table. If you fall between two sizes, choose the larger of the two.
-
-For example, if you have 8,000 users with 80,000 repositories, your instance size would be **M**. If you have 1,000 users with 80,000 repositories, you should still go with size **M**.
-
-|                  |                                                  **XS**                                                  |                        **S**                         |                        **M**                         |                                                  **L**                                                  |                                                  **XL**                                                  |
-| :--------------- | :------------------------------------------------------------------------------------------------------: | :--------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------: |
-| **Users**        |                                                   500                                                    |                        1,000                         |                        5,000                         |                                                 10,000                                                  |                                                  20,000                                                  |
-| **Repositories** |                                                  5,000                                                   |                        10,000                        |                        50,000                        |                                                 100,000                                                 |                                                 250,000                                                  |
-| **Recommended Type**  |                                               m6a.2xlarge                                                |                     m6a.4xlarge                      |                     m6a.8xlarge                      |                                              m6a.12xlarge                                               |                                               m6a.24xlarge                                               |
-| **Minimum Type**      |                                               m6a.2xlarge                                                |                     m6a.2xlarge                      |                     m6a.4xlarge                      |                                               m6a.8xlarge                                               |                                               m6a.12xlarge                                               |
-| **AMIs List** | [size-XS AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XS) | [size-S AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-S) | [size-M AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-M) | [size-L AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-L) | [size-XL AMIs](https://console.aws.amazon.com/ec2/v2/home#Images:visibility=public-images;imageName=Sourcegraph-XL) |
-
-Click [here](https://github.com/sourcegraph/deploy#amazon-ec2-amis) to see the completed list of AMI IDs published in each region.
-
-<span class="badge badge-critical">IMPORTANT</span> The default AMI user name is **ec2-user**.
-
-> NOTE: AMIs are optimized for the specific set of resources provided by the instance type, please ensure you use the correct AMI for the associated EC2 instance type. You can [resize your EC2 instance anytime](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-resize.html), but your Sourcegraph AMI must match accordingly. If needed, follow the [upgrade steps](#upgrade) to switch to the correct AMI image that is optimized for your EC2 instance type.
-
 ---
 
 ## Networking
@@ -81,7 +80,7 @@ We suggest using an AWS Application Load Balancer (ALB) to manage HTTPS connecti
 
 #### Step 1: Request certificate
 
-![image](https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png)
+<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/192369850-e90d1078-7ad6-4624-acc1-db093ef4d642.png">
 
 Open the [AWS Certificate Manager console](https://console.aws.amazon.com/acm) to **Request a certificate**:
 

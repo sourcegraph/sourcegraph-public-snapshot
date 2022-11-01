@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { QueryState, SearchContextInputProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -21,9 +20,11 @@ import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
 import { LoggedOutHomepage } from './LoggedOutHomepage'
+import { exampleTripsAndTricks } from './LoggedOutHomepage.constants'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './SearchPage.module.scss'
 
@@ -31,7 +32,6 @@ export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
@@ -78,6 +78,17 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 })}
             >
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
+                {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
+                    <TipsAndTricks
+                        examples={exampleTripsAndTricks}
+                        moreLink={{
+                            label: 'More search features',
+                            href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                            trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
+                        }}
+                        {...props}
+                    />
+                )}
 
                 {showEnterpriseHomePanels && props.authenticatedUser && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />

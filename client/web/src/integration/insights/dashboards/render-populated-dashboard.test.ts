@@ -71,7 +71,9 @@ describe('Code insights populated dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
-        const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
+        const dashboardSelectButton = await driver.page.waitForSelector(
+            '[aria-label="Choose a dashboard, Each Type of Insight"]'
+        )
 
         assert(dashboardSelectButton)
 

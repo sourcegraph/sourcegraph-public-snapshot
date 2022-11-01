@@ -25,6 +25,8 @@ type AutoIndexingService interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
 	GetInferenceScript(ctx context.Context) (script string, err error)
 	SetInferenceScript(ctx context.Context, script string) (err error)
 

@@ -1,375 +1,576 @@
 package database
 
 import (
+	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestExecutorSecrets_CreateUpdate(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+func TestEnsureActorHasNamespaceWriteAccess(t *testing.T) {
+	userID := int32(1)
+	adminID := int32(2)
+	orgID := int32(1)
 
-	// Authorisation failure tests. (We'll test the happy path below.)
-	t.Run("unauthorised", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
-				tc.setup(t)
-
-				scope := UserCredentialScope{
-					Domain:              name,
-					UserID:              tc.user.ID,
-					ExternalServiceType: extsvc.TypeBitbucketCloud,
-					ExternalServiceID:   "https://bitbucket.org",
-				}
-				auth := &auth.BasicAuth{}
-
-				// Attempt to create with the invalid context.
-				cred, err := fx.db.Create(tc.ctx, scope, auth)
-				assert.Error(t, err)
-				assert.Nil(t, cred)
-
-				// Now we'll create a credential so we can test update.
-				cred, err = fx.db.Create(fx.internalCtx, scope, auth)
-				require.NoError(t, err)
-				require.NotNil(t, cred)
-
-				// And let's test that we can't update either.
-				err = fx.db.Update(tc.ctx, cred)
-				assert.Error(t, err)
-			})
+	db := NewMockDB()
+	us := NewMockUserStore()
+	us.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+		if i == userID {
+			return &types.User{
+				SiteAdmin: false,
+			}, nil
 		}
+		if i == adminID {
+			return &types.User{
+				SiteAdmin: true,
+			}, nil
+		}
+		return nil, errors.New("not found")
 	})
+	db.UsersFunc.SetDefaultReturn(us)
+	om := NewMockOrgMemberStore()
+	om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
+		if uid == userID && oid == orgID {
+			// Is a member.
+			return &types.OrgMembership{}, nil
+		}
+		return nil, nil
+	})
+	db.OrgMembersFunc.SetDefaultReturn(om)
 
-	// Instead of two of every animal, we want one of every authenticator. Same,
-	// same.
-	for name, auth := range createUserCredentialAuths(t) {
-		t.Run(name, func(t *testing.T) {
-			scope := UserCredentialScope{
-				Domain:              name,
-				UserID:              fx.user.ID,
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalServiceID:   "https://github.com",
+	internalCtx := actor.WithInternalActor(context.Background())
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(adminID))
+	unauthedCtx := context.Background()
+
+	tts := []struct {
+		name            string
+		namespaceOrgID  int32
+		namespaceUserID int32
+		ctx             context.Context
+		wantErr         bool
+	}{
+		{
+			name:    "unauthed actor accessing global secret",
+			ctx:     unauthedCtx,
+			wantErr: true,
+		},
+		{
+			name:            "unauthed actor accessing user secret",
+			namespaceUserID: userID,
+			ctx:             unauthedCtx,
+			wantErr:         true,
+		},
+		{
+			name:           "unauthed actor accessing org secret",
+			namespaceOrgID: orgID,
+			ctx:            unauthedCtx,
+			wantErr:        true,
+		},
+		{
+			name:    "internal actor accessing global secret",
+			ctx:     internalCtx,
+			wantErr: false,
+		},
+		{
+			name:            "internal actor accessing user secret",
+			namespaceUserID: userID,
+			ctx:             internalCtx,
+			wantErr:         false,
+		},
+		{
+			name:           "internal actor accessing org secret",
+			namespaceOrgID: orgID,
+			ctx:            internalCtx,
+			wantErr:        false,
+		},
+		{
+			name:    "site admin accessing global secret",
+			ctx:     adminCtx,
+			wantErr: false,
+		},
+		{
+			name:            "site admin accessing user secret",
+			namespaceUserID: userID,
+			ctx:             adminCtx,
+			wantErr:         false,
+		},
+		{
+			name:           "site admin accessing org secret",
+			namespaceOrgID: orgID,
+			ctx:            adminCtx,
+			wantErr:        false,
+		},
+		{
+			name:    "user accessing global secret",
+			ctx:     userCtx,
+			wantErr: true,
+		},
+		{
+			name:            "user accessing user secret",
+			namespaceUserID: userID,
+			ctx:             userCtx,
+			wantErr:         false,
+		},
+		{
+			name:            "user accessing user secret of other user",
+			namespaceUserID: userID + 1,
+			ctx:             userCtx,
+			wantErr:         true,
+		},
+		{
+			name:           "user accessing org secret",
+			namespaceOrgID: orgID,
+			ctx:            userCtx,
+			wantErr:        false,
+		},
+		{
+			name:           "user accessing org secret where not member",
+			namespaceOrgID: orgID + 1,
+			ctx:            userCtx,
+			wantErr:        true,
+		},
+	}
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			secret := &ExecutorSecret{}
+			if tt.namespaceOrgID != 0 {
+				secret.NamespaceOrgID = tt.namespaceOrgID
+			}
+			if tt.namespaceUserID != 0 {
+				secret.NamespaceUserID = tt.namespaceUserID
+			}
+			err := ensureActorHasNamespaceWriteAccess(tt.ctx, db, secret)
+			if have, want := err != nil, tt.wantErr; have != want {
+				t.Fatalf("unexpected err state: have=%t want=%t", have, want)
+			}
+		})
+	}
+}
+
+func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
+	// Use an internal actor for most of these tests, namespace access is already properly
+	// tested further down separately.
+	ctx := actor.WithInternalActor(context.Background())
+	logger := logtest.NoOp(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	org, err := db.Orgs().Create(ctx, "the-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	store := db.ExecutorSecrets(&encryption.NoopKey{})
+	secretVal := "sosecret"
+	t.Run("global secret", func(t *testing.T) {
+		secret := &ExecutorSecret{
+			Key:       "GH_TOKEN",
+			CreatorID: user.ID,
+		}
+		t.Run("non-admin user cannot create global secret", func(t *testing.T) {
+			if err := store.Create(userCtx, ExecutorSecretScopeBatches, secret, secretVal); err == nil {
+				t.Fatal("unexpected non-nil error")
+			}
+		})
+		t.Run("empty secret is forbidden", func(t *testing.T) {
+			if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
+				t.Fatal("unexpected non-nil error")
+			}
+		})
+		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+			t.Fatal(err)
+		}
+		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			t.Fatal(err)
+		} else if val != secretVal {
+			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
+		}
+		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
+		}
+		if have, want := secret.CreatorID, user.ID; have != want {
+			t.Fatalf("invalid creator ID stored: have=%q want=%q", have, want)
+		}
+		t.Run("duplicate keys are forbidden", func(t *testing.T) {
+			secret := &ExecutorSecret{
+				Key:       "GH_TOKEN",
+				CreatorID: user.ID,
+			}
+			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			if err == nil {
+				t.Fatal("no error for duplicate key")
+			}
+		})
+		t.Run("update", func(t *testing.T) {
+			newSecretValue := "evenmoresecret"
+
+			t.Run("non-admin user cannot update global secret", func(t *testing.T) {
+				if err := store.Update(userCtx, ExecutorSecretScopeBatches, secret, newSecretValue); err == nil {
+					t.Fatal("unexpected non-nil error")
+				}
+			})
+
+			t.Run("empty secret is forbidden", func(t *testing.T) {
+				if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
+					t.Fatal("unexpected non-nil error")
+				}
+			})
+
+			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+				t.Fatal(err)
+			}
+			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+				t.Fatal(err)
+			} else if val != newSecretValue {
+				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
+			}
+		})
+		t.Run("delete", func(t *testing.T) {
+			t.Run("non-admin user cannot delete global secret", func(t *testing.T) {
+				if err := store.Delete(userCtx, ExecutorSecretScopeBatches, secret.ID); err == nil {
+					t.Fatal("unexpected non-nil error")
+				}
+			})
+
+			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+				t.Fatal(err)
+			}
+			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			if err == nil {
+				t.Fatal("secret not deleted")
+			}
+			esnfe := &ExecutorSecretNotFoundErr{}
+			if !errors.As(err, esnfe) {
+				t.Fatal("invalid error returned, expected not found")
+			}
+		})
+	})
+	t.Run("user secret", func(t *testing.T) {
+		secret := &ExecutorSecret{
+			Key:             "GH_TOKEN",
+			NamespaceUserID: user.ID,
+			CreatorID:       user.ID,
+		}
+		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+			t.Fatal(err)
+		}
+		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			t.Fatal(err)
+		} else if val != secretVal {
+			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
+		}
+		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
+		}
+		if have, want := secret.CreatorID, user.ID; have != want {
+			t.Fatalf("invalid creator ID stored: have=%q want=%q", have, want)
+		}
+		if have, want := secret.NamespaceUserID, user.ID; have != want {
+			t.Fatalf("invalid namespace user ID stored: have=%q want=%q", have, want)
+		}
+		t.Run("duplicate keys are forbidden", func(t *testing.T) {
+			secret := &ExecutorSecret{
+				Key:             "GH_TOKEN",
+				NamespaceUserID: user.ID,
+				CreatorID:       user.ID,
+			}
+			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			if err == nil {
+				t.Fatal("no error for duplicate key")
+			}
+		})
+		t.Run("update", func(t *testing.T) {
+			newSecretValue := "evenmoresecret"
+			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+				t.Fatal(err)
+			}
+			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+				t.Fatal(err)
+			} else if val != newSecretValue {
+				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
+			}
+		})
+		t.Run("delete", func(t *testing.T) {
+			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+				t.Fatal(err)
+			}
+			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			if err == nil {
+				t.Fatal("secret not deleted")
+			}
+			esnfe := &ExecutorSecretNotFoundErr{}
+			if !errors.As(err, esnfe) {
+				t.Fatal("invalid error returned, expected not found")
+			}
+		})
+	})
+	t.Run("org secret", func(t *testing.T) {
+		secret := &ExecutorSecret{
+			Key:            "GH_TOKEN",
+			NamespaceOrgID: org.ID,
+			CreatorID:      user.ID,
+		}
+		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+			t.Fatal(err)
+		}
+		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			t.Fatal(err)
+		} else if val != secretVal {
+			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
+		}
+		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
+		}
+		if have, want := secret.CreatorID, user.ID; have != want {
+			t.Fatalf("invalid creator ID stored: have=%q want=%q", have, want)
+		}
+		if have, want := secret.NamespaceOrgID, org.ID; have != want {
+			t.Fatalf("invalid namespace org ID stored: have=%q want=%q", have, want)
+		}
+		t.Run("duplicate keys are forbidden", func(t *testing.T) {
+			secret := &ExecutorSecret{
+				Key:            "GH_TOKEN",
+				NamespaceOrgID: org.ID,
+				CreatorID:      user.ID,
+			}
+			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			if err == nil {
+				t.Fatal("no error for duplicate key")
+			}
+		})
+		t.Run("update", func(t *testing.T) {
+			newSecretValue := "evenmoresecret"
+			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+				t.Fatal(err)
+			}
+			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+				t.Fatal(err)
+			} else if val != newSecretValue {
+				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
+			}
+		})
+		t.Run("delete", func(t *testing.T) {
+			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+				t.Fatal(err)
+			}
+			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			if err == nil {
+				t.Fatal("secret not deleted")
+			}
+			esnfe := &ExecutorSecretNotFoundErr{}
+			if !errors.As(err, esnfe) {
+				t.Fatal("invalid error returned, expected not found")
+			}
+		})
+	})
+}
+
+func TestExecutorSecrets_GetListCount(t *testing.T) {
+	internalCtx := actor.WithInternalActor(context.Background())
+	logger := logtest.NoOp(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	user, err := db.Users().Create(internalCtx, NewUser{Username: "johndoe"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(internalCtx, user.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	otherUser, err := db.Users().Create(internalCtx, NewUser{Username: "alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(internalCtx, otherUser.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	org, err := db.Orgs().Create(internalCtx, "the-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.OrgMembers().Create(internalCtx, org.ID, user.ID); err != nil {
+		t.Fatal(err)
+	}
+	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	otherUserCtx := actor.WithActor(context.Background(), actor.FromUser(otherUser.ID))
+	store := db.ExecutorSecrets(&encryption.NoopKey{})
+
+	// We create a bunch of secrets to test overrides:
+	// GH_TOKEN User:NULL Org:NULL
+	// NPM_TOKEN User:NULL Org:NULL
+	// GH_TOKEN User:Set Org:NULL
+	// SG_TOKEN User:Set Org:NULL
+	// NPM_TOKEN User:NULL Org:Set
+	// DOCKER_TOKEN User:NULL Org:Set
+	// Expected results:
+	// Global: GH_TOKEN, NPM_TOKEN
+	// User: GH_TOKEN (user-owned), NPM_TOKEN, SG_TOKEN (user-owned)
+	// Org: GH_TOKEN, NPM_TOKEN (org-owned), DOCKER_TOKEN (org-owned)
+
+	secretVal := "sosecret"
+	createSecret := func(secret *ExecutorSecret) *ExecutorSecret {
+		secret.CreatorID = user.ID
+		if err := store.Create(internalCtx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+			t.Fatal(err)
+		}
+		return secret
+	}
+	globalGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN"})
+	globalNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN"})
+	userGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN", NamespaceUserID: user.ID})
+	userSGToken := createSecret(&ExecutorSecret{Key: "SG_TOKEN", NamespaceUserID: user.ID})
+	orgNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN", NamespaceOrgID: org.ID})
+	orgDockerToken := createSecret(&ExecutorSecret{Key: "DOCKER_TOKEN", NamespaceOrgID: org.ID})
+
+	t.Run("GetByID", func(t *testing.T) {
+		t.Run("global secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, globalGHToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(globalGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("user secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, userGHToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(userGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
 			}
 
-			cred, err := fx.db.Create(fx.userCtx, scope, auth)
-			assert.NoError(t, err)
-			assert.NotNil(t, cred)
-			assert.NotZero(t, cred.ID)
-			assert.Equal(t, scope.Domain, cred.Domain)
-			assert.Equal(t, scope.UserID, cred.UserID)
-			assert.Equal(t, scope.ExternalServiceType, cred.ExternalServiceType)
-			assert.Equal(t, scope.ExternalServiceID, cred.ExternalServiceID)
-			assert.NotZero(t, cred.CreatedAt)
-			assert.NotZero(t, cred.UpdatedAt)
-
-			have, err := cred.Authenticator(fx.userCtx)
-			assert.NoError(t, err)
-			assert.Equal(t, auth, have)
-
-			// Ensure that trying to insert again fails.
-			second, err := fx.db.Create(fx.userCtx, scope, auth)
-			assert.Error(t, err)
-			assert.Nil(t, second)
-
-			// Valid update contexts.
-			newExternalServiceType := extsvc.TypeGitLab
-			cred.ExternalServiceType = newExternalServiceType
-
-			err = fx.db.Update(fx.userCtx, cred)
-			assert.NoError(t, err)
-
-			updatedCred, err := fx.db.GetByID(fx.userCtx, cred.ID)
-			assert.NoError(t, err)
-			assert.Equal(t, cred, updatedCred)
-		})
-	}
-}
-
-func TestExecutorSecrets_Delete(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-
-	t.Run("nonextant", func(t *testing.T) {
-		err := fx.db.Delete(fx.internalCtx, 1)
-		assertUserCredentialNotFoundError(t, 1, err)
-	})
-
-	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
-				tc.setup(t)
-
-				scope := UserCredentialScope{
-					Domain:              UserCredentialDomainBatches,
-					UserID:              tc.user.ID,
-					ExternalServiceType: "github",
-					ExternalServiceID:   "https://github.com",
+			t.Run("accessing other users secret", func(t *testing.T) {
+				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, userGHToken.ID); err == nil {
+					t.Fatal("unexpected non nil error")
 				}
-				token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-				cred, err := fx.db.Create(fx.internalCtx, scope, token)
-				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
-
-				err = fx.db.Delete(tc.ctx, cred.ID)
-				assert.Error(t, err)
 			})
-		}
-	})
+		})
+		t.Run("org secret as user", func(t *testing.T) {
+			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, orgNPMToken.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(orgNPMToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
 
-	t.Run("extant", func(t *testing.T) {
-		scope := UserCredentialScope{
-			Domain:              UserCredentialDomainBatches,
-			UserID:              fx.user.ID,
-			ExternalServiceType: "github",
-			ExternalServiceID:   "https://github.com",
-		}
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-		cred, err := fx.db.Create(fx.internalCtx, scope, token)
-		require.NoError(t, err)
-
-		err = fx.db.Delete(fx.userCtx, cred.ID)
-		assert.NoError(t, err)
-
-		_, err = fx.db.GetByID(fx.internalCtx, cred.ID)
-		assert.ErrorAs(t, err, &UserCredentialNotFoundErr{})
-	})
-}
-
-func TestExecutorSecrets_GetByID(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-
-	t.Run("nonextant", func(t *testing.T) {
-		cred, err := fx.db.GetByID(fx.internalCtx, 1)
-		assert.Nil(t, cred)
-		assertUserCredentialNotFoundError(t, 1, err)
-	})
-
-	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
-				tc.setup(t)
-
-				scope := UserCredentialScope{
-					Domain:              UserCredentialDomainBatches,
-					UserID:              tc.user.ID,
-					ExternalServiceType: "github",
-					ExternalServiceID:   "https://github.com",
+			t.Run("accessing org secret as non-member", func(t *testing.T) {
+				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, orgNPMToken.ID); err == nil {
+					t.Fatal("unexpected non nil error")
 				}
-				token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-				cred, err := fx.db.Create(fx.internalCtx, scope, token)
-				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
-
-				_, err = fx.db.GetByID(tc.ctx, cred.ID)
-				assert.Error(t, err)
 			})
-		}
+		})
 	})
 
-	t.Run("extant", func(t *testing.T) {
-		scope := UserCredentialScope{
-			Domain:              UserCredentialDomainBatches,
-			UserID:              fx.user.ID,
-			ExternalServiceType: "github",
-			ExternalServiceID:   "https://github.com",
-		}
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
+	t.Run("ListCount", func(t *testing.T) {
+		t.Run("global secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("user secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken, userSGToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
 
-		want, err := fx.db.Create(fx.internalCtx, scope, token)
-		require.NoError(t, err)
-
-		have, err := fx.db.GetByID(fx.userCtx, want.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, want, have)
-	})
-}
-
-func TestExecutorSecrets_GetByScope(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-
-	scope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
-		UserID:              fx.user.ID,
-		ExternalServiceType: "github",
-		ExternalServiceID:   "https://github.com",
-	}
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-	t.Run("nonextant", func(t *testing.T) {
-		cred, err := fx.db.GetByScope(fx.internalCtx, scope)
-		assert.Nil(t, cred)
-		assertUserCredentialNotFoundError(t, scope, err)
-	})
-
-	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
-				tc.setup(t)
-
-				s := scope
-				s.UserID = tc.user.ID
-
-				cred, err := fx.db.Create(fx.internalCtx, s, token)
-				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
-
-				_, err = fx.db.GetByScope(tc.ctx, scope)
-				assert.Error(t, err)
+			t.Run("by Keys", func(t *testing.T) {
+				opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID, Keys: []string{userGHToken.Key, globalNPMToken.Key}}
+				secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := count, len(secrets); have != want {
+					t.Fatalf("invalid count returned: %d", have)
+				}
+				if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
 			})
-		}
-	})
 
-	t.Run("extant", func(t *testing.T) {
-		want, err := fx.db.Create(fx.internalCtx, scope, token)
-		require.NoError(t, err)
-		require.NotNil(t, want)
-
-		have, err := fx.db.GetByScope(fx.userCtx, scope)
-		assert.NoError(t, err)
-		assert.Equal(t, want, have)
-	})
-}
-
-func TestExecutorSecrets_List(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-
-	githubScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
-		UserID:              fx.user.ID,
-		ExternalServiceType: "github",
-		ExternalServiceID:   "https://github.com",
-	}
-	gitlabScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
-		UserID:              fx.user.ID,
-		ExternalServiceType: "gitlab",
-		ExternalServiceID:   "https://gitlab.com",
-	}
-	adminScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
-		UserID:              fx.admin.ID,
-		ExternalServiceType: "gitlab",
-		ExternalServiceID:   "https://gitlab.com",
-	}
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
-
-	// Unlike the other tests in this file, we'll set up a couple of credentials
-	// right now, and then list from there.
-	githubCred, err := fx.db.Create(fx.userCtx, githubScope, token)
-	require.NoError(t, err)
-
-	gitlabCred, err := fx.db.Create(fx.userCtx, gitlabScope, token)
-	require.NoError(t, err)
-
-	// This one should always be invisible to the user tests below.
-	_, err = fx.db.Create(fx.adminCtx, adminScope, token)
-	require.NoError(t, err)
-
-	t.Run("not found", func(t *testing.T) {
-		creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
-			Scope: UserCredentialScope{
-				Domain: "this is not a valid domain",
-			},
-		})
-		assert.NoError(t, err)
-		assert.Zero(t, next)
-		assert.Empty(t, creds)
-	})
-
-	t.Run("user accessing admin", func(t *testing.T) {
-		creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
-			Scope: UserCredentialScope{UserID: fx.admin.ID},
-		})
-		assert.NoError(t, err)
-		assert.Zero(t, next)
-		assert.Empty(t, creds)
-	})
-
-	for name, tc := range map[string]struct {
-		scope UserCredentialScope
-		want  *UserCredential
-	}{
-		"service ID only": {
-			scope: UserCredentialScope{
-				ExternalServiceID: "https://github.com",
-			},
-			want: githubCred,
-		},
-		"service type only": {
-			scope: UserCredentialScope{
-				ExternalServiceType: "gitlab",
-			},
-			want: gitlabCred,
-		},
-		"full scope": {
-			scope: githubScope,
-			want:  githubCred,
-		},
-	} {
-		t.Run("single match on "+name, func(t *testing.T) {
-			creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
-				Scope: tc.scope,
+			t.Run("accessing other users secrets", func(t *testing.T) {
+				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Only returns global tokens.
+				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
 			})
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{tc.want}, creds)
 		})
-	}
+		t.Run("org secrets as user", func(t *testing.T) {
+			opts := ExecutorSecretsListOpts{NamespaceOrgID: org.ID}
+			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := count, len(secrets); have != want {
+				t.Fatalf("invalid count returned: %d", have)
+			}
+			if diff := cmp.Diff([]*ExecutorSecret{orgDockerToken, globalGHToken, orgNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				t.Fatal(diff)
+			}
 
-	// Combinations that return all user credentials.
-	for name, opts := range map[string]UserCredentialsListOpts{
-		"no options":   {},
-		"domain only":  {Scope: UserCredentialScope{Domain: UserCredentialDomainBatches}},
-		"user ID only": {Scope: UserCredentialScope{UserID: fx.user.ID}},
-		"domain and user ID": {
-			Scope: UserCredentialScope{
-				Domain: UserCredentialDomainBatches,
-				UserID: fx.user.ID,
-			},
-		},
-	} {
-		t.Run("multiple matches on "+name, func(t *testing.T) {
-			creds, next, err := fx.db.List(fx.userCtx, opts)
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{githubCred, gitlabCred}, creds)
+			t.Run("accessing org secrets as non-member", func(t *testing.T) {
+				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Only returns global tokens.
+				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+					t.Fatal(diff)
+				}
+			})
 		})
-
-		t.Run("pagination for "+name, func(t *testing.T) {
-			o := opts
-			o.LimitOffset = &LimitOffset{Limit: 1}
-			creds, next, err := fx.db.List(fx.userCtx, o)
-			assert.NoError(t, err)
-			assert.EqualValues(t, 1, next)
-			assert.Equal(t, []*UserCredential{githubCred}, creds)
-
-			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
-			creds, next, err = fx.db.List(fx.userCtx, o)
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{gitlabCred}, creds)
-		})
-	}
+	})
 }
 
 func TestExecutorSecretNotFoundError(t *testing.T) {
@@ -379,132 +580,18 @@ func TestExecutorSecretNotFoundError(t *testing.T) {
 	}
 }
 
-func assertExecutorSecretNotFoundError(t *testing.T, want int64, have error) {
-	t.Helper()
-
-	var e ExecutorSecretNotFoundErr
-	assert.ErrorAs(t, have, &e)
-	assert.EqualValues(t, want, e.id)
+func TestExecutorSecret_Value(t *testing.T) {
+	secretVal := "sosecret"
+	esal := NewMockExecutorSecretAccessLogStore()
+	secret := &ExecutorSecret{encryptedValue: NewUnencryptedCredential([]byte(secretVal))}
+	val, err := secret.Value(context.Background(), esal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if val != secretVal {
+		t.Fatalf("invalid secret value returned: want=%q have=%q", secretVal, val)
+	}
+	if len(esal.CreateFunc.History()) != 1 {
+		t.Fatal("no access log entry created")
+	}
 }
-
-// func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
-// 	t.Helper()
-
-// 	createOAuthClient := func(t *testing.T, token, secret string) *oauth.Client {
-// 		t.Helper()
-
-// 		// Generate a random key so we can test different clients are different.
-// 		// Note that this is wildly insecure.
-// 		key, err := rsa.GenerateKey(rand.Reader, 64)
-// 		if err != nil {
-// 			t.Fatal(err)
-// 		}
-
-// 		return &oauth.Client{
-// 			Credentials: oauth.Credentials{
-// 				Token:  token,
-// 				Secret: secret,
-// 			},
-// 			PrivateKey: key,
-// 		}
-// 	}
-
-// 	auths := make(map[string]auth.Authenticator)
-// 	for _, a := range []auth.Authenticator{
-// 		&auth.OAuthClient{Client: createOAuthClient(t, "abc", "def")},
-// 		&auth.BasicAuth{Username: "foo", Password: "bar"},
-// 		&auth.BasicAuthWithSSH{BasicAuth: auth.BasicAuth{Username: "foo", Password: "bar"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
-// 		&auth.OAuthBearerToken{Token: "abcdef"},
-// 		&auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
-// 		&bitbucketserver.SudoableOAuthClient{
-// 			Client:   auth.OAuthClient{Client: createOAuthClient(t, "ghi", "jkl")},
-// 			Username: "neo",
-// 		},
-// 		&gitlab.SudoableToken{Token: "mnop", Sudo: "qrs"},
-// 	} {
-// 		auths[reflect.TypeOf(a).String()] = a
-// 	}
-
-// 	return auths
-// }
-
-// type testFixture struct {
-// 	internalCtx context.Context
-// 	userCtx     context.Context
-// 	adminCtx    context.Context
-
-// 	db  UserCredentialsStore
-// 	key encryption.Key
-
-// 	user  *types.User
-// 	admin *types.User
-// }
-
-// func setUpUserCredentialTest(t *testing.T, db DB) *testFixture {
-// 	if testing.Short() {
-// 		t.Skip()
-// 	}
-
-// 	t.Helper()
-// 	ctx := context.Background()
-// 	key := et.TestKey{}
-
-// 	admin, err := db.Users().Create(ctx, NewUser{
-// 		Email:                 "admin@example.com",
-// 		Username:              "admin",
-// 		Password:              "pw",
-// 		EmailVerificationCode: "c",
-// 	})
-// 	require.NoError(t, err)
-
-// 	user, err := db.Users().Create(ctx, NewUser{
-// 		Email:                 "a@example.com",
-// 		Username:              "u2",
-// 		Password:              "pw",
-// 		EmailVerificationCode: "c",
-// 	})
-// 	require.NoError(t, err)
-
-// 	return &testFixture{
-// 		internalCtx: actor.WithInternalActor(ctx),
-// 		userCtx:     actor.WithActor(ctx, actor.FromUser(user.ID)),
-// 		adminCtx:    actor.WithActor(ctx, actor.FromUser(admin.ID)),
-// 		key:         key,
-// 		db:          db.UserCredentials(key),
-// 		user:        user,
-// 		admin:       admin,
-// 	}
-// }
-
-// type authFailureTestCase struct {
-// 	user  *types.User
-// 	ctx   context.Context
-// 	setup func(*testing.T)
-// }
-
-// func authFailureTestCases(t *testing.T, fx *testFixture) map[string]authFailureTestCase {
-// 	t.Helper()
-
-// 	return map[string]authFailureTestCase{
-// 		"user accessing admin": {
-// 			user:  fx.admin,
-// 			ctx:   fx.userCtx,
-// 			setup: func(*testing.T) {},
-// 		},
-// 		"admin accessing user without permission": {
-// 			user: fx.user,
-// 			ctx:  fx.adminCtx,
-// 			setup: func(*testing.T) {
-// 				conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-// 					AuthzEnforceForSiteAdmins: true,
-// 				}})
-// 				t.Cleanup(func() { conf.Mock(nil) })
-// 			},
-// 		},
-// 		"anonymous accessing user": {
-// 			user:  fx.user,
-// 			ctx:   context.Background(),
-// 			setup: func(*testing.T) {},
-// 		},
-// 	}
-// }

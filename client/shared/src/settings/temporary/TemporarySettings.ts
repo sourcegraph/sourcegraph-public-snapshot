@@ -49,6 +49,7 @@ export interface TemporarySettingsSchema {
     'coreWorkflowImprovements.enabled_deprecated': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
+    'repo.commitPage.diffMode': 'split' | 'unified'
 }
 
 /**

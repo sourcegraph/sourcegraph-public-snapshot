@@ -195,7 +195,6 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 			false,
 			&patternInfo,
 			time.Hour,
-			nil,
 			search.Features{},
 			onMatch,
 		)

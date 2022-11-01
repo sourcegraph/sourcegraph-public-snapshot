@@ -545,8 +545,7 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
+          "default": false
         },
         "insightsAlternateLoadingStrategy": {
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
@@ -1229,11 +1228,6 @@
               "pattern": "^https?://"
             }
           }
-        },
-        "gitserver.accessLogs": {
-          "description": "DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.",
-          "type": "boolean",
-          "default": false
         },
         "auditLog": {
           "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",

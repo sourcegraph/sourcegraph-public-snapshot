@@ -12,7 +12,6 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -20,8 +19,11 @@ import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
+import { RepositoryComparisonDiffResult } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
@@ -30,7 +32,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     first?: number
     after?: string | null
     paths?: string[]
-}): Observable<GQL.IFileDiffConnection> {
+}): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
     return queryGraphQL(
         gql`
             query RepositoryComparisonDiff(
@@ -72,7 +74,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryComparisonDiff
             if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
                 throw createAggregateError(errors)
             }
@@ -136,7 +138,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<GQL.IFileDiffConnection> =>
+    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,

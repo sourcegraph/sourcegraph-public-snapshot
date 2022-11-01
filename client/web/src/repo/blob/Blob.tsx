@@ -402,6 +402,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             platformContext,
         ]
     )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
     const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)

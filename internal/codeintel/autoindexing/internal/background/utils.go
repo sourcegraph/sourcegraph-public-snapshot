@@ -57,6 +57,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf(`u.local_steps`),
 	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
+	sqlf.Sprintf(`u.should_reindex`),
 }
 
 func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
@@ -83,6 +84,7 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 		&index.Rank,
 		pq.Array(&index.LocalSteps),
 		&index.AssociatedUploadID,
+		&index.ShouldReindex,
 	); err != nil {
 		return index, err
 	}

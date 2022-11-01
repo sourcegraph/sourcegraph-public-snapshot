@@ -16,6 +16,9 @@ type operations struct {
 	// Worker metrics
 	uploadProcessor *observation.Operation
 	uploadSizeGuage prometheus.Gauge
+
+	numReconcileScans   prometheus.Counter
+	numReconcileDeletes prometheus.Counter
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -33,6 +36,25 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	counter := func(name, help string) prometheus.Counter {
+		counter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		})
+
+		observationContext.Registerer.MustRegister(counter)
+		return counter
+	}
+
+	numReconcileScans := counter(
+		"src_codeintel_uploads_reconciliation_records_scanned_total",
+		"The number of upload records read from codeintel-db for reconciliation.",
+	)
+	numReconcileDeletes := counter(
+		"src_codeintel_uploads_reconciliation_records_deleted_total",
+		"The number of abandoned uploads deleted from the codeintel-db.",
+	)
 
 	honeyObservationContext := *observationContext
 	honeyObservationContext.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
@@ -55,5 +77,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Worker metrics
 		uploadProcessor: uploadProcessor,
 		uploadSizeGuage: uploadSizeGuage,
+
+		numReconcileScans:   numReconcileScans,
+		numReconcileDeletes: numReconcileDeletes,
 	}
 }

@@ -44,7 +44,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await gheLogin(driver)
             await driver.setExtensionSourcegraphUrl()

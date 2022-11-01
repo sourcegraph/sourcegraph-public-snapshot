@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -32,7 +33,7 @@ type newBackfillHandler struct {
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
 func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	insightsDB := config.InsightsDB
-	backfillStore := newBackfillStore(insightsDB)
+	backfillStore := NewBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
 
@@ -45,20 +46,23 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		OrderByExpression: sqlf.Sprintf("id"), // todo
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
+		RetryAfter:        time.Second * 30,
+		MaxNumRetries:     3,
 	}, config.ObsContext)
 
 	task := newBackfillHandler{
 		workerStore:   workerStore,
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, config.RepoStore), //TODO add in a real all repos iterator
+		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
+		Name:              name,
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
@@ -84,9 +88,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	if err != nil {
 		return err
 	}
-	defer func() {
-		tx.Done(err)
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	// load backfill and series
 	backfill, err := tx.loadBackfill(ctx, job.backfillId)
@@ -112,7 +114,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.Wrap(err, "reposIterator.ForEach")
 	}
 
-	//TODO: use query costing
+	// TODO: use query costing
 	backfill, err = backfill.SetScope(ctx, tx, repoIds, 0)
 	if err != nil {
 		return errors.Wrap(err, "backfill.SetScope")
@@ -125,5 +127,16 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	}
 
 	// enqueue backfill for next step in processing
-	return enqueueBackfill(ctx, tx.Handle(), backfill)
+	err = enqueueBackfill(ctx, tx.Handle(), backfill)
+	if err != nil {
+		return errors.Wrap(err, "backfill.enqueueBackfill")
+	}
+	// We have to manually manipulate the queue record here to ensure that the new job is written in the same tx
+	// that this job is marked complete. This is how we will ensure there is no desync if the mark complete operation
+	// fails after we've already queued up a new job.
+	_, err = h.workerStore.MarkComplete(ctx, record.RecordID(), dbworkerstore.MarkFinalOptions{})
+	if err != nil {
+		return errors.Wrap(err, "backfill.MarkComplete")
+	}
+	return err
 }

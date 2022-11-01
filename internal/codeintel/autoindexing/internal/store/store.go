@@ -33,8 +33,11 @@ type Store interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error)
+	ReindexIndexByID(ctx context.Context, id int) (err error)
+	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error)
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error)
+	IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error)
 	QueueRepoRev(ctx context.Context, repositoryID int, commit string) error
 	GetQueuedRepoRev(ctx context.Context, batchSize int) ([]RepoRev, error)
 	MarkRepoRevsAsProcessed(ctx context.Context, ids []int) error

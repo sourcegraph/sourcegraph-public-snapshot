@@ -32,6 +32,8 @@ type ExecutorSecret struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
+	// unexported so that there's no direct access. Use `Value` to access it
+	// which will generate the access log entries as well.
 	encryptedValue *encryption.Encryptable
 }
 
@@ -72,6 +74,8 @@ type ExecutorSecretStore interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) ExecutorSecretStore
 	Transact(context.Context) (ExecutorSecretStore, error)
+	Done(err error) error
+	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
 
 	// Create inserts the given ExecutorSecret into the database.
 	Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
@@ -105,7 +109,7 @@ type ExecutorSecretsListOpts struct {
 	NamespaceOrgID int32
 }
 
-func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, error) {
+func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) (*sqlf.Query, error) {
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
@@ -113,7 +117,10 @@ func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context) (*sqlf.Query, 
 
 	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
 
-	preds := []*sqlf.Query{authz}
+	preds := []*sqlf.Query{
+		authz,
+		sqlf.Sprintf("scope = %s", scope),
+	}
 
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("(namespace_org_id = %s OR (%s))", opts.NamespaceOrgID, globalSecret))
@@ -172,13 +179,19 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
+var ErrEmptyExecutorSecret = errors.New("empty executor secret is not allowed")
+
 func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+	if len(value) == 0 {
+		return ErrEmptyExecutorSecret
+	}
+
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
-	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
-	// Set the current actor as the secret creator.
+	// Set the current actor as the secret creator if not set.
 	if secret.CreatorID == 0 {
 		secret.CreatorID = actor.FromContext(ctx).UID
 	}
@@ -209,8 +222,12 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
-	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
-	if err := ensureActorHasNamespaceAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	if len(value) == 0 {
+		return ErrEmptyExecutorSecret
+	}
+
+	// SECURITY: check that the current user is authorized to update a secret in the given namespace.
+	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
@@ -227,7 +244,7 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 
 	q := sqlf.Sprintf(
 		executorSecretUpdateQueryFmtstr,
-		[]byte(encryptedValue),
+		encryptedValue,
 		keyID,
 		secret.UpdatedAt,
 		secret.ID,
@@ -245,13 +262,37 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
+	// Grab the secret and make sure that namespace write access from the actor
+	// is acceptable.
+	var tx ExecutorSecretStore
+	if s.InTransaction() {
+		tx = s
+	} else {
+		var err error
+		tx, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
+	}
+
+	secret, err := tx.GetByID(ctx, scope, id)
+	if err != nil {
+		return err
+	}
+
+	// SECURITY: check that the current user is authorized to delete a secret in the given namespace.
+	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
+		return err
+	}
+
 	authz, err := executorSecretsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
-	res, err := s.ExecResult(ctx, q)
+	res, err := tx.ExecResult(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -290,7 +331,7 @@ func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretS
 }
 
 func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error) {
-	conds, err := opts.sqlConds(ctx)
+	conds, err := opts.sqlConds(ctx, scope)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -330,7 +371,7 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 }
 
 func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretScope, opts ExecutorSecretsListOpts) (int, error) {
-	conds, err := opts.sqlConds(ctx)
+	conds, err := opts.sqlConds(ctx, scope)
 	if err != nil {
 		return 0, err
 	}
@@ -469,7 +510,7 @@ func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface 
 	return nil
 }
 
-func ensureActorHasNamespaceAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
+func ensureActorHasNamespaceWriteAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() {
 		return nil
@@ -478,7 +519,8 @@ func ensureActorHasNamespaceAccess(ctx context.Context, db DB, secret *ExecutorS
 		return errors.New("not logged in")
 	}
 
-	// TODO: This should use the helpers from the auth package, but it depends on this package.
+	// TODO: This should use the helpers from the auth package, but that package
+	// today depends on the database package, so that would be an import cycle.
 	if secret.NamespaceOrgID != 0 {
 		// Check if the current user is org member.
 		resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, secret.NamespaceOrgID, a.UID)
@@ -493,6 +535,8 @@ func ensureActorHasNamespaceAccess(ctx context.Context, db DB, secret *ExecutorS
 		if resp != nil {
 			return nil
 		}
+		// Not a member case: Fall through and eventually end up down at the site-admin
+		// check.
 	} else if secret.NamespaceUserID != 0 {
 		// If the actor is the same user as the namespace user, pass. Otherwise
 		// fall through and check if they're site-admin.
@@ -529,8 +573,18 @@ func executorSecretsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	), nil
 }
 
+// executorSecretsAuthzQueryCondsFmtstr contains the SQL used to determine if a user
+// has access to the given secret value. It is used in every query to ensure that
+// the store never returns secrets that are not meant to be seen by them.
 const executorSecretsAuthzQueryCondsFmtstr = `
 (
+	(
+		-- the secret is a global secret
+		executor_secrets.namespace_user_id IS NULL
+		AND
+		executor_secrets.namespace_org_id IS NULL
+	)
+	OR
 	(
 		-- user is the same as the actor
 		executor_secrets.namespace_user_id = %s
@@ -559,6 +613,8 @@ const executorSecretsAuthzQueryCondsFmtstr = `
 )
 `
 
+// encryptExecutorSecret encrypts the given raw secret value if encryption is enabled
+// and returns the encrypted data and the associated encryption key ID.
 func encryptExecutorSecret(ctx context.Context, key encryption.Key, raw string) ([]byte, string, error) {
 	if len(raw) == 0 {
 		return nil, "", errors.New("got empty secret")
