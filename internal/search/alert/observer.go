@@ -256,8 +256,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &mErr) {
-		var a *search.Alert
-		a = AlertForMissingRepoRevs(mErr.Missing)
+		a := AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
 	}
