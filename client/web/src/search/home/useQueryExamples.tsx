@@ -195,7 +195,7 @@ export function useQueryExamples(selectedSearchContextSpec: string): QueryExampl
                     queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
                     footer: (
                         <small className="d-block mt-3">
-                            <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                            <Link target="blank" to="/help/code_search/reference/queries">
                                 Complete query reference{' '}
                                 <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>

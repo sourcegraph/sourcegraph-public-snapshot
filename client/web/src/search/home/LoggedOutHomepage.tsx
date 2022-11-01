@@ -2,8 +2,8 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { QueryState } from '@sourcegraph/search'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { H4, Link } from '@sourcegraph/wildcard'
 

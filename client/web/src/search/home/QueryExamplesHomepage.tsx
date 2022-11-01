@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
-import classNames from 'classnames'
 import { mdiOpenInNew } from '@mdi/js'
+import classNames from 'classnames'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -11,62 +11,6 @@ import { Button, H2, Text, Icon, Link } from '@sourcegraph/wildcard'
 import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
-
-const dotComExamples = [
-    [
-        {
-            title: 'Scope search to specific repos',
-            queryExamples: [
-                { id: 'single-repo', query: 'repo:sourcegraph/webloop' },
-                { id: 'org-repos', query: 'repo:sourcegraph/*'},
-            ],
-        },
-        {
-            title: 'Jump into code navigation',
-            queryExamples: [
-                { id: 'file-filter', query: 'file:README.md' },
-                { id: 'type-symbol', query: 'type:symbol SymbolName' },
-            ],
-        },
-        {
-            title: 'Explore code history',
-            queryExamples: [
-                { id: 'type-diff-author', query: 'type:diff author:Linus Torvalds' },
-                { id: 'type-commit-message', query: 'type:commit some message' },
-                { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
-            ],
-        },
-    ],
-    [
-        {
-            title: 'Find content or patterns',
-            queryExamples: [
-                { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
-                { id: 'regex-pattern', query: '/regex.*pattern/' },
-            ],
-        },
-        {
-            title: 'Get logical',
-            queryExamples: [
-                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                { id: 'and-operator', query: 'hello AND world' },
-                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-            ],
-        },
-        {
-            title: 'Get advanced',
-            queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-            footer: (
-                <small className="d-block mt-3">
-                    <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
-                        Complete query reference{' '}
-                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                    </Link>
-                </small>
-            ),
-        },
-    ],
-]
 
 export interface QueryExamplesHomepageProps extends TelemetryProps {
     selectedSearchContextSpec?: string
@@ -103,7 +47,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
 
-    const queryExampleSectionsColumns = isDotCom ? dotComExamples : useQueryExamples(selectedSearchContextSpec ?? 'global')
+    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global')
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {
@@ -141,6 +85,66 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             setSelectTipTimeout,
         ]
     )
+    
+    const documentationUrlPrefix = isDotCom ? 'https://docs.sourcegraph.com' : '/help'
+
+    const dotComExamples = [
+        [
+            {
+                title: 'Scope search to specific repos',
+                queryExamples: [
+                    { id: 'org-repos', query: 'repo:sourcegraph/*' },
+                    { id: 'single-repo', query: 'repo:facebook/react' },
+                ],
+            },
+            {
+                title: 'Jump into code navigation',
+                queryExamples: [
+                    { id: 'file-filter', query: 'file:README.md' },
+                    { id: 'type-symbol', query: 'type:symbol SymbolName' },
+                ],
+            },
+            {
+                title: 'Explore code history',
+                queryExamples: [
+                    { id: 'type-diff-author', query: 'type:diff author:torvalds' },
+                    { id: 'type-commit-message', query: 'type:commit some message' },
+                ],
+                footer: (
+                    <small className="d-block mt-3">
+                        <Link target="blank" to={`${documentationUrlPrefix}/code_search/reference/queries`}>
+                            Complete query reference{' '}
+                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                        </Link>
+                    </small>
+                ),
+            },
+        ],
+        [
+            {
+                title: 'Find content or patterns',
+                queryExamples: [
+                    { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
+                    { id: 'regex-pattern', query: '/regex.*pattern/' },
+                ],
+            },
+            {
+                title: 'Get logical',
+                queryExamples: [
+                    { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
+                    { id: 'not-operator', query: 'lang:go NOT file:main.go' },
+                    { id: 'and-operator', query: 'hello AND world' },
+                ],
+            },
+            {
+                title: 'Get advanced',
+                queryExamples: [
+                    { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
+                    { id: 'conditional-repo', query: 'repo:has.file(path:package.json content:eslint.*\^8\.13\.0) file:\.eslintrc$ rules' },
+                ],
+            },
+        ],
+    ]
 
     return (
         <div>
@@ -174,7 +178,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                 </div>
             )}
             <div className={styles.queryExamplesSectionsColumns}>
-                {queryExampleSectionsColumns.map((column, index) => (
+                {(isDotCom ? dotComExamples : queryExampleSectionsColumns).map((column, index) => (
                     // eslint-disable-next-line react/no-array-index-key
                     <div key={`column-${index}`}>
                         {column.map(({ title, queryExamples, footer }) => (
