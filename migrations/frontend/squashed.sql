@@ -4482,6 +4482,8 @@ CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 
 CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at);
 
+CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch;
+
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
 CREATE INDEX notebook_stars_user_id_idx ON notebook_stars USING btree (user_id);
