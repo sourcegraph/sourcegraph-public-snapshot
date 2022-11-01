@@ -1,4 +1,6 @@
 -- Undo the changes made in the up migration
+drop view if exists insights_jobs_backfill_in_progress;
+
 CREATE OR REPLACE VIEW insights_jobs_backfill_in_progress AS
 SELECT jobs.*, isb.state AS backfill_state, isb.estimated_cost
 FROM insights_background_jobs jobs
