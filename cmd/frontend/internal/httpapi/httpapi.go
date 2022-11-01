@@ -176,10 +176,9 @@ func NewInternalHandler(
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
 		Indexers: search.Indexers(),
+		Ranking:  codeIntelServices.RankingService,
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
-
-		codeIntelServices: codeIntelServices,
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
