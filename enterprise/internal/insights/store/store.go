@@ -255,6 +255,10 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		return nil
 	})
 
+	if err != nil {
+		return []SeriesPoint{}, err
+	}
+
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})
 

@@ -101,7 +101,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Hour*24))
 
-	for true {
+	for {
 		repoId, more, finish := itr.NextWithFinish()
 		if !more {
 			break

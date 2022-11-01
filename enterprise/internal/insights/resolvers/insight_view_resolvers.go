@@ -511,9 +511,8 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, backfiller, r.scheduler, r.insightEnqueuer)
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
+		_, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
