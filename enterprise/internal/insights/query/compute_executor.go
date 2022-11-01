@@ -78,7 +78,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		})
 
 		for _, group := range grouped {
-            groupedValues[group.Value] += group.Count
+			groupedValues[group.Value] += group.Count
 		}
 	}
 
