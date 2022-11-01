@@ -159,16 +159,30 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         },
                     ]}
                 />
-                {/* Hide regex and structural search toggles if lucky search is enabled */}
-                {(!showSmartSearch || patternType !== SearchPatternType.lucky) && (
-                    <>
+                <QueryInputToggle
+                    title="Regular expression"
+                    isActive={patternType === SearchPatternType.regexp}
+                    onToggle={toggleRegexp}
+                    iconSvgPath={mdiRegex}
+                    interactive={props.interactive}
+                    className="test-regexp-toggle"
+                    disableOn={[
+                        {
+                            condition:
+                                findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
+                            reason: 'Query already contains one or more patterntype subexpressions',
+                        },
+                    ]}
+                />
+                <>
+                    {!structuralSearchDisabled && (
                         <QueryInputToggle
-                            title="Regular expression"
-                            isActive={patternType === SearchPatternType.regexp}
-                            onToggle={toggleRegexp}
-                            iconSvgPath={mdiRegex}
+                            title="Structural search"
+                            className="test-structural-search-toggle"
+                            isActive={patternType === SearchPatternType.structural}
+                            onToggle={toggleStructuralSearch}
+                            iconSvgPath={mdiCodeBrackets}
                             interactive={props.interactive}
-                            className="test-regexp-toggle"
                             disableOn={[
                                 {
                                     condition:
@@ -178,26 +192,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                                 },
                             ]}
                         />
-                        {!structuralSearchDisabled && (
-                            <QueryInputToggle
-                                title="Structural search"
-                                className="test-structural-search-toggle"
-                                isActive={patternType === SearchPatternType.structural}
-                                onToggle={toggleStructuralSearch}
-                                iconSvgPath={mdiCodeBrackets}
-                                interactive={props.interactive}
-                                disableOn={[
-                                    {
-                                        condition:
-                                            findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
-                                            undefined,
-                                        reason: 'Query already contains one or more patterntype subexpressions',
-                                    },
-                                ]}
-                            />
-                        )}
-                    </>
-                )}
+                    )}
+                </>
                 {(showSmartSearch || showCopyQueryButton) && <div className={styles.separator} />}
                 {showSmartSearch && (
                     <SmartSearchToggle

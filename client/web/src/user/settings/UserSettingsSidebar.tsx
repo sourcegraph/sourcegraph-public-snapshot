@@ -8,7 +8,6 @@ import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sour
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { NavItemDescriptor } from '../../util/contributions'
@@ -21,7 +20,6 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
     user: UserSettingsAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
-    openBetaEnabled: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -43,8 +41,6 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-
     if (!props.authenticatedUser) {
         return null
     }
@@ -58,7 +54,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        openBetaEnabled: isOpenBetaEnabled,
     }
 
     return (
@@ -74,7 +69,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         )
                 )}
             </SidebarGroup>
-            {!isOpenBetaEnabled && (props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
+            {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
                     <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (

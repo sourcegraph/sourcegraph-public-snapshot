@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func Init(db database.DB, w *webhooks.GitHubWebhook) {
+func Init(db database.DB, w *webhooks.WebhookRouter) {
 	// Refer to https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads
 	// for event types
 

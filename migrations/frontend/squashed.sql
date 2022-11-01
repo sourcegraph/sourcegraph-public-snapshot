@@ -749,6 +749,14 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
+
 CREATE FUNCTION versions_insert_row_trigger() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1612,7 +1620,8 @@ CREATE TABLE codeintel_path_rank_inputs (
     input_filename text NOT NULL,
     repository_name text NOT NULL,
     payload jsonb NOT NULL,
-    processed boolean DEFAULT false NOT NULL
+    processed boolean DEFAULT false NOT NULL,
+    "precision" double precision NOT NULL
 );
 
 COMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';
@@ -1628,7 +1637,10 @@ ALTER SEQUENCE codeintel_path_rank_inputs_id_seq OWNED BY codeintel_path_rank_in
 
 CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
-    payload jsonb NOT NULL
+    payload jsonb NOT NULL,
+    "precision" double precision NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    graph_key text
 );
 
 CREATE TABLE codeintel_ranking_exports (
@@ -3958,9 +3970,6 @@ ALTER TABLE ONLY codeintel_path_rank_inputs
 ALTER TABLE ONLY codeintel_path_rank_inputs
     ADD CONSTRAINT codeintel_path_rank_inputs_pkey PRIMARY KEY (id);
 
-ALTER TABLE ONLY codeintel_path_ranks
-    ADD CONSTRAINT codeintel_path_ranks_repository_id_key UNIQUE (repository_id);
-
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (upload_id, graph_key);
 
@@ -4321,6 +4330,10 @@ CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON c
 
 CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE (NOT processed);
 
+CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
+
+CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
+
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 
 CREATE INDEX configuration_policies_audit_logs_timestamp ON configuration_policies_audit_logs USING brin (log_timestamp);
@@ -4468,6 +4481,8 @@ CREATE UNIQUE INDEX lsif_uploads_repository_id_commit_root_indexer ON lsif_uploa
 CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 
 CREATE INDEX lsif_uploads_uploaded_at ON lsif_uploads USING btree (uploaded_at);
+
+CREATE INDEX lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip USING btree (upload_id) WHERE is_default_branch;
 
 CREATE INDEX lsif_uploads_visible_at_tip_repository_id_upload_id ON lsif_uploads_visible_at_tip USING btree (repository_id, upload_id);
 
@@ -4622,6 +4637,8 @@ CREATE TRIGGER trigger_lsif_uploads_delete AFTER DELETE ON lsif_uploads REFERENC
 CREATE TRIGGER trigger_lsif_uploads_insert AFTER INSERT ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_insert();
 
 CREATE TRIGGER trigger_lsif_uploads_update BEFORE UPDATE OF state, num_resets, num_failures, worker_hostname, expired, committed_at ON lsif_uploads FOR EACH ROW EXECUTE FUNCTION func_lsif_uploads_update();
+
+CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column();
 
 CREATE TRIGGER versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger();
 
