@@ -2,8 +2,9 @@ import { act } from '@testing-library/react'
 import * as H from 'history'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
+
+import { DotComProductSubscriptionResult, ProductLicensesResult } from '../../../../graphql-operations'
 
 import { SiteAdminProductSubscriptionPage } from './SiteAdminProductSubscriptionPage'
 
@@ -22,14 +23,37 @@ describe('SiteAdminProductSubscriptionPage', () => {
                 history={history}
                 location={location}
                 _queryProductSubscription={() =>
-                    of<GQL.IProductSubscription>({
+                    of<DotComProductSubscriptionResult['dotcom']['productSubscription']>({
                         __typename: 'ProductSubscription',
                         createdAt: '2020-01-01',
                         url: '/s',
-                    } as GQL.IProductSubscription)
+                        account: null,
+                        id: 'l1',
+                        isArchived: false,
+                        name: 'sn1',
+                        productLicenses: {
+                            __typename: 'ProductLicenseConnection',
+                            nodes: [
+                                {
+                                    createdAt: '2020-01-01',
+                                    id: 'l1',
+                                    licenseKey: 'lk1',
+                                    info: {
+                                        __typename: 'ProductLicenseInfo',
+                                        expiresAt: '2021-01-01',
+                                        tags: ['a'],
+                                        userCount: 123,
+                                    },
+                                },
+                            ],
+                            totalCount: 1,
+                            pageInfo: { hasNextPage: false },
+                        },
+                        activeLicense: null
+                    })
                 }
                 _queryProductLicenses={() =>
-                    of<GQL.IProductLicenseConnection>({
+                    of<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']>({
                         __typename: 'ProductLicenseConnection',
                         nodes: [
                             {
@@ -43,11 +67,17 @@ describe('SiteAdminProductSubscriptionPage', () => {
                                     tags: ['a'],
                                     userCount: 123,
                                 },
-                                subscription: { activeLicense: { id: 'l1' } } as GQL.IProductSubscription,
+                                subscription: {
+                                    id: 'l1',
+                                    name: 'sn1',
+                                    urlForSiteAdmin: null,
+                                    account: null,
+                                    activeLicense: { id: 'l1' },
+                                },
                             },
-                        ] as GQL.IProductLicense[],
+                        ],
                         totalCount: 1,
-                        pageInfo: { hasNextPage: false } as GQL.IPageInfo,
+                        pageInfo: { hasNextPage: false },
                     })
                 }
             />,
