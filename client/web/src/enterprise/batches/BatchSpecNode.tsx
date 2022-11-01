@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import {
     mdiCheckCircle,
@@ -9,6 +9,8 @@ import {
     mdiChevronRight,
     mdiStar,
     mdiPencil,
+    mdiFileDownload,
+    mdiFileDocumentOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
@@ -17,25 +19,19 @@ import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Code,
-    Button,
     Link,
     Icon,
     H3,
     H4,
     Tooltip,
-    Tab,
-    TabPanel,
-    TabPanels,
-    Tabs,
-    TabList,
-    LoadingSpinner,
+    Text,
+    Button,
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
-import { retrieveFileContent } from './backend'
 import { BatchSpec } from './BatchSpec'
 
 import styles from './BatchSpecNode.module.scss'
@@ -120,44 +116,59 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <BatchSpecAndFiles spec={node} isLightTheme={isLightTheme} />
+                    <ExpandedBatchSpec spec={node} isLightTheme={isLightTheme} />
                 </div>
             )}
         </>
     )
 }
 
-interface BatchSpecAndFilesProps {
+interface ExpandedBatchSpecProps {
     spec: BatchSpecListFields
     isLightTheme: boolean
 }
 
-const BatchSpecAndFiles: React.FunctionComponent<BatchSpecAndFilesProps> = ({ spec, isLightTheme }) => {
+
+const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ spec, isLightTheme }) => {
+    const [selectedFile, setSelectedFile] = useState<{
+        isBinary: boolean
+        content: string
+        isSpecFile: boolean
+        name: string
+    }>({
+        isBinary: false,
+        content: spec.originalInput,
+        isSpecFile: true,
+        name: 'spec_file.yaml'
+    })
+
+    const onClick = (isBinary: boolean, content: string, isSpecFile: boolean, name: string): void => setSelectedFile({ isBinary, content, isSpecFile, name })
+
     if (spec.files && spec.files.totalCount > 0) {
         return (
-            <Tabs lazy={true} behavior="memoize" size="small">
-                <TabList>
-                    <Tab>Input Spec</Tab>
+            <div className={styles.specFilesContainer}>
+                <ul className={styles.specFilesList}>
+                    <li className={styles.specFilesListNode}>
+                        <Button className={styles.specFilesListNodeButton} onClick={() => onClick(false, spec.originalInput, true, 'spec_file.yaml')}>spec_file.yaml</Button>
+                    </li>
                     {spec.files.nodes.map(file => (
-                        <Tab key={file.id}>{file.name}</Tab>
+                        <li key={file.id} className={styles.specFilesListNode}>
+                            <Button className={styles.specFilesListNodeButton} onClick={() => onClick(file.binary, file.highlight.html, false, file.name)}>{file.name}</Button>
+                        </li>
                     ))}
-                </TabList>
-                <TabPanels>
-                    <TabPanel>
+                </ul>
+
+                <div className={styles.specFileContent}>
+                    {selectedFile.isSpecFile ? (
                         <BatchSpec
                             isLightTheme={isLightTheme}
                             name={spec.description.name}
                             originalInput={spec.originalInput}
-                            className={classNames(styles.batchSpec, 'mt-1')}
+                            className={classNames(styles.batchSpec, 'mb-0')}
                         />
-                    </TabPanel>
-                    {spec.files.nodes.map(file => (
-                        <TabPanel key={file.id}>
-                            <BatchSpecWorkspaceFileRenderer specId={spec.id} file={file} />
-                        </TabPanel>
-                    ))}
-                </TabPanels>
-            </Tabs>
+                    ) : <BatchSpecWorkspaceFileContent name={selectedFile.name} content={selectedFile.content} isBinary={selectedFile.isBinary} />}
+                </div>
+            </div>
         )
     }
 
@@ -174,46 +185,38 @@ const BatchSpecAndFiles: React.FunctionComponent<BatchSpecAndFilesProps> = ({ sp
     )
 }
 
-interface BatchSpecWorkspaceFileRendererProps {
-    specId: string
-    file: {
-        __typename?: 'BatchSpecWorkspaceFile'
-        id: string
-        name: string
-    }
+interface BatchSpecWorkspaceFileContentProps {
+    content: string
+    isBinary: boolean
+    name: string
 }
 
-const BatchSpecWorkspaceFileRenderer: React.FunctionComponent<BatchSpecWorkspaceFileRendererProps> = ({ specId, file }) => {
-    const [isLoading, setIsLoading] = useState<boolean>(true)
-    const [content, setContent] = useState<string>('')
-
-    useEffect(() => {
-        const controller = new AbortController();
-
-        retrieveFileContent(specId, file.id, controller)
-            .then(fileContent => setContent(fileContent))
-            .catch((error: Error) => {
-                console.log('error occurred while retrieving content', error.message)
-            })
-            .finally(() => setIsLoading(false))
-
-        return () => {
-            controller.abort()
-        }
-    }, [specId, file.id])
-
-    if (isLoading) {
+const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({ content, isBinary, name }) => {
+    if (isBinary) {
         return (
-            <div className={styles.fileContainer}>
-                <LoadingSpinner />
+            <div className={styles.specFileBinary}>
+                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
+                <Text className={styles.specFileBinaryName}>
+                    {name}{' '}
+                    <span className={styles.specFileBinarySize}>4.5mb</span>
+                </Text>
+                <Button className={styles.specFileBinaryBtn}>
+                    <Icon aria-hidden={true} svgPath={mdiFileDownload} />
+                    {'  '}
+                    Download file
+                </Button>
             </div>
         )
     }
 
     return (
-        <Code className={styles.fileContainer}>
-            {content}
-        </Code>
+        <pre>
+            <Code
+                dangerouslySetInnerHTML={{
+                    __html: content,
+                }}
+            />
+        </pre>
     )
 }
 

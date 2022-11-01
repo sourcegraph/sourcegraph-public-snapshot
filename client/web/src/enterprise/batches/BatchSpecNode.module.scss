@@ -23,8 +23,69 @@
     height: 100%;
 }
 
-.file-container {
+.spec-files-container {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    background: var(--body-bg);
+    gap: 1rem;
     min-height: 400px;
     height: 100%;
-    overflow-y: scroll;
+}
+
+.spec-file-content {
+    max-width: 100%;
+    min-height: 400px;
+    height: 33.75rem; // the same as the monaco editor
+    border: 1px solid #DBE2F0;
+}
+
+.spec-files-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.25rem 0;
+
+    &__node {
+        &:hover {
+            background: var(--body-color);
+            color: var(--body-bg);
+        }
+
+        &__button {
+            padding: 0.25rem 0.75rem;
+            cursor: pointer;
+            width: 100%;
+            text-align: start;
+        }
+    }
+}
+
+.spec-file-binary {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+
+    &__name {
+        font-weight: 500;
+        margin: 0;
+    }
+
+    &__size {
+        font-size: 0.625rem;
+        font-weight: 400;
+    }
+
+    &__btn {
+        border: 1px solid #DBE2F0;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    &__icon {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+        margin-bottom: 0.8rem;
+    }
 }
