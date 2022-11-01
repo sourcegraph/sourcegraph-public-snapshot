@@ -86,6 +86,10 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 
 type registerFunc func(webhook *webhooks.WebhookRouter)
 
+func (fn registerFunc) Register(w *webhooks.WebhookRouter) {
+	fn(w)
+}
+
 type emptyWebhookHandler struct {
 	name string
 }
@@ -94,10 +98,6 @@ func (e *emptyWebhookHandler) Register(w *webhooks.WebhookRouter) {}
 
 func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	makeNotFoundHandler(e.name)
-}
-
-func (fn registerFunc) Register(w *webhooks.WebhookRouter) {
-	fn(w)
 }
 
 type ErrBatchChangesDisabledDotcom struct{}

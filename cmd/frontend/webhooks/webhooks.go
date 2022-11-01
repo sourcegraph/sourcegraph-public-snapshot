@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+type webhookEventHandlers map[string][]WebhookHandler
+
 // WebhookRouter is responsible for handling incoming http requests for all webhooks
 // and routing to any registered WebhookHandlers, events are routed by their code host kind
 // and event type.
@@ -24,7 +26,7 @@ type WebhookRouter struct {
 
 	mu sync.RWMutex
 	// Mapped by codeHostKind: webhookEvent: handlers
-	handlers map[string]map[string][]WebhookHandler
+	handlers map[string]webhookEventHandlers
 }
 
 type Registerer interface {
@@ -46,7 +48,7 @@ func (h *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, ev
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.handlers == nil {
-		h.handlers = make(map[string]map[string][]WebhookHandler)
+		h.handlers = make(map[string]webhookEventHandlers)
 	}
 	if _, ok := h.handlers[codeHostKind]; !ok {
 		h.handlers[codeHostKind] = make(map[string][]WebhookHandler)
