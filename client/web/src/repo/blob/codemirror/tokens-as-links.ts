@@ -11,49 +11,10 @@ import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 import { BlobInfo } from '../Blob'
 import { DefinitionResponse, fetchDefinitionsFromRanges } from '../definitions'
 
-import { SelectedLineRange, selectedLines } from './linenumbers'
-
 interface TokenLink {
     range: UIRange
     url: string
 }
-
-/**
- * View plugin responsible for focusing a selected line when necessary.
- */
-const focusSelectedLine = ViewPlugin.fromClass(
-    class implements PluginValue {
-        private lastSelectedLines: SelectedLineRange | null = null
-        constructor(private readonly view: EditorView) {}
-
-        public update(update: ViewUpdate): void {
-            const currentSelectedLines = update.state.field(selectedLines)
-            if (this.lastSelectedLines !== currentSelectedLines) {
-                this.lastSelectedLines = currentSelectedLines
-                this.focusLine(currentSelectedLines)
-            }
-        }
-
-        public focusLine(selection: SelectedLineRange): void {
-            if (selection) {
-                const line = this.view.state.doc.line(selection.line)
-
-                const node = this.view.domAtPos(line.from).node
-                const closestElement = node instanceof HTMLElement ? node : node.parentElement
-
-                const target = closestElement?.hasAttribute('data-line-focusable')
-                    ? closestElement
-                    : closestElement?.closest<HTMLElement>('[data-line-focusable]')
-
-                if (target) {
-                    window.requestAnimationFrame(() => {
-                        target.focus()
-                    })
-                }
-            }
-        }
-    }
-)
 
 class DefinitionManager implements PluginValue {
     private subscription: Subscription
@@ -245,7 +206,6 @@ export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: Toke
         })) ?? []
 
     return [
-        // focusSelectedLine,
         tokenLinks.init(() => referencesLinks),
         preloadGoToDefinition ? ViewPlugin.define(view => new DefinitionManager(view, blobInfo)) : [],
         EditorView.domEventHandlers({

@@ -66,9 +66,6 @@ class LineFocus implements PluginValue {
 
     public update(update: ViewUpdate): void {
         const currentSelectedLine = update.state.field(selectedLines)?.line
-        // Problem:
-        // Last selected line is 9:
-        // Focus event tries to move to line 9 but won't focus as it's the same
         if (currentSelectedLine !== undefined && this.lastSelectedLine !== currentSelectedLine) {
             this.lastSelectedLine = currentSelectedLine
             this.focusLine({ line: currentSelectedLine })
@@ -82,22 +79,23 @@ class LineFocus implements PluginValue {
     }
 
     private focusLine({ line, preventScroll = true }: { line: number; preventScroll?: boolean }): void {
-        const nextLine = this.view.state.doc.line(line)
-        const node = this.view.domAtPos(nextLine.from).node
-        const closestElement = node instanceof HTMLElement ? node : node.parentElement
+        window.requestAnimationFrame(() => {
+            const nextLine = this.view.state.doc.line(line)
+            const closestNode = this.view.domAtPos(nextLine.from).node
 
-        const target = closestElement?.hasAttribute('data-line-focusable')
-            ? closestElement
-            : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+            // Loosely find closest element.
+            // Note: This is usually only be `closestNode` if the line is empty.
+            const closestElement = closestNode instanceof HTMLElement ? closestNode : closestNode.parentElement
 
-        if (target) {
-            this.lastFocusedLine = line
-            window.requestAnimationFrame(() => {
-                if (document.activeElement !== target && !this.view.dom.contains(document.activeElement)) {
-                    target.focus({ preventScroll })
-                }
-            })
-        }
+            const target = closestElement?.hasAttribute('data-line-focusable')
+                ? closestElement
+                : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+
+            if (target && document.activeElement !== target && !this.view.dom.contains(document.activeElement)) {
+                this.lastFocusedLine = line
+                target.focus({ preventScroll })
+            }
+        })
     }
 }
 
