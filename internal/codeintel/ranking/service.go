@@ -155,8 +155,8 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	return ranks, nil
 }
 
-func (s *Service) LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (map[api.RepoName]time.Time, error) {
-	return s.store.LastUpdatedAt(ctx, repoNames)
+func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return s.store.LastUpdatedAt(ctx, repoIDs)
 }
 
 func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {
