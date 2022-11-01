@@ -487,7 +487,7 @@ export const testDataRealMatchesByZoektRanking: MatchItem[] = [
                 startLine: 24,
                 startCharacter: 8,
                 endLine: 24,
-                endCharacter: 13
+                endCharacter: 13,
             },
             {
                 startLine: 24,
@@ -750,11 +750,11 @@ export const testDataRealMatchesByZoektRanking: MatchItem[] = [
                 startCharacter: 50,
                 endLine: 60,
                 endCharacter: 55,
-            }
+            },
         ],
         content: '// Contains checks if the given error contains an error with the',
         startLine: 60,
-        endLine: 60
+        endLine: 60,
     },
     {
         highlightRanges: [
@@ -1218,7 +1218,7 @@ export const testDataRealMatchesByZoektRanking: MatchItem[] = [
         ],
         content: '// errors, you should replace it with this.',
         startLine: 42,
-        endLine: 42
+        endLine: 42,
     },
     {
         highlightRanges: [
@@ -1363,7 +1363,8 @@ export const testDataRealMultilineMatches: MatchItem[] = [
                 endCharacter: 1,
             },
         ],
-        content: '// Contains checks if the given error contains an error with the\n// message msg. If err is not a wrapped error, this will always return\n// false unless the error itself happens to match this msg.\nfunc Contains(err error, msg string) bool {\n\treturn len(GetAll(err, msg)) > 0\n}',
+        content:
+            '// Contains checks if the given error contains an error with the\n// message msg. If err is not a wrapped error, this will always return\n// false unless the error itself happens to match this msg.\nfunc Contains(err error, msg string) bool {\n\treturn len(GetAll(err, msg)) > 0\n}',
         startLine: 60,
         endLine: 65,
     },
@@ -1376,7 +1377,8 @@ export const testDataRealMultilineMatches: MatchItem[] = [
                 endCharacter: 1,
             },
         ],
-        content: '// ContainsType checks if the given error contains an error with\n// the same concrete type as v. If err is not a wrapped error, this will\n// check the err itself.\nfunc ContainsType(err error, v interface{}) bool {\n\treturn len(GetAllType(err, v)) > 0\n}',
+        content:
+            '// ContainsType checks if the given error contains an error with\n// the same concrete type as v. If err is not a wrapped error, this will\n// check the err itself.\nfunc ContainsType(err error, v interface{}) bool {\n\treturn len(GetAllType(err, v)) > 0\n}',
         startLine: 67,
         endLine: 72,
     },

@@ -42,7 +42,6 @@ env:
   GRAFANA_SERVER_URL: http://localhost:3370
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
-  ZOEKT_HOST: localhost:3070
 
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
@@ -59,6 +58,7 @@ env:
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
+      { "Name": "github-proxy", "Host": "127.0.0.1:6090" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
@@ -204,6 +204,7 @@ commands:
       HOSTNAME: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
 
   gitserver-1:
     <<: *gitserver_template
@@ -212,6 +213,7 @@ commands:
       HOSTNAME: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
 
   github-proxy:
     cmd: .bin/github-proxy
@@ -221,8 +223,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
-    env:
-      HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal

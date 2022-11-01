@@ -170,16 +170,23 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             changesets.
         </Text>
         <Container className="mb-3">
-            <iframe
-                title="Batch Changes demo"
-                className="percy-hide chromatic-ignore"
-                width="100%"
-                height="600"
-                src="https://www.youtube-nocookie.com/embed/eOmiyXIWTCw"
-                frameBorder="0"
-                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen={true}
-            />
+            <video
+                className="w-100 h-auto shadow percy-hide chromatic-ignore"
+                width={1280}
+                height={720}
+                autoPlay={false}
+                muted={false}
+                loop={false}
+                playsInline={true}
+                controls={true}
+            >
+                <track kind="captions" />
+                <source
+                    type="video/webm"
+                    src="https://storage.googleapis.com/sourcegraph-assets/ssbc-demo-update.webm"
+                />
+                <source type="video/mp4" src="https://storage.googleapis.com/sourcegraph-assets/ssbc-demo-update.mp4" />
+            </video>
         </Container>
         {footer}
     </div>

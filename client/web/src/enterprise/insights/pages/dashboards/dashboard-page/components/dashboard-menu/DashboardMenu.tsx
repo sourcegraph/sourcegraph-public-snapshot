@@ -50,17 +50,11 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                     outline={true}
                     className={classNames(className, styles.triggerButton)}
                 >
-                    <Icon
-                        svgPath={mdiDotsVertical}
-                        inline={false}
-                        height={16}
-                        width={16}
-                        aria-label="dashboard options"
-                    />
+                    <Icon svgPath={mdiDotsVertical} height={16} width={16} aria-label="dashboard options" />
                 </MenuButton>
             </Tooltip>
 
-            <MenuList className={styles.menuList} position={Position.bottomEnd}>
+            <MenuList className={styles.menuList} position={Position.bottomStart}>
                 {menuPermissions.configure.display && (
                     <Tooltip content={menuPermissions.configure.tooltip} placement="right">
                         <MenuItem

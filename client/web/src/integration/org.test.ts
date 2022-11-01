@@ -148,11 +148,6 @@ describe('Organizations', () => {
                             },
                         },
                     }),
-                    GetStartedInfo: () => ({
-                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
-                    }),
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
@@ -203,11 +198,6 @@ describe('Organizations', () => {
                     }),
                     RemoveUserFromOrganization: () => ({
                         removeUserFromOrganization: emptyResponse,
-                    }),
-                    GetStartedInfo: () => ({
-                        membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-                        repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-                        extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
                     }),
                 }
                 testContext.overrideGraphQL(graphQlResults)

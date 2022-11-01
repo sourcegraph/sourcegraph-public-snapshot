@@ -15,6 +15,21 @@ In general:
 - For enterprise customers that require a multi-node, self-hosted deployment, we offer a Kubernetes option. We strongly encourage you to get in touch by emails (sales@sourcegraph.com) if you pursue this option.
 - If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md).
 
+## Recommended
+
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
+  </a>
+</div>
+
 ## Deployment types
 
 To start, you will need to decide your on deployment method, including Kubernetes with or without Helm, as they are noninterchangeable. In short, you **cannot** change your deployment type of a running instance.

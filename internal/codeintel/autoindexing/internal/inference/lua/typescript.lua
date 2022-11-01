@@ -83,7 +83,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 				if contents_by_path[path.join(reverse_ancestors[i], "package.json")] then
 					local install_command = ""
 					if is_yarn or util.contains(paths, path.join(reverse_ancestors[i], "yarn.lock")) then
-						install_command = "yarn --ignore-engines"
+						install_command = "yarn"
 					else
 						install_command = "npm install"
 					end

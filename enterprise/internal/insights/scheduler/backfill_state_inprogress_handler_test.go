@@ -32,15 +32,20 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
+	insightsStore := store.NewInsightStore(insightsDB)
+	seriesStore := store.New(insightsDB, permStore)
+
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
-	insightsStore := store.NewInsightStore(insightsDB)
+
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
+		InsightStore:   seriesStore,
 		ObsContext:     &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 	}
@@ -70,8 +75,9 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	handler := inProgressHandler{
 		workerStore:    monitor.newBackfillStore,
 		backfillStore:  bfs,
-		seriesReader:   store.NewInsightStore(insightsDB),
+		seriesReader:   insightsStore,
 		repoStore:      repos,
+		insightsStore:  seriesStore,
 		backfillRunner: &noopBackfillRunner{},
 	}
 	err = handler.Handle(ctx, logger, dequeue)
@@ -94,4 +100,9 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		t.Fatal(errors.New("iterator should be COMPLETED after success"))
 	}
 
+	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
+	require.NoError(t, err)
+	if len(recordingTimes.RecordingTimes) == 0 {
+		t.Fatal(errors.New("recording times should have been saved after success"))
+	}
 }

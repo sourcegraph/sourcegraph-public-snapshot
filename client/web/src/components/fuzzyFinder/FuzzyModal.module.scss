@@ -50,6 +50,10 @@
     box-shadow: var(--search-input-shadow);
 }
 
+.empty-results {
+    text-align: center;
+}
+
 .results {
     overflow: auto;
     flex: 1;

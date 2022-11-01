@@ -1256,14 +1256,12 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 		}
 	}
 
-	if !conf.Get().DisableAutoGitUpdates {
-		for _, rev := range args.Revisions {
-			// TODO add result to trace
-			if rev.RevSpec != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
-			} else if rev.RefGlob != "" {
-				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
-			}
+	for _, rev := range args.Revisions {
+		// TODO add result to trace
+		if rev.RevSpec != "" {
+			_ = s.ensureRevision(ctx, args.Repo, rev.RevSpec, dir)
+		} else if rev.RefGlob != "" {
+			_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
 		}
 	}
 
@@ -1385,7 +1383,14 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var buf bytes.Buffer
-		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, string(repoCommit.CommitID))
+
+		commitId := string(repoCommit.CommitID)
+		// make sure CommitID is not an arg
+		if commitId[0] == '-' {
+			return "", true, errors.New("commit ID starting with - is not allowed")
+		}
+
+		cmd := exec.CommandContext(ctx, "git", "log", "-n", "1", "--name-only", format, commitId)
 		dir.Set(cmd)
 		cmd.Stdout = &buf
 
@@ -1670,12 +1675,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	}
 
 	dir := s.dir(req.Repo)
-	if !conf.Get().DisableAutoGitUpdates {
-		// ensureRevision may kick off a git fetch operation which we don't want if we've
-		// configured DisableAutoGitUpdates.
-		if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
-			ensureRevisionStatus = "fetched"
-		}
+	if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+		ensureRevisionStatus = "fetched"
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -2541,33 +2542,33 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch")
+		return errors.Wrapf(err, "failed to fetch repo %q", repo)
 	}
 
 	removeBadRefs(ctx, dir)
 
 	if err := setHEAD(ctx, logger, dir, syncer, remoteURL); err != nil {
-		return errors.Wrap(err, "failed to ensure HEAD exists")
+		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
 	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("Failed to update last changed time", log.Error(err))
+		logger.Warn("failed to update last changed time", log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed setting last fetch in DB", log.Error(err))
+		logger.Warn("failed to set last_fetched in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed setting repo size", log.Error(err))
+		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
 	return nil
@@ -2810,6 +2811,12 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
+	if conf.Get().DisableAutoGitUpdates {
+		// ensureRevision may kick off a git fetch operation which we don't want if we've
+		// configured DisableAutoGitUpdates.
+		return false
+	}
+
 	// rev-parse on an OID does not check if the commit actually exists, so it always
 	// works. So we append ^0 to force the check
 	if isAbsoluteRevision(rev) {

@@ -15,9 +15,9 @@ import (
 )
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
-// authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
+// authenticated actor if successful; otherwise it returns a friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, p *provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, db database.DB, p *Provider, idToken *oidc.IDToken, userInfo *oidc.UserInfo, claims *userClaims, usernamePrefix string) (_ *actor.Actor, safeErrMsg string, err error) {
 	if userInfo.Email == "" {
 		return nil, "Only users with an email address may authenticate to Sourcegraph.", errors.New("no email address in claims")
 	}
@@ -45,16 +45,26 @@ func getOrCreateUser(ctx context.Context, db database.DB, p *provider, idToken *
 			displayName = login
 		}
 	}
+
+	if usernamePrefix != "" {
+		login = usernamePrefix + login
+	}
 	login, err = auth.NormalizeUsername(login)
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return nil,
+			fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login),
+			errors.Wrap(err, "normalize username")
 	}
 
 	serialized, err := json.Marshal(struct {
 		IDToken    *oidc.IDToken  `json:"idToken"`
 		UserInfo   *oidc.UserInfo `json:"userInfo"`
 		UserClaims *userClaims    `json:"userClaims"`
-	}{IDToken: idToken, UserInfo: userInfo, UserClaims: claims})
+	}{
+		IDToken:    idToken,
+		UserInfo:   userInfo,
+		UserClaims: claims,
+	})
 	if err != nil {
 		return nil, "", err
 	}

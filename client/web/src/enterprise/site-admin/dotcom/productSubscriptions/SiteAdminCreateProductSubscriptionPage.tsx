@@ -9,20 +9,26 @@ import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, useEventObservable, Link, Alert, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import {
+    CreateProductSubscriptionVariables,
+    ProductSubscriptionAccountsResult,
+    ProductSubscriptionAccountsVariables,
+    ProductSubscriptionAccountFields,
+    CreateProductSubscriptionResult,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 interface UserCreateSubscriptionNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
+    node: ProductSubscriptionAccountFields
 
     /**
      * Browser history, used to redirect the user to the new subscription after one is successfully created.
@@ -31,8 +37,8 @@ interface UserCreateSubscriptionNodeProps {
 }
 
 const createProductSubscription = (
-    args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> =>
+    args: CreateProductSubscriptionVariables
+): Observable<CreateProductSubscriptionResult['dotcom']['createProductSubscription']> =>
     mutateGraphQL(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
@@ -56,7 +62,9 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
         useCallback(
             (
                 submits: Observable<React.FormEvent<HTMLFormElement>>
-            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | ErrorLike> =>
+            ): Observable<
+                CreateProductSubscriptionResult['dotcom']['createProductSubscription'] | 'saving' | ErrorLike
+            > =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
                     tap(() => eventLogger.log('NewProductSubscriptionCreated')),
@@ -112,7 +120,10 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
     )
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.IUser, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
+class FilteredUserConnection extends FilteredConnection<
+    ProductSubscriptionAccountFields,
+    Pick<UserCreateSubscriptionNodeProps, 'history'>
+> {}
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
@@ -146,24 +157,29 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
     )
 }
 
-function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
+function queryAccounts(
+    args: Partial<ProductSubscriptionAccountsVariables>
+): Observable<ProductSubscriptionAccountsResult['users']> {
     return queryGraphQL(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {
                 users(first: $first, query: $query) {
                     nodes {
-                        id
-                        username
-                        emails {
-                            email
-                            verified
-                            isPrimary
-                        }
+                        ...ProductSubscriptionAccountFields
                     }
                     totalCount
                     pageInfo {
                         hasNextPage
                     }
+                }
+            }
+            fragment ProductSubscriptionAccountFields on User {
+                id
+                username
+                emails {
+                    email
+                    verified
+                    isPrimary
                 }
             }
         `,

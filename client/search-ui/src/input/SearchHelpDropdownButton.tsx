@@ -132,7 +132,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                     <Icon aria-hidden={true} className="small" svgPath={mdiOpenInNew} /> All search keywords
                 </MenuText>
             </PopoverContent>
-            <PopoverTail />
+            <PopoverTail size="sm" />
         </Popover>
     )
 }
