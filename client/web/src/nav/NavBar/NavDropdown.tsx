@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
-import { Link, Menu, MenuButton, MenuLink, MenuList, EMPTY_RECTANGLE, Icon } from '@sourcegraph/wildcard'
+import { EMPTY_RECTANGLE, Icon, Link, Menu, MenuButton, MenuLink, MenuList } from '@sourcegraph/wildcard'
 
 import { NavItem, NavLink, NavLinkProps } from '.'
 
@@ -49,27 +49,10 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
     const menuButtonReference = useRef<HTMLButtonElement>(null)
     const linkReference = useRef<HTMLAnchorElement>(null)
 
-    const [isOverButton, setIsOverButton] = useState(false)
-    const [isOverList, setIsOverList] = useState(false)
-
     // Use this func for toggling menu
     const triggerMenuButtonEvent = useCallback(() => {
         menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
     }, [])
-
-    useLayoutEffect(() => {
-        const isOpen = menuButtonReference.current!.hasAttribute('aria-expanded')
-
-        if (isOpen && !isOverButton && !isOverList) {
-            triggerMenuButtonEvent()
-
-            return
-        }
-
-        if (!isOpen && (isOverButton || isOverList)) {
-            triggerMenuButtonEvent()
-        }
-    }, [isOverButton, isOverList, triggerMenuButtonEvent])
 
     useEffect(() => {
         const currentLink = linkReference.current!
@@ -119,8 +102,6 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 )}
                                 data-test-id={toggleItem.path}
                                 data-test-active={isItemSelected}
-                                onMouseEnter={() => setIsOverButton(true)}
-                                onMouseLeave={() => setIsOverButton(false)}
                             >
                                 <div
                                     className={classNames(
@@ -168,12 +149,7 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 </div>
                             </div>
 
-                            <MenuList
-                                className={styles.navDropdownContainer}
-                                targetPadding={EMPTY_RECTANGLE}
-                                onMouseEnter={() => setIsOverList(true)}
-                                onMouseLeave={() => setIsOverList(false)}
-                            >
+                            <MenuList className={styles.navDropdownContainer} targetPadding={EMPTY_RECTANGLE}>
                                 <MenuLink
                                     as={Link}
                                     key={toggleItem.path}
