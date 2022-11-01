@@ -1639,7 +1639,8 @@ CREATE TABLE codeintel_path_ranks (
     repository_id integer NOT NULL,
     payload jsonb NOT NULL,
     "precision" double precision NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    graph_key text
 );
 
 CREATE TABLE codeintel_ranking_exports (

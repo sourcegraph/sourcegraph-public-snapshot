@@ -78,10 +78,10 @@ func TestDocumentRanks(t *testing.T) {
 	}
 
 	if err := store.SetDocumentRanks(ctx, repoName, 0.25, map[string]float64{
-		"cmd/main.go":        2,
+		"cmd/main.go":        2, // no longer referenced
 		"internal/secret.go": 3,
 		"internal/util.go":   4,
-		"README.md":          5,
+		"README.md":          5, // no longer referenced
 	}); err != nil {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
@@ -98,8 +98,6 @@ func TestDocumentRanks(t *testing.T) {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 	expectedRanks := map[string][2]float64{
-		"cmd/main.go":        {0.25, 2},
-		"README.md":          {0.25, 5},
 		"cmd/args.go":        {0.25, 8},
 		"internal/secret.go": {0.25, 7},
 		"internal/util.go":   {0.25, 6},
@@ -119,8 +117,29 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('r1'), ('r2'), ('r3'), ('r4'), ('r5'), ('r6'), ('r7'), ('r8'), ('r9'), ('r10'), ('r11'), ('r12'), ('r13'), ('r14'), ('r15')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	for i := 1; i <= 15; i++ {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`INSERT INTO repo (name) VALUES ('r%d')`, i)); err != nil {
+			t.Fatalf("failed to insert repos: %s", err)
+		}
+	}
+
+	{
+		for i := 0; i < 10; i++ {
+			fi := float64(i)
+
+			if err := store.BulkSetDocumentRanks(ctx, "old-scores", fmt.Sprintf("f-%02d.csv", i+1), 0.25, map[api.RepoName]map[string]float64{
+				api.RepoName(fmt.Sprintf("r%d", i+1)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+				api.RepoName(fmt.Sprintf("r%d", i+2)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+				api.RepoName(fmt.Sprintf("r%d", i+3)): {fmt.Sprintf("baz-%d.go", i): fi + 5},
+			}); err != nil {
+				t.Fatalf("unexpected error setting document ranks: %s", err)
+			}
+		}
+
+		// Create scores that will need to be overwritten with a newer graph key
+		if _, _, err := store.MergeDocumentRanks(ctx, "old-scores", 500); err != nil {
+			t.Fatalf("Unexpected error merging document ranks: %s", err)
+		}
 	}
 
 	for i := 0; i < 10; i++ {

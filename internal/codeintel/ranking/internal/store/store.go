@@ -174,7 +174,7 @@ VALUES (
 )
 ON CONFLICT (repository_id, precision) DO
 UPDATE
-	SET payload = pr.payload || EXCLUDED.payload
+	SET payload = EXCLUDED.payload
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {
@@ -256,15 +256,22 @@ locked_candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 upserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
 	SELECT
 		r.id,
 		c.precision,
+		c.graph_key,
 		sg_jsonb_concat_agg(c.payload)
 	FROM locked_candidates c
 	JOIN repo r ON r.name = c.repository_name
-	GROUP BY r.id, c.precision
-	ON CONFLICT (repository_id, precision) DO UPDATE SET payload = pr.payload || EXCLUDED.payload
+	GROUP BY r.id, c.precision, c.graph_key
+	ON CONFLICT (repository_id, precision) DO UPDATE SET payload =
+	 CASE
+		WHEN pr.graph_key != EXCLUDED.graph_key
+			THEN EXCLUDED.payload
+		ELSE
+			pr.payload || EXCLUDED.payload
+	END
 	RETURNING 1
 ),
 processed AS (
