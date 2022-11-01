@@ -2858,7 +2858,7 @@
   "Views": [
     {
       "Name": "insights_jobs_backfill_in_progress",
-      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'processing'::text);"
+      "Definition": " SELECT jobs.id,\n    jobs.state,\n    jobs.failure_message,\n    jobs.queued_at,\n    jobs.started_at,\n    jobs.finished_at,\n    jobs.process_after,\n    jobs.num_resets,\n    jobs.num_failures,\n    jobs.last_heartbeat_at,\n    jobs.execution_logs,\n    jobs.worker_hostname,\n    jobs.cancel,\n    jobs.backfill_id,\n    isb.state AS backfill_state,\n    isb.estimated_cost,\n    width_bucket(isb.estimated_cost, (0)::double precision, max((isb.estimated_cost + (1)::double precision)) OVER (), 4) AS cost_bucket\n   FROM (insights_background_jobs jobs\n     JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))\n  WHERE (isb.state = 'processing'::text);"
     },
     {
       "Name": "insights_jobs_backfill_new",
