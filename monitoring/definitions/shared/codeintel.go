@@ -450,10 +450,10 @@ func (codeIntelligence) NewExecutorTeardownCommandGroup(containerName string) mo
 	})
 }
 
-// src_apiworker_apiclient_total
-// src_apiworker_apiclient_duration_seconds_bucket
-// src_apiworker_apiclient_errors_total
-func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitoring.Group {
+// src_apiworker_apiclient_queue_total
+// src_apiworker_apiclient_queue_duration_seconds_bucket
+// src_apiworker_apiclient_queue_errors_total
+func (codeIntelligence) NewExecutorAPIQueueClientGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
@@ -461,7 +461,41 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "apiworker_apiclient",
+				MetricNameRoot:        "apiworker_apiclient_queue",
+				JobLabel:              "sg_job",
+				MetricDescriptionRoot: "client",
+				Filters:               nil,
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_apiworker_apiclient_files_total
+// src_apiworker_apiclient_files_duration_seconds_bucket
+// src_apiworker_apiclient_files_errors_total
+func (codeIntelligence) NewExecutorAPIFilesClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "executor",
+			DescriptionRoot: "Files API client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "apiworker_apiclient_files",
 				JobLabel:              "sg_job",
 				MetricDescriptionRoot: "client",
 				Filters:               nil,
@@ -655,19 +689,19 @@ func (codeIntelligence) NewGitserverClientGroup(containerName string) monitoring
 	})
 }
 
-// src_codeintel_repoupdater_total
-// src_codeintel_repoupdater_duration_seconds_bucket
-// src_codeintel_repoupdater_errors_total
-func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitoring.Group {
+// src_codeintel_dependencies_total
+// src_codeintel_dependencies_duration_seconds_bucket
+// src_codeintel_dependencies_errors_total
+func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "repo-updater client",
+			DescriptionRoot: "dependencies service stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_repoupdater",
-				MetricDescriptionRoot: "client",
+				MetricNameRoot:        "codeintel_dependencies",
+				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
@@ -687,18 +721,50 @@ func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitori
 	})
 }
 
-// src_codeintel_dependencies_total
-// src_codeintel_dependencies_duration_seconds_bucket
-// src_codeintel_dependencies_errors_total
-func (codeIntelligence) NewDependencyServiceGroup(containerName string) monitoring.Group {
+// src_codeintel_dependencies_store_total
+// src_codeintel_dependencies_store_duration_seconds_bucket
+// src_codeintel_dependencies_store_errors_total
+func (codeIntelligence) NewDependencyStoreGroup(containerName string) monitoring.Group {
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "dependencies service stats",
+			DescriptionRoot: "dependencies service store stats",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_dependencies",
+				MetricNameRoot:        "codeintel_dependencies_background",
+				MetricDescriptionRoot: "service",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+// src_codeintel_dependencies_background_total
+// src_codeintel_dependencies_background_duration_seconds_bucket
+// src_codeintel_dependencies_background_errors_total
+func (codeIntelligence) NewDependencyBackgroundJobGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "dependencies service background stats",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_dependencies_background",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},

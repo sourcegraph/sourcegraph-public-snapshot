@@ -27,6 +27,9 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
+	// for addWebApp
+	CacheBundleSize      bool
+	CreateBundleSizeDiff bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -59,7 +62,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			clientIntegrationTests,
 			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
-			addWebApp,                    // ~5.5m
+			addWebApp(opts),              // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
@@ -106,7 +109,23 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations -fail-fast=false " + strings.Join(targets, " ")
+	var (
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = runtype.Compute(tag, branch, map[string]string{
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+		})
+	)
+
+	formatCheck := ""
+	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
+		formatCheck = "--no-format-check "
+	}
+
+	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
@@ -177,33 +196,62 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(pipeline *bk.Pipeline) {
-	// Webapp build
-	pipeline.AddStep(":webpack::globe_with_meridians: Build",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", ""))
+func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians: Build",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", ""))
 
-	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
+		addWebEnterpriseBuild(pipeline, opts)
+
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
+			withYarnCache(),
+			bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+				},
+			}),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+	}
+}
+
+// Webapp enterprise build
+func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	branch := os.Getenv("BUILDKITE_BRANCH")
+
+	cmds := []bk.StepOpt{
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+	}
 
-	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
-		withYarnCache(),
-		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+	if opts.CacheBundleSize {
+		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+			withBundleSizeCache(commit))
+	}
+
+	if opts.CreateBundleSizeDiff {
+		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+			bk.Env("BRANCH", branch),
+			bk.Env("COMMIT", commit),
+			bk.Cmd("dev/ci/report-bundle-diff.sh"),
+		)
+	}
+
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
@@ -415,8 +463,8 @@ func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
 	slowGoTestPackages := []string{
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore",                  // 224s
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore",                // 122s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/dbstore",                  // 224s
+		"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifstore",                // 122s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
 		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
@@ -424,6 +472,7 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
+		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
@@ -834,13 +883,14 @@ func executorImageFamilyForConfig(c Config) string {
 }
 
 // ~15m (building executor base VM)
-func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
+func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -856,7 +906,21 @@ func buildExecutor(c Config, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
+func buildExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor.binary")),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build_binary.sh"))
+
+		pipeline.AddStep(":construction: Build executor binary", stepOpts...)
+	}
+}
+
+func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		imageFamily := executorImageFamilyForConfig(c)
@@ -864,6 +928,7 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -877,6 +942,21 @@ func publishExecutor(c Config, skipHashCompare bool) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
+	}
+}
+
+func publishExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor.binary")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release_binary.sh"))
+
+		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
 	}
 }
 
@@ -903,6 +983,7 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -919,6 +1000,7 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))

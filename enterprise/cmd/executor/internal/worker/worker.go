@@ -7,15 +7,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/files"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -51,8 +53,11 @@ type Options struct {
 	// WorkerOptions configures the worker behavior.
 	WorkerOptions workerutil.WorkerOptions
 
-	// ClientOptions configures the client that interacts with the queue API.
-	ClientOptions apiclient.Options
+	// QueueOptions configures the client that interacts with the queue API.
+	QueueOptions queue.Options
+
+	// FilesOptions configures the client that interacts with the files API.
+	FilesOptions apiclient.BaseClientOptions
 
 	// FirecrackerOptions configures the behavior of Firecracker virtual machine creation.
 	FirecrackerOptions command.FirecrackerOptions
@@ -75,18 +80,27 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
+func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
+	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore := apiclient.New(options.ClientOptions, gatherer, observationContext)
-	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
+	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building queue store")
+	}
+	filesStore, err := files.New(options.FilesOptions, observationContext)
+	if err != nil {
+		return nil, errors.Wrap(err, "building files store")
+	}
+	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
-	if !connectToFrontend(queueStore, options) {
+	if !connectToFrontend(logger, queueStore, options) {
 		os.Exit(1)
 	}
 
-	handler := &handler{
+	h := &handler{
 		nameSet:       nameSet,
-		store:         store,
+		store:         shim,
+		filesStore:    filesStore,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
@@ -94,16 +108,16 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
+	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
 // For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
 // in dev environments where the executor may start up before the frontend. This method returns true
 // after a ping is successful and returns false if a user signal is received.
-func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
+func connectToFrontend(logger log.Logger, queueStore *queue.Client, options Options) bool {
 	start := time.Now()
-	log15.Info("Connecting to Sourcegraph instance", "url", options.ClientOptions.EndpointOptions.URL)
+	logger.Info("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -115,7 +129,7 @@ func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
 	for {
 		err := queueStore.Ping(context.Background(), options.QueueName, nil)
 		if err == nil {
-			log15.Info("Connected to Sourcegraph instance")
+			logger.Info("Connected to Sourcegraph instance")
 			return true
 		}
 
@@ -125,13 +139,13 @@ func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
 			// Logs occurring one minute after startup or later are not filtered, nor are non-expected
 			// connection errors during app startup.
 		} else {
-			log15.Error("Failed to connect to Sourcegraph instance", "error", err)
+			logger.Error("Failed to connect to Sourcegraph instance", log.Error(err))
 		}
 
 		select {
 		case <-ticker.C:
-		case <-signals:
-			log15.Error("Signal received while connecting to Sourcegraph")
+		case sig := <-signals:
+			logger.Error("Signal received while connecting to Sourcegraph", log.String("signal", sig.String()))
 			return false
 		}
 	}

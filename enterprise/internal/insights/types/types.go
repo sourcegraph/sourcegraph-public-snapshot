@@ -8,6 +8,7 @@ import (
 type InsightViewSeries struct {
 	ViewID                        int
 	DashboardViewID               int
+	InsightSeriesID               int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
@@ -39,6 +40,7 @@ type InsightViewSeries struct {
 	SeriesLimit                   *int32
 	GroupBy                       *string
 	BackfillAttempts              int32
+	SupportsAugmentation          bool
 }
 
 type Insight struct {
@@ -104,6 +106,7 @@ type InsightSeries struct {
 	GenerationMethod           GenerationMethod
 	GroupBy                    *string
 	BackfillAttempts           int32
+	SupportsAugmentation       bool
 }
 
 type IntervalUnit string
@@ -197,6 +200,16 @@ type SeriesDisplayOptions struct {
 type SeriesSortOptions struct {
 	Mode      SeriesSortMode
 	Direction SeriesSortDirection
+}
+
+type InsightSeriesRecordingTimes struct {
+	InsightSeriesID int // references insight_series(id)
+	RecordingTimes  []RecordingTime
+}
+
+type RecordingTime struct {
+	Timestamp time.Time
+	Snapshot  bool
 }
 
 type SearchAggregationMode string

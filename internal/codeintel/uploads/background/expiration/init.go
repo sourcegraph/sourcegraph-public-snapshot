@@ -4,9 +4,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewExpirationTasks(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewExpirationTasks(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewExpirer(ConfigInst.ExpirerInterval,
+		backgroundJobs.NewUploadExpirer(
+			ConfigInst.ExpirerInterval,
 			ConfigInst.RepositoryProcessDelay,
 			ConfigInst.RepositoryBatchSize,
 			ConfigInst.UploadProcessDelay,
@@ -14,6 +15,5 @@ func NewExpirationTasks(uploadSvc UploadService) []goroutine.BackgroundRoutine {
 			ConfigInst.CommitBatchSize,
 			ConfigInst.PolicyBatchSize,
 		),
-		uploadSvc.NewReferenceCountUpdater(ConfigInst.ReferenceCountUpdaterInterval, ConfigInst.ReferenceCountUpdaterBatchSize),
 	}
 }

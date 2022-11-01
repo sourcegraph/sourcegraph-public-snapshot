@@ -9,7 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -45,6 +45,7 @@ func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
 		&index.Rank,
 		pq.Array(&index.LocalSteps),
 		&index.AssociatedUploadID,
+		&index.ShouldReindex,
 	); err != nil {
 		return index, err
 	}
@@ -103,6 +104,7 @@ func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err err
 		&index.Rank,
 		pq.Array(&index.LocalSteps),
 		&index.AssociatedUploadID,
+		&index.ShouldReindex,
 		&count,
 	); err != nil {
 		return index, 0, err

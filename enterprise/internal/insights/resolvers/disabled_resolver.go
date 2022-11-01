@@ -15,10 +15,6 @@ func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
 	return &disabledResolver{reason}
 }
 
-func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
 func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return nil, errors.New(r.reason)
 }

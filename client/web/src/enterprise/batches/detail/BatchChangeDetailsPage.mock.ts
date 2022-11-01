@@ -1,7 +1,5 @@
 import { subDays } from 'date-fns'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-
 import {
     BatchChangeFields,
     BulkOperationState,
@@ -14,6 +12,7 @@ import {
     ChangesetCheckState,
     BatchSpecState,
     BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
 
 const now = new Date()

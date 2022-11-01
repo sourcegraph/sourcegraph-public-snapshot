@@ -42,7 +42,10 @@ func NewDatabaseWriter(
 }
 
 func (w *databaseWriter) WriteDBFile(ctx context.Context, args search.SymbolsParameters, dbFile string) error {
-	w.sem.Acquire(ctx, 1)
+	err := w.sem.Acquire(ctx, 1)
+	if err != nil {
+		return err
+	}
 	defer w.sem.Release(1)
 
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {

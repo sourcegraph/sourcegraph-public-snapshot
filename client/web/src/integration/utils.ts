@@ -324,6 +324,8 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         case 'monaco':
         case 'codemirror6':
             break
+        case undefined:
+            throw new Error("Can't determine editor, data-editor=... is not set.")
         default:
             throw new Error(`${editor} is not a supported editor`)
     }

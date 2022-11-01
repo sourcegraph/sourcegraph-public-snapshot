@@ -7,9 +7,11 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -85,13 +87,13 @@ func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused 
 func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
 	logger = logger.Scoped("UserEmails", "handles user emails")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
-	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
+	if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
 		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err
@@ -165,7 +167,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 	q.Set("code", code)
 	q.Set("email", email)
 	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_email_verification", txemail.Message{
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
@@ -214,7 +216,7 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, logger log.Log
 		return err
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_account_update", txemail.Message{
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
 		Data: struct {

@@ -17,8 +17,11 @@ import { requestGraphQLFromVSCode } from './requestGraphQl'
  * - regular instance version format: 3.38.2
  * - insiders version format: 134683_2022-03-02_5188fes0101
  */
-export const observeInstanceVersionNumber = (): Observable<string | undefined> =>
-    from(requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {})).pipe(
+export const observeInstanceVersionNumber = (
+    accessToken: string,
+    endpointURL: string
+): Observable<string | undefined> =>
+    from(requestGraphQLFromVSCode<SiteVersionResult>(siteVersionQuery, {}, accessToken, endpointURL)).pipe(
         map(dataOrThrowErrors),
         map(data => data.site.productVersion),
         catchError(error => {
@@ -67,12 +70,12 @@ export const isOlderThan = (instanceVersion: string, comparedVersion: RegularVer
  */
 export function initializeInstanceVersionNumber(
     localStorageService: LocalStorageService,
-    instanceURL: string,
-    accessToken: string | undefined
+    initialAccessToken: string | undefined,
+    initialInstanceURL: string
 ): EventSource {
     // Check only if a user is trying to connect to a private instance with a valid access token provided
-    if (instanceURL !== 'https://sourcegraph.com' && accessToken) {
-        observeInstanceVersionNumber()
+    if (initialAccessToken && initialAccessToken !== undefined) {
+        observeInstanceVersionNumber(initialAccessToken, initialInstanceURL)
             .toPromise()
             .then(async version => {
                 if (version) {

@@ -91,6 +91,7 @@ class LineDecorationWidget extends WidgetType {
     public toDOM(): HTMLElement {
         if (!this.container) {
             this.container = document.createElement('span')
+            this.container.dataset.testid = 'line-decoration'
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <LineDecoratorContents decorations={this.decorations} isLightTheme={this.isLightTheme} />

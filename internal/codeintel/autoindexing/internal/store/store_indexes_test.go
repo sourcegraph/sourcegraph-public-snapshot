@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -223,7 +223,7 @@ func TestGetIndexes(t *testing.T) {
 			)
 
 			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(ctx, types.GetIndexesOptions{
+				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
 					RepositoryID: testCase.repositoryID,
 					State:        testCase.state,
 					Term:         testCase.term,
@@ -258,7 +258,7 @@ func TestGetIndexes(t *testing.T) {
 		defer globals.SetPermissionsUserMapping(before)
 
 		indexes, totalCount, err := store.GetIndexes(ctx,
-			types.GetIndexesOptions{
+			shared.GetIndexesOptions{
 				Limit: 1,
 			},
 		)
@@ -572,6 +572,30 @@ func TestDeleteIndexByID(t *testing.T) {
 	}
 }
 
+func TestDeleteIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index no longer exists
+	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+}
+
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -629,12 +653,62 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 }
 
+func TestReindexIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
+		State:        "errored",
+		Term:         "",
+		RepositoryID: 0,
+	}); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index has been marked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("index missing")
+	} else if !index.ShouldReindex {
+		t.Fatal("index not marked for reindexing")
+	}
+}
+
+func TestReindexIndexByID(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	insertIndexes(t, db, types.Index{ID: 1, State: "completed"})
+	insertIndexes(t, db, types.Index{ID: 2, State: "errored"})
+
+	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error deleting indexes: %s", err)
+	}
+
+	// Index has been marked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error getting index: %s", err)
+	} else if !exists {
+		t.Fatal("index missing")
+	} else if !index.ShouldReindex {
+		t.Fatal("index not marked for reindexing")
+	}
+}
+
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
 	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
+	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
 	insertUploads(t, db, Upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
 	insertUploads(t, db, Upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
 
@@ -650,6 +724,7 @@ func TestIsQueued(t *testing.T) {
 		{3, makeCommit(1), false},
 		{3, makeCommit(2), false},
 		{3, makeCommit(3), false},
+		{4, makeCommit(1), false},
 	}
 
 	for _, testCase := range testCases {
@@ -661,7 +736,48 @@ func TestIsQueued(t *testing.T) {
 				t.Fatalf("unexpected error checking if commit is queued: %s", err)
 			}
 			if queued != testCase.expected {
-				t.Errorf("unexpected state. want=%v have=%v", testCase.expected, queued)
+				t.Errorf("unexpected state. repo=%v commit=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.expected, queued)
+			}
+		})
+	}
+}
+
+func TestIsQueuedRootIndexer(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	now := time.Now()
+	insertIndexes(t, db, types.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, types.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, types.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
+	insertIndexes(t, db, types.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, types.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, types.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
+
+	testCases := []struct {
+		repositoryID int
+		commit       string
+		root         string
+		indexer      string
+		expected     bool
+	}{
+		{1, makeCommit(1), "/foo", "i1", true},
+		{1, makeCommit(1), "/bar", "i1", false}, // no index for root
+		{2, makeCommit(2), "/foo", "i1", false}, // reindex (live)
+		{3, makeCommit(3), "/foo", "i1", true},  // reindex (done)
+	}
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("repositoryId=%d commit=%s", testCase.repositoryID, testCase.commit)
+
+		t.Run(name, func(t *testing.T) {
+			queued, err := store.IsQueuedRootIndexer(context.Background(), testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer)
+			if err != nil {
+				t.Fatalf("unexpected error checking if commit/root/indexer is queued: %s", err)
+			}
+			if queued != testCase.expected {
+				t.Errorf("unexpected state. repo=%v commit=%v root=%v indexer=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer, testCase.expected, queued)
 			}
 		})
 	}

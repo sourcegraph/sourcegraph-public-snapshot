@@ -8,9 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,6 +24,9 @@ type RootResolver interface {
 	// Mirrors AutoindexingServiceResolver in graphqlbackend
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
+	ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
+	ReindexLSIFIndexes(ctx context.Context, args *ReindexLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
 	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
@@ -40,6 +43,8 @@ type RootResolver interface {
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
 	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
 	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
+	CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error)
+	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error)
 
 	// Symbols client
 	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
@@ -87,12 +92,12 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := r.operations.deleteLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -105,6 +110,78 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 	}
 
 	if _, err := r.autoindexSvc.DeleteIndexByID(ctx, int(indexID)); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	opts, err := makeDeleteIndexesOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.autoindexSvc.DeleteIndexes(ctx, opts); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence index data
+func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("indexID", string(args.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.autoindexSvc.ReindexIndexByID(ctx, int(indexID)); err != nil {
+		return nil, err
+	}
+
+	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
+func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *ReindexLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.reindexLsifIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+		return nil, err
+	}
+	if !autoIndexingEnabled() {
+		return nil, errAutoIndexingNotEnabled
+	}
+
+	opts, err := makeReindexIndexesOptions(args)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.autoindexSvc.ReindexIndexes(ctx, opts); err != nil {
 		return nil, err
 	}
 
@@ -151,6 +228,18 @@ type LSIFRepositoryIndexesQueryArgs struct {
 	RepositoryID graphql.ID
 }
 
+type DeleteLSIFIndexesArgs struct {
+	Query      *string
+	State      *string
+	Repository *graphql.ID
+}
+
+type ReindexLSIFIndexesArgs struct {
+	Query      *string
+	State      *string
+	Repository *graphql.ID
+}
+
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
 func (r *rootResolver) LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (_ sharedresolvers.LSIFIndexConnectionResolver, err error) {
 	if !autoIndexingEnabled() {
@@ -186,7 +275,6 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *LSIFReposito
 
 	// Create a new indexConnectionResolver here as we only want to index records in
 	// the same graphQL request, not across different request.
-	// indexConnectionResolver := r.resolver.AutoIndexingResolver().IndexConnectionResolverFromFactory(opts)
 	indexConnectionResolver := sharedresolvers.NewIndexesResolver(r.autoindexSvc, opts)
 
 	return sharedresolvers.NewIndexConnectionResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexConnectionResolver, prefetcher, traceErrs), nil
@@ -205,7 +293,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -227,8 +315,6 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 		configuration = *args.Configuration
 	}
 
-	// autoindexingResolver := r.resolver.AutoIndexingResolver()
-	// indexes, err := r.autoindexSvc.QueueAutoIndexJobsForRepo(ctx, int(repositoryID), rev, configuration)
 	indexes, err := r.autoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configuration, true, true)
 	if err != nil {
 		return nil, err
@@ -240,7 +326,6 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *Queu
 
 	lsifIndexResolvers := make([]sharedresolvers.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		// index := convertSharedIndexToDBStoreIndex(indexes[i])
 		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, traceErrs))
 	}
 
@@ -259,7 +344,7 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -280,6 +365,18 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 	}
 
 	return &sharedresolvers.EmptyResponse{}, nil
+}
+
+func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
+	return r.autoindexSvc.GetInferenceScript(ctx)
+}
+
+type UpdateCodeIntelligenceInferenceScriptArgs struct {
+	Script string
+}
+
+func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (err error) {
+	return r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
 type GitTreeEntryCodeIntelInfoArgs struct {

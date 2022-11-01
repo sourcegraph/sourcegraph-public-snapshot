@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +21,7 @@ var timeNow = time.Now
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
 	// emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
@@ -64,7 +65,7 @@ func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, 
 		return false, nil
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrNotAuthenticated || err == auth.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -86,13 +87,13 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 	// 🚨 SECURITY: Only the authenticated user can add new email to their accounts
 	// on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only the authenticated user or site admins can add new email to
 		// users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 	}
@@ -124,13 +125,13 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
 	// on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only the authenticated user and site admins can remove email
 		// from users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 	}
@@ -167,13 +168,13 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 	// 🚨 SECURITY: Only the authenticated user can set the primary email for their
 	// accounts on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
 		// email for users' accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 	}
@@ -205,7 +206,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUser
 
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
 	// status. Users themselves must go through the normal email verification process.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -248,13 +249,13 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 	// 🚨 SECURITY: Only the authenticated user can resend verification email for
 	// their accounts on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only the authenticated user and site admins can resend
 		// verification email for their accounts.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 	}

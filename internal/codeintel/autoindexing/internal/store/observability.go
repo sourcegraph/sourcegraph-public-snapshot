@@ -24,6 +24,9 @@ type operations struct {
 	getRecentIndexesSummary        *observation.Operation
 	getLastIndexScanForRepository  *observation.Operation
 	deleteIndexByID                *observation.Operation
+	deleteIndexes                  *observation.Operation
+	reindexIndexByID               *observation.Operation
+	reindexIndexes                 *observation.Operation
 	deleteIndexesWithoutRepository *observation.Operation
 	isQueued                       *observation.Operation
 	queueRepoRev                   *observation.Operation
@@ -33,12 +36,14 @@ type operations struct {
 	// Index Configuration
 	getIndexConfigurationByRepositoryID    *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
-
+	setInferenceScript                     *observation.Operation
+	getInferenceScript                     *observation.Operation
 	// Language Support
 	getLanguagesRequestedBy   *observation.Operation
 	setRequestLanguageSupport *observation.Operation
 
 	insertDependencyIndexingJob *observation.Operation
+	expireFailedRecords         *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -78,6 +83,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRecentIndexesSummary:        op("GetRecentIndexesSummary"),
 		getLastIndexScanForRepository:  op("GetLastIndexScanForRepository"),
 		deleteIndexByID:                op("DeleteIndexByID"),
+		deleteIndexes:                  op("DeleteIndexes"),
+		reindexIndexByID:               op("ReindexIndexByID"),
+		reindexIndexes:                 op("ReindexIndexes"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 		isQueued:                       op("IsQueued"),
 		queueRepoRev:                   op("QueueRepoRev"),
@@ -87,11 +95,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Index Configuration
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		getInferenceScript:                     op("GetInferenceScript"),
+		setInferenceScript:                     op("SetInferenceScript"),
 
 		// Language Support
 		getLanguagesRequestedBy:   op("GetLanguagesRequestedBy"),
 		setRequestLanguageSupport: op("SetRequestLanguageSupport"),
 
 		insertDependencyIndexingJob: op("InsertDependencyIndexingJob"),
+		expireFailedRecords:         op("ExpireFailedRecords"),
 	}
 }

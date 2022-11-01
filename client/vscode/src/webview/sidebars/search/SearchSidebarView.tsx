@@ -9,6 +9,7 @@ import create from 'zustand'
 import {
     InitialParametersSource,
     QueryUpdate,
+    SearchMode,
     SearchPatternType,
     SearchQueryState,
     SearchQueryStateStore,
@@ -41,7 +42,7 @@ interface SearchSidebarViewProps
 }
 
 export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
-    ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
+    function SearchSidebarView({ settingsCascade, platformContext, extensionCoreAPI, filters }) {
         const history = useHistory()
         const [, setCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
@@ -54,6 +55,7 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                     searchCaseSensitivity: false,
                     searchPatternType: SearchPatternType.standard,
                     searchQueryFromURL: '',
+                    searchMode: SearchMode.Precise,
 
                     setQueryState: queryStateUpdate => {
                         const currentSearchQueryState = get()
@@ -171,9 +173,11 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                 <SearchSidebarSection
                     sectionId={SectionID.REPOSITORIES}
                     header="Repositories"
-                    showSearch={true}
+                    searchOptions={{
+                        ariaLabel: 'Find repositories',
+                        noResultText: getRepoFilterNoResultText,
+                    }}
                     minItems={1}
-                    noResultText={getRepoFilterNoResultText}
                 >
                     {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
                 </SearchSidebarSection>
@@ -181,10 +185,12 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_REFERENCE}
                     header="Search reference"
-                    showSearch={true}
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange={false}
+                    searchOptions={{
+                        ariaLabel: 'Find filters',
+                        // search reference should always preserve the filter
+                        // (false is just an arbitrary but static value)
+                        clearSearchOnChange: false,
+                    }}
                 >
                     {getSearchReferenceFactory({
                         telemetryService: platformContext.telemetryService,

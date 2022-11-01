@@ -11,7 +11,7 @@ import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildca
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
@@ -25,7 +25,12 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
 }
 
@@ -35,14 +40,26 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
 
+    const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
+
+    const showSourcegraphOperatorLogin =
+        !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
+
+    const isSourcegraphOperatorProvider = (provider: AuthProvider): boolean =>
+        provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee'
+
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
     }
 
-    const [[builtInAuthProvider], thirdPartyAuthProviders] = partition(
+    const [[builtInAuthProvider], nonBuiltinAuthProviders] = partition(
         props.context.authProviders,
         provider => provider.isBuiltin
+    )
+
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(
+        provider => showSourcegraphOperatorLogin || !isSourcegraphOperatorProvider(provider)
     )
 
     const body =

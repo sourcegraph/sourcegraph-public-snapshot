@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"io/fs"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -55,15 +56,9 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return wantCommitID, nil
 	})
 
-	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
-		oid := gitdomain.OID{} // empty is OK for this test
-		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
-		return &gitdomain.GitObject{
-			ID:   oid,
-			Type: gitdomain.ObjectTypeTree,
-		}, nil
-	}
-	defer gitserver.ResetClientMocks()
+	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
+		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
+	})
 
 	mkResult := func(path string, lineNumbers ...int) *result.FileMatch {
 		rn := types.MinimalRepo{

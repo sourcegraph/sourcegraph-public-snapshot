@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -48,23 +49,30 @@ func (d *dynamicInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]gra
 
 type emptyInsightStatusResolver struct{}
 
-func (e emptyInsightStatusResolver) TotalPoints() int32 {
-	return 0
+func (e emptyInsightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
-func (e emptyInsightStatusResolver) PendingJobs() int32 {
-	return 0
+func (e emptyInsightStatusResolver) PendingJobs(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
-func (e emptyInsightStatusResolver) CompletedJobs() int32 {
-	return 0
+func (e emptyInsightStatusResolver) CompletedJobs(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
-func (e emptyInsightStatusResolver) FailedJobs() int32 {
-	return 0
+func (e emptyInsightStatusResolver) FailedJobs(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
-func (e emptyInsightStatusResolver) BackfillQueuedAt() *graphqlbackend.DateTime {
+func (e emptyInsightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error) {
+	// beacuse this resolver is created when dynamic data exists
+	// it means it's not loading data.
+	loading := false
+	return &loading, nil
+}
+
+func (e emptyInsightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlutil.DateTime {
 	current := time.Now().AddDate(-1, 0, 0)
-	return graphqlbackend.DateTimeOrNil(&current)
+	return gqlutil.DateTimeOrNil(&current)
 }

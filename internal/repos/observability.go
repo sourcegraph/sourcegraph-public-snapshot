@@ -154,7 +154,6 @@ type StoreMetrics struct {
 	GetExternalService                 *metrics.REDMetrics
 	SetClonedRepos                     *metrics.REDMetrics
 	CountNotClonedRepos                *metrics.REDMetrics
-	CountNamespacedRepos               *metrics.REDMetrics
 	EnqueueSyncJobs                    *metrics.REDMetrics
 }
 
@@ -380,20 +379,6 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_count_not_cloned_repos_errors_total",
 				Help: "Total number of errors when counting not-cloned repos",
-			}, []string{}),
-		},
-		CountNamespacedRepos: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_count_user_added_repos",
-				Help: "Time spent counting the number of user added repos",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_count_user_added_repos_total",
-				Help: "Total number of count user added repo calls",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_count_user_added_repos_errors_total",
-				Help: "Total number of errors when counting user added repos",
 			}, []string{}),
 		},
 	}

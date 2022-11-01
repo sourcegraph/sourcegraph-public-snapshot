@@ -85,10 +85,9 @@ export function getCodeMonitoringCreateAction(
 export function getBatchChangeCreateAction(
     query: string | undefined,
     patternType: SearchPatternType,
-    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null,
-    isServerSideBatchChangeEnabled: boolean | undefined
+    canCreateBatchChange: boolean
 ): CreateAction | null {
-    if (!isServerSideBatchChangeEnabled || !query || !authenticatedUser) {
+    if (!canCreateBatchChange) {
         return null
     }
     const searchParameters = new URLSearchParams(location.search)

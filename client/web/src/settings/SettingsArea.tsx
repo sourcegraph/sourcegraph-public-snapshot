@@ -15,8 +15,12 @@ import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/ext
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    gqlToCascade,
+    SettingsCascadeProps,
+    SettingsSubject,
+    SubjectSettingsContents,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
@@ -36,7 +40,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
     /** The subject whose settings to edit. */
-    subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
+    subject: Pick<SettingsSubject & SubjectSettingsContents, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -44,8 +48,9 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     authenticatedUser: AuthenticatedUser | null
 }
 
+type SettingsCascadeSubject = (SettingsSubject & SubjectSettingsContents)[]
 interface SettingsData {
-    subjects: GQL.ISettingsCascade['subjects']
+    subjects: SettingsCascadeSubject
     settingsJSONSchema: { $id: string }
 }
 
@@ -169,7 +174,11 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
-                <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
+                <PageHeader className="mb-3">
+                    <PageHeader.Heading as="h3" styleAs="h2">
+                        <PageHeader.Breadcrumb>{`${term} settings`}</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 {this.props.extraHeader}
                 <Switch>
                     <Route
@@ -186,7 +195,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsCascadeSubject }): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
@@ -218,7 +227,7 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsCascadeSubject }> {
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {

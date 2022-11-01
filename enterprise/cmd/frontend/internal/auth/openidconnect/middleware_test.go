@@ -119,7 +119,7 @@ func TestMiddleware(t *testing.T) {
 	defer cleanup()
 	defer licensing.TestingSkipFeatureChecks()()
 
-	mockGetProviderValue = &provider{
+	mockGetProviderValue = &Provider{
 		config: schema.OpenIDConnectAuthProvider{
 			ClientID:           testClientID,
 			ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -298,7 +298,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	defer licensing.TestingSkipFeatureChecks()()
 
-	mockGetProviderValue = &provider{
+	mockGetProviderValue = &Provider{
 		config: schema.OpenIDConnectAuthProvider{
 			ClientID:     testClientID,
 			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",

@@ -2,8 +2,6 @@ package cliutil
 
 import (
 	"context"
-	"encoding/json"
-	"os"
 
 	"github.com/urfave/cli/v2"
 
@@ -38,6 +36,14 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return errors.New("must supply exactly one of -version or -file")
 		}
 
+		if file != "" {
+			expectedSchemaFactories = []ExpectedSchemaFactory{ExplicitFileSchemaFactory(file)}
+		}
+		expectedSchema, err := fetchExpectedSchema(schemaName, version, out, expectedSchemaFactories)
+		if err != nil {
+			return err
+		}
+
 		_, store, err := setupStore(ctx, factory, schemaName)
 		if err != nil {
 			return err
@@ -48,11 +54,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		}
 		schema := schemas["public"]
 
-		if file != "" {
-			return compareByFile(schemaName, version, schema, out, file)
-		}
-
-		return compareByFactories(schemaName, version, schema, out, expectedSchemaFactories)
+		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
@@ -68,58 +70,36 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 	}
 }
 
-func compareByFile(
+func fetchExpectedSchema(
 	schemaName string,
 	version string,
-	schema descriptions.SchemaDescription,
 	out *output.Output,
-	file string,
-) error {
-	expectedSchema, err := readDescriptionFromFile(file)
-	if err != nil {
-		return err
-	}
-
-	return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
-}
-
-func readDescriptionFromFile(file string) (descriptions.SchemaDescription, error) {
-	f, err := os.Open(file)
+	expectedSchemaFactories []ExpectedSchemaFactory,
+) (descriptions.SchemaDescription, error) {
+	filename, err := getSchemaJSONFilename(schemaName)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err
 	}
-	defer f.Close()
 
-	var expectedSchema descriptions.SchemaDescription
-	err = json.NewDecoder(f).Decode(&expectedSchema)
-	return expectedSchema, err
-}
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locating schema description"))
 
-func compareByFactories(
-	schemaName string,
-	version string,
-	schema descriptions.SchemaDescription,
-	out *output.Output,
-	expectedSchemaFactories []ExpectedSchemaFactory,
-) error {
-	filename, err := getSchemaJSONFilename(schemaName)
-	if err != nil {
-		return err
-	}
-
-	for _, factory := range expectedSchemaFactories {
-		expectedSchema, ok, err := factory(filename, version)
+	for i, factory := range expectedSchemaFactories {
+		name, expectedSchema, err := factory(filename, version)
 		if err != nil {
-			return err
-		}
-		if !ok {
+			suffix := ""
+			if i < len(expectedSchemaFactories)-1 {
+				suffix = " Will attempt a fallback source."
+			}
+
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition from %s... Schema not found (%s).%s", name, err, suffix))
 			continue
 		}
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found at %s.", name))
+		return expectedSchema, nil
 	}
 
-	return errors.Newf("failed to determine squash schema for version %s (expected the file %s to exist)", version, filename)
+	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")
 }
 
 func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {

@@ -4,7 +4,7 @@ import { numberWithCommas } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
 import { SingleValueCard } from '../../components/SingleValueCard'
-import { ProductLicenseInfoLicenseFields } from '../../graphql-operations'
+import { ProductLicenseInfoResult } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 import styles from './TrueUpStatusSummary.module.scss'
@@ -21,7 +21,7 @@ interface Props {
      * no license is in use, returns an empty string.
      */
     actualUserCountDate: string
-    license: ProductLicenseInfoLicenseFields
+    license: NonNullable<ProductLicenseInfoResult['site']['productSubscription']['license']>
 }
 /**
  * Displays a summary of the site's true-up pricing status.

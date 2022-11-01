@@ -71,7 +71,6 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startL
 }
 
 const rangesDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/ranges.go:Ranges
 SELECT
 	dump_id,
 	path,

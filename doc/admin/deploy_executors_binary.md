@@ -67,7 +67,10 @@ you run the latest version of Sourcegraph.
 Download and setup the `executor` binary:
 
 ```bash
-curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+# Plug in the version of your Sourcegraph instance, like v4.1.0.
+# Before Sourcegraph 3.43.0, tagged releases of executors are not available and you should default to using "latest" instead.
+# Using latest is NOT recommended, because it might be incompatible with your Sourcegraph version.
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/${SOURCEGRAPH_VERSION}/linux-amd64/executor
 chmod +x executor
 # Assuming /usr/local/bin is in $PATH.
 mv executor /usr/local/bin
@@ -145,7 +148,7 @@ executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
 
 This should succeed and print a command to use to attach to the guest VM. If it is able to spin up properly, that is usually good indication that everything is set up properly. If you need to debug some issue further, this can be helpful as you can exec into the guest VM from here.
 
-### **Step 4:** Make executor a systemd service (optional, systemd-based distributions only)
+### **Step 5:** Make executor a systemd service (optional, systemd-based distributions only)
 
 To make sure that the executor runs post-boot of the machine, you might want to wrap it in a systemd service. This is an example of how that could look like:
 
@@ -176,6 +179,6 @@ EOF
 systemctl enable executor
 ```
 
-### **Step 5:** Start receiving workloads
+### **Step 6:** Start receiving workloads
 
 If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!

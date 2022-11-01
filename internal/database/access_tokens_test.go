@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -38,10 +39,12 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assertSecurityEventAccessTokenCreatedCount(t, db, 1)
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
@@ -84,6 +87,52 @@ func TestAccessTokens_Create(t *testing.T) {
 	if want := 0; len(ts) != want {
 		t.Errorf("got %d access tokens, want %d", len(ts), want)
 	}
+}
+
+func assertSecurityEventAccessTokenCreatedCount(t *testing.T, db DB, expectedCount int) {
+	t.Helper()
+
+	row := db.SecurityEventLogs().Handle().QueryRowContext(context.Background(), "SELECT count(name) FROM security_event_logs WHERE name = $1", SecurityEventAccessTokenCreated)
+	var count int
+	if err := row.Scan(&count); err != nil {
+		t.Fatal("couldn't read security events count")
+	}
+	assert.Equal(t, expectedCount, count)
+}
+
+func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	subject, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	creator, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+	_, _, err = db.AccessTokens().CreateInternal(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertSecurityEventAccessTokenCreatedCount(t, db, 0)
+
 }
 
 func TestAccessTokens_List(t *testing.T) {

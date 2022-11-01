@@ -8,10 +8,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -43,13 +45,13 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		// for themselves. A site admin should NOT be allowed to do this since they could
 		// then use the token to impersonate a user and gain access to their private
 		// code.
-		if err := backend.CheckSameUser(ctx, userID); err != nil {
+		if err := auth.CheckSameUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	case conf.AccessTokensAdmin:
 		// 🚨 SECURITY: The site has opted in to only allow site admins to create access
 		// tokens. In this case, they can create a token for any user.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 	case conf.AccessTokensNone:
@@ -67,7 +69,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			hasUserAllScope = true
 		case authz.ScopeSiteAdminSudo:
 			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
-			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			} else if envvar.SourcegraphDotComMode() {
 				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
@@ -130,7 +132,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		}
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
 		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
@@ -166,7 +168,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
 	// token values themselves are not stored in our database.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +181,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 

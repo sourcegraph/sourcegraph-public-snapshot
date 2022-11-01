@@ -1,7 +1,8 @@
 import { renderError } from '@sourcegraph/branded/src/components/alerts'
 import { dedupeWhitespace } from '@sourcegraph/common'
 
-import { createRequiredValidator, Validator, AsyncValidator } from '../../form'
+import { Validator, AsyncValidator } from '../../form'
+import { createRequiredValidator } from '../../form/hooks/validators'
 import { EditableDataSeries } from '../form-series'
 import { getSanitizedRepositories } from '../sanitizers'
 

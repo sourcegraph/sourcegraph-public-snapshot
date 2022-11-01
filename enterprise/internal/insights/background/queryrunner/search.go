@@ -54,8 +54,8 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 }
 
-// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking it
-// Returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
+// checkSubRepoPermissions returns true if the repo has sub-repo permissions or any error occurred while checking.
+// It returns false only if the repo doesn't have sub-repo permissions or these are disabled in settings.
 // Note that repo ID is received untyped and being cast to api.RepoID
 // err is an upstream error to which any new occurring error is appended
 func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissionChecker, untypedRepoID any, err error) (bool, error) {
@@ -89,7 +89,7 @@ func checkSubRepoPermissions(ctx context.Context, checker authz.SubRepoPermissio
 	return enabled, err
 }
 
-func toRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
+func toRecording(record *SearchJob, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
 		SeriesID: record.SeriesID,
@@ -115,7 +115,7 @@ func toRecording(record *Job, value float64, recordTime time.Time, repoName stri
 type streamComputeProvider func(context.Context, string) (*streaming.ComputeTabulationResult, error)
 type streamSearchProvider func(context.Context, string) (*streaming.TabulationResult, error)
 
-func generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime time.Time, provider streamComputeProvider) (_ []store.RecordSeriesPointArgs, err error) {
+func generateComputeRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamComputeProvider) (_ []store.RecordSeriesPointArgs, err error) {
 	streamResults, err := provider(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func generateComputeRecordingsStream(ctx context.Context, job *Job, recordTime t
 	return recordings, nil
 }
 
-func generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime time.Time, provider streamSearchProvider) ([]store.RecordSeriesPointArgs, error) {
+func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordTime time.Time, provider streamSearchProvider) ([]store.RecordSeriesPointArgs, error) {
 	tabulationResult, err := provider(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,7 @@ func generateSearchRecordingsStream(ctx context.Context, job *Job, recordTime ti
 }
 
 func makeSearchHandler(provider streamSearchProvider) InsightsHandler {
-	return func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 		recordings, err := generateSearchRecordingsStream(ctx, job, recordTime, provider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "searchHandler")
@@ -192,8 +192,8 @@ func makeSearchHandler(provider streamSearchProvider) InsightsHandler {
 }
 
 func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
-	return func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-		computeDelegate := func(ctx context.Context, job *Job, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
+	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+		computeDelegate := func(ctx context.Context, job *SearchJob, recordTime time.Time) (_ []store.RecordSeriesPointArgs, err error) {
 			return generateComputeRecordingsStream(ctx, job, recordTime, provider)
 		}
 		recordings, err := computeDelegate(ctx, job, recordTime)
@@ -205,7 +205,7 @@ func makeComputeHandler(provider streamComputeProvider) InsightsHandler {
 }
 
 func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
-	return func(ctx context.Context, job *Job, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 		recordings, err := generateComputeRecordingsStream(ctx, job, recordTime, provider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "mappingComputeHandler")
@@ -214,20 +214,26 @@ func makeMappingComputeHandler(provider streamComputeProvider) InsightsHandler {
 	}
 }
 
-func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs) (err error) {
+func (r *workHandler) persistRecordings(ctx context.Context, job *SearchJob, series *types.InsightSeries, recordings []store.RecordSeriesPointArgs, recordTime time.Time) (err error) {
 	tx, err := r.insightsStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
+	seriesRecordingTimes := types.InsightSeriesRecordingTimes{
+		InsightSeriesID: series.ID,
+	}
+	snapshot := false
 	if store.PersistMode(job.PersistMode) == store.SnapshotMode {
 		// The purpose of the snapshot is for low fidelity but recently updated data points.
 		// We store one snapshot of an insight at any time, so we prune the table whenever adding a new series.
 		if err := tx.DeleteSnapshots(ctx, series); err != nil {
-			return err
+			return errors.Wrap(err, "DeleteSnapshots")
 		}
+		snapshot = true
 	}
+	seriesRecordingTimes.RecordingTimes = append(seriesRecordingTimes.RecordingTimes, types.RecordingTime{recordTime, snapshot})
 
 	// Newly queued queries should be scoped to correct repos however leaving filtering
 	// in place to ensure any older queued jobs get filtered properly. It's a noop for global insights.
@@ -236,8 +242,8 @@ func (r *workHandler) persistRecordings(ctx context.Context, job *Job, series *t
 		return errors.Wrap(err, "filterRecordingsBySeriesRepos")
 	}
 
-	if recordErr := tx.RecordSeriesPoints(ctx, filteredRecordings); recordErr != nil {
-		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	if recordErr := tx.RecordSeriesPointsAndRecordingTimes(ctx, filteredRecordings, seriesRecordingTimes); recordErr != nil {
+		err = errors.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsAndRecordingTimes"))
 	}
 	return err
 }

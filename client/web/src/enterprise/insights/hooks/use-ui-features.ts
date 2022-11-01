@@ -3,6 +3,7 @@ import { useContext, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { useCodeInsightsState } from '../../../stores'
 import { CodeInsightsBackendContext, Insight, InsightDashboard, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
@@ -42,8 +43,8 @@ export interface UseUiFeatures {
 }
 
 export function useUiFeatures(): UseUiFeatures {
-    const { UIFeatures, getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
-    const { licensed, insightsLimit } = UIFeatures
+    const { getActiveInsightsCount } = useContext(CodeInsightsBackendContext)
+    const { licensed, insightsLimit } = useCodeInsightsState()
 
     return useMemo(
         () => ({

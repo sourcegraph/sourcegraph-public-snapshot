@@ -3,14 +3,15 @@ package sharedresolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExecutionLogEntryResolver interface {
 	Key() string
 	Command() []string
-	StartTime() DateTime
+	StartTime() gqlutil.DateTime
 	ExitCode() *int32
 	Out(ctx context.Context) (string, error)
 	DurationMilliseconds() *int32
@@ -39,8 +40,8 @@ func (r *executionLogEntryResolver) ExitCode() *int32 {
 	return &val
 }
 
-func (r *executionLogEntryResolver) StartTime() DateTime {
-	return DateTime{Time: r.entry.StartTime}
+func (r *executionLogEntryResolver) StartTime() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.entry.StartTime}
 }
 
 func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
@@ -53,8 +54,8 @@ func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.svc.GetUnsafeDB()); err != nil {
-		if err != backend.ErrMustBeSiteAdmin {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.svc.GetUnsafeDB()); err != nil {
+		if err != auth.ErrMustBeSiteAdmin {
 			return "", err
 		}
 

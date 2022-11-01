@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { ProductLicenseFields } from '../../graphql-operations'
+import { ProductLicenseInfoFields } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 export const ProductLicenseInfoDescription: React.FunctionComponent<
     React.PropsWithChildren<{
-        licenseInfo: NonNullable<ProductLicenseFields['info']>
+        licenseInfo: ProductLicenseInfoFields
         className?: string
     }>
 > = ({ licenseInfo, className = '' }) => (

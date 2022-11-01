@@ -14,8 +14,8 @@ func TestDiffFormat(t *testing.T) {
 	t.Run("last line matches", func(t *testing.T) {
 		rawDiff := `diff --git a/.mailmap b/.mailmap
 index dbace57d5f..53357b4971 100644
---- .mailmap
-+++ .mailmap
+--- file with spaces
++++ new file with spaces
 @@ -59,3 +59,4 @@ Unknown <u@gogs.io> 无闻 <u@gogs.io>
  Renovate Bot <bot@renovateapp.com> renovate[bot] <renovate[bot]@users.noreply.github.com>
  Matt King <kingy895@gmail.com> Matthew King <kingy895@gmail.com>
@@ -36,7 +36,7 @@ index dbace57d5f..53357b4971 100644
 		}
 
 		formatted, ranges := FormatDiff(parsedDiff, highlights)
-		expectedFormatted := `.mailmap .mailmap
+		expectedFormatted := `file\ with\ spaces new\ file\ with\ spaces
 @@ -60,1 +60,2 @@ Unknown <u@gogs.io> 无闻 <u@gogs.io>
  Matt King <kingy895@gmail.com> Matthew King <kingy895@gmail.com>
 +Camden Cheek <camden@sourcegraph.com> Camden Cheek <camden@ccheek.com>
@@ -44,10 +44,9 @@ index dbace57d5f..53357b4971 100644
 		require.Equal(t, expectedFormatted, formatted)
 
 		expectedRanges := result.Ranges{{
-			Start: result.Location{Offset: 142, Line: 3, Column: 1},
-			End:   result.Location{Offset: 148, Line: 3, Column: 7},
+			Start: result.Location{Offset: 167, Line: 3, Column: 1},
+			End:   result.Location{Offset: 173, Line: 3, Column: 7},
 		}}
 		require.Equal(t, expectedRanges, ranges)
-
 	})
 }

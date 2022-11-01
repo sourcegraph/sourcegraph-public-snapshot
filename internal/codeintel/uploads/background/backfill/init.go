@@ -4,8 +4,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewCommittedAtBackfiller(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewCommittedAtBackfiller(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewCommittedAtBackfiller(ConfigInst.Interval, ConfigInst.BatchSize),
+		backgroundJobs.NewCommittedAtBackfiller(
+			ConfigInst.Interval,
+			ConfigInst.BatchSize,
+		),
 	}
 }

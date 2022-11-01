@@ -64,7 +64,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 value:
                     aggregation.selected === 'count'
                         ? insightHovers.summary.totalCount
-                        : insightHovers.summary.totalRegisteredUsers,
+                        : insightHovers.summary.totalUniqueUsers,
                 description: aggregation.selected === 'count' ? 'Insight hovers' : 'Users hovering insights',
                 color: 'var(--orange)',
                 tooltip:
@@ -76,7 +76,7 @@ export const AnalyticsCodeInsightsPage: React.FunctionComponent<RouteComponentPr
                 value:
                     aggregation.selected === 'count'
                         ? insightDataPointClicks.summary.totalCount
-                        : insightDataPointClicks.summary.totalRegisteredUsers,
+                        : insightDataPointClicks.summary.totalUniqueUsers,
                 description: aggregation.selected === 'count' ? 'Datapoint clicks' : 'Users clicking datapoints',
                 color: 'var(--purple)',
                 tooltip:
