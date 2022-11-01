@@ -6,7 +6,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, H2, Text, Icon, Link } from '@sourcegraph/wildcard'
 
 import { useQueryExamples } from './useQueryExamples'
 
@@ -144,29 +144,35 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 
     return (
         <div>
-            <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
-                <strong>Tip</strong>
-                <span className="mx-1">–</span>
-                {selectedTip === 'rev' && (
-                    <>
-                        Add <QueryExampleChip query="rev:branchname" onClick={onQueryExampleClick} className="mx-1" />{' '}
-                        to query accross a specific branch or commit
-                    </>
-                )}
-                {selectedTip === 'lang' && (
-                    <>
-                        Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to query
-                        for matches only in a given language
-                    </>
-                )}
-                {selectedTip === 'before' && (
-                    <>
-                        Use{' '}
-                        <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
-                        to query within a time range
-                    </>
-                )}
-            </div>
+            {isDotCom ? (
+                <div className="d-flex align-items-center mb-2">
+                    <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>Code Search Basics</Text>
+                </div>
+            ) : (
+                <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
+                    <strong>Tip</strong>
+                    <span className="mx-1">–</span>
+                    {selectedTip === 'rev' && (
+                        <>
+                            Add <QueryExampleChip query="rev:branchname" onClick={onQueryExampleClick} className="mx-1" />{' '}
+                            to query accross a specific branch or commit
+                        </>
+                    )}
+                    {selectedTip === 'lang' && (
+                        <>
+                            Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to query
+                            for matches only in a given language
+                        </>
+                    )}
+                    {selectedTip === 'before' && (
+                        <>
+                            Use{' '}
+                            <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
+                            to query within a time range
+                        </>
+                    )}
+                </div>
+            )}
             <div className={styles.queryExamplesSectionsColumns}>
                 {queryExampleSectionsColumns.map((column, index) => (
                     // eslint-disable-next-line react/no-array-index-key
