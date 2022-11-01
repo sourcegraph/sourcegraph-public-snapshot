@@ -203,3 +203,22 @@ func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (shared.DeleteIndexes
 		RepositoryID: repository,
 	}, nil
 }
+
+// makeReindexIndexesOptions translates the given GraphQL arguments into options defined by the
+// store.ReindexIndexes operations.
+func makeReindexIndexesOptions(args *ReindexLSIFIndexesArgs) (shared.ReindexIndexesOptions, error) {
+	var repository int
+	if args.Repository != nil {
+		var err error
+		repository, err = resolveRepositoryID(*args.Repository)
+		if err != nil {
+			return shared.ReindexIndexesOptions{}, err
+		}
+	}
+
+	return shared.ReindexIndexesOptions{
+		State:        strings.ToLower(derefString(args.State, "")),
+		Term:         derefString(args.Query, ""),
+		RepositoryID: repository,
+	}, nil
+}

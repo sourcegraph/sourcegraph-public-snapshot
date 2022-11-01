@@ -19,7 +19,12 @@ import (
 const SchemeExecutorToken = "token-executor"
 
 // These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
-var gitStdEnv = []string{"GIT_TERMINAL_PROMPT=0"}
+var gitStdEnv = []string{
+	"GIT_TERMINAL_PROMPT=0",
+	// We don't support LFS so don't even try to get these files. There is no endpoint
+	// for that on the executor git clone endpoint anyways and this will 404.
+	"GIT_LFS_SKIP_SMUDGE=1",
+}
 
 func cloneRepo(
 	ctx context.Context,

@@ -304,6 +304,7 @@ export function createDefaultSuggestionSources(
                 return {
                     from,
                     options: FILTER_SUGGESTIONS,
+                    validFor: /^-?[a-z]+$/i,
                 }
             }),
             // Show static filter value suggestions
@@ -353,6 +354,11 @@ export function createDefaultSuggestionSources(
                                 boost: index * -1,
                             }
                         }),
+                    // validFor should not be set when the filter has dynamic
+                    // suggestions, otherwise static suggestions won't be
+                    // removed from the list (because we also disable
+                    // filtering above)
+                    validFor: hasDynamicSuggestions ? undefined : /^[().:a-z]+$/i,
                 }
             }),
 

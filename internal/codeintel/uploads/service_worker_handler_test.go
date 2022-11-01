@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -118,15 +117,6 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	} else if diff := cmp.Diff(expectedPackageReferences, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
-	}
-
-	expectedIDsForRefcountUpdate := []int{42}
-	if len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateUploadsReferenceCountsFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(shared.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateUploadsReferenceCountsFunc.History()[0].Arg2); diff != "" {
-		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {

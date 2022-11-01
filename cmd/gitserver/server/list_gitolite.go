@@ -10,12 +10,6 @@ import (
 )
 
 func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	// Ensure the request came from us
-	if h := r.Header.Get("X-Requested-With"); h != "Sourcegraph" {
-		http.Error(w, "incorrect headers", http.StatusBadRequest)
-		return
-	}
-
 	defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"), w)
 }
 

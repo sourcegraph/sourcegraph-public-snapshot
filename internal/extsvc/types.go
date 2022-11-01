@@ -772,3 +772,29 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 
 	return NormalizeBaseURL(u).String(), nil
 }
+
+// CodeHostBaseURL is an identifier for a unique code host in the form
+// of its host URL.
+// To create a new CodeHostBaseURL, use NewCodeHostURN.
+// e.g. NewCodeHostURN("https://github.com")
+// To use the string value again, use codeHostURN.String()
+type CodeHostBaseURL struct {
+	baseURL string
+}
+
+// NewCodeHostBaseURL takes a code host URL string, normalizes it,
+// and returns a CodeHostURN. If the string is required, use the
+// .String() method on the CodeHostURN.
+func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
+	codeHostURL, err := url.Parse(baseURL)
+	if err != nil {
+		return CodeHostBaseURL{}, err
+	}
+
+	return CodeHostBaseURL{baseURL: NormalizeBaseURL(codeHostURL).String()}, nil
+}
+
+// String returns the stored, normalized code host URN as a string.
+func (c CodeHostBaseURL) String() string {
+	return c.baseURL
+}

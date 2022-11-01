@@ -60,7 +60,9 @@ func TestFormatRawOrDockerCommandDockerScript(t *testing.T) {
 			"-v", "/proj/src:/data",
 			"-w", "/data/subdir",
 			"-e", "TEST=true",
-			"-e", `CONTAINS_WHITESPACE="yes it does"`,
+			// Note: This does NOT need to be quoted, as exec.Command
+			// properly passes each string in this slice as a separate argument.
+			"-e", `CONTAINS_WHITESPACE=yes it does`,
 			"--entrypoint",
 			"/bin/sh",
 			"alpine:latest",

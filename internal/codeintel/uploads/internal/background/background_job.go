@@ -17,7 +17,6 @@ import (
 type BackgroundJob interface {
 	NewCommittedAtBackfiller(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
 	NewUploadResetter(interval time.Duration) *dbworker.Resetter
-	NewReferenceCountUpdater(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
 
 	NewCommitGraphUpdater(
 		interval time.Duration,
@@ -32,6 +31,11 @@ type BackgroundJob interface {
 		minimumTimeSinceLastCheck time.Duration,
 		commitResolverBatchSize int,
 		commitResolverMaximumCommitLag time.Duration,
+	) goroutine.BackgroundRoutine
+
+	NewReconciler(
+		interval time.Duration,
+		batchSize int,
 	) goroutine.BackgroundRoutine
 
 	NewWorker(

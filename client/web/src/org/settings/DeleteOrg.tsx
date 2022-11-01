@@ -4,11 +4,11 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { Button, Container, H3, Text } from '@sourcegraph/wildcard'
 
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import { DeleteOrgModal } from './DeleteOrgModal'
 
-interface DeleteOrgProps extends OrgAreaPageProps, RouteComponentProps<{}> {}
+interface DeleteOrgProps extends OrgAreaRouteContext, RouteComponentProps<{}> {}
 
 /**
  * Deletes an organization.

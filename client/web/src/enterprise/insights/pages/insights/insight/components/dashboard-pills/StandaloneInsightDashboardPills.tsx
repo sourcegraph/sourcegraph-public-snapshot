@@ -6,7 +6,8 @@ import classNames from 'classnames'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD, InsightDashboardReference } from '../../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
+import { InsightDashboardReference } from '../../../../../core'
 
 import styles from './StandaloneInsightDashboardPills.module.scss'
 

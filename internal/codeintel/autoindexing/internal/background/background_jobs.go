@@ -21,7 +21,7 @@ type BackgroundJob interface {
 	NewDependencyIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewIndexResetter(interval time.Duration) *dbworker.Resetter
 	NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine
-	NewScheduler(interval time.Duration, repositoryProcessDelay time.Duration, repositoryBatchSize int, policyBatchSize int) goroutine.BackgroundRoutine
+	NewScheduler(interval time.Duration, repositoryProcessDelay time.Duration, repositoryBatchSize int, policyBatchSize int, inferenceConcurrency int) goroutine.BackgroundRoutine
 	NewJanitor(
 		interval time.Duration,
 		minimumTimeSinceLastCheck time.Duration,

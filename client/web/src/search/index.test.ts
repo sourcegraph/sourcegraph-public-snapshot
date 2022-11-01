@@ -3,6 +3,7 @@ import { of, Subscription, Observable } from 'rxjs'
 import { first, startWith, tap, last } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { observeLocation } from '../util/location'
@@ -22,6 +23,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -30,6 +32,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -38,12 +41,14 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph+case:yes&patternType=standard')).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -54,12 +59,14 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(parseSearchURL('q=TEST+repo:sourcegraph/sourcegraph&patternType=standard')).toStrictEqual({
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
     })
 
@@ -72,6 +79,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -82,6 +90,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -92,6 +101,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -102,6 +112,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph case:yes',
             patternType: SearchPatternType.standard,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -113,6 +124,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.regexp,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(
@@ -121,6 +133,7 @@ describe('search/index', () => {
             query: 'TEST repo:sourcegraph/sourcegraph',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
     })
 
@@ -129,18 +142,21 @@ describe('search/index', () => {
             query: 'content:"/a literal pattern/"',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(parseSearchURL('q=not /a literal pattern/&patternType=literal')).toStrictEqual({
             query: 'not content:"/a literal pattern/"',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
 
         expect(parseSearchURL('q=un.*touched&patternType=literal')).toStrictEqual({
             query: 'un.*touched',
             patternType: SearchPatternType.standard,
             caseSensitive: false,
+            searchMode: SearchMode.Precise,
         })
     })
 })

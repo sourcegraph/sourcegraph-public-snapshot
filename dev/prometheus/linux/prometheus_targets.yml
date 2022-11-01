@@ -7,8 +7,10 @@
 - labels:
     job: gitserver
   targets:
-    # gitserver
-    - 127.0.0.1:6068
+    # gitserver 1
+    - 127.0.0.1:3551
+    # gitserver 2
+    - 127.0.0.1:3552
 - labels:
     job: searcher
   targets:
@@ -56,3 +58,8 @@
   targets:
     # postgres exporter
     - 127.0.0.1:9187
+- labels:
+    job: github-proxy
+  targets:
+    # github proxy
+    - 127.0.0.1:6090

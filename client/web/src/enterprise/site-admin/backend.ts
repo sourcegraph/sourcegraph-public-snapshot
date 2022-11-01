@@ -2,14 +2,18 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { queryGraphQL } from '../../backend/graphql'
+import { SiteAdminLsifUploadResult } from '../../graphql-operations'
 
 /**
  * Fetch a single LSIF upload by id.
  */
-export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
+export function fetchLsifUpload({
+    id,
+}: {
+    id: string
+}): Observable<Extract<SiteAdminLsifUploadResult['node'], { __typename: 'LSIFUpload' }> | null> {
     return queryGraphQL(
         gql`
             query SiteAdminLsifUpload($id: ID!) {
