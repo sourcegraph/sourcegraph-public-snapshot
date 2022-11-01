@@ -508,14 +508,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "CreateView")
 	}
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, backfiller, r.insightEnqueuer, view, series)
+		_, err := createAndAttachSeries(ctx, insightTx, backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
-		}
-		if len(c.Repositories) > 0 {
-			scoped = append(scoped, *c)
 		}
 	}
 

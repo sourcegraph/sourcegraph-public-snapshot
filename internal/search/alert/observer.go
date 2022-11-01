@@ -212,7 +212,7 @@ type alertKind string
 
 const (
 	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
-	smartSearchPureResults                 = "smart-search-pure-results"
+	smartSearchPureResults       alertKind = "smart-search-pure-results"
 )
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
