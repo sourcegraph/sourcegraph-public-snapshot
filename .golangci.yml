@@ -14,6 +14,7 @@ linters:
     # this is flakey: https://github.com/sourcegraph/sourcegraph/issues/34304
     # - nolintlint
     - staticcheck
+    - typecheck
     - unconvert
     #- unused
     #- unparam
