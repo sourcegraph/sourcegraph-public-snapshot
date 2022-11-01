@@ -61,7 +61,7 @@ func (e *SecurityEvent) marshalArgumentAsJSON() string {
 	if e.Argument == nil {
 		return "{}"
 	}
-	return string(e.Argument)
+	return fmt.Sprintf("%s", e.Argument)
 }
 
 // SecurityEventLogsStore provides persistence for security events.
