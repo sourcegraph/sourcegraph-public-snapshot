@@ -243,7 +243,9 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
 
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
+	idFoo := api.RepoID(1)
+	idBar := api.RepoID(2)
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 	if err := store.SetDocumentRanks(ctx, "foo", 0.25, nil); err != nil {
@@ -253,20 +255,20 @@ func TestLastUpdatedAt(t *testing.T) {
 		t.Fatalf("unexpected error setting document ranks: %s", err)
 	}
 
-	pairs, err := store.LastUpdatedAt(ctx, []api.RepoName{"foo", "bar", "bonk"})
+	pairs, err := store.LastUpdatedAt(ctx, []api.RepoID{idFoo, idBar})
 	if err != nil {
 		t.Fatalf("unexpected error getting repo last update times: %s", err)
 	}
 
-	fooUpdatedAt, ok := pairs["foo"]
+	fooUpdatedAt, ok := pairs[idFoo]
 	if !ok {
 		t.Fatalf("expected 'foo' in result: %v", pairs)
 	}
-	barUpdatedAt, ok := pairs["bar"]
+	barUpdatedAt, ok := pairs[idBar]
 	if !ok {
 		t.Fatalf("expected 'bar' in result: %v", pairs)
 	}
-	if _, ok := pairs["bonk"]; ok {
+	if _, ok := pairs[999]; ok {
 		t.Fatalf("unexpected 'bonk' in result: %v", pairs)
 	}
 

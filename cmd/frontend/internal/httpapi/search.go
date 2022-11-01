@@ -154,6 +154,15 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		indexedIDs = filtered
 	}
 
+	rankingLastUpdatedAt, err := h.codeIntelServices.RankingService.LastUpdatedAt(ctx, indexedIDs)
+	if err != nil {
+		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no rankingx",
+			log.Int("repos", len(indexedIDs)),
+			log.Error(err),
+		)
+		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
+	}
+
 	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
@@ -180,6 +189,11 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 
 		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
+		var documentRanksVersion string
+		if t, ok := rankingLastUpdatedAt[api.RepoID(repoID)]; ok {
+			documentRanksVersion = t.String()
+		}
+
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
 			RepoID:     int32(repo.ID),
@@ -188,6 +202,8 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 			Fork:       repo.Fork,
 			Archived:   repo.Archived,
 			GetVersion: getVersion,
+
+			DocumentRanksVersion: documentRanksVersion,
 		}, nil
 	}
 
