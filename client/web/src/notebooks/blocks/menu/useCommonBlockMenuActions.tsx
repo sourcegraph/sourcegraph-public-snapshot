@@ -57,7 +57,7 @@ export const useCommonBlockMenuActions = ({
             },
             {
                 type: 'button',
-                label: 'New',
+                label: 'Add Block',
                 icon: <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />,
                 onClick: onNewBlock,
                 keyboardShortcutLabel: `${modifierKeyLabel} + ⇧ + ↵`
