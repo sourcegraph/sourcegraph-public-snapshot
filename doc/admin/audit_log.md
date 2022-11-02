@@ -90,7 +90,7 @@ Audit logs are structured logs. As long as one can ingest logs, we assume one ca
 There are two easy approaches to filtering the audit logs:
 
 - JSON-based: look for the presence of the `Attributes.audit` node.
-- Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following Body string: `sampling immunity token`.
+- Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following string: `auditId`.
 
 ### Cloud
 
