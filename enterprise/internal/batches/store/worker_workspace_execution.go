@@ -210,6 +210,11 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}
 
+	author, err := batchesStore.GetChangesetAuthorForUser(ctx, batchSpec.UserID)
+	if err != nil {
+		return false, errors.Wrap(err, "creating changeset author")
+	}
+
 	rawSpecs, err := cache.ChangesetSpecsFromCache(
 		batchSpec.Spec,
 		batcheslib.Repository{
@@ -221,6 +226,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		},
 		latestStepResult.Value,
 		workspace.Path,
+		author,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to build changeset specs from cache")

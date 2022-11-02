@@ -244,7 +244,12 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path)
+		author, err := r.store.GetChangesetAuthorForUser(ctx, spec.UserID)
+		if err != nil {
+			return err
+		}
+
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, author)
 		if err != nil {
 			return err
 		}
