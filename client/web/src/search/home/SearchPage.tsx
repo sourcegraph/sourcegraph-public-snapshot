@@ -79,7 +79,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         <HomePanels showCollaborators={showCollaborators} {...props} />
                     )}
 
-                    {(!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom && (
+                    {((!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom) && (
                         <QueryExamplesHomepage
                             selectedSearchContextSpec={props.selectedSearchContextSpec}
                             telemetryService={props.telemetryService}
