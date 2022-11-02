@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiCog, mdiDelete } from '@mdi/js'
 
-import { Button, H3, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { WebhookFields } from '../graphql-operations'
