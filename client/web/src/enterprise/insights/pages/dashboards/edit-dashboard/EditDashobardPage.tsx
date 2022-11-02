@@ -20,7 +20,7 @@ import {
     InsightsDashboardOwner,
     isPersonalOwner,
     isVirtualDashboard,
-    useInsightDashboard
+    useInsightDashboard,
 } from '../../../core'
 import {
     DashboardCreationFields,
