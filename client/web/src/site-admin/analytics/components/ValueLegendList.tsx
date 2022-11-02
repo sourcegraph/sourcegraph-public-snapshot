@@ -2,8 +2,9 @@
 import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
+import { useLocation } from 'react-router'
 
-import { Text, Tooltip } from '@sourcegraph/wildcard'
+import { Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatNumber } from '../utils'
 
@@ -15,6 +16,7 @@ interface ValueLegendItemProps {
     value: number | string
     tooltip?: string
     className?: string
+    filter?: { name: string; value: string }
 }
 
 export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
@@ -23,25 +25,52 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     description,
     tooltip,
     className,
+    filter,
 }) => {
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
+    const location = useLocation()
+
+    const searchParams = useMemo(() => {
+        const search = new URLSearchParams(location.search)
+        if (filter) {
+            search.set(filter.name, filter.value)
+        }
+        return search
+    }, [filter, location.search])
+
     return (
         <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
             <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
-                <span style={{ color }} className={styles.count}>
-                    {formattedNumber}
-                </span>
+                {filter ? (
+                    <Link to={`?${searchParams.toString()}`} style={{ color }} className={styles.count}>
+                        {formattedNumber}
+                    </Link>
+                ) : (
+                    <span style={{ color }} className={styles.count}>
+                        {formattedNumber}
+                    </span>
+                )}
             </Tooltip>
             <Tooltip content={tooltip}>
-                <Text
-                    as="span"
-                    alignment="center"
-                    className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
-                >
-                    {description}
-                    {tooltip && <span className={styles.linkColor}>*</span>}
-                </Text>
+                {filter ? (
+                    <Link
+                        to={`?${searchParams.toString()}`}
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Link>
+                ) : (
+                    <Text
+                        as="span"
+                        alignment="center"
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Text>
+                )}
             </Tooltip>
         </div>
     )

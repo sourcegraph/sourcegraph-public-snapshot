@@ -18,6 +18,7 @@ import (
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -47,6 +48,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),
+		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
 	}
 
 	jobs := map[string]job.Job{}

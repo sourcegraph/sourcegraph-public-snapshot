@@ -33,6 +33,7 @@ import {
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
+    ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     getLatestTag,
 } from './util'
@@ -415,6 +416,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+            // ensure $SRC_ENDPOINT is set
+            ensureSrcCliEndpoint()
             // ensure src-cli is up to date
             await ensureSrcCliUpToDate()
             // set up batch change config
@@ -496,8 +499,6 @@ cc @${config.captainGitHubUsername}
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E 's/--version ${versionRegex}/--version ${release.version}/g' {} +`,
                             // Update fork variables in installation guides
                             `find ./doc/admin/deploy/ -type f -name '*.md' -exec ${sed} -i -E "s/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${versionRegex}'/DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v${release.version}'/g" {} +`,
-                            // Update sourcegraph.com frontpage
-                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'client/web/src/search/home/SelfHostInstructions.tsx'`,
 
                             notPatchRelease
                                 ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${release.version}"}} {{$currentReleaseVersion := "${release.major}.${release.minor}"}}' doc/_resources/templates/document.html`
@@ -878,6 +879,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:srccliensure',
         description: 'test srccli version',
         run: async () => {
+            ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
         },
     },

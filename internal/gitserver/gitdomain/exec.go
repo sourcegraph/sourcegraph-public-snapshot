@@ -35,6 +35,7 @@ var (
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {},
 		"lfs":          {},
+		"apply":        {"--cached", "-p0"},
 
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
@@ -97,11 +98,7 @@ func isAllowedDiffArg(arg string) bool {
 	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
 
-	if os.IsNotExist(err) {
-		return true
-	}
-
-	return false
+	return os.IsNotExist(err)
 }
 
 // isAllowedGitArg checks if the arg is allowed.

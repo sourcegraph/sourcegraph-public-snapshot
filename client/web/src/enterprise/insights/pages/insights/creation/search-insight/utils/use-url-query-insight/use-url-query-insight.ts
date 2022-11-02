@@ -1,4 +1,6 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+import { gql, useLazyQuery } from '@apollo/client'
 
 import { asError, ErrorLike, dedupeWhitespace } from '@sourcegraph/common'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -6,9 +8,71 @@ import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 
+import { SearchRepositoriesResult, SearchRepositoriesVariables } from '../../../../../../../../graphql-operations'
 import { createDefaultEditSeries } from '../../../../../../components'
-import { CodeInsightsBackendContext } from '../../../../../../core'
 import { CreateInsightFormFields } from '../../types'
+
+const GET_SEARCH_REPOSITORIES = gql`
+    query SearchRepositories($query: String) {
+        search(query: $query) {
+            results {
+                repositories {
+                    name
+                }
+            }
+        }
+    }
+`
+
+export interface UseURLQueryInsightResult {
+    /**
+     * Insight data. undefined in case if we are in a loading state or
+     * URL doesn't have query param.
+     * */
+    data: Partial<CreateInsightFormFields> | ErrorLike | undefined
+
+    /** Whether the search query  param is presented in URL. */
+    hasQueryInsight: boolean
+}
+
+/**
+ * Returns initial values for the search insight from query param.
+ */
+export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
+    const [insightValues, setInsightValues] = useState<Partial<CreateInsightFormFields> | ErrorLike | undefined>()
+
+    const [getResolvedSearchRepositories] = useLazyQuery<SearchRepositoriesResult, SearchRepositoriesVariables>(
+        GET_SEARCH_REPOSITORIES
+    )
+    const query = useMemo(() => new URLSearchParams(queryParameters).get('query'), [queryParameters])
+
+    useEffect(() => {
+        if (query === null) {
+            return
+        }
+
+        const { seriesQuery, repositories } = getInsightDataFromQuery(query)
+
+        // If search query doesn't have repo we should run async repositories resolve
+        // step to avoid case then run search with query without repo: filter we get
+        // all indexed repositories.
+        if (repositories.length > 0) {
+            getResolvedSearchRepositories({ variables: { query } })
+                .then(({ data }) => {
+                    const repositories = data?.search?.results.repositories ?? []
+                    setInsightValues(createInsightFormFields(seriesQuery, repositories.map(repo => repo.name)))
+                })
+                .catch(error => setInsightValues(asError(error)))
+        } else {
+            setInsightValues(createInsightFormFields(seriesQuery, repositories))
+        }
+    }, [getResolvedSearchRepositories, query])
+
+    return {
+        hasQueryInsight: query !== null,
+        data: query !== null ? insightValues : undefined,
+    }
+}
 
 export interface InsightData {
     repositories: string[]
@@ -22,7 +86,7 @@ export interface InsightData {
  *
  * Exported for testing only.
  */
-export function getInsightDataFromQuery(searchQuery: string): InsightData {
+export function getInsightDataFromQuery(searchQuery: string | null): InsightData {
     const sequence = scanSearchQuery(searchQuery ?? '')
 
     if (!searchQuery || sequence.type === 'error') {
@@ -71,52 +135,5 @@ function createInsightFormFields(seriesQuery: string, repositories: string[] = [
             }),
         ],
         repositories: repositories.join(', '),
-    }
-}
-
-export interface UseURLQueryInsightResult {
-    /**
-     * Insight data. undefined in case if we are in a loading state or
-     * URL doesn't have query param.
-     * */
-    data: Partial<CreateInsightFormFields> | ErrorLike | undefined
-
-    /** Whether the search query  param is presented in URL. */
-    hasQueryInsight: boolean
-}
-
-/**
- * Returns initial values for the search insight from query param.
- */
-export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
-    const { getResolvedSearchRepositories } = useContext(CodeInsightsBackendContext)
-    const [insightFormFields, setInsightFormFields] = useState<
-        Partial<CreateInsightFormFields> | ErrorLike | undefined
-    >()
-
-    const query = useMemo(() => new URLSearchParams(queryParameters).get('query'), [queryParameters])
-
-    useEffect(() => {
-        if (query === null) {
-            return
-        }
-
-        const { seriesQuery, repositories } = getInsightDataFromQuery(query)
-
-        // If search query doesn't have repo we should run async repositories resolve
-        // step to avoid case then run search with query without repo: filter we get
-        // all indexed repositories.
-        if (repositories.length > 0) {
-            getResolvedSearchRepositories(query)
-                .then(repositories => setInsightFormFields(createInsightFormFields(seriesQuery, repositories)))
-                .catch(error => setInsightFormFields(asError(error)))
-        } else {
-            setInsightFormFields(createInsightFormFields(seriesQuery, repositories))
-        }
-    }, [getResolvedSearchRepositories, query])
-
-    return {
-        hasQueryInsight: query !== null,
-        data: query !== null ? insightFormFields : undefined,
     }
 }

@@ -93,7 +93,6 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
-                activation: undefined,
             })
         },
         [caseSensitive, patternType, submitSearch]
@@ -142,7 +141,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     onToggle={toggleCaseSensitivity}
                     iconSvgPath={mdiFormatLetterCase}
                     interactive={props.interactive}
-                    className="test-case-sensitivity-toggle"
+                    className={`test-case-sensitivity-toggle ${styles.caseSensitivityToggle}`}
                     disableOn={[
                         {
                             condition: findFilter(navbarSearchQuery, 'case', FilterKind.Subexpression) !== undefined,
@@ -160,16 +159,30 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         },
                     ]}
                 />
-                {/* Hide regex and structural search toggles if lucky search is enabled */}
-                {(!showSmartSearch || patternType !== SearchPatternType.lucky) && (
-                    <>
+                <QueryInputToggle
+                    title="Regular expression"
+                    isActive={patternType === SearchPatternType.regexp}
+                    onToggle={toggleRegexp}
+                    iconSvgPath={mdiRegex}
+                    interactive={props.interactive}
+                    className={`test-regexp-toggle ${styles.regularExpressionToggle}`}
+                    disableOn={[
+                        {
+                            condition:
+                                findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !== undefined,
+                            reason: 'Query already contains one or more patterntype subexpressions',
+                        },
+                    ]}
+                />
+                <>
+                    {!structuralSearchDisabled && (
                         <QueryInputToggle
-                            title="Regular expression"
-                            isActive={patternType === SearchPatternType.regexp}
-                            onToggle={toggleRegexp}
-                            iconSvgPath={mdiRegex}
+                            title="Structural search"
+                            className={`test-structural-search-toggle ${styles.structuralSearchToggle}`}
+                            isActive={patternType === SearchPatternType.structural}
+                            onToggle={toggleStructuralSearch}
+                            iconSvgPath={mdiCodeBrackets}
                             interactive={props.interactive}
-                            className="test-regexp-toggle"
                             disableOn={[
                                 {
                                     condition:
@@ -179,26 +192,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                                 },
                             ]}
                         />
-                        {!structuralSearchDisabled && (
-                            <QueryInputToggle
-                                title="Structural search"
-                                className="test-structural-search-toggle"
-                                isActive={patternType === SearchPatternType.structural}
-                                onToggle={toggleStructuralSearch}
-                                iconSvgPath={mdiCodeBrackets}
-                                interactive={props.interactive}
-                                disableOn={[
-                                    {
-                                        condition:
-                                            findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
-                                            undefined,
-                                        reason: 'Query already contains one or more patterntype subexpressions',
-                                    },
-                                ]}
-                            />
-                        )}
-                    </>
-                )}
+                    )}
+                </>
                 {(showSmartSearch || showCopyQueryButton) && <div className={styles.separator} />}
                 {showSmartSearch && (
                     <SmartSearchToggle

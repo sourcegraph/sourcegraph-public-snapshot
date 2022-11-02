@@ -6,12 +6,17 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -32,7 +37,7 @@ type newBackfillHandler struct {
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
 func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	insightsDB := config.InsightsDB
-	backfillStore := newBackfillStore(insightsDB)
+	backfillStore := NewBackfillStore(insightsDB)
 
 	name := "backfill_new_backfill_worker"
 
@@ -42,9 +47,11 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		ViewName:          "insights_jobs_backfill_new",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
+		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
+		RetryAfter:        time.Second * 30,
+		MaxNumRetries:     3,
 	}, config.ObsContext)
 
 	task := newBackfillHandler{
@@ -52,13 +59,15 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 		backfillStore: backfillStore,
 		seriesReader:  store.NewInsightStore(insightsDB),
 		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
+		costAnalyzer:  *config.CostAnalyzer,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(config.ObsContext, name),
+		Name:              name,
+		NumHandlers:       1,
+		Interval:          5 * time.Second,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
@@ -110,8 +119,17 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.Wrap(err, "reposIterator.ForEach")
 	}
 
-	// TODO: use query costing
-	backfill, err = backfill.SetScope(ctx, tx, repoIds, 0)
+	queryPlan, err := parseQuery(*series)
+	if err != nil {
+		return errors.Wrap(err, "parseQuery")
+	}
+
+	cost := h.costAnalyzer.Cost(&priority.QueryObject{
+		Query:                queryPlan,
+		NumberOfRepositories: int64(len(repoIds)),
+	})
+
+	backfill, err = backfill.SetScope(ctx, tx, repoIds, cost)
 	if err != nil {
 		return errors.Wrap(err, "backfill.SetScope")
 	}
@@ -135,4 +153,29 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 		return errors.Wrap(err, "backfill.MarkComplete")
 	}
 	return err
+}
+
+func parseQuery(series types.InsightSeries) (query.Plan, error) {
+	if series.GeneratedFromCaptureGroups {
+		query, err := compute.Parse(series.Query)
+		if err != nil {
+			return nil, errors.Wrap(err, "compute.Parse")
+		}
+		searchQuery, err := query.ToSearchQuery()
+		if err != nil {
+			return nil, errors.Wrap(err, "ToSearchQuery")
+		}
+		plan, err := querybuilder.ParseQuery(searchQuery, "regexp")
+		if err != nil {
+			return nil, errors.Wrap(err, "ParseQuery")
+		}
+		return plan, nil
+	}
+
+	plan, err := querybuilder.ParseQuery(series.Query, "literal")
+	if err != nil {
+		return nil, errors.Wrap(err, "ParseQuery")
+	}
+	return plan, nil
+
 }

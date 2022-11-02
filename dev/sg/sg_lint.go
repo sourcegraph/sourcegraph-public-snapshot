@@ -31,6 +31,13 @@ var lintFailFast = &cli.BoolFlag{
 	Value:   true,
 }
 
+var lintNoFormatCheck = &cli.BoolFlag{
+	Name:    "no-format-check",
+	Aliases: []string{"nfc"},
+	Usage:   "Don't check file formatting",
+	Value:   false,
+}
+
 var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
@@ -57,6 +64,7 @@ sg lint --help
 		generateAnnotations,
 		lintFix,
 		lintFailFast,
+		lintNoFormatCheck,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -97,6 +105,11 @@ sg lint --help
 			return errors.Wrap(err, "repo.GetState")
 		}
 
+		if !lintNoFormatCheck.Get(cmd) {
+			lintTargets = append(lintTargets, linters.FormattingTarget)
+			targets = append(targets, linters.FormattingTarget.Name)
+		}
+
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 		if cmd.Bool("fix") {
 			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
@@ -106,7 +119,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(linters.Targets).Commands(),
+	Subcommands: lintTargets(append(linters.Targets, linters.FormattingTarget)).Commands(),
 }
 
 type lintTargets []linters.Target

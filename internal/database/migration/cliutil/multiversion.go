@@ -321,7 +321,11 @@ func checkDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		var buf bytes.Buffer
 		noopOutput := output.NewOutput(&buf, output.OutputOpts{})
 
-		if err := compareByFactories(schemaName, version, schema, noopOutput, expectedSchemaFactories); err != nil {
+		expectedSchema, err := fetchExpectedSchema(schemaName, version, noopOutput, expectedSchemaFactories)
+		if err != nil {
+			return err
+		}
+		if err := compareSchemaDescriptions(noopOutput, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
 			schemasWithDrift = append(schemasWithDrift, schemaName)
 		}
 	}

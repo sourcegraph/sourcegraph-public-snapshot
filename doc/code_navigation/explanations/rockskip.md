@@ -129,6 +129,12 @@ indexing github.com/sgtest/megarepo@14a3d9849ba587d667efbc542cf0c7cd106c3e72
 
 In this example you can see there's 1 repository and the symbols service has indexed 9% of all commits with an ETA of 36H from now. There's also a breakdown of tasks that are part of Rockskip's internal workings mostly for Sourcegraph engineers, so you can ignore that.
 
+## When is indexing triggered?
+
+Indexing is triggered upon opening the symbol sidebar or hovering on a token. Both of those UI features hit the same `type:symbol` search API which is serviced under the hood by Rockskip.
+
+Rockskip indexes the new commits since the previously indexed commit, so if it's been a long time since a user last opened the symbol sidebar then Rockskip will take longer to process before it can service queries. Simply opening the symbol sidebar more frequently (e.g. via having more users on the instance) will decrease the probability of seeing the still-processing message.
+
 ## How does it work?
 
 For a deeper dive into the index and query structures, check out the [explanatory RFC](https://docs.google.com/document/d/1sDDpZaWdGtIaiNLNB8QsLwHTvH10fhEKpEa4qcog5vg/edit?usp=sharing).

@@ -3495,17 +3495,16 @@ func (c InferenceServiceInferIndexJobsFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background)
 // used for unit testing.
 type MockPolicyMatcher struct {
-	// CommitsDescribedByPolicyInternalFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// CommitsDescribedByPolicyInternal.
-	CommitsDescribedByPolicyInternalFunc *PolicyMatcherCommitsDescribedByPolicyInternalFunc
+	// CommitsDescribedByPolicyFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitsDescribedByPolicy.
+	CommitsDescribedByPolicyFunc *PolicyMatcherCommitsDescribedByPolicyFunc
 }
 
 // NewMockPolicyMatcher creates a new mock of the PolicyMatcher interface.
 // All methods return zero values for all results, unless overwritten.
 func NewMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
-		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
 			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (r0 map[string][]enterprise.PolicyMatch, r1 error) {
 				return
 			},
@@ -3517,9 +3516,9 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 	return &MockPolicyMatcher{
-		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
 			defaultHook: func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
-				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicyInternal")
+				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
 	}
@@ -3530,43 +3529,43 @@ func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
 // overwritten.
 func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
 	return &MockPolicyMatcher{
-		CommitsDescribedByPolicyInternalFunc: &PolicyMatcherCommitsDescribedByPolicyInternalFunc{
-			defaultHook: i.CommitsDescribedByPolicyInternal,
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: i.CommitsDescribedByPolicy,
 		},
 	}
 }
 
-// PolicyMatcherCommitsDescribedByPolicyInternalFunc describes the behavior
-// when the CommitsDescribedByPolicyInternal method of the parent
-// MockPolicyMatcher instance is invoked.
-type PolicyMatcherCommitsDescribedByPolicyInternalFunc struct {
+// PolicyMatcherCommitsDescribedByPolicyFunc describes the behavior when the
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// is invoked.
+type PolicyMatcherCommitsDescribedByPolicyFunc struct {
 	defaultHook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
 	hooks       []func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)
-	history     []PolicyMatcherCommitsDescribedByPolicyInternalFuncCall
+	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
 	mutex       sync.Mutex
 }
 
-// CommitsDescribedByPolicyInternal delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockPolicyMatcher) CommitsDescribedByPolicyInternal(v0 context.Context, v1 int, v2 []types.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
-	r0, r1 := m.CommitsDescribedByPolicyInternalFunc.nextHook()(v0, v1, v2, v3, v4...)
-	m.CommitsDescribedByPolicyInternalFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyInternalFuncCall{v0, v1, v2, v3, v4, r0, r1})
+// CommitsDescribedByPolicy delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []types.ConfigurationPolicy, v3 time.Time, v4 ...string) (map[string][]enterprise.PolicyMatch, error) {
+	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3, v4...)
+	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// CommitsDescribedByPolicyInternal method of the parent MockPolicyMatcher
-// instance is invoked and the hook queue is empty.
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) SetDefaultHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// is invoked and the hook queue is empty.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CommitsDescribedByPolicyInternal method of the parent MockPolicyMatcher
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) PushHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3574,20 +3573,20 @@ func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) PushHook(hook func(c
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
 	f.SetDefaultHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]enterprise.PolicyMatch, r1 error) {
 	f.PushHook(func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 		return r0, r1
 	})
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) nextHook() func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []types.ConfigurationPolicy, time.Time, ...string) (map[string][]enterprise.PolicyMatch, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3600,28 +3599,28 @@ func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) nextHook() func(cont
 	return hook
 }
 
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) appendCall(r0 PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) {
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) appendCall(r0 PolicyMatcherCommitsDescribedByPolicyFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// PolicyMatcherCommitsDescribedByPolicyInternalFuncCall objects describing
-// the invocations of this function.
-func (f *PolicyMatcherCommitsDescribedByPolicyInternalFunc) History() []PolicyMatcherCommitsDescribedByPolicyInternalFuncCall {
+// PolicyMatcherCommitsDescribedByPolicyFuncCall objects describing the
+// invocations of this function.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) History() []PolicyMatcherCommitsDescribedByPolicyFuncCall {
 	f.mutex.Lock()
-	history := make([]PolicyMatcherCommitsDescribedByPolicyInternalFuncCall, len(f.history))
+	history := make([]PolicyMatcherCommitsDescribedByPolicyFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// PolicyMatcherCommitsDescribedByPolicyInternalFuncCall is an object that
-// describes an invocation of method CommitsDescribedByPolicyInternal on an
-// instance of MockPolicyMatcher.
-type PolicyMatcherCommitsDescribedByPolicyInternalFuncCall struct {
+// PolicyMatcherCommitsDescribedByPolicyFuncCall is an object that describes
+// an invocation of method CommitsDescribedByPolicy on an instance of
+// MockPolicyMatcher.
+type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -3649,7 +3648,7 @@ type PolicyMatcherCommitsDescribedByPolicyInternalFuncCall struct {
 // invocation. The variadic slice argument is flattened in this array such
 // that one positional argument and three variadic arguments would result in
 // a slice of four, not two.
-func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Args() []interface{} {
+func (c PolicyMatcherCommitsDescribedByPolicyFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
 	for _, val := range c.Arg4 {
 		trailing = append(trailing, val)
@@ -3660,7 +3659,7 @@ func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Args() []interfac
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c PolicyMatcherCommitsDescribedByPolicyInternalFuncCall) Results() []interface{} {
+func (c PolicyMatcherCommitsDescribedByPolicyFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
