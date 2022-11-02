@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -95,4 +96,42 @@ SELECT
 FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
 WHERE u.id IN (SELECT id FROM inserted)
+`
+
+func (s *store) ProcessStaleExportedUplods(
+	ctx context.Context,
+	graphKey string,
+	batchSize int,
+	deleter func(ctx context.Context, id int) error,
+) (totalDeleted int, err error) {
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
+	if err != nil {
+		return 0, err
+	}
+
+	for _, id := range ids {
+		if err := deleter(ctx, id); err != nil {
+			return 0, err
+		}
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
+		return 0, err
+	}
+
+	return len(ids), nil
+}
+
+const selectStaleExportedUploadsQuery = `
+TODO
+`
+
+const deleteStaleExportedUploadsQuery = `
+TODO
 `
