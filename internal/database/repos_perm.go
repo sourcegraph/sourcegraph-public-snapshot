@@ -82,20 +82,7 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 )
 `
 	unrestrictedReposQuery := sqlf.Sprintf(unrestrictedReposSQL)
-
-	const restrictedRepositoriesSQL = `
-(                             -- Restricted repositories require checking permissions
-    SELECT object_ids_ints @> INTSET(repo.id)
-    FROM user_permissions
-    WHERE
-        user_id = %s
-    AND permission = %s
-    AND object_type = 'repos'
-)
-`
-	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
-
-	conditions := []*sqlf.Query{unrestrictedReposQuery, restrictedRepositoriesQuery}
+	conditions := []*sqlf.Query{unrestrictedReposQuery}
 
 	// Disregard unrestricted state when permissions user mapping is enabled
 	if !usePermissionsUserMapping {
@@ -117,6 +104,20 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 		externalServiceUnrestrictedQuery := sqlf.Sprintf(externalServiceUnrestrictedSQL)
 		conditions = append(conditions, externalServiceUnrestrictedQuery)
 	}
+
+	const restrictedRepositoriesSQL = `
+(                             -- Restricted repositories require checking permissions
+    SELECT object_ids_ints @> INTSET(repo.id)
+    FROM user_permissions
+    WHERE
+        user_id = %s
+    AND permission = %s
+    AND object_type = 'repos'
+)
+`
+	restrictedRepositoriesQuery := sqlf.Sprintf(restrictedRepositoriesSQL, authenticatedUserID, perms.String())
+
+	conditions = append(conditions, restrictedRepositoriesQuery)
 
 	// Have to manually wrap the result in parenthesis so that they're evaluated together
 	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "OR"))
