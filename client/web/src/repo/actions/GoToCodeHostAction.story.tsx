@@ -5,10 +5,10 @@ import { mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 const decorator: DecoratorFn = story => <div className="container mt-3">{story()}</div>
 

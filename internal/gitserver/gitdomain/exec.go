@@ -98,11 +98,7 @@ func isAllowedDiffArg(arg string) bool {
 	// make sure that arg is not a local file
 	_, err := os.Stat(arg)
 
-	if os.IsNotExist(err) {
-		return true
-	}
-
-	return false
+	return os.IsNotExist(err)
 }
 
 // isAllowedGitArg checks if the arg is allowed.

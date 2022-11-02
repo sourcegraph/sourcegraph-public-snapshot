@@ -41,11 +41,12 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
-    # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git>=2.34.1' \
+    # We require git 2.38+ because we need a fix for this vulnerability to be included:
+    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+    'git>=2.38.1' \
     git-lfs \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:

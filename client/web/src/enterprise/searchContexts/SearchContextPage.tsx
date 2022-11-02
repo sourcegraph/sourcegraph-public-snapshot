@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
-import { SearchContextProps, SearchContextRepositoryRevisisonsFields } from '@sourcegraph/search'
+import { SearchContextProps, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -42,7 +42,7 @@ const initialRepositoriesToShow = 15
 const incrementalRepositoriesToShow = 10
 
 const SearchContextRepositories: React.FunctionComponent<
-    React.PropsWithChildren<{ repositories: SearchContextRepositoryRevisisonsFields[] }>
+    React.PropsWithChildren<{ repositories: SearchContextRepositoryRevisionsFields[] }>
 > = ({ repositories }) => {
     const [filterQuery, setFilterQuery] = useState('')
     const debouncedSetFilterQuery = useMemo(() => debounce(value => setFilterQuery(value), 250), [setFilterQuery])
@@ -71,7 +71,7 @@ const SearchContextRepositories: React.FunctionComponent<
     )
 
     const renderRepositoryRevisions = useCallback(
-        (repositoryRevisions: SearchContextRepositoryRevisisonsFields) => (
+        (repositoryRevisions: SearchContextRepositoryRevisionsFields) => (
             <div
                 key={repositoryRevisions.repository.name}
                 className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
@@ -120,7 +120,7 @@ const SearchContextRepositories: React.FunctionComponent<
                         <div className="w-50">Revisions</div>
                     </div>
                     <hr className="mt-2 mb-0" />
-                    <VirtualList<SearchContextRepositoryRevisisonsFields>
+                    <VirtualList<SearchContextRepositoryRevisionsFields>
                         className="mt-2"
                         itemsToShow={repositoriesToShow}
                         onShowMoreItems={onBottomHit}

@@ -16,7 +16,6 @@ import {
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    RepositorySuggestionData,
     CategoricalChartContent,
     SeriesChartContent,
     UiFeaturesConfig,
@@ -102,22 +101,6 @@ export interface CodeInsightsBackend {
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
     getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
-
-    /**
-     * Returns a list of suggestions for the repositories' field in the insight creation UI.
-     *
-     * @param query - A string with a possible value for the repository name
-     */
-    getRepositorySuggestions: (query: string) => Promise<RepositorySuggestionData[]>
-
-    /**
-     * Returns a list of resolved repositories from the search page query via search API.
-     * Used by 1-click insight creation flow. Since users can have a repo: filter in their
-     * query we have to resolve these filters by our search API.
-     *
-     * @param query - search page query value
-     */
-    getResolvedSearchRepositories: (query: string) => Promise<string[]>
 
     /**
      * Used for the dynamic insight example on the insights landing page.
