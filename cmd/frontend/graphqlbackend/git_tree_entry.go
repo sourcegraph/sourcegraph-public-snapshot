@@ -327,6 +327,15 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 	return &symbolInfoResolver{symbolInfo: result}, nil
 }
 
+func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
+	_, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(keegan) implement. Right now a stub which always pretends a file is LFS for testing.
+	return &lfsResolver{}, nil
+}
+
 type symbolInfoArgs struct {
 	Line      int32
 	Character int32
