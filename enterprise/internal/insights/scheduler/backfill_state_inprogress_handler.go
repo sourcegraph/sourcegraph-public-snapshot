@@ -81,8 +81,6 @@ type inProgressHandler struct {
 var _ workerutil.Handler = &inProgressHandler{}
 
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("inProgressHandler called", log.Int("recordId", record.RecordID()))
-
 	ctx = actor.WithInternalActor(ctx)
 	job := record.(*BaseJob)
 	backfillJob, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
@@ -103,6 +101,16 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Hour*24))
+
+	logger.Info("insights backfill progress handler loaded",
+		log.Int("recordId", record.RecordID()),
+		log.Int("jobNumFailures", job.NumFailures),
+		log.Int("seriesId", series.ID),
+		log.Int("backfillId", backfillJob.Id),
+		log.Int("repoTotalCount", itr.TotalCount),
+		log.Float64("percentComplete", itr.PercentComplete),
+		log.Int("erroredRepos", itr.ErroredRepos()),
+		log.Int("totalErrors", itr.TotalErrors()))
 
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, []itypes.InsightSeriesRecordingTimes{
 		{
@@ -128,10 +136,10 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 				return err
 			}
 
-			logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
+			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
 			runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
 			if runErr != nil {
-				logger.Debug("error during backfill execution", log.Error(runErr))
+				logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
 			}
 			err = finish(ctx, h.backfillStore.Store, runErr)
 			if err != nil {
@@ -141,18 +149,18 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		return nil
 	}
 
-	logger.Info("starting primary loop", log.Int("series_id", series.ID), log.Int("backfill_id", backfillJob.Id))
+	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
 	if err := itrLoop(itr.NextWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
 	}
 
-	logger.Info("starting retry loop", log.Int("series_id", series.ID), log.Int("backfill_id", backfillJob.Id))
+	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
 	if err := itrLoop(itr.NextRetryWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.RetryLoop")
 	}
 
 	if itr.IsComplete() {
-		logger.Debug("setting backfill to completed state", log.Int("series_id", series.ID), log.Int("backfill_id", backfillJob.Id))
+		logger.Info("setting backfill to completed state", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Duration("totalDuration", itr.RuntimeDuration))
 		err = itr.MarkComplete(ctx, h.backfillStore.Store)
 		if err != nil {
 			return err

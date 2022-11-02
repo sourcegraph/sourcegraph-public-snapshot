@@ -196,6 +196,18 @@ func (p *PersistentRepoIterator) IsComplete() bool {
 	return p.PercentComplete == 1
 }
 
+func (p *PersistentRepoIterator) ErroredRepos() int {
+	return len(p.errors)
+}
+
+func (p *PersistentRepoIterator) TotalErrors() int {
+	count := 0
+	for _, iterationError := range p.errors {
+		count += iterationError.FailureCount
+	}
+	return count
+}
+
 func stampStartedAt(ctx context.Context, store *basestore.Store, itrId int, stampTime time.Time) error {
 	return store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET started_at = %S WHERE Id = %S", stampTime, itrId))
 }
