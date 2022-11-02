@@ -1,6 +1,6 @@
 import { createPoint, Point } from '../models/geometry/point'
 import { Rectangle } from '../models/geometry/rectangle'
-import { Position } from '../models/tether-models'
+import { ElementPosition } from '../models/tether-models'
 
 import { POSITION_VARIANTS } from './geometry/constants'
 
@@ -136,7 +136,7 @@ export function setStyle(element: HTMLElement | SVGElement | null, key: string, 
     }
 }
 
-export function setPositionAttributes(element: HTMLElement | SVGElement | null, position: Position): void {
+export function setPositionAttributes(element: HTMLElement | SVGElement | null, position: ElementPosition): void {
     if (element !== null && position) {
         element.dataset.position = position
         element.dataset.side = POSITION_VARIANTS[position].positionSides

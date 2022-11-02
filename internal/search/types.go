@@ -49,7 +49,7 @@ type Mode int
 
 const (
 	Precise     Mode = 0
-	SmartSearch      = 1 << iota
+	SmartSearch      = 1 << (iota - 1)
 )
 
 type Protocol int

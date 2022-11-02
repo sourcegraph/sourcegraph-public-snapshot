@@ -2,11 +2,11 @@ import * as React from 'react'
 
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Tooltip } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { Timestamp } from '../../../../components/time/Timestamp'
+import { ProductLicenseFields } from '../../../../graphql-operations'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'
 import { ProductLicenseInfoDescription } from '../../../productSubscription/ProductLicenseInfoDescription'
@@ -48,7 +48,7 @@ export const siteAdminProductLicenseFragment = gql`
 `
 
 export interface SiteAdminProductLicenseNodeProps {
-    node: GQL.IProductLicense
+    node: ProductLicenseFields
     showSubscription: boolean
 }
 

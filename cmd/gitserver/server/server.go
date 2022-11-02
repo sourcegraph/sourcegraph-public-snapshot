@@ -1189,7 +1189,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if honey.Enabled() || traceLogs {
 		act := actor.FromContext(ctx)
 		ev := honey.NewEvent("gitserver-search")
-		ev.SetSampleRate(honeySampleRate("", act.IsInternal()))
+		ev.SetSampleRate(honeySampleRate("", act))
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
@@ -1619,7 +1619,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
+				ev.SetSampleRate(honeySampleRate(cmd, act))
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -1840,7 +1840,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			if honey.Enabled() || traceLogs || isSlow {
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-p4exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
+				ev.SetSampleRate(honeySampleRate(cmd, act))
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -2417,7 +2417,11 @@ var (
 // internally. So we update our sampling to heavily downsample internal
 // rev-parse, while upping our sampling for non-internal.
 // https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
-func honeySampleRate(cmd string, internal bool) uint {
+func honeySampleRate(cmd string, actor *actor.Actor) uint {
+	// HACK(keegan) 2022-11-02 IsInternal on sourcegraph.com is always
+	// returning false. For now I am also marking it internal if UID is not
+	// set to work around us hammering honeycomb.
+	internal := actor.IsInternal() || actor.UID == 0
 	switch {
 	case cmd == "rev-parse" && internal:
 		return 1 << 14 // 16384
@@ -2542,33 +2546,33 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch")
+		return errors.Wrapf(err, "failed to fetch repo %q", repo)
 	}
 
 	removeBadRefs(ctx, dir)
 
 	if err := setHEAD(ctx, logger, dir, syncer, remoteURL); err != nil {
-		return errors.Wrap(err, "failed to ensure HEAD exists")
+		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
 	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("Failed to update last changed time", log.Error(err))
+		logger.Warn("failed to update last changed time", log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed setting last fetch in DB", log.Error(err))
+		logger.Warn("failed to set last_fetched in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed setting repo size", log.Error(err))
+		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
 	return nil

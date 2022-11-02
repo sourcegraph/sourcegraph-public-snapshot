@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -37,7 +36,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -51,17 +50,6 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics,
 	}
-
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-
-	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
-
-	go conf.Watch(func() {
-		val := getRateLimit()
-		logger.Info("Updating insights/query-worker rate limit", log.Int("value", int(val)))
-		limiter.SetLimit(val)
-	})
 
 	sharedCache := make(map[string]*types.InsightSeries)
 
@@ -87,21 +75,6 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		searchHandlers:  GetSearchHandlers(),
 		logger:          log.Scoped("insights.queryRunner.Handler", ""),
 	}, options)
-}
-
-func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsQueryWorkerRateLimit
-
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
-		} else {
-			result = rate.Limit(*val)
-		}
-
-		return result
-	}
 }
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long

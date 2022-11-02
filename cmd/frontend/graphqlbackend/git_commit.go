@@ -283,7 +283,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -340,8 +340,7 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 	if args.Base != nil {
 		base = *args.Base
 	}
-	client := gitserver.NewClient(r.db)
-	return NewRepositoryComparison(ctx, r.db, client, r.repoResolver, &RepositoryComparisonInput{
+	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r.repoResolver, &RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &oidString,
 		FetchMissing: false,
