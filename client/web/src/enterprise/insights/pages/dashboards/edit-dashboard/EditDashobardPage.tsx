@@ -20,6 +20,7 @@ import {
     InsightsDashboardOwner,
     isPersonalOwner,
     isVirtualDashboard,
+    useInsightDashboard
 } from '../../../core'
 import {
     DashboardCreationFields,
@@ -40,22 +41,15 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
     const { dashboardId, authenticatedUser } = props
     const history = useHistory()
 
-    const { getDashboardById, getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getDashboardOwners, updateDashboard } = useContext(CodeInsightsBackendContext)
 
     // Load edit dashboard information
     const owners = useObservable(useMemo(() => getDashboardOwners(), [getDashboardOwners]))
 
-    const dashboard = useObservable(
-        useMemo(
-            () => getDashboardById({ dashboardId }),
-            // Load only on first render to avoid UI flashing after settings update
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            [dashboardId]
-        )
-    )
+    const { dashboard, loading } = useInsightDashboard({ id: dashboardId })
 
     // Loading state
-    if (owners === undefined || dashboard === undefined) {
+    if (owners === undefined || dashboard === undefined || loading) {
         return <LoadingSpinner />
     }
 
