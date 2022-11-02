@@ -23,6 +23,8 @@ func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine
 	}))
 }
 
+const pageRankPrecision = float64(0)
+
 func (s *Service) loadRanks(ctx context.Context) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
@@ -76,7 +78,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 			return err
 		}
 
-		ranks := map[api.RepoName]map[string][]float64{}
+		ranks := map[api.RepoName]map[string]float64{}
 
 		lastOffset := 0
 		cr := &countingReader{r: r}
@@ -109,13 +111,12 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 			}
 
 			if _, ok := ranks[repo]; !ok {
-				ranks[repo] = map[string][]float64{}
+				ranks[repo] = map[string]float64{}
 			}
-
-			ranks[repo][path] = []float64{rank}
+			ranks[repo][path] = rank
 		}
 
-		if err := s.store.BulkSetDocumentRanks(ctx, rankingGraphKey, name, ranks); err != nil {
+		if err := s.store.BulkSetDocumentRanks(ctx, rankingGraphKey, name, pageRankPrecision, ranks); err != nil {
 			return err
 		}
 

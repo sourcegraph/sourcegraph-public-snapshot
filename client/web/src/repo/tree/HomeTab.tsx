@@ -9,7 +9,6 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
@@ -37,7 +36,7 @@ import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 
-import { fetchTreeCommits } from './TreePageContent'
+import { fetchTreeCommits, TreeCommitsRepositoryCommit } from './TreePageContent'
 
 import styles from './HomeTab.module.scss'
 
@@ -143,7 +142,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     )
 
     const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,
