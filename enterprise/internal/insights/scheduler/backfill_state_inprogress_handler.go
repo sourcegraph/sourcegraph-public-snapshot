@@ -130,11 +130,13 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 				break
 			}
 
-			repo, err := h.repoStore.Get(ctx, repoId)
-			if err != nil {
-				// TODO: this repo should be marked as errored and processing should continue
-				// revisit when error handling added.
-				return err
+			repo, repoErr := h.repoStore.Get(ctx, repoId)
+			if repoErr != nil {
+				err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
+				if err != nil {
+					return err
+				}
+				continue
 			}
 
 			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
