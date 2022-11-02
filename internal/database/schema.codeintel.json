@@ -79,6 +79,62 @@
   ],
   "Tables": [
     {
+      "Name": "codeintel_last_reconcile",
+      "Comment": "Stores the last time processed LSIF data was reconciled with the other database.",
+      "Columns": [
+        {
+          "Name": "dump_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_reconcile_at",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_last_reconcile_dump_id_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_last_reconcile_dump_id_key ON codeintel_last_reconcile USING btree (dump_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (dump_id)"
+        },
+        {
+          "Name": "codeintel_last_reconcile_last_reconcile_at_dump_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_last_reconcile_last_reconcile_at_dump_id ON codeintel_last_reconcile USING btree (last_reconcile_at, dump_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "lsif_data_definitions",
       "Comment": "Associates (document, range) pairs with the import monikers attached to the range.",
       "Columns": [

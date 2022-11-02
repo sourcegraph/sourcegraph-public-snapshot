@@ -20,7 +20,7 @@ func TestIndexRepository(t *testing.T) {
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 	symbolsClient := NewMockSymbolsClient()
-	svc := newService(mockStore, nil, gitserverClient, symbolsClient, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, symbolsClient, siteConfigQuerier{}, nil, &observation.TestContext)
 
 	repositoryContents := map[string]string{
 		"foo.go": "func Foo()",
@@ -46,8 +46,8 @@ func TestIndexRepository(t *testing.T) {
 	if calls := mockStore.SetDocumentRanksFunc.History(); len(calls) != 1 {
 		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(calls))
 	} else {
-		ranks := calls[0].Arg2
-		if !(ranks["foo.go"][0] < ranks["bar.go"][0] && ranks["bar.go"][0] < ranks["baz.go"][0]) {
+		ranks := calls[0].Arg3
+		if !(ranks["foo.go"] < ranks["bar.go"] && ranks["bar.go"] < ranks["baz.go"]) {
 			t.Fatalf("unexpected ordering. want=%v have=%v", []string{"foo.go", "bar.go", "baz.go"}, ranks)
 		}
 	}

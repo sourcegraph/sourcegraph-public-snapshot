@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-type testFunc func(context.Context, api.RepoID, finishFunc) bool
+type testFunc func(context.Context, api.RepoID, FinishFunc) bool
 
 func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
 	ctx := context.Background()
@@ -60,7 +60,7 @@ func TestForNextAndFinish(t *testing.T) {
 		itr, _ := NewWithClock(ctx, store, clock, repos)
 		var seen []api.RepoID
 
-		got, _ := testForNextAndFinish(t, store, itr, seen, func(ctx context.Context, id api.RepoID, fn finishFunc) bool {
+		got, _ := testForNextAndFinish(t, store, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
 			clock.Advance(time.Second * 1)
 			err := fn(ctx, store, nil)
 			if err != nil {
@@ -79,7 +79,7 @@ func TestForNextAndFinish(t *testing.T) {
 		itr, _ := NewWithClock(ctx, store, clock, repos)
 		var seen []api.RepoID
 
-		got, _ := testForNextAndFinish(t, store, itr, seen, func(ctx context.Context, id api.RepoID, fn finishFunc) bool {
+		got, _ := testForNextAndFinish(t, store, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
 			clock.Advance(time.Second * 1)
 			var executionErr error
 			if id == 6 {
@@ -109,7 +109,7 @@ func TestForNextAndFinish(t *testing.T) {
 		var seen []api.RepoID
 
 		hasStopped := false
-		do := func(ctx context.Context, id api.RepoID, fn finishFunc) bool {
+		do := func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
 			clock.Advance(time.Second * 1)
 			var executionErr error
 			if id == 6 && !hasStopped {
@@ -133,6 +133,37 @@ func TestForNextAndFinish(t *testing.T) {
 		secondItr, _ := testForNextAndFinish(t, store, reloaded, seen, do)
 		jsonify, _ := json.Marshal(secondItr)
 		autogold.Want("iterate with no error and 1 interruptions", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"2021-01-01T00:00:06Z","RuntimeDuration":5000000000,"PercentComplete":1,"TotalCount":5,"SuccessCount":5,"Cursor":5}`).Equal(t, string(jsonify))
+	})
+
+	t.Run("iterate twice and verify progress updates", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		repos := []int32{1, 5, 6, 14, 17}
+		itr, _ := NewWithClock(ctx, store, clock, repos)
+
+		var finishFunc FinishFunc
+
+		// iterate once
+		_, _, finishFunc = itr.NextWithFinish()
+		err := finishFunc(ctx, store, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// then twice
+		_, _, finishFunc = itr.NextWithFinish()
+		err = finishFunc(ctx, store, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// we should see 40% progress
+		reloaded, err := Load(ctx, store, itr.Id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		jsonify, _ := json.Marshal(reloaded)
+		autogold.Want("iterate twice and verify progress", `{"Id":4,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0.4,"TotalCount":5,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
 	})
 }
 

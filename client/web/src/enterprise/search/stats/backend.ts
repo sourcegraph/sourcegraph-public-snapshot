@@ -2,12 +2,12 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { queryGraphQL } from '../../../backend/graphql'
+import { requestGraphQL } from '../../../backend/graphql'
+import { SearchResultsStatsResult, SearchResultsStatsFields } from '../../../graphql-operations'
 
-export const querySearchResultsStats = (query: string): Observable<GQL.ISearchResultsStats & { limitHit: boolean }> =>
-    queryGraphQL(
+export const querySearchResultsStats = (query: string): Observable<SearchResultsStatsFields & { limitHit: boolean }> =>
+    requestGraphQL<SearchResultsStatsResult>(
         gql`
             query SearchResultsStats($query: String!) {
                 search(query: $query) {
@@ -15,11 +15,15 @@ export const querySearchResultsStats = (query: string): Observable<GQL.ISearchRe
                         limitHit
                     }
                     stats {
-                        languages {
-                            name
-                            totalLines
-                        }
+                        ...SearchResultsStatsFields
                     }
+                }
+            }
+
+            fragment SearchResultsStatsFields on SearchResultsStats {
+                languages {
+                    name
+                    totalLines
                 }
             }
         `,

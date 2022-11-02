@@ -28,3 +28,6 @@ ignore = true
 # shfmt shouldn't format third-party script codecov.sh
 [dev/ci/codecov.sh]
 ignore = true
+
+[*.nix]
+indent_size = 2

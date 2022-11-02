@@ -91,7 +91,6 @@ import {
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
-import { withActivation } from './tracking/withActivation'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -175,8 +174,6 @@ const WILDCARD_THEME: WildcardTheme = {
 }
 
 setLinkComponent(RouterLink)
-
-const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
 const history = createBrowserHistory()
 
@@ -375,7 +372,7 @@ export class SourcegraphWebApp extends React.Component<
                                                             <CodeHostScopeProvider
                                                                 authenticatedUser={authenticatedUser}
                                                             >
-                                                                <LayoutWithActivation
+                                                                <Layout
                                                                     {...props}
                                                                     {...routeComponentProps}
                                                                     authenticatedUser={authenticatedUser}
