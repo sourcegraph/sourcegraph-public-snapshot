@@ -19,12 +19,12 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
-import { LoggedOutHomepage } from './LoggedOutHomepage'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
 import styles from './SearchPage.module.scss'
+import { isSourcegraphDotCom } from '../../enterprise/codeintel/searchBased'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
@@ -75,13 +75,11 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} queryState={queryState} setQueryState={setQueryState} />}
-
-                {showEnterpriseHomePanels && props.authenticatedUser && (
+                {showEnterpriseHomePanels && props.authenticatedUser && !isSourcegraphDotCom && (
                     <HomePanels showCollaborators={showCollaborators} {...props} />
                 )}
 
-                {(!showEnterpriseHomePanels && props.authenticatedUser) && (
+                {(!showEnterpriseHomePanels && props.authenticatedUser) || props.isSourcegraphDotCom && (
                     <QueryExamplesHomepage
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         telemetryService={props.telemetryService}
