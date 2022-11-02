@@ -328,7 +328,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(history.location.pathname + history.location.search)
+                                            encodeURI(history.location.pathname + history.location.search + history.location.hash)
                                         }
                                         variant="secondary"
                                         outline={true}

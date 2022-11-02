@@ -141,7 +141,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     onToggle={toggleCaseSensitivity}
                     iconSvgPath={mdiFormatLetterCase}
                     interactive={props.interactive}
-                    className="test-case-sensitivity-toggle"
+                    className={`test-case-sensitivity-toggle ${styles.caseSensitivityToggle}`}
                     disableOn={[
                         {
                             condition: findFilter(navbarSearchQuery, 'case', FilterKind.Subexpression) !== undefined,
@@ -165,7 +165,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     onToggle={toggleRegexp}
                     iconSvgPath={mdiRegex}
                     interactive={props.interactive}
-                    className="test-regexp-toggle"
+                    className={`test-regexp-toggle ${styles.regularExpressionToggle}`}
                     disableOn={[
                         {
                             condition:
@@ -178,7 +178,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     {!structuralSearchDisabled && (
                         <QueryInputToggle
                             title="Structural search"
-                            className="test-structural-search-toggle"
+                            className={`test-structural-search-toggle ${styles.structuralSearchToggle}`}
                             isActive={patternType === SearchPatternType.structural}
                             onToggle={toggleStructuralSearch}
                             iconSvgPath={mdiCodeBrackets}

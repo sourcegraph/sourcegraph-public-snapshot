@@ -6,6 +6,7 @@ import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
 
+import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 
@@ -49,7 +50,7 @@ export interface TemporarySettingsSchema {
     'coreWorkflowImprovements.enabled_deprecated': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
-    'repo.commitPage.diffMode': 'split' | 'unified'
+    'repo.commitPage.diffMode': DiffMode
 }
 
 /**
