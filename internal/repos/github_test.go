@@ -341,7 +341,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			name: "name-with-owner",
 			schema: &schema.GitHubConnection{
 				Url:                   "https://github.com",
-				RepositoryPathPattern: "{nameWithowner}",
+				RepositoryPathPattern: "{nameWithOwner}",
 			},
 		},
 	}

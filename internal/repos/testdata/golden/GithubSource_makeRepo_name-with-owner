@@ -1,7 +1,7 @@
 [
   {
    "ID": 0,
-   "Name": "{nameWithowner}",
+   "Name": "tsenart/vegeta",
    "URI": "github.com/tsenart/vegeta",
    "Description": "HTTP load testing tool and library. It''s over 9000!",
    "Fork": false,
@@ -37,7 +37,7 @@
   },
   {
    "ID": 0,
-   "Name": "{nameWithowner}",
+   "Name": "sourcegraph/secret-vegeta",
    "URI": "github.com/sourcegraph/secret-vegeta",
    "Description": "This vegeta is made with secret sauce from Sourcegraph.",
    "Fork": false,
