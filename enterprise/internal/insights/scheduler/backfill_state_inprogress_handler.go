@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	log "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
@@ -89,7 +90,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		return errors.Wrap(err, "repoIterator")
 	}
 
-	for true {
+	for {
 		repoId, more, finish := itr.NextWithFinish()
 		if !more {
 			break
