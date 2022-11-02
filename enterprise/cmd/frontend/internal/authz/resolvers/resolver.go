@@ -457,7 +457,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}, nil
 }
 
-func (r *Resolver) AuthzProviders() []string {
+func (r *Resolver) AuthzProviderTypes() []string {
 	_, providers := authz.GetProviders()
 	providerTypes := make([]string, 0, len(providers))
 	for _, p := range providers {

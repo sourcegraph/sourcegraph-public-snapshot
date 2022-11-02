@@ -331,9 +331,9 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	}
 	// Wait up to 30 seconds for Perforce to be added as an authz provider
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		authzProviders, err := client.AuthzProviders()
+		authzProviders, err := client.AuthzProviderTypes()
 		if err != nil {
-			t.Fatal(err)
+			t.Fatal("failed to fetch list of authz providers", err)
 		}
 		if len(authzProviders) != 0 {
 			for _, p := range authzProviders {
@@ -345,7 +345,7 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		return gqltestutil.ErrContinueRetry
 	})
 	if err != nil {
-		t.Fatal("Waiting for user permissions to be synced:", err)
+		t.Fatal("Waiting for authz providers to be added:", err)
 	}
 }
 
