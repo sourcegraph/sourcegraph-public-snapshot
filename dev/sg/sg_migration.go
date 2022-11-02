@@ -248,7 +248,7 @@ var localGitExpectedSchemaFactory = cliutil.NewExpectedSchemaFactory(
 		output := root.Run(run.Cmd(ctx, "git", "show", path))
 
 		if err := output.Wait(); err != nil {
-			// Rewrite error if it was a locali git error (non-fatal)
+			// Rewrite error if it was a local git error (non-fatal)
 			if err = filterLocalGitErrors(err); err == nil {
 				err = errors.New("no such git object")
 			}
