@@ -33,7 +33,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		ViewName:          "insights_jobs_backfill_in_progress",
 		ColumnExpressions: baseJobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("id"), // todo
+		OrderByExpression: sqlf.Sprintf("cost_bucket, id"), // take the oldest item in the group of least work
 		MaxNumResets:      100,
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
