@@ -5583,7 +5583,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5606,7 +5606,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5629,7 +5629,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5652,7 +5652,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5675,7 +5675,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10062
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -5698,7 +5698,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10062
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -5721,7 +5721,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10063
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -5744,7 +5744,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10063
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -5767,7 +5767,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10064
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5790,7 +5790,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10064
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -5813,7 +5813,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10065
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 

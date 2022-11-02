@@ -507,7 +507,7 @@ func GitServer() *monitoring.Dashboard {
 					MetricNamespace:      "gitserver",
 
 					ServiceName:         "gitserver",
-					InstanceFilterRegex: `${instance:regex}`,
+					InstanceFilterRegex: `${shard:regex}`,
 				},
 				monitoring.ObservableOwnerRepoManagement,
 			),
