@@ -31,7 +31,7 @@ export const LoggedOutHomepage: React.FunctionComponent<React.PropsWithChildren<
                     telemetryService={props.telemetryService}
                     queryState={props.queryState}
                     setQueryState={props.setQueryState}
-                    isDotCom={props.isSourcegraphDotCom}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
             </div>
 

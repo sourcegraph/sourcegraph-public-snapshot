@@ -87,7 +87,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         telemetryService={props.telemetryService}
                         queryState={queryState}
                         setQueryState={setQueryState}
-                        isDotCom={props.isSourcegraphDotCom}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
                     />
                 )}
             </div>
