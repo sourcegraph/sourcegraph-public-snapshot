@@ -82,7 +82,10 @@ var _ workerutil.Handler = &inProgressHandler{}
 
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	ctx = actor.WithInternalActor(ctx)
-	job := record.(*BaseJob)
+	job, ok := record.(*BaseJob)
+	if !ok {
+		return errors.New("unable to convert to backfill inprogress job")
+	}
 	backfillJob, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
@@ -175,8 +178,10 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	} else {
 		// this is a rudimentary way of getting this job to retry. Eventually we should manually queue up work so that
 		// we aren't bound by the retry limits placed on the queue, but for now this will work.
-		return errors.New("incomplete backfill")
+		return incompleteBackfillErr
 	}
 
 	return nil
 }
+
+var incompleteBackfillErr error = errors.New("incomplete backfill")
