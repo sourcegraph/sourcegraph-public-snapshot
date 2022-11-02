@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store provides the interface for ranking storage.
@@ -33,6 +33,8 @@ type Store interface {
 	MergeDocumentRanks(ctx context.Context, graphKey string, inputFileBatchSize int) (numRepositoriesUpdated int, numInputsProcessed int, _ error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
+
+	ExportRankPayloadFor(ctx context.Context, repoName api.RepoName) (time.Time, []byte, error)
 }
 
 // store manages the ranking store.
@@ -327,4 +329,39 @@ FROM codeintel_path_ranks pr
 JOIN repo r ON r.id = pr.repository_id
 WHERE pr.updated_at >= %s
 ORDER BY r.name
+`
+
+func (s *store) ExportRankPayloadFor(ctx context.Context, repoName api.RepoName) (_ time.Time, _ []byte, err error) {
+	type st struct {
+		lastUpdated time.Time
+		payload     []byte
+	}
+	scan := basestore.NewFirstScanner(func(s dbutil.Scanner) (st, error) {
+		var sx st
+		err := s.Scan(&sx.lastUpdated, &sx.payload)
+		return sx, err
+	})
+
+	const targetPrecision = 1
+	v, _, err := scan(s.db.Query(ctx, sqlf.Sprintf(exportRankPayloadForQuery, repoName, targetPrecision)))
+	if err != nil {
+		return time.Time{}, nil, err
+	}
+
+	return v.lastUpdated, v.payload, nil
+}
+
+const exportRankPayloadForQuery = `
+SELECT
+	pr.updated_at,
+	pr.payload
+FROM codeintel_path_ranks pr
+JOIN repo r ON r.id = pr.repository_id
+WHERE
+	r.name = %s AND
+	pr.precision = %s AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
+ORDER BY pr.updated_at DESC
+LIMIT 1
 `
