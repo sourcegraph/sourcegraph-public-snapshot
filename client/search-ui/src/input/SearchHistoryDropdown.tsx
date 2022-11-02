@@ -29,6 +29,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 const buttonContent: React.ReactElement = (
     <span className="text-nowrap">
@@ -41,6 +42,8 @@ interface SearchHistoryDropdownProps {
     onSelect: (search: RecentSearch) => void
     onClose: () => void
 }
+
+const recentSearchTooltipContent = `Recent searches ${shortcutDisplayName('Mod+ArrowDown')}`
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
     ({ recentSearches = [], onSelect, onClose }) => {
@@ -65,7 +68,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
-                    <Tooltip content="Recent searches ⌘↓">
+                    <Tooltip content={recentSearchTooltipContent}>
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.triggerButtonOpen : null)}

@@ -133,7 +133,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
             <div
                 className={classNames(
                     styles.searchBoxBackgroundContainer,
-                    props.showSearchHistory ? styles.searchBoxBackgroundContainerWithoutSearchButton : null,
                     props.className,
                     'flex-shrink-past-contents'
                 )}
@@ -163,14 +162,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     To fix Rule: "region" (All page content should be contained by landmarks)
                     Added role attribute to the following element to satisfy the rule.
                 */}
-                <div
-                    className={classNames(
-                        styles.searchBoxFocusContainer,
-                        showSearchHistory ? styles.searchBoxFocusContainerWithoutSearchButton : null,
-                        'flex-shrink-past-contents'
-                    )}
-                    role="search"
-                >
+                <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')} role="search">
                     <LazyMonacoQueryInput
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}

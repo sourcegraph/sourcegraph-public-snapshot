@@ -26,7 +26,6 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -47,6 +46,7 @@ import { UserNavItem } from './UserNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
@@ -118,7 +118,7 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                 size="sm"
             >
                 <span aria-hidden={true} aria-label={isMacPlatform() ? 'command-k' : 'ctrl-k'}>
-                    {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
+                    {shortcutDisplayName('Mod+K')}
                 </span>
             </Button>
         </NavAction>
