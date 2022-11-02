@@ -29,13 +29,6 @@ export const useCommonBlockMenuActions = ({
         return [
             {
                 type: 'button',
-                label: 'New',
-                icon: <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />,
-                onClick: onNewBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + ⇧ + ↵`
-            },
-            {
-                type: 'button',
                 label: 'Duplicate',
                 icon: <Icon aria-hidden={true} svgPath={mdiContentDuplicate} />,
                 onClick: onDuplicateBlock,
@@ -61,6 +54,13 @@ export const useCommonBlockMenuActions = ({
                 icon: <Icon aria-hidden={true} svgPath={mdiDelete} />,
                 onClick: onDeleteBlock,
                 keyboardShortcutLabel: !isInputFocused ? (isMacPlatform ? '⌘ + ⌫' : 'Del') : '',
+            },
+            {
+                type: 'button',
+                label: 'New',
+                icon: <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />,
+                onClick: onNewBlock,
+                keyboardShortcutLabel: `${modifierKeyLabel} + ⇧ + ↵`
             },
         ]
     }, [isReadOnly, isMacPlatform, isInputFocused, modifierKeyLabel, onMoveBlock, onDeleteBlock, onDuplicateBlock, onNewBlock])
