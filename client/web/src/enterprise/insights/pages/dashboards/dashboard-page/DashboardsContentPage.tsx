@@ -39,7 +39,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
         return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD.id}`} />
     }
 
-    if (loading === undefined || !dashboards) {
+    if (loading || !dashboards) {
         return (
             <div data-testid="loading-spinner">
                 <LoadingSpinner inline={false} />
