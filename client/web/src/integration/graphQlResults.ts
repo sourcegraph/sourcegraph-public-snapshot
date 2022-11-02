@@ -201,21 +201,6 @@ export const commonWebGraphQlResults: Partial<
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],
     }),
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-            }),
-        },
-    }),
-    EditTemporarySettings: () => ({
-        editTemporarySettings: {
-            alwaysNil: null,
-        },
-    }),
     HomePanelsQuery: () => ({
         node: {
             __typename: 'User',

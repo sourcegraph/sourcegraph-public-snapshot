@@ -31,7 +31,7 @@ type Store interface {
 	HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error)
 	BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error
 	MergeDocumentRanks(ctx context.Context, graphKey string, inputFileBatchSize int) (numRepositoriesUpdated int, numInputsProcessed int, _ error)
-	LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (map[api.RepoName]time.Time, error)
+	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 	UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error)
 }
 
@@ -174,7 +174,7 @@ VALUES (
 )
 ON CONFLICT (repository_id, precision) DO
 UPDATE
-	SET payload = pr.payload || EXCLUDED.payload
+	SET payload = EXCLUDED.payload
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {
@@ -256,15 +256,22 @@ locked_candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 upserted AS (
-	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, payload)
+	INSERT INTO codeintel_path_ranks AS pr (repository_id, precision, graph_key, payload)
 	SELECT
 		r.id,
 		c.precision,
+		c.graph_key,
 		sg_jsonb_concat_agg(c.payload)
 	FROM locked_candidates c
 	JOIN repo r ON r.name = c.repository_name
-	GROUP BY r.id, c.precision
-	ON CONFLICT (repository_id, precision) DO UPDATE SET payload = pr.payload || EXCLUDED.payload
+	GROUP BY r.id, c.precision, c.graph_key
+	ON CONFLICT (repository_id, precision) DO UPDATE SET payload =
+	 CASE
+		WHEN pr.graph_key != EXCLUDED.graph_key
+			THEN EXCLUDED.payload
+		ELSE
+			pr.payload || EXCLUDED.payload
+	END
 	RETURNING 1
 ),
 processed AS (
@@ -278,8 +285,8 @@ SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed
 `
 
-func (s *store) LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (map[api.RepoName]time.Time, error) {
-	pairs, err := scanLastUpdatedAtPairs(s.db.Query(ctx, sqlf.Sprintf(lastUpdatedAtQuery, pq.Array(repoNames))))
+func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	pairs, err := scanLastUpdatedAtPairs(s.db.Query(ctx, sqlf.Sprintf(lastUpdatedAtQuery, pq.Array(repoIDs))))
 	if err != nil {
 		return nil, err
 	}
@@ -289,16 +296,15 @@ func (s *store) LastUpdatedAt(ctx context.Context, repoNames []api.RepoName) (ma
 
 const lastUpdatedAtQuery = `
 SELECT
-	r.name,
-	pr.updated_at
-FROM codeintel_path_ranks pr
-JOIN repo r ON r.id = pr.repository_id
-WHERE r.name = ANY(%s)
+	repository_id,
+	updated_at
+FROM codeintel_path_ranks
+WHERE repository_id = ANY(%s)
 `
 
-var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoName api.RepoName, t time.Time, _ error) {
-	err := s.Scan(&repoName, &t)
-	return repoName, t, err
+var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoID api.RepoID, t time.Time, _ error) {
+	err := s.Scan(&repoID, &t)
+	return repoID, t, err
 })
 
 func (s *store) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {

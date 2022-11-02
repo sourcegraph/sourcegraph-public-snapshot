@@ -86,17 +86,6 @@ func TestGetUploads(t *testing.T) {
 	deleteUploads(t, db, 16)
 	deleteUploads(t, db, 17)
 
-	query := sqlf.Sprintf(
-		`DELETE FROM lsif_uploads_audit_logs WHERE upload_id = %s
-			AND sequence NOT IN (
-				SELECT MAX(sequence) FROM lsif_uploads_audit_logs
-				WHERE upload_id = %s
-			)`,
-		17, 17)
-	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
-
 	// upload 10 depends on uploads 7 and 8
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
@@ -120,18 +109,19 @@ func TestGetUploads(t *testing.T) {
 	}
 
 	type testCase struct {
-		repositoryID     int
-		state            string
-		term             string
-		visibleAtTip     bool
-		dependencyOf     int
-		dependentOf      int
-		uploadedBefore   *time.Time
-		uploadedAfter    *time.Time
-		inCommitGraph    bool
-		oldestFirst      bool
-		allowDeletedRepo bool
-		expectedIDs      []int
+		repositoryID        int
+		state               string
+		term                string
+		visibleAtTip        bool
+		dependencyOf        int
+		dependentOf         int
+		uploadedBefore      *time.Time
+		uploadedAfter       *time.Time
+		inCommitGraph       bool
+		oldestFirst         bool
+		allowDeletedRepo    bool
+		alllowDeletedUpload bool
+		expectedIDs         []int
 	}
 	testCases := []testCase{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
@@ -157,7 +147,8 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
-		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15, 16, 17}},
+		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
+		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
@@ -174,19 +165,20 @@ func TestGetUploads(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
-				RepositoryID:     testCase.repositoryID,
-				State:            testCase.state,
-				Term:             testCase.term,
-				VisibleAtTip:     testCase.visibleAtTip,
-				DependencyOf:     testCase.dependencyOf,
-				DependentOf:      testCase.dependentOf,
-				UploadedBefore:   testCase.uploadedBefore,
-				UploadedAfter:    testCase.uploadedAfter,
-				InCommitGraph:    testCase.inCommitGraph,
-				OldestFirst:      testCase.oldestFirst,
-				AllowDeletedRepo: testCase.allowDeletedRepo,
-				Limit:            3,
-				Offset:           lo,
+				RepositoryID:       testCase.repositoryID,
+				State:              testCase.state,
+				Term:               testCase.term,
+				VisibleAtTip:       testCase.visibleAtTip,
+				DependencyOf:       testCase.dependencyOf,
+				DependentOf:        testCase.dependentOf,
+				UploadedBefore:     testCase.uploadedBefore,
+				UploadedAfter:      testCase.uploadedAfter,
+				InCommitGraph:      testCase.inCommitGraph,
+				OldestFirst:        testCase.oldestFirst,
+				AllowDeletedRepo:   testCase.allowDeletedRepo,
+				AllowDeletedUpload: testCase.alllowDeletedUpload,
+				Limit:              3,
+				Offset:             lo,
 			})
 			if err != nil {
 				t.Fatalf("unexpected error getting uploads for repo: %s", err)

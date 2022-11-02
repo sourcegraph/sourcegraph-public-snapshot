@@ -909,6 +909,7 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
  payload       | jsonb                    |           | not null | 
  precision     | double precision         |           | not null | 
  updated_at    | timestamp with time zone |           | not null | now()
+ graph_key     | text                     |           |          | 
 Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
@@ -2170,6 +2171,7 @@ A less hot-path reference count for upload records.
  branch_or_tag_name | text    |           | not null | ''::text
  is_default_branch  | boolean |           | not null | false
 Indexes:
+    "lsif_uploads_visible_at_tip_is_default_branch" btree (upload_id) WHERE is_default_branch
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
