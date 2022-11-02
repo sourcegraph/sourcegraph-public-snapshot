@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
-import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -210,12 +209,12 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                     />
                 )}
                 {blobLines && blobLines === LOADING && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                    <div className={'d-flex justify-content-center py-3'}>
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
                 {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
-                    <div className={styles.highlightedFileWrapper}>
+                    <div>
                         <CodeExcerpt
                             className={styles.code}
                             repoName={input.repositoryName}

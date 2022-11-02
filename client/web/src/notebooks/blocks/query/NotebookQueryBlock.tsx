@@ -156,7 +156,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
 
         return (
             <NotebookBlock
-                className={styles.block}
                 id={id}
                 aria-label="Notebook query block"
                 isSelected={isSelected}
