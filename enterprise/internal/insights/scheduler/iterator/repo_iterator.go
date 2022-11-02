@@ -192,8 +192,13 @@ func (p *PersistentRepoIterator) MarkComplete(ctx context.Context, store *basest
 	return nil
 }
 
-func (p *PersistentRepoIterator) IsComplete() bool {
-	return p.PercentComplete == 1
+func (p *PersistentRepoIterator) HasMore() bool {
+	_, has := peek(p.Cursor, p.repos)
+	return has
+}
+
+func (p *PersistentRepoIterator) HasErrors() bool {
+	return len(p.errors) > 0
 }
 
 func (p *PersistentRepoIterator) ErroredRepos() int {
