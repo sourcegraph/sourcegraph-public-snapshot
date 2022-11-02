@@ -5,27 +5,11 @@ import { HighlightedLinkProps, RangePosition } from '../components/fuzzyFinder/H
 import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult, SearchValue } from './FuzzySearch'
 import { createUrlFunction } from './WordSensitiveFuzzySearch'
 
-class CacheCandidate {
-    constructor(public readonly query: string, public readonly candidates: SearchValue[]) {}
-    public matches(parameters: FuzzySearchParameters): boolean {
-        return parameters.query.startsWith(this.query)
-    }
-}
-
 /**
  * FuzzySearch implementation that uses the original fzy filtering algorithm from https://github.com/jhawthorn/fzy.js
  */
 export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     public totalFileCount: number
-    // Optimization: stack of results from the previous queries. For example,
-    // when the user types ["P", "r", "o"] the stack contains the matching
-    // results for the queries ["P", "Pr", "Pro"]. When we get the query "Prov"
-    // we fuzzy match against the cached candidates for the query "Pro", which
-    // is most likely faster compared to fuzzy matching against the entire
-    // filename corpu. We cache all prefixes of the query instead of only the
-    // last query to allow the user to quickly delete // multiple characters
-    // from the query.
-    private cacheCandidates: CacheCandidate[] = []
 
     constructor(public readonly values: SearchValue[], private readonly createUrl: createUrlFunction) {
         super()
@@ -33,9 +17,7 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
     }
 
     public search(parameters: FuzzySearchParameters): FuzzySearchResult {
-        const cacheCandidate = this.nextCacheCandidate(parameters)
-        const searchValues: SearchValue[] = cacheCandidate ? cacheCandidate.candidates : this.values
-        const fzf = new Fzf<SearchValue[]>(searchValues, {
+        const fzf = new Fzf<SearchValue[]>(this.values, {
             selector: ({ text }) => text,
             limit: parameters.maxResults,
             match: extendedMatch,
@@ -58,32 +40,6 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
             isComplete,
             links,
         }
-    }
-
-    /**
-     * Returns the results from the last query, if any, that is a prefix of the current query.
-     *
-     * Removes cached candidates that are no longer a prefix of the current
-     * query.
-     */
-    private nextCacheCandidate(parameters: FuzzySearchParameters): CacheCandidate | undefined {
-        if (parameters.query === '') {
-            this.cacheCandidates = []
-            return undefined
-        }
-        let cacheCandidate = this.lastCacheCandidate()
-        while (cacheCandidate && !cacheCandidate.matches(parameters)) {
-            this.cacheCandidates.pop()
-            cacheCandidate = this.lastCacheCandidate()
-        }
-        return cacheCandidate
-    }
-
-    private lastCacheCandidate(): CacheCandidate | undefined {
-        if (this.cacheCandidates.length > 0) {
-            return this.cacheCandidates[this.cacheCandidates.length - 1]
-        }
-        return undefined
     }
 }
 
