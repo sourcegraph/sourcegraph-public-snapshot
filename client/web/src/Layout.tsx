@@ -16,7 +16,6 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
@@ -28,6 +27,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -65,8 +65,6 @@ import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
-
-const FuzzyFinderContainer = lazyComponent(() => import('./components/fuzzyFinder/FuzzyFinder'), 'FuzzyFinderContainer')
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -289,7 +287,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
             {fuzzyFinder && (
-                <FuzzyFinderContainer
+                <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
                     themeState={themeStateRef}
