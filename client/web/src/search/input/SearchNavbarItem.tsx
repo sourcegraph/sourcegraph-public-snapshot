@@ -109,7 +109,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                 showSearchHistory={showSearchHistory}
-                showCopyQueryButton={!showSearchHistory}
                 recentSearches={recentSearches}
             />
         </Form>

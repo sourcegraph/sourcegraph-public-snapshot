@@ -1,8 +1,14 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/search'
+import {
+    SearchContextInputProps,
+    QueryState,
+    SubmitSearchProps,
+    EditorHint,
+    isSearchContextSpecAvailable,
+} from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -78,10 +84,17 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         hideHelpButton,
         onChange,
         selectedSearchContextSpec,
+        setSelectedSearchContextSpec,
+        platformContext,
+        recentSearches,
     } = props
+
+    const [editor, setEditor] = useState<IEditor>()
+    const focusEditor = useCallback(() => editor?.focus(), [editor])
 
     const onEditorCreated = useCallback(
         (editor: IEditor) => {
+            setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
         [onEditorCreatedCallback]
@@ -90,14 +103,39 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
     const onSearchHistorySelect = useCallback(
         (search: RecentSearch) => {
             const searchContext = getGlobalSearchContextFilter(search.query)
-            const query =
-                searchContext && searchContext.spec === selectedSearchContextSpec
-                    ? omitFilter(search.query, searchContext?.filter)
-                    : search.query
-            onChange({ query, hint: EditorHint.Focus })
+            if (searchContext) {
+                console.log('selected')
+                isSearchContextSpecAvailable({ spec: searchContext.spec, platformContext }).subscribe(isAvailable => {
+                    console.log('available')
+                    const query = isAvailable ? omitFilter(search.query, searchContext?.filter) : search.query
+                    if (isAvailable) {
+                        setSelectedSearchContextSpec(searchContext.spec)
+                    }
+                    onChange({ query, hint: EditorHint.Focus })
+                })
+            } else {
+                onChange({ query: search.query, hint: EditorHint.Focus })
+            }
         },
-        [onChange, selectedSearchContextSpec]
+        [onChange, selectedSearchContextSpec, platformContext]
     )
+
+    const historyWithoutSelectedContext = useMemo(() => {
+        if (!recentSearches || !selectedSearchContextSpec) {
+            return undefined
+        }
+
+        return recentSearches.map(search => {
+            const searchContext = getGlobalSearchContextFilter(search.query)
+            if (searchContext && searchContext.spec === selectedSearchContextSpec) {
+                return {
+                    ...search,
+                    query: omitFilter(search.query, searchContext?.filter),
+                }
+            }
+            return search
+        })
+    }, [recentSearches, selectedSearchContextSpec])
 
     return (
         <div
@@ -172,7 +210,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         defaultSuggestionsShowWhenEmpty={props.defaultSuggestionsShowWhenEmpty}
                         showSuggestionsOnFocus={props.showSuggestionsOnFocus}
-                        searchHistory={props.recentSearches}
+                        searchHistory={historyWithoutSelectedContext}
                     />
                     <Toggles
                         patternType={props.patternType}
@@ -189,7 +227,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     />
                 </div>
             </div>
-            {!showSearchHistory && <SearchButton className={styles.searchBoxButton} />}
+            <SearchButton className={styles.searchBoxButton} />
             {!hideHelpButton && (
                 <SearchHelpDropdownButton
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
