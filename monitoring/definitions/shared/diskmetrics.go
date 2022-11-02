@@ -39,6 +39,8 @@ type DiskMetricsGroupOptions struct {
 	InstanceFilterRegex string
 }
 
+// NewDiskMetricsGroup creates a group containing statistics (r/w rate, throughtput, etc.) for the disk
+// specified in the given opts.
 func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.ObservableOwner) monitoring.Group {
 	mountMetric := "mount_point_info"
 	if opts.MetricNamespace != "" {
