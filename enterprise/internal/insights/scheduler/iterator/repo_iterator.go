@@ -192,6 +192,10 @@ func (p *PersistentRepoIterator) MarkComplete(ctx context.Context, store *basest
 	return nil
 }
 
+func (p *PersistentRepoIterator) IsComplete() bool {
+	return p.PercentComplete == 1
+}
+
 func stampStartedAt(ctx context.Context, store *basestore.Store, itrId int, stampTime time.Time) error {
 	return store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET started_at = %S WHERE Id = %S", stampTime, itrId))
 }
