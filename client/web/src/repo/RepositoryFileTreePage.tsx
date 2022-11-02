@@ -108,8 +108,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     commitID={resolvedRevision?.commitID}
                                     filePath={filePath}
                                     globbing={globbing}
-                                    repo={repo}
+                                    repoID={repo?.id}
                                     repoName={repoName}
+                                    repoUrl={repo?.url}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps

@@ -36,7 +36,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 
     actionType?: 'nav' | 'dropdown'
 
-    source?: 'repoHeader' | 'actionItemsBar' | 'textLink'
+    source?: 'repoHeader' | 'actionItemsBar'
 }
 
 /**
@@ -146,14 +146,6 @@ export const GoToCodeHostAction: React.FunctionComponent<
             <SimpleActionItem tooltip={descriptiveText} {...commonProps}>
                 <Icon as={exportIcon} aria-hidden={true} />
             </SimpleActionItem>
-        )
-    }
-
-    if (props.source === 'textLink') {
-        return (
-            <Link to={url} target="_blank" rel="noopener noreferrer" onClick={onClick} onAuxClick={onClick}>
-                {descriptiveText}
-            </Link>
         )
     }
 
@@ -287,7 +279,7 @@ function getPerforceChangelistNumberFromCommitMessage(commitMessage: string): st
     return commitMessage.slice(changeIndex + 9, -1)
 }
 
-function serviceKindDisplayNameAndIcon(
+export function serviceKindDisplayNameAndIcon(
     serviceKind: ExternalServiceKind | null
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     if (!serviceKind) {
