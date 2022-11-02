@@ -156,7 +156,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		return errors.Wrap(err, "InProgressHandler.RetryLoop")
 	}
 
-	if itr.IsComplete() {
+	if !itr.HasMore() && !itr.HasErrors() {
 		logger.Info("setting backfill to completed state", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id), log.Duration("totalDuration", itr.RuntimeDuration))
 		err = itr.MarkComplete(ctx, h.backfillStore.Store)
 		if err != nil {
