@@ -86,7 +86,6 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 		if len(validationErrs) == 0 {
 			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
 			if costErr != nil {
-				// We send errors to Honeycomb, no need to spam logs
 				log15.Debug("estimating GraphQL cost", "error", costErr)
 			}
 			traceData.costError = costErr
