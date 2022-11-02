@@ -11,6 +11,9 @@
 }
 
 .query-input-wrapper {
+    display: flex;
+    align-items: center;
+
     border-radius: 0.25rem;
     padding: 0.5rem;
     background-color: var(--color-bg-1);
@@ -24,6 +27,6 @@
 }
 
 .code-mirror-wrapper {
-    display: inline-block;
     padding-left: 0.5rem;
+    flex-grow: 2;
 }
