@@ -127,7 +127,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) error {
-		for true {
+		for {
 			repoId, more, finish := nextFunc()
 			if !more {
 				break
