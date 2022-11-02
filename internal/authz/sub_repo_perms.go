@@ -412,9 +412,9 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
-// expandDirs will return all directories above a match and a bool indicating
-// whether all directories should be matched. This can happen if we have an
-// include rule that starts with a wildcard.
+// expandDirs will return a new set of rules that will match all directories
+// above the supplied rule. As a special case, if the rule starts with a wildcard
+// we return a rule to match all directories.
 func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
 
