@@ -55,10 +55,6 @@ func TestUsers(t *testing.T) {
 func TestUsers_Pagination(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.ListFunc.SetDefaultReturn([]*types.User{
-		{Username: "user1"},
-		{Username: "user2"},
-	}, nil)
 	users.ListFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
 		if opt.LimitOffset.Offset == 2 {
 			return []*types.User{

@@ -26,6 +26,11 @@ type usersArgs struct {
 }
 
 func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can see users.
+	if err := checkMembersAccess(ctx, r.db, 0); err != nil {
+		return nil, err
+	}
+
 	var opt database.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -43,10 +48,6 @@ func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConne
 			return nil, err
 		}
 		opt.LimitOffset.Offset = int(cursor)
-	}
-
-	if err := checkMembersAccess(ctx, r.db, 0); err != nil {
-		return nil, err
 	}
 
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil

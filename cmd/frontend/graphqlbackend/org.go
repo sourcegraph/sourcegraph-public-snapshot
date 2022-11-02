@@ -148,6 +148,11 @@ type MembersConnectionArgs struct {
 }
 
 func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Only org members can list other org members.
+	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
+
 	// For backward compatibility, the query needs to work with no pagination
 	limitOffset := &database.LimitOffset{
 		Limit: 1000,
@@ -168,10 +173,6 @@ func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) 
 	query := ""
 	if args.Query != nil {
 		query = *args.Query
-	}
-
-	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
-		return nil, err
 	}
 
 	return &userConnectionResolver{
