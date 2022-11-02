@@ -58,6 +58,8 @@ import {
     SiteMonitoringStatisticsResult,
     SiteAdminSettingsCascadeFields,
     UserUsageStatisticsResult,
+    WebhooksListResult,
+    WebhooksListVariables,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -893,3 +895,38 @@ export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
         }
     }
 `
+
+export const WEBHOOKS = gql`
+    fragment WebhookFields on Webhook {
+        id
+        uuid
+        url
+        codeHostKind
+        codeHostURN
+        secret
+        updatedAt
+        createdAt
+    }
+    query WebhooksList {
+        webhooks {
+            nodes {
+                ...WebhookFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+            }
+        }
+    }
+`
+
+export function queryWebhooks(): Observable<WebhooksListResult['webhooks']> {
+    return requestGraphQL<WebhooksListResult, WebhooksListVariables>(WEBHOOKS, {}).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.webhooks || errors) {
+                throw createAggregateError(errors)
+            }
+            return data.webhooks
+        })
+    )
+}
