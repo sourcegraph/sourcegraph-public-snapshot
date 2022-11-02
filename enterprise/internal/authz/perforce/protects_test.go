@@ -546,7 +546,7 @@ read    group   Dev1    *   //depot/main/...
 read    group   Dev1    *   -//depot/main/dir/...
 read    group   Dev1    *   //depot/main/dir/file.java
 `,
-			canReadAll: []string{"dir/file.java"},
+			canReadAll: []string{"dir/file.java", "dir/"},
 		},
 		{
 			// Should still be able to browse directories
