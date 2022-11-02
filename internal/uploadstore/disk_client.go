@@ -41,30 +41,47 @@ func (s *diskStore) Upload(ctx context.Context, key string, r io.Reader) (int64,
 	if err != nil {
 		return 0, err
 	}
+	defer f.Close()
 
 	return io.Copy(f, r)
 }
 
-func (s *diskStore) Compose(ctx context.Context, destination string, sources ...string) (int64, error) {
+func (s *diskStore) Compose(ctx context.Context, destination string, sources ...string) (count int64, err error) {
 	destPath := s.pathForKey(destination)
 
-	dest, err := os.Create(destPath)
+	tmp, err := os.CreateTemp("", "disk-store-*")
 	if err != nil {
 		return 0, err
 	}
 
-	var count int64
 	for _, src := range sources {
 		f, err := s.Get(ctx, src)
 		if err != nil {
+			_ = tmp.Close()
+			_ = f.Close()
 			return 0, errors.Wrapf(err, "failed to open %s", src)
 		}
 
-		n, err := io.Copy(dest, f)
+		n, err := io.Copy(tmp, f)
 		if err != nil {
+			_ = tmp.Close()
+			_ = f.Close()
 			return 0, errors.Wrapf(err, "failed to copy %s to %s", src, destination)
 		}
 		count += n
+
+		if err := f.Close(); err != nil {
+			_ = tmp.Close()
+			return 0, errors.Wrapf(err, "failed to close %s", src)
+		}
+	}
+
+	if err := tmp.Close(); err != nil {
+		return 0, err
+	}
+
+	if err := os.Rename(tmp.Name(), destPath); err != nil {
+		return 0, errors.Wrap(err, "failed to rename temp file to dest file")
 	}
 
 	return count, nil
