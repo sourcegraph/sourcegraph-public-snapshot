@@ -28,10 +28,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 
     // Dashboards
-    public getDashboards = errorMockMethod('getDashboards')
-    public getDashboardById = errorMockMethod('getDashboardById')
     public getDashboardOwners = errorMockMethod('getDashboardSubjects')
-    public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
     public deleteDashboard = errorMockMethod('deleteDashboard')
     public updateDashboard = errorMockMethod('updateDashboard')

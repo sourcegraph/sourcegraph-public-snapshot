@@ -1,14 +1,14 @@
-import { FC, useContext, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../components/PageTitle'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
-import { CodeInsightsBackendContext } from '../../../core'
+import { useInsightDashboards } from '../../../core';
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -26,8 +26,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
-    const { getDashboards } = useContext(CodeInsightsBackendContext)
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const { dashboards, loading } = useInsightDashboards()
 
     const currentDashboard = useMemo(() => dashboards?.find(dashboard => dashboard.id === dashboardID), [
         dashboardID,
@@ -40,7 +39,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
         return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD.id}`} />
     }
 
-    if (dashboards === undefined) {
+    if (loading || !dashboards) {
         return (
             <div data-testid="loading-spinner">
                 <LoadingSpinner inline={false} />
