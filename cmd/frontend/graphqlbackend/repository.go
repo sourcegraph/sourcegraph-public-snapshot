@@ -197,7 +197,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -245,14 +245,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	gsClient := gitserver.NewClient(r.db)
-	commitID, err := backend.NewRepos(r.logger, r.db, gsClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gsClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -455,19 +454,18 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
+		_, err = r.gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, gitserver.NewClient(db), repo)
+		r := NewRepositoryResolver(db, r.gitserverClient, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -533,7 +531,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = r.gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
