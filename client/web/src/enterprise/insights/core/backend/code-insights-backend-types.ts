@@ -144,11 +144,6 @@ export interface GetLangStatsInsightContentInput {
     otherThreshold: number
 }
 
-export interface RepositorySuggestionData {
-    id: string
-    name: string
-}
-
 export interface UiFeaturesConfig {
     licensed: boolean
     insightsLimit: number | null

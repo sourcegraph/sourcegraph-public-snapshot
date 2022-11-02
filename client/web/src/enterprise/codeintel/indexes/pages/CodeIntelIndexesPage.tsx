@@ -130,6 +130,22 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
     const deletes = useMemo(() => new Subject<undefined>(), [])
 
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            setArgs({
+                query: args.query ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                state: (args as any).state ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                repository: repo?.id ?? null,
+            })
+            setSelection(new Set())
+            return queryIndexes(args)
+        },
+        [queryIndexes, repo?.id]
+    )
+
     return (
         <div className="code-intel-indexes">
             <PageTitle title="Auto-indexing jobs" />
@@ -257,18 +273,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         querySubject={querySubject}
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now, selection, onCheckboxToggle }}
-                        queryConnection={args => {
-                            setArgs({
-                                query: args.query ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                state: (args as any).state ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                isLatestForRepo: (args as any).isLatestForRepo ?? null,
-                                repository: repo?.id ?? null,
-                            })
-                            setSelection(new Set())
-                            return queryIndexes(args)
-                        }}
+                        queryConnection={queryConnection}
                         history={history}
                         location={location}
                         cursorPaging={true}

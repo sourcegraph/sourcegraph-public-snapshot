@@ -1,4 +1,9 @@
-import { Attribute, getUsernameOrEmail, SamlExternalData } from './ExternalAccountsSignIn'
+import {
+    Attribute,
+    getSamlUsernameOrEmail,
+    SamlExternalData,
+    getOpenIDUsernameOrEmail,
+} from './ExternalAccountsSignIn'
 
 function toAttribute(value: string): Attribute {
     return {
@@ -23,7 +28,7 @@ function samlDataObject(keysValues: object): SamlExternalData {
     return testData as SamlExternalData
 }
 
-describe('getUsernameOrEmail', () => {
+describe('getSamlUsernameOrEmail', () => {
     test('saml account data has only email', () => {
         const testCases = [
             samlDataObject({
@@ -38,7 +43,7 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('mary@boole.com')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('mary@boole.com')
         }
     })
 
@@ -55,7 +60,7 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('emmynoether')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('emmynoether')
         }
     })
 
@@ -76,7 +81,36 @@ describe('getUsernameOrEmail', () => {
         ]
 
         for (const testCase of testCases) {
-            expect(getUsernameOrEmail(testCase)).toEqual('adalovelace')
+            expect(getSamlUsernameOrEmail(testCase)).toEqual('adalovelace')
+        }
+    })
+})
+
+describe('getOpenIDUsernameOrEmail', () => {
+    test('openid account data has only email', () => {
+        const testCase = { randomField: 'random', userInfo: { email: 'ada@lovelace.com' } }
+        expect(getOpenIDUsernameOrEmail(testCase)).toEqual('ada@lovelace.com')
+    })
+
+    test('openid account data has only username', () => {
+        const testCases = [
+            { randomField: 'random', userClaims: { name: 'adalovelace' } },
+            { anotherField: 'another', userClaims: { given_name: 'adalovelace' } },
+            { testField: 'test', userClaims: { preferred_username: 'adalovelace' } },
+        ]
+
+        for (const testCase of testCases) {
+            expect(getOpenIDUsernameOrEmail(testCase)).toBe('adalovelace')
+        }
+    })
+
+    test('openid account has both email and username - username takes precedence', () => {
+        const testCases = [
+            { userInfo: { email: 'ada@lovelace.com' }, userClaims: { preferred_username: 'adalovelace' } },
+        ]
+
+        for (const testCase of testCases) {
+            expect(getOpenIDUsernameOrEmail(testCase)).toBe('adalovelace')
         }
     })
 })

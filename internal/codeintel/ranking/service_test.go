@@ -72,6 +72,11 @@ func TestGetDocumentRanks(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, nil, &observation.TestContext)
 
+	mockStore.GetDocumentRanksFunc.SetDefaultReturn(map[string][2]float64{
+		"rust/main.rs": {0.00, 0.84},
+		"rust/lib.rs":  {0.25, 0.42},
+	}, true, nil)
+
 	gitserverClient.ListFilesForRepoFunc.SetDefaultReturn([]string{
 		"main.go",
 		"code/c.go",
@@ -94,6 +99,11 @@ func TestGetDocumentRanks(t *testing.T) {
 	}
 
 	expected := map[string][]float64{
+		// Precise
+		"rust/main.rs": {0.00, 0.84, 0, 0, 0, 0, 0},
+		"rust/lib.rs":  {0.25, 0.42, 0, 0, 0, 0, 0},
+
+		// Fallback
 		"code/a.go":           {1, 1, 1, 1, 1, 0.100, 1 - (0.00 / 13.0)},
 		"code/b.go":           {1, 1, 1, 1, 1, 0.100, 1 - (1.00 / 13.0)},
 		"code/c.go":           {1, 1, 1, 1, 1, 0.100, 1 - (2.00 / 13.0)},

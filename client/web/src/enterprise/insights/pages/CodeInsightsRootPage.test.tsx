@@ -1,20 +1,23 @@
 /* eslint-disable ban/ban */
 import React from 'react'
 
+import { MockedResponse } from '@apollo/client/testing';
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { MemoryRouter } from 'react-router'
 import { Route } from 'react-router-dom'
 import { CompatRouter } from 'react-router-dom-v5-compat'
-import { of } from 'rxjs'
 import sinon from 'sinon'
 
+import { getDocumentNode } from '@sourcegraph/http-client';
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
+import { InsightsDashboardsResult } from '../../../graphql-operations';
 import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 import { CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'
+import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards';
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
@@ -54,6 +57,37 @@ const Wrapper: React.FunctionComponent<React.PropsWithChildren<{ api: Partial<Co
     return <CodeInsightsBackendContext.Provider value={extendedApi}>{children}</CodeInsightsBackendContext.Provider>
 }
 
+const mockedGQL: MockedResponse[] = [
+    {
+        request: {
+            query: getDocumentNode(GET_INSIGHT_DASHBOARDS_GQL),
+        },
+        result: {
+            data: {
+                insightsDashboards: {
+                    nodes: [{
+                        __typename: 'InsightsDashboard',
+                        id: 'foo',
+                        title: 'Global Dashboard',
+                        grants: {
+                            __typename: 'InsightsPermissionGrants',
+                            users: [],
+                            organizations: [],
+                            global: true,
+                        },
+                    }]
+                },
+                currentUser: {
+                    __typename: 'User',
+                    id: '001',
+                    organizations: {
+                        nodes: [],
+                    },
+                } },
+        },
+    } as MockedResponse<InsightsDashboardsResult>,
+]
+
 const renderWithBrandedContext = (component: React.ReactElement, { route = '/', api = {} } = {}) => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -61,7 +95,7 @@ const renderWithBrandedContext = (component: React.ReactElement, { route = '/', 
 
     return {
         ...render(
-            <MockedTestProvider>
+            <MockedTestProvider mocks={mockedGQL}>
                 <Wrapper api={api}>
                     <MemoryRouter initialEntries={[route]}>
                         <CompatRouter>
@@ -96,10 +130,6 @@ describe('CodeInsightsRootPage', () => {
             />,
             {
                 route: '/insights/dashboards/',
-                api: {
-                    getUiFeatures: () => of({ licensed: true }),
-                    getDashboards: () => of([]),
-                },
             }
         )
 
@@ -114,11 +144,6 @@ describe('CodeInsightsRootPage', () => {
             />,
             {
                 route: '/insights/dashboards/foo',
-                api: {
-                    getDashboardSubjects: () => of([]),
-                    getDashboards: () => of([]),
-                    getUiFeatures: () => of({ licensed: true }),
-                },
             }
         )
 
@@ -132,16 +157,9 @@ describe('CodeInsightsRootPage', () => {
                 telemetryService={mockTelemetryService}
             />,
             {
-                route: '/insights/dashboards/foo',
-                api: {
-                    getDashboardSubjects: () => of([]),
-                    getDashboards: () => of([]),
-                    getUiFeatures: () => of({ licensed: true }),
-                },
+                route: '/insights/dashboards/foo'
             }
         )
-
-        expect(mockTelemetryService.logViewEvent.calledWith('Insights')).toBe(true)
 
         userEvent.click(screen.getByText('Create insight'))
         expect(mockTelemetryService.log.calledWith('InsightAddMoreClick')).toBe(true)

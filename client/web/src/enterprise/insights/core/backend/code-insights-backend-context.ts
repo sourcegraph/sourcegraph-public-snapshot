@@ -6,7 +6,6 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import {
     SeriesChartContent,
     CategoricalChartContent,
-    RepositorySuggestionData,
     BackendInsightDatum,
 } from './code-insights-backend-types'
 
@@ -29,10 +28,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 
     // Dashboards
-    public getDashboards = errorMockMethod('getDashboards')
-    public getDashboardById = errorMockMethod('getDashboardById')
     public getDashboardOwners = errorMockMethod('getDashboardSubjects')
-    public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
     public deleteDashboard = errorMockMethod('deleteDashboard')
     public updateDashboard = errorMockMethod('updateDashboard')
@@ -47,11 +43,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsightPreviewContent = (): Promise<SeriesChartContent<BackendInsightDatum>> =>
         errorMockMethod('getInsightPreviewContent')().toPromise()
 
-    // Repositories API
-    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
-        errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = (): Promise<string[]> =>
-        errorMockMethod('getResolvedSearchRepositories')().toPromise()
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 
     // License check

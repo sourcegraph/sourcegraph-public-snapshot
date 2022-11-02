@@ -4,8 +4,6 @@ import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import { DiffMode } from './RepositoryCommitPage'
 
-import styles from './DiffModeSelector.module.scss'
-
 interface DiffModeSelectorProps {
     className?: string
     small?: boolean
@@ -26,7 +24,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 variant="secondary"
                 outline={diffMode !== 'unified'}
                 as="label"
-                className={styles.button}
+                htmlFor="diff-mode-selector-unified"
             >
                 <Input
                     type="radio"
@@ -35,6 +33,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                     checked={diffMode === 'unified'}
                     onChange={event => onHandleDiffMode(event.target.value as DiffMode)}
                     className="sr-only"
+                    id="diff-mode-selector-unified"
                 />
                 Unified
             </Button>
@@ -43,7 +42,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 variant="secondary"
                 outline={diffMode !== 'split'}
                 as="label"
-                className={styles.button}
+                htmlFor="diff-mode-selector-split"
             >
                 <Input
                     type="radio"
@@ -52,6 +51,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                     checked={diffMode === 'split'}
                     onChange={event => onHandleDiffMode(event.target.value as DiffMode)}
                     className="sr-only"
+                    id="diff-mode-selector-split"
                 />
                 Split
             </Button>

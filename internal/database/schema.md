@@ -909,6 +909,7 @@ Sharded inputs from Spark jobs that will subsequently be written into `codeintel
  payload       | jsonb                    |           | not null | 
  precision     | double precision         |           | not null | 
  updated_at    | timestamp with time zone |           | not null | now()
+ graph_key     | text                     |           |          | 
 Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
@@ -1973,7 +1974,6 @@ Associates an upload with the set of packages they provide within a given packag
  scheme  | text    |           | not null | 
  name    | text    |           | not null | 
  version | text    |           |          | 
- filter  | bytea   |           |          | 
  dump_id | integer |           | not null | 
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
@@ -1987,8 +1987,6 @@ Foreign-key constraints:
 Associates an upload with the set of packages they require within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that references the package.
-
-**filter**: A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package.
 
 **name**: The package name.
 
@@ -2170,6 +2168,7 @@ A less hot-path reference count for upload records.
  branch_or_tag_name | text    |           | not null | ''::text
  is_default_branch  | boolean |           | not null | false
 Indexes:
+    "lsif_uploads_visible_at_tip_is_default_branch" btree (upload_id) WHERE is_default_branch
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```

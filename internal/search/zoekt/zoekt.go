@@ -113,10 +113,11 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// It is hard to think up general stats here based on limit. So
 		// instead we only run the ranking code path if the limit is
 		// reasonably small. This is fine while we experiment.
-		searchOpts.ShardMaxMatchCount = 1000
-		searchOpts.TotalMaxMatchCount = 10000
+		searchOpts.ShardMaxMatchCount = 1_000
+		searchOpts.TotalMaxMatchCount = 100_000
 		searchOpts.MaxDocDisplayCount = limit
 		searchOpts.FlushWallTime = 500 * time.Millisecond
+		searchOpts.UseDocumentRanks = true
 		return searchOpts
 	}
 
