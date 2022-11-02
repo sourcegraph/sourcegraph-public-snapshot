@@ -12,6 +12,7 @@ import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 // eslint-disable-next-line no-restricted-imports
@@ -29,7 +30,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
-import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 const buttonContent: React.ReactElement = (
     <span className="text-nowrap">
@@ -65,6 +65,14 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
             [onClose]
         )
 
+        const onSelectInternal = useCallback(
+            (search: RecentSearch) => {
+                onSelect(search)
+                setIsOpen(false)
+            },
+            [onSelect, setIsOpen]
+        )
+
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
@@ -77,17 +85,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                         </PopoverTrigger>
                     </Tooltip>
                     <PopoverContent flipping={Flipping.opposite}>
-                        <SearchHistoryEntries
-                            onSelect={search => {
-                                onSelect(search)
-                                setIsOpen(false)
-                            }}
-                            onEsc={() => {
-                                setIsOpen(false)
-                                onClose()
-                            }}
-                            recentSearches={recentSearches}
-                        />
+                        <SearchHistoryEntries onSelect={onSelectInternal} recentSearches={recentSearches} />
                     </PopoverContent>
                 </Popover>
                 <Shortcut onMatch={() => setIsOpen(true)} held={['Mod']} ordered={['ArrowDown']} />
@@ -99,14 +97,9 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
 interface SearchHistoryEntriesProps {
     recentSearches: RecentSearch[]
     onSelect: (search: RecentSearch) => void
-    onEsc: () => void
 }
 
-const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> = ({
-    recentSearches,
-    onSelect,
-    onEsc,
-}) => {
+const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> = ({ recentSearches, onSelect }) => {
     const { isOpen } = usePopoverContext()
     const [selectedIndex, setSelectedIndex] = useState(0)
     const selectedIndexRef = useRef(selectedIndex)
@@ -129,10 +122,6 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
                         onSelect(recentSearches[selectedIndexRef.current])
                     }
                     break
-                case 'Esc':
-                    event.preventDefault()
-                    onEsc()
-                    break
             }
         },
         [setSelectedIndex, recentSearches, onSelect]
@@ -148,7 +137,7 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
                 }
             }
         },
-        [setSelectedIndex, recentSearches]
+        [recentSearches, onSelect]
     )
 
     if (!isOpen) {

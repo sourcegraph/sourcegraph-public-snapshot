@@ -11,6 +11,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -46,7 +47,6 @@ import { UserNavItem } from './UserNavItem'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
-import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,

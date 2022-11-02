@@ -22,6 +22,7 @@ import { createRoot, Root } from 'react-dom/client'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryInputToggle } from '@sourcegraph/search-ui'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Button, Icon, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
 import { Keybindings } from '../../../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
@@ -30,7 +31,6 @@ import { createElement } from '../../../util/dom'
 import { Container } from './react-interop'
 
 import { blobPropsFacet } from '.'
-import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
