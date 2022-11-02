@@ -128,7 +128,8 @@ type cachedRules struct {
 type path struct {
 	globPath  glob.Glob
 	exclusion bool
-	original  string
+	// the original rule before it was compiled into a glob matcher
+	original string
 }
 
 type compiledRules struct {
