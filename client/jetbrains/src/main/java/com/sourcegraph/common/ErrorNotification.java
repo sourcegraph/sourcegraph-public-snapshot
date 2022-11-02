@@ -1,4 +1,4 @@
-package com.sourcegraph.vcs;
+package com.sourcegraph.common;
 
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
@@ -10,7 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.sourcegraph.Icons;
 import org.jetbrains.annotations.NotNull;
 
-public class RepoInfoGettingErrorNotification {
+public class ErrorNotification {
     public static void show(Project project, String errorMessage) {
         Notification notification = new Notification("Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING);
         AnAction dismissAction = new DumbAwareAction("Dismiss") {

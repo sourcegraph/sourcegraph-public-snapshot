@@ -14,9 +14,11 @@ import com.intellij.vcs.log.VcsLog;
 import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
+import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RevisionContext;
+import com.sourcegraph.vcs.VCSType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -29,14 +31,35 @@ public class OpenRevisionAction extends DumbAwareAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        // This action handles events for both log and history views, so attempt to load from any possible option.
-        RevisionContext context = getHistoryRevisionContext(event).or(() -> getLogRevisionContext(event))
-            .orElseThrow(() -> new RuntimeException("Unable to determine revision from history or log."));
+        Project project = event.getProject();
+        if (project == null) {
+            return;
+        }
 
-        Project project = context.getProject();
+        // This action handles events for both log and history views, so attempt to load from any possible option.
+        RevisionContext context = getHistoryRevisionContext(event).or(() -> getLogRevisionContext(event)).orElse(null);
+
+        if (context == null) {
+            VirtualFile file = event.getDataContext().getData(VcsDataKeys.VCS_VIRTUAL_FILE);
+            if (file != null) {
+                // This cannot run on EDT
+                ApplicationManager.getApplication().executeOnPooledThread(
+                    () -> {
+                        if (RepoUtil.getVcsType(project, file) == VCSType.PERFORCE) {
+                            // Perforce doesn't have a history view, so we'll just open the file in Sourcegraph.
+                            ErrorNotification.show(project, "This feature is not yet supported for Perforce. If you want to see Perforce support sooner than later, please raise this at support@sourcegraph.com.");
+                        } else {
+                            ErrorNotification.show(project, "Could not find revision to open.");
+                        }
+                    });
+            } else {
+                ErrorNotification.show(project, "Could not find revision to open.");
+            }
+            return;
+        }
 
         if (project.getProjectFilePath() == null) {
-            logger.warn("No project file path found (project: " + project.getName() + ")");
+            ErrorNotification.show(project, "No project file path found (project: " + project.getName() + ")");
             return;
         }
 

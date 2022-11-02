@@ -6,6 +6,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
+import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
 import git4idea.repo.GitRepository;
 import org.jetbrains.annotations.NotNull;
@@ -52,7 +53,7 @@ public class RepoUtil {
             } else {
                 message = "Error determining repository info: " + err.getMessage();
             }
-            RepoInfoGettingErrorNotification.show(project, message);
+            ErrorNotification.show(project, message);
             Logger.getInstance(RepoUtil.class).warn(message);
             err.printStackTrace();
         }
@@ -128,7 +129,7 @@ public class RepoUtil {
         return false;
     }
 
-    private static VCSType getVcsType(@NotNull Project project, @NotNull VirtualFile file) {
+    public static VCSType getVcsType(@NotNull Project project, @NotNull VirtualFile file) {
         Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
 
         if (repository instanceof GitRepository) {
