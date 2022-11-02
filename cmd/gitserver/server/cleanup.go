@@ -228,6 +228,9 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
 		if err != nil {
 			s.Logger.Error("failed to get server address for repo", log.String("repoName", string(name)))
+			// We bail out here because it would mean that the hostname doesn't match below and
+			// it would remove repos if the DB is down for example
+			return
 		}
 
 		if !s.hostnameMatch(addr) {
