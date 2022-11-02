@@ -1,11 +1,9 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
 import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Icon, Link } from '@sourcegraph/wildcard'
 
 const dotComExamples = [
     [
@@ -24,19 +22,12 @@ const dotComExamples = [
             ],
         },
         {
-            title: 'Explore code history',
+            title: 'Get logical',
             queryExamples: [
-                { id: 'type-diff-author', query: 'type:diff author:torvalds' },
-                { id: 'type-commit-message', query: 'type:commit some message' },
+                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
+                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
+                { id: 'and-operator', query: 'hello AND world' },
             ],
-            footer: (
-                <small className="d-block mt-3">
-                    <Link target="blank" to="/help/code_search/reference/queries">
-                        Complete query reference{' '}
-                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                    </Link>
-                </small>
-            ),
         },
     ],
     [
@@ -48,11 +39,10 @@ const dotComExamples = [
             ],
         },
         {
-            title: 'Get logical',
+            title: 'Explore code history',
             queryExamples: [
-                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-                { id: 'and-operator', query: 'hello AND world' },
+                { id: 'type-diff-author', query: 'type:diff author:torvalds' },
+                { id: 'type-commit-message', query: 'type:commit some message' },
             ],
         },
         {
@@ -77,7 +67,6 @@ interface QueryExample {
         query: string
         helperText?: string
     }[]
-    footer?: React.ReactElement
 }
 
 interface ComputeResult {
@@ -253,14 +242,6 @@ export function useQueryExamples(selectedSearchContextSpec: string, isSourcegrap
                 {
                     title: 'Get advanced',
                     queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-                    footer: (
-                        <small className="d-block mt-3">
-                            <Link target="blank" to="/help/code_search/reference/queries">
-                                Complete query reference{' '}
-                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                            </Link>
-                        </small>
-                    ),
                 },
             ],
         ]

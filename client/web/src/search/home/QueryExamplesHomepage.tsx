@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, H4, Text, Link } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -123,15 +124,22 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                     {queryExampleSectionsColumns.map((column, index) => (
                         // eslint-disable-next-line react/no-array-index-key
                         <div key={`column-${index}`}>
-                            {column.map(({ title, queryExamples, footer }) => (
+                            {column.map(({ title, queryExamples }) => (
                                 <QueryExamplesSection
                                     key={title}
                                     title={title}
                                     queryExamples={queryExamples}
-                                    footer={footer}
                                     onQueryExampleClick={onQueryExampleClick}
                                 />
                             ))}
+                            {!!index && (
+                                <small className="d-block">
+                                    <Link target="blank" to="/help/code_search/reference/queries">
+                                        Complete query reference{' '}
+                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                    </Link>
+                                </small>
+                            )}
                         </div>
                     ))}
                 </div>
@@ -151,14 +159,12 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 interface QueryExamplesSection {
     title: string
     queryExamples: QueryExample[]
-    footer?: React.ReactElement
     onQueryExampleClick: (id: string | undefined, query: string) => void
 }
 
 export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
     title,
     queryExamples,
-    footer,
     onQueryExampleClick,
 }) => (
     <div className={styles.queryExamplesSection}>
@@ -176,7 +182,6 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
                     />
                 ))}
         </ul>
-        {footer}
     </div>
 )
 
