@@ -8,7 +8,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
