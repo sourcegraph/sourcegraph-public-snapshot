@@ -54,7 +54,15 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
-    const isMounted = useIsMounted()()
+    const isMounted = useIsMounted()
+    const searchContextDropdownReference = useRef<HTMLButtonElement>(null)
+
+    useEffect(() => {
+        if (isMounted() && !isOpen) {
+            searchContextDropdownReference?.current?.focus()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -69,13 +77,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         },
         [submitSearch, setSelectedSearchContextSpec]
     )
-    const searchContextDropdownReference = useRef<HTMLButtonElement>(null)
-    useEffect(() => {
-        if (isMounted && !isOpen) {
-            searchContextDropdownReference?.current?.focus()
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen])
 
     const handleMenuClose = useCallback(
         (isEscapeKey?: boolean) => {
