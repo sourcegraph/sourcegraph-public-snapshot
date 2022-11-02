@@ -59,7 +59,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 		opts.ServiceName, opts.ServiceName, opts.ServiceName)
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s Disk I/O metrics (only available on Sourcegraph internal instances)", cases.Title(language.English).String(opts.DiskTitle)),
+		Title:  fmt.Sprintf("%s disk I/O metrics (only available on Sourcegraph internal instances)", cases.Title(language.English).String(opts.DiskTitle)),
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
