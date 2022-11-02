@@ -17,6 +17,13 @@ import (
 type Store interface {
 	GetUnsafeDB() database.DB
 	GetUploadsForRanking(ctx context.Context, key string, batchSize int) ([]Upload, error)
+
+	ProcessStaleExportedUplods(
+		ctx context.Context,
+		graphKey string,
+		batchSize int,
+		deleter func(ctx context.Context, id int) error,
+	) (totalDeleted int, err error)
 }
 
 // store manages the codenav store.
@@ -121,17 +128,41 @@ func (s *store) ProcessStaleExportedUplods(
 		}
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, graphKey, pq.Array(ids))); err != nil {
 		return 0, err
 	}
 
 	return len(ids), nil
 }
 
+// Note: should remove the cascsade delete on codeintel_ranking_exports
+// from lsif_uploads, as we'd catch it this way without abandoning data
+// in the bucket with no metadata to delete it from.
+
 const selectStaleExportedUploadsQuery = `
-TODO
+SELECT re.upload_id
+FROM codeintel_ranking_exports re
+LEFT JOIN lsif_uploads u ON u.id = re.upload_id
+LEFT JOIN repo r ON r.id = u.repository_id
+WHERE
+	re.graph_key = %s AND NOT (
+		u.id IN (
+			SELECT uvt.upload_id
+			FROM lsif_uploads_visible_at_tip uvt
+			WHERE uvt.is_default_branch
+		) AND
+		r.id IS NOT NULL AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
+	)
+ORDER BY re.upload_id DESC
+LIMIT %s
+FOR UPDATE OF re SKIP LOCKED
 `
 
 const deleteStaleExportedUploadsQuery = `
-TODO
+DELETE FROM codeintel_ranking_exports re
+WHERE
+	re.graph_key = %s AND
+	re.upload_id = ANY(%q)
 `

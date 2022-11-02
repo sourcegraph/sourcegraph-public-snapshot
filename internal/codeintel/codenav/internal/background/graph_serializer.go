@@ -18,5 +18,13 @@ func (b *backgroundJob) NewRankingGraphSerializer(
 func (b backgroundJob) handleRankingGraphSerializer(
 	ctx context.Context,
 ) error {
-	return b.codeNavSvc.SerializeRankingGraph(ctx)
+	if err := b.codeNavSvc.SerializeRankingGraph(ctx); err != nil {
+		return err
+	}
+
+	if err := b.codeNavSvc.VacuumRankingGraph(ctx); err != nil {
+		return err
+	}
+
+	return nil
 }
