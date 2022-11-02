@@ -57,7 +57,9 @@ public abstract class SearchActionBase extends DumbAwareAction {
                     String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
                     if (repoInfo.vcsType == VCSType.PERFORCE) {
                         // Our "editor" backend doesn't support Perforce, but we have all the info we need, so we'll go to the final URL directly.
-                        url = URLBuilder.buildDirectSearchUrl(project, selectedText, repoInfo.getCodeHostUrl(), repoInfo.getRepoName());
+                        String codeHostUrl = (scope == Scope.REPOSITORY) ? repoInfo.getCodeHostUrl() : null;
+                        String repoName = (scope == Scope.REPOSITORY) ? repoInfo.getRepoName() : null;
+                        url = URLBuilder.buildDirectSearchUrl(project, selectedText, codeHostUrl, repoName);
                     } else {
                         url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
                     }

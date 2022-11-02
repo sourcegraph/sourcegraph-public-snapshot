@@ -44,10 +44,10 @@ public class URLBuilder {
 
     @NotNull
     public static String buildDirectSearchUrl(@NotNull Project project, @NotNull String search, @Nullable String codeHost, @Nullable String repoName) {
-        String repoFilter = (codeHost != null && repoName != null) ? "repo:^" + codeHost + "/" + repoName + "$" : null;
+        String repoFilter = (codeHost != null && repoName != null) ? "repo:^" + escapeRegexChars(codeHost + "/" + repoName) + "$" : null;
         return ConfigUtil.getSourcegraphUrl(project) + "/search"
             + "?patternType=literal"
-            + "&q=" + URLEncoder.encode((repoFilter != null ? escapeRegexChars(repoFilter) + " " : "") + escapeRegexChars(search), StandardCharsets.UTF_8);
+            + "&q=" + URLEncoder.encode((repoFilter != null ? repoFilter + " " : "") + search, StandardCharsets.UTF_8);
     }
 
     @NotNull
