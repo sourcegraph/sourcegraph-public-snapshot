@@ -135,7 +135,7 @@ func (s *store) ProcessStaleExportedUplods(
 	return len(ids), nil
 }
 
-// Note: should remove the cascsade delete on codeintel_ranking_exports
+// Note: should remove the cascade delete on codeintel_ranking_exports
 // from lsif_uploads, as we'd catch it this way without abandoning data
 // in the bucket with no metadata to delete it from.
 
