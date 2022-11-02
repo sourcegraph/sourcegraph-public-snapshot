@@ -32,6 +32,7 @@ var storeConstructors = map[string]func(ctx context.Context, config Config, oper
 	"s3":    newS3FromConfig,
 	"minio": newS3FromConfig,
 	"gcs":   newGCSFromConfig,
+	"disk":  newDiskStoreFromConfig,
 }
 
 // CreateLazy initialize a new store from the given configuration that is initialized

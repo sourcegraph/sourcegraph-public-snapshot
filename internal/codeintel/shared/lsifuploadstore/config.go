@@ -26,6 +26,8 @@ type Config struct {
 	GCSProjectID               string
 	GCSCredentialsFile         string
 	GCSCredentialsFileContents string
+
+	DiskBaseFolder string
 }
 
 func (c *Config) Load() {
@@ -34,8 +36,8 @@ func (c *Config) Load() {
 	c.Bucket = c.Get("PRECISE_CODE_INTEL_UPLOAD_BUCKET", "lsif-uploads", "The name of the bucket to store LSIF uploads in.")
 	c.TTL = c.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TTL", "168h", "The maximum age of an upload before deletion.")
 
-	if c.Backend != "minio" && c.Backend != "s3" && c.Backend != "gcs" {
-		c.AddError(errors.Errorf("invalid backend %q for PRECISE_CODE_INTEL_UPLOAD_BACKEND: must be S3, GCS, or MinIO", c.Backend))
+	if c.Backend != "minio" && c.Backend != "s3" && c.Backend != "gcs" && c.Backend != "disk" {
+		c.AddError(errors.Errorf("invalid backend %q for PRECISE_CODE_INTEL_UPLOAD_BACKEND: must be S3, GCS, MinIO, or Disk", c.Backend))
 	}
 
 	if c.Backend == "minio" || c.Backend == "s3" {
@@ -53,5 +55,7 @@ func (c *Config) Load() {
 		c.GCSProjectID = c.Get("PRECISE_CODE_INTEL_UPLOAD_GCP_PROJECT_ID", "", "The project containing the GCS bucket.")
 		c.GCSCredentialsFile = c.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to GCS.")
 		c.GCSCredentialsFileContents = c.GetOptional("PRECISE_CODE_INTEL_UPLOAD_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to GCS.")
+	} else if c.Backend == "disk" {
+		c.DiskBaseFolder = c.Get("PRECISE_CODE_INTEL_UPLOAD_DISK_FOLDER", "", "The folder which to use for code intelligence uploads.")
 	}
 }

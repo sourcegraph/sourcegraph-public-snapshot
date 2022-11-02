@@ -14,6 +14,7 @@ type Config struct {
 	TTL          time.Duration
 	S3           S3Config
 	GCS          GCSConfig
+	Disk         DiskConfig
 }
 
 func normalizeConfig(t Config) Config {
