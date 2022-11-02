@@ -43,7 +43,6 @@ type repositoryContributorConnectionResolver struct {
 
 func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	r.once.Do(func() {
-		client := gitserver.NewClient(r.db)
 		var opt gitserver.ContributorOptions
 		if r.args.RevisionRange != nil {
 			opt.Range = *r.args.RevisionRange
@@ -54,7 +53,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 		if r.args.AfterDate != nil {
 			opt.After = *r.args.AfterDate
 		}
-		r.results, r.err = client.ContributorCount(ctx, r.repo.RepoName(), opt)
+		r.results, r.err = r.repo.gitserverClient.ContributorCount(ctx, r.repo.RepoName(), opt)
 	})
 	return r.results, r.err
 }
