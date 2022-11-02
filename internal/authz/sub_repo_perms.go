@@ -128,13 +128,11 @@ type cachedRules struct {
 type path struct {
 	globPath  glob.Glob
 	exclusion bool
+	original  string
 }
 
 type compiledRules struct {
 	paths []path
-	// parent directories of all included paths so that we can still see
-	// the paths in file navigation
-	dirs []glob.Glob
 }
 
 // GetPermissionsForPath tries to match a given path to a list of rules.
@@ -142,16 +140,6 @@ type compiledRules struct {
 // traversed in reverse, and the function returns as soon as a match is found.
 // If no match is found, None is returned.
 func (rules compiledRules) GetPermissionsForPath(path string) Perms {
-	// We want to match any directories above paths that we include so that we
-	// can browse down the file hierarchy.
-	if strings.HasSuffix(path, "/") {
-		for _, dir := range rules.dirs {
-			if dir.Match(path) {
-				return Read
-			}
-		}
-	}
-
 	for i := len(rules.paths) - 1; i >= 0; i-- {
 		if rules.paths[i].globPath.Match(path) {
 			if rules.paths[i].exclusion {
@@ -351,8 +339,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			paths := make([]path, 0, len(perms.Paths))
-			allDirs := make([]glob.Glob, 0)
-			dirSeen := make(map[string]struct{})
+			allowAllDirs := false
 			for _, rule := range perms.Paths {
 				exclusion := strings.HasPrefix(rule, "-")
 				rule = strings.TrimPrefix(rule, "-")
@@ -366,29 +353,41 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					return nil, errors.Wrap(err, "building include matcher")
 				}
 
-				paths = append(paths, path{g, exclusion})
+				paths = append(paths, path{globPath: g, exclusion: exclusion, original: rule})
 
-				// We should include all directories above an include rule
-				dirs := expandDirs(rule)
-				for _, dir := range dirs {
-					if _, ok := dirSeen[dir]; ok {
-						continue
+				// Special case. Our glob package does not handle rules starting with a double
+				// wildcard correctly. For example, we would expect `/**/*.java` to match all
+				// java files, but it does not match files at the root, eg `/foo.java`. To get
+				// around this we add an extra rule to cover this case.
+				if strings.HasPrefix(rule, "/**/") {
+					trimmed := strings.TrimPrefix(rule, "/**")
+					g, err := glob.Compile(trimmed, '/')
+					if err != nil {
+						return nil, errors.Wrap(err, "building include matcher")
 					}
+					paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
+				}
+
+				// We should include all directories above an include rule so that we can browse
+				// to the included items.
+				if exclusion {
+					// No required for an exclude rule
+					continue
+				}
+
+				dirs, allowAll := expandDirs(rule)
+				allowAllDirs = allowAllDirs || allowAll
+				for _, dir := range dirs {
 					g, err := glob.Compile(dir, '/')
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					if exclusion {
-						continue
-					}
-					allDirs = append(allDirs, g)
-					dirSeen[dir] = struct{}{}
+					paths = append(paths, path{globPath: g, exclusion: false, original: dir})
 				}
 			}
 
 			toCache.rules[repo] = compiledRules{
 				paths: paths,
-				dirs:  allDirs,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -415,20 +414,24 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
-// expandDirs will return rules that match all parent directories of the given
-// rule.
-func expandDirs(rule string) []string {
+// expandDirs will return all directories above a match and a bool indicating
+// whether all directories should be matched. This can happen if we have an
+// include rule that starts with a wildcard.
+func expandDirs(rule string) ([]string, bool) {
 	dirs := make([]string, 0)
 
 	// Make sure the rule starts with a slash
 	if !strings.HasPrefix(rule, "/") {
 		rule = "/" + rule
 	}
-	// We can't support rules that start with a wildcard because we can only
-	// see one level of the tree at a time so we have no way of knowing which path leads
-	// to a file the user is allowed to see.
+
+	// If a rule starts with a wildcard it can match at any level in the tree
+	// structure so there's no way of walking up the tree and expand out to the list
+	// of valid directories. Instead, we just return a rule that matches any
+	// directory
 	if strings.HasPrefix(rule, "/*") {
-		return dirs
+		dirs = append(dirs, "**/")
+		return dirs, true
 	}
 
 	for {
@@ -442,7 +445,7 @@ func expandDirs(rule string) []string {
 		dirs = append(dirs, rule+"/")
 	}
 
-	return dirs
+	return dirs, false
 }
 
 // NewSimpleChecker is exposed for testing and allows creation of a simple
