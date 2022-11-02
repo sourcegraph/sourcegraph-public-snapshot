@@ -8,7 +8,7 @@ import React, {
     MouseEvent,
 } from 'react'
 
-import { mdiMagnify, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { mdiHistory } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -30,14 +30,11 @@ import {
 
 import styles from './SearchHistoryDropdown.module.scss'
 
-function buttonContent(isOpen: boolean): React.ReactElement {
-    return (
-        <span className="text-nowrap">
-            <Icon svgPath={mdiMagnify} aria-label="Open search history" />
-            <Icon svgPath={isOpen ? mdiChevronUp : mdiChevronDown} aria-label="" />
-        </span>
-    )
-}
+const buttonContent: React.ReactElement = (
+    <span className="text-nowrap">
+        <Icon svgPath={mdiHistory} aria-label="Open search history" />
+    </span>
+)
 
 interface SearchHistoryDropdownProps {
     recentSearches: RecentSearch[]

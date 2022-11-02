@@ -2,13 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import {
-    SearchContextInputProps,
-    QueryState,
-    SubmitSearchProps,
-    EditorHint,
-    isSearchContextSpecAvailable,
-} from '@sourcegraph/search'
+import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/search'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -84,8 +78,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         hideHelpButton,
         onChange,
         selectedSearchContextSpec,
-        setSelectedSearchContextSpec,
-        platformContext,
         recentSearches,
     } = props
 
@@ -103,21 +95,13 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
     const onSearchHistorySelect = useCallback(
         (search: RecentSearch) => {
             const searchContext = getGlobalSearchContextFilter(search.query)
-            if (searchContext) {
-                console.log('selected')
-                isSearchContextSpecAvailable({ spec: searchContext.spec, platformContext }).subscribe(isAvailable => {
-                    console.log('available')
-                    const query = isAvailable ? omitFilter(search.query, searchContext?.filter) : search.query
-                    if (isAvailable) {
-                        setSelectedSearchContextSpec(searchContext.spec)
-                    }
-                    onChange({ query, hint: EditorHint.Focus })
-                })
-            } else {
-                onChange({ query: search.query, hint: EditorHint.Focus })
-            }
+            const query =
+                searchContext && searchContext.spec === selectedSearchContextSpec
+                    ? omitFilter(search.query, searchContext?.filter)
+                    : search.query
+            onChange({ query, hint: EditorHint.Focus })
         },
-        [onChange, selectedSearchContextSpec, platformContext]
+        [onChange, selectedSearchContextSpec]
     )
 
     const historyWithoutSelectedContext = useMemo(() => {
