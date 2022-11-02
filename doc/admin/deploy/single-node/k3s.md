@@ -157,7 +157,7 @@ kubectl --kubeconfig $KUBECONFIG_FILE create -f $DEPLOY_PATH/ingress.yaml
 
 ## Upgrade
 
-Please refer to the [upgrade docs for all Sourcegraph Helm instances](../kubernetes/operations#upgrade).
+Please refer to the [upgrade docs for all Sourcegraph Helm instances](../kubernetes/operations.md#upgrade).
 
 ## Downgrade
 
