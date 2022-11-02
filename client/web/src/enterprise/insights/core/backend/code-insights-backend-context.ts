@@ -6,7 +6,6 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import {
     SeriesChartContent,
     CategoricalChartContent,
-    RepositorySuggestionData,
     BackendInsightDatum,
 } from './code-insights-backend-types'
 
@@ -47,11 +46,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getInsightPreviewContent = (): Promise<SeriesChartContent<BackendInsightDatum>> =>
         errorMockMethod('getInsightPreviewContent')().toPromise()
 
-    // Repositories API
-    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
-        errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = (): Promise<string[]> =>
-        errorMockMethod('getResolvedSearchRepositories')().toPromise()
     public getFirstExampleRepository = errorMockMethod('getFirstExampleRepository')
 
     // License check

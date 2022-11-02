@@ -2,7 +2,7 @@ import { ChangeEvent, FocusEvent, forwardRef, MouseEvent, Ref, useImperativeHand
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 
-import { FlexTextArea, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { FlexTextArea, ForwardReferenceComponent, useDebounce } from '@sourcegraph/wildcard'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'
@@ -26,8 +26,10 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
         value,
         caretPosition,
     })
-    const { searchValue, suggestions } = useRepoSuggestions({
-        search,
+
+    const debouncedSearchTerm = useDebounce(search, 1000)
+    const suggestions = useRepoSuggestions({
+        search: debouncedSearchTerm,
         disable: !panel,
     })
 
@@ -118,7 +120,7 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
 
             {panel && (
                 <ComboboxPopover hidden={false} className={styles.comboboxReachPopover}>
-                    <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
+                    <SuggestionsPanel value={debouncedSearchTerm} suggestions={suggestions} className={styles.popover} />
                 </ComboboxPopover>
             )}
         </Combobox>

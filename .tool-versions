@@ -1,4 +1,4 @@
-golang 1.18.7
+golang 1.19.3
 nodejs 16.7.0
 # We're using yarn classic to install yarn 3.x as defined in package.json
 yarn 1.22.19

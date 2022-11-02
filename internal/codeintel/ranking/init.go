@@ -41,11 +41,9 @@ type serviceDependencies struct {
 
 var (
 	bucketName                   = env.Get("CODEINTEL_RANKING_RESULTS_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
+	rankingGraphKey              = env.Get("CODEINTEL_RANKING_RESULTS_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new import from the configured bucket.")
 	resultsBucketObjectKeyPrefix = env.Get("CODEINTEL_RANKING_RESULTS_OBJECT_KEY_PREFIX", "ranks/", "The object key prefix that holds results of the last PageRank batch job.")
 	resultsBucketCredentialsFile = env.Get("CODEINTEL_RANKING_RESULTS_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
-
-	// Set in codenav service
-	rankingGraphKey = os.Getenv("CODEINTEL_CODENAV_RANKING_GRAPH_KEY")
 
 	// Backdoor tuning for dotcom
 	inputFileBatchSize = env.MustGetInt("CODEINTEL_RANKING_RESULTS_INPUT_FILE_BATCH_SIZE", 5000, "")

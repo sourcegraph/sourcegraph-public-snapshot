@@ -1,71 +1,51 @@
-import { useContext, useEffect, useMemo, useState } from 'react'
 
-import { useDebounce } from '@sourcegraph/wildcard'
+import { gql, useQuery } from '@apollo/client';
 
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { RepositorySuggestionData } from '../../../../core/backend/code-insights-backend-types'
-import { memoizeAsync } from '../utils/memoize-async'
+import { asError } from '@sourcegraph/common';
+
+import { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations';
+
+const GET_REPOSITORY_SUGGESTION = gql`
+    query RepositorySearchSuggestions($query: String!) {
+        repositories(first: 5, query: $query) {
+            nodes {
+                id
+                name
+            }
+        }
+    }
+`
 
 interface UseRepoSuggestionsProps {
     search: string | null
     disable?: boolean
 }
 
-interface UseRepoSuggestionsResult {
-    searchValue: string | null
-    suggestions: RepositorySuggestionData[] | Error | undefined
+export interface RepositorySuggestionData {
+    id: string
+    name: string
 }
 
-/**
- * Returns fetch method for repository suggestions with local cache
- */
-function useFetchSuggestions(): (search: string) => Promise<RepositorySuggestionData[]> {
-    const { getRepositorySuggestions } = useContext(CodeInsightsBackendContext)
-
-    return useMemo(
-        // memoizeAsync adds local result cache
-        () => memoizeAsync<string, RepositorySuggestionData[]>(getRepositorySuggestions, query => query),
-        [getRepositorySuggestions]
-    )
-}
-
-/**
- * Provides list of repository suggestions.
- */
-export function useRepoSuggestions(props: UseRepoSuggestionsProps): UseRepoSuggestionsResult {
+export function useRepoSuggestions(props: UseRepoSuggestionsProps): RepositorySuggestionData[] | Error | undefined {
     const { search, disable = false } = props
 
-    const [suggestions, setSuggestions] = useState<RepositorySuggestionData[] | Error | undefined>([])
-    const debouncedSearchTerm = useDebounce(search, 1000)
-    const fetchSuggestions = useFetchSuggestions()
+    const { data, loading, error } = useQuery<RepositorySearchSuggestionsResult>(GET_REPOSITORY_SUGGESTION, {
+        skip: disable || !search,
+        fetchPolicy: 'cache-first',
+        variables: { query: search }
+    })
 
-    useEffect(() => {
-        if (disable || !debouncedSearchTerm) {
-            setSuggestions([])
-            return
-        }
+    if (error) {
+        return asError(error)
+    }
 
-        let wasCanceled = false
+    if (loading) {
+        return undefined
+    }
 
-        // Start fetching repository suggestions
-        setSuggestions(undefined)
+    if (data) {
+        return data.repositories.nodes.filter(suggestion => !!suggestion.name)
+    }
 
-        fetchSuggestions(debouncedSearchTerm)
-            .then(suggestions => {
-                if (!wasCanceled) {
-                    setSuggestions(suggestions)
-                }
-            })
-            .catch(error => {
-                if (!wasCanceled) {
-                    setSuggestions(error)
-                }
-            })
-
-        return () => {
-            wasCanceled = true
-        }
-    }, [fetchSuggestions, disable, debouncedSearchTerm])
-
-    return { searchValue: debouncedSearchTerm, suggestions }
+    return []
 }
