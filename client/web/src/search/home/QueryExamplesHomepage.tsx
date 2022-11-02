@@ -91,7 +91,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     return (
         <div>
             <div>
-                {!isSourcegraphDotCom ? (
+                {isSourcegraphDotCom ? (
                     <div className="d-flex align-items-center mb-2">
                         <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>Code Search Basics</Text>
                     </div>
