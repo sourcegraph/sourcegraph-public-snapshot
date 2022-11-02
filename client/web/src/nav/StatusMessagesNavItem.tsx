@@ -265,7 +265,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 variant="link"
                 aria-label={isOpen ? 'Hide status messages' : 'Show status messages'}
             >
-                {error && (
+                {error ? (
                     <Tooltip content="Sorry, we couldn’t fetch notifications!">
                         <Icon
                             aria-label="Sorry, we couldn’t fetch notifications!"
@@ -273,8 +273,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             size="md"
                         />
                     </Tooltip>
+                ) : (
+                    icon
                 )}
-                {icon}
             </PopoverTrigger>
 
             <PopoverContent position={Position.bottom} className={classNames('p-0', styles.dropdownMenu)}>

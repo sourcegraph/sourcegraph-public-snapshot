@@ -6,12 +6,16 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import {
+    DotComProductLicensesResult,
+    DotComProductLicensesVariables,
+    ProductLicenseFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import {
@@ -23,7 +27,7 @@ import {
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
+    ProductLicenseFields,
     Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
 > {}
 
@@ -62,8 +66,11 @@ export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWi
     )
 }
 
-function queryLicenses(args: { first?: number; query?: string }): Observable<GQL.IProductLicenseConnection> {
-    const variables: GQL.IProductLicensesOnDotcomQueryArguments = {
+function queryLicenses(args: {
+    first?: number
+    query?: string
+}): Observable<DotComProductLicensesResult['dotcom']['productLicenses']> {
+    const variables: Partial<DotComProductLicensesVariables> = {
         first: args.first,
         licenseKeySubstring: args.query,
     }
