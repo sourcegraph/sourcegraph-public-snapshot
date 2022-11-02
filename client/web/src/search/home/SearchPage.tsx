@@ -24,7 +24,6 @@ import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
 
 import styles from './SearchPage.module.scss'
-import { isSourcegraphDotCom } from '../../enterprise/codeintel/searchBased'
 
 export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
