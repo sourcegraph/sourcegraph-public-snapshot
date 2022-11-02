@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 
-import { Insight, InsightDashboard, InsightsDashboardOwner } from '../types'
+import { Insight, InsightsDashboardOwner } from '../types'
 
 import {
     AssignInsightsToDashboardInput,
@@ -18,7 +18,6 @@ import {
     RemoveInsightFromDashboardInput,
     CategoricalChartContent,
     SeriesChartContent,
-    UiFeaturesConfig,
     InsightContent,
     InsightPreviewSettings,
     BackendInsightDatum,
@@ -30,21 +29,12 @@ import {
  * pages and components have.
  */
 export interface CodeInsightsBackend {
-    /**
-     * Returns all accessible code insights dashboards for the current user.
-     * This includes virtual (like "all insights") and real dashboards.
-     */
-    getDashboards: () => Observable<InsightDashboard[]>
-
-    getDashboardById: (input: { dashboardId: string | undefined }) => Observable<InsightDashboard | null>
 
     /**
      * Returns all possible visibility options for dashboard. Dashboard can be stored
      * as private (user subject), org level (organization subject) or global (site subject)
      */
     getDashboardOwners: () => Observable<InsightsDashboardOwner[]>
-
-    findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
     createDashboard: (input: DashboardCreateInput) => Observable<DashboardCreateResult>
 
@@ -111,9 +101,4 @@ export interface CodeInsightsBackend {
      * or "select:repo count:1" if no repository is found with the string "TODO"
      */
     getFirstExampleRepository: () => Observable<string>
-
-    /**
-     * Returns a features object used to show/hide and enable/disable UI elements
-     */
-    readonly UIFeatures: UiFeaturesConfig
 }
