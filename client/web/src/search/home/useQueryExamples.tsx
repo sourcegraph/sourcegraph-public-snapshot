@@ -1,12 +1,60 @@
-import React, { useMemo, useEffect, useState, useCallback } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
 import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Icon, Link } from '@sourcegraph/wildcard'
 
+const dotComExamples = [
+    [
+        {
+            title: 'Scope search to specific repos',
+            queryExamples: [
+                { id: 'org-repos', query: 'repo:sourcegraph/*' },
+                { id: 'single-repo', query: 'repo:facebook/react' },
+            ],
+        },
+        {
+            title: 'Jump into code navigation',
+            queryExamples: [
+                { id: 'file-filter', query: 'file:README.md' },
+                { id: 'type-symbol', query: 'type:symbol SymbolName' },
+            ],
+        },
+        {
+            title: 'Get logical',
+            queryExamples: [
+                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
+                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
+                { id: 'and-operator', query: 'hello AND world' },
+            ],
+        },
+    ],
+    [
+        {
+            title: 'Find content or patterns',
+            queryExamples: [
+                { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
+                { id: 'regex-pattern', query: '/regex.*pattern/' },
+            ],
+        },
+        {
+            title: 'Explore code history',
+            queryExamples: [
+                { id: 'type-diff-author', query: 'type:diff author:torvalds' },
+                { id: 'type-commit-message', query: 'type:commit some message' },
+            ],
+        },
+        {
+            title: 'Get advanced',
+            queryExamples: [
+                { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
+                // eslint-disable-next-line no-useless-escape
+                { id: 'conditional-repo', query: 'repo:has.file(path:package.json content:eslint.*\^8\.13\.0) file:\.eslintrc$ rules' },
+            ],
+        },
+    ],
+]
 export interface QueryExamplesContent {
     repositoryName: string
     filePath: string
@@ -20,7 +68,6 @@ interface QueryExample {
         query: string
         helperText?: string
     }[]
-    footer?: React.ReactElement
 }
 
 interface ComputeResult {
@@ -66,7 +113,7 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     }
 }
 
-export function useQueryExamples(selectedSearchContextSpec: string): QueryExample[][] {
+export function useQueryExamples(selectedSearchContextSpec: string, isSourcegraphDotCom: boolean = false): QueryExample[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,
@@ -104,10 +151,9 @@ export function useQueryExamples(selectedSearchContextSpec: string): QueryExampl
     )
 
     useEffect(() => {
-        if (queryExamplesContent || cachedQueryExamplesContentLoadStatus === 'initial') {
+        if (queryExamplesContent || cachedQueryExamplesContentLoadStatus === 'initial' || isSourcegraphDotCom) {
             return
         }
-
         if (
             cachedQueryExamplesContentLoadStatus === 'loaded' &&
             cachedQueryExamplesContent &&
@@ -126,6 +172,7 @@ export function useQueryExamples(selectedSearchContextSpec: string): QueryExampl
         setCachedQueryExamplesContent,
         cachedQueryExamplesContentLoadStatus,
         loadQueryExamples,
+        isSourcegraphDotCom,
     ])
 
     useEffect(() => {
@@ -139,6 +186,10 @@ export function useQueryExamples(selectedSearchContextSpec: string): QueryExampl
     }, [selectedSearchContextSpec])
 
     return useMemo(() => {
+        // Static examples for DotCom
+        if (isSourcegraphDotCom) {
+            return dotComExamples
+        }
         if (!queryExamplesContent) {
             return []
         }
@@ -193,16 +244,8 @@ export function useQueryExamples(selectedSearchContextSpec: string): QueryExampl
                 {
                     title: 'Get advanced',
                     queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-                    footer: (
-                        <small className="d-block mt-3">
-                            <Link target="blank" to="/help/code_search/reference/queries">
-                                Complete query reference{' '}
-                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                            </Link>
-                        </small>
-                    ),
                 },
             ],
         ]
-    }, [queryExamplesContent])
+    }, [queryExamplesContent, isSourcegraphDotCom])
 }

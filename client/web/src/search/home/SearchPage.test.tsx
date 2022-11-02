@@ -38,10 +38,6 @@ jest.mock('./SearchPageInput', () => ({
 
 // Uses import.meta.url, which is a SyntaxError when used outside of ES Modules (Jest runs tests as
 // CommonJS).
-jest.mock('./LoggedOutHomepage.constants', () => ({
-    fonts: [],
-    exampleTripsAndTricks: [],
-}))
 
 function getMocks({
     enableSavedSearches,
@@ -114,6 +110,23 @@ describe('SearchPage', () => {
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
+    
+    it('should show home panels if not on Sourcegraph.com, logged in and showEnterpriseHomePanels enabled', () => {
+        useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+
+        container = renderWithBrandedContext(
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps} />
+            </MockedTestProvider>
+        ).container
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
+        expect(homePanels).toBeVisible()
+    })
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = renderWithBrandedContext(
@@ -130,24 +143,7 @@ describe('SearchPage', () => {
         expect(homePanels).not.toBeInTheDocument()
     })
 
-    it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
-        useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-
-        container = renderWithBrandedContext(
-            <MockedTestProvider
-                mocks={getMocks({
-                    enableSavedSearches: false,
-                    enableCollaborators: false,
-                })}
-            >
-                <SearchPage {...defaultProps} isSourcegraphDotCom={true} />
-            </MockedTestProvider>
-        ).container
-        const homePanels = container.querySelector('[data-testid="home-panels"]')
-        expect(homePanels).toBeVisible()
-    })
-
-    it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
+    it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled with user logged out', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 
         container = renderWithBrandedContext(
