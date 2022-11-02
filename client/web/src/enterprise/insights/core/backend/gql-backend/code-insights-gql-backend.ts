@@ -37,8 +37,6 @@ import {
     InsightPreviewSettings,
     BackendInsightDatum,
 } from '../code-insights-backend-types'
-import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
-import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
@@ -247,10 +245,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getInsightPreviewContent = (
         input: InsightPreviewSettings
     ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
-
-    // Repositories API
-    public getRepositorySuggestions = getRepositorySuggestions
-    public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     public assignInsightsToDashboard = ({
         id,
