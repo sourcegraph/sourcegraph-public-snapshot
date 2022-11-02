@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -179,20 +178,15 @@ func (s *Service) exportRanksForDevelopment(ctx context.Context) (err error) {
 			}
 		}
 
-		fmt.Printf("EXPORTING\n")
-
 		w := objectHandle.NewWriter(ctx)
 		if _, err := io.Copy(w, bytes.NewReader(payload)); err != nil {
 			_ = w.Close()
-			fmt.Printf("WTF NO: %s\n", err)
 			return err
 		}
 		if err := w.Close(); err != nil {
-			fmt.Printf("WTF NO: %s\n", err)
 			return err
 		}
 		if _, err := objectHandle.Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: lastUpdated}); err != nil {
-			fmt.Printf("WTF NO: %s\n", err)
 			return err
 		}
 	}
