@@ -523,7 +523,16 @@ read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 			protects: `
 read    group   Dev1    *   //depot/main/.../*.java
 `,
-			canReadAll:    []string{"dev/bar.java", "foo.java"},
+			canReadAll:    []string{"dev/bar.java", "foo.java", "/foo.java"},
+			cannotReadAny: []string{"dev/foo.go"},
+		},
+		{
+			name:  "Root matching, multiple levels",
+			depot: "//depot/main/",
+			protects: `
+read    group   Dev1    *   //depot/main/.../.../*.java
+`,
+			canReadAll:    []string{"/foo/dev/bar.java", "foo.java", "/foo.java"},
 			cannotReadAny: []string{"dev/foo.go"},
 		},
 		{

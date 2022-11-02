@@ -360,12 +360,20 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 				// java files, but it does not match files at the root, eg `/foo.java`. To get
 				// around this we add an extra rule to cover this case.
 				if strings.HasPrefix(rule, "/**/") {
-					trimmed := strings.TrimPrefix(rule, "/**")
-					g, err := glob.Compile(trimmed, '/')
-					if err != nil {
-						return nil, errors.Wrap(err, "building include matcher")
+					trimmed := rule
+					for {
+						trimmed = strings.TrimPrefix(trimmed, "/**")
+						if strings.HasPrefix(trimmed, "/**/") {
+							// Keep trimming
+							continue
+						}
+						g, err := glob.Compile(trimmed, '/')
+						if err != nil {
+							return nil, errors.Wrap(err, "building include matcher")
+						}
+						paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
+						break
 					}
-					paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
 				}
 
 				// We should include all directories above an include rule so that we can browse
