@@ -371,7 +371,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 				// We should include all directories above an include rule so that we can browse
 				// to the included items.
 				if exclusion {
-					// No required for an exclude rule
+					// Not required for an exclude rule
 					continue
 				}
 
