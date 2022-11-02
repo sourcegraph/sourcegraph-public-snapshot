@@ -38,7 +38,7 @@ func (s *Server) RegisterMetrics(db dbutil.DB, observationContext *observation.C
 
 	// report the size of the repos dir
 	if s.ReposDir == "" {
-		s.Logger.Error("ReposDir is not set, cannot export disk_space_available metric.")
+		s.Logger.Error("ReposDir is not set, cannot export disk_space_available and gitserver_mount_info metric.")
 		return
 	}
 
