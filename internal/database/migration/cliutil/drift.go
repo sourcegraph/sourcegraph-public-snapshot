@@ -163,14 +163,12 @@ func fetchExpectedSchema(
 			strings.Join(paths, "\n  - "),
 			additionalHints,
 		))
-	} else {
-		if len(versionExamples) > 0 {
-			out.WriteLine(output.Linef(
-				output.EmojiLightbulb,
-				output.StyleFailure,
-				"Schema not found. Ensure your supplied version matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
-			))
-		}
+	} else if len(versionExamples) > 0 {
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb,
+			output.StyleFailure,
+			"Schema not found. Ensure your supplied version matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+		))
 	}
 
 	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")
