@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -68,12 +66,11 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Streamer // addr -> client
 }
 
-var rankingEnabled, _ = strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING"))
-
 // StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
-
-	if rankingEnabled {
+	// We check for nil opts for convenience in tests. Must fix once we rely
+	// on this.
+	if opts != nil && opts.FlushWallTime > 0 {
 		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
 	}
 
@@ -213,24 +210,20 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	// Hack: 500ms is a better default for this function. The original default of 0
-	// disables the flushCollectSender and offers no ranking at all. For now
-	// StreamSearch and streamSearchExperimentalRanking share newRankingSiteConfig.
-	// Once this function is not behind a feature flag anymore, we should update the
-	// default.
-	if siteConfig.maxReorderDuration == 0 {
-		siteConfig.maxReorderDuration = 500 * time.Millisecond
-	}
-
 	streamer, flushAll := newFlushCollectSender(
 		&collectOpts{
 			maxDocDisplayCount: opts.MaxDocDisplayCount,
-			flushWallTime:      siteConfig.maxReorderDuration,
+			flushWallTime:      opts.FlushWallTime,
 			maxSizeBytes:       siteConfig.maxSizeBytes,
 		},
 		streamer,
 	)
 	defer flushAll()
+
+	// We give each zoekt a little less time to flush so the frontend has a
+	// chance to collect them before flushing.
+	childOpts := *opts
+	childOpts.FlushWallTime -= childOpts.FlushWallTime / 5
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
@@ -244,7 +237,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := c.StreamSearch(ctx, q, &childOpts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return

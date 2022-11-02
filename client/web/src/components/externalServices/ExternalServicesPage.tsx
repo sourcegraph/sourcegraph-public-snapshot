@@ -4,10 +4,8 @@ import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
@@ -21,7 +19,7 @@ import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDis
 import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
-interface Props extends ActivationProps, TelemetryProps {
+interface Props extends TelemetryProps {
     history: H.History
     location: H.Location
     routingPrefix: string
@@ -44,7 +42,6 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     history,
     location,
     routingPrefix,
-    activation,
     userID,
     telemetryService,
     authenticatedUser,
@@ -64,16 +61,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 first: args.first ?? null,
                 after: args.after ?? null,
                 namespace: userID ?? null,
-            }).pipe(
-                tap(externalServices => {
-                    if (activation && externalServices.totalCount > 0) {
-                        activation.update({ ConnectedCodeHost: true })
-                    }
-                })
-            ),
-        // Activation changes in here, so we cannot recreate the callback on change,
-        // or queryConnection will constantly change, resulting in infinite refetch loops.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            }),
         [userID, queryExternalServices]
     )
 

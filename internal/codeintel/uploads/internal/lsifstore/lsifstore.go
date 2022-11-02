@@ -22,6 +22,8 @@ type LsifStore interface {
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
 	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+
+	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 }
 
 type store struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,9 +27,10 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	repos := database.NewMockRepoStore()
 	config := JobMonitorConfig{
-		InsightsDB: insightsDB,
-		RepoStore:  repos,
-		ObsContext: &observation.TestContext,
+		InsightsDB:   insightsDB,
+		RepoStore:    repos,
+		ObsContext:   &observation.TestContext,
+		CostAnalyzer: priority.NewQueryAnalyzer(),
 	}
 	routines := NewBackgroundJobMonitor(ctx, config).Routines()
 	goroutine.MonitorBackgroundRoutines(ctx, routines...)
@@ -41,9 +43,10 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	repos := database.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
-		InsightsDB: insightsDB,
-		RepoStore:  repos,
-		ObsContext: &observation.TestContext,
+		InsightsDB:   insightsDB,
+		RepoStore:    repos,
+		ObsContext:   &observation.TestContext,
+		CostAnalyzer: priority.NewQueryAnalyzer(),
 	}
 	monitor := NewBackgroundJobMonitor(ctx, config)
 

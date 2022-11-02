@@ -11,6 +11,7 @@ import (
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -31,9 +32,10 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
-		InsightsDB: insightsDB,
-		RepoStore:  repos,
-		ObsContext: &observation.TestContext,
+		InsightsDB:   insightsDB,
+		RepoStore:    repos,
+		ObsContext:   &observation.TestContext,
+		CostAnalyzer: priority.NewQueryAnalyzer(),
 	}
 	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)
@@ -61,6 +63,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 		backfillStore: bfs,
 		seriesReader:  store.NewInsightStore(insightsDB),
 		repoIterator:  discovery.NewSeriesRepoIterator(nil, repos),
+		costAnalyzer:  *config.CostAnalyzer,
 	}
 	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)

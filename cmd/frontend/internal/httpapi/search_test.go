@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -45,6 +46,7 @@ func TestServeConfiguration(t *testing.T) {
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
+		Ranking: &fakeRankingService{},
 	}
 
 	data := url.Values{
@@ -226,6 +228,18 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	}
 
 	return nil
+}
+
+type fakeRankingService struct{}
+
+func (*fakeRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return map[api.RepoID]time.Time{}, nil
+}
+func (*fakeRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+	return nil, nil
+}
+func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
+	return nil, nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with

@@ -67,7 +67,7 @@ func main() {
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 
 		// Note: experimental (not documented)
-		"codeintel-ranking-indexer": codeintel.NewRankingIndexerJob(),
+		"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),
 	}
 
 	if err := shared.Start(logger, additionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {

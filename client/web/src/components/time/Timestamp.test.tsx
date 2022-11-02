@@ -10,5 +10,14 @@ describe('Timestamp', () => {
 
     test('noAbout', () => expect(render(<Timestamp date="2006-01-02" noAbout={true} />).asFragment()).toMatchSnapshot())
 
-    test('absolute time with formatting', () => expect(render(<Timestamp date="2006-01-02T01:02:00Z" timestampFormat={TimestampFormat.FULL_TIME} preferAbsolute={true} />).asFragment()).toMatchSnapshot())
+    test('absolute time with formatting', () =>
+        expect(
+            render(
+                <Timestamp
+                    date="2006-01-02T01:02:00Z"
+                    timestampFormat={TimestampFormat.FULL_TIME}
+                    preferAbsolute={true}
+                />
+            ).asFragment()
+        ).toMatchSnapshot())
 })

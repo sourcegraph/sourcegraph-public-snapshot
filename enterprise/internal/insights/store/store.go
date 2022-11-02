@@ -25,6 +25,7 @@ import (
 type Interface interface {
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
@@ -538,7 +539,8 @@ type RecordSeriesPointArgs struct {
 	PersistMode PersistMode
 }
 
-// RecordSeriesPoints stores multiple data points atomically.
+// RecordSeriesPoints stores multiple data points atomically. Use this in favour of RecordSeriesPointsAndRecordingTimes
+// if recording times are not known.
 func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -664,6 +666,7 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from
 
 // RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
 // functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
+// Use this in favour of RecordSeriesPoints if recording times are known.
 func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {

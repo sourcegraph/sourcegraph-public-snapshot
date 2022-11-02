@@ -386,6 +386,7 @@ Flags:
 * `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Try to fix any lint issues
+* `--no-format-check, --nfc`: Don't check file formatting
 
 ### sg lint urls
 
@@ -444,6 +445,15 @@ Flags:
 ### sg lint shell
 
 Check shell code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg lint format
+
+Check client code and docs for formatting errors.
 
 
 Flags:

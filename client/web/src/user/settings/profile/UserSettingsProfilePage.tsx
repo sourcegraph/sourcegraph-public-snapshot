@@ -1,15 +1,12 @@
 import React, { useEffect } from 'react'
 
 import { gql } from '@sourcegraph/http-client'
-import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { EditUserProfilePage as EditUserProfilePageFragment } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
 
@@ -26,7 +23,7 @@ export const EditUserProfilePageGQLFragment = gql`
     }
 `
 
-interface Props extends Pick<UserSettingsAreaRouteContext, 'activation'> {
+interface Props {
     user: EditUserProfilePageFragment
 }
 
@@ -56,13 +53,6 @@ export const UserSettingsProfilePage: React.FunctionComponent<React.PropsWithChi
                 }
                 className={styles.heading}
             />
-            {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
-                <Container className="mb-3">
-                    <H3>Almost there!</H3>
-                    <Text>Complete the steps below to finish onboarding to Sourcegraph.</Text>
-                    <ActivationChecklist steps={props.activation.steps} completed={props.activation.completed} />
-                </Container>
-            )}
             {user && (
                 <EditUserProfileForm
                     user={user}
