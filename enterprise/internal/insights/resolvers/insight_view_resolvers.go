@@ -511,14 +511,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, backfiller, r.scheduler, r.insightEnqueuer)
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
+		_, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
-		}
-		if len(c.Repositories) > 0 {
-			scoped = append(scoped, *c)
 		}
 	}
 
@@ -1300,7 +1296,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(resolvers, func(i, j int) bool {
 		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-		if hasSemVar == true {
+		if hasSemVar {
 			return result
 		}
 		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
@@ -1324,7 +1320,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		} else {
 			sort.SliceStable(resolvers, func(i, j int) bool {
 				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-				if hasSemVar == true {
+				if hasSemVar {
 					return !result
 				}
 				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0

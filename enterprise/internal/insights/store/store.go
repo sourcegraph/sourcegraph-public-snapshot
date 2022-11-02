@@ -184,7 +184,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
-		return []SeriesPoint{}, err
+		return nil, err
 	}
 	denyBitmap := roaring.New()
 	for _, id := range denylist {
@@ -254,6 +254,10 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	pointsMap := make(map[string]*SeriesPoint)
 	captureValues := make(map[string]struct{})

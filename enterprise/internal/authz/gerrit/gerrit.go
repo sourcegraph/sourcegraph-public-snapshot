@@ -67,7 +67,7 @@ func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []
 }
 
 func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool, error) {
-	if accts == nil || len(accts) == 0 {
+	if len(accts) == 0 {
 		return nil, false, nil
 	}
 	for _, email := range verifiedEmails {

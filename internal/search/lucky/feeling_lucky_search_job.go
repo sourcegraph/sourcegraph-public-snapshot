@@ -220,7 +220,7 @@ func (n *notifier) New(count int) error {
 	if count == limits.DefaultMaxSearchResultsStreaming {
 		resultCountString = fmt.Sprintf("%d+ results", count)
 	} else if count == 1 {
-		resultCountString = fmt.Sprintf("1 result")
+		resultCountString = "1 result"
 	} else {
 		resultCountString = fmt.Sprintf("%d additional results", count)
 	}

@@ -437,8 +437,6 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 			h.logger.Warn("unable to purge jobs for old seriesID", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 		}
 	}
-
-	return
 }
 
 func markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries, dataSeriesStore store.DataSeriesStore) {
