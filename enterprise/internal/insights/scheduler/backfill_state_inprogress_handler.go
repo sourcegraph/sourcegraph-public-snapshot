@@ -106,6 +106,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		log.Int("recordId", record.RecordID()),
 		log.Int("jobNumFailures", job.NumFailures),
 		log.Int("seriesId", series.ID),
+		log.String("seriesUniqueId", series.SeriesID),
 		log.Int("backfillId", backfillJob.Id),
 		log.Int("repoTotalCount", itr.TotalCount),
 		log.Float64("percentComplete", itr.PercentComplete),
@@ -160,7 +161,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	}
 
 	if itr.IsComplete() {
-		logger.Info("setting backfill to completed state", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Duration("totalDuration", itr.RuntimeDuration))
+		logger.Info("setting backfill to completed state", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id), log.Duration("totalDuration", itr.RuntimeDuration))
 		err = itr.MarkComplete(ctx, h.backfillStore.Store)
 		if err != nil {
 			return err
