@@ -142,7 +142,7 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
         }, [hasFocus])
 
         return (
-            <div role="generic" className={styles.root} ref={rootReference} data-testid="notebook-command-palette">
+            <div className={styles.root} ref={rootReference} data-testid="notebook-command-palette">
                 <div className={styles.inputRow}>
                     <Input
                         ref={mergedInputReference}
