@@ -36,7 +36,7 @@ interface Props extends RevisionSpec, Partial<FileSpec> {
 
     actionType?: 'nav' | 'dropdown'
 
-    source?: 'repoHeader' | 'actionItemsBar'
+    source?: 'repoHeader' | 'actionItemsBar' | 'textLink'
 }
 
 /**
@@ -146,6 +146,14 @@ export const GoToCodeHostAction: React.FunctionComponent<
             <SimpleActionItem tooltip={descriptiveText} {...commonProps}>
                 <Icon as={exportIcon} aria-hidden={true} />
             </SimpleActionItem>
+        )
+    }
+
+    if (props.source === 'textLink') {
+        return (
+            <Link to={url} target="_blank" rel="noopener noreferrer" onClick={onClick} onAuxClick={onClick}>
+                {descriptiveText}
+            </Link>
         )
     }
 

@@ -3,9 +3,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect } from 'react-router'
-import { Observable, of } from 'rxjs'
+import { from, Observable, of } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
@@ -20,26 +21,29 @@ import {
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, LoadingSpinner, Text, useEventObservable, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { RepositoryFields } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
-import { toTreeURL } from '../../util/url'
+import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
+import { GoToCodeHostAction } from '../actions/GoToCodeHostAction'
+import { fetchFileExternalLinks } from '../backend'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -84,8 +88,10 @@ interface BlobPageProps
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
-    repoID?: Scalars['ID']
-    repoUrl?: string
+    repo?: Pick<
+        RepositoryFields,
+        'id' | 'url' | 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'
+    > | null
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -102,7 +108,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
-    const { repoName, revision, repoID, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repo, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { id: repoID } = repo || {}
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
@@ -118,6 +125,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         props.location.search,
         props.location.hash,
     ])
+
+    const settingsOrError = useObservable(
+        useMemo(() => from(props.platformContext.settings), [props.platformContext.settings])
+    )
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -203,6 +214,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
+                                lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                                externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                             }
 
                             fetchSpan.end()
@@ -262,6 +275,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                         }
                         return blobInfo
                     }),
@@ -428,6 +443,49 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     icon={MapSearchIcon}
                     title="Not found"
                     subtitle={`${filePath} does not exist at this revision.`}
+                />
+            </div>
+        )
+    }
+
+    // LFS file:
+    if (blobInfoOrError.lfs) {
+        const settings =
+            settingsOrError !== undefined && isSettingsValid(settingsOrError) ? settingsOrError.final : undefined
+        const perforceCodeHostUrlToSwarmUrlMap =
+            (settings?.['perforce.codeHostToSwarmMap'] as { [codeHost: string]: string } | undefined) || {}
+
+        const { rawRevision, commitRange, position, range } = parseBrowserRepoURL(
+            location.pathname + location.search + location.hash
+        )
+
+        return (
+            <div className={styles.placeholder}>
+                <HeroPage
+                    icon={FileAlertIcon}
+                    title="Large file"
+                    subtitle={
+                        <div>
+                            <Text>
+                                This file is stored in Git LFS.
+                                <GoToCodeHostAction
+                                    repo={repo}
+                                    repoName={repoName}
+                                    // We need a revision to generate code host URLs, if revision isn't available, we use the default branch or HEAD.
+                                    revision={rawRevision || repo?.defaultBranch?.displayName || 'HEAD'}
+                                    filePath={filePath}
+                                    commitRange={commitRange}
+                                    range={range}
+                                    position={position}
+                                    perforceCodeHostUrlToSwarmUrlMap={perforceCodeHostUrlToSwarmUrlMap}
+                                    fetchFileExternalLinks={fetchFileExternalLinks}
+                                    externalLinks={blobInfoOrError.externalURLs}
+                                    actionType="nav"
+                                    source="textLink"
+                                />
+                            </Text>
+                        </div>
+                    }
                 />
             </div>
         )
