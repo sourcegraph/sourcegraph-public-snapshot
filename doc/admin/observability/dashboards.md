@@ -5571,6 +5571,7 @@ Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex
 <p class="subtitle">Read request rate over 2m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5588,11 +5589,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_writes_sec)
+#### gitserver: repos_disk_writes_sec
 
 <p class="subtitle">Write request rate over 2m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5610,11 +5612,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_read_throughput)
+#### gitserver: repos_disk_read_throughput
 
 <p class="subtitle">Read throughput over 2m (per instance)</p>
 
 The amount of data that was read from the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5632,11 +5635,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_write_throughput)
+#### gitserver: repos_disk_write_throughput
 
 <p class="subtitle">Write throughput over 2m (per instance)</p>
 
 The amount of data that was written to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5654,11 +5658,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_read_duration)
+#### gitserver: repos_disk_read_duration
 
 <p class="subtitle">Average read duration over 2m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5676,11 +5681,12 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 <br />
 
-#### gitserver: repos_disk_write_duration)
+#### gitserver: repos_disk_write_duration
 
 <p class="subtitle">Average write duration over 2m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5698,11 +5704,12 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 <br />
 
-#### gitserver: repos_disk_read_request_size)
+#### gitserver: repos_disk_read_request_size
 
 <p class="subtitle">Average read request size over 2m (per instance)</p>
 
 The average size of read requests that were issued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5725,6 +5732,7 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 <p class="subtitle">Average write request size over 2m (per instance)</p>
 
 The average size of write requests that were issued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5742,11 +5750,12 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 <br />
 
-#### gitserver: repos_disk_reads_merged_sec)
+#### gitserver: repos_disk_reads_merged_sec
 
 <p class="subtitle">Merged read request rate over 2m (per instance)</p>
 
 The number of read requests merged per second that were queued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5764,11 +5773,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_writes_merged_sec)
+#### gitserver: repos_disk_writes_merged_sec
 
 <p class="subtitle">Merged writes request rate over 2m (per instance)</p>
 
 The number of write requests merged per second that were queued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -5786,11 +5796,12 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 <br />
 
-#### gitserver: repos_disk_average_queue_size)
+#### gitserver: repos_disk_average_queue_size
 
 <p class="subtitle">Average queue size over 2m (per instance)</p>
 
 The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17120,6 +17131,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 <p class="subtitle">Read request rate over 2m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17137,11 +17149,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_writes_sec)
+#### zoekt: data_disk_writes_sec
 
 <p class="subtitle">Write request rate over 2m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17159,11 +17172,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_read_throughput)
+#### zoekt: data_disk_read_throughput
 
 <p class="subtitle">Read throughput over 2m (per instance)</p>
 
 The amount of data that was read from the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17181,11 +17195,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_write_throughput)
+#### zoekt: data_disk_write_throughput
 
 <p class="subtitle">Write throughput over 2m (per instance)</p>
 
 The amount of data that was written to the device per second.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17203,11 +17218,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_read_duration)
+#### zoekt: data_disk_read_duration
 
 <p class="subtitle">Average read duration over 2m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17225,11 +17241,12 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 <br />
 
-#### zoekt: data_disk_write_duration)
+#### zoekt: data_disk_write_duration
 
 <p class="subtitle">Average write duration over 2m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17247,11 +17264,12 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 <br />
 
-#### zoekt: data_disk_read_request_size)
+#### zoekt: data_disk_read_request_size
 
 <p class="subtitle">Average read request size over 2m (per instance)</p>
 
 The average size of read requests that were issued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17274,6 +17292,7 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 <p class="subtitle">Average write request size over 2m (per instance)</p>
 
 The average size of write requests that were issued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17291,11 +17310,12 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 <br />
 
-#### zoekt: data_disk_reads_merged_sec)
+#### zoekt: data_disk_reads_merged_sec
 
 <p class="subtitle">Merged read request rate over 2m (per instance)</p>
 
 The number of read requests merged per second that were queued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17313,11 +17333,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_writes_merged_sec)
+#### zoekt: data_disk_writes_merged_sec
 
 <p class="subtitle">Merged writes request rate over 2m (per instance)</p>
 
 The number of write requests merged per second that were queued to the device.
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
@@ -17335,11 +17356,12 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 <br />
 
-#### zoekt: data_disk_average_queue_size)
+#### zoekt: data_disk_average_queue_size
 
 <p class="subtitle">Average queue size over 2m (per instance)</p>
 
 The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
 Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.

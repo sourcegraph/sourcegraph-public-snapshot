@@ -72,10 +72,10 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.ReadsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of read requests that were issued to the device per second.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The number of read requests that were issued to the device per second.\n\n%s", sharedInterpretationNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_writes_sec)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_writes_sec", opts.DiskTitle),
 					Description: "write request rate over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_writes_completed_total"),
 					NoAlert:     true,
@@ -83,12 +83,12 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.WritesPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of write requests that were issued to the device per second.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The number of write requests that were issued to the device per second.\n\n%s", sharedInterpretationNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_throughput)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_read_throughput", opts.DiskTitle),
 					Description: "read throughput over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_read_bytes_total"),
 					NoAlert:     true,
@@ -96,10 +96,10 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.BytesPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The amount of data that was read from the device per second.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The amount of data that was read from the device per second.\n\n%s", sharedInterpretationNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_write_throughput)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_write_throughput", opts.DiskTitle),
 					Description: "write throughput over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_written_bytes_total"),
 					NoAlert:     true,
@@ -107,12 +107,12 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.BytesPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The amount of data that was written to the device per second.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The amount of data that was written to the device per second.\n\n%s", sharedInterpretationNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_duration)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_read_duration", opts.DiskTitle),
 					Description: "average read duration over 2m (per instance)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
@@ -125,11 +125,11 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner: owner,
 					Interpretation: fmt.Sprintf(
-						"The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n%s",
+						"The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n\n%s",
 						sharedInterpretationNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_write_duration)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_write_duration", opts.DiskTitle),
 					Description: "average write duration over 2m (per instance)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
@@ -142,13 +142,13 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner: owner,
 					Interpretation: fmt.Sprintf(
-						"The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n%s",
+						"The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n\n%s",
 						sharedInterpretationNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_request_size)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_read_request_size", opts.DiskTitle),
 					Description: "average read request size over 2m (per instance)",
 					Query: fmt.Sprintf("((%s) / (%s))",
 						diskStatsQuery("node_disk_read_bytes_total"),
@@ -159,7 +159,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The average size of read requests that were issued to the device.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The average size of read requests that were issued to the device.\n\n%s", sharedInterpretationNote),
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_write_request_size)", opts.DiskTitle),
@@ -173,12 +173,12 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The average size of write requests that were issued to the device.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The average size of write requests that were issued to the device.\n\n%s", sharedInterpretationNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_reads_merged_sec)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_reads_merged_sec", opts.DiskTitle),
 					Description: "merged read request rate over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_reads_merged_total"),
 					NoAlert:     true,
@@ -186,10 +186,10 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of read requests merged per second that were queued to the device.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The number of read requests merged per second that were queued to the device.\n\n%s", sharedInterpretationNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_writes_merged_sec)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_writes_merged_sec", opts.DiskTitle),
 					Description: "merged writes request rate over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_writes_merged_total"),
 					NoAlert:     true,
@@ -197,13 +197,13 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of write requests merged per second that were queued to the device.\n%s", sharedInterpretationNote),
+					Interpretation: fmt.Sprintf("The number of write requests merged per second that were queued to the device.\n\n%s", sharedInterpretationNote),
 				},
 			},
 			{
 				{
 
-					Name:        fmt.Sprintf("%s_disk_average_queue_size)", opts.DiskTitle),
+					Name:        fmt.Sprintf("%s_disk_average_queue_size", opts.DiskTitle),
 					Description: "average queue size over 2m (per instance)",
 					Query:       diskStatsQuery("node_disk_io_time_weighted_seconds_total"),
 					NoAlert:     true,
@@ -212,7 +212,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 						With(monitoring.PanelOptions.LegendOnRight()),
 					Owner: owner,
 					Interpretation: fmt.Sprintf(
-						"The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).\n%s",
+						"The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).\n\n%s",
 						sharedInterpretationNote,
 					),
 				},
