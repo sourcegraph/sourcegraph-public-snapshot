@@ -65,8 +65,8 @@ func VisitAll(adrDir string, visit func(adr ArchitectureDecisionRecord) error) e
 		date := time.Unix(int64(ts), 0)
 
 		// Look for more details in the file contents
-		file, innerErrr := os.Open(path)
-		if innerErrr != nil {
+		file, err := os.Open(path)
+		if err != nil {
 			return err
 		}
 		defer file.Close()
@@ -89,7 +89,7 @@ func VisitAll(adrDir string, visit func(adr ArchitectureDecisionRecord) error) e
 
 					Path:     path,
 					BasePath: entry.Name(),
-				}); innerErrr != nil {
+				}); err != nil {
 					return err
 				}
 				break
