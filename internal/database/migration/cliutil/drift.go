@@ -45,7 +45,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 				NewExplicitFileSchemaFactory(file),
 			}
 		}
-		expectedSchema, err := fetchExpectedSchema(schemaName, version, out, expectedSchemaFactories)
+		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
@@ -77,6 +77,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 }
 
 func fetchExpectedSchema(
+	ctx context.Context,
 	schemaName string,
 	version string,
 	out *output.Output,
@@ -91,29 +92,30 @@ func fetchExpectedSchema(
 
 	for i, factory := range expectedSchemaFactories {
 		matches := false
-		for _, pattern := range factory.VersionPatterns() {
+		patterns := factory.VersionPatterns()
+		for _, pattern := range patterns {
 			if pattern.MatchString(version) {
 				matches = true
 				break
 			}
 		}
-		if !matches {
+		if len(patterns) > 0 && !matches {
 			continue
 		}
 
 		resourcePath := factory.ResourcePath(filename, version)
-		expectedSchema, err := factory.CreateFromPath(resourcePath)
+		expectedSchema, err := factory.CreateFromPath(ctx, resourcePath)
 		if err != nil {
 			suffix := ""
 			if i < len(expectedSchemaFactories)-1 {
 				suffix = " Will attempt a fallback source."
 			}
 
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition from %s... Schema not found (%s).%s", resourcePath, err, suffix))
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition in %s (%s)... Schema not found (%s).%s", factory.Name(), resourcePath, err, suffix))
 			continue
 		}
 
-		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found at %s.", resourcePath))
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found in %s (%s).", factory.Name(), resourcePath))
 		return expectedSchema, nil
 	}
 

@@ -1,6 +1,7 @@
 package cliutil
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,7 +22,7 @@ type ExpectedSchemaFactory interface {
 	Name() string
 	VersionPatterns() []NamedRegexp
 	ResourcePath(filename, version string) string
-	CreateFromPath(path string) (descriptions.SchemaDescription, error)
+	CreateFromPath(ctx context.Context, path string) (descriptions.SchemaDescription, error)
 }
 
 type NamedRegexp struct {
@@ -74,8 +75,14 @@ func NewExplicitFileSchemaFactory(filename string) ExpectedSchemaFactory {
 }
 
 // fetchSchema makes an HTTP GET request to the given URL and reads the schema description from the response.
-func fetchSchema(url string) (descriptions.SchemaDescription, error) {
-	resp, err := http.Get(url)
+func fetchSchema(ctx context.Context, url string) (descriptions.SchemaDescription, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return descriptions.SchemaDescription{}, err
+	}
+	req = req.WithContext(ctx)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err
 	}
@@ -91,7 +98,7 @@ func fetchSchema(url string) (descriptions.SchemaDescription, error) {
 }
 
 // readSchemaFromFile reads a schema description from the given filename.
-func readSchemaFromFile(filename string) (descriptions.SchemaDescription, error) {
+func readSchemaFromFile(ctx context.Context, filename string) (descriptions.SchemaDescription, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return descriptions.SchemaDescription{}, err
@@ -114,14 +121,14 @@ type expectedSchemaFactory struct {
 	name               string
 	versionPatterns    []NamedRegexp
 	resourcePathFunc   func(filename, version string) string
-	createFromPathFunc func(path string) (descriptions.SchemaDescription, error)
+	createFromPathFunc func(ctx context.Context, path string) (descriptions.SchemaDescription, error)
 }
 
 func NewExpectedSchemaFactory(
 	name string,
 	versionPatterns []NamedRegexp,
 	resourcePathFunc func(filename, version string) string,
-	createFromPathFunc func(path string) (descriptions.SchemaDescription, error),
+	createFromPathFunc func(ctx context.Context, path string) (descriptions.SchemaDescription, error),
 ) ExpectedSchemaFactory {
 	return &expectedSchemaFactory{
 		name:               name,
@@ -143,6 +150,6 @@ func (f expectedSchemaFactory) ResourcePath(filename, version string) string {
 	return f.resourcePathFunc(filename, version)
 }
 
-func (f expectedSchemaFactory) CreateFromPath(path string) (descriptions.SchemaDescription, error) {
-	return f.createFromPathFunc(path)
+func (f expectedSchemaFactory) CreateFromPath(ctx context.Context, path string) (descriptions.SchemaDescription, error) {
+	return f.createFromPathFunc(ctx, path)
 }
