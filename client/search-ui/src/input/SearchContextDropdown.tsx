@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,7 +17,7 @@ import {
     PopoverTrigger,
     Position,
     PopoverOpenEventReason,
-    useIsMounted,
+    useUpdateEffect,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'
@@ -54,14 +54,12 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
-    const isMounted = useIsMounted()
     const searchContextDropdownReference = useRef<HTMLButtonElement>(null)
 
-    useEffect(() => {
-        if (isMounted() && !isOpen) {
+    useUpdateEffect(() => {
+        if (!isOpen) {
             searchContextDropdownReference?.current?.focus()
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
     const selectSearchContextSpec = useCallback(
