@@ -49,6 +49,7 @@ const dotComExamples = [
             title: 'Get advanced',
             queryExamples: [
                 { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
+                // eslint-disable-next-line no-useless-escape
                 { id: 'conditional-repo', query: 'repo:has.file(path:package.json content:eslint.*\^8\.13\.0) file:\.eslintrc$ rules' },
             ],
         },
@@ -171,6 +172,7 @@ export function useQueryExamples(selectedSearchContextSpec: string, isSourcegrap
         setCachedQueryExamplesContent,
         cachedQueryExamplesContentLoadStatus,
         loadQueryExamples,
+        isSourcegraphDotCom,
     ])
 
     useEffect(() => {
@@ -245,5 +247,5 @@ export function useQueryExamples(selectedSearchContextSpec: string, isSourcegrap
                 },
             ],
         ]
-    }, [queryExamplesContent])
+    }, [queryExamplesContent, isSourcegraphDotCom])
 }

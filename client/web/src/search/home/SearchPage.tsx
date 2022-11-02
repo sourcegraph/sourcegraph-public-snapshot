@@ -74,19 +74,21 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                {showEnterpriseHomePanels && props.authenticatedUser && !isSourcegraphDotCom && (
-                    <HomePanels showCollaborators={showCollaborators} {...props} />
-                )}
+                <>
+                    {showEnterpriseHomePanels && props.authenticatedUser && !props.isSourcegraphDotCom && (
+                        <HomePanels showCollaborators={showCollaborators} {...props} />
+                    )}
 
-                {(!showEnterpriseHomePanels && props.authenticatedUser) || props.isSourcegraphDotCom && (
-                    <QueryExamplesHomepage
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        telemetryService={props.telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    />
-                )}
+                    {(!showEnterpriseHomePanels && props.authenticatedUser) || props.isSourcegraphDotCom && (
+                        <QueryExamplesHomepage
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                    )}
+                </>
             </div>
 
             <SearchPageFooter {...props} />
