@@ -1,4 +1,4 @@
-package com.sourcegraph.repo;
+package com.sourcegraph.vcs;
 
 import com.intellij.dvcs.repo.Repository;
 import com.intellij.openapi.project.Project;
@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class GitUtil {
 
     @NotNull
+    // Returned format: git@github.com:sourcegraph/sourcegraph.git
     public static String getRemoteRepoUrl(@NotNull GitRepository repository, @NotNull Project project) throws Exception {
         GitRemote remote = getBestRemote(repository, project);
         if (remote == null) {

@@ -1,4 +1,4 @@
-package com.sourcegraph.repo;
+package com.sourcegraph.vcs;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;

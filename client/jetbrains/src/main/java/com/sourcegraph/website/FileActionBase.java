@@ -11,8 +11,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.repo.RepoUtil;
-import com.sourcegraph.repo.RepoInfo;
+import com.sourcegraph.vcs.RepoUtil;
+import com.sourcegraph.vcs.RepoInfo;
+import com.sourcegraph.vcs.VCSType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,12 +45,19 @@ public abstract class FileActionBase extends DumbAwareAction {
         } else {
             ApplicationManager.getApplication().executeOnPooledThread(
                 () -> {
-                    RepoInfo repoInfo = RepoUtil.getRepoInfo(currentFile, project);
+                    RepoInfo repoInfo = RepoUtil.getRepoInfo(project, currentFile);
                     if (repoInfo.remoteUrl.equals("")) {
                         return;
                     }
 
-                    handleFileUri(project, URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, selectionStartPosition, selectionEndPosition));
+                    String url;
+                    if (repoInfo.vcsType == VCSType.PERFORCE) {
+                        // Our "editor" backend doesn't support Perforce, but we have all the info we need, so we'll go to the final URL directly.
+                        url = URLBuilder.buildSourcegraphBlobUrl(project, repoInfo.getCodeHostUrl() + "/" + repoInfo.getRepoName(), null, repoInfo.relativePath, selectionStartPosition, selectionEndPosition);
+                    } else {
+                        url = URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, selectionStartPosition, selectionEndPosition);
+                    }
+                    handleFileUri(project, url);
                 }
             );
         }

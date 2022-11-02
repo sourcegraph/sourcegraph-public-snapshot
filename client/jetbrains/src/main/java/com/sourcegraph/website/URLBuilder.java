@@ -1,6 +1,5 @@
 package com.sourcegraph.website;
 
-import com.google.common.base.Strings;
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.config.ConfigUtil;
@@ -10,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+
+import static com.sourcegraph.common.RegexEscaper.escapeRegexChars;
 
 public class URLBuilder {
     @NotNull
@@ -42,11 +43,19 @@ public class URLBuilder {
     }
 
     @NotNull
+    public static String buildDirectSearchUrl(@NotNull Project project, @NotNull String search, @Nullable String codeHost, @Nullable String repoName) {
+        String repoFilter = (codeHost != null && repoName != null) ? "repo:^" + codeHost + "/" + repoName + "$" : null;
+        return ConfigUtil.getSourcegraphUrl(project) + "/search"
+            + "?patternType=literal"
+            + "&q=" + URLEncoder.encode((repoFilter != null ? escapeRegexChars(repoFilter) + " " : "") + escapeRegexChars(search), StandardCharsets.UTF_8);
+    }
+
+    @NotNull
     public static String buildCommitUrl(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull String remoteUrl,
                                         @NotNull String productName, @NotNull String productVersion) {
-        if (Strings.isNullOrEmpty(sourcegraphBase)) {
+        if (sourcegraphBase.equals("")) {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");
-        } else if (Strings.isNullOrEmpty(revisionNumber)) {
+        } else if (revisionNumber.equals("")) {
             throw new RuntimeException("Missing revision number for commit uri.");
         } else if (remoteUrl.equals("")) {
             throw new RuntimeException("Missing remote URL for commit uri.");
@@ -69,9 +78,15 @@ public class URLBuilder {
     }
 
     @NotNull
-    public static String buildSourcegraphBlobUrl(@NotNull Project project, @NotNull String repoUrl, @NotNull String commit, @NotNull String path, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {
+    // repoUrl should be like "github.com/sourcegraph/sourcegraph"
+    public static String buildSourcegraphBlobUrl(@NotNull Project project,
+                                                 @NotNull String repoUrl,
+                                                 @Nullable String commit,
+                                                 @NotNull String path,
+                                                 @Nullable LogicalPosition start,
+                                                 @Nullable LogicalPosition end) {
         return ConfigUtil.getSourcegraphUrl(project)
-            + repoUrl + "@" + commit + "/-/blob/" + path
+            + repoUrl + (commit != null ? "@" + commit : "") + "/-/blob/" + path
             + "?"
             + (start != null ? ("L" + URLEncoder.encode(Integer.toString(start.line + 1), StandardCharsets.UTF_8)
             + ":" + URLEncoder.encode(Integer.toString(start.column + 1), StandardCharsets.UTF_8)) : "")

@@ -15,8 +15,8 @@ import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.repo.RepoUtil;
-import com.sourcegraph.repo.RevisionContext;
+import com.sourcegraph.vcs.RepoUtil;
+import com.sourcegraph.vcs.RevisionContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -47,7 +47,7 @@ public class OpenRevisionAction extends DumbAwareAction {
             () -> {
                 String remoteUrl;
                 try {
-                    remoteUrl = RepoUtil.getRemoteRepoUrl(context.getRepoRoot(), project);
+                    remoteUrl = RepoUtil.getRemoteRepoUrl(project, context.getRepoRoot());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
