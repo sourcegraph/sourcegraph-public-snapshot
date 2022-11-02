@@ -339,7 +339,6 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			paths := make([]path, 0, len(perms.Paths))
-			allowAllDirs := false
 			for _, rule := range perms.Paths {
 				exclusion := strings.HasPrefix(rule, "-")
 				rule = strings.TrimPrefix(rule, "-")
@@ -375,8 +374,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 					continue
 				}
 
-				dirs, allowAll := expandDirs(rule)
-				allowAllDirs = allowAllDirs || allowAll
+				dirs := expandDirs(rule)
 				for _, dir := range dirs {
 					g, err := glob.Compile(dir, '/')
 					if err != nil {
@@ -417,7 +415,7 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 // expandDirs will return all directories above a match and a bool indicating
 // whether all directories should be matched. This can happen if we have an
 // include rule that starts with a wildcard.
-func expandDirs(rule string) ([]string, bool) {
+func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
 
 	// Make sure the rule starts with a slash
@@ -431,7 +429,7 @@ func expandDirs(rule string) ([]string, bool) {
 	// directory
 	if strings.HasPrefix(rule, "/*") {
 		dirs = append(dirs, "**/")
-		return dirs, true
+		return dirs
 	}
 
 	for {
@@ -445,7 +443,7 @@ func expandDirs(rule string) ([]string, bool) {
 		dirs = append(dirs, rule+"/")
 	}
 
-	return dirs, false
+	return dirs
 }
 
 // NewSimpleChecker is exposed for testing and allows creation of a simple
