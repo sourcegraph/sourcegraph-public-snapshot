@@ -43,8 +43,6 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
     let accountConnection: JSX.Element | string
     switch (authProvider.serviceType) {
         case 'openidconnect':
-            accountConnection = account.external ? account.external.userName : 'Not connected'
-            break
         case 'saml':
             accountConnection = account.external ? account.external.userName : 'Not connected'
             break
