@@ -1,21 +1,25 @@
-import { useQuery, gql, ApolloError } from '@apollo/client';
-import { groupBy } from 'lodash';
+import { useQuery, gql, ApolloError } from '@apollo/client'
+import { groupBy } from 'lodash'
 
-import { isDefined } from '@sourcegraph/common';
+import { isDefined } from '@sourcegraph/common'
 
 import {
     InsightsDashboardCurrentUser,
     InsightsDashboardNode,
-    InsightsDashboardsResult
-} from '../../../../graphql-operations';
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants';
-import { InsightDashboard, InsightsDashboardOwner, InsightsDashboardOwnerType, InsightsDashboardType } from '../index';
+    InsightsDashboardsResult,
+} from '../../../../graphql-operations'
+import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
+import { InsightDashboard, InsightsDashboardOwner, InsightsDashboardOwnerType, InsightsDashboardType } from '../index'
 
 export const GET_INSIGHT_DASHBOARDS_GQL = gql`
     query InsightsDashboards($id: ID) {
-        currentUser { ...InsightsDashboardCurrentUser }
+        currentUser {
+            ...InsightsDashboardCurrentUser
+        }
         insightsDashboards(id: $id) {
-            nodes { ...InsightsDashboardNode }
+            nodes {
+                ...InsightsDashboardNode
+            }
         }
     }
 
@@ -52,7 +56,9 @@ interface useInsightDashboardsResult {
  * hook.
  */
 export function useInsightDashboards(): useInsightDashboardsResult {
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, { fetchPolicy: 'cache-first' })
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
+        fetchPolicy: 'cache-first',
+    })
 
     if (data) {
         const { insightsDashboards, currentUser } = data
@@ -72,7 +78,6 @@ export function useInsightDashboards(): useInsightDashboardsResult {
     }
 
     return { dashboards: undefined, error, loading }
-
 }
 
 interface useInsightDashboardProps {
@@ -92,24 +97,21 @@ interface useInsightDashboardResult {
  */
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
     const { id = '' } = props
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(
-        GET_INSIGHT_DASHBOARDS_GQL,
-        {
-            fetchPolicy: 'cache-first',
-            variables: { id }
-        }
-    )
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
+        fetchPolicy: 'cache-first',
+        variables: { id },
+    })
 
     if (data) {
         const { insightsDashboards, currentUser } = data
         const rawDashboard = insightsDashboards.nodes.find(dashboard => dashboard.id === id)
         const insightDashboard = rawDashboard
             ? {
-                id: rawDashboard.id,
-                type: InsightsDashboardType.Custom,
-                title: rawDashboard.title,
-                owners: deserializeDashboardsOwners(rawDashboard, currentUser),
-            }
+                  id: rawDashboard.id,
+                  type: InsightsDashboardType.Custom,
+                  title: rawDashboard.title,
+                  owners: deserializeDashboardsOwners(rawDashboard, currentUser),
+              }
             : null
 
         return { dashboard: insightDashboard, error, loading }

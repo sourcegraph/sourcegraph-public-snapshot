@@ -1,9 +1,8 @@
+import { gql, useQuery } from '@apollo/client'
 
-import { gql, useQuery } from '@apollo/client';
+import { asError } from '@sourcegraph/common'
 
-import { asError } from '@sourcegraph/common';
-
-import { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations';
+import { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations'
 
 const GET_REPOSITORY_SUGGESTION = gql`
     query RepositorySearchSuggestions($query: String!) {
@@ -32,7 +31,7 @@ export function useRepoSuggestions(props: UseRepoSuggestionsProps): RepositorySu
     const { data, loading, error } = useQuery<RepositorySearchSuggestionsResult>(GET_REPOSITORY_SUGGESTION, {
         skip: disable || !search,
         fetchPolicy: 'cache-first',
-        variables: { query: search }
+        variables: { query: search },
     })
 
     if (error) {
