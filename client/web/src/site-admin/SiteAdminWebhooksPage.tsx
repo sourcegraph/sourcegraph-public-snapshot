@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
 import { mdiMapSearch, mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
@@ -26,8 +26,6 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         telemetryService.logPageView('SiteAdminWebhooks')
     }, [telemetryService])
 
-    const queryConnection = useCallback(() => queryWebhooks(), [])
-
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Webhook receivers" />
@@ -37,11 +35,9 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                 description="All configured webhooks receivers"
                 className="mb-3"
                 actions={
-                    <>
-                        <ButtonLink className="test-create-webhook" variant="primary">
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
-                        </ButtonLink>
-                    </>
+                    <ButtonLink className="test-create-webhook" variant="primary">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add webhook
+                    </ButtonLink>
                 }
             />
 
@@ -50,12 +46,11 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                     className="mb-0"
                     noun="webhook"
                     pluralNoun="webhooks"
-                    queryConnection={queryConnection}
+                    queryConnection={queryWebhooks}
                     nodeComponent={WebhookNode}
-                    nodeComponentProps={{}}
                     hideSearch={true}
                     listComponent="div"
-                    listClassName={styles.specsGrid}
+                    listClassName={styles.webhooksGrid}
                     withCenteredSummary={true}
                     noSummaryIfAllNodesVisible={true}
                     history={history}
