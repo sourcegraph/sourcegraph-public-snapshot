@@ -109,6 +109,10 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		ChunkMatches: true,
 	}
 
+	if o.Features.Debug {
+		searchOpts.DebugScore = true
+	}
+
 	if limit := int(o.FileMatchLimit); o.Features.Ranking && limit < 1000 {
 		// It is hard to think up general stats here based on limit. So
 		// instead we only run the ranking code path if the limit is

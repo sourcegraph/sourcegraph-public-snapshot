@@ -341,6 +341,10 @@ type Features struct {
 	// Ranking when true will use a our new #ranking signals and code paths
 	// for ranking results from Zoekt.
 	Ranking bool `json:"ranking"`
+
+	// Debug when true will set the Debug field on FileMatches. This may grow
+	// from here. For now we treat this like a feature flag for convenience.
+	Debug bool `json:"debug"`
 }
 
 func (f *Features) String() string {
