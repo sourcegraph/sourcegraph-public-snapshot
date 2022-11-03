@@ -101,20 +101,29 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         <span className="mx-1">–</span>
                         {selectedTip === 'rev' && (
                             <>
-                                Add <QueryExampleChip query="rev:branchname" onClick={onQueryExampleClick} className="mx-1" />{' '}
+                                Add{' '}
+                                <QueryExampleChip
+                                    query="rev:branchname"
+                                    onClick={onQueryExampleClick}
+                                    className="mx-1"
+                                />{' '}
                                 to query accross a specific branch or commit
                             </>
                         )}
                         {selectedTip === 'lang' && (
                             <>
-                                Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to query
-                                for matches only in a given language
+                                Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to
+                                query for matches only in a given language
                             </>
                         )}
                         {selectedTip === 'before' && (
                             <>
                                 Use{' '}
-                                <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
+                                <QueryExampleChip
+                                    query={'before:"last week"'}
+                                    onClick={onQueryExampleClick}
+                                    className="mx-1"
+                                />{' '}
                                 to query within a time range
                             </>
                         )}

@@ -20,4 +20,3 @@ changesetTemplate:
   branch: batch-changes/regex
   commit:
     message: batch changes -  apply regex
-

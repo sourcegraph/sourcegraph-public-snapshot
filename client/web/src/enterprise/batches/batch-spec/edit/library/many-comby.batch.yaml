@@ -29,7 +29,6 @@ steps:
           :[body]
         };'''
 
-
 # Describe the changeset (e.g., GitHub pull request) you want for each repository.
 changesetTemplate:
   title: Apply many comby match patterns

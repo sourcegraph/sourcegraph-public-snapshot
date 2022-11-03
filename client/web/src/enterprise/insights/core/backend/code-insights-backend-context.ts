@@ -3,11 +3,7 @@ import React from 'react'
 import { throwError } from 'rxjs'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import {
-    SeriesChartContent,
-    CategoricalChartContent,
-    BackendInsightDatum,
-} from './code-insights-backend-types'
+import { SeriesChartContent, CategoricalChartContent, BackendInsightDatum } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 

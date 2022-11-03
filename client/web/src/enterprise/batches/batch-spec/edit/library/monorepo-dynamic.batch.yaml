@@ -5,11 +5,10 @@ description: |
 on:
   - repository: github.com/sourcegraph/sourcegraph
 
-
 # Each time a package.json is found at a path, batch change will treat it as a workspace
 workspaces:
   - rootAtLocationOf: package.json
-    in: "*"
+    in: '*'
 
 # Batch change steps will run in each workspace
 steps:
@@ -25,8 +24,8 @@ changesetTemplate:
   title: Run in each workspace of a monorepo
   body: |
     Run in each workspace of a monorepo
-# Each branch needs to be unique, so we're using templating to define them
-# https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
+  # Each branch needs to be unique, so we're using templating to define them
+  # https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
   branch: batch-changes/monorepo/${{ replace steps.path "/" "-" }}
   commit:
     message: opening several changesets in a monorepo

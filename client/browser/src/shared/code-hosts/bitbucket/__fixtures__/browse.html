@@ -132,8 +132,9 @@
             <header id="header" role="banner">
                 <section class="notifications">
                     <script type="text/javascript">
-                        require('bitbucket/internal/feature/integrity/alert').init([])</script
-                    ><script>
+                        require('bitbucket/internal/feature/integrity/alert').init([])
+                    </script>
+                    <script>
                         require('bitbucket/internal/feature/alerts/alerts').add({
                             type: 'error',
                             title:
@@ -151,8 +152,8 @@
                             <h1 id="logo" class="bitbucket-header-logo">
                                 <a href="http://localhost:7990">Bitbucket</a>
                             </h1>
-                            <ul class="aui-nav" resolved="" style="width: auto;">
-                                <li class=" projects-link">
+                            <ul class="aui-nav" resolved="" style="width: auto">
+                                <li class="projects-link">
                                     <a
                                         href="/projects"
                                         class="projects-link"
@@ -163,7 +164,7 @@
                                 <li class="selected recent-repositories">
                                     <a
                                         id="repositories-menu-trigger"
-                                        class=" aui-dropdown2-trigger"
+                                        class="aui-dropdown2-trigger"
                                         aria-controls="com.atlassian.bitbucket.server.bitbucket-server-web-fragments-repositories-menu"
                                         aria-haspopup="true"
                                         role="button"
@@ -207,7 +208,7 @@
                                                                             ><img
                                                                                 alt="sourcegraph"
                                                                                 src="/projects/SOURCEGRAPH/avatar.png?s=64&amp;v=1542162761005"
-                                                                                original-title="sourcegraph"/></span
+                                                                                original-title="sourcegraph" /></span
                                                                     ></span>
                                                                     <div class="item-wrapper">
                                                                         <strong class="item-name">mux</strong>
@@ -231,7 +232,7 @@
                                                                             ><img
                                                                                 alt="sourcegraph"
                                                                                 src="/projects/SOURCEGRAPH/avatar.png?s=64&amp;v=1542162761005"
-                                                                                original-title="sourcegraph"/></span
+                                                                                original-title="sourcegraph" /></span
                                                                     ></span>
                                                                     <div class="item-wrapper">
                                                                         <strong class="item-name"
@@ -306,18 +307,18 @@
                                         </div>
                                     </div>
                                     <script>
-                                        jQuery(document).ready(function() {
+                                        jQuery(document).ready(function () {
                                             require([
                                                 'bitbucket-plugin-search/internal/component/quick-search/quick-search-loader',
-                                            ], function(loader) {
+                                            ], function (loader) {
                                                 loader.onReady('#quick-search-loader')
                                             })
                                         })
                                     </script>
                                 </li>
-                                <li class=" help-link" title="Help">
+                                <li class="help-link" title="Help">
                                     <a
-                                        class=" aui-dropdown2-trigger aui-dropdown2-trigger-arrowless"
+                                        class="aui-dropdown2-trigger aui-dropdown2-trigger-arrowless"
                                         aria-controls="com.atlassian.bitbucket.server.bitbucket-server-web-fragments-help-menu"
                                         aria-haspopup="true"
                                         role="button"
@@ -378,7 +379,7 @@
                                         </div>
                                     </div>
                                 </li>
-                                <li class=" admin-link" title="Administration">
+                                <li class="admin-link" title="Administration">
                                     <a
                                         href="/admin"
                                         class="admin-link"
@@ -389,7 +390,7 @@
                                         ></a
                                     >
                                 </li>
-                                <li class=" inbox-menu" title="View your unapproved pull requests">
+                                <li class="inbox-menu" title="View your unapproved pull requests">
                                     <a
                                         href="#inbox"
                                         id="inbox-trigger"
@@ -401,7 +402,7 @@
                                         ><span class="aui-icon aui-icon-small aui-iconfont-tray-empty"></span
                                     ></a>
                                 </li>
-                                <li class=" alerts-menu" title="View system alerts">
+                                <li class="alerts-menu" title="View system alerts">
                                     <a
                                         href="#alerts"
                                         id="alerts-trigger"
@@ -421,7 +422,7 @@
                                 </li>
                                 <li class="user-dropdown">
                                     <a
-                                        class=" aui-dropdown2-trigger user-dropdown-trigger aui-dropdown2-trigger-arrowless"
+                                        class="aui-dropdown2-trigger user-dropdown-trigger aui-dropdown2-trigger-arrowless"
                                         aria-controls="user-dropdown-menu"
                                         aria-haspopup="true"
                                         role="button"
@@ -441,7 +442,7 @@
                                             ><span class="aui-avatar-inner"
                                                 ><img
                                                     src="http://www.gravatar.com/avatar/136cfa95366534bfa42f55becb1be434.jpg?s=48&amp;d=mm"
-                                                    alt="Logged in as Felix Becker (felixfbecker)"/></span></span
+                                                    alt="Logged in as Felix Becker (felixfbecker)" /></span></span
                                         ><span class="icon aui-icon-dropdown"></span
                                     ></a>
                                     <div
@@ -512,8 +513,8 @@
                 data-projectname="sourcegraph"
             >
                 <section class="notifications"></section>
-                <div id="aui-sidebar-content" class="aui-sidebar " tabindex="-1" aria-expanded="false">
-                    <div class="aui-sidebar-wrapper" style="height: 429px;">
+                <div id="aui-sidebar-content" class="aui-sidebar" tabindex="-1" aria-expanded="false">
+                    <div class="aui-sidebar-wrapper" style="height: 429px">
                         <div class="aui-sidebar-body">
                             <script>
                                 require('bitbucket/internal/widget/sidebar/sidebar').preload()
@@ -528,7 +529,7 @@
                                                 ><span class="aui-avatar-inner"
                                                     ><img
                                                         src="/projects/SOURCEGRAPH/avatar.png?s=96&amp;v=1542162761005"
-                                                        alt="sourcegraph"/></span></span
+                                                        alt="sourcegraph" /></span></span
                                         ></a>
                                     </div>
                                     <!-- .aui-page-header-image -->
@@ -549,10 +550,10 @@
                                     <div class="aui-sidebar-group aui-sidebar-group-tier-one">
                                         <div class="aui-nav-heading"><strong>Actions</strong></div>
                                         <ul class="aui-nav" resolved="">
-                                            <li class=" clone-repo">
+                                            <li class="clone-repo">
                                                 <a
                                                     href="#"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="clone-repo-button"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:repository-clone"
                                                     title="Clone"
@@ -563,19 +564,19 @@
                                                     ><span class="aui-nav-item-label">Clone</span></a
                                                 >
                                             </li>
-                                            <li class=" create-branch">
+                                            <li class="create-branch">
                                                 <a
                                                     href="/plugins/servlet/create-branch"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-branch:create-branch-repository-action"
                                                     ><span class="aui-icon icon-create-branch"></span
                                                     ><span class="aui-nav-item-label">Create branch</span></a
                                                 >
                                             </li>
-                                            <li class=" create-pull-request">
+                                            <li class="create-pull-request">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/pull-requests?create"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:repository-pull-request"
                                                     title="Create"
                                                     a=""
@@ -586,10 +587,10 @@
                                                     ><span class="aui-nav-item-label">Create pull request</span></a
                                                 >
                                             </li>
-                                            <li class=" fork-repo">
+                                            <li class="fork-repo">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux?fork"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:repository-fork"
                                                     title="Fork"
                                                     this=""
@@ -670,7 +671,7 @@
                                             <li class="aui-nav-selected">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/browse"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="repository-nav-files"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.files"
                                                     original-title=""
@@ -678,10 +679,10 @@
                                                     ><span class="aui-nav-item-label">Source</span></a
                                                 >
                                             </li>
-                                            <li class=" commits-nav">
+                                            <li class="commits-nav">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/commits"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="repository-nav-commits"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.commits"
                                                     ><span class="aui-icon icon-commits"></span
@@ -691,7 +692,7 @@
                                             <li>
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/branches"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="repository-nav-branches"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.branches"
                                                     ><span class="aui-icon icon-branches"></span
@@ -701,7 +702,7 @@
                                             <li>
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/pull-requests"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="repository-nav-pull-requests"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.pull-requests"
                                                     ><span class="aui-icon icon-pull-requests"></span>
@@ -710,10 +711,10 @@
                                                     ><span class="aui-nav-item-label">Pull requests</span></a
                                                 >
                                             </li>
-                                            <li class=" forks-nav">
+                                            <li class="forks-nav">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/forks"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     id="repository-nav-forks"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.forks"
                                                     ><span class="aui-icon icon-forks"></span
@@ -765,7 +766,7 @@
                                         <ul class="aui-nav" resolved="">
                                             <li>
                                                 <button
-                                                    class="aui-nav-item aui-button aui-button-subtle "
+                                                    class="aui-nav-item aui-button aui-button-subtle"
                                                     id="add-repo-shortcut-trigger"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-repository-shortcuts:bitbucket.web.sidebar.repository.nav.add.shortcut"
                                                     aria-controls="add-shortcut-dialog"
@@ -779,10 +780,10 @@
                                     <div class="aui-sidebar-group aui-sidebar-group-tier-one sidebar-settings-group">
                                         <div class="aui-nav-heading"><strong> </strong></div>
                                         <ul class="aui-nav" resolved="">
-                                            <li class=" aui-sidebar-settings-button">
+                                            <li class="aui-sidebar-settings-button">
                                                 <a
                                                     href="/projects/SOURCEGRAPH/repos/mux/settings"
-                                                    class="aui-nav-item "
+                                                    class="aui-nav-item"
                                                     data-web-item-key="com.atlassian.bitbucket.server.bitbucket-server-web-fragments:bitbucket.repository.nav.settings"
                                                     ><span class="aui-icon icon-settings"></span
                                                     ><span class="aui-nav-item-label">Repository settings</span></a
@@ -849,7 +850,7 @@
                                                         ></button
                                                     ><button
                                                         id="branch-actions"
-                                                        class=" aui-dropdown2-trigger aui-button aui-dropdown2-trigger-arrowless"
+                                                        class="aui-dropdown2-trigger aui-button aui-dropdown2-trigger-arrowless"
                                                         aria-controls="branch-actions-menu"
                                                         aria-haspopup="true"
                                                         role="button"
@@ -932,11 +933,11 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                    <div class="spinner" style="display: none;"></div>
+                                    <div class="spinner" style="display: none"></div>
                                 </div>
-                                <div class="spinner" style="display: none;"></div>
+                                <div class="spinner" style="display: none"></div>
                             </div>
-                            <div class="filebrowser-readme" style="display: none;">
+                            <div class="filebrowser-readme" style="display: none">
                                 <div class="filebrowser-readme-header">
                                     <span class="readme-icon aui-icon aui-icon-small aui-iconfont-document"></span
                                     ><span class="filebrowser-readme-title"></span>
@@ -1015,7 +1016,7 @@
             <!-- End #footer -->
         </div>
         <script>
-            ;(function(loader) {
+            ;(function (loader) {
                 loader.load('bitbucket.web.repository.clone.dialog.options', {
                     'com.atlassian.bitbucket.server.bitbucket-mirroring-upstream:mirroring-clone-urls': {
                         serverCondition: false,
@@ -1079,8 +1080,9 @@
                         serverCondition: true,
                     },
                 })
-            })(_PageDataPlugin)</script
-        ><script>
+            })(_PageDataPlugin)
+        </script>
+        <script>
             require('bitbucket/internal/layout/base/base').onReady(
                 {
                     id: 1,
@@ -1095,8 +1097,9 @@
                 },
                 'Bitbucket'
             )
-            require('bitbucket/internal/widget/keyboard-shortcuts/keyboard-shortcuts').onReady()</script
-        ><script>
+            require('bitbucket/internal/widget/keyboard-shortcuts/keyboard-shortcuts').onReady()
+        </script>
+        <script>
             require('bitbucket/internal/layout/repository/repository').onReady(
                 {
                     slug: 'mux',
@@ -1137,8 +1140,9 @@
             <div role="presentation"></div>
         </div>
         <script>
-            require('bitbucket/internal/layout/branch/branch').onReady('#repository-layout-revision-selector')</script
-        ><script>
+            require('bitbucket/internal/layout/branch/branch').onReady('#repository-layout-revision-selector')
+        </script>
+        <script>
             require('bitbucket/internal/layout/files/files').onReady(
                 [],
                 {
@@ -1150,8 +1154,9 @@
                 },
                 '.branch-selector-toolbar .breadcrumbs',
                 true
-            )</script
-        ><script>
+            )
+        </script>
+        <script>
             require('bitbucket/internal/page/filebrowser/filebrowser').onReady(
                 '',
                 {
@@ -1164,12 +1169,12 @@
                 '#file-browser-wrapper',
                 '#browse-table',
                 1000
-            )</script
-        ><script type="text/javascript">
-            require('bitbucket/internal/layout/base/menu/repositories/recent').initMenu(
-                'repositories-menu-trigger'
-            )</script
-        ><aui-inline-dialog
+            )
+        </script>
+        <script type="text/javascript">
+            require('bitbucket/internal/layout/base/menu/repositories/recent').initMenu('repositories-menu-trigger')
+        </script>
+        <aui-inline-dialog
             class="aui-layer aui-sidebar-submenu-dialog"
             resolved=""
             id="sidebar-submenu0"
