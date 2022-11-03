@@ -99,10 +99,10 @@ var allPathsPattern = lazyregexp.New(".*")
 //
 // Rank vector index labels:
 //   - precision                   [0 to 1]
-//   - global document rank        [0 to 1] (=0 w/o pagerank)
 //   - generated                   [0 or 1]
 //   - vendor                      [0 or 1]
 //   - test                        [0 or 1]
+//   - global document rank        [0 to 1] (=0 w/o pagerank)
 //   - name length                 [0 to 1] (=1 w/  pagerank)
 //   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
@@ -118,10 +118,10 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 		for path, rank := range documentRanks {
 			ranks[path] = []float64{
 				rank[0],             // precision level (0, 1]
-				rank[1],             // global document rank
 				generatedRank(path), // generated
 				vendorRank(path),    // vendor
 				testRank(path),      // test
+				rank[1],             // global document rank
 				1,                   // name length
 				1,                   // lexicographic order in repo
 			}
@@ -141,10 +141,10 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 		ranks[path] = []float64{
 			0,                                     // imprecise
-			0,                                     // no global document rank
 			generatedRank(path),                   // generated
 			vendorRank(path),                      // vendor
 			testRank(path),                        // test
+			0,                                     // no global document rank
 			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
 			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
 		}
