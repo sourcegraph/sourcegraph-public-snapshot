@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/run"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -238,41 +238,46 @@ func makeRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []
 // localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
 // (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-func localGitExpectedSchemaFactory(filename, version string) (string, schemas.SchemaDescription, error) {
-	ctx := context.Background()
-	path := fmt.Sprintf("%s:%s", version, filename)
-	name := fmt.Sprintf("git://%s", path)
-	output := root.Run(run.Cmd(ctx, "git", "show", path))
+var localGitExpectedSchemaFactory = cliutil.NewExpectedSchemaFactory(
+	"git",
+	nil,
+	func(filename, version string) string {
+		return fmt.Sprintf("%s:%s", version, filename)
+	},
+	func(ctx context.Context, path string) (schemas.SchemaDescription, error) {
+		output := root.Run(run.Cmd(ctx, "git", "show", path))
 
-	if err := output.Wait(); err != nil {
-		// Rewrite error if it was a local git error (non-fatal)
-		if err = filterLocalGitErrors(filename, version, err); err == nil {
-			err = errors.New("no such git object")
+		if err := output.Wait(); err != nil {
+			// Rewrite error if it was a local git error (non-fatal)
+			if err = filterLocalGitErrors(err); err == nil {
+				err = errors.New("no such git object")
+			}
+
+			return schemas.SchemaDescription{}, err
 		}
 
-		return name, schemas.SchemaDescription{}, err
-	}
+		var schemaDescription schemas.SchemaDescription
+		err := json.NewDecoder(output).Decode(&schemaDescription)
+		return schemaDescription, err
+	},
+)
 
-	var schemaDescription schemas.SchemaDescription
-	err := json.NewDecoder(output).Decode(&schemaDescription)
-	return name, schemaDescription, err
+var missingMessagePatterns = []*lazyregexp.Regexp{
+	// unknown revision
+	lazyregexp.New("fatal: invalid object name '[^']'"),
+
+	// path unknown to the revision (regardless of repo state)
+	lazyregexp.New("fatal: path '[^']' does not exist in '[^']'"),
+	lazyregexp.New("fatal: path '[^']' exists on disk, but not in '[^']'"),
 }
 
-func filterLocalGitErrors(filename, version string, err error) error {
+func filterLocalGitErrors(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	missingMessages := []string{
-		// unknown revision
-		fmt.Sprintf("fatal: invalid object name '%s'", version),
-
-		// path unknown to the revision (regardless of repo state)
-		fmt.Sprintf("fatal: path '%s' does not exist in '%s'", filename, version),
-		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s'", filename, version),
-	}
-	for _, missingMessage := range missingMessages {
-		if strings.Contains(err.Error(), missingMessage) {
+	for _, pattern := range missingMessagePatterns {
+		if pattern.MatchString(err.Error()) {
 			return nil
 		}
 	}
