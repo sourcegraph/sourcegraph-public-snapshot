@@ -66,7 +66,7 @@ func (r *executorSecretAccessLogResolver) ID() graphql.ID {
 
 func (r *executorSecretAccessLogResolver) ExecutorSecret(ctx context.Context) (*executorSecretResolver, error) {
 	// TODO: Where to get the scope from..
-	return executorSecretByID(ctx, r.db, marshalExecutorSecretID(r.log.ExecutorSecretID))
+	return executorSecretByID(ctx, r.db, marshalExecutorSecretID(ExecutorSecretScopeBatches, r.log.ExecutorSecretID))
 }
 
 func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolver, error) {

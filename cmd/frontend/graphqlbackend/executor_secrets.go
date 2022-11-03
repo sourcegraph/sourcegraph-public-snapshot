@@ -62,6 +62,10 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 		return nil, errors.New("invalid key format, should be a valid env var name")
 	}
 
+	if len(args.Value) == 0 {
+		return nil, errors.New("value cannot be empty string")
+	}
+
 	secret := &database.ExecutorSecret{
 		Key:             args.Key,
 		CreatorID:       a.UID,
@@ -94,6 +98,10 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 
 	if scope != args.Scope {
 		return nil, errors.New("scope mismatch")
+	}
+
+	if len(args.Value) == 0 {
+		return nil, errors.New("value cannot be empty string")
 	}
 
 	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
@@ -187,6 +195,8 @@ func (o ExecutorSecretsListArgs) LimitOffset() (*database.LimitOffset, error) {
 // ExecutorSecrets returns the global executor secrets.
 func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
 	// Security: Only allow access to list global secrets if the user is admin.
+	// This is not terribly bad, since the secrets are also part of the user's namespace
+	// secrets, but this endpoint is useless to non-admins.
 	if err := checkNamespaceAccess(ctx, r.db, 0, 0); err != nil {
 		return nil, err
 	}
@@ -195,6 +205,7 @@ func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecre
 	if err != nil {
 		return nil, err
 	}
+
 	return &executorSecretConnectionResolver{
 		db:    r.db,
 		scope: args.Scope,
