@@ -133,7 +133,7 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
         content: spec.originalInput,
         isSpecFile: true,
         name: 'spec_file.yaml',
-        id: spec.id
+        id: spec.id,
     }
     const [selectedFile, setSelectedFile] = useState<BatchSpecFile>(specFile)
 
@@ -143,44 +143,41 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
             content: file.highlight.html,
             isSpecFile: false,
             name: file.name,
-            id: file.id
+            id: file.id,
         }))
-        const allFiles: BatchSpecFile[] = [
-            specFile,
-            ...mountedFiles,
-        ]
+        const allFiles: BatchSpecFile[] = [specFile, ...mountedFiles]
 
         return (
             <div className={styles.specFilesContainer}>
                 <ul className={styles.specFilesList}>
                     {allFiles.map(file => (
-                        <li key={file.id} className={classNames(styles.specFilesListNode, {
-                            [styles.specFilesListNodeActive]: file.id === selectedFile.id
-                        })}>
-                            <Button
-                                className={styles.specFilesListNodeButton}
-                                onClick={() => setSelectedFile(file)}
-                            >
+                        <li
+                            key={file.id}
+                            className={classNames(styles.specFilesListNode, {
+                                [styles.specFilesListNodeActive]: file.id === selectedFile.id,
+                            })}
+                        >
+                            <Button className={styles.specFilesListNodeButton} onClick={() => setSelectedFile(file)}>
                                 {file.name}
                             </Button>
                         </li>
                     ))}
                 </ul>
 
-                    {selectedFile.isSpecFile ? (
-                        <BatchSpec
-                            isLightTheme={isLightTheme}
-                            name={spec.description.name}
-                            originalInput={spec.originalInput}
-                            className={classNames(styles.batchSpec, 'mb-0')}
-                        />
-                    ) : (
-                        <BatchSpecWorkspaceFileContent
-                            name={selectedFile.name}
-                            content={selectedFile.content}
-                            isBinary={selectedFile.isBinary}
-                        />
-                    )}
+                {selectedFile.isSpecFile ? (
+                    <BatchSpec
+                        isLightTheme={isLightTheme}
+                        name={spec.description.name}
+                        originalInput={spec.originalInput}
+                        className={classNames(styles.batchSpec, 'mb-0')}
+                    />
+                ) : (
+                    <BatchSpecWorkspaceFileContent
+                        name={selectedFile.name}
+                        content={selectedFile.content}
+                        isBinary={selectedFile.isBinary}
+                    />
+                )}
             </div>
         )
     }
@@ -226,7 +223,7 @@ const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceF
     }
 
     return (
-        <pre>
+        <pre className={styles.blobWrapper}>
             <Code
                 className={styles.blobCode}
                 dangerouslySetInnerHTML={{
