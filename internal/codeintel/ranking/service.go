@@ -142,8 +142,8 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 		impreciseDocumentRank := rank(path, 1.0-float64(i)/float64(len(paths)))
 
 		ranks[path] = []float64{
-			1,                        // imprecise
-			1,                        // no global document rank
+			0,                        // imprecise
+			0,                        // no global document rank
 			impreciseDocumentRank[0], // generated
 			impreciseDocumentRank[1], // vendor
 			impreciseDocumentRank[2], // test

@@ -26,7 +26,7 @@ func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine
 	}))
 }
 
-const pageRankPrecision = float64(0)
+const pageRankPrecision = float64(1.0)
 
 func (s *Service) loadRanks(ctx context.Context) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
