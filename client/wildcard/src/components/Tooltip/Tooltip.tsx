@@ -1,7 +1,7 @@
 import React, { FC, forwardRef, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useId } from '@reach/auto-id'
-import { noop } from 'lodash';
+import { noop } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useDebounce } from '../../hooks'
@@ -85,13 +85,16 @@ export const Tooltip: FC<TooltipProps> = props => {
     const isControlled = open !== undefined
     const [internalOpen, setInternalOpen] = useState(defaultOpen)
     const isOpen = isControlled ? open : internalOpen
-    const setOpen = useCallback((event: TooltipOpenEvent): void => {
-        if (isControlled) {
-            onOpenChange(event)
-        } else {
-            setInternalOpen(event.isOpen)
-        }
-    }, [isControlled, onOpenChange])
+    const setOpen = useCallback(
+        (event: TooltipOpenEvent): void => {
+            if (isControlled) {
+                onOpenChange(event)
+            } else {
+                setInternalOpen(event.isOpen)
+            }
+        },
+        [isControlled, onOpenChange]
+    )
 
     useEffect(() => {
         function handleTargetPointerEnter(): void {
