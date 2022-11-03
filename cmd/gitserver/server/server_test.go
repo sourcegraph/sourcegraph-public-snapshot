@@ -1593,7 +1593,6 @@ func TestRunCommandGraceful(t *testing.T) {
 	})
 
 	t.Run("context cancel", func(t *testing.T) {
-		t.Skip() // flake https://github.com/sourcegraph/sourcegraph/issues/40431
 		t.Parallel()
 		logger := logtest.Scoped(t)
 		ctx := context.Background()
