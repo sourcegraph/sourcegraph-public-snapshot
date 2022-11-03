@@ -47,10 +47,13 @@
         }
 
         &__button {
-            padding: 0.25rem 0.75rem;
+            padding: 4px 12px;
             cursor: pointer;
             width: 100%;
             text-align: start;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     }
 }

@@ -157,7 +157,7 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
                                 [styles.specFilesListNodeActive]: file.id === selectedFile.id,
                             })}
                         >
-                            <Button className={styles.specFilesListNodeButton} onClick={() => setSelectedFile(file)}>
+                            <Button title={file.name} className={styles.specFilesListNodeButton} onClick={() => setSelectedFile(file)}>
                                 {file.name}
                             </Button>
                         </li>
