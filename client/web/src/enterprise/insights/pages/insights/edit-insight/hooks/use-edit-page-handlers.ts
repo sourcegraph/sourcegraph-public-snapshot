@@ -1,9 +1,8 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 
 import { useHistory } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components'
@@ -22,16 +21,11 @@ export interface useHandleSubmitOutput {
  */
 export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
     const { id } = props
-    const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
-    const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
-    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
-    const redirectUrl = insight
-        ? `/insights/insight/${insight}`
-        : dashboard
-        ? `/insights/dashboards/${dashboard.id}`
-        : `/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`
+    const { dashboardId = ALL_INSIGHTS_DASHBOARD.id, insight } = useQueryParameters(['dashboardId', 'insight'])
+    const redirectUrl = insight ? `/insights/insight/${insight}` : `/insights/dashboards/${dashboardId}`
 
     const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
         if (!id) {

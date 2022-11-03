@@ -100,6 +100,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
         isEmbedded,
         onBlockInputChange,
         onRunBlock,
+        onNewBlock,
         ...props
     }) => {
         const [isEditing, setIsEditing] = useState(!isReadOnly && input.initialFocusInput)
@@ -110,6 +111,13 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
             setIsEditing(false)
             return true
         }, [id, onRunBlock, setIsEditing])
+
+        const newBlock = useCallback(() => {
+            onRunBlock(id)
+            onNewBlock(id)
+            setIsEditing(false)
+            return true
+        }, [id, onRunBlock, onNewBlock, setIsEditing])
 
         const onInputChange = useCallback((text: string) => onBlockInputChange(id, { type: 'md', input: { text } }), [
             id,
@@ -123,11 +131,15 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
                         key: 'Mod-Enter',
                         run: runBlock,
                     },
+                    {
+                        key: 'Mod-Shift-Enter',
+                        run: newBlock,
+                    },
                 ]),
                 changeListener(onInputChange),
                 staticExtensions,
             ],
-            [runBlock, onInputChange]
+            [runBlock, onInputChange, newBlock]
         )
 
         const editor = useCodeMirror(container, input.text, extensions)
@@ -144,7 +156,7 @@ export const NotebookMarkdownBlock: React.FunctionComponent<
             }
         }, [isEditing, editor])
 
-        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, ...props })
+        const commonMenuActions = useCommonBlockMenuActions({ id, isReadOnly, onNewBlock, ...props })
 
         const modifierKeyLabel = useModifierKeyLabel()
         const menuActions = useMemo(() => {

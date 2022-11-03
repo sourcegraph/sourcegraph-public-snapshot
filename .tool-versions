@@ -1,6 +1,8 @@
 golang 1.19.3
 nodejs 16.7.0
-# We're using yarn classic to install yarn 3.x as defined in package.json
+# We install classic yarn with asdf, and then use yarn itself to upgrade to 3.2.3
+# This is done because there is a problem fetching yarn via asdf, instead the version is
+# specified in .yarnrc via the yarnPath.
 yarn 1.22.19
 fd 7.4.0
 shfmt 3.5.0

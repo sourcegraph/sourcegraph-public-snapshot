@@ -309,6 +309,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-structural-search-toggle')
+                    await driver.page.click('aria/Search[role="button"]')
                     await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
                 })
 
