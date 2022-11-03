@@ -36,7 +36,7 @@ public class PerforceUtil {
             throw new Exception("No depot name found.");
         }
 
-        return "perforce@" + serverName + ":" + depotName;
+        return "perforce@" + serverName + ":" + depotName + ".perforce";
     }
 
     @Nullable

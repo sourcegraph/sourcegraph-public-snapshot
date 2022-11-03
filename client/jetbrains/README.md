@@ -66,15 +66,17 @@ The plugin works with all JetBrains IDEs, including:
   - Pairs are replaced from left to right. Whitespace around commas doesn't matter.
   - **Important:** The replacements are done on the Git remote-formatted URL, not the URL you see in the browser!
     - Example replacement subject for Git: `git@github.com:sourcegraph/sourcegraph.git`
-    - Example replacement subject for Perforce: `perforce@perforce.company.com:depot-name`
+    - Example replacement subject for Perforce: `perforce@perforce.company.com:depot-name.perforce`
     - Anatomy of the replacement subjects:
       - The username is not used.
       - Between the `@` and the `:` is the hostname
       - After the `:` is the organization/repo name (for Git) or the depot name (for Perforce)
+      - The `.git` / `.perforce` extension is not used.
     - When you do the replacements, make sure you **keep the colon**.
     - In the case of a custom `repositoryPathPattern` being set for your code host in your private Sourcegraph instance,
-      you may try to set up a pattern that uses the "@" and ":" boundaries, _or_ specify a replacement pair
-      for _each repo_ or _each depot_ you may have. If none of these solutions work for you, please raise this
+      you may try to set up a pattern that uses the `@`, `:`, and `.git`/`.perforce` boundaries, _or_ specify a
+      replacement
+      pair for _each repo_ or _each depot_ you may have. If none of these solutions work for you, please raise this
       at [support@sourcegraph.com](mailto:support@sourcegraph.com) and we'll prioritize making this more convenient.
 - **Globbing**: Determines whether you can specify sets of filenames with wildcard characters.
 
@@ -180,7 +182,9 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
-3. Go through the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (private doc)
+3. Go through
+   the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (
+   Sourcegraph internal doc)
 4. Make sure `runIde` is not running
 5. Commit your changes
 6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
