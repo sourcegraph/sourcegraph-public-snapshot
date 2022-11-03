@@ -8,7 +8,10 @@ import { BlockDirection, BlockProps } from '..'
 import { Notebook } from '.'
 
 interface UseNotebookEventHandlersProps
-    extends Pick<BlockProps, 'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onNewBlock'> {
+    extends Pick<
+        BlockProps,
+        'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onNewBlock'
+    > {
     notebook: Notebook
     selectedBlockId: string | null
     commandPaletteInputReference: React.RefObject<HTMLInputElement>

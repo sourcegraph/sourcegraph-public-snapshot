@@ -206,7 +206,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                     />
                 )}
                 {symbolOutput === LOADING && (
-                    <div className='d-flex justify-content-center py-3'>
+                    <div className="d-flex justify-content-center py-3">
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
