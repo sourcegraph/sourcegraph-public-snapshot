@@ -38,6 +38,7 @@ const buttonContent: React.ReactElement = (
 )
 
 interface SearchHistoryDropdownProps {
+    className?: string
     recentSearches: RecentSearch[]
     onSelect: (search: RecentSearch) => void
     onClose: () => void
@@ -46,7 +47,7 @@ interface SearchHistoryDropdownProps {
 const recentSearchTooltipContent = `Recent searches ${shortcutDisplayName('Mod+ArrowDown')}`
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    ({ recentSearches = [], onSelect, onClose }) => {
+    ({ recentSearches = [], onSelect, onClose, className }) => {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
@@ -79,7 +80,11 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                     <Tooltip content={recentSearchTooltipContent}>
                         <PopoverTrigger
                             type="button"
-                            className={classNames(styles.triggerButton, isOpen ? styles.triggerButtonOpen : null)}
+                            className={classNames(
+                                styles.triggerButton,
+                                isOpen ? styles.triggerButtonOpen : null,
+                                className
+                            )}
                         >
                             {buttonContent}
                         </PopoverTrigger>

@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .list {
     padding: 0;
     margin: 0;
@@ -24,7 +26,8 @@
     background-color: transparent;
     border: none;
     color: var(--text-muted);
-    margin: 0 0.25rem;
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
     border-radius: 0.25rem;
     padding: 0.0625rem 0.125rem;
 
@@ -32,5 +35,10 @@
     &:focus,
     &:hover {
         background-color: var(--color-bg-2);
+    }
+
+    @media (--xs-breakpoint-down) {
+        border: 1px solid var(--input-border-color);
+        margin-left: 0;
     }
 }

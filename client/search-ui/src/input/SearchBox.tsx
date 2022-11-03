@@ -140,6 +140,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                 {showSearchHistory && (
                     <>
                         <SearchHistoryDropdown
+                            className={styles.searchBoxAlignMiddle}
                             recentSearches={props.recentSearches ?? []}
                             onSelect={onSearchHistorySelect}
                             onClose={focusEditor}
@@ -153,7 +154,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                             {...props}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
-                            className={styles.searchBoxContextDropdown}
+                            className={styles.searchBoxAlignMiddle}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -203,14 +204,15 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     />
                 </div>
             </div>
-            <SearchButton className={styles.searchBoxButton} />
-            {!hideHelpButton && (
-                <SearchHelpDropdownButton
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    className={styles.helpButton}
-                    telemetryService={props.telemetryService}
-                />
-            )}
+            <div className={styles.searchBoxButton}>
+                <SearchButton />
+                {!hideHelpButton && (
+                    <SearchHelpDropdownButton
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryService={props.telemetryService}
+                    />
+                )}
+            </div>
         </div>
     )
 }

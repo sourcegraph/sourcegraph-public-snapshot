@@ -86,8 +86,7 @@
         }
     }
 
-    &__version-context-dropdown,
-    &__context-dropdown {
+    &__align-middle {
         @media (--xs-breakpoint-down) {
             display: inline-block;
             vertical-align: middle;
