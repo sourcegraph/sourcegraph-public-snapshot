@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { useHistory } from 'react-router'
+
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -39,6 +41,29 @@ export const queryToTip = (id: string | undefined): Tip | null => {
     return null
 }
 
+const exampleQueryColumns = [
+    [
+        {
+            title: 'Discover how developers are using hooks',
+            queryExamples: [{ id: 'hooks', query: 'useState AND useRef lang:javascript', slug: '?q=context:global+useState+AND+useRef+lang:javascript' }],
+        },
+        {
+            title: 'Discover what is being passed to propTypes for type checking',
+            queryExamples: [{ id: 'prop-types', query: '.propTypes = {...} patterntype:structural', slug: '?q=context:global+.propTypes+%3D+%7B...%7D' }],
+        },
+    ],
+    [
+        {
+            title: 'Error boundaries in React',
+            queryExamples: [{ id: 'error-boundaries', query: 'static getDerivedStateFromError(', slug: '' }],
+        },
+        {
+            title: 'Find to-dos on a specific repository',
+            queryExamples: [{ id: 'find-todos', query: 'repo:facebook/react content:TODO', slug: '' }],
+        },
+    ],
+]
+
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
     selectedSearchContextSpec,
     telemetryService,
@@ -48,11 +73,19 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
+    const [toggleSyntaxToQueryExamples, setToggleSyntaxToQueryExamples] = useState<boolean>(false)
+    const history = useHistory()
 
-    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
 
     const onQueryExampleClick = useCallback(
-        (id: string | undefined, query: string) => {
+        (id: string | undefined, query: string, slug: string | undefined) => {
+            console.log('hit', isSourcegraphDotCom, toggleSyntaxToQueryExamples)
+            if (isSourcegraphDotCom && toggleSyntaxToQueryExamples) {
+                telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+                history.push(slug!)
+            }
+            
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
@@ -92,8 +125,13 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
         <div>
             <div>
                 {isSourcegraphDotCom ? (
-                    <div className="d-flex align-items-center mb-2">
-                        <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>Code Search Basics</Text>
+                    <div className="d-flex justify-content-center align-items-center mb-2">
+                        <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>
+                            {toggleSyntaxToQueryExamples ? 'Search Query Examples' : 'Code Search Basics'}
+                        </Text>
+                        <Button onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)}>
+                            {toggleSyntaxToQueryExamples ? 'Code search basics' : 'Search query examples'}
+                        </Button>
                     </div>
                 ) : (
                     <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
@@ -130,7 +168,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                     </div>
                 )}
                 <div className={styles.queryExamplesSectionsColumns}>
-                    {queryExampleSectionsColumns.map((column, index) => (
+                    {(isSourcegraphDotCom && toggleSyntaxToQueryExamples ? exampleQueryColumns : exampleSyntaxColumns).map((column, index) => (
                         // eslint-disable-next-line react/no-array-index-key
                         <div key={`column-${index}`}>
                             {column.map(({ title, queryExamples }) => (
@@ -168,7 +206,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 interface QueryExamplesSection {
     title: string
     queryExamples: QueryExample[]
-    onQueryExampleClick: (id: string | undefined, query: string) => void
+    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
 }
 
 export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
@@ -181,11 +219,12 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
-                .map(({ id, query, helperText }) => (
+                .map(({ id, query, helperText, slug }) => (
                     <QueryExampleChip
                         id={id}
                         key={query}
                         query={query}
+                        slug={slug}
                         helperText={helperText}
                         onClick={onQueryExampleClick}
                     />
@@ -198,22 +237,24 @@ interface QueryExample {
     id?: string
     query: string
     helperText?: string
+    slug?: string
 }
 
 interface QueryExampleChipProps extends QueryExample {
     className?: string
-    onClick: (id: string | undefined, query: string) => void
+    onClick: (id: string | undefined, query: string, slug?: string | undefined) => void
 }
 
 export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     id,
     query,
     helperText,
+    slug,
     className,
     onClick,
 }) => (
     <li className={classNames('d-flex align-items-center', className)}>
-        <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
+        <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query, slug || '')}>
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
         {helperText && (

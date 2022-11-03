@@ -5,7 +5,7 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-const dotComExamples = [
+const dotComSyntaxBasics = [
     [
         {
             title: 'Scope search to specific repos',
@@ -194,7 +194,7 @@ export function useQueryExamples(
     return useMemo(() => {
         // Static examples for DotCom
         if (isSourcegraphDotCom) {
-            return dotComExamples
+            return dotComSyntaxBasics
         }
         if (!queryExamplesContent) {
             return []
