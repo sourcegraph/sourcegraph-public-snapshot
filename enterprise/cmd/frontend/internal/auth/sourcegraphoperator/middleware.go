@@ -132,7 +132,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				//   - Upon creation of an account, the session lives for an hour.
 				//   - If the same operator signs out and signs back in again after 10 minutes,
 				//       the second session only lives for 50 minutes.
-				expiry = result.User.CreatedAt.Add(p.lifecycleDuration()).Sub(time.Now())
+				expiry = time.Until(result.User.CreatedAt.Add(p.lifecycleDuration()))
 				if expiry <= 0 {
 					http.Error(w, "The retrieved user account lifecycle has already expired, please re-authenticate.", http.StatusUnauthorized)
 					return
