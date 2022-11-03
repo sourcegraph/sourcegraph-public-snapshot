@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -359,7 +360,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") {
+		if errors.HasType(err, &net.OpError{}) {
 			// If fetching session info failed because of a Redis error, return empty Context
 			// without deleting the session cookie and throw an internal server error.
 			// This prevents background requests made by off-screen tabs from signing
