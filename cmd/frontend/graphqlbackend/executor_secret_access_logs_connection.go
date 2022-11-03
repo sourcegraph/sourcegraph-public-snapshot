@@ -68,7 +68,10 @@ func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context
 func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context) (_ []*database.ExecutorSecretAccessLog, _ []*types.User, next int, err error) {
 	r.computeOnce.Do(func() {
 		r.logs, r.next, r.err = r.db.ExecutorSecretAccessLogs().List(ctx, r.opts)
-		if r.err != nil && len(r.logs) > 0 {
+		if r.err != nil {
+			return
+		}
+		if len(r.logs) > 0 {
 			userIDMap := make(map[int32]struct{})
 			userIDs := []int32{}
 			for _, log := range r.logs {

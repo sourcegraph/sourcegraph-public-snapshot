@@ -2,9 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
 
@@ -499,4 +503,265 @@ func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 	if tc != 2 {
 		t.Fatalf("invalid totalcount returned: %d", len(nodes))
 	}
+}
+
+func TestExecutorSecretsIntegration(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
+		t.Fatal(err)
+	}
+
+	org, err := db.Orgs().Create(ctx, "super-org", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := db.OrgMembers().Create(ctx, org.ID, user.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+
+	secret1 := &database.ExecutorSecret{
+		Key:       "ASDF",
+		Scope:     database.ExecutorSecretScopeBatches,
+		CreatorID: user.ID,
+	}
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret1, "1234"); err != nil {
+		t.Fatal(err)
+	}
+	secret2 := &database.ExecutorSecret{
+		Key:             "ASDF",
+		Scope:           database.ExecutorSecretScopeBatches,
+		CreatorID:       user.ID,
+		NamespaceUserID: user.ID,
+	}
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret2, "1234"); err != nil {
+		t.Fatal(err)
+	}
+	secret3 := &database.ExecutorSecret{
+		Key:             "FOOBAR",
+		Scope:           database.ExecutorSecretScopeBatches,
+		NamespaceUserID: user.ID,
+	}
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Read secret2 twice.
+	for i := 0; i < 2; i++ {
+		_, err := secret2.Value(userCtx, db.ExecutorSecretAccessLogs())
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	als, _, err := db.ExecutorSecretAccessLogs().List(ctx, database.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret2.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(als) != 2 {
+		t.Fatal("invalid number of access logs found in DB")
+	}
+
+	s, err := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp := s.Exec(userCtx, fmt.Sprintf(`
+query ExecutorSecretsIntegrationTest {
+	node(id: %q) {
+		__typename
+		... on User {
+			executorSecrets(scope: BATCHES, first: 10) {
+				totalCount
+				pageInfo { hasNextPage endCursor }
+				nodes {
+					id
+					key
+					scope
+					namespace {
+						id
+					}
+					creator {
+						id
+					}
+					createdAt
+					updatedAt
+					accessLogs(first: 2) {
+						totalCount
+						pageInfo { hasNextPage endCursor }
+						nodes {
+							id
+							executorSecret {
+								id
+							}
+							user {
+								id
+							}
+							createdAt
+						}
+					}
+				}
+			}
+		}
+	}
+}
+	`, MarshalUserID(user.ID)), "ExecutorSecretsIntegrationTest", nil)
+	if len(resp.Errors) > 0 {
+		t.Fatal(resp.Errors)
+	}
+	data := &executorSecretsIntegrationTestResponse{}
+	if err := json.Unmarshal(resp.Data, data); err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(data, &executorSecretsIntegrationTestResponse{
+		Node: executorSecretsIntegrationTestResponseNode{
+			Typename: "User",
+			ExecutorSecrets: executorSecretsIntegrationTestResponseExecutorSecrets{
+				TotalCount: 2,
+				PageInfo: executorSecretsIntegrationTestResponsePageInfo{
+					HasNextPage: false,
+					EndCursor:   "",
+				},
+				Nodes: []executorSecretsIntegrationTestResponseSecretNode{
+					{
+						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+						Key:   "ASDF",
+						Scope: string(ExecutorSecretScopeBatches),
+						Namespace: executorSecretsIntegrationTestResponseNamespace{
+							ID: MarshalUserID(user.ID),
+						},
+						Creator: executorSecretsIntegrationTestResponseCreator{
+							ID: MarshalUserID(user.ID),
+						},
+						CreatedAt: secret2.CreatedAt.Format(time.RFC3339),
+						UpdatedAt: secret2.UpdatedAt.Format(time.RFC3339),
+						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
+							TotalCount: 2,
+							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
+								HasNextPage: false,
+								EndCursor:   "",
+							},
+							Nodes: []executorSecretsIntegrationTestResponseAccessLogNode{
+								{
+									ID: marshalExecutorSecretAccessLogID(als[0].ID),
+									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
+										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+									},
+									User: executorSecretsIntegrationTestResponseAccessLogUser{
+										ID: MarshalUserID(user.ID),
+									},
+									CreatedAt: als[0].CreatedAt.Format(time.RFC3339),
+								},
+								{
+									ID: marshalExecutorSecretAccessLogID(als[1].ID),
+									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
+										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+									},
+									User: executorSecretsIntegrationTestResponseAccessLogUser{
+										ID: MarshalUserID(user.ID),
+									},
+									CreatedAt: als[1].CreatedAt.Format(time.RFC3339),
+								},
+							},
+						},
+					},
+					{
+						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret3.Scope)), secret3.ID),
+						Key:   "FOOBAR",
+						Scope: string(ExecutorSecretScopeBatches),
+						Namespace: executorSecretsIntegrationTestResponseNamespace{
+							ID: MarshalUserID(user.ID),
+						},
+						Creator: executorSecretsIntegrationTestResponseCreator{
+							ID: MarshalUserID(user.ID),
+						},
+						CreatedAt: secret3.CreatedAt.Format(time.RFC3339),
+						UpdatedAt: secret3.UpdatedAt.Format(time.RFC3339),
+						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
+							TotalCount: 0,
+							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
+								HasNextPage: false,
+								EndCursor:   "",
+							},
+							Nodes: []executorSecretsIntegrationTestResponseAccessLogNode{},
+						},
+					},
+				},
+			},
+		},
+	}); diff != "" {
+		t.Fatalf("invalid response: %s", diff)
+	}
+}
+
+type executorSecretsIntegrationTestResponse struct {
+	Node executorSecretsIntegrationTestResponseNode `json:"node"`
+}
+
+type executorSecretsIntegrationTestResponseNode struct {
+	Typename        string                                                `json:"__typename"`
+	ExecutorSecrets executorSecretsIntegrationTestResponseExecutorSecrets `json:"executorSecrets"`
+}
+
+type executorSecretsIntegrationTestResponseExecutorSecrets struct {
+	TotalCount int32                                              `json:"totalCount"`
+	PageInfo   executorSecretsIntegrationTestResponsePageInfo     `json:"pageInfo"`
+	Nodes      []executorSecretsIntegrationTestResponseSecretNode `json:"nodes"`
+}
+
+type executorSecretsIntegrationTestResponsePageInfo struct {
+	HasNextPage bool   `json:"hasNextPage"`
+	EndCursor   string `json:"endCursor"`
+}
+
+type executorSecretsIntegrationTestResponseSecretNode struct {
+	ID         graphql.ID                                       `json:"id"`
+	Key        string                                           `json:"key"`
+	Scope      string                                           `json:"scope"`
+	Namespace  executorSecretsIntegrationTestResponseNamespace  `json:"namespace"`
+	Creator    executorSecretsIntegrationTestResponseCreator    `json:"creator"`
+	CreatedAt  string                                           `json:"createdAt"`
+	UpdatedAt  string                                           `json:"updatedAt"`
+	AccessLogs executorSecretsIntegrationTestResponseAccessLogs `json:"accessLogs"`
+}
+
+type executorSecretsIntegrationTestResponseNamespace struct {
+	ID graphql.ID `json:"id"`
+}
+
+type executorSecretsIntegrationTestResponseCreator struct {
+	ID graphql.ID `json:"id"`
+}
+
+type executorSecretsIntegrationTestResponseAccessLogs struct {
+	TotalCount int32                                                 `json:"totalCount"`
+	PageInfo   executorSecretsIntegrationTestResponsePageInfo        `json:"pageInfo"`
+	Nodes      []executorSecretsIntegrationTestResponseAccessLogNode `json:"nodes"`
+}
+
+type executorSecretsIntegrationTestResponseAccessLogNode struct {
+	ID             graphql.ID                                                    `json:"id"`
+	ExecutorSecret executorSecretsIntegrationTestResponseAccessLogExecutorSecret `json:"executorSecret"`
+	User           executorSecretsIntegrationTestResponseAccessLogUser           `json:"user"`
+	CreatedAt      string                                                        `json:"createdAt"`
+}
+
+type executorSecretsIntegrationTestResponseAccessLogExecutorSecret struct {
+	ID graphql.ID `json:"id"`
+}
+
+type executorSecretsIntegrationTestResponseAccessLogUser struct {
+	ID graphql.ID `json:"id"`
 }
