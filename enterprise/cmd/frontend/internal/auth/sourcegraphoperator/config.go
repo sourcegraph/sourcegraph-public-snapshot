@@ -51,7 +51,7 @@ func Init() {
 
 			go func() {
 				if err := p.Refresh(context.Background()); err != nil {
-					logger.Error("Error prefetching Sourcegraph Operator service provider metadata.", log.Error(err))
+					logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))
 				}
 			}()
 			providers.Update(providerType, []providers.Provider{p})

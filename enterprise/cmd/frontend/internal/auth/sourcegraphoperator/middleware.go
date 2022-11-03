@@ -76,7 +76,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
 			p, safeErrMsg, err := openidconnect.GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetOIDCProvider)
 			if err != nil {
-				logger.Error("Failed to get provider", log.Error(err))
+				logger.Error("failed to get provider", log.Error(err))
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
@@ -86,7 +86,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
 			result, safeErrMsg, errStatus, err := openidconnect.AuthCallback(db, r, stateCookieName, usernamePrefix, GetOIDCProvider)
 			if err != nil {
-				logger.Error("Failed to authenticate with Sourcegraph Operator", log.Error(err))
+				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(err))
 				http.Error(w, safeErrMsg, errStatus)
 				return
 			}
@@ -98,7 +98,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				},
 			).(*provider)
 			if !ok {
-				logger.Error("Failed to get Sourcegraph Operator authentication provider.", log.Error(errors.Errorf("no authentication provider found with ID %q", providerType)))
+				logger.Error("failed to get Sourcegraph Operator authentication provider", log.Error(errors.Errorf("no authentication provider found with ID %q", providerType)))
 				http.Error(w, "Misconfigured authentication provider.", http.StatusInternalServerError)
 				return
 			}
@@ -113,7 +113,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				},
 			)
 			if err != nil {
-				logger.Error("Failed list user external accounts", log.Error(err))
+				logger.Error("failed list user external accounts", log.Error(err))
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not list user external accounts.", http.StatusInternalServerError)
 				return
 			}
@@ -139,7 +139,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if err = session.SetActor(w, r, actor.FromUser(result.User.ID), expiry, result.User.CreatedAt); err != nil {
-				logger.Error("Failed to authenticate with Sourcegraph Operator: could not initiate session.", log.Error(err))
+				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(errors.Wrap(err, "initiate session")))
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
 			}
@@ -147,13 +147,17 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err = session.SetData(w, r, SessionKey, result.SessionData); err != nil {
 				// It's not fatal if this fails. It just means we won't be able to sign the user
 				// out of the OP.
-				logger.Warn("Failed to set Sourcegraph Operator session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
+				logger.Warn(
+					"failed to set Sourcegraph Operator session data",
+					log.String("message", "The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph."),
+					log.Error(err),
+				)
 			}
 
 			if !result.User.SiteAdmin {
 				err = db.Users().SetIsSiteAdmin(r.Context(), result.User.ID, true)
 				if err != nil {
-					logger.Error("Failed to update Sourcegraph Operator as site admin.", log.Error(err))
+					logger.Error("failed to update Sourcegraph Operator as site admin", log.Error(err))
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)
 					return
 				}
