@@ -10,16 +10,28 @@ func CodeIntelUploads() *monitoring.Dashboard {
 		Name:        "codeintel-uploads",
 		Title:       "Code Intelligence > Uploads",
 		Description: "The service at `internal/codeintel/uploads`.",
-		Variables:   []monitoring.ContainerVariable{},
+		Variables: []monitoring.ContainerVariable{
+			{
+				Label: "Source",
+				Name:  "source",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_codeintel_uploads_total{}",
+					LabelName:     "app",
+					ExampleOption: "frontend",
+				},
+				WildcardAllValue: true,
+				Multi:            false,
+			},
+		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewUploadsServiceGroup(""),
-			shared.CodeIntelligence.NewUploadsStoreGroup(""),
-			shared.CodeIntelligence.NewUploadsBackgroundGroup(""),
-			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup(""),
-			shared.CodeIntelligence.NewUploadsHTTPTransportGroup(""),
-			shared.CodeIntelligence.NewUploadsCleanupTaskGroup(""),
-			shared.CodeIntelligence.NewCommitGraphQueueGroup(""),
-			shared.CodeIntelligence.NewUploadsExpirationTaskGroup(""),
+			shared.CodeIntelligence.NewUploadsServiceGroup("$source"),
+			shared.CodeIntelligence.NewUploadsStoreGroup("$source"),
+			shared.CodeIntelligence.NewUploadsBackgroundGroup("$source"),
+			shared.CodeIntelligence.NewUploadsGraphQLTransportGroup("$source"),
+			shared.CodeIntelligence.NewUploadsHTTPTransportGroup("$source"),
+			shared.CodeIntelligence.NewUploadsCleanupTaskGroup("$source"),
+			shared.CodeIntelligence.NewCommitGraphQueueGroup("$source"),
+			shared.CodeIntelligence.NewUploadsExpirationTaskGroup("$source"),
 		},
 	}
 }

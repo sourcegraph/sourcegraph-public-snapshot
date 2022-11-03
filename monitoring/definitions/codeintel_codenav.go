@@ -10,12 +10,24 @@ func CodeIntelCodeNav() *monitoring.Dashboard {
 		Name:        "codeintel-codenav",
 		Title:       "Code Intelligence > Code Nav",
 		Description: "The service at `internal/codeintel/codenav`.",
-		Variables:   []monitoring.ContainerVariable{},
+		Variables: []monitoring.ContainerVariable{
+			{
+				Label: "Source",
+				Name:  "source",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_codeintel_codenav_total{}",
+					LabelName:     "app",
+					ExampleOption: "frontend",
+				},
+				WildcardAllValue: true,
+				Multi:            false,
+			},
+		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewCodeNavServiceGroup(""),
-			shared.CodeIntelligence.NewCodeNavLsifStoreGroup(""),
-			shared.CodeIntelligence.NewCodeNavGraphQLTransportGroup(""),
-			shared.CodeIntelligence.NewCodeNavStoreGroup(""),
+			shared.CodeIntelligence.NewCodeNavServiceGroup("$source"),
+			shared.CodeIntelligence.NewCodeNavLsifStoreGroup("$source"),
+			shared.CodeIntelligence.NewCodeNavGraphQLTransportGroup("$source"),
+			shared.CodeIntelligence.NewCodeNavStoreGroup("$source"),
 		},
 	}
 }
