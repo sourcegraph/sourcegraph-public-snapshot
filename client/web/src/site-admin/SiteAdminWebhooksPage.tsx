@@ -2,18 +2,26 @@ import React, { useEffect } from 'react'
 
 import { mdiMapSearch, mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
-import { WebhookFields } from 'src/graphql-operations'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
 
-import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 
 import { queryWebhooks } from './backend'
 import { WebhookNode } from './WebhookNode'
 
 import styles from './SiteAdminWebhooksPage.module.scss'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../components/FilteredConnection/ui'
+import classNames from 'classnames'
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -26,6 +34,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         telemetryService.logPageView('SiteAdminWebhooks')
     }, [telemetryService])
 
+    const { loading, hasNextPage, fetchMore, connection, error } = queryWebhooks()
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Webhook receivers" />
@@ -41,33 +50,46 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                 }
             />
 
-            <Container className="mb-3">
-                <FilteredConnection<WebhookFields>
-                    className="mb-0"
-                    noun="webhook"
-                    pluralNoun="webhooks"
-                    queryConnection={queryWebhooks}
-                    nodeComponent={WebhookNode}
-                    hideSearch={true}
-                    listComponent="div"
-                    listClassName={styles.webhooksGrid}
-                    withCenteredSummary={true}
-                    noSummaryIfAllNodesVisible={true}
-                    history={history}
-                    location={location}
-                    headComponent={Header}
-                    emptyElement={<EmptyList />}
-                />
+            <Container>
+                <ConnectionContainer>
+                    {error && <ConnectionError errors={[error.message]} />}
+                    {loading && !connection && <ConnectionLoading />}
+                    {connection && connection.nodes?.length > 0 && <Header />}
+                    <ConnectionList
+                        as="ul"
+                        className={classNames(styles.webhooksGrid, 'list-group')}
+                        aria-label="Webhooks"
+                    >
+                        {connection?.nodes?.map(node => (
+                            <WebhookNode codeHostKind={node.codeHostKind} codeHostURN={node.codeHostURN} />
+                        ))}
+                    </ConnectionList>
+                    {connection && (
+                        <SummaryContainer className="mt-2">
+                            <ConnectionSummary
+                                noSummaryIfAllNodesVisible={false}
+                                first={connection.totalCount ?? 0}
+                                centered={true}
+                                connection={connection}
+                                noun="webhook"
+                                pluralNoun="webhooks"
+                                hasNextPage={hasNextPage}
+                                emptyElement={<EmptyList />}
+                            />
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                        </SummaryContainer>
+                    )}
+                </ConnectionContainer>
             </Container>
         </div>
     )
 }
 
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <>
+    <div className={styles.webhooksGrid}>
         <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Receiver</H5>
         <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Actions</H5>
-    </>
+    </div>
 )
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (

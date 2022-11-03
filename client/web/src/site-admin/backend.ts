@@ -60,8 +60,10 @@ import {
     UserUsageStatisticsResult,
     WebhooksListResult,
     WebhooksListVariables,
+    WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
+import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 
 /**
  * Fetches all users.
@@ -920,13 +922,13 @@ export const WEBHOOKS = gql`
     }
 `
 
-export function queryWebhooks(): Observable<WebhooksListResult['webhooks']> {
-    return requestGraphQL<WebhooksListResult, WebhooksListVariables>(WEBHOOKS, {}).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.webhooks || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.webhooks
-        })
-    )
+export function queryWebhooks(): UseConnectionResult<WebhookFields> {
+    return useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+        query: WEBHOOKS,
+        variables: {},
+        getConnection: result => {
+            const { webhooks } = dataOrThrowErrors(result)
+            return webhooks
+        },
+    })
 }

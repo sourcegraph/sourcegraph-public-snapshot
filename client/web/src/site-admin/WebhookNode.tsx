@@ -5,16 +5,20 @@ import { mdiCog, mdiDelete } from '@mdi/js'
 import { Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
-import { WebhookFields } from '../graphql-operations'
+import { ExternalServiceKind } from '../graphql-operations'
 
 import styles from './WebhookNode.module.scss'
 
 export interface WebhookProps {
-    node: WebhookFields
+    codeHostKind: ExternalServiceKind
+    codeHostURN: string
 }
 
-export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<WebhookProps>> = ({ node }) => {
-    const IconComponent = defaultExternalServices[node.codeHostKind].icon
+export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<WebhookProps>> = ({
+    codeHostKind,
+    codeHostURN,
+}) => {
+    const IconComponent = defaultExternalServices[codeHostKind].icon
     return (
         <>
             <span className={styles.nodeSeparator} />
@@ -22,7 +26,7 @@ export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<Webhoo
                 <H3 className="pr-2">
                     {' '}
                     <Icon inline={true} as={IconComponent} aria-label="Code host logo" className="mr-2" />
-                    {node.codeHostURN}
+                    {codeHostURN}
                 </H3>
             </div>
             <div className="d-flex flex-shrink-0 ml-3">
