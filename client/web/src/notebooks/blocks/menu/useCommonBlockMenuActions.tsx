@@ -18,7 +18,10 @@ export const useCommonBlockMenuActions = ({
     onDeleteBlock,
     onNewBlock,
     onDuplicateBlock,
-}: Pick<BlockProps, 'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock' | 'onNewBlock'>): BlockMenuAction[] => {
+}: Pick<
+    BlockProps,
+    'id' | 'isReadOnly' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onMoveBlock' | 'onNewBlock'
+>): BlockMenuAction[] => {
     const isMacPlatform = useMemo(() => isMacPlatformFunc(), [])
     const modifierKeyLabel = useModifierKeyLabel()
     const isInputFocused = useIsBlockInputFocused(id)
@@ -60,8 +63,17 @@ export const useCommonBlockMenuActions = ({
                 label: 'Add Block',
                 icon: <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />,
                 onClick: onNewBlock,
-                keyboardShortcutLabel: `${modifierKeyLabel} + ⇧ + ↵`
+                keyboardShortcutLabel: `${modifierKeyLabel} + ⇧ + ↵`,
             },
         ]
-    }, [isReadOnly, isMacPlatform, isInputFocused, modifierKeyLabel, onMoveBlock, onDeleteBlock, onDuplicateBlock, onNewBlock])
+    }, [
+        isReadOnly,
+        isMacPlatform,
+        isInputFocused,
+        modifierKeyLabel,
+        onMoveBlock,
+        onDeleteBlock,
+        onDuplicateBlock,
+        onNewBlock,
+    ])
 }

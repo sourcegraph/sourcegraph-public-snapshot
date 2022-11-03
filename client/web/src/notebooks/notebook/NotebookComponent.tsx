@@ -158,9 +158,12 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [isReadOnly, setSelectedBlockId]
         )
 
-        const focusBlock = useCallback((blockId: string) => {
-            focusBlockElement(blockId, isReadOnly)
-        }, [isReadOnly])
+        const focusBlock = useCallback(
+            (blockId: string) => {
+                focusBlockElement(blockId, isReadOnly)
+            },
+            [isReadOnly]
+        )
 
         // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
         useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
@@ -248,19 +251,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [isReadOnly, notebook, selectBlock]
         )
 
-        const dismissNewBlockPalette = useCallback(
-            () => {
-                if (isReadOnly) {
-                    return
-                }
-                if (blocks.length === 0) {
-                    return
-                }
-                const blockToSelectIndex = blockInserterIndex - 1
-                selectBlock(blocks[blockToSelectIndex].id)
-                setBlockInserterIndex(-1)
-            }, [isReadOnly, blocks, selectBlock, blockInserterIndex]
-        )
+        const dismissNewBlockPalette = useCallback(() => {
+            if (isReadOnly) {
+                return
+            }
+            if (blocks.length === 0) {
+                return
+            }
+            const blockToSelectIndex = blockInserterIndex - 1
+            selectBlock(blocks[blockToSelectIndex].id)
+            setBlockInserterIndex(-1)
+        }, [isReadOnly, blocks, selectBlock, blockInserterIndex])
 
         const onAddBlock = useCallback(
             (index: number, blockInput: BlockInput) => {
@@ -443,8 +444,9 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
         const renderBlock = useCallback(
             (block: Block) => {
-                const isSelected = (selectedBlockId === block.id)
-                const isSomethingElseSelected = (selectedBlockId !== null && selectedBlockId !== block.id) || (blockInserterIndex !== -1)
+                const isSelected = selectedBlockId === block.id
+                const isSomethingElseSelected =
+                    (selectedBlockId !== null && selectedBlockId !== block.id) || blockInserterIndex !== -1
                 const blockProps = {
                     onRunBlock,
                     onBlockInputChange,
@@ -595,13 +597,15 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 </div>
                 {blocks.map((block, blockIndex) => (
                     <div key={block.id}>
-                        {blockInserterIndex === blockIndex && <NotebookCommandPaletteInput
-                            hasFocus={true}
-                            ref={floatingCommandPaletteInputReference}
-                            index={blockIndex}
-                            onAddBlock={onAddBlock}
-                            onShouldDismiss={dismissNewBlockPalette}
-                        />}
+                        {blockInserterIndex === blockIndex && (
+                            <NotebookCommandPaletteInput
+                                hasFocus={true}
+                                ref={floatingCommandPaletteInputReference}
+                                index={blockIndex}
+                                onAddBlock={onAddBlock}
+                                onShouldDismiss={dismissNewBlockPalette}
+                            />
+                        )}
                         {renderBlock(block)}
                     </div>
                 ))}
