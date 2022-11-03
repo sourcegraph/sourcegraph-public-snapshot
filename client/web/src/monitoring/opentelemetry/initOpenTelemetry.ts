@@ -20,6 +20,8 @@ import {
     getTracingURL,
 } from '@sourcegraph/observability-client'
 
+import { PageRoutes } from '../../routes.constants'
+
 export function initOpenTelemetry(): void {
     const { openTelemetry, externalURL } = window.context
 
@@ -71,7 +73,22 @@ export function initOpenTelemetry(): void {
             instrumentations: [
                 (new FetchInstrumentation() as unknown) as InstrumentationOption,
                 new WindowLoadInstrumentation(),
-                new HistoryInstrumentation(),
+                new HistoryInstrumentation({
+                    shouldCreatePageViewOnLocationChange: prevLocationInfo => {
+                        /**
+                         * Start a new PageView trace on `location.search` change only
+                         * for some pages to avoid spam.
+                         */
+                        if (location.pathname.endsWith(PageRoutes.Search)) {
+                            return (
+                                prevLocationInfo.pathname !== location.pathname ||
+                                prevLocationInfo.search !== location.search
+                            )
+                        }
+
+                        return prevLocationInfo.pathname !== location.pathname
+                    },
+                }),
             ],
         })
     }
