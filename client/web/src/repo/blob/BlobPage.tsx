@@ -109,11 +109,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    let enableTokenKeyboardNavigation =
+    const enableTokenKeyboardNavigation =
         props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
         props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
-    enableTokenKeyboardNavigation = true
+
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
         props.location.hash,
