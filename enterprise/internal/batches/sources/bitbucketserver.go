@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -404,8 +403,6 @@ func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketser
 	if repo.Origin == nil {
 		return nil, errNotAFork
 	} else if repo.Origin.ID != parent.ID {
-		fmt.Printf("PARENT ID: %v", parent.ID)
-		fmt.Printf("ORIGIN ID: %v", repo.Origin.ID)
 		return nil, errNotForkedFromParent
 	}
 
