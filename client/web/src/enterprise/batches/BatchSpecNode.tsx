@@ -127,7 +127,7 @@ interface BatchSpecFile {
     id: string
 }
 
-const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ spec, isLightTheme }) => {
+export const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ spec, isLightTheme }) => {
     const specFile: BatchSpecFile = {
         isBinary: false,
         content: spec.originalInput,
@@ -157,7 +157,11 @@ const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ sp
                                 [styles.specFilesListNodeActive]: file.id === selectedFile.id,
                             })}
                         >
-                            <Button title={file.name} className={styles.specFilesListNodeButton} onClick={() => setSelectedFile(file)}>
+                            <Button
+                                title={file.name}
+                                className={styles.specFilesListNodeButton}
+                                onClick={() => setSelectedFile(file)}
+                            >
                                 {file.name}
                             </Button>
                         </li>
