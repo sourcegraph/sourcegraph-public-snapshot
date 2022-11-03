@@ -139,16 +139,14 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 			continue
 		}
 
-		impreciseDocumentRank := rank(path, 1.0-float64(i)/float64(len(paths)))
-
 		ranks[path] = []float64{
-			0,                        // imprecise
-			0,                        // no global document rank
-			impreciseDocumentRank[0], // generated
-			impreciseDocumentRank[1], // vendor
-			impreciseDocumentRank[2], // test
-			impreciseDocumentRank[3], // name length
-			impreciseDocumentRank[4], // lexicographic order in repo
+			0,                                     // imprecise
+			0,                                     // no global document rank
+			generatedRank(path),                   // generated
+			vendorRank(path),                      // vendor
+			testRank(path),                        // test
+			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
+			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
 		}
 	}
 
@@ -161,16 +159,6 @@ func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[
 
 func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {
 	return s.store.UpdatedAfter(ctx, t)
-}
-
-func rank(name string, nameRank float64) [5]float64 {
-	return [5]float64{
-		generatedRank(name),                   // Prefer non-generated text documents
-		vendorRank(name),                      // Prefer non-vendored text documents
-		testRank(name),                        // Prefer non-tests text documents
-		1.0 - squashRange(float64(len(name))), // Prefer short names
-		nameRank,                              // Lexicographic ordering ordering
-	}
 }
 
 func generatedRank(name string) float64 {
