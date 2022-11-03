@@ -279,3 +279,5 @@ This is an adjusted version of @lguychard's [comment here](https://github.com/so
    - Switch into the main Phabricator directory: `cd /opt/bitnami/phabricator`
    - Restart the daemons: `./bin/phd restart`
 9. Navigated to `http://127.0.0.1/source/jrpc/browse/master/async.go`
+
+Whenever you make changes to the native extension code, you need to run `yarn build` inside the `client/browser` directory before seeing the changes in effect on the Phabricator instance.
