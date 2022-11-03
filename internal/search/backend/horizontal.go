@@ -205,7 +205,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint)
+		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)

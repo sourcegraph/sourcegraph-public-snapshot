@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Updated minimum required version of `git` to 2.38.1 in `gitserver` and `server` Docker image. This addresses: https://github.blog/2022-04-12-git-security-vulnerability-announced/ and https://lore.kernel.org/git/d1d460f6-e70f-b17f-73a5-e56d604dd9d5@github.com/. [#43615](https://github.com/sourcegraph/sourcegraph/pull/43615)
 - When a `content:` filter is used in a query, only file contents will be searched (previously any of file contents, paths, or repos were searched). However, as before, if `type:` is also set, the `content:` filter will search for results of the specified `type:`. [#43442](https://github.com/sourcegraph/sourcegraph/pull/43442)
 
 ### Fixed

@@ -268,7 +268,7 @@ func filterRecordingsBySeriesRepos(ctx context.Context, repoStore discovery.Repo
 		if record.RepoID == nil {
 			continue
 		}
-		if included := repos[*record.RepoID]; included == true {
+		if included := repos[*record.RepoID]; included {
 			filteredRecords = append(filteredRecords, record)
 		}
 	}

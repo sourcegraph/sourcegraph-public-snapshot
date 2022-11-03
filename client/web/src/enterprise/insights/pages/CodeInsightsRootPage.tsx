@@ -115,7 +115,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
             <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange} lazy={true}>
                 <TabList>
                     <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
-
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
                 <TabPanels className="mt-3">
