@@ -75,6 +75,7 @@ func TestGetDocumentRanks(t *testing.T) {
 	mockStore.GetDocumentRanksFunc.SetDefaultReturn(map[string][2]float64{
 		"rust/main.rs": {1.00, 0.84},
 		"rust/lib.rs":  {0.75, 0.42},
+		"rust/min.js":  {0.25, 0.24}, // generated
 	}, true, nil)
 
 	gitserverClient.ListFilesForRepoFunc.SetDefaultReturn([]string{
@@ -102,6 +103,7 @@ func TestGetDocumentRanks(t *testing.T) {
 		// Precise
 		"rust/main.rs": {1.00, 1, 1, 1, 0.84, 1, 1},
 		"rust/lib.rs":  {0.75, 1, 1, 1, 0.42, 1, 1},
+		"rust/min.js":  {0.25, 0, 1, 1, 0.24, 1, 1},
 
 		// Fallback
 		"code/a.go":           {0, 1, 1, 1, 0, 0.100, 1 - (0.00 / 13.0)},
