@@ -1,17 +1,12 @@
 import React, { useEffect } from 'react'
 
 import { mdiMapSearch, mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
 
-import { PageTitle } from '../components/PageTitle'
-
-import { queryWebhooks } from './backend'
-import { WebhookNode } from './WebhookNode'
-
-import styles from './SiteAdminWebhooksPage.module.scss'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -21,7 +16,12 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
-import classNames from 'classnames'
+import { PageTitle } from '../components/PageTitle'
+
+import { useWebhooksConnection } from './backend'
+import { WebhookNode } from './WebhookNode'
+
+import styles from './SiteAdminWebhooksPage.module.scss'
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -34,7 +34,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         telemetryService.logPageView('SiteAdminWebhooks')
     }, [telemetryService])
 
-    const { loading, hasNextPage, fetchMore, connection, error } = queryWebhooks()
+    const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
     return (
         <div className="site-admin-webhooks-page">
             <PageTitle title="Webhook receivers" />
@@ -61,7 +61,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         aria-label="Webhooks"
                     >
                         {connection?.nodes?.map(node => (
-                            <WebhookNode codeHostKind={node.codeHostKind} codeHostURN={node.codeHostURN} />
+                            <WebhookNode key={node.id} codeHostKind={node.codeHostKind} codeHostURN={node.codeHostURN} />
                         ))}
                     </ConnectionList>
                     {connection && (

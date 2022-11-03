@@ -1,18 +1,17 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import * as H from 'history'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../components/WebStory'
-
-import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'
-import { getDocumentNode } from '@sourcegraph/http-client'
-
-import { ExternalServiceKind } from '../../../shared/src/graphql-operations'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import * as H from 'history'
-import { WEBHOOKS } from './backend'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { WebhookFields } from '../graphql-operations'
+
+import { WEBHOOKS } from './backend'
+import { SiteAdminWebhooksPage } from './SiteAdminWebhooksPage'
 
 const decorator: DecoratorFn = Story => <Story />
 

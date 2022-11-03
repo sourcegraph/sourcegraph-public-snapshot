@@ -12,6 +12,7 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 import {
     RepositoriesVariables,
     RepositoriesResult,
@@ -63,7 +64,6 @@ import {
     WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
-import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 
 /**
  * Fetches all users.
@@ -922,8 +922,8 @@ export const WEBHOOKS = gql`
     }
 `
 
-export function queryWebhooks(): UseConnectionResult<WebhookFields> {
-    return useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
+    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
         getConnection: result => {
@@ -931,4 +931,3 @@ export function queryWebhooks(): UseConnectionResult<WebhookFields> {
             return webhooks
         },
     })
-}
