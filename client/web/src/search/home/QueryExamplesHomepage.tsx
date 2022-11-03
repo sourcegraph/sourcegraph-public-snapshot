@@ -10,8 +10,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 
+import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
