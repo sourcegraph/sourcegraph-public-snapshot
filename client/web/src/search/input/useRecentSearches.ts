@@ -6,6 +6,8 @@ import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentS
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 import { SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables } from '../../graphql-operations'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 const MAX_RECENT_SEARCHES = 20
 
@@ -89,18 +91,23 @@ export function useRecentSearches(): {
 
     const [pendingAdditions, setPendingAdditions] = useState<RecentSearch[]>([])
 
+    // Adds non-empty queries. A query is considered empty if it's an empty
+    // string or only contains a context: filter.
     // If the search is being added after the list is finished loading,
     // add it immediately.
     // If the search is being added before the list is finished loading,
     // queue it to be added after loading is complete.
     const addRecentSearch = useCallback(
         (query: string) => {
-            const recentSearch = { query, timestamp: new Date().toISOString() }
+            const searchContext = getGlobalSearchContextFilter(query)
+            if (searchContext && omitFilter(query, searchContext.filter).trim() !== '') {
+                const recentSearch = { query, timestamp: new Date().toISOString() }
 
-            if (state === 'success') {
-                addOrMoveRecentSearchToTop(recentSearch)
-            } else {
-                setPendingAdditions(pendingAdditions => pendingAdditions.concat(recentSearch))
+                if (state === 'success') {
+                    addOrMoveRecentSearchToTop(recentSearch)
+                } else {
+                    setPendingAdditions(pendingAdditions => pendingAdditions.concat(recentSearch))
+                }
             }
         },
         [addOrMoveRecentSearchToTop, state]
