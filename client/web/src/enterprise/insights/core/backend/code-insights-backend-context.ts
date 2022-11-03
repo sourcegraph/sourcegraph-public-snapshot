@@ -3,11 +3,7 @@ import React from 'react'
 import { throwError } from 'rxjs'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import {
-    SeriesChartContent,
-    CategoricalChartContent,
-    BackendInsightDatum,
-} from './code-insights-backend-types'
+import { SeriesChartContent, CategoricalChartContent, BackendInsightDatum } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -28,10 +24,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 
     // Dashboards
-    public getDashboards = errorMockMethod('getDashboards')
-    public getDashboardById = errorMockMethod('getDashboardById')
     public getDashboardOwners = errorMockMethod('getDashboardSubjects')
-    public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
     public deleteDashboard = errorMockMethod('deleteDashboard')
     public updateDashboard = errorMockMethod('updateDashboard')
