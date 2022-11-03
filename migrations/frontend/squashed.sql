@@ -2471,6 +2471,7 @@ CREATE TABLE lsif_uploads (
     uncompressed_size bigint,
     last_referenced_scan_at timestamp with time zone,
     last_traversal_scan_at timestamp with time zone,
+    last_reconcile_at timestamp with time zone,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -4470,6 +4471,8 @@ CREATE INDEX lsif_uploads_audit_logs_upload_id ON lsif_uploads_audit_logs USING 
 CREATE INDEX lsif_uploads_commit_last_checked_at ON lsif_uploads USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
 
 CREATE INDEX lsif_uploads_committed_at ON lsif_uploads USING btree (committed_at) WHERE (state = 'completed'::text);
+
+CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_reconcile_at, id) WHERE (state = 'completed'::text);
 
 CREATE INDEX lsif_uploads_repository_id_commit ON lsif_uploads USING btree (repository_id, commit);
 

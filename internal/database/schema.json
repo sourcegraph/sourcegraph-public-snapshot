@@ -13608,6 +13608,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_reconcile_at",
+          "Index": 33,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "last_referenced_scan_at",
           "Index": 31,
           "TypeName": "timestamp with time zone",
@@ -13903,6 +13916,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_uploads_committed_at ON lsif_uploads USING btree (committed_at) WHERE state = 'completed'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_uploads_last_reconcile_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_reconcile_at, id) WHERE state = 'completed'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
