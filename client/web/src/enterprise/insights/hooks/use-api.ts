@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 
