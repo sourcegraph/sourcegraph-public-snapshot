@@ -157,7 +157,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                 <div className="d-flex align-items-center justify-content-lg-center my-5">
                     <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
                     <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
-                        Use Sourcegraph to search across your team's code.
+                        Search your private code with Sourcegraph Cloud.
                     </Link>
                 </div>
             )}
