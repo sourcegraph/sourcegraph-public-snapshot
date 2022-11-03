@@ -19,8 +19,6 @@ func TestReconcileCandidates(t *testing.T) {
 	store := New(db, &observation.TestContext)
 	ctx := context.Background()
 
-	// TODO - setup test
-
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (100, 50, '0000000000000000000000000000000000000001', 'lsif-test', 1, '{}', 'completed');
 		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (101, 50, '0000000000000000000000000000000000000002', 'lsif-test', 1, '{}', 'completed');
