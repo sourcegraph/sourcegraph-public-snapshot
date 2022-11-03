@@ -24,7 +24,6 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import { BatchSpec } from './BatchSpec'
-
 import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
