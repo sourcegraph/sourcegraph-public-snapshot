@@ -22,9 +22,9 @@ export interface SearchFilterSectionProps {
     forcedRender?: boolean
 
     /**
-     * Minimal number of items to render the filter section.
-     * This prop is used for repositories filter section: when we have only
-     * one repo, the repo filter section shouldn't be rendered.
+     * Minimal number of items to render the filter section. Defaults to 1.
+     * This prop is set to 2 for repositories and languages filter sections:
+     * when we have only one repo or language, the section shouldn't be rendered.
      */
     minItems?: number
 
@@ -73,7 +73,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         forcedRender = true,
         onToggle,
         startCollapsed,
-        minItems = 0,
+        minItems = 1,
     } = props
 
     const { ariaLabel = '', noResultText = defaultNoResult, clearSearchOnChange = children } = searchOptions ?? {}
@@ -97,7 +97,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         // items (usually it's FilterLink components)
     } else if (Array.isArray(children)) {
         // Sometimes we don't need to render filter section with just one item (example - repositories filter section)
-        visible = children.length > minItems
+        visible = children.length >= minItems
 
         // We don't need to have a search UI if we're dealing with only one item
         searchVisible = searchVisible && children.length > 1

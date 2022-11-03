@@ -110,9 +110,7 @@ func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err err
 		return index, 0, err
 	}
 
-	for _, entry := range executionLogs {
-		index.ExecutionLogs = append(index.ExecutionLogs, entry)
-	}
+	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
 
 	return index, count, nil
 }

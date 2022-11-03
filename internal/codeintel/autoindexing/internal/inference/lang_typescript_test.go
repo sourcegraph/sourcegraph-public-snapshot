@@ -45,7 +45,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    expectedIndexerImage,
-							Commands: []string{"yarn --ignore-engines --ignore-scripts"},
+							Commands: []string{"yarn --ignore-scripts"},
 						},
 					},
 					LocalSteps:  []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
@@ -143,7 +143,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "foo/bar",
 							Image:    expectedIndexerImage,
-							Commands: []string{"yarn --ignore-engines"},
+							Commands: []string{"yarn"},
 						},
 					},
 					LocalSteps:  []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
@@ -162,7 +162,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "foo/bar",
 							Image:    expectedIndexerImage,
-							Commands: []string{"yarn --ignore-engines"},
+							Commands: []string{"yarn"},
 						},
 						{
 							Root:     "foo/bar/bonk",
@@ -205,7 +205,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 						{
 							Root:     "",
 							Image:    expectedIndexerImage,
-							Commands: []string{"yarn --ignore-engines"},
+							Commands: []string{"yarn"},
 						},
 					},
 					LocalSteps:  []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},

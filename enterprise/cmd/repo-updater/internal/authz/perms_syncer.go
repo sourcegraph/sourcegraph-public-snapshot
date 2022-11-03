@@ -693,16 +693,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
-	rs, err := s.reposStore.RepoStore().List(ctx, database.ReposListOptions{
-		IDs: []api.RepoID{repoID},
-	})
+	repo, err := s.reposStore.RepoStore().Get(ctx, repoID)
 	if err != nil {
-		return errors.Wrap(err, "list repositories")
-	} else if len(rs) == 0 {
-		return nil
+		if errcode.IsNotFound(err) {
+			return nil
+		}
+		return errors.Wrap(err, "get repository")
 	}
-	repo := rs[0]
-
 	var userIDs []int32
 	var provider authz.Provider
 

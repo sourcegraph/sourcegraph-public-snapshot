@@ -659,11 +659,6 @@ func TestExternalAccounts_UpdateGitHubAppInstallations(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accts))
 
-	acctIds := []int32{}
-	for _, acct := range accts {
-		acctIds = append(acctIds, acct.ID)
-	}
-
 	err = db.UserExternalAccounts().UpdateGitHubAppInstallations(ctx, acct, installations)
 	require.NoError(t, err)
 

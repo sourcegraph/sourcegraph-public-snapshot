@@ -11,56 +11,58 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
 import styles from './RepoSettingsIndexPage.module.scss'
 
+type RepositoryTextSearchIndex = RepositoryTextSearchIndexRepository['textSearchIndex']
 /**
  * Fetches a repository's text search index information.
  */
-function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepositoryTextSearchIndex | null> {
+function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndex> {
     return queryGraphQL(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
                 node(id: $id) {
-                    ... on Repository {
-                        textSearchIndex {
-                            status {
-                                updatedAt
-                                contentByteSize
-                                contentFilesCount
-                                indexByteSize
-                                indexShardsCount
-                                newLinesCount
-                                defaultBranchNewLinesCount
-                                otherBranchesNewLinesCount
-                            }
-                            refs {
-                                ref {
-                                    displayName
-                                    url
-                                }
-                                skippedIndexed {
-                                    count
-                                    query
-                                }
-                                indexed
-                                current
-                                indexedCommit {
-                                    oid
-                                    abbreviatedOID
-                                    commit {
-                                        url
-                                    }
-                                }
+                    ...RepositoryTextSearchIndexRepository
+                }
+            }
+
+            fragment RepositoryTextSearchIndexRepository on Repository {
+                textSearchIndex {
+                    status {
+                        updatedAt
+                        contentByteSize
+                        contentFilesCount
+                        indexByteSize
+                        indexShardsCount
+                        newLinesCount
+                        defaultBranchNewLinesCount
+                        otherBranchesNewLinesCount
+                    }
+                    refs {
+                        ref {
+                            displayName
+                            url
+                        }
+                        skippedIndexed {
+                            count
+                            query
+                        }
+                        indexed
+                        current
+                        indexedCommit {
+                            oid
+                            abbreviatedOID
+                            commit {
+                                url
                             }
                         }
                     }
@@ -73,7 +75,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
             if (!data || !data.node || errors) {
                 throw createAggregateError(errors)
             }
-            return (data.node as GQL.IRepository).textSearchIndex
+            return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex
         })
     )
 }
@@ -81,7 +83,7 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<GQL.IRepo
 const TextSearchIndexedReference: React.FunctionComponent<
     React.PropsWithChildren<{
         repo: SettingsAreaRepositoryFields
-        indexedRef: GQL.IRepositoryTextSearchIndexedRef
+        indexedRef: NonNullable<RepositoryTextSearchIndex>['refs'][number]
     }>
 > = ({ repo, indexedRef }) => {
     const isCurrent = indexedRef.indexed && indexedRef.current
@@ -108,12 +110,12 @@ const TextSearchIndexedReference: React.FunctionComponent<
                         </LinkOrSpan>
                     </Code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
-                    {indexedRef.skippedIndexed && indexedRef.skippedIndexed.count > 0 ? (
+                    {indexedRef.skippedIndexed && Number(indexedRef.skippedIndexed.count) > 0 ? (
                         <span>
                             .&nbsp;
                             <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
-                                {indexedRef.skippedIndexed.count} {pluralize('file', indexedRef.skippedIndexed.count)}{' '}
-                                skipped during indexing
+                                {indexedRef.skippedIndexed.count}{' '}
+                                {pluralize('file', Number(indexedRef.skippedIndexed.count))} skipped during indexing
                             </Link>
                             .
                         </span>
@@ -131,7 +133,7 @@ interface Props extends RouteComponentProps<{}> {
 }
 
 interface State {
-    textSearchIndex?: GQL.IRepositoryTextSearchIndex | null
+    textSearchIndex?: RepositoryTextSearchIndex
     loading: boolean
     error?: Error
 }

@@ -16,7 +16,7 @@ func TestGetRepoRank(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, nil, &observation.TestContext)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
@@ -38,7 +38,7 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 	mockConfigQuerier := NewMockSiteConfigQuerier()
-	svc := newService(mockStore, nil, gitserverClient, nil, mockConfigQuerier, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, mockConfigQuerier, nil, &observation.TestContext)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 	mockConfigQuerier.SiteConfigFunc.SetDefaultReturn(schema.SiteConfiguration{
@@ -70,7 +70,12 @@ func TestGetDocumentRanks(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, nil, &observation.TestContext)
+
+	mockStore.GetDocumentRanksFunc.SetDefaultReturn(map[string][2]float64{
+		"rust/main.rs": {0.00, 0.84},
+		"rust/lib.rs":  {0.25, 0.42},
+	}, true, nil)
 
 	gitserverClient.ListFilesForRepoFunc.SetDefaultReturn([]string{
 		"main.go",
@@ -94,19 +99,24 @@ func TestGetDocumentRanks(t *testing.T) {
 	}
 
 	expected := map[string][]float64{
-		"code/a.go":           {1, 1, 1, 0.100, 1 - (0.00 / 13.0)},
-		"code/b.go":           {1, 1, 1, 0.100, 1 - (1.00 / 13.0)},
-		"code/c.go":           {1, 1, 1, 0.100, 1 - (2.00 / 13.0)},
-		"code/d.go":           {1, 1, 1, 0.100, 1 - (3.00 / 13.0)},
-		"main.go":             {1, 1, 1, 0.125, 1 - (4.00 / 13.0)},
-		"node_modules/bar.js": {1, 0, 1, 0.050, 1 - (5.00 / 13.0)},
-		"node_modules/baz.js": {1, 0, 1, 0.050, 1 - (6.00 / 13.0)},
-		"node_modules/foo.js": {1, 0, 1, 0.050, 1 - (7.00 / 13.0)},
-		"rendered/web/min.js": {0, 1, 1, 0.050, 1 - (8.00 / 13.0)},
-		"test/a.go":           {1, 1, 0, 0.100, 1 - (9.00 / 13.0)},
-		"test/b.go":           {1, 1, 0, 0.100, 1 - (10.0 / 13.0)},
-		"test/c.go":           {1, 1, 0, 0.100, 1 - (11.0 / 13.0)},
-		"test/d.go":           {1, 1, 0, 0.100, 1 - (12.0 / 13.0)},
+		// Precise
+		"rust/main.rs": {0.00, 0.84, 0, 0, 0, 0, 0},
+		"rust/lib.rs":  {0.25, 0.42, 0, 0, 0, 0, 0},
+
+		// Fallback
+		"code/a.go":           {1, 1, 1, 1, 1, 0.100, 1 - (0.00 / 13.0)},
+		"code/b.go":           {1, 1, 1, 1, 1, 0.100, 1 - (1.00 / 13.0)},
+		"code/c.go":           {1, 1, 1, 1, 1, 0.100, 1 - (2.00 / 13.0)},
+		"code/d.go":           {1, 1, 1, 1, 1, 0.100, 1 - (3.00 / 13.0)},
+		"main.go":             {1, 1, 1, 1, 1, 0.125, 1 - (4.00 / 13.0)},
+		"node_modules/bar.js": {1, 1, 1, 0, 1, 0.050, 1 - (5.00 / 13.0)},
+		"node_modules/baz.js": {1, 1, 1, 0, 1, 0.050, 1 - (6.00 / 13.0)},
+		"node_modules/foo.js": {1, 1, 1, 0, 1, 0.050, 1 - (7.00 / 13.0)},
+		"rendered/web/min.js": {1, 1, 0, 1, 1, 0.050, 1 - (8.00 / 13.0)},
+		"test/a.go":           {1, 1, 1, 1, 0, 0.100, 1 - (9.00 / 13.0)},
+		"test/b.go":           {1, 1, 1, 1, 0, 0.100, 1 - (10.0 / 13.0)},
+		"test/c.go":           {1, 1, 1, 1, 0, 0.100, 1 - (11.0 / 13.0)},
+		"test/d.go":           {1, 1, 1, 1, 0, 0.100, 1 - (12.0 / 13.0)},
 	}
 
 	opt := cmp.Comparer(cmpFloat)

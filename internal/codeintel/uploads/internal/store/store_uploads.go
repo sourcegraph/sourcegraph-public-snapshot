@@ -1951,7 +1951,7 @@ func nilTimeToString(t *time.Time) string {
 func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sqlf.Query, []cteDefinition) {
 	conds := make([]*sqlf.Query, 0, 12)
 
-	allowDeletedUploads := (opts.AllowDeletedUpload && opts.State == "") || opts.State == "deleted"
+	allowDeletedUploads := opts.AllowDeletedUpload && (opts.State == "" || opts.State == "deleted")
 
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))

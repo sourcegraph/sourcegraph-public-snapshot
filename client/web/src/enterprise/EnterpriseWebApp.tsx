@@ -6,6 +6,7 @@ import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
 import { CodeIntelligenceBadgeContent } from './codeintel/badge/components/CodeIntelligenceBadgeContent'
 import { CodeIntelligenceBadgeMenu } from './codeintel/badge/components/CodeIntelligenceBadgeMenu'
+import { useCodeIntel } from './codeintel/useCodeIntel'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -55,6 +56,7 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         codeIntelligenceEnabled={true}
         codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
         codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
+        useCodeIntel={useCodeIntel}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}

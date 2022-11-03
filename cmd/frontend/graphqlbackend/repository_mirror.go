@@ -181,7 +181,11 @@ func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, erro
 		return nil, err
 	}
 
-	return &info.ShardID, err
+	if info.ShardID == "" {
+		return nil, nil
+	}
+
+	return &info.ShardID, nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {

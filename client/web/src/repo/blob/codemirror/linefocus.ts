@@ -79,8 +79,9 @@ class LineFocus implements PluginValue {
     }
 
     private focusLine({ line, preventScroll = true }: { line: number; preventScroll?: boolean }): void {
+        const nextLine = this.view.state.doc.line(line)
+
         window.requestAnimationFrame(() => {
-            const nextLine = this.view.state.doc.line(line)
             const closestNode = this.view.domAtPos(nextLine.from).node
 
             // Loosely find closest element.

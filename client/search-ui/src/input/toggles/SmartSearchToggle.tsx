@@ -51,24 +51,24 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-            <PopoverTrigger
-                as={Button}
-                className={classNames(
-                    styles.toggle,
-                    smartStyles.button,
-                    className,
-                    !!disabledRule && styles.disabled,
-                    isActive && styles.toggleActive,
-                    !interactive && styles.toggleNonInteractive
-                )}
-                variant="icon"
-                aria-checked={isActive}
-                {...interactiveProps}
-            >
-                <Tooltip content={tooltipValue} placement="bottom">
+            <Tooltip content={tooltipValue} placement="bottom">
+                <PopoverTrigger
+                    as={Button}
+                    className={classNames(
+                        styles.toggle,
+                        smartStyles.button,
+                        className,
+                        !!disabledRule && styles.disabled,
+                        isActive && styles.toggleActive,
+                        !interactive && styles.toggleNonInteractive
+                    )}
+                    variant="icon"
+                    aria-checked={isActive}
+                    {...interactiveProps}
+                >
                     <Icon aria-label={tooltipValue} svgPath={smartSearchIconSvgPath} />
-                </Tooltip>
-            </PopoverTrigger>
+                </PopoverTrigger>
+            </Tooltip>
 
             <SmartSearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
         </Popover>
