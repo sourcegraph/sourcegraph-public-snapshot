@@ -10,7 +10,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { Alert, useDebounce } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
 import {
@@ -26,6 +26,7 @@ import { Scalars, SymbolKind, SymbolNodeFields, SymbolsResult, SymbolsVariables 
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 interface SymbolNodeProps {
     node: SymbolNodeFields
@@ -196,7 +197,11 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                     {query && summary}
                 </SummaryContainer>
             </div>
-            {error && <ConnectionError errors={[error.message]} compact={true} />}
+            {error && (
+                <Alert variant={error.message.includes('Estimated completion') ? 'info' : 'danger'}>
+                    <ErrorMessage error={error.message} />
+                </Alert>
+            )}
             {connection && (
                 <HierarchicalSymbols
                     symbols={connection.nodes}
