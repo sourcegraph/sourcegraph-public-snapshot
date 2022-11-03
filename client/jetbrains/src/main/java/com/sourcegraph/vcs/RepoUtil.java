@@ -132,12 +132,22 @@ public class RepoUtil {
     public static VCSType getVcsType(@NotNull Project project, @NotNull VirtualFile file) {
         Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
 
-        if (repository instanceof GitRepository) {
-            return VCSType.GIT;
+        try {
+            Class.forName("git4idea.repo.GitRepository", false, RepoUtil.class.getClassLoader());
+            if (repository instanceof GitRepository) {
+                return VCSType.GIT;
+            }
+        } catch (ClassNotFoundException e) {
+            // Git plugin is not installed.
         }
 
-        if (PerforceSettings.getSettings(project).getConnectionForFile(new File(file.getPath())) != null) {
-            return VCSType.PERFORCE;
+        try {
+            Class.forName("org.jetbrains.idea.perforce.perforce.PerforceSettings", false, RepoUtil.class.getClassLoader());
+            if (PerforceSettings.getSettings(project).getConnectionForFile(new File(file.getPath())) != null) {
+                return VCSType.PERFORCE;
+            }
+        } catch (ClassNotFoundException e) {
+            // Perforce plugin is not installed.
         }
 
         return VCSType.UNKNOWN;

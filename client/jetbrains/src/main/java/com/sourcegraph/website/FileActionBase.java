@@ -9,6 +9,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.vcs.RepoUtil;
@@ -48,6 +49,7 @@ public abstract class FileActionBase extends DumbAwareAction {
                 () -> {
                     RepoInfo repoInfo = RepoUtil.getRepoInfo(project, currentFile);
                     if (repoInfo.remoteUrl.equals("")) {
+                        ErrorNotification.show(project, "The file is not under version control that your IDE + this plugin supports. The plugin currently only supports Git and Perforce. For the IDE part, make sure you have the Git or Perforce plugin (whichever you need) installed. If you are seeing this error for a supported VCS with the plugin installed, please reach out to support@sourcegraph.com.");
                         return;
                     }
 
