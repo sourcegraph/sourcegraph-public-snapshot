@@ -130,7 +130,7 @@ func (b backgroundJob) handleExpiredRecords(ctx context.Context, cfg janitorConf
 func shouldDeleteUploadsForCommit(ctx context.Context, gitserverClient GitserverClient, repositoryID int, commit string) (bool, error) {
 	if _, err := gitserverClient.ResolveRevision(ctx, repositoryID, commit); err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			// Target condition: repository is resolvable bu the commit is not; was probably
+			// Target condition: repository is resolvable but the commit is not; was probably
 			// force-pushed away and the commit was gc'd after some time or after a re-clone
 			// in gitserver.
 			return true, nil
