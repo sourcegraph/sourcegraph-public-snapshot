@@ -83,7 +83,7 @@ export const FiveWebhooksFound: Story = () => (
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1'),
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo2'),
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo3'),
-                                            createWebhookMock(ExternalServiceKind.BITBUCKETCLOUD, 'github.com/repo2'),
+                                            createWebhookMock(ExternalServiceKind.BITBUCKETCLOUD, 'bitbucket.com/repo2'),
                                         ],
                                         totalCount: 5,
                                         pageInfo: {
@@ -113,7 +113,7 @@ function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookField
     return {
         __typename: 'Webhook',
         createdAt: '',
-        id: '',
+        id: `webhook-${urn}`,
         secret: null,
         updatedAt: '',
         url: '',
