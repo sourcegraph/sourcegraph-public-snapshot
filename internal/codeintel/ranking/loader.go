@@ -1,11 +1,14 @@
 package ranking
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -36,7 +39,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 
 	var filenames []string
 	objects := s.resultsBucket.Objects(ctx, &storage.Query{
-		Prefix: resultsBucketObjectKeyPrefix,
+		Prefix: resultsObjectKeyPrefix,
 	})
 	for {
 		attrs, err := objects.Next()
@@ -48,14 +51,14 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 		}
 
 		// Don't read the the enclosing folder or success metadata file
-		if attrs.Name == resultsBucketObjectKeyPrefix || attrs.Name == resultsBucketObjectKeyPrefix+"_SUCCESS" {
+		if attrs.Name == resultsObjectKeyPrefix || attrs.Name == resultsObjectKeyPrefix+"_SUCCESS" {
 			continue
 		}
 
 		filenames = append(filenames, attrs.Name)
 	}
 
-	knownFilenames, err := s.store.HasInputFilename(ctx, rankingGraphKey, filenames)
+	knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, filenames)
 	if err != nil {
 		return err
 	}
@@ -116,7 +119,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 			ranks[repo][path] = rank
 		}
 
-		if err := s.store.BulkSetDocumentRanks(ctx, rankingGraphKey, name, pageRankPrecision, ranks); err != nil {
+		if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, name, pageRankPrecision, ranks); err != nil {
 			return err
 		}
 
@@ -137,13 +140,57 @@ func (s *Service) mergeRanks(ctx context.Context) (err error) {
 		return nil
 	}
 
-	numRepositoriesUpdated, numInputRowsProcessed, err := s.store.MergeDocumentRanks(ctx, rankingGraphKey, inputFileBatchSize)
+	numRepositoriesUpdated, numInputRowsProcessed, err := s.store.MergeDocumentRanks(ctx, resultsGraphKey, mergeBatchSize)
 	if err != nil {
 		return err
 	}
 
 	s.operations.numRepositoriesUpdated.Add(float64(numRepositoriesUpdated))
 	s.operations.numInputRowsProcessed.Add(float64(numInputRowsProcessed))
+
+	if err := s.exportRanksForDevelopment(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) exportRanksForDevelopment(ctx context.Context) (err error) {
+	if exportObjectKeyPrefix == "" {
+		return nil
+	}
+	for _, repoName := range strings.Split(developmentExportRepositories, ",") {
+		lastUpdated, payload, err := s.store.ExportRankPayloadFor(ctx, api.RepoName(repoName))
+		if err != nil {
+			return err
+		}
+		lastUpdated = lastUpdated.UTC().Truncate(time.Second)
+
+		objectHandle := s.resultsBucket.Object(filepath.Join(exportObjectKeyPrefix, strings.ReplaceAll(repoName, "/", "_")))
+
+		if attrs, err := objectHandle.Attrs(ctx); err != nil {
+			if err != storage.ErrObjectNotExist {
+				return err
+			}
+		} else {
+			if !attrs.CustomTime.IsZero() && !attrs.CustomTime.Before(lastUpdated) {
+				continue
+			}
+		}
+
+		w := objectHandle.NewWriter(ctx)
+		if _, err := io.Copy(w, bytes.NewReader(payload)); err != nil {
+			_ = w.Close()
+			return err
+		}
+		if err := w.Close(); err != nil {
+			return err
+		}
+		if _, err := objectHandle.Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: lastUpdated}); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
