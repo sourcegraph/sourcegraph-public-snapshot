@@ -1,12 +1,27 @@
-import React, { FC, forwardRef, ReactElement, useEffect, useRef, useState } from 'react'
+import React, { FC, forwardRef, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 
 import { useId } from '@reach/auto-id'
+import { noop } from 'lodash';
 import { useMergeRefs } from 'use-callback-ref'
 
 import { useDebounce } from '../../hooks'
 import { PopoverContent, PopoverOpenEvent, PopoverOpenEventReason, PopoverTail, Position } from '../Popover'
 
 import styles from './Tooltip.module.scss'
+
+export enum TooltipOpenChangeReason {
+    TargetHover = 'TargetHover',
+    TargetFocus = 'TargetFocus',
+    TargetBlur = 'TargetBlur',
+    TargetLeave = 'TargetLeave',
+    ClickOutside = 'ClickOutside',
+    Esc = 'Esc',
+}
+
+export interface TooltipOpenEvent {
+    isOpen: boolean
+    reason: TooltipOpenChangeReason
+}
 
 export interface TooltipProps {
     /**
@@ -21,7 +36,10 @@ export interface TooltipProps {
      * The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered,
      * allowing for Tooltips to be shown conditionally.
      */
-    content: string | null | undefined
+    content: React.ReactNode
+
+    /** The controlled open state prop, it allows to control tooltip appearance from consumer. */
+    open?: boolean
 
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
@@ -31,6 +49,12 @@ export interface TooltipProps {
      * a collision is detected. Defaults to `bottom`.
      */
     placement?: `${Position}`
+
+    /**
+     * The open state observer prop. It's supposed to be used with open prop in order to have
+     * a fully controlled tooltip.
+     */
+    onOpenChange?: (event: TooltipOpenEvent) => void
 }
 
 /**
@@ -52,22 +76,30 @@ export interface TooltipProps {
  * it must have an `aria-label`.
  */
 export const Tooltip: FC<TooltipProps> = props => {
-    const { children, content, defaultOpen = false, placement = 'bottom' } = props
+    const { children, content, open, defaultOpen = false, placement = 'bottom', onOpenChange = noop } = props
 
-    const tooltipId = `tooltip-${useId()}`
     const [target, setTarget] = useState<HTMLElement | null>(null)
     const [tail, setTail] = useState<HTMLDivElement | null>(null)
     const popoverContentRef = useRef<HTMLDivElement>(null)
 
-    const [open, setOpen] = useState(defaultOpen)
+    const isControlled = open !== undefined
+    const [internalOpen, setInternalOpen] = useState(defaultOpen)
+    const isOpen = isControlled ? open : internalOpen
+    const setOpen = useCallback((event: TooltipOpenEvent): void => {
+        if (isControlled) {
+            onOpenChange(event)
+        } else {
+            setInternalOpen(event.isOpen)
+        }
+    }, [isControlled, onOpenChange])
 
     useEffect(() => {
         function handleTargetPointerEnter(): void {
-            setOpen(true)
+            setOpen({ isOpen: true, reason: TooltipOpenChangeReason.TargetHover })
         }
 
         function handleTargetPointerLeave(): void {
-            setOpen(false)
+            setOpen({ isOpen: false, reason: TooltipOpenChangeReason.TargetLeave })
         }
 
         target?.addEventListener('pointerenter', handleTargetPointerEnter)
@@ -81,17 +113,17 @@ export const Tooltip: FC<TooltipProps> = props => {
             target?.removeEventListener('focus', handleTargetPointerEnter)
             target?.removeEventListener('blur', handleTargetPointerLeave)
         }
-    }, [target])
+    }, [target, setOpen])
 
     useEffect(() => {
         const popoverElement = popoverContentRef.current
 
         function handlePointerEnter(): void {
-            setOpen(true)
+            setOpen({ isOpen: true, reason: TooltipOpenChangeReason.TargetHover })
         }
 
         function handlePointerLeave(): void {
-            setOpen(false)
+            setOpen({ isOpen: false, reason: TooltipOpenChangeReason.TargetLeave })
         }
 
         popoverElement?.addEventListener('pointerenter', handlePointerEnter)
@@ -101,26 +133,31 @@ export const Tooltip: FC<TooltipProps> = props => {
             popoverElement?.removeEventListener('pointerenter', handlePointerEnter)
             popoverElement?.removeEventListener('pointerleave', handlePointerLeave)
         }
-    }, [open])
+    }, [isOpen, setOpen])
 
     const handleOpenChange = (event: PopoverOpenEvent): void => {
         switch (event.reason) {
-            case PopoverOpenEventReason.Esc:
+            case PopoverOpenEventReason.Esc: {
+                setOpen({ isOpen: event.isOpen, reason: TooltipOpenChangeReason.Esc })
+                return
+            }
             case PopoverOpenEventReason.ClickOutside: {
-                setOpen(false)
+                setOpen({ isOpen: event.isOpen, reason: TooltipOpenChangeReason.ClickOutside })
+                return
             }
         }
     }
 
-    const isOpen = useDebounce(open, 100)
+    const tooltipId = `tooltip-${useId()}`
+    const isOpenDebounced = useDebounce(isOpen, 100)
 
     return (
         <>
-            <TooltipTarget ref={setTarget} aria-describedby={isOpen ? tooltipId : undefined}>
+            <TooltipTarget ref={setTarget} aria-describedby={isOpenDebounced ? tooltipId : undefined}>
                 {children}
             </TooltipTarget>
 
-            {content && target && isOpen && (
+            {content && target && isOpenDebounced && (
                 <>
                     <PopoverContent
                         role="tooltip"
