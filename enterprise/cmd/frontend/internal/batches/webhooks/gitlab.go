@@ -24,6 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var gitlabEvents = []string{
+	"merge_request",
+	"pipeline",
+}
+
 type GitLabWebhook struct {
 	*Webhook
 
@@ -35,6 +40,20 @@ type GitLabWebhook struct {
 func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *GitLabWebhook {
 	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
 }
+
+func (h *GitLabWebhook) Register(router *fewebhooks.WebhookRouter) {
+	router.Register(
+		h.handleEvent,
+		extsvc.KindGitLab,
+		gitlabEvents...,
+	)
+}
+
+var (
+	errExternalServiceNotFound     = errors.New("external service not found")
+	errExternalServiceWrongKind    = errors.New("external service is not of the expected kind")
+	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
+)
 
 // ServeHTTP implements the http.Handler interface.
 func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +68,27 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
+
+	c, err := extSvc.Configuration(r.Context())
+	if err != nil {
+		log15.Error("Could not decode external service config", "error", err)
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
+	}
+
+	config, ok := c.(*schema.GitLabConnection)
+	if !ok {
+		log15.Error("Could not decode external service config")
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
+	}
+
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	if err != nil {
+		log15.Error("Could not parse code host URL from config", "error", err)
+		http.Error(w, "Invalid code host URL", http.StatusInternalServerError)
+		return
+	}
 
 	// 🚨 SECURITY: Verify the shared secret against the GitLab external service
 	// configuration. If there isn't a webhook defined in the service with this
@@ -96,18 +136,12 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Route the request based on the event type.
-	if err := h.handleEvent(ctx, extSvc, event); err != nil {
-		respond(w, err.code, err)
+	if err := h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, event); err != nil {
+		respond(w, http.StatusInternalServerError, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)
 	}
 }
-
-var (
-	errExternalServiceNotFound     = errors.New("external service not found")
-	errExternalServiceWrongKind    = errors.New("external service is not of the expected kind")
-	errPipelineMissingMergeRequest = errors.New("pipeline event does not include a merge request")
-)
 
 // getExternalServiceFromRawID retrieves the external service matching the
 // given raw ID, which is usually going to be the string in the
@@ -141,22 +175,11 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 
 // handleEvent is essentially a router: it dispatches based on the event type
 // to perform whatever changeset action is appropriate for that event.
-func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event any) *httpError {
+func (h *GitLabWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
 	if h.failHandleEvent != nil {
-		return &httpError{
-			code: http.StatusInternalServerError,
-			err:  h.failHandleEvent,
-		}
-	}
-
-	esID, err := extractExternalServiceID(ctx, extSvc)
-	if err != nil {
-		return &httpError{
-			code: http.StatusInternalServerError,
-			err:  err,
-		}
+		return h.failHandleEvent
 	}
 
 	switch e := event.(type) {
@@ -191,7 +214,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 	case *webhooks.MergeRequestApprovedEvent,
 		*webhooks.MergeRequestUnapprovedEvent,
 		*webhooks.MergeRequestUpdateEvent:
-		if err := h.enqueueChangesetSyncFromEvent(ctx, esID, e.(webhooks.MergeRequestEventCommonContainer).ToEventCommon()); err != nil {
+		if err := h.enqueueChangesetSyncFromEvent(ctx, codeHostURN, e.(webhooks.MergeRequestEventCommonContainer).ToEventCommon()); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,
@@ -203,7 +226,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		eventCommon := e.ToEventCommon()
 		event := e.ToEvent()
 		pr := gitlabToPR(&eventCommon.Project, eventCommon.MergeRequest)
-		if err := h.upsertChangesetEvent(ctx, esID, pr, event); err != nil {
+		if err := h.upsertChangesetEvent(ctx, codeHostURN, pr, event); err != nil {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  errors.Wrap(err, "upserting changeset event"),
@@ -212,7 +235,7 @@ func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalS
 		return nil
 
 	case *webhooks.PipelineEvent:
-		if err := h.handlePipelineEvent(ctx, esID, e); err != nil && err != errPipelineMissingMergeRequest {
+		if err := h.handlePipelineEvent(ctx, codeHostURN, e); err != nil && err != errPipelineMissingMergeRequest {
 			return &httpError{
 				code: http.StatusInternalServerError,
 				err:  err,

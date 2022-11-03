@@ -185,7 +185,7 @@ const domFunctions = {
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
+        const numberCell = row.querySelector<HTMLTableCellElement>('th.line')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
@@ -402,6 +402,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             platformContext,
         ]
     )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
     const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)

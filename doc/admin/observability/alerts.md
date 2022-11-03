@@ -1214,6 +1214,43 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*(frontend|sour
 
 <br />
 
+## frontend: email_delivery_failures
+
+<p class="subtitle">emails delivery failures every 30 minutes</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 1+ emails delivery failures every 30 minutes
+- <span class="badge badge-critical">critical</span> frontend: 2+ emails delivery failures every 30 minutes
+
+**Next steps**
+
+- Check your SMTP configuration in site configuration.
+- Check frontend logs for more detailed error messages.
+- Check your SMTP provider for more detailed error messages.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-email-delivery-failures).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_email_delivery_failures",
+  "critical_frontend_email_delivery_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 1)`
+
+Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 2)`
+
+</details>
+
+<br />
+
 ## frontend: mean_successful_sentinel_duration_over_2h
 
 <p class="subtitle">mean successful sentinel search duration over 2h</p>

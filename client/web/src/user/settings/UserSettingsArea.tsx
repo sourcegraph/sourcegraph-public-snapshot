@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -7,14 +7,12 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
     UserAreaUserFields,
     UserSettingsAreaUserFields,
@@ -108,20 +106,6 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
             siteAdmin: authenticatedUser.siteAdmin,
         },
     })
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-    const memoizedRoutes = useMemo((): readonly UserSettingsAreaRoute[] => {
-        if (!isOpenBetaEnabled) {
-            return props.routes
-        }
-        return [
-            ...props.routes,
-            {
-                path: '/organizations',
-                render: lazyComponent(() => import('./openBetaOrgs/OrganizationsList'), 'OrganizationsListPage'),
-                exact: true,
-            },
-        ]
-    }, [isOpenBetaEnabled, props.routes])
 
     // Accept stale data if recently updated, avoids unmounting components due to a brief lack of data
     const user =
@@ -175,7 +159,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
-                                {memoizedRoutes.map(
+                                {props.routes.map(
                                     ({ path, exact, render, condition = () => true }) =>
                                         condition(context) && (
                                             <Route

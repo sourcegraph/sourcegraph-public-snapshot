@@ -13,7 +13,7 @@ type GitLabCodeHost struct {
 	c   *gitlab.Client
 }
 
-func NewGitLabCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
+func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
 	baseURL, err := url.Parse(def.URL)
 	if err != nil {
 		return nil, err

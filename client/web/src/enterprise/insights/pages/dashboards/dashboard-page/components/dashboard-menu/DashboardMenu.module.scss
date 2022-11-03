@@ -1,5 +1,11 @@
 .trigger-button {
     padding: 0.25rem;
+    fill: var(--icon-color);
+
+    &:hover,
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
+    }
 }
 
 .menu-list[data-reach-menu-items] {
@@ -12,7 +18,6 @@
     // Override default Bootstrap button style
     display: block;
     padding: 0.25rem 0.75rem;
-    text-align: right;
     width: 100%;
     border-radius: 0;
     transition: unset;

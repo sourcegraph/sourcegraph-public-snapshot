@@ -47,6 +47,8 @@ func (s *Service) indexRepositories(ctx context.Context) (err error) {
 	return nil
 }
 
+const fileReferenceGraphPrecision = 0.5
+
 func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
 	_, _, endObservation := s.operations.indexRepository.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -61,5 +63,5 @@ func (s *Service) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return err
 	}
 
-	return s.store.SetDocumentRanks(ctx, repoName, ranks)
+	return s.store.SetDocumentRanks(ctx, repoName, fileReferenceGraphPrecision, ranks)
 }
