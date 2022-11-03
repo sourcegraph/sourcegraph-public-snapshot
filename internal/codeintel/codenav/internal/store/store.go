@@ -103,6 +103,7 @@ SELECT
 FROM lsif_uploads u
 JOIN repo r ON r.id = u.repository_id
 WHERE u.id IN (SELECT id FROM inserted)
+ORDER BY u.id
 `
 
 func (s *store) ProcessStaleExportedUplods(
