@@ -8,7 +8,7 @@ import React, {
     MouseEvent,
 } from 'react'
 
-import { mdiHistory } from '@mdi/js'
+import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -25,45 +25,34 @@ import {
     usePopoverContext,
     Flipping,
     Tooltip,
-    PopoverOpenEventReason,
     PopoverOpenEvent,
+    createRectangle,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
 
-const buttonContent: React.ReactElement = (
-    <span className="text-nowrap">
-        <Icon svgPath={mdiHistory} aria-label="Open search history" />
-    </span>
-)
+const buttonContent: React.ReactElement = <Icon svgPath={mdiClockOutline} aria-hidden="true" />
 
 interface SearchHistoryDropdownProps {
     className?: string
     recentSearches: RecentSearch[]
     onSelect: (search: RecentSearch) => void
-    onClose: () => void
 }
 
 const recentSearchTooltipContent = `Recent searches ${shortcutDisplayName('Mod+ArrowDown')}`
+// Adds padding to the popover content to add some space between the trigger
+// button and the content
+const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    ({ recentSearches = [], onSelect, onClose, className }) => {
+    ({ recentSearches = [], onSelect, className }) => {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
             (event: PopoverOpenEvent): void => {
-                const { isOpen, reason } = event
-
-                setIsOpen(isOpen)
-
-                if (reason === PopoverOpenEventReason.Esc) {
-                    // In order to wait until Popover will be unmounted and popover internal focus
-                    // management returns focus to the target, and then we call onEscapeMenuClose
-                    // and put focus to the search box
-                    requestAnimationFrame(() => onClose())
-                }
+                setIsOpen(event.isOpen)
             },
-            [onClose]
+            [setIsOpen]
         )
 
         const onSelectInternal = useCallback(
@@ -81,15 +70,16 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.open : null, className)}
+                            aria-label="Toggle search history"
                         >
                             {buttonContent}
                         </PopoverTrigger>
                     </Tooltip>
-                    <PopoverContent flipping={Flipping.opposite}>
+                    <PopoverContent flipping={Flipping.opposite} targetPadding={popoverPadding}>
                         <SearchHistoryEntries onSelect={onSelectInternal} recentSearches={recentSearches} />
                     </PopoverContent>
                 </Popover>
-                <Shortcut onMatch={() => setIsOpen(true)} held={['Mod']} ordered={['ArrowDown']} />
+                <Shortcut onMatch={() => setIsOpen(true)} held={['Mod']} ordered={['ArrowDown']} ignoreInput={true} />
             </>
         )
     }

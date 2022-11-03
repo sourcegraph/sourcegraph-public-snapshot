@@ -2,12 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
+import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 import { SearchHistoryEventLogsQueryResult, SearchHistoryEventLogsQueryVariables } from '../../graphql-operations'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 const MAX_RECENT_SEARCHES = 20
 

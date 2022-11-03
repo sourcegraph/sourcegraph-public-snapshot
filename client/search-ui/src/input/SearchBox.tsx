@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 
@@ -79,12 +79,8 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         recentSearches,
     } = props
 
-    const [editor, setEditor] = useState<IEditor>()
-    const focusEditor = useCallback(() => editor?.focus(), [editor])
-
     const onEditorCreated = useCallback(
         (editor: IEditor) => {
-            setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
         [onEditorCreatedCallback]
@@ -141,7 +137,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                             className={styles.searchBoxAlignMiddle}
                             recentSearches={props.recentSearches ?? []}
                             onSelect={onSearchHistorySelect}
-                            onClose={focusEditor}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
