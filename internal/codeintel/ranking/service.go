@@ -99,12 +99,12 @@ var allPathsPattern = lazyregexp.New(".*")
 //
 // Rank vector index labels:
 //   - precision                   [0 to 1]
-//   - global document rank        [0 to 1] (w   pagerank)
-//   - generated                   [0 or 1] (w/o pagerank)
-//   - vendor                      [0 or 1] (w/o pagerank)
-//   - test                        [0 or 1] (w/o pagerank)
-//   - name length                 [0 to 1] (w/o pagerank)
-//   - lexicographic order in repo [0 to 1] (w/o pagerank)
+//   - generated                   [0 or 1]
+//   - vendor                      [0 or 1]
+//   - test                        [0 or 1]
+//   - global document rank        [0 to 1] (=0 w/o pagerank)
+//   - name length                 [0 to 1] (=1 w/  pagerank)
+//   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -117,13 +117,13 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	if ok {
 		for path, rank := range documentRanks {
 			ranks[path] = []float64{
-				rank[0], // precise
-				rank[1], // global document rank
-				0,       // generated
-				0,       // vendor
-				0,       // test
-				0,       // name length
-				0,       // lexicographic order in repo
+				rank[0],             // precision level (0, 1]
+				generatedRank(path), // generated
+				vendorRank(path),    // vendor
+				testRank(path),      // test
+				rank[1],             // global document rank
+				1,                   // name length
+				1,                   // lexicographic order in repo
 			}
 		}
 	}
@@ -139,16 +139,14 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 			continue
 		}
 
-		impreciseDocumentRank := rank(path, 1.0-float64(i)/float64(len(paths)))
-
 		ranks[path] = []float64{
-			0,                        // imprecise
-			0,                        // no global document rank
-			impreciseDocumentRank[0], // generated
-			impreciseDocumentRank[1], // vendor
-			impreciseDocumentRank[2], // test
-			impreciseDocumentRank[3], // name length
-			impreciseDocumentRank[4], // lexicographic order in repo
+			0,                                     // imprecise
+			generatedRank(path),                   // generated
+			vendorRank(path),                      // vendor
+			testRank(path),                        // test
+			0,                                     // no global document rank
+			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
+			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
 		}
 	}
 
@@ -163,34 +161,30 @@ func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName
 	return s.store.UpdatedAfter(ctx, t)
 }
 
+func generatedRank(name string) float64 {
+	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
+		return 0.0
+	}
+
+	return 1.0
+}
+
+func vendorRank(name string) float64 {
+	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
+		return 0.0
+	}
+
+	return 1.0
+}
+
 var testPattern = lazyregexp.New("test")
 
-// copy pasta + modified
-// https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
-func rank(name string, nameRank float64) [5]float64 {
-	generated := 1.0
-	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 0.0
-	}
-
-	vendor := 1.0
-	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 0.0
-	}
-
-	test := 1.0
+func testRank(name string) float64 {
 	if testPattern.MatchString(name) {
-		test = 0.0
+		return 0.0
 	}
 
-	// Bigger is earlier (=better).
-	return [5]float64{
-		generated,                             // Prefer non-generated text documents
-		vendor,                                // Prefer non-vendored text documents
-		test,                                  // Prefer non-tests text documents
-		1.0 - squashRange(float64(len(name))), // Prefer short names
-		nameRank,                              // Lexicographic ordering ordering
-	}
+	return 1.0
 }
 
 // map [0,inf) to [0,1) monotonically
