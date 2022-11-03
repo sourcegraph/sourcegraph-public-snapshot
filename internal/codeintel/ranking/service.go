@@ -163,34 +163,40 @@ func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName
 	return s.store.UpdatedAfter(ctx, t)
 }
 
-var testPattern = lazyregexp.New("test")
-
-// copy pasta + modified
-// https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
 func rank(name string, nameRank float64) [5]float64 {
-	generated := 1.0
-	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 0.0
-	}
-
-	vendor := 1.0
-	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 0.0
-	}
-
-	test := 1.0
-	if testPattern.MatchString(name) {
-		test = 0.0
-	}
-
-	// Bigger is earlier (=better).
 	return [5]float64{
-		generated,                             // Prefer non-generated text documents
-		vendor,                                // Prefer non-vendored text documents
-		test,                                  // Prefer non-tests text documents
+		generatedRank(name),                   // Prefer non-generated text documents
+		vendorRank(name),                      // Prefer non-vendored text documents
+		testRank(name),                        // Prefer non-tests text documents
 		1.0 - squashRange(float64(len(name))), // Prefer short names
 		nameRank,                              // Lexicographic ordering ordering
 	}
+}
+
+func generatedRank(name string) float64 {
+	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
+		return 0.0
+	}
+
+	return 1.0
+}
+
+func vendorRank(name string) float64 {
+	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
+		return 0.0
+	}
+
+	return 1.0
+}
+
+var testPattern = lazyregexp.New("test")
+
+func testRank(name string) float64 {
+	if testPattern.MatchString(name) {
+		return 0.0
+	}
+
+	return 1.0
 }
 
 // map [0,inf) to [0,1) monotonically
