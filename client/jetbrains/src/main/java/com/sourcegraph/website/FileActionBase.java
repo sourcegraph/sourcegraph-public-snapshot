@@ -43,6 +43,7 @@ public abstract class FileActionBase extends DumbAwareAction {
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
             handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), selectionStartPosition, selectionEndPosition));
         } else {
+            // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
             ApplicationManager.getApplication().executeOnPooledThread(
                 () -> {
                     RepoInfo repoInfo = RepoUtil.getRepoInfo(project, currentFile);

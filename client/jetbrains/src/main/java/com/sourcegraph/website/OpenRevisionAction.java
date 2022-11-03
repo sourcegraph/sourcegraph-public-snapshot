@@ -42,7 +42,7 @@ public class OpenRevisionAction extends DumbAwareAction {
         if (context == null) {
             VirtualFile file = event.getDataContext().getData(VcsDataKeys.VCS_VIRTUAL_FILE);
             if (file != null) {
-                // This cannot run on EDT
+                // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
                 ApplicationManager.getApplication().executeOnPooledThread(
                     () -> {
                         if (RepoUtil.getVcsType(project, file) == VCSType.PERFORCE) {
@@ -66,6 +66,7 @@ public class OpenRevisionAction extends DumbAwareAction {
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
 
+        // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
         ApplicationManager.getApplication().executeOnPooledThread(
             () -> {
                 String remoteUrl;

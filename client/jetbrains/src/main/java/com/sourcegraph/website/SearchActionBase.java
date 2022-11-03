@@ -49,6 +49,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
             url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
             BrowserOpener.openInBrowser(project, url);
         } else {
+            // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
             ApplicationManager.getApplication().executeOnPooledThread(
                 () -> {
                     String url;
@@ -80,6 +81,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
         if (project == null) {
             return;
         }
+        // This must run on EDT (Event Dispatch Thread) because it interacts with the editor.
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
                 String selectedText = getSelectedText(project);
