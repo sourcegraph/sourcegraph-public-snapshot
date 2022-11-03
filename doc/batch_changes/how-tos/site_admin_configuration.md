@@ -19,10 +19,10 @@
         <a href="../../admin/external_service/github#webhooks">GitHub</a>
       </li>
       <li>
-        <a href="../../admin/external_service/bitbucket_server#webhooks-setup">Bitbucket Server / Bitbucket Data Center</a>
+        <a href="../../admin/external_service/bitbucket_server#webhooks">Bitbucket Server / Bitbucket Data Center</a>
       </li>
       <li>
-        <a href="../../admin/external_service/gitlab#webhooks">GitLab</a>
+        <a href="../../admin/external_service/gitlab#webhook-setup">GitLab</a>
       </li>
       <li>
         <a href="../../admin/external_service/bitbucket_cloud#webhooks">Bitbucket Cloud</a>
