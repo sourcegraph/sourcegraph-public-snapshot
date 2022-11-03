@@ -132,6 +132,7 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
                 id
                 name
                 binary
+                byteSize
                 highlight(disableTimeout: false) {
                     html
                 }

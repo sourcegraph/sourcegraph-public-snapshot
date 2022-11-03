@@ -98,8 +98,8 @@ const batchChangeDefaults: BatchChangeFields = {
         files: null,
         description: {
             __typename: 'BatchChangeDescription',
-            name: 'Spec Description'
-        }
+            name: 'Spec Description',
+        },
     },
     batchSpecs: {
         nodes: [{ state: BatchSpecState.COMPLETED }],

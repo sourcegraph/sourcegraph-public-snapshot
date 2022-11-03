@@ -30,8 +30,8 @@ const currentSpec = {
     files: null,
     description: {
         __typename: 'BatchChangeDescription' as const,
-        name: 'spec with ID 1'
-    }
+        name: 'spec with ID 1',
+    },
 }
 
 const batchChange = (totalCount: number, hasNextPage: boolean) => ({

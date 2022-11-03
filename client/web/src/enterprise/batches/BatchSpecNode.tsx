@@ -25,6 +25,8 @@ import { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import { BatchSpec } from './BatchSpec'
 
+import { humanizeSize } from './utils/size'
+
 import styles from './BatchSpecNode.module.scss'
 
 export interface BatchSpecNodeProps extends ThemeProps {
@@ -125,6 +127,7 @@ interface BatchSpecFile {
     isSpecFile: boolean
     name: string
     id: string
+    size: number
 }
 
 export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
@@ -134,6 +137,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
         isSpecFile: true,
         name: 'spec_file.yaml',
         id: spec.id,
+        size: 0,
     }
     const [selectedFile, setSelectedFile] = useState<BatchSpecFile>(specFile)
 
@@ -144,6 +148,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
             isSpecFile: false,
             name: file.name,
             id: file.id,
+            size: file.byteSize,
         }))
         const allFiles: BatchSpecFile[] = [specFile, ...mountedFiles]
 
@@ -180,6 +185,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                         name={selectedFile.name}
                         content={selectedFile.content}
                         isBinary={selectedFile.isBinary}
+                        size={selectedFile.size}
                     />
                 )}
             </div>
@@ -203,19 +209,21 @@ interface BatchSpecWorkspaceFileContentProps {
     content: string
     isBinary: boolean
     name: string
+    size: number
 }
 
 const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({
     content,
     isBinary,
     name,
+    size,
 }) => {
     if (isBinary) {
         return (
             <div className={styles.specFileBinary}>
                 <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
                 <Text className={styles.specFileBinaryName}>
-                    {name} <span className={styles.specFileBinarySize}>4.5mb</span>
+                    {name} <span className={styles.specFileBinarySize}>{humanizeSize(size)}</span>
                 </Text>
                 <Button className={styles.specFileBinaryBtn}>
                     <Icon aria-hidden={true} svgPath={mdiFileDownload} />

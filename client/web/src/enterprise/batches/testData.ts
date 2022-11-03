@@ -19,7 +19,7 @@ const COMMON_NODE_FIELDS = {
     creator: {
         username: 'courier-new',
     },
-    files: null
+    files: null,
 } as const
 
 export const successNode = (id: string): BatchSpecListFields => ({

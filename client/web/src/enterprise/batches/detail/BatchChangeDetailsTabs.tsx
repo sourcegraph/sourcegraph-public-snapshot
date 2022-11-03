@@ -277,10 +277,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                     originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
-                            <BatchSpecInfo
-                                spec={batchChange.currentSpec}
-                                isLightTheme={isLightTheme}
-                            />
+                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
                     )}
                 </TabPanel>
