@@ -312,7 +312,19 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 #### Step 6: Deprecation
 
-On or after the deprecation version of a migration, we can begin clean-up of inactive code. This is not a critical step, but may be beneficial if the code supporting the old format gets in the way of feature implemetation or maintenance. Clean-up may include:
+Despite an out of band migration being marked deprecated, it may still need to be executed by multi-version upgrades in a later version. For this reason it is not safe to delete any code from the out of band migrations until _after_ the deprecation version falls out of the [supported multi-version upgrade window](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/blob/internal/database/migration/shared/upgradedata/cmd/generator/consts.go?L24).
 
-- removing the ability to read the old format of data
-- altering database constraint to more specifically describe the new format (e.g., column nullability, check constrants, etc)
+As an alternative to deleting the code, the out of band migration can be isolated from any dependencies outside of the out of band migration. For example copying any types, functions, and other code that is used to execute the migration. Once isolated, the migration can be considered frozen and effectively ignored. To see an example, [see the Code Insights settings migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/tree/enterprise/internal/oobmigration/migrations/insights)
+
+It is important to note that breaking changes to the database using an in-band migration are safe to execute after the marked deprecation version for the out of band migration, even if they would logically break the code of the out of band migration. This is because [the multi-version upgrade will execute the out of band migration sequentially with in-band migrations](https://storage.googleapis.com/sourcegraph-assets/blog/multi-version-upgrades/mvu-oobmigrations.png). Once executed, the out of band migration will see the database in the state it was at when prior to being marked deprecated.
+
+To clarify, here is a concrete example of a valid series of events to deprecate an out of band migration:
+
+```
+3.41 - table A is introduced
+3.42 - table B is introduced
+3.43 - an out of band migration is created to migrate from A -> B
+3.45 - the out of band migration is marked deprecated and isolated in the codebase
+3.46 - table A is removed
+
+3.48 - a user successfully performs a multi-verion upgrade from 3.40 -> 3.48, including the out of band migration
