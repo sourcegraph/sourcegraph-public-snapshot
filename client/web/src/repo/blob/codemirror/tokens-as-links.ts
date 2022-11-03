@@ -231,7 +231,7 @@ interface TokensAsLinksConfiguration {
 }
 
 /**
- * Occurrences that are possibly interactive (i.e. they can have code intelligence)
+ * Occurrences that are possibly interactive (i.e. they can have code intelligence).
  */
 const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.Identifier,
