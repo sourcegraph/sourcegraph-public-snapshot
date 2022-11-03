@@ -99,14 +99,11 @@ export function useInsightDashboard(props: useInsightDashboardProps): useInsight
     const { id = '' } = props
 
     const isVirtualDashboardId = id === ALL_INSIGHTS_DASHBOARD.id
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(
-        GET_INSIGHT_DASHBOARDS_GQL,
-        {
-            skip: isVirtualDashboardId,
-            variables: { id },
-            fetchPolicy: 'cache-first'
-        }
-    )
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
+        skip: isVirtualDashboardId,
+        variables: { id },
+        fetchPolicy: 'cache-first',
+    })
 
     if (isVirtualDashboardId) {
         return { dashboard: null, loading, error }
