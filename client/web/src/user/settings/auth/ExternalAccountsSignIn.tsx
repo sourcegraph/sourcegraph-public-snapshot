@@ -83,7 +83,8 @@ const getNormalizedAccount = (
     if (
         authProvider.serviceType === 'builtin' ||
         authProvider.serviceType === 'http-header' ||
-        authProvider.serviceType === 'openidconnect'
+        authProvider.serviceType === 'openidconnect' ||
+        authProvider.serviceType === 'sourcegraph-operator'
     ) {
         return null
     }
