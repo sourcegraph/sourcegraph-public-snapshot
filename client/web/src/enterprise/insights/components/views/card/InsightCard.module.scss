@@ -36,9 +36,10 @@
 }
 
 .action {
-    align-self: start;
     display: flex;
+    align-self: start;
     align-items: center;
+    gap: 0.1rem;
     // Move icons in action panel visually closer to card border
     margin-right: -0.5rem;
     margin-top: -0.25rem;
