@@ -4110,6 +4110,48 @@ Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[
 
 <br />
 
+### Frontend: Emails
+
+#### frontend: email_delivery_failures
+
+<p class="subtitle">Emails delivery failures every 30 minutes</p>
+
+Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_email_send{success="false"}[30m]))`
+
+</details>
+
+<br />
+
+#### frontend: email_deliveries
+
+<p class="subtitle">Emails delivered per minute</p>
+
+Emails successfully delivered by source.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (source) (increase(src_email_send{success="true"}[1m]))`
+
+</details>
+
+<br />
+
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
 #### frontend: mean_successful_sentinel_duration_over_2h
@@ -4120,7 +4162,7 @@ Mean search duration for all successful sentinel queries
 
 Refer to the [alerts reference](./alerts.md#frontend-mean-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4141,7 +4183,7 @@ Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alerts reference](./alerts.md#frontend-mean-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4162,7 +4204,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-successful-sentinel-duration-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4183,7 +4225,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 Refer to the [alerts reference](./alerts.md#frontend-90th-percentile-sentinel-stream-latency-over-2h) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4204,7 +4246,7 @@ Mean search duration for successful sentinel queries, broken down by query. Usef
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103220` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4225,7 +4267,7 @@ Mean time to first result for successful streaming sentinel queries, broken down
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103121` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103221` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4246,7 +4288,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103230` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4267,7 +4309,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103231` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4288,7 +4330,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103140` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103240` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4309,7 +4351,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103150` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103250` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4330,7 +4372,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103151` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103251` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4351,7 +4393,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103160` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103260` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4372,7 +4414,7 @@ The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103170` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103270` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/departments/engineering/teams/search/product).*</sub>
 
@@ -4393,7 +4435,7 @@ Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4412,7 +4454,7 @@ Query: `sum(increase(src_insights_aggregations_total{job=~"^(frontend|sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4431,7 +4473,7 @@ Query: `sum  by (le)(rate(src_insights_aggregations_duration_seconds_bucket{job=
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103202` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103302` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4450,7 +4492,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103203` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103303` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4469,7 +4511,7 @@ Query: `sum(increase(src_insights_aggregations_errors_total{job=~"^(frontend|sou
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103310` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4488,7 +4530,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_total{job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103311` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4507,7 +4549,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op,extended_mode)(rate(src_insights
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103212` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103312` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -4526,7 +4568,7 @@ Query: `sum by (op,extended_mode)(increase(src_insights_aggregations_errors_tota
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103213` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103313` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code Insights team](https://handbook.sourcegraph.com/departments/engineering/teams/code-insights).*</sub>
 
@@ -5522,6 +5564,261 @@ Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex
 
 <br />
 
+### Git Server: Repos disk I/O metrics (only available on Sourcegraph internal instances)
+
+#### gitserver: repos_disk_reads_sec
+
+<p class="subtitle">Read request rate over 2m (per instance)</p>
+
+The number of read requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100600` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_writes_sec
+
+<p class="subtitle">Write request rate over 2m (per instance)</p>
+
+The number of write requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_read_throughput
+
+<p class="subtitle">Read throughput over 2m (per instance)</p>
+
+The amount of data that was read from the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100610` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_write_throughput
+
+<p class="subtitle">Write throughput over 2m (per instance)</p>
+
+The amount of data that was written to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100611` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_read_duration
+
+<p class="subtitle">Average read duration over 2m (per instance)</p>
+
+The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100620` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_write_duration
+
+<p class="subtitle">Average write duration over 2m (per instance)</p>
+
+The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100621` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_read_request_size
+
+<p class="subtitle">Average read request size over 2m (per instance)</p>
+
+The average size of read requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100630` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_write_request_size)
+
+<p class="subtitle">Average write request size over 2m (per instance)</p>
+
+The average size of write requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100631` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_reads_merged_sec
+
+<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+
+The number of read requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100640` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_writes_merged_sec
+
+<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+
+The number of write requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100641` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### gitserver: repos_disk_average_queue_size
+
+<p class="subtitle">Average queue size over 2m (per instance)</p>
+
+The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), gitserver could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device gitserver is using, not the load gitserver is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100650` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
 ### Git Server: Codeintel: Coursier invocation stats
 
 #### gitserver: codeintel_coursier_total
@@ -5530,7 +5827,7 @@ Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5549,7 +5846,7 @@ Query: `sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitser
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100601` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100701` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5568,7 +5865,7 @@ Query: `sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="Ru
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100602` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100702` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5587,7 +5884,7 @@ Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100603` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100703` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5606,7 +5903,7 @@ Query: `sum(increase(src_codeintel_coursier_errors_total{op!="RunCommand",job=~"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100610` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100710` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5625,7 +5922,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_total{op!="RunCommand",job=~
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100611` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100711` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5644,7 +5941,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_coursier_dur
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100612` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100712` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5663,7 +5960,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100613` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100713` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5684,7 +5981,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100700` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100800` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5703,7 +6000,7 @@ Query: `sum(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^gitserver.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100701` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100801` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5722,7 +6019,7 @@ Query: `sum  by (le)(rate(src_codeintel_npm_duration_seconds_bucket{op!="RunComm
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100702` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100802` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5741,7 +6038,7 @@ Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gits
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100703` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100803` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5760,7 +6057,7 @@ Query: `sum(increase(src_codeintel_npm_errors_total{op!="RunCommand",job=~"^gits
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100710` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100810` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5779,7 +6076,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_total{op!="RunCommand",job=~"^git
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100711` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100811` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5798,7 +6095,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_npm_duration
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100712` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100812` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5817,7 +6114,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100713` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100813` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -5840,7 +6137,7 @@ The number of healthy HTTP requests per second to internal HTTP api
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100800` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -5861,7 +6158,7 @@ The number of unhealthy HTTP requests per second to internal HTTP api
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100801` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -5882,7 +6179,7 @@ The number of HTTP requests per second by code
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100802` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100902` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -5903,7 +6200,7 @@ The 95th percentile duration by route when the status code is 200
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100810` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100910` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -5924,7 +6221,7 @@ The 95th percentile duration by route when the status code is not 200
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100811` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100911` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -5945,7 +6242,7 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100900` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -5964,7 +6261,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="gitserver
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100901` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -5983,7 +6280,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="gitserver"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100910` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6002,7 +6299,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="gitserver"}
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100911` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6021,7 +6318,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="gitserver"})`
 
 Refer to the [alerts reference](./alerts.md#gitserver-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100920` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6040,7 +6337,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100930` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101030` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6059,7 +6356,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100931` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101031` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6078,7 +6375,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100932` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101032` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -6109,7 +6406,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6128,7 +6425,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^gitserver.*"}) > 6
 
 Refer to the [alerts reference](./alerts.md#gitserver-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6147,7 +6444,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^gitserver.*"}`
 
 Refer to the [alerts reference](./alerts.md#gitserver-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6169,7 +6466,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101003` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101103` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6190,7 +6487,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^gitserver.*"}[1h]) +
 
 Refer to the [alerts reference](./alerts.md#gitserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6211,7 +6508,7 @@ Git Server is expected to use up all the memory it is provided.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6230,7 +6527,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^g
 
 Refer to the [alerts reference](./alerts.md#gitserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6251,7 +6548,7 @@ Git Server is expected to use up all the memory it is provided.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6273,7 +6570,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#gitserver-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101112` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101212` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6296,7 +6593,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#gitserver-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6315,7 +6612,7 @@ Query: `max by(instance) (go_goroutines{job=~".*gitserver"})`
 
 Refer to the [alerts reference](./alerts.md#gitserver-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -6336,7 +6633,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*gitserver"})`
 
 Refer to the [alerts reference](./alerts.md#gitserver-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=101400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -13607,6 +13904,261 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
+### Searcher: Cache disk I/O metrics (only available on Sourcegraph internal instances)
+
+#### searcher: cache_disk_reads_sec
+
+<p class="subtitle">Read request rate over 2m (per instance)</p>
+
+The number of read requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_writes_sec
+
+<p class="subtitle">Write request rate over 2m (per instance)</p>
+
+The number of write requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_throughput
+
+<p class="subtitle">Read throughput over 2m (per instance)</p>
+
+The amount of data that was read from the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_throughput
+
+<p class="subtitle">Write throughput over 2m (per instance)</p>
+
+The amount of data that was written to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_duration
+
+<p class="subtitle">Average read duration over 2m (per instance)</p>
+
+The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_duration
+
+<p class="subtitle">Average write duration over 2m (per instance)</p>
+
+The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100121` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_request_size
+
+<p class="subtitle">Average read request size over 2m (per instance)</p>
+
+The average size of read requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_request_size)
+
+<p class="subtitle">Average write request size over 2m (per instance)</p>
+
+The average size of write requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_reads_merged_sec
+
+<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+
+The number of read requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100140` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_writes_merged_sec
+
+<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+
+The number of write requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100141` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_average_queue_size
+
+<p class="subtitle">Average queue size over 2m (per instance)</p>
+
+The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100150` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
 ### Searcher: Database connections
 
 #### searcher: max_open_conns
@@ -13615,7 +14167,7 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13634,7 +14186,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="searcher"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13653,7 +14205,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="searcher"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13672,7 +14224,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="searcher"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13691,7 +14243,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100220` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13710,7 +14262,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100230` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13729,7 +14281,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100231` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13748,7 +14300,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100132` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100232` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13769,7 +14321,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_tim
 
 Refer to the [alerts reference](./alerts.md#searcher-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13800,7 +14352,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13819,7 +14371,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^searcher.*"}) > 60
 
 Refer to the [alerts reference](./alerts.md#searcher-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13838,7 +14390,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}`
 
 Refer to the [alerts reference](./alerts.md#searcher-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13860,7 +14412,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13881,7 +14433,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^searcher.*"}[1h]) + 
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13900,7 +14452,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13919,7 +14471,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13938,7 +14490,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^sear
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13960,7 +14512,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#searcher-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -13983,7 +14535,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#searcher-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14002,7 +14554,7 @@ Query: `max by(instance) (go_goroutines{job=~".*searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14023,7 +14575,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -16827,20 +17379,15 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-### Zoekt: Disk I/O metrics (only available on Sourcegraph internal instances)
+### Zoekt: Data disk I/O metrics (only available on Sourcegraph internal instances)
 
 #### zoekt: data_disk_reads_sec
 
-<p class="subtitle">Data disk read request rate over 2m (per instance)</p>
+<p class="subtitle">Read request rate over 2m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
 
-
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16851,7 +17398,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -16859,15 +17406,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_writes_sec
 
-<p class="subtitle">Data disk write request rate over 2m (per instance)</p>
+<p class="subtitle">Write request rate over 2m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
 
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16878,7 +17421,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -16886,15 +17429,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_read_throughput
 
-<p class="subtitle">Data disk read throughput over 2m (per instance)</p>
+<p class="subtitle">Read throughput over 2m (per instance)</p>
 
 The amount of data that was read from the device per second.
 
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16905,7 +17444,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -16913,15 +17452,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_write_throughput
 
-<p class="subtitle">Data disk write throughput over 2m (per instance)</p>
+<p class="subtitle">Write throughput over 2m (per instance)</p>
 
 The amount of data that was written to the device per second.
 
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16932,7 +17467,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -16940,16 +17475,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_read_duration
 
-<p class="subtitle">Data disk average read duration over 2m (per instance)</p>
+<p class="subtitle">Average read duration over 2m (per instance)</p>
 
-The average time for read requests issued to the device to be served. This includes the time spent
-by the requests in queue and the time spent servicing them.
+The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16960,7 +17490,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -16968,16 +17498,11 @@ Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="inde
 
 #### zoekt: data_disk_write_duration
 
-<p class="subtitle">Data disk average write duration over 2m (per instance)</p>
+<p class="subtitle">Average write duration over 2m (per instance)</p>
 
-The average time for write requests issued to the device to be served. This includes the time spent
-by the requests in queue and the time spent servicing them.
+The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
-Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-These statistics are best interpreted as the load experienced by the device Zoekt is
-using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -16988,7 +17513,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -16996,15 +17521,11 @@ Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="inde
 
 #### zoekt: data_disk_read_request_size
 
-<p class="subtitle">Data disk average read request size over 2m (per instance)</p>
+<p class="subtitle">Average read request size over 2m (per instance)</p>
 
-	The average size of read requests that were issued to the device.
+The average size of read requests that were issued to the device.
 
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17015,23 +17536,19 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
 <br />
 
-#### zoekt: data_disk_write_request_size
+#### zoekt: data_disk_write_request_size)
 
-<p class="subtitle">Data disk average write request size over 2m (per instance)</p>
+<p class="subtitle">Average write request size over 2m (per instance)</p>
 
-	The average size of write requests that were issued to the device.
+The average size of write requests that were issued to the device.
 
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17042,7 +17559,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m]))) / (max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m]))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
 
 </details>
 
@@ -17050,15 +17567,11 @@ Query: `((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="inde
 
 #### zoekt: data_disk_reads_merged_sec
 
-<p class="subtitle">Data disk merged read request rate over 2m (per instance)</p>
+<p class="subtitle">Merged read request rate over 2m (per instance)</p>
 
-	The number of read requests merged per second that were queued to the device.
+The number of read requests merged per second that were queued to the device.
 
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17069,7 +17582,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -17077,15 +17590,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_writes_merged_sec
 
-<p class="subtitle">Data disk merged writes request rate over 2m (per instance)</p>
+<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
 
-	The number of write requests merged per second that were queued to the device.
+The number of write requests merged per second that were queued to the device.
 
-	Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-	as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-	These statistics are best interpreted as the load experienced by the device Zoekt is
-	using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17096,7 +17605,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -17104,16 +17613,11 @@ Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexD
 
 #### zoekt: data_disk_average_queue_size
 
-<p class="subtitle">Data disk average queue size over 2m (per instance)</p>
+<p class="subtitle">Average queue size over 2m (per instance)</p>
 
-							The number of I/O operations that were being queued or being serviced. See
-							https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
 
-							Note: Disk statistics are per _device_, not per _service_. In certain environments (such
-							as common docker-compose setups), Zoekt could be one of _many services_ using this disk.
-
-							These statistics are best interpreted as the load experienced by the device Zoekt is
-							using, not the load Zoekt is solely responsible for causing.
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), zoekt could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device zoekt is using, not the load zoekt is solely responsible for causing.
 
 This panel has no related alerts.
 
@@ -17124,7 +17628,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (nodename, device) group_left rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m]))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
 
 </details>
 
@@ -19661,7 +20165,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m]))) * 100`
 
 </details>
 
@@ -19745,7 +20249,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19764,7 +20268,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19783,7 +20287,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19802,7 +20306,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -19821,7 +20325,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19840,7 +20344,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -19859,7 +20363,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19878,7 +20382,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -19899,7 +20403,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19918,7 +20422,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19937,7 +20441,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19956,7 +20460,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -19975,7 +20479,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -19994,7 +20498,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20013,7 +20517,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20032,7 +20536,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20053,7 +20557,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20072,7 +20576,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20091,7 +20595,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20110,7 +20614,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20129,7 +20633,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20148,7 +20652,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20167,7 +20671,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20186,7 +20690,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20207,7 +20711,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20226,7 +20730,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20245,7 +20749,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20264,7 +20768,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20283,7 +20787,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20302,7 +20806,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20321,7 +20825,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20340,7 +20844,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20361,7 +20865,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20380,7 +20884,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20399,7 +20903,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20418,7 +20922,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20437,7 +20941,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20456,7 +20960,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20475,7 +20979,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20494,7 +20998,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20515,7 +21019,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20534,7 +21038,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20553,7 +21057,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20572,7 +21076,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20591,7 +21095,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20610,7 +21114,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20629,7 +21133,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20648,7 +21152,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20675,7 +21179,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20694,7 +21198,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20713,7 +21217,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20732,7 +21236,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20751,7 +21255,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20770,7 +21274,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20789,7 +21293,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20808,7 +21312,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20829,7 +21333,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20848,7 +21352,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20867,7 +21371,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20886,7 +21390,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20905,7 +21409,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20924,7 +21428,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20943,7 +21447,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20962,7 +21466,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20983,7 +21487,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21002,7 +21506,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21021,7 +21525,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21040,7 +21544,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21059,7 +21563,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21078,7 +21582,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21097,7 +21601,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21116,7 +21620,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21137,7 +21641,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21156,7 +21660,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21175,7 +21679,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21194,7 +21698,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21213,7 +21717,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21232,7 +21736,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21251,7 +21755,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21270,7 +21774,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21291,7 +21795,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21310,7 +21814,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21329,7 +21833,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21348,7 +21852,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21367,7 +21871,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21386,7 +21890,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21405,7 +21909,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21424,7 +21928,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21447,7 +21951,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21468,7 +21972,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21489,7 +21993,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21510,7 +22014,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21531,7 +22035,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21552,7 +22056,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_cleanup_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21573,7 +22077,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_total{job=~"^${source:regex}.*"})`
 
 </details>
 
@@ -21598,7 +22102,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^.*"}[30m]))`
+Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^${source:regex}.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^${source:regex}.*"}[30m]))`
 
 </details>
 
@@ -21617,7 +22121,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^${source:regex}.*"})`
 
 </details>
 
@@ -21640,7 +22144,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21661,7 +22165,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21682,7 +22186,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21703,7 +22207,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21730,7 +22234,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21749,7 +22253,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21768,7 +22272,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21787,7 +22291,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21806,7 +22310,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21825,7 +22329,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21844,7 +22348,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21863,7 +22367,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21884,7 +22388,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21903,7 +22407,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21922,7 +22426,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21941,7 +22445,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21960,7 +22464,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21979,7 +22483,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21998,7 +22502,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22017,7 +22521,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22038,7 +22542,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22057,7 +22561,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22076,7 +22580,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22095,7 +22599,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22114,7 +22618,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22133,7 +22637,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22152,7 +22656,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22171,7 +22675,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22194,7 +22698,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22221,7 +22725,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22240,7 +22744,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22259,7 +22763,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22278,7 +22782,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22297,7 +22801,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22316,7 +22820,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22335,7 +22839,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22354,7 +22858,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22375,7 +22879,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22394,7 +22898,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22413,7 +22917,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22432,7 +22936,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22451,7 +22955,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22470,7 +22974,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22489,7 +22993,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22508,7 +23012,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22529,7 +23033,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22548,7 +23052,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22567,7 +23071,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22586,7 +23090,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22605,7 +23109,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22624,7 +23128,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22643,7 +23147,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22662,7 +23166,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22683,7 +23187,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22702,7 +23206,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22721,7 +23225,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22740,7 +23244,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22759,7 +23263,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22778,7 +23282,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22797,7 +23301,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22816,7 +23320,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 

@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"sync/atomic"
 
 	"github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"golang.org/x/oauth2"
@@ -25,6 +27,11 @@ type config struct {
 	prefix string
 	resume string
 	retry  int
+}
+
+type repo struct {
+	*store.Repo
+	blank *blankRepo
 }
 
 func main() {
@@ -93,17 +100,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	state, err := newState(cfg.resume)
+	state, err := store.New(cfg.resume)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var repos []*repo
-	if repos, err = state.load(); err != nil {
+	var storeRepos []*store.Repo
+	if storeRepos, err = state.Load(); err != nil {
 		log.Fatal(err)
 	}
 
-	if len(repos) == 0 {
-		repos, err = state.generate(cfg)
+	if len(storeRepos) == 0 {
+		storeRepos, err = generate(state, cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -126,6 +133,14 @@ func main() {
 		defer clone.teardown()
 		blanks = append(blanks, clone)
 	}
+
+	// Wrap repos from the store with ones having a blank repo attached.
+	repos := make([]*repo, len(storeRepos))
+	for i, r := range storeRepos {
+		repos[i] = &repo{Repo: r}
+	}
+
+	// Distribute the blank repos.
 	for i := 0; i < cfg.count; i++ {
 		repos[i].blank = blanks[i%clonesCount]
 	}
@@ -156,7 +171,7 @@ func main() {
 			if err != nil {
 				writeFailure(out, "Failed to create repository %s", repo.Name)
 				repo.Failed = err.Error()
-				if err := state.saveRepo(repo); err != nil {
+				if err := state.SaveRepo(repo.Repo); err != nil {
 					log.Fatal(err)
 				}
 				return
@@ -164,7 +179,7 @@ func main() {
 			repo.GitURL = newRepo.GetGitURL()
 			repo.Created = true
 			repo.Failed = ""
-			if err = state.saveRepo(repo); err != nil {
+			if err = state.SaveRepo(repo.Repo); err != nil {
 				log.Fatal(err)
 			}
 
@@ -211,14 +226,14 @@ func main() {
 			if err != nil {
 				writeFailure(out, "Failed to push to repository %s", repo.Name)
 				repo.Failed = err.Error()
-				if err := state.saveRepo(repo); err != nil {
+				if err := state.SaveRepo(repo.Repo); err != nil {
 					log.Fatal(err)
 				}
 				return
 			}
 			repo.Pushed = true
 			repo.Failed = ""
-			if err := state.saveRepo(repo); err != nil {
+			if err := state.SaveRepo(repo.Repo); err != nil {
 				log.Fatal(err)
 			}
 			atomic.AddInt64(&done, 1)
@@ -228,11 +243,11 @@ func main() {
 	g.Wait()
 
 	progress.Destroy()
-	all, err := state.countAllRepos()
+	all, err := state.CountAllRepos()
 	if err != nil {
 		log.Fatal(err)
 	}
-	completed, err := state.countCompletedRepos()
+	completed, err := state.CountCompletedRepos()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -246,4 +261,25 @@ func writeSuccess(out *output.Output, format string, a ...any) {
 
 func writeFailure(out *output.Output, format string, a ...any) {
 	out.WriteLine(output.Linef("❌", output.StyleFailure, format, a...))
+}
+
+func generateNames(prefix string, count int) []string {
+	names := make([]string, count)
+	for i := 0; i < count; i++ {
+		names[i] = fmt.Sprintf("%s%09d", prefix, i)
+	}
+	return names
+}
+
+func generate(s *store.Store, cfg config) ([]*store.Repo, error) {
+	names := generateNames(cfg.prefix, cfg.count)
+	repos := make([]*store.Repo, 0, len(names))
+	for _, name := range names {
+		repos = append(repos, &store.Repo{Name: name})
+	}
+
+	if err := s.Insert(repos); err != nil {
+		return nil, err
+	}
+	return s.Load()
 }

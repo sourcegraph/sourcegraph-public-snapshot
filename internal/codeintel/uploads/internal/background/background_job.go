@@ -33,6 +33,11 @@ type BackgroundJob interface {
 		commitResolverMaximumCommitLag time.Duration,
 	) goroutine.BackgroundRoutine
 
+	NewReconciler(
+		interval time.Duration,
+		batchSize int,
+	) goroutine.BackgroundRoutine
+
 	NewWorker(
 		uploadStore uploadstore.Store,
 		workerConcurrency int,

@@ -24,13 +24,13 @@ func TestSetExternalServiceID(t *testing.T) {
 	SetExternalServiceID(ctx, 1)
 
 	// Make sure it can handle an invalid setter.
-	invalidCtx := context.WithValue(ctx, setterContextKey, func() {
+	invalidCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func() {
 		panic("if we get as far as calling this, that's a bug")
 	})
 	SetExternalServiceID(invalidCtx, 1)
 
 	// Now the real case: a valid setter.
-	validCtx := context.WithValue(ctx, setterContextKey, func(id int64) {
+	validCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func(id int64) {
 		assert.EqualValues(t, 42, id)
 	})
 	SetExternalServiceID(validCtx, 42)

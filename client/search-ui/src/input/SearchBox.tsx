@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
@@ -61,12 +61,8 @@ export interface SearchBoxProps
 export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBoxProps>> = props => {
     const { queryState, onEditorCreated: onEditorCreatedCallback } = props
 
-    const [editor, setEditor] = useState<IEditor>()
-    const focusEditor = useCallback(() => editor?.focus(), [editor])
-
     const onEditorCreated = useCallback(
         (editor: IEditor) => {
-            setEditor(editor)
             onEditorCreatedCallback?.(editor)
         },
         [onEditorCreatedCallback]
@@ -95,7 +91,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
-                            onEscapeMenuClose={focusEditor}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ProductSubscriptionFields } from '../../../graphql-operations'
+import { ProductSubscriptionFields, SiteAdminProductSubscriptionFields } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 
 /**
@@ -9,7 +9,7 @@ import { formatUserCount } from '../../../productSubscription/helpers'
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<
     React.PropsWithChildren<{
-        productSubscription: ProductSubscriptionFields
+        productSubscription: ProductSubscriptionFields | SiteAdminProductSubscriptionFields
         className?: string
     }>
 > = ({ productSubscription, className = '' }) => (

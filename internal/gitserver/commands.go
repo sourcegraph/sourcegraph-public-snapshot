@@ -195,9 +195,6 @@ func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, a
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
-		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
-	}
 	cmd := c.gitCommand(repo, args...)
 	return cmd.StdoutReader(ctx)
 }

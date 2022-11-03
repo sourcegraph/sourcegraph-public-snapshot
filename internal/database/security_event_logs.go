@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
@@ -43,7 +42,9 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenCreated     SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted     SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted SecurityEventName = "AccessTokenHardDeleted"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -61,7 +62,7 @@ func (e *SecurityEvent) marshalArgumentAsJSON() string {
 	if e.Argument == nil {
 		return "{}"
 	}
-	return fmt.Sprintf("%s", e.Argument)
+	return string(e.Argument)
 }
 
 // SecurityEventLogsStore provides persistence for security events.

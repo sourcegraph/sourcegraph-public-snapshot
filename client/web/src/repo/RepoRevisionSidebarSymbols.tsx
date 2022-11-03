@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { escapeRegExp, isEqual } from 'lodash'
+import { sortBy } from 'lodash'
+import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual, map } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
@@ -14,7 +15,6 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionForm,
-    ConnectionList,
     ConnectionContainer,
     ConnectionLoading,
     ConnectionSummary,
@@ -22,7 +22,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import { Scalars, SymbolKind, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
@@ -31,16 +31,19 @@ interface SymbolNodeProps {
     node: SymbolNodeFields
     onHandleClick: () => void
     isActive: boolean
+    style: React.CSSProperties
 }
 
 const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProps>> = ({
     node,
     onHandleClick,
     isActive,
+    style,
 }) => {
     const isActiveFunc = (): boolean => isActive
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode}>
+        // eslint-disable-next-line react/forbid-dom-props
+        <li className={styles.repoRevisionSidebarSymbolsNode} style={style}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -52,11 +55,6 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                 <span className={styles.name} data-testid="symbol-name">
                     {node.name}
                 </span>
-                {node.containerName && (
-                    <span className={styles.containerName}>
-                        <small>{node.containerName}</small>
-                    </span>
-                )}
             </NavLink>
         </li>
     )
@@ -200,16 +198,27 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             </div>
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
-                <ConnectionList compact={true}>
-                    {connection.nodes.map((node, index) => (
-                        <SymbolNode
-                            key={index}
-                            node={node}
-                            onHandleClick={onHandleSymbolClick}
-                            isActive={isSymbolActive(node.url)}
-                        />
-                    ))}
-                </ConnectionList>
+                <HierarchicalSymbols
+                    symbols={connection.nodes}
+                    render={args =>
+                        args.symbol.__typename === 'IntermediateSymbol' ? (
+                            // eslint-disable-next-line react/forbid-dom-props
+                            <li className={styles.repoRevisionSidebarSymbolsNode} style={padding(args.symbol)}>
+                                <span className={styles.link}>
+                                    <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
+                                    {args.symbol.name}
+                                </span>
+                            </li>
+                        ) : (
+                            <SymbolNode
+                                node={args.symbol}
+                                onHandleClick={onHandleSymbolClick}
+                                isActive={isSymbolActive(args.symbol.url)}
+                                style={padding(args.symbol)}
+                            />
+                        )
+                    }
+                />
             )}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
@@ -221,3 +230,76 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         </ConnectionContainer>
     )
 }
+
+interface HierarchicalSymbolsProps {
+    symbols: SymbolNodeFields[]
+    render: (props: { symbol: Sym }) => React.ReactElement
+}
+
+const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = props => (
+    <ul className={styles.hierarchicalSymbolsContainer}>
+        {flow(
+            groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
+            entries,
+            flatMap(([, symbols]) => hierarchyOf(symbols)),
+            map(symbol => <props.render key={'url' in symbol ? symbol.url : fullName(symbol)} symbol={symbol} />)
+        )(props.symbols)}
+    </ul>
+)
+
+interface IntermediateSymbol {
+    __typename: 'IntermediateSymbol'
+    name: string
+    language: string
+}
+
+type Sym = (SymbolNodeFields | IntermediateSymbol) & { containers: string[] }
+
+const hierarchyOf = (symbols: SymbolNodeFields[]): Sym[] => {
+    const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))
+    const fullNameToSym = new Map<string, Sym>()
+
+    const visit = (fullName: string, language: string): string[] => {
+        if (fullName === '') {
+            return []
+        }
+
+        const sym = fullNameToSym.get(fullName)
+        if (sym) {
+            return [...sym.containers, sym.name]
+        }
+
+        const symbol = fullNameToSymbol.get(fullName)
+        if (symbol) {
+            const containers = symbol.containerName ? visit(fullName.split('.').slice(0, -1).join('.'), language) : []
+            fullNameToSym.set(fullName, { ...symbol, containers })
+            return [...containers, symbol.name]
+        }
+
+        const containers = visit(fullName.split('.').slice(0, -1).join('.'), language)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const name = fullName.split('.').pop()!
+        fullNameToSym.set(fullName, {
+            __typename: 'IntermediateSymbol',
+            containers,
+            name,
+            language,
+        })
+        return [...containers, name]
+    }
+
+    for (const symbol of symbols) {
+        visit(fullName(symbol), symbol.language)
+    }
+
+    return sortBy([...fullNameToSym.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
+}
+
+const fullName = (symbol: SymbolNodeFields | Sym): string => {
+    if ('containers' in symbol) {
+        return [...symbol.containers, symbol.name].join('.')
+    }
+    return `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+}
+
+const padding = (symbol: Sym): React.CSSProperties => ({ paddingLeft: `${symbol.containers.length}rem` })

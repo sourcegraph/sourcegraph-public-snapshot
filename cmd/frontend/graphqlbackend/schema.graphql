@@ -569,10 +569,6 @@ type Mutation {
     """
     submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
     """
-    Submits a request for a Sourcegraph Enterprise trial license.
-    """
-    requestTrial(email: String!): EmptyResponse
-    """
     Manages the extension registry.
     """
     extensionRegistry: ExtensionRegistryMutation!
@@ -1336,6 +1332,10 @@ type Query {
         Returns the first n users from the list.
         """
         first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
         """
         Return users whose usernames or display names match the query.
         """
@@ -5503,7 +5503,20 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     A list of users who are members of this organization.
     """
-    members: UserConnection!
+    members(
+        """
+        Number of users to return after the given cursor.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+    ): UserConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.

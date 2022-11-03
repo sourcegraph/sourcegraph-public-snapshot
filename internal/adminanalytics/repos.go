@@ -15,7 +15,7 @@ type Repos struct {
 
 func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
 	cacheKey := "Repos:Summary"
-	if r.Cache == true {
+	if r.Cache {
 		if summary, err := getItemFromCache[ReposSummary](cacheKey); err == nil {
 			return summary, nil
 		}

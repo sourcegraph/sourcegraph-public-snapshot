@@ -5,6 +5,8 @@ import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
 
+const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
+
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
     return `${date.toLocaleString('en-US', {
@@ -146,6 +148,14 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
             console.log('Trouble upgrading src-cli:', error)
             process.exit(1)
         }
+    }
+}
+
+export function ensureSrcCliEndpoint(): void {
+    const srcEndpoint = process.env.SRC_ENDPOINT
+    if (srcEndpoint !== SOURCEGRAPH_RELEASE_INSTANCE_URL) {
+        throw new Error(`the $SRC_ENDPOINT provided doesn't match what is expected by the release tool.
+Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
     }
 }
 
