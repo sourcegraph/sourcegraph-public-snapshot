@@ -328,3 +328,4 @@ To clarify, here is a concrete example of a valid series of events to deprecate 
 3.46 - table A is removed
 
 3.48 - a user successfully performs a multi-verion upgrade from 3.40 -> 3.48, including the out of band migration
+```
