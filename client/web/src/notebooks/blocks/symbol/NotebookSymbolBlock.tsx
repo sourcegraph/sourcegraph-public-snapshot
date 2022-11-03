@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import { mdiOpenInNew, mdiInformationOutline, mdiCheck, mdiPencil } from '@mdi/js'
-import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -64,7 +63,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
         output,
         telemetryService,
         isSelected,
-        isOtherBlockSelected,
+        showMenu,
         isReadOnly,
         hoverifier,
         extensionsController,
@@ -172,7 +171,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 focusInput={focusInput}
                 isReadOnly={isReadOnly}
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
+                showMenu={showMenu}
                 actions={isSelected ? menuActions : linkMenuAction}
                 {...props}
             >
@@ -207,12 +206,12 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                     />
                 )}
                 {symbolOutput === LOADING && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                    <div className='d-flex justify-content-center py-3'>
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
                 {isSymbolOutputLoaded(symbolOutput) && (
-                    <div className={styles.highlightedFileWrapper}>
+                    <div>
                         <CodeExcerpt
                             className={styles.code}
                             repoName={input.repositoryName}
@@ -256,7 +255,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [effectiveRevision])
     return (
         <>
-            <SymbolIcon kind={symbolKind} />
+            <SymbolIcon kind={symbolKind} inheritColor={true} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}
