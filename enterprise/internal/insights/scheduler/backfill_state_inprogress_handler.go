@@ -6,7 +6,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -78,10 +81,11 @@ type inProgressHandler struct {
 var _ workerutil.Handler = &inProgressHandler{}
 
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("inProgressHandler called", log.Int("recordId", record.RecordID()))
-
 	ctx = actor.WithInternalActor(ctx)
-	job := record.(*BaseJob)
+	job, ok := record.(*BaseJob)
+	if !ok {
+		return errors.New("unable to convert to backfill inprogress job")
+	}
 	backfillJob, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
@@ -101,32 +105,16 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Hour*24))
 
-	for {
-		repoId, more, finish := itr.NextWithFinish()
-		if !more {
-			break
-		}
-
-		repo, err := h.repoStore.Get(ctx, repoId)
-		if err != nil {
-			// TODO: this repo should be marked as errored and processing should continue
-			// revisit when error handling added.
-			return err
-		}
-
-		logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
-		err = h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
-		if err != nil {
-			// TODO: this repo should be marked as errored and processing should continue
-			// revisit when error handling added.
-			return err
-		}
-
-		err = finish(ctx, h.backfillStore.Store, nil)
-		if err != nil {
-			return err
-		}
-	}
+	logger.Info("insights backfill progress handler loaded",
+		log.Int("recordId", record.RecordID()),
+		log.Int("jobNumFailures", job.NumFailures),
+		log.Int("seriesId", series.ID),
+		log.String("seriesUniqueId", series.SeriesID),
+		log.Int("backfillId", backfillJob.Id),
+		log.Int("repoTotalCount", itr.TotalCount),
+		log.Float64("percentComplete", itr.PercentComplete),
+		log.Int("erroredRepos", itr.ErroredRepos()),
+		log.Int("totalErrors", itr.TotalErrors()))
 
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, []itypes.InsightSeriesRecordingTimes{
 		{
@@ -134,19 +122,66 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		},
 	}); err != nil {
-		return err
+		return errors.Wrap(err, "InProgressHandler.SetInsightSeriesRecordingTimes")
 	}
 
-	// todo handle errors down here after the main loop https://github.com/sourcegraph/sourcegraph/issues/42724
+	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
+	itrLoop := func(nextFunc nextFunc) error {
+		for {
+			repoId, more, finish := nextFunc()
+			if !more {
+				break
+			}
 
-	err = itr.MarkComplete(ctx, h.backfillStore.Store)
-	if err != nil {
-		return err
+			repo, repoErr := h.repoStore.Get(ctx, repoId)
+			if repoErr != nil {
+				err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
+				if err != nil {
+					return err
+				}
+				continue
+			}
+
+			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+			runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
+			if runErr != nil {
+				logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
+			}
+			err = finish(ctx, h.backfillStore.Store, runErr)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-	err = backfillJob.setState(ctx, h.backfillStore, BackfillStateCompleted)
-	if err != nil {
-		return err
+
+	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
+	if err := itrLoop(itr.NextWithFinish); err != nil {
+		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
+	}
+
+	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
+	if err := itrLoop(itr.NextRetryWithFinish); err != nil {
+		return errors.Wrap(err, "InProgressHandler.RetryLoop")
+	}
+
+	if !itr.HasMore() && !itr.HasErrors() {
+		logger.Info("setting backfill to completed state", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id), log.Duration("totalDuration", itr.RuntimeDuration))
+		err = itr.MarkComplete(ctx, h.backfillStore.Store)
+		if err != nil {
+			return err
+		}
+		err = backfillJob.setState(ctx, h.backfillStore, BackfillStateCompleted)
+		if err != nil {
+			return err
+		}
+	} else {
+		// this is a rudimentary way of getting this job to retry. Eventually we should manually queue up work so that
+		// we aren't bound by the retry limits placed on the queue, but for now this will work.
+		return incompleteBackfillErr
 	}
 
 	return nil
 }
+
+var incompleteBackfillErr error = errors.New("incomplete backfill")

@@ -97,10 +97,20 @@ interface useInsightDashboardResult {
  */
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
     const { id = '' } = props
-    const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
-        fetchPolicy: 'cache-first',
-        variables: { id },
-    })
+
+    const isVirtualDashboardId = id === ALL_INSIGHTS_DASHBOARD.id
+    const { data, error, loading } = useQuery<InsightsDashboardsResult>(
+        GET_INSIGHT_DASHBOARDS_GQL,
+        {
+            skip: isVirtualDashboardId,
+            variables: { id },
+            fetchPolicy: 'cache-first'
+        }
+    )
+
+    if (isVirtualDashboardId) {
+        return { dashboard: null, loading, error }
+    }
 
     if (data) {
         const { insightsDashboards, currentUser } = data
