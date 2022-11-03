@@ -85,7 +85,10 @@ const historyView = ViewPlugin.fromClass(
  */
 export const searchHistory = Facet.define<RecentSearch[], RecentSearch[]>({
     combine(searches) {
-        return searches.flat().sort((searchA, searchB) => searchA.timestamp.localeCompare(searchB.timestamp))
+        return searches
+            .flat()
+            .filter(search => search.query.trim() !== '')
+            .sort((searchA, searchB) => searchB.timestamp.localeCompare(searchA.timestamp))
     },
     enables: historyView,
 })
