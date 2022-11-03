@@ -9,7 +9,7 @@ import { PopoverContent, PopoverOpenEvent, PopoverOpenEventReason, PopoverTail, 
 
 import styles from './Tooltip.module.scss'
 
-export enum TooltipOpenEventReason {
+export enum TooltipOpenChangeReason {
     TargetHover = 'TargetHover',
     TargetFocus = 'TargetFocus',
     TargetBlur = 'TargetBlur',
@@ -20,7 +20,7 @@ export enum TooltipOpenEventReason {
 
 export interface TooltipOpenEvent {
     isOpen: boolean
-    reason: TooltipOpenEventReason
+    reason: TooltipOpenChangeReason
 }
 
 export interface TooltipProps {
@@ -95,11 +95,11 @@ export const Tooltip: FC<TooltipProps> = props => {
 
     useEffect(() => {
         function handleTargetPointerEnter(): void {
-            setOpen({ isOpen: true, reason: TooltipOpenEventReason.TargetHover })
+            setOpen({ isOpen: true, reason: TooltipOpenChangeReason.TargetHover })
         }
 
         function handleTargetPointerLeave(): void {
-            setOpen({ isOpen: false, reason: TooltipOpenEventReason.TargetLeave })
+            setOpen({ isOpen: false, reason: TooltipOpenChangeReason.TargetLeave })
         }
 
         target?.addEventListener('pointerenter', handleTargetPointerEnter)
@@ -119,11 +119,11 @@ export const Tooltip: FC<TooltipProps> = props => {
         const popoverElement = popoverContentRef.current
 
         function handlePointerEnter(): void {
-            setOpen({ isOpen: true, reason: TooltipOpenEventReason.TargetHover })
+            setOpen({ isOpen: true, reason: TooltipOpenChangeReason.TargetHover })
         }
 
         function handlePointerLeave(): void {
-            setOpen({ isOpen: false, reason: TooltipOpenEventReason.TargetLeave })
+            setOpen({ isOpen: false, reason: TooltipOpenChangeReason.TargetLeave })
         }
 
         popoverElement?.addEventListener('pointerenter', handlePointerEnter)
@@ -138,28 +138,26 @@ export const Tooltip: FC<TooltipProps> = props => {
     const handleOpenChange = (event: PopoverOpenEvent): void => {
         switch (event.reason) {
             case PopoverOpenEventReason.Esc: {
-                setOpen({ isOpen: event.isOpen, reason: TooltipOpenEventReason.Esc })
+                setOpen({ isOpen: event.isOpen, reason: TooltipOpenChangeReason.Esc })
                 return
             }
             case PopoverOpenEventReason.ClickOutside: {
-                setOpen({ isOpen: event.isOpen, reason: TooltipOpenEventReason.ClickOutside })
+                setOpen({ isOpen: event.isOpen, reason: TooltipOpenChangeReason.ClickOutside })
                 return
             }
         }
     }
 
     const tooltipId = `tooltip-${useId()}`
-    const isTooltipOpen = useDebounce(isOpen, 100)
-
-    // console.log(isTooltipOpen)
+    const isOpenDebounced = useDebounce(isOpen, 100)
 
     return (
         <>
-            <TooltipTarget ref={setTarget} aria-describedby={isTooltipOpen ? tooltipId : undefined}>
+            <TooltipTarget ref={setTarget} aria-describedby={isOpenDebounced ? tooltipId : undefined}>
                 {children}
             </TooltipTarget>
 
-            {content && target && isTooltipOpen && (
+            {content && target && isOpenDebounced && (
                 <>
                     <PopoverContent
                         role="tooltip"
