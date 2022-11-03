@@ -2,12 +2,11 @@ import { formatISO } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Series } from '@sourcegraph/wildcard'
 
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
 import { BackendInsight, InsightFilters, SearchBasedInsightSeries } from '../../types'
-import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
+import { BackendInsightDatum, BackendInsightSeries, SeriesChartContent } from '../code-insights-backend-types'
 
 import { getParsedSeriesMetadata } from './parse-series-metadata'
 
@@ -27,8 +26,9 @@ export function createLineChartContent(
     )
 
     return {
-        series: seriesData.map<Series<BackendInsightDatum>>(line => ({
+        series: seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
             id: line.seriesId,
+            errored: true, // line.status.incompleteDatapoints.length > 0,
             data: line.points.map((point, index) => ({
                 dateTime: new Date(point.dateTime),
                 value: point.value,

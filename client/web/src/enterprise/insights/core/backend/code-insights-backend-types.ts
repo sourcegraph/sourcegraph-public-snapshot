@@ -20,8 +20,12 @@ export interface CategoricalChartContent<Datum> {
     getCategory?: (datum: Datum) => string | undefined
 }
 
+export interface BackendInsightSeries<Datum> extends Series<Datum> {
+    errored: boolean
+}
+
 export interface SeriesChartContent<Datum> {
-    series: Series<Datum>[]
+    series: BackendInsightSeries<Datum>[]
 }
 
 export interface InsightCategoricalContent<Datum> {
@@ -103,6 +107,7 @@ export interface BackendInsightDatum {
 export interface BackendInsightData {
     data: InsightContent<any>
     isFetchingHistoricalData: boolean
+    isAllSeriesErrored: boolean
 }
 
 export interface GetBuiltInsightInput {
