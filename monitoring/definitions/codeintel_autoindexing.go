@@ -24,13 +24,13 @@ func CodeIntelAutoIndexing() *monitoring.Dashboard {
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewAutoindexingSummaryGroup("$source"),
-			shared.CodeIntelligence.NewAutoindexingServiceGroup("$source"),
-			shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup("$source"),
-			shared.CodeIntelligence.NewAutoindexingStoreGroup("$source"),
-			shared.CodeIntelligence.NewAutoindexingBackgroundJobGroup("$source"),
-			shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup("$source"),
-			shared.CodeIntelligence.NewLuasandboxServiceGroup("$source"),
+			shared.CodeIntelligence.NewAutoindexingSummaryGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingServiceGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingStoreGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingBackgroundJobGroup("${source:regex}"),
+			shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup("${source:regex}"),
+			shared.CodeIntelligence.NewLuasandboxServiceGroup("${source:regex}"),
 		},
 	}
 }

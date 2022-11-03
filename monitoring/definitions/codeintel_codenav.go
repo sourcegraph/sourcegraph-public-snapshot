@@ -24,10 +24,10 @@ func CodeIntelCodeNav() *monitoring.Dashboard {
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewCodeNavServiceGroup("$source"),
-			shared.CodeIntelligence.NewCodeNavLsifStoreGroup("$source"),
-			shared.CodeIntelligence.NewCodeNavGraphQLTransportGroup("$source"),
-			shared.CodeIntelligence.NewCodeNavStoreGroup("$source"),
+			shared.CodeIntelligence.NewCodeNavServiceGroup("${source:regex}"),
+			shared.CodeIntelligence.NewCodeNavLsifStoreGroup("${source:regex}"),
+			shared.CodeIntelligence.NewCodeNavGraphQLTransportGroup("${source:regex}"),
+			shared.CodeIntelligence.NewCodeNavStoreGroup("${source:regex}"),
 		},
 	}
 }

@@ -24,10 +24,10 @@ func CodeIntelPolicies() *monitoring.Dashboard {
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewPoliciesServiceGroup("$source"),
-			shared.CodeIntelligence.NewPoliciesStoreGroup("$source"),
-			shared.CodeIntelligence.NewPoliciesGraphQLTransportGroup("$source"),
-			shared.CodeIntelligence.NewRepoMatcherTaskGroup("$source"),
+			shared.CodeIntelligence.NewPoliciesServiceGroup("${source:regex}"),
+			shared.CodeIntelligence.NewPoliciesStoreGroup("${source:regex}"),
+			shared.CodeIntelligence.NewPoliciesGraphQLTransportGroup("${source:regex}"),
+			shared.CodeIntelligence.NewRepoMatcherTaskGroup("${source:regex}"),
 		},
 	}
 }
