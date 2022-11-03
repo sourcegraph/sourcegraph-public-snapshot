@@ -458,7 +458,7 @@ func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pi
 // buildGoTests invokes the given function once for each subset of tests that should
 // be run as part of complete coverage. The description will be the specific test path
 // broken out to be run independently (or "all"), and the testSuffix will be the string
-// to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
+// to pass to go test to filter test packages (e.g., "only <pkg>" or "exclude <pkgs...>").
 func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
@@ -473,6 +473,7 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
+		"github.com/sourcegraph/sourcegraph/cmd/gitserver/server",                               // TEMP
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
