@@ -38,23 +38,23 @@
     &__node {
         border-radius: 3px;
 
-        &__active {
-            background-color: var(--color-bg-3) !important;
-        }
-
         &:hover {
             background-color: var(--color-bg-2);
         }
+    }
 
-        &__button {
-            padding: 4px 12px;
-            cursor: pointer;
-            width: 100%;
-            text-align: start;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+    &__active-node {
+        background-color: var(--color-bg-3) !important;
+    }
+
+    &__node-button {
+        padding: 0.25rem 0.75rem;
+        cursor: pointer;
+        width: 100%;
+        text-align: start;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 

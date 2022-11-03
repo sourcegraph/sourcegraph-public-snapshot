@@ -154,7 +154,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                         <li
                             key={file.id}
                             className={classNames(styles.specFilesListNode, {
-                                [styles.specFilesListNodeActive]: file.id === selectedFile.id,
+                                [styles.specFilesListActiveNode]: file.id === selectedFile.id,
                             })}
                         >
                             <Button
