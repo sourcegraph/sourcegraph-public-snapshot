@@ -110,7 +110,7 @@ describe('SearchPage', () => {
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
-    
+
     it('should show home panels if not on Sourcegraph.com, logged in and showEnterpriseHomePanels enabled', () => {
         useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
 

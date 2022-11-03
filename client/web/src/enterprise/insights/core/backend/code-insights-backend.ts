@@ -29,7 +29,6 @@ import {
  * pages and components have.
  */
 export interface CodeInsightsBackend {
-
     /**
      * Returns all possible visibility options for dashboard. Dashboard can be stored
      * as private (user subject), org level (organization subject) or global (site subject)

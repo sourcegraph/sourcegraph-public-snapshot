@@ -120,7 +120,11 @@ const RepositoriesField = forwardRef((props: RepositoryFieldProps, reference: Re
 
             {panel && (
                 <ComboboxPopover hidden={false} className={styles.comboboxReachPopover}>
-                    <SuggestionsPanel value={debouncedSearchTerm} suggestions={suggestions} className={styles.popover} />
+                    <SuggestionsPanel
+                        value={debouncedSearchTerm}
+                        suggestions={suggestions}
+                        className={styles.popover}
+                    />
                 </ComboboxPopover>
             )}
         </Combobox>

@@ -50,7 +50,10 @@ const dotComExamples = [
             queryExamples: [
                 { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
                 // eslint-disable-next-line no-useless-escape
-                { id: 'conditional-repo', query: 'repo:has.file(path:package.json content:eslint.*\^8\.13\.0) file:\.eslintrc$ rules' },
+                {
+                    id: 'conditional-repo',
+                    query: 'repo:has.file(path:package.json content:eslint.*^8.13.0) file:.eslintrc$ rules',
+                },
             ],
         },
     ],
@@ -113,7 +116,10 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     }
 }
 
-export function useQueryExamples(selectedSearchContextSpec: string, isSourcegraphDotCom: boolean = false): QueryExample[][] {
+export function useQueryExamples(
+    selectedSearchContextSpec: string,
+    isSourcegraphDotCom: boolean = false
+): QueryExample[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,
