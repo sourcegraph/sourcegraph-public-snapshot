@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type webhookEventHandlers map[string][]WebhookHandler
@@ -131,6 +132,9 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
+	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
+		return errors.Newf("event type %s not supported for code host kind %s", eventType, codeHostKind)
+	}
 	for _, handler := range h.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
