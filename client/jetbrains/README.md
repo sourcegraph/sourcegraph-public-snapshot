@@ -37,23 +37,68 @@ The plugin works with all JetBrains IDEs, including:
   - Mac: Go to `IntelliJ IDEA | Preferences` (or use <kbd>⌘,</kbd>)
 - Click `Plugins` in the left-hand pane, then the `Marketplace` tab at the top
 - Search for `Sourcegraph`, then click the `Install` button
-- Make sure that the `git` command is available in your PATH. We’re going to [get rid of this dependency](https://github.com/sourcegraph/sourcegraph/issues/40452), but for now, the plugin relies on it.
+- Make sure that the `git` command is available in your PATH. We’re going
+  to [get rid of this dependency](https://github.com/sourcegraph/sourcegraph/issues/40452), but for now, the plugin
+  relies on it.
 - Restart your IDE if needed
 - To search with Sourcegraph, press <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac).
-- To share a link to your code or search through the website, right-click in the editor, and choose an action under the `Sourcegraph` context menu item.
+- To share a link to your code or search through the website, right-click in the editor, and choose an action under
+  the `Sourcegraph` context menu item.
 - To use your private Sourcegraph instance, open `Settings | Tools | Sourcegraph` and enter your URL and access token.
 
 ## Settings
 
+### List of in-app settings and how to use them
+
+- **Sourcegraph URL**: The URL of your Sourcegraph instance if you use a private instance.
+  - To use Sourcegraph.com and search in public repos, just choose "Use sourcegraph.com".
+- **Access token**: If you want to use your private Sourcegraph instance, you'll need an access token to authorize
+  yourself.
+  - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide.
+- **Custom request headers**: Any custom headers to send with every request to Sourcegraph.
+  - Use any number of pairs: `header1, value1, header2, value2, ...`.
+  - Example: `Authorization, Bearer 1234567890, X-My-Header, My-Value`.
+  - Whitespace around commas doesn't matter.
+- **Default branch name**: The branch to use if the current branch is not yet pushed to the remote.
+  - Usually "main" or "master", but can be any name
+- **Remote URL replacements**: You can replace specific strings in your repo's remote URL.
+  - Use any number of pairs: `search1, replacement1, search2, replacement2, ...`.
+  - Pairs are replaced from left to right. Whitespace around commas doesn't matter.
+  - **Important:** The replacements are done on the Git remote-formatted URL, not the URL you see in the browser!
+    - Example replacement subject for Git: `git@github.com:sourcegraph/sourcegraph.git`
+    - Example replacement subject for Perforce: `perforce@perforce.company.com:depot-name.perforce`
+    - Anatomy of the replacement subjects:
+      - The username is not used.
+      - Between the `@` and the `:` is the hostname
+      - After the `:` is the organization/repo name (for Git) or the depot name (for Perforce)
+      - The `.git` / `.perforce` extension is not used.
+    - When you do the replacements, make sure you **keep the colon**.
+    - In the case of a custom `repositoryPathPattern` being set for your code host in your private Sourcegraph instance,
+      you may try to set up a pattern that uses the `@`, `:`, and `.git`/`.perforce` boundaries, _or_ specify a
+      replacement
+      pair for _each repo_ or _each depot_ you may have. If none of these solutions work for you, please raise this
+      at [support@sourcegraph.com](mailto:support@sourcegraph.com) and we'll prioritize making this more convenient.
+- **Globbing**: Determines whether you can specify sets of filenames with wildcard characters.
+
+### Git remote setting
+
+By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds
+to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by
+the name of `sourcegraph`. It will take priority when creating Sourcegraph links.
+
+### Setting levels
+
 You can configure the plugin on three levels:
 
 1. **Project-level** settings take the highest priority.
-2. **Application-level** settings are second: For _each specific setting_, if the plugin finds no project-level value, then the app-level setting is used.
-3. **User-level** (legacy) settings take the lowest priority. Also, note that only three of the settings are available on the user level.
+2. **Application-level** settings are second: For _each specific setting_, if the plugin finds no project-level value,
+   then the app-level setting is used.
+3. **User-level** (legacy) settings take the lowest priority. Also, note that only three of the settings are available
+   on the user level.
 
 Here is each level in detail.
 
-### Project level
+#### Project level
 
 These settings have the highest priority. You can set them in a less than intuitive way:
 
@@ -77,13 +122,13 @@ These settings have the highest priority. You can set them in a less than intuit
 
 **Storage location:** `{project root}/.idea/sourcegraph.xml`
 
-### Application level
+#### Application level
 
 This is what you edit when you go to Settings and make changes in the UI. That is, unless you have project-specific settings for your current project.
 
 **Storage location:** App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
 
-### User level – ⚠️ DEPRECATED ⚠️
+#### User level – ⚠️ DEPRECATED ⚠️
 
 This type of settings take the lowest priority, and is something that's rarely used and is only kept for backwards compatibility, and might be removed in the future. So, the plugin is also configurable by removing all creating a file called `.sourcegraph-jetbrains.properties` in your home directory. Both the app-level and project-level XMLs override this, plus it only supports three settings:
 
@@ -92,10 +137,6 @@ url = https://sourcegraph.example.com
 defaultBranch = example-branch
 remoteUrlReplacements = git.example.com, git-web.example.com
 ```
-
-### Git remote setting
-
-By default, the plugin will use the git remote called `origin` to determine which repository on Sourcegraph corresponds to your local repository. If your `origin` remote doesn’t match Sourcegraph, you may instead configure a Git remote by the name of `sourcegraph`. It will take priority when creating Sourcegraph links.
 
 ## Managing Custom Keymaps
 
@@ -141,7 +182,9 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
-3. Go through the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (private doc)
+3. Go through
+   the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (
+   Sourcegraph internal doc)
 4. Make sure `runIde` is not running
 5. Commit your changes
 6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
