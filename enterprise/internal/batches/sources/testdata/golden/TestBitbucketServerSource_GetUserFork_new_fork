@@ -17,12 +17,12 @@
   "Sources": {
    "extsvc:bitbucketcloud:1": {
     "ID": "extsvc:bitbucketcloud:1",
-    "CloneURL": "https://bitbucket.sgdev.org/bat/slug"
+    "CloneURL": "https://bitbucket.sgdev.org/~milton/bat-vcr-fork-test-repo"
    }
   },
   "Metadata": {
    "slug": "bat-vcr-fork-test-repo",
-   "id": 24375,
+   "id": 24377,
    "name": "BAT-vcr-fork-test-repo",
    "scmId": "git",
    "state": "AVAILABLE",
