@@ -107,15 +107,15 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
-                    <ExpandedBatchSpec spec={node} isLightTheme={isLightTheme} />
+                    <BatchSpecInfo spec={node} isLightTheme={isLightTheme} />
                 </div>
             )}
         </>
     )
 }
 
-interface ExpandedBatchSpecProps {
-    spec: BatchSpecListFields
+interface BatchSpecInfoProps {
+    spec: Pick<BatchSpecListFields, 'originalInput' | 'id' | 'files' | 'description'>
     isLightTheme: boolean
 }
 
@@ -127,7 +127,7 @@ interface BatchSpecFile {
     id: string
 }
 
-export const ExpandedBatchSpec: React.FunctionComponent<ExpandedBatchSpecProps> = ({ spec, isLightTheme }) => {
+export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
     const specFile: BatchSpecFile = {
         isBinary: false,
         content: spec.originalInput,
