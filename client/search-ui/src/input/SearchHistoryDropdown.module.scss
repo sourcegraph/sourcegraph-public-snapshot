@@ -22,7 +22,7 @@
     }
 }
 
-.triggerButton {
+.trigger-button {
     background-color: transparent;
     border: none;
     color: var(--text-muted);
@@ -31,7 +31,7 @@
     border-radius: 0.25rem;
     padding: 0.0625rem 0.125rem;
 
-    &__open,
+    &.open,
     &:focus,
     &:hover {
         background-color: var(--color-bg-2);

@@ -59,7 +59,6 @@
 
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
-            //margin-left: 0.0625rem;
 
             @media (--xs-breakpoint-down) {
                 padding-left: 0;

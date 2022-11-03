@@ -80,11 +80,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                     <Tooltip content={recentSearchTooltipContent}>
                         <PopoverTrigger
                             type="button"
-                            className={classNames(
-                                styles.triggerButton,
-                                isOpen ? styles.triggerButtonOpen : null,
-                                className
-                            )}
+                            className={classNames(styles.triggerButton, isOpen ? styles.open : null, className)}
                         >
                             {buttonContent}
                         </PopoverTrigger>
