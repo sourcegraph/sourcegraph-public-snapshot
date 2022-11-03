@@ -472,6 +472,7 @@ func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 	secret3 := &database.ExecutorSecret{
 		Key:            "FOOBAR",
 		Scope:          database.ExecutorSecretScopeBatches,
+		CreatorID:      user.ID,
 		NamespaceOrgID: user.ID,
 	}
 	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
