@@ -111,7 +111,7 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 	// Mess some stuff up
 	if _, err := db.ExecContext(ctx, `
 		UPDATE repo SET deleted_at = NOW() WHERE id = 51;
-		DELETE FROM lsif_uploads WHERE id = 105;
+		-- DELETE FROM lsif_uploads WHERE id = 105;
 		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 100;
 		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 50, true);
 	`); err != nil {
