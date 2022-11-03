@@ -23,6 +23,7 @@ var tableNames = []string{
 	"lsif_data_references_schema_versions",
 	"lsif_data_implementations",
 	"lsif_data_implementations_schema_versions",
+	"codeintel_last_reconcile",
 }
 
 // DeleteLsifDataByUploadIds deletes LSIF data by UploadIds from the lsif database.

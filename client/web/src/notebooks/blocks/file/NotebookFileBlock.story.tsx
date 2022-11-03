@@ -26,6 +26,7 @@ const noopBlockCallbacks = {
     onDeleteBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
+    onNewBlock: noop,
 }
 
 const fileBlockInput: FileBlockInput = {
@@ -46,7 +47,7 @@ export const Default: Story = () => (
                 output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
                 extensionsController={extensionsController}
@@ -66,7 +67,7 @@ export const EditMode: Story = () => (
                 output={of(HIGHLIGHTED_FILE_LINES_LONG[0])}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
                 extensionsController={extensionsController}
@@ -88,7 +89,7 @@ export const ErrorFetchingFile: Story = () => (
                 output={of(new Error('File not found'))}
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={false}
                 globbing={false}
                 extensionsController={extensionsController}

@@ -51,11 +51,11 @@ const searchContextFragment = gql`
         viewerCanManage
         query
         repositories {
-            ...SearchContextRepositoryRevisisonsFields
+            ...SearchContextRepositoryRevisionsFields
         }
     }
 
-    fragment SearchContextRepositoryRevisisonsFields on SearchContextRepositoryRevisions {
+    fragment SearchContextRepositoryRevisionsFields on SearchContextRepositoryRevisions {
         repository {
             name
         }

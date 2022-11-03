@@ -36,6 +36,17 @@ export interface SamlExternalData {
     }
 }
 
+interface OpenIDConnectExternalData {
+    userInfo?: {
+        email?: string
+    }
+    userClaims?: {
+        preferred_username?: string
+        given_name?: string
+        name?: string
+    }
+}
+
 export interface Attribute {
     Values: AttributeValue[]
 }
@@ -63,7 +74,17 @@ interface Props {
     onDidError: (error: ErrorLike) => void
 }
 
-export function getUsernameOrEmail(data: SamlExternalData): string {
+export function getOpenIDUsernameOrEmail(data: OpenIDConnectExternalData): string {
+    return (
+        data.userClaims?.preferred_username ||
+        data.userClaims?.given_name ||
+        data.userClaims?.name ||
+        data.userInfo?.email ||
+        ''
+    )
+}
+
+export function getSamlUsernameOrEmail(data: SamlExternalData): string {
     return (
         data.Values.nickname?.Values[0]?.Value ||
         data.Values.login?.Values[0]?.Value ||
@@ -83,7 +104,6 @@ const getNormalizedAccount = (
     if (
         authProvider.serviceType === 'builtin' ||
         authProvider.serviceType === 'http-header' ||
-        authProvider.serviceType === 'openidconnect' ||
         authProvider.serviceType === 'sourcegraph-operator'
     ) {
         return null
@@ -140,7 +160,20 @@ const getNormalizedAccount = (
                         ...normalizedAccount,
                         external: {
                             id: account.id,
-                            userName: getUsernameOrEmail(samlExternalData),
+                            userName: getSamlUsernameOrEmail(samlExternalData),
+                        },
+                    }
+                }
+                break
+
+            case 'openidconnect':
+                {
+                    const oidcExternalData = accountExternalData as OpenIDConnectExternalData
+                    normalizedAccount = {
+                        ...normalizedAccount,
+                        external: {
+                            id: account.id,
+                            userName: getOpenIDUsernameOrEmail(oidcExternalData),
                         },
                     }
                 }

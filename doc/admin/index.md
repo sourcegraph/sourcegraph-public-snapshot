@@ -65,4 +65,5 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
+- [Audit logs](audit_log.md)
 

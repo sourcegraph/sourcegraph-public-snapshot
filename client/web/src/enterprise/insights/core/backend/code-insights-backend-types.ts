@@ -6,7 +6,6 @@ import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
     InsightDashboard,
-    SearchBasedInsightSeries,
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
@@ -112,10 +111,10 @@ export interface InsightPreviewSettings {
 
 export interface SeriesPreviewSettings {
     query: string
-    generatedFromCaptureGroup?: boolean
     label: string
     stroke: string
     groupBy?: GroupByField
+    generatedFromCaptureGroup?: boolean
 }
 
 export interface BackendInsightDatum {
@@ -133,20 +132,9 @@ export interface GetBuiltInsightInput {
     insight: RuntimeInsight
 }
 
-export interface GetSearchInsightContentInput {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
 export interface GetLangStatsInsightContentInput {
     repository: string
     otherThreshold: number
-}
-
-export interface RepositorySuggestionData {
-    id: string
-    name: string
 }
 
 export interface UiFeaturesConfig {

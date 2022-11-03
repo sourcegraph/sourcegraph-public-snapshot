@@ -58,6 +58,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         proactive,
         caseSensitive,
         extendedTimeout,
+        telemetryService,
     })
 
     // When query is updated reset extendedTimeout as per business rules
@@ -156,3 +157,5 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         </article>
     )
 })
+
+SearchAggregations.displayName = 'SearchAggregations'

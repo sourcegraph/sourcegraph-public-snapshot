@@ -247,7 +247,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+		EnableLegacyExtensions: conf.ExperimentalFeatures().EnableLegacyExtensions,
 
 		LicenseInfo: licenseInfo,
 	}

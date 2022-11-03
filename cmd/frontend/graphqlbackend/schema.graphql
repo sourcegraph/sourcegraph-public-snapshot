@@ -1333,6 +1333,10 @@ type Query {
         """
         first: Int
         """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
         Return users whose usernames or display names match the query.
         """
         query: String
@@ -5499,7 +5503,20 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     A list of users who are members of this organization.
     """
-    members: UserConnection!
+    members(
+        """
+        Number of users to return after the given cursor.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+    ): UserConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.

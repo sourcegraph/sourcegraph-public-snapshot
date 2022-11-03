@@ -2,7 +2,7 @@ import React, { useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useDeepMemo } from '@sourcegraph/wildcard'
+import { Series, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import {
@@ -21,14 +21,17 @@ import {
     SERIES_MOCK_CHART,
 } from '../../../../../components'
 import { DATA_SERIES_COLORS } from '../../../../../constants'
-import { CodeInsightsBackendContext, SearchBasedInsightSeries, SeriesChartContent } from '../../../../../core'
+import {
+    CodeInsightsBackendContext,
+    SeriesChartContent,
+    SeriesPreviewSettings
+} from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 
-const createExampleDataSeries = (query: string): SearchBasedInsightSeries[] => [
+const createExampleDataSeries = (query: string): SeriesPreviewSettings[] => [
     {
         query,
-        id: '1',
-        name: 'TODOs',
+        label: 'TODOs',
         stroke: DATA_SERIES_COLORS.ORANGE,
     },
 ]
@@ -45,7 +48,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
 > = props => {
     const { disabled, repositories, query, className, telemetryService } = props
 
-    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
+    const { getInsightPreviewContent } = useContext(CodeInsightsBackendContext)
     const seriesToggleState = useSeriesToggle()
 
     // Compare live insight settings with deep check to avoid unnecessary
@@ -60,9 +63,9 @@ export const DynamicInsightPreview: React.FunctionComponent<
     const getLivePreviewContent = useMemo(
         () => ({
             disabled: settings.disabled,
-            fetcher: () => getSearchInsightContent(settings),
+            fetcher: () => getInsightPreviewContent(settings),
         }),
-        [settings, getSearchInsightContent]
+        [settings, getInsightPreviewContent]
     )
 
     const { state } = useLivePreview(getLivePreviewContent)
@@ -115,7 +118,7 @@ export const DynamicInsightPreview: React.FunctionComponent<
                 </LivePreviewChart>
             )}
 
-            {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+            {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series as Series<unknown>[]} />}
         </LivePreviewCard>
     )
 }

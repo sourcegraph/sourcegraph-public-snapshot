@@ -86,10 +86,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
 			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
-			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			log.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+			log.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
 		tr.LogFields(fields...)
 		event.AddLogFields(fields)
