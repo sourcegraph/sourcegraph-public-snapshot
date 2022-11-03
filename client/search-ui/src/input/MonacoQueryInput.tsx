@@ -110,16 +110,6 @@ export interface MonacoQueryInputProps
      * Additional sources to use for autocompletion.
      */
     searchHistory?: RecentSearch[]
-    /**
-     * Show suggestions from default sources when query is empty. Defaults to
-     * true.
-     */
-    defaultSuggestionsShowWhenEmpty?: boolean
-    /**
-     * Automatically show suggestions when the input receives focus and it is
-     * empty. Defaults to false.
-     */
-    showSuggestionsOnFocus?: boolean
 }
 
 /**

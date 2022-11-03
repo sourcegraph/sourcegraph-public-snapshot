@@ -87,8 +87,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     ariaLabel = 'Search query',
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
-    defaultSuggestionsShowWhenEmpty = true,
-    showSuggestionsOnFocus = false,
     searchHistory,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
@@ -124,16 +122,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
-                showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
-        [
-            selectedSearchContextSpec,
-            globbing,
-            isSourcegraphDotCom,
-            fetchStreamSuggestions,
-            applySuggestionsOnEnter,
-            defaultSuggestionsShowWhenEmpty,
-        ]
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(() => {
@@ -166,48 +156,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             extensions.push(EditorView.editable.of(false))
         }
 
-        if (showSuggestionsOnFocus) {
-            // This is currently used when search history suggestions are
-            // enabled. It looks like CodeMirror doesn't automatically trigger
-            // the autocompletion again when the cursor is at the start of the
-            // input after deleting some characters. This update listener makes
-            // sure that. Since `showSuggestionsOnFocus` is currently only
-            // enabled when we show search history suggestions, we use a single
-            // listener to handle that case too.
-            const TIMEOUT = 1000
-            let timer: number | null = null
-            const clear = (): void => {
-                if (timer !== null) {
-                    clearTimeout(timer)
-                }
-                timer = null
-            }
-
-            extensions.push(
-                EditorView.updateListener.of(update => {
-                    if (update.view.state.doc.length === 0) {
-                        if (update.focusChanged && update.view.hasFocus) {
-                            startCompletion(update.view)
-                        } else if (update.docChanged) {
-                            timer = window.setTimeout(() => {
-                                timer = null
-                                if (update.view.hasFocus) {
-                                    startCompletion(update.view)
-                                }
-                            }, TIMEOUT)
-                        }
-                    } else {
-                        clear()
-                    }
-                })
-            )
-        }
-
         if (searchHistory) {
             extensions.push(searchHistoryFacet.of(searchHistory))
         }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus, searchHistory])
+    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, searchHistory])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.

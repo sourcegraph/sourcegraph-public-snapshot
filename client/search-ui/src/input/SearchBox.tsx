@@ -38,8 +38,6 @@ export interface SearchBoxProps
             | 'onChange'
             | 'onCompletionItemSelected'
             | 'applySuggestionsOnEnter'
-            | 'defaultSuggestionsShowWhenEmpty'
-            | 'showSuggestionsOnFocus'
         > {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
@@ -185,8 +183,6 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
-                        defaultSuggestionsShowWhenEmpty={props.defaultSuggestionsShowWhenEmpty}
-                        showSuggestionsOnFocus={props.showSuggestionsOnFocus}
                         searchHistory={historyWithoutSelectedContext}
                     />
                     <Toggles
