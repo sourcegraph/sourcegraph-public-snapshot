@@ -150,7 +150,7 @@ export const BlameDecoration: React.FunctionComponent<{
             </PopoverTrigger>
 
             <PopoverContent
-                targetPadding={createRectangle(0, 0, 8, 8)}
+                constraintPadding={createRectangle(150, 0, 0, 0)}
                 position={Position.topStart}
                 focusLocked={false}
                 returnTargetFocus={false}

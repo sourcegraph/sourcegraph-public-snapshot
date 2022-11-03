@@ -37,8 +37,6 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
         telemetryService.log('SearchHelpDropdownQueryDocsLinkClicked')
     }, [telemetryService])
 
-    const documentationUrlPrefix = isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
-
     return (
         <Popover>
             <PopoverTrigger
@@ -126,7 +124,7 @@ export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props
                     target="_blank"
                     rel="noopener"
                     as={Link}
-                    to={`${documentationUrlPrefix}/code_search/reference/queries`}
+                    to="/help/code_search/reference/queries"
                     onClick={onQueryDocumentationLinkClicked}
                 >
                     <Icon aria-hidden={true} className="small" svgPath={mdiOpenInNew} /> All search keywords

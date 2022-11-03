@@ -17738,10 +17738,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fzy.js@npm:^0.4.1":
-  version: 0.4.1
-  resolution: "fzy.js@npm:0.4.1"
-  checksum: 962419f11e75a07cc7dca608cd3d64045d7cbb62359ded7b8faac7fd0555bd42d9af74f905d90f84d3e8dfe3b805c55b9885b4d2cd763b4df8fa63d7e1c884ff
+"fzf@npm:^0.5.1":
+  version: 0.5.1
+  resolution: "fzf@npm:0.5.1"
+  checksum: 5c5f56ec9fdd83c7edba58425aa3fadd587aeb9d18b013b8a0f14c80f8eef6b068249786b2e3707be9306fe877f21107f9dce5b4aabb58ee7f488de32191e62a
   languageName: node
   linkType: hard
 
@@ -28797,7 +28797,7 @@ pvutils@latest:
     express-static-gzip: ^2.1.1
     fancy-log: ^1.3.3
     focus-visible: ^5.2.0
-    fzy.js: ^0.4.1
+    fzf: ^0.5.1
     get-port: ^5.1.1
     glob: ^7.1.6
     google-protobuf: 3.17.3

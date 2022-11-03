@@ -11,9 +11,7 @@ import (
 
 type operations struct {
 	// Commits
-	getStaleSourcedCommits *observation.Operation
-	deleteSourcedCommits   *observation.Operation
-	updateSourcedCommits   *observation.Operation
+	processStaleSourcedCommits *observation.Operation
 
 	// Indexes
 	insertIndex                    *observation.Operation
@@ -70,9 +68,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		// Commits
-		getStaleSourcedCommits: op("StaleSourcedCommits"),
-		deleteSourcedCommits:   op("DeleteSourcedCommits"),
-		updateSourcedCommits:   op("UpdateSourcedCommits"),
+		processStaleSourcedCommits: op("ProcessStaleSourcedCommits"),
 
 		// Indexes
 		insertIndex:                    op("InsertIndex"),

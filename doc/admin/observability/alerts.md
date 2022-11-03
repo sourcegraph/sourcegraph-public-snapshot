@@ -7782,7 +7782,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})) >= 3600)`
+Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
 
 </details>
 

@@ -422,7 +422,7 @@
     "escape-html": "^1.0.3",
     "eventsource": "1.1.1",
     "focus-visible": "^5.2.0",
-    "fzy.js": "^0.4.1",
+    "fzf": "^0.5.1",
     "got": "^11.5.2",
     "graphiql": "^1.11.5",
     "highlight.js": "^10.5.0",
