@@ -366,20 +366,6 @@ func NewStrictMockSettingStore() *MockSettingStore {
 	}
 }
 
-// NewMockSettingStoreFrom creates a new mock of the MockSettingStore
-// interface. All methods delegate to the given implementation, unless
-// overwritten.
-func NewMockSettingStoreFrom(i SettingStore) *MockSettingStore {
-	return &MockSettingStore{
-		GetLatestFunc: &SettingStoreGetLatestFunc{
-			defaultHook: i.GetLatest,
-		},
-		GetLatestSchemaSettingsFunc: &SettingStoreGetLatestSchemaSettingsFunc{
-			defaultHook: i.GetLatestSchemaSettings,
-		},
-	}
-}
-
 // SettingStoreGetLatestFunc describes the behavior when the GetLatest
 // method of the parent MockSettingStore instance is invoked.
 type SettingStoreGetLatestFunc struct {
