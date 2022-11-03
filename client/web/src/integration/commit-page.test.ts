@@ -328,7 +328,7 @@ describe('RepositoryCommitPage', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it.only('Display diff in unified mode', async () => {
+    it('Display diff in unified mode', async () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
         await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
