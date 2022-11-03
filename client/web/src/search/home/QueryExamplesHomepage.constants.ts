@@ -7,7 +7,7 @@ export const exampleQueryColumns = [
             queryExamples: [{ id: 'hooks', query: 'useState AND useRef lang:javascript', slug: '?q=context:global+useState+AND+useRef+lang:javascript' }],
         },
         {
-            title: 'Discover what is being passed to propTypes for type checking',
+            title: 'Type check, find what\'s passed to propTypes',
             queryExamples: [{ id: 'prop-types', query: '.propTypes = {...} patterntype:structural', slug: '?q=context:global+.propTypes+%3D+%7B...%7D' }],
         },
     ],
