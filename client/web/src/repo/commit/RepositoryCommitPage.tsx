@@ -55,7 +55,7 @@ const COMMIT_QUERY = gql`
             __typename
             ... on Repository {
                 commit(rev: $revspec) {
-                    __typename # necessary so that isErrorLike(x) is false when x: GitCommitFields
+                    __typename # Necessary for error handling to check if commit exists
                     ...GitCommitFields
                 }
             }

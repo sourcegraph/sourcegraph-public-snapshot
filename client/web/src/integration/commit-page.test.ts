@@ -31,12 +31,15 @@ describe('RepositoryCommitPage', () => {
                     subject: 'Signup copy adjustment (#43435)',
                     body: 'Copy adjustment',
                     author: {
+                        __typename: 'Signature',
                         person: {
+                            __typename: 'Person',
                             avatarURL: null,
                             name: 'st0nebraker',
                             email: 'beccasteinbrecher@gmail.com',
                             displayName: 'Becca Steinbrecher',
                             user: {
+                                __typename: 'User',
                                 id: 'VXNlcjo1MTA5OQ==',
                                 username: 'st0nebraker',
                                 url: '/users/st0nebraker',
@@ -46,7 +49,9 @@ describe('RepositoryCommitPage', () => {
                         date: '2022-10-27T21:31:53Z',
                     },
                     committer: {
+                        __typename: 'Signature',
                         person: {
+                            __typename: 'Person',
                             avatarURL: null,
                             name: 'GitHub',
                             email: 'noreply@github.com',
@@ -57,6 +62,7 @@ describe('RepositoryCommitPage', () => {
                     },
                     parents: [
                         {
+                            __typename: 'GitCommit',
                             oid: '56ab377d94fe96c87bc8c5e26675c585f9312e64',
                             abbreviatedOID: '56ab377',
                             url:
@@ -68,12 +74,14 @@ describe('RepositoryCommitPage', () => {
                         '/github.com/sourcegraph/sourcegraph/-/commit/1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     externalURLs: [
                         {
+                            __typename: 'ExternalLink',
                             url:
                                 'https://github.com/sourcegraph/sourcegraph/commit/1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                             serviceKind: ExternalServiceKind.GITHUB,
                         },
                     ],
                     tree: {
+                        __typename: 'GitTree',
                         canonicalURL: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     },
                 },
@@ -320,7 +328,7 @@ describe('RepositoryCommitPage', () => {
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    it('Display diff in unified mode', async () => {
+    it.only('Display diff in unified mode', async () => {
         await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/commit/${commitID}`)
         await driver.page.waitForSelector('.test-file-diff-node', { visible: true })
 
