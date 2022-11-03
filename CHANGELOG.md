@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
   - [Docker Compose](https://docs.sourcegraph.com/admin/updates/docker_compose)
 - A structural search diagnostic to warn users when a language filter is not set. [#43835](https://github.com/sourcegraph/sourcegraph/pull/43835)
 - GitHub/GitLab OAuth success/fail attempts are now a part of the audit log. [#43886](https://github.com/sourcegraph/sourcegraph/pull/43886)
+- Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 
 ### Changed
 
