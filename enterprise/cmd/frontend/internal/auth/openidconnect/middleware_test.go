@@ -124,6 +124,7 @@ func TestMiddleware(t *testing.T) {
 			ClientID:           testClientID,
 			ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
 			RequireEmailDomain: "example.com",
+			Type:               providerType,
 		},
 	}
 	defer func() { mockGetProviderValue = nil }()
@@ -147,8 +148,8 @@ func TestMiddleware(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	validState := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+	validState := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
 		}
@@ -180,7 +181,7 @@ func TestMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	state := func(t *testing.T, urlStr string) (state authnState) {
+	state := func(t *testing.T, urlStr string) (state AuthnState) {
 		u, _ := url.Parse(urlStr)
 		if err := state.Decode(u.Query().Get("nonce")); err != nil {
 			t.Fatal(err)
@@ -256,7 +257,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		invalidState := (&authnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
 		if want := http.StatusBadRequest; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
@@ -302,6 +303,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		config: schema.OpenIDConnectAuthProvider{
 			ClientID:     testClientID,
 			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+			Type:         providerType,
 		},
 	}
 	defer func() { mockGetProviderValue = nil }()
@@ -317,8 +319,8 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	state := (&authnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	mockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
+	state := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
 			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
 		}
