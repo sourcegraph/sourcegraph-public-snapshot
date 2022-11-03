@@ -14,6 +14,18 @@ func Searcher() *monitoring.Dashboard {
 		Name:        "searcher",
 		Title:       "Searcher",
 		Description: "Performs unindexed searches (diff and commit search, text search for unindexed branches).",
+		Variables: []monitoring.ContainerVariable{
+			{
+				Label: "Instance",
+				Name:  "instance",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "searcher_service_request_total",
+					LabelName:     "instance",
+					ExampleOption: "searcher-7dd95df88c-5bjt9:3181",
+				},
+				Multi: true,
+			},
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -40,6 +52,19 @@ func Searcher() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "cache",
+
+					MetricMountNameLabel: "cacheDir",
+					MetricNamespace:      "searcher",
+
+					ServiceName:         "searcher",
+					InstanceFilterRegex: `${instance:regex}`,
+				},
+				monitoring.ObservableOwnerSearchCore,
+			),
 
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

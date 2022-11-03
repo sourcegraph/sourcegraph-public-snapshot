@@ -31,8 +31,6 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
 
     // Live preview fetchers
-    public getSearchInsightContent = (): Promise<SeriesChartContent<unknown>> =>
-        errorMockMethod('getSearchInsightContent')().toPromise()
     public getLangStatsInsightContent = (): Promise<CategoricalChartContent<unknown>> =>
         errorMockMethod('getLangStatsInsightContent')().toPromise()
 

@@ -13904,6 +13904,261 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
+### Searcher: Cache disk I/O metrics (only available on Sourcegraph internal instances)
+
+#### searcher: cache_disk_reads_sec
+
+<p class="subtitle">Read request rate over 2m (per instance)</p>
+
+The number of read requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_writes_sec
+
+<p class="subtitle">Write request rate over 2m (per instance)</p>
+
+The number of write requests that were issued to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_throughput
+
+<p class="subtitle">Read throughput over 2m (per instance)</p>
+
+The amount of data that was read from the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_throughput
+
+<p class="subtitle">Write throughput over 2m (per instance)</p>
+
+The amount of data that was written to the device per second.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_duration
+
+<p class="subtitle">Average read duration over 2m (per instance)</p>
+
+The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_duration
+
+<p class="subtitle">Average write duration over 2m (per instance)</p>
+
+The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100121` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_read_request_size
+
+<p class="subtitle">Average read request size over 2m (per instance)</p>
+
+The average size of read requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_write_request_size)
+
+<p class="subtitle">Average write request size over 2m (per instance)</p>
+
+The average size of write requests that were issued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_reads_merged_sec
+
+<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+
+The number of read requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100140` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_writes_merged_sec
+
+<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+
+The number of write requests merged per second that were queued to the device.
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100141` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
+#### searcher: cache_disk_average_queue_size
+
+<p class="subtitle">Average queue size over 2m (per instance)</p>
+
+The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
+
+Note: Disk statistics are per _device_, not per _service_. In certain environments (such as common docker-compose setups), searcher could be one of _many services_ using this disk. These statistics are best interpreted as the load experienced by the device searcher is using, not the load searcher is solely responsible for causing.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100150` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+
+</details>
+
+<br />
+
 ### Searcher: Database connections
 
 #### searcher: max_open_conns
@@ -13912,7 +14167,7 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13931,7 +14186,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name="searcher"
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13950,7 +14205,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_open{app_name="searcher"})`
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13969,7 +14224,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name="searcher"})
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100211` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -13988,7 +14243,7 @@ Query: `sum by (app_name, db_name) (src_pgsql_conns_idle{app_name="searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-mean-blocked-seconds-per-conn-request) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100220` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14007,7 +14262,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100230` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14026,7 +14281,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100231` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14045,7 +14300,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100132` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100232` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -14066,7 +14321,7 @@ Query: `sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_tim
 
 Refer to the [alerts reference](./alerts.md#searcher-frontend-internal-api-error-responses) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14097,7 +14352,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14116,7 +14371,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^searcher.*"}) > 60
 
 Refer to the [alerts reference](./alerts.md#searcher-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14135,7 +14390,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^searcher.*"}`
 
 Refer to the [alerts reference](./alerts.md#searcher-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14157,7 +14412,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14178,7 +14433,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^searcher.*"}[1h]) + 
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14197,7 +14452,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14216,7 +14471,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^s
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14235,7 +14490,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^sear
 
 Refer to the [alerts reference](./alerts.md#searcher-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14257,7 +14512,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#searcher-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100512` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14280,7 +14535,7 @@ A high value here indicates a possible goroutine leak.
 
 Refer to the [alerts reference](./alerts.md#searcher-go-goroutines) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14299,7 +14554,7 @@ Query: `max by(instance) (go_goroutines{job=~".*searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-go-gc-duration-seconds) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -14320,7 +14575,7 @@ Query: `max by(instance) (go_gc_duration_seconds{job=~".*searcher"})`
 
 Refer to the [alerts reference](./alerts.md#searcher-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
@@ -19910,7 +20165,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^.*"}[10m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m])) / (sum(increase(src_codeintel_autoindexing_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m])) + sum(increase(src_codeintel_autoindexing_errors_total{op='HandleIndexSchedule',job=~"^${source:regex}.*"}[10m]))) * 100`
 
 </details>
 
@@ -19994,7 +20249,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20013,7 +20268,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20032,7 +20287,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20051,7 +20306,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20070,7 +20325,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20089,7 +20344,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20108,7 +20363,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20127,7 +20382,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20148,7 +20403,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20167,7 +20422,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20186,7 +20441,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20205,7 +20460,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20224,7 +20479,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20243,7 +20498,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20262,7 +20517,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20281,7 +20536,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20302,7 +20557,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20321,7 +20576,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20340,7 +20595,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20359,7 +20614,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20378,7 +20633,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20397,7 +20652,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20416,7 +20671,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20435,7 +20690,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20456,7 +20711,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20475,7 +20730,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20494,7 +20749,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20513,7 +20768,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20532,7 +20787,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20551,7 +20806,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20570,7 +20825,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20589,7 +20844,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_background_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20610,7 +20865,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20629,7 +20884,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20648,7 +20903,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20667,7 +20922,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20686,7 +20941,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20705,7 +20960,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_autoindexing_inference_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20724,7 +20979,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20743,7 +20998,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_autoindexing_inference_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_autoindexing_inference_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20764,7 +21019,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20783,7 +21038,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_luasandbox_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20802,7 +21057,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20821,7 +21076,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20840,7 +21095,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20859,7 +21114,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_luasandbox_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -20878,7 +21133,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20897,7 +21152,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-au
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_luasandbox_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -20924,7 +21179,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20943,7 +21198,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20962,7 +21217,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -20981,7 +21236,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21000,7 +21255,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21019,7 +21274,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21038,7 +21293,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21057,7 +21312,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21078,7 +21333,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21097,7 +21352,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21116,7 +21371,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21135,7 +21390,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21154,7 +21409,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21173,7 +21428,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21192,7 +21447,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21211,7 +21466,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21232,7 +21487,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21251,7 +21506,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21270,7 +21525,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21289,7 +21544,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21308,7 +21563,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21327,7 +21582,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_background_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21346,7 +21601,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21365,7 +21620,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_background_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_background_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21386,7 +21641,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21405,7 +21660,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21424,7 +21679,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21443,7 +21698,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21462,7 +21717,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21481,7 +21736,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21500,7 +21755,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21519,7 +21774,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21540,7 +21795,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21559,7 +21814,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21578,7 +21833,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21597,7 +21852,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21616,7 +21871,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21635,7 +21890,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_uploads_transport_http_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -21654,7 +21909,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21673,7 +21928,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_uploads_transport_http_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_uploads_transport_http_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -21696,7 +21951,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_removed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21717,7 +21972,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_index_records_removed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21738,7 +21993,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_uploads_purged_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21759,7 +22014,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_audit_log_records_expired_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21780,7 +22035,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_background_cleanup_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21801,7 +22056,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_autoindexing_background_cleanup_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_autoindexing_background_cleanup_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21822,7 +22077,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_total{job=~"^${source:regex}.*"})`
 
 </details>
 
@@ -21847,7 +22102,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^.*"}[30m]))`
+Query: `sum(increase(src_codeintel_commit_graph_total{job=~"^${source:regex}.*"}[30m])) / sum(increase(src_codeintel_commit_graph_processor_total{job=~"^${source:regex}.*"}[30m]))`
 
 </details>
 
@@ -21866,7 +22121,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})`
+Query: `max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^${source:regex}.*"})`
 
 </details>
 
@@ -21889,7 +22144,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_repositories_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21910,7 +22165,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21931,7 +22186,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_commits_scanned_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21952,7 +22207,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_upload_records_expired_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21979,7 +22234,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -21998,7 +22253,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22017,7 +22272,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22036,7 +22291,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22055,7 +22310,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22074,7 +22329,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22093,7 +22348,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22112,7 +22367,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22133,7 +22388,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22152,7 +22407,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22171,7 +22426,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22190,7 +22445,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22209,7 +22464,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22228,7 +22483,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22247,7 +22502,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22266,7 +22521,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22287,7 +22542,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22306,7 +22561,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22325,7 +22580,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22344,7 +22599,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22363,7 +22618,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22382,7 +22637,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_policies_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22401,7 +22656,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22420,7 +22675,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_policies_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_policies_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22443,7 +22698,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-policies/codeintel-polici
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22470,7 +22725,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22489,7 +22744,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22508,7 +22763,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22527,7 +22782,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22546,7 +22801,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22565,7 +22820,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22584,7 +22839,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22603,7 +22858,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22624,7 +22879,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22643,7 +22898,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22662,7 +22917,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22681,7 +22936,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22700,7 +22955,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22719,7 +22974,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_lsifstore_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22738,7 +22993,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22757,7 +23012,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_lsifstore_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_lsifstore_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22778,7 +23033,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22797,7 +23052,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22816,7 +23071,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22835,7 +23090,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22854,7 +23109,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22873,7 +23128,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_transport_graphql_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -22892,7 +23147,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22911,7 +23166,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_transport_graphql_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_transport_graphql_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -22932,7 +23187,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22951,7 +23206,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum  by (le)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^.*"}[5m]))`
+Query: `sum  by (le)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22970,7 +23225,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -22989,7 +23244,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m])) / (sum(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m])) + sum(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m])) + sum(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -23008,7 +23263,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -23027,7 +23282,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_codenav_store_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
@@ -23046,7 +23301,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -23065,7 +23320,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_codenav_store_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 

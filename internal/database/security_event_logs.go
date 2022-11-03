@@ -42,7 +42,9 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenCreated     SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted     SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted SecurityEventName = "AccessTokenHardDeleted"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.

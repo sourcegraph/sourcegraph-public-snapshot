@@ -34,7 +34,10 @@ const MOUSE_MAIN_BUTTON = 0
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line', attributes: { tabIndex: '-1' } })
+const selectedLineDecoration = Decoration.line({
+    class: 'selected-line',
+    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+})
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()

@@ -48,6 +48,7 @@ var (
 	bucketName                   = env.Get("CODEINTEL_CODENAV_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
 	rankingGraphKey              = env.Get("CODEINTEL_CODENAV_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
 	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_CODENAV_RANKING_GRAPH_BATCH_SIZE", 1, "How many uploads to process at once.")
+	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_CODENAV_RANKING_GRAPH_DELETE_BATCH_SIZE", 20, "How many stale uploads to delete at once.")
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_CODENAV_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
 )
 

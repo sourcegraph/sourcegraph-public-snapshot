@@ -114,12 +114,6 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	if completedItr.CompletedAt.IsZero() {
 		t.Fatal(errors.New("iterator should be COMPLETED after success"))
 	}
-
-	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
-	require.NoError(t, err)
-	if len(recordingTimes.RecordingTimes) == 0 {
-		t.Fatal(errors.New("recording times should have been saved after success"))
-	}
 }
 
 func Test_PullsByPriorityGroupAge(t *testing.T) {
@@ -266,12 +260,6 @@ func Test_BackfillWithRetry(t *testing.T) {
 	if completedBackfill.State != BackfillStateProcessing {
 		t.Fatal(errors.New("backfill should be state in progress"))
 	}
-
-	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
-	require.NoError(t, err)
-	if len(recordingTimes.RecordingTimes) == 0 {
-		t.Fatal(errors.New("recording times should have been saved after success"))
-	}
 }
 
 func Test_BackfillWithRetryAndComplete(t *testing.T) {
@@ -357,11 +345,4 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	if completedBackfill.State != BackfillStateCompleted {
 		t.Fatal(errors.New("backfill should be state completed"))
 	}
-
-	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
-	require.NoError(t, err)
-	if len(recordingTimes.RecordingTimes) == 0 {
-		t.Fatal(errors.New("recording times should have been saved after success"))
-	}
-
 }
