@@ -95,6 +95,9 @@ func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, c
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
+	// TODO(jchen): Once https://github.com/sourcegraph/customer/issues/1427 is
+	// implemented, use the env var as the toggle to determine if we need to run this
+	// background job.
 	goroutine.Go(func() { sourcegraphoperator.CleanUp(ctx, logger, db) })
 
 	return enterpriseServices
