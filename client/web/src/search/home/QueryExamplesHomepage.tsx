@@ -1,17 +1,16 @@
 import React, { useCallback, useState } from 'react'
 
-import { useHistory } from 'react-router'
-
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
+import { useHistory } from 'react-router'
 
-import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 
 import { useQueryExamples } from './useQueryExamples'
 
@@ -58,7 +57,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string, slug: string | undefined) => {
-            console.log('hit', isSourcegraphDotCom, toggleSyntaxToQueryExamples)
+            // Run search for dotcom longer query examples
             if (isSourcegraphDotCom && toggleSyntaxToQueryExamples) {
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
                 history.push(slug!)
@@ -96,6 +95,9 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             setSelectedTip,
             selectTipTimeout,
             setSelectTipTimeout,
+            toggleSyntaxToQueryExamples,
+            history,
+            isSourcegraphDotCom
         ]
     )
 
@@ -104,12 +106,12 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             <div>
                 {isSourcegraphDotCom ? (
                     <div className="d-flex justify-content-center align-items-center mb-4">
-                        <Text className={classNames('mr-2 pr-2 mb-0', styles.codeBasicsTitle)}>
+                        <Text className={classNames('mr-2 pr-2 mb-0', styles.title)}>
                             {toggleSyntaxToQueryExamples ? 'Search Query Examples' : 'Code Search Basics'}
                         </Text>
-                        <Link onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)} to={undefined}>
+                        <Text role="button" className={classNames('mb-0', styles.toggleLink)} onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)}>
                             {toggleSyntaxToQueryExamples ? 'Code search basics' : 'Search query examples'}
-                        </Link>
+                        </Text>
                     </div>
                 ) : (
                     <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
@@ -171,7 +173,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             </div>
             {isSourcegraphDotCom && (
                 <div className="d-flex align-items-center justify-content-lg-center my-5">
-                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
+                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.title)}>Pro Tip</H4>
                     <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                         Use Sourcegraph to search across your team's code.
                     </Link>

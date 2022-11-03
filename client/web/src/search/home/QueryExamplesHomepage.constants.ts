@@ -14,11 +14,11 @@ export const exampleQueryColumns = [
     [
         {
             title: 'Error boundaries in React',
-            queryExamples: [{ id: 'error-boundaries', query: 'static getDerivedStateFromError(', slug: '' }],
+            queryExamples: [{ id: 'error-boundaries', query: 'static getDerivedStateFromError(', slug: '?q=context%3Aglobal+static+getDerivedStateFromError%28' }],
         },
         {
             title: 'Find to-dos on a specific repository',
-            queryExamples: [{ id: 'find-todos', query: 'repo:facebook/react content:TODO', slug: '' }],
+            queryExamples: [{ id: 'find-todos', query: 'repo:facebook/react content:TODO', slug: '?q=context%3Aglobal+repo%3Afacebook%2Freact+content%3ATODO' }],
         },
     ],
 ]
@@ -67,7 +67,6 @@ export const basicSyntaxColumns = [
             title: 'Get advanced',
             queryExamples: [
                 { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
-                // eslint-disable-next-line no-useless-escape
                 {
                     id: 'conditional-repo',
                     query: 'repo:has.file(path:package.json content:eslint.*^8.13.0) file:.eslintrc$ rules',
