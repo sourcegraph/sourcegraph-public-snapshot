@@ -1648,7 +1648,7 @@ CREATE TABLE codeintel_ranking_exports (
     graph_key text NOT NULL,
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
-    path text
+    object_prefix text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq

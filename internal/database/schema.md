@@ -920,13 +920,13 @@ Triggers:
 
 # Table "public.codeintel_ranking_exports"
 ```
-  Column   |           Type           | Collation | Nullable |                        Default                        
------------+--------------------------+-----------+----------+-------------------------------------------------------
- upload_id | integer                  |           |          | 
- graph_key | text                     |           | not null | 
- locked_at | timestamp with time zone |           | not null | now()
- id        | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
- path      | text                     |           |          | 
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ upload_id     | integer                  |           |          | 
+ graph_key     | text                     |           | not null | 
+ locked_at     | timestamp with time zone |           | not null | now()
+ id            | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
+ object_prefix | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_upload_id_graph_key" UNIQUE, btree (upload_id, graph_key)

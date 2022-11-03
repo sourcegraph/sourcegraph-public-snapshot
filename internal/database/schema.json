@@ -7133,7 +7133,7 @@
           "Comment": ""
         },
         {
-          "Name": "path",
+          "Name": "object_prefix",
           "Index": 5,
           "TypeName": "text",
           "IsNullable": true,

@@ -15,4 +15,4 @@ ALTER TABLE codeintel_ranking_exports ADD PRIMARY KEY (upload_id, graph_key);
 DROP INDEX IF EXISTS codeintel_ranking_exports_upload_id_graph_key;
 
 -- TODO
-ALTER TABLE codeintel_ranking_exports DROP COLUMN IF EXISTS path;
+ALTER TABLE codeintel_ranking_exports DROP COLUMN IF EXISTS object_prefix;

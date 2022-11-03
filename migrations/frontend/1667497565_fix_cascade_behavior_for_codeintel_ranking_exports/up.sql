@@ -12,4 +12,4 @@ ALTER TABLE codeintel_ranking_exports ADD CONSTRAINT codeintel_ranking_exports_u
 CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports(upload_id, graph_key);
 
 -- TODO
-ALTER TABLE codeintel_ranking_exports ADD COLUMN IF NOT EXISTS path TEXT;
+ALTER TABLE codeintel_ranking_exports ADD COLUMN IF NOT EXISTS object_prefix TEXT;
