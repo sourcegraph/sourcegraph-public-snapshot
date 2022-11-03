@@ -5,6 +5,7 @@ import { useHistory } from 'react-router'
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
+import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -40,29 +41,6 @@ export const queryToTip = (id: string | undefined): Tip | null => {
     }
     return null
 }
-
-const exampleQueryColumns = [
-    [
-        {
-            title: 'Discover how developers are using hooks',
-            queryExamples: [{ id: 'hooks', query: 'useState AND useRef lang:javascript', slug: '?q=context:global+useState+AND+useRef+lang:javascript' }],
-        },
-        {
-            title: 'Discover what is being passed to propTypes for type checking',
-            queryExamples: [{ id: 'prop-types', query: '.propTypes = {...} patterntype:structural', slug: '?q=context:global+.propTypes+%3D+%7B...%7D' }],
-        },
-    ],
-    [
-        {
-            title: 'Error boundaries in React',
-            queryExamples: [{ id: 'error-boundaries', query: 'static getDerivedStateFromError(', slug: '' }],
-        },
-        {
-            title: 'Find to-dos on a specific repository',
-            queryExamples: [{ id: 'find-todos', query: 'repo:facebook/react content:TODO', slug: '' }],
-        },
-    ],
-]
 
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
     selectedSearchContextSpec,
@@ -125,13 +103,13 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
         <div>
             <div>
                 {isSourcegraphDotCom ? (
-                    <div className="d-flex justify-content-center align-items-center mb-2">
-                        <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>
+                    <div className="d-flex justify-content-center align-items-center mb-4">
+                        <Text className={classNames('mr-2 pr-2 mb-0', styles.codeBasicsTitle)}>
                             {toggleSyntaxToQueryExamples ? 'Search Query Examples' : 'Code Search Basics'}
                         </Text>
-                        <Button onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)}>
+                        <Link onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)} to={undefined}>
                             {toggleSyntaxToQueryExamples ? 'Code search basics' : 'Search query examples'}
-                        </Button>
+                        </Link>
                     </div>
                 ) : (
                     <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
