@@ -21,11 +21,7 @@ import {
     SERIES_MOCK_CHART,
 } from '../../../../../components'
 import { DATA_SERIES_COLORS } from '../../../../../constants'
-import {
-    CodeInsightsBackendContext,
-    SeriesChartContent,
-    SeriesPreviewSettings
-} from '../../../../../core'
+import { CodeInsightsBackendContext, SeriesChartContent, SeriesPreviewSettings } from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
 
 const createExampleDataSeries = (query: string): SeriesPreviewSettings[] => [

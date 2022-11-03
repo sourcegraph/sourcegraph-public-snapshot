@@ -48,7 +48,9 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
             if (!selectedOptionId) {
                 return
             }
-            const optionButton = rootReference.current?.querySelector<HTMLButtonElement>(`[data-option-id="${selectedOptionId}"]`)
+            const optionButton = rootReference.current?.querySelector<HTMLButtonElement>(
+                `[data-option-id="${selectedOptionId}"]`
+            )
             optionButton?.focus()
         }, [selectedOptionId])
 
@@ -119,7 +121,17 @@ export const NotebookCommandPaletteInput = React.forwardRef<HTMLInputElement, No
                 event.stopPropagation()
                 event.nativeEvent.stopImmediatePropagation()
             },
-            [selectedOptionId, showCommandPalette, focusOption, getNextOptionId, closeCommandPalette, input, onFocusPreviousBlock, getPreviousOptionId, onDeselected]
+            [
+                selectedOptionId,
+                showCommandPalette,
+                focusOption,
+                getNextOptionId,
+                closeCommandPalette,
+                input,
+                onFocusPreviousBlock,
+                getPreviousOptionId,
+                onDeselected,
+            ]
         )
 
         useEffect(() => {

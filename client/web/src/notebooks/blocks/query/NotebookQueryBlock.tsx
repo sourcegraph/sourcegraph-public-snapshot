@@ -173,7 +173,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                             style={{
                                 display: 'inline-block',
                             }}
-                         />
+                        />
                         <div className={styles.codeMirrorWrapper}>
                             <CodeMirrorQueryInput
                                 value={input.query}
