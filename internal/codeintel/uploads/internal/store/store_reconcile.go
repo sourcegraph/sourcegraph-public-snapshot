@@ -18,7 +18,7 @@ candidates AS (
 	SELECT u.id
 	FROM lsif_uploads u
 	WHERE u.state = 'completed'
-	ORDER BY u.last_reconcile_at DESC NULLS FIRST
+	ORDER BY u.last_reconcile_at DESC NULLS FIRST, u.id
 	LIMIT %s
 ),
 locked_candidates AS (
