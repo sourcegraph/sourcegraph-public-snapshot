@@ -108,6 +108,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		// Only return file match if line matches exist
 		if len(fm.ChunkMatches) > 0 {
 			fm.Symbols = nil
+			fm.PathMatches = nil
 			return fm
 		}
 		return nil
