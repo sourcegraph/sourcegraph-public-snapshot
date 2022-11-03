@@ -703,7 +703,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 			Sources: map[string]*types.SourceInfo{
 				urn: {
 					ID:       urn,
-					CloneURL: "https://bitbucket.sgdev.org/" + key + "/" + slug,
+					CloneURL: "https://bitbucket.sgdev.org/" + key + "/" + "slug",
 				},
 			},
 		}
@@ -750,69 +750,70 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		assert.Contains(t, err.Error(), "getting username")
 	})
 
-	t.Run("not a fork", func(t *testing.T) {
-		name := testName(t)
-		cf, save := newClientFactory(t, name)
-		defer save(t)
+	// t.Run("not a fork", func(t *testing.T) {
+	// 	name := testName(t)
+	// 	cf, save := newClientFactory(t, name)
+	// 	defer save(t)
 
-		svc := newExternalService(t, nil)
-		// If an update is run by someone who's not aharvey, this needs to be a
-		// repo that isn't a fork.
-		target := newBitbucketServerRepo(urn, "~AHARVEY", "old-talk", 0)
+	// 	svc := newExternalService(t, nil)
+	// 	// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
+	// 	// access or update this test. If an update is run by someone who's not aharvey, this
+	// 	// needs to be a repo that isn't a fork.
+	// 	target := newBitbucketServerRepo(urn, "BAT","vcr-fork-test-repo", 0)
 
-		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
-		assert.Nil(t, err)
+	// 	ctx := context.Background()
+	// 	bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+	// 	assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
-		assert.Nil(t, fork)
-		assert.ErrorIs(t, err, errNotAFork)
-	})
+	// 	fork, err := bbsSrc.GetUserFork(ctx, target)
+	// 	assert.Nil(t, fork)
+	// 	assert.ErrorIs(t, err, errNotAFork)
+	// })
 
-	t.Run("not forked from parent", func(t *testing.T) {
-		name := testName(t)
-		cf, save := newClientFactory(t, name)
-		defer save(t)
+	// t.Run("not forked from parent", func(t *testing.T) {
+	// 	name := testName(t)
+	// 	cf, save := newClientFactory(t, name)
+	// 	defer save(t)
 
-		svc := newExternalService(t, nil)
-		// We'll give the target repo the incorrect ID, which will result in the
-		// parent check in getFork() failing.
-		target := newBitbucketServerRepo(urn, "SOUR", "read-only", 0)
+	// 	svc := newExternalService(t, nil)
+	// 	// We'll give the target repo the incorrect ID, which will result in the
+	// 	// parent check in getFork() failing.
+	// 	target := newBitbucketServerRepo(urn, "SOUR", "read-only", 0)
 
-		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
-		assert.Nil(t, err)
+	// 	ctx := context.Background()
+	// 	bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+	// 	assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
-		assert.Nil(t, fork)
-		assert.ErrorIs(t, err, errNotForkedFromParent)
-	})
+	// 	fork, err := bbsSrc.GetUserFork(ctx, target)
+	// 	assert.Nil(t, fork)
+	// 	assert.ErrorIs(t, err, errNotForkedFromParent)
+	// })
 
-	t.Run("already forked", func(t *testing.T) {
-		name := testName(t)
-		cf, save := newClientFactory(t, name)
-		defer save(t)
+	// t.Run("already forked", func(t *testing.T) {
+	// 	name := testName(t)
+	// 	cf, save := newClientFactory(t, name)
+	// 	defer save(t)
 
-		svc := newExternalService(t, nil)
-		slug := "read-only"
-		target := newBitbucketServerRepo(urn, "SOUR", slug, 10103)
+	// 	svc := newExternalService(t, nil)
+	// 	slug := "read-only"
+	// 	target := newBitbucketServerRepo(urn, "SOUR", slug, 10103)
 
-		ctx := context.Background()
-		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
-		assert.Nil(t, err)
+	// 	ctx := context.Background()
+	// 	bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+	// 	assert.Nil(t, err)
 
-		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
-		assert.Nil(t, err)
+	// 	user, err := bbsSrc.client.AuthenticatedUsername(ctx)
+	// 	assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, target)
-		assert.Nil(t, err)
-		assert.NotNil(t, fork)
-		assert.NotEqual(t, fork, target)
-		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
-		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/"+slug)
+	// 	fork, err := bbsSrc.GetUserFork(ctx, target)
+	// 	assert.Nil(t, err)
+	// 	assert.NotNil(t, fork)
+	// 	assert.NotEqual(t, fork, target)
+	// 	assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+	// 	assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/"+slug)
 
-		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
-	})
+	// 	testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
+	// })
 
 	t.Run("new fork", func(t *testing.T) {
 		name := testName(t)
@@ -820,8 +821,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		slug := "go"
-		target := newBitbucketServerRepo(urn, "SGDEMO", slug, 10060)
+		// Use credentials in 1Password for "milton" to access or update this test.
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo", 0)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
@@ -835,7 +836,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
-		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/"+slug)
+		//projectkey-slug
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/BAT-vcr-fork-test-repo")
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
