@@ -11,9 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// Init initializes the given enterpriseServices to include the required
-// resolvers for Batch Changes and sets up webhook handlers for changeset
-// events.
+// Init initializes the given enterpriseServices with the webhook handlers for handling GitHub push events.
 func Init(
 	ctx context.Context,
 	db database.DB,
