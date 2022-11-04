@@ -22,9 +22,10 @@ const TestRawBatchSpec = `{
     {
       "run": "echo 'foobar'",
       "container": "alpine",
-      "env": {
-        "PATH": "/work/foobar:$PATH"
-      }
+      "env": [
+		{ "PATH": "/work/foobar:$PATH" },
+		"FOO"
+	  ]
     }
   ],
   "changesetTemplate": {
