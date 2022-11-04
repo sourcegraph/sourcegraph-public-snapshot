@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +39,7 @@ func cleanup(ctx context.Context, db database.DB) error {
 	}
 
 	q := sqlf.Sprintf(`
-SELECT array_agg(id)
+SELECT id
 FROM users
 WHERE
 	id IN ( -- Only users with a single external account and the service_type is "sourcegraph-operator"
@@ -56,8 +56,7 @@ AND created_at <= %s
 		providerType,
 		time.Now().Add(-1*p.lifecycleDuration()),
 	)
-	var userIDs []int32
-	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(pq.Array(&userIDs))
+	userIDs, err := basestore.ScanInt32s(db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		return errors.Wrap(err, "query user IDs")
 	}
