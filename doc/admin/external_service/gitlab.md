@@ -120,9 +120,7 @@ To set up webhooks:
 1. Add the `"webhooks"` property to the configuration (you can generate a secret with `openssl rand -hex 32`):<br /> `"webhooks": [{"secret": "verylongrandomsecret"}]`
 1. Click **Update repositories**.
 1. Copy the webhook URL displayed below the **Update repositories** button.
-1. Set up webhook on your GitLab instance, you have two options:
-   1. System wide webhooks (recommended): On GitLab, go to **Main menu > Admin > System hooks**. ([Details here](https://docs.gitlab.com/ee/administration/system_hooks.html#create-a-system-hook))
-   1. Per project webhooks: On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
+1. On GitLab, go to your project, and then **Settings > Webhooks** (or **Settings > Integration** on older GitLab versions that don't have the **Webhooks** option).
 1. Fill in the webhook form:
    * **URL**: the URL you copied above from Sourcegraph.
    * **Secret token**: the secret token you configured Sourcegraph to use above.
