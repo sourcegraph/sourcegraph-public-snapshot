@@ -4,6 +4,7 @@ Thank you for your interest in contributing to Sourcegraph!
 The goal of this document is to provide a high-level overview of how you can contribute to the Sourcegraph JetBrains Extension.
 Please refer to our [main CONTRIBUTING](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md) docs for general information regarding contributing to any Sourcegraph feature.
 
+
 ## License
 
 Apache
@@ -34,8 +35,8 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 ### Publishing from your local machine
 
 1. Update `pluginVersion` in `gradle.properties`
-
-   - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+ 
+    - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
 3. Go through
