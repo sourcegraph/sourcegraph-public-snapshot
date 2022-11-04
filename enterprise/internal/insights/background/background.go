@@ -19,11 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -92,7 +92,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 				RepoStore:      mainAppDB.Repos(),
 				BackfillRunner: backfillRunner,
 				ObsContext:     observationContext,
-				AllRepoIterator: discovery.NewAllReposIterator(dbcache.NewIndexableReposLister(observationContext.Logger, mainAppDB.Repos()),
+				AllRepoIterator: discovery.NewAllReposIterator(
 					mainAppDB.Repos(),
 					time.Now,
 					envvar.SourcegraphDotComMode(),
@@ -102,6 +102,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 						Name:      "insight_backfill_new_index_repositories_analyzed",
 						Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
 					}),
+				CostAnalyzer: priority.DefaultQueryAnalyzer(),
 			}
 			monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
 			routines = append(routines, monitor.Routines()...)

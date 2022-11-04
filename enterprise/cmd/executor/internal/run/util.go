@@ -131,13 +131,17 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 }
 
 func firecrackerOptions(c *config.Config) command.FirecrackerOptions {
+	dockerMirrors := []string{}
+	if len(c.DockerRegistryMirrorURL) > 0 {
+		dockerMirrors = strings.Split(c.DockerRegistryMirrorURL, ",")
+	}
 	return command.FirecrackerOptions{
 		Enabled:                  c.UseFirecracker,
 		Image:                    c.FirecrackerImage,
 		KernelImage:              c.FirecrackerKernelImage,
 		SandboxImage:             c.FirecrackerSandboxImage,
 		VMStartupScriptPath:      c.VMStartupScriptPath,
-		DockerRegistryMirrorURLs: strings.Split(c.DockerRegistryMirrorURL, ","),
+		DockerRegistryMirrorURLs: dockerMirrors,
 	}
 }
 

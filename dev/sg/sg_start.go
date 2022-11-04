@@ -136,7 +136,7 @@ func constructStartCmdLongHelp() string {
 		case "batches":
 			names = append(names, fmt.Sprintf("%s 🦡", name))
 		default:
-			names = append(names, fmt.Sprintf("%s", name))
+			names = append(names, name)
 		}
 	}
 	sort.Strings(names)

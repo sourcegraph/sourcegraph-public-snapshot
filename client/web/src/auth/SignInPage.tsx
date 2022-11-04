@@ -108,7 +108,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
+                        New to Sourcegraph? <Link to="https://signup.sourcegraph.com">Sign up</Link>
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

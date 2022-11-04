@@ -285,8 +285,8 @@ func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutorSecret() (*ExecutorSecretResolver, bool) {
-	n, ok := r.Node.(*ExecutorSecretResolver)
+func (r *NodeResolver) ToExecutorSecret() (*executorSecretResolver, bool) {
+	n, ok := r.Node.(*executorSecretResolver)
 	return n, ok
 }
 

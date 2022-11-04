@@ -191,22 +191,3 @@ If you would like to sync all public repositories while omitting archived repos,
     ]
 }
 ```
-### repositoryQuery returns first 1000 results only
-
-GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three pre-defined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
-
-```jsonx
-{
-  // ...
-  "repositoryQuery": [
-    "org:Microsoft fork:no created:>=2019",
-    "org:Microsoft fork:no created:2018",
-    "org:Microsoft fork:no created:2016..2017",
-    "org:Microsoft fork:no created:<2016"
-  ]
-}
-```
-
-If splitting by creation date does not work, try another field. See [GitHub advanced search query](https://github.com/search/advanced) for other fields you can try.
-
-See [Handle GitHub repositoryQuery that has more than 1000 results](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.

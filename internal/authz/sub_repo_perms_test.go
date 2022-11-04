@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
@@ -388,22 +389,23 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
-		// We can't support rules that start with a wildcard, see comment in expandDirs
+		// If we have a wildcard in a path we allow all directories that are not
+		// explicitly excluded.
 		{
-			paths:         []string{"**/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"**/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
-			paths:         []string{"*/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"*/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
-			paths:         []string{"/**/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"/**/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
-			paths:         []string{"/*/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"/*/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
 			paths:      []string{"-/**", "/storage/redis/**"},
@@ -412,6 +414,13 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 		{
 			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
 			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
+		// Even with a wildcard include rule, we should still exclude directories that
+		// are explicitly excluded later
+		{
+			paths:         []string{"/**", "-/storage/**"},
+			canReadAll:    []string{"/foo"},
+			cannotReadAny: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
 	}
 
@@ -556,4 +565,15 @@ func TestFileInfoPath(t *testing.T) {
 		}
 		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
 	})
+}
+
+func TestGlobMatchOnlyDirectories(t *testing.T) {
+	g, err := glob.Compile("**/", '/')
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, g.Match("foo/"))
+	assert.True(t, g.Match("foo/thing/"))
+	assert.False(t, g.Match("foo/thing"))
+	assert.False(t, g.Match("/foo/thing"))
 }

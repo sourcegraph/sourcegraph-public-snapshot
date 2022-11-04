@@ -541,8 +541,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			return executorSecretByID(ctx, db, id)
 		},
 		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
-			// TODO: Implement.
-			return nil, nil
+			return executorSecretAccessLogByID(ctx, db, id)
 		},
 	}
 	return r

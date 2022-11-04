@@ -413,6 +413,10 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		contentEvent.RepoLastFetched = r.LastFetched
 	}
 
+	if fm.Debug != nil {
+		contentEvent.Debug = *fm.Debug
+	}
+
 	return contentEvent
 }
 

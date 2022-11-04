@@ -19,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/mountinfo"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -118,6 +119,11 @@ func (s *Store) Start() {
 		)
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)
+
+		o := mountinfo.CollectorOpts{Namespace: "searcher"}
+		m := mountinfo.NewCollector(s.Log, o, map[string]string{"cacheDir": s.Path})
+		s.ObservationContext.Registerer.MustRegister(m)
+
 		go s.watchAndEvict()
 		go s.watchConfig()
 	})
