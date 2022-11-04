@@ -26,15 +26,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func (b *backgroundJob) NewCrateSyncer() goroutine.BackgroundRoutine {
-	if b.gitClient == nil {
-		panic("illegal service construction - NewCrateSyncer called without a registered gitClient")
-	}
+type crateSyncerJob struct {
+	dependenciesSvc DependenciesService
+	gitClient       GitserverClient
+	extSvcStore     ExternalServiceStore
+	operations      *operations
+}
 
+func NewCrateSyncer(dependenciesSvc DependenciesService,
+	gitClient GitserverClient,
+	extSvcStore ExternalServiceStore,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), b.extSvcStore)
+	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
 	if externalService != nil {
 		config, err := rustPackagesConfig(context.Background(), externalService)
 		if err == nil { // silently ignore config errors.
@@ -45,12 +52,19 @@ func (b *backgroundJob) NewCrateSyncer() goroutine.BackgroundRoutine {
 		}
 	}
 
+	job := crateSyncerJob{
+		dependenciesSvc: dependenciesSvc,
+		gitClient:       gitClient,
+		extSvcStore:     extSvcStore,
+		operations:      newOperations(observationContext),
+	}
+
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleCrateSyncer(ctx, interval)
+		return job.handleCrateSyncer(ctx, interval)
 	}))
 }
 
-func (b *backgroundJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
+func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
 	ctx, _, endObservation := b.operations.handleCrateSyncer.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -134,6 +148,7 @@ func (b *backgroundJob) handleCrateSyncer(ctx context.Context, interval time.Dur
 		if err != nil {
 			return err
 		}
+
 		new, err := b.dependenciesSvc.UpsertDependencyRepos(ctx, pkgs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to insert Rust crate")
