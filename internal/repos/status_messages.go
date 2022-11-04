@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -74,6 +75,11 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 	// instances.
 	// So for now we don't return the indexing message on sourcegraph.com.
 	if !envvar.SourcegraphDotComMode() {
+		// Check feature flag
+		if !featureflag.FromContext(ctx).GetBoolOr("indexing-status-message", false) {
+			return messages, nil
+		}
+
 		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "loading repo statistics")
