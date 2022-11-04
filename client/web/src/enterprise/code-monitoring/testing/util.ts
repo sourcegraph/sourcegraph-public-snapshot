@@ -27,6 +27,7 @@ export const mockUser: AuthenticatedUser = {
     tosAccepted: true,
     searchable: true,
     emails: [],
+    latestSettings: null,
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {

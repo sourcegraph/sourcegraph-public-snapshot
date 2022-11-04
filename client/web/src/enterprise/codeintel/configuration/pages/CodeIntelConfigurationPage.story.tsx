@@ -303,6 +303,7 @@ Policies.args = {
         tosAccepted: true,
         searchable: true,
         emails: [],
+        latestSettings: null,
     },
 }
 

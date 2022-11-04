@@ -1,20 +1,16 @@
 import { useMemo } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsOrgSubject,
-    SettingsUserSubject,
-    SettingsSubject,
-    SettingsCascadeOrError,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsSubject, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { Scalars } from '../../../graphql-operations'
 
 export interface UseNamespacesResult {
-    userNamespace: SettingsUserSubject
-    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
-    defaultSelectedNamespace: SettingsUserSubject | SettingsOrgSubject
+    userNamespace: UserSettingFields
+    namespaces: (UserSettingFields | OrgSettingFields)[]
+    defaultSelectedNamespace: UserSettingFields | OrgSettingFields
 }
 
 /**
@@ -40,7 +36,7 @@ export const useNamespaces = (
     )
 
     const userNamespace = useMemo(
-        () => rawNamespaces.find((namespace): namespace is SettingsUserSubject => namespace.__typename === 'User'),
+        () => rawNamespaces.find((namespace): namespace is UserSettingFields => namespace.__typename === 'User'),
         [rawNamespaces]
     )
 
@@ -49,11 +45,11 @@ export const useNamespaces = (
     }
 
     const organizationNamespaces = useMemo(
-        () => rawNamespaces.filter((namespace): namespace is SettingsOrgSubject => namespace.__typename === 'Org'),
+        () => rawNamespaces.filter((namespace): namespace is OrgSettingFields => namespace.__typename === 'Org'),
         [rawNamespaces]
     )
 
-    const namespaces: (SettingsUserSubject | SettingsOrgSubject)[] = useMemo(
+    const namespaces: (UserSettingFields | OrgSettingFields)[] = useMemo(
         () => [userNamespace, ...organizationNamespaces],
         [userNamespace, organizationNamespaces]
     )

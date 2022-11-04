@@ -102,6 +102,7 @@ describe('FileSearchResult', () => {
                         settingsURL: '/users/f/settings',
                         viewerCanAdminister: true,
                         displayName: 'f',
+                        latestSettings: null,
                     },
                 },
             ],

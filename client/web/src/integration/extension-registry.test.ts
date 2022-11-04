@@ -192,6 +192,7 @@ describe('Extension Registry', () => {
                     viewerCanAdminister: true,
                     searchable: true,
                     emails: [],
+                    latestSettings: null,
                 },
             }),
             RegistryExtensions: () => ({

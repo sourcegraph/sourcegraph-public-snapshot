@@ -81,6 +81,7 @@ export const commonWebGraphQlResults: Partial<
             viewerCanAdminister: true,
             searchable: true,
             emails: [],
+            latestSettings: null,
         },
     }),
     ...createViewerSettingsGraphQLOverride(),

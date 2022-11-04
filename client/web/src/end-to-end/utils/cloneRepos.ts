@@ -1,6 +1,6 @@
 import { Context } from 'mocha'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 

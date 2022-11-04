@@ -5,7 +5,6 @@ import { createAggregateError } from '@sourcegraph/common'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { ISettingsCascade } from '@sourcegraph/shared/src/schema'
 import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 // Throttle refreshes for one hour.
@@ -36,7 +35,7 @@ export function initializeSourcegraphSettings(
                 if (!data?.viewerSettings) {
                     throw createAggregateError(errors)
                 }
-                return gqlToCascade(data?.viewerSettings as ISettingsCascade)
+                return gqlToCascade(data.viewerSettings)
             }),
             catchError(error => {
                 console.warn('Failed to load Sourcegraph settings', error)

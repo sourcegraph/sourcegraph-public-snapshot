@@ -5,11 +5,8 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -60,20 +57,24 @@ const config: Meta = {
 
 export default config
 
-const FIXTURE_ORG: SettingsOrgSubject = {
+const FIXTURE_ORG: OrgSettingFields = {
     __typename: 'Org',
     name: 'sourcegraph',
     displayName: 'Sourcegraph',
     id: 'a',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
-const FIXTURE_USER: SettingsUserSubject = {
+const FIXTURE_USER: UserSettingFields = {
     __typename: 'User',
     username: 'alice',
     displayName: 'alice',
     id: 'b',
     viewerCanAdminister: true,
+    settingsURL: null,
+    latestSettings: null,
 }
 
 const SETTINGS_CASCADE = {

@@ -75,6 +75,7 @@ const authUser: AuthenticatedUser = {
     tosAccepted: true,
     searchable: true,
     emails: [],
+    latestSettings: null,
 }
 
 const repositories: SearchContextFields['repositories'] = [
