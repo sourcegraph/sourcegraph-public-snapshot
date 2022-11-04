@@ -4,12 +4,10 @@ Site admins can sync Git repositories hosted on [GitHub.com](https://github.com)
 
 To connect GitHub to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitHub**.
-1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
+1. Go to **Site admin > Manage code hosts**
+2. Select **GitHub**.
+3. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Press **Add repositories**.
 
 In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
 
@@ -23,8 +21,6 @@ In this example, the kubernetes public repository on GitHub is added by selectin
   ]
 }
 ```
-
-> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
