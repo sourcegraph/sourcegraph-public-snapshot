@@ -11,5 +11,5 @@ ALTER TABLE codeintel_ranking_exports ADD CONSTRAINT codeintel_ranking_exports_u
 -- Emulate old primary key index
 CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports(upload_id, graph_key);
 
--- TODO
+Add prefix to control authoritative GCS paths as we might set upload_id to NULL now
 ALTER TABLE codeintel_ranking_exports ADD COLUMN IF NOT EXISTS object_prefix TEXT;
