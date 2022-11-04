@@ -101,9 +101,9 @@ func TestGetDocumentRanks(t *testing.T) {
 
 	expected := map[string][]float64{
 		// Precise
-		"rust/main.rs": {1.00, 1, 1, 1, 0.84, 1, 1},
-		"rust/lib.rs":  {0.75, 1, 1, 1, 0.42, 1, 1},
-		"rust/min.js":  {0.25, 0, 1, 1, 0.24, 1, 1},
+		"rust/main.rs": {1.00, 1, 1, 1, 0.45652173, 1, 1}, // squashRange(0.84) -> 0.45652173
+		"rust/lib.rs":  {0.75, 1, 1, 1, 0.29577464, 1, 1}, // squashRange(0.42) -> 0.29577464
+		"rust/min.js":  {0.25, 0, 1, 1, 0.19354838, 1, 1}, // squashRange(0.24) -> 0.19354838
 
 		// Fallback
 		"code/a.go":           {0, 1, 1, 1, 0, 0.100, 1 - (0.00 / 13.0)},

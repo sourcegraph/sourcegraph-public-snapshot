@@ -121,7 +121,7 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 				1 - boolRank(isPathGenerated(path)), // rank generated paths lower
 				1 - boolRank(isPathVendored(path)),  // rank vendored paths lower
 				1 - boolRank(isPathTest(path)),      // rank test paths lower
-				rank[1],                             // global document rank
+				squashRange(rank[1]),                // global document rank
 				1,                                   // name length
 				1,                                   // lexicographic order in repo
 			}
