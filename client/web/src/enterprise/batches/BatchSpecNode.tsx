@@ -136,7 +136,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
         isSpecFile: true,
         name: 'spec_file.yaml',
         id: spec.id,
-        size: 0,
+        size: spec.originalInput.length,
     }
     const [selectedFile, setSelectedFile] = useState<BatchSpecFile>(specFile)
 
