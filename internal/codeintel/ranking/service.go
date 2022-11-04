@@ -117,13 +117,13 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	if ok {
 		for path, rank := range documentRanks {
 			ranks[path] = []float64{
-				rank[0],             // precision level (0, 1]
-				generatedRank(path), // generated
-				vendorRank(path),    // vendor
-				testRank(path),      // test
-				rank[1],             // global document rank
-				1,                   // name length
-				1,                   // lexicographic order in repo
+				rank[0],              // precision level (0, 1]
+				generatedRank(path),  // generated
+				vendorRank(path),     // vendor
+				testRank(path),       // test
+				squashRange(rank[1]), // global document rank
+				1,                    // name length
+				1,                    // lexicographic order in repo
 			}
 		}
 	}
