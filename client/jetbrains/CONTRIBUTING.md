@@ -40,8 +40,7 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
 3. Go through
-   the [manual test cases](https://docs.google.com/document/d/1LtYeBrSd3Q7mDxq4Qk4T3XRBSWBNux6IXRJOi2WAb6E/edit#) (
-   Sourcegraph internal doc)
+   the [manual test cases](https://docs.sourcegraph.com/integration/jetbrains/manual_testing)
 4. Make sure `runIde` is not running
 5. Commit your changes
 6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
