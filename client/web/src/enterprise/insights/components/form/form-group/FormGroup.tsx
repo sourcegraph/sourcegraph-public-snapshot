@@ -2,8 +2,9 @@ import React, { PropsWithChildren, ReactNode, RefObject } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './FormGroup.module.scss'
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+
+import styles from './FormGroup.module.scss'
 
 interface FormGroupProps {
     /** Name attr value for root fieldset element. */

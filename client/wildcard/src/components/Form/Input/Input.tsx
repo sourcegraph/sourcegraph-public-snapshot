@@ -3,6 +3,7 @@ import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
@@ -10,7 +11,6 @@ import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 export enum InputStatus {
     initial = 'initial',
