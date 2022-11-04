@@ -162,20 +162,6 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 	}
 }
 
-func (c *Client) AuthzProviderTypes() ([]string, error) {
-	const query = `query { authzProviderTypes }`
-	var resp struct {
-		Data struct {
-			AuthzProviderTypes []string `json:"authzProviderTypes"`
-		} `json:"data"`
-	}
-	err := c.GraphQL("", query, nil, &resp)
-	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
-	}
-	return resp.Data.AuthzProviderTypes, nil
-}
-
 // UsersWithPendingPermissions returns bind IDs of users with pending permissions
 func (c *Client) UsersWithPendingPermissions() ([]string, error) {
 	const query = `
