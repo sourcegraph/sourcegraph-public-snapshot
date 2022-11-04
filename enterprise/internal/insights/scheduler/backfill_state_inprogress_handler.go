@@ -48,7 +48,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumRetries:     3,
 	}, config.ObsContext)
 
-	handlerConfig := handlerConfig{interruptAfter: defaultInterruptSeconds}
+	handlerConfig := handlerConfig{interruptAfter: getInterruptAfter()}
 
 	task := &inProgressHandler{
 		workerStore:    workerStore,
@@ -84,8 +84,11 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 
 		mu.Lock()
 		defer mu.Unlock()
-		task.config.interruptAfter = getInterruptAfter()
-		// logger.Info("insights backfiller interrupt time changed", log.Duration("old", interruptAfter), log.Duration("new", newVal))
+		oldVal := task.config.interruptAfter
+		newVal := getInterruptAfter()
+		task.config.interruptAfter = newVal
+		logger := log.Scoped("insightsInProgressConfig", "")
+		logger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
 	})
 
 	return worker, resetter, workerStore
@@ -148,28 +151,23 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		log.Int("totalErrors", itr.TotalErrors()))
 
 	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
-	itrLoop := func(nextFunc nextFunc) error {
+	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {
 		for {
-			if h.shouldInterrupt(h.clock.Now().Sub(start)) {
-				err = h.doInterrupt(ctx, job)
-				if err != nil {
-					// this shouldn't break the job state if this happens because the record never got set to queued
-					return errors.Wrap(err, "doInterrupt")
-				}
-				logger.Info("interrupted insight series backfill", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
-				return nil
-			}
-
 			repoId, more, finish := nextFunc()
 			if !more {
 				break
+			}
+			if h.shouldInterrupt(h.clock.Now().Sub(start)) {
+				// the check for interrupt is after the check for more values so that completed series are not interrupted
+				// this is safe as long as the next operation doesn't mutate the persistable state of the iterator
+				return true, nil
 			}
 
 			repo, repoErr := h.repoStore.Get(ctx, repoId)
 			if repoErr != nil {
 				err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
 				if err != nil {
-					return err
+					return false, err
 				}
 				continue
 			}
@@ -181,20 +179,26 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 			}
 			err = finish(ctx, h.backfillStore.Store, runErr)
 			if err != nil {
-				return err
+				return false, err
 			}
 		}
-		return nil
+		return false, nil
 	}
 
 	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if err := itrLoop(itr.NextWithFinish); err != nil {
+	if interrupted, err := itrLoop(itr.NextWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
+	} else if interrupted {
+		logger.Info("interrupted insight series backfill", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+		return h.doInterrupt(ctx, job)
 	}
 
 	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if err := itrLoop(itr.NextRetryWithFinish); err != nil {
+	if interrupted, err := itrLoop(itr.NextRetryWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.RetryLoop")
+	} else if interrupted {
+		logger.Info("interrupted insight series backfill retry", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+		return h.doInterrupt(ctx, job)
 	}
 
 	if !itr.HasMore() && !itr.HasErrors() {
