@@ -4,14 +4,10 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 
 To connect GitLab to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts > Add repositories**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitLab**.
-1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
-
-**NOTE** That adding code hosts as a user is currently in private beta.
+1. Go to **Site admin > Manage code hosts > Add repositories**
+2. Select **GitLab**.
+3. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Press **Add repositories**.
 
 ## Supported versions
 
