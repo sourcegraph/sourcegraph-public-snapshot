@@ -18,6 +18,16 @@ type PidFile struct {
 	LogFile string   `json:"logfile"`
 }
 
+func RemovePid(pid int) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return errors.Wrap(err, "unable to get user home dir for pid files")
+	}
+
+	filename := filepath.Join(homeDir, ".sourcegraph", fmt.Sprintf("sg.pid.%d", pid))
+	return os.Remove(filename)
+}
+
 func PidExistsWithArgs(args []string) (int, bool, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -44,14 +54,6 @@ func PidExistsWithArgs(args []string) (int, bool, error) {
 
 		if argsEqual(content.Args, args) {
 			// If a pid already exists, let's check if it's still running.
-			alive, err := isPidAlive(int32(content.Pid))
-			if err != nil {
-				return 0, true, errors.Wrapf(err, "could not check if pid %d is alive", content.Pid)
-			}
-			if !alive {
-				// Trash the pidfile and return that it's not running.
-				_ = os.Remove(match)
-			}
 			return content.Pid, true, nil
 		}
 	}
@@ -74,7 +76,7 @@ func argsEqual(s1, s2 []string) bool {
 // On Unix systems, os.FindProcess always returns a os.Proc, regardless if the process is running or not. Therefore,
 // we need more work to check if it's alive or not.
 // Reference: https://github.com/shirou/gopsutil/blob/c141152a7b8f59b63e060fa8450f5cd5e7196dfb/process/process_posix.go#L73
-func isPidAlive(pid int32) (bool, error) {
+func IsPidAlive(pid int32) (bool, error) {
 	if pid <= 0 {
 		return false, errors.Newf("invalid pid %v", pid)
 	}
