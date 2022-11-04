@@ -27,10 +27,10 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { url } = useRouteMatch()
 
     const { dashboards, loading } = useInsightDashboards()
-    const currentDashboard = useMemo(
-        () => dashboards?.find(dashboard => dashboard.id === dashboardID),
-        [dashboardID, dashboards]
-    )
+    const currentDashboard = useMemo(() => dashboards?.find(dashboard => dashboard.id === dashboardID), [
+        dashboardID,
+        dashboards,
+    ])
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
@@ -41,7 +41,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     if (loading || !dashboards) {
         return (
             <div data-testid="loading-spinner">
-                <LoadingSpinner aria-live='off' inline={false} />
+                <LoadingSpinner aria-live="off" inline={false} />
             </div>
         )
     }
