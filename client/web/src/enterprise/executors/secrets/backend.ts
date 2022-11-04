@@ -29,6 +29,7 @@ const EXECUTOR_SECRET_FIELDS = gql`
         id
         key
         scope
+        overwritesGlobalSecret
         createdAt
         updatedAt
         creator {
@@ -253,14 +254,16 @@ export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
 `
 
 export const useExecutorSecretAccessLogsConnection = (
-    secret: Scalars['ID']
+    secret: Scalars['ID'],
+    first: number,
+    after: string | null
 ): UseConnectionResult<ExecutorSecretAccessLogFields> =>
     useConnection<ExecutorSecretAccessLogsResult, ExecutorSecretAccessLogsVariables, ExecutorSecretAccessLogFields>({
         query: EXECUTOR_SECRET_ACCESS_LOGS,
         variables: {
             secret,
-            after: null,
-            first: 15,
+            first,
+            after,
         },
         options: {
             fetchPolicy: 'no-cache',

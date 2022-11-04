@@ -53,6 +53,7 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
 
                 afterCreate()
             } catch (error) {
+                // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
             }
         },
@@ -80,8 +81,17 @@ export const AddSecretModal: React.FunctionComponent<React.PropsWithChildren<Add
                         minLength={1}
                         value={key}
                         onChange={onChangeKey}
+                        pattern="^[A-Z][A-Z0-9_]*$"
+                        message={
+                            <>
+                                Must be uppercase characters, digits and underscores only. Must start with an uppercase
+                                character.
+                            </>
+                        }
                         label="Key"
                     />
+                </div>
+                <div className="form-group">
                     <Input
                         id="value"
                         name="value"

@@ -1680,6 +1680,11 @@ type ExecutorSecret implements Node {
     """
     scope: ExecutorSecretScope!
     """
+    If true, this secret is defined in a namespace and a secret with the same key
+    is also defined in the global namespace, which this secret overwrites.
+    """
+    overwritesGlobalSecret: Boolean!
+    """
     The namespace this secret belongs to. Null, if a global secret.
     Global secrets are available to every execution.
     """

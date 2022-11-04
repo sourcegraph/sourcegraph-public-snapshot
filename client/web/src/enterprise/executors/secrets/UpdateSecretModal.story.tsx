@@ -12,6 +12,12 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/executors/secrets/UpdateSecretModal',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
+            delay: 2000,
+        },
+    },
 }
 
 export default config
@@ -33,6 +39,7 @@ export const Update: Story = () => (
                     },
                     key: 'SG_TOKEN',
                     scope: ExecutorSecretScope.BATCHES,
+                    overwritesGlobalSecret: false,
                     // Global secret.
                     namespace: null,
                     createdAt: subDays(new Date(), 1).toISOString(),
@@ -44,10 +51,3 @@ export const Update: Story = () => (
         )}
     </WebStory>
 )
-
-Update.parameters = {
-    chromatic: {
-        // Delay screenshot taking, so the modal has opened by the time the screenshot is taken.
-        delay: 2000,
-    },
-}

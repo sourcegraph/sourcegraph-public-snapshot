@@ -15,7 +15,7 @@ export const ExecutorCompatibilityAlert: React.FunctionComponent<
     switch (compatibility) {
         case ExecutorCompatibility.OUTDATED:
             return (
-                <Alert variant="warning" className="mt-3">
+                <Alert variant="warning" className="mt-3 mb-0">
                     <Text className="m-0">{hostname} is outdated.</Text>
                     <Text className="m-0">
                         Please{' '}
@@ -28,7 +28,7 @@ export const ExecutorCompatibilityAlert: React.FunctionComponent<
             )
         case ExecutorCompatibility.VERSION_AHEAD:
             return (
-                <Alert variant="warning" className="mt-3">
+                <Alert variant="warning" className="mt-3 mb-0">
                     <Text className="m-0">Your Sourcegraph instance is out of date.</Text>
                     <Text className="m-0">
                         Please{' '}

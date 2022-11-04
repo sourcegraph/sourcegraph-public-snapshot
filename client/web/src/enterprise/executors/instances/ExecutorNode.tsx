@@ -1,11 +1,15 @@
 import React, { FunctionComponent } from 'react'
+
 import { mdiCheckboxBlankCircle } from '@mdi/js'
-import { H4, Icon, Badge, Tooltip } from '@sourcegraph/wildcard'
-import { Collapsible } from '../../../components/Collapsible'
-import { ExecutorFields } from '../../../graphql-operations'
-import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
-import { Timestamp } from '../../../components/time/Timestamp'
 import classNames from 'classnames'
+
+import { H4, Icon, Badge, Tooltip } from '@sourcegraph/wildcard'
+
+import { Collapsible } from '../../../components/Collapsible'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { ExecutorFields } from '../../../graphql-operations'
+
+import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
 
 import styles from './ExecutorNode.module.scss'
 

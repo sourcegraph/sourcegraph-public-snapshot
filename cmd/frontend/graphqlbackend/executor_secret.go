@@ -65,12 +65,16 @@ type executorSecretResolver struct {
 }
 
 func (r *executorSecretResolver) ID() graphql.ID {
-	return marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(r.secret.Scope)), r.secret.ID)
+	return marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(r.secret.Scope))), r.secret.ID)
 }
 
 func (r *executorSecretResolver) Key() string { return r.secret.Key }
 
-func (r *executorSecretResolver) Scope() string { return strings.ToUpper(r.secret.Scope) }
+func (r *executorSecretResolver) Scope() string { return strings.ToUpper(string(r.secret.Scope)) }
+
+func (r *executorSecretResolver) OverwritesGlobalSecret() bool {
+	return r.secret.OverwritesGlobalSecret
+}
 
 func (r *executorSecretResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.secret.NamespaceUserID != 0 {

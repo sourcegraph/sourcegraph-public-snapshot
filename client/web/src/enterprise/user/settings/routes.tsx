@@ -36,11 +36,9 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         condition: () => authExp,
     },
     {
-        path: '/executors/secrets',
-        exact: true,
+        path: '/executors',
         render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
-        condition: ({ batchChangesEnabled, user: { viewerCanAdminister } }) =>
-            batchChangesEnabled && viewerCanAdminister,
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
         path: '/batch-changes',

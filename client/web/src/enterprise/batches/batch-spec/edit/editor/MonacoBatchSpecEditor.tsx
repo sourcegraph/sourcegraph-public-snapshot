@@ -24,6 +24,7 @@ import {
 import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'
 
 import styles from './MonacoBatchSpecEditor.module.scss'
+import { JSONSchemaType } from 'ajv'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -198,8 +199,14 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string, a
     // @ts-ignore
     delete schema.properties.steps.items.properties.mount
 
-    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf[0].examples = availableSecrets
-    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf[0].enum = availableSecrets
+    if (availableSecrets !== undefined) {
+        // Rewrite the JSON schema so that the env field has proper auto completion and
+        // warns if any secrets referenced don't exist.
+        const envVarString: JSONSchemaType<'string'> = schema.properties.steps.items.properties.env.oneOf[2].items!
+            .oneOf[0]
+        envVarString.examples = availableSecrets
+        envVarString.enum = availableSecrets
+    }
 
     // Enforce the exact name match. The user must use the settings UI to change the name.
     schema.properties.name.pattern = `^${batchChangeName}$`

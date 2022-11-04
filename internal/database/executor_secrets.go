@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -22,12 +23,13 @@ import (
 
 // ExecutorSecret represents a row in the `executor_secrets` table.
 type ExecutorSecret struct {
-	ID              int64
-	Key             string
-	Scope           string
-	CreatorID       int32
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	ID                     int64
+	Key                    string
+	Scope                  ExecutorSecretScope
+	OverwritesGlobalSecret bool
+	CreatorID              int32
+	NamespaceUserID        int32
+	NamespaceOrgID         int32
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -53,7 +55,7 @@ func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogStor
 type ExecutorSecretScope string
 
 const (
-	ExecutorSecretScopeBatches = "batches"
+	ExecutorSecretScopeBatches ExecutorSecretScope = "batches"
 )
 
 // ExecutorSecretNotFoundErr is returned when a secret cannot be found.
@@ -182,6 +184,8 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 var ErrEmptyExecutorSecretKey = errors.New("empty executor secret key is not allowed")
 var ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
 
+var ErrDuplicateExecutorSecret = errors.New("duplicate executor secret")
+
 func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	if len(secret.Key) == 0 {
 		return ErrEmptyExecutorSecretKey
@@ -220,6 +224,10 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 
 	row := s.QueryRow(ctx, q)
 	if err := scanExecutorSecret(secret, s.key, row); err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.Code == "23505" {
+			return ErrDuplicateExecutorSecret
+		}
 		return err
 	}
 
@@ -402,6 +410,7 @@ var executorSecretsColumns = []*sqlf.Query{
 	sqlf.Sprintf("key"),
 	sqlf.Sprintf("value"),
 	sqlf.Sprintf("encryption_key_id"),
+	sqlf.Sprintf("COALESCE((SELECT o.id FROM executor_secrets o WHERE o.key = executor_secrets.key AND o.namespace_user_id IS NULL AND o.namespace_org_id IS NULL AND o.id != executor_secrets.id)::boolean, false) AS overwrites_global"),
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("creator_id"),
@@ -502,6 +511,7 @@ func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface 
 		&secret.Key,
 		&value,
 		&dbutil.NullString{S: &keyID},
+		&secret.OverwritesGlobalSecret,
 		&dbutil.NullInt32{N: &secret.NamespaceUserID},
 		&dbutil.NullInt32{N: &secret.NamespaceOrgID},
 		&dbutil.NullInt32{N: &secret.CreatorID},

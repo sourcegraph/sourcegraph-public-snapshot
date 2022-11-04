@@ -1,26 +1,22 @@
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import React, { FunctionComponent, useCallback, useEffect } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
-import { RouteComponentProps, useHistory } from 'react-router'
-import { Subject } from 'rxjs'
+import { mdiMapSearch } from '@mdi/js'
+import { useHistory } from 'react-router'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Container, Link, PageHeader, Icon, H3, Text } from '@sourcegraph/wildcard'
 
-import { Collapsible } from '../../../components/Collapsible'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { Timestamp } from '../../../components/time/Timestamp'
 import { ExecutorFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
-import { queryExecutors as defaultQueryExecutors } from './useExecutors'
 import { ExecutorNode } from './ExecutorNode'
+import { queryExecutors as defaultQueryExecutors } from './useExecutors'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -44,13 +40,12 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
+export interface ExecutorsListPageProps {
     queryExecutors?: typeof defaultQueryExecutors
 }
 
 export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<ExecutorsListPageProps>> = ({
     queryExecutors = defaultQueryExecutors,
-    ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
 
@@ -61,8 +56,6 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
         (args: FilteredConnectionQueryArguments) => queryExecutors(args, apolloClient),
         [queryExecutors, apolloClient]
     )
-
-    const querySubject = useMemo(() => new Subject<string>(), [])
 
     return (
         <>
@@ -96,19 +89,18 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                     .
                 </Text>
             </Container>
-            <Container>
+            <Container className="mb-3">
                 <FilteredConnection<ExecutorFields>
                     listComponent="ul"
                     listClassName="list-group mb-2"
                     showMoreClassName="mb-0"
                     noun="executor"
                     pluralNoun="executors"
-                    querySubject={querySubject}
                     nodeComponent={ExecutorNode}
                     nodeComponentProps={{}}
                     queryConnection={queryExecutorsCallback}
                     history={history}
-                    location={props.location}
+                    location={history.location}
                     cursorPaging={true}
                     filters={filters}
                     emptyElement={<NoExecutors />}

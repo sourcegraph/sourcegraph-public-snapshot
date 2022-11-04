@@ -4,6 +4,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { Link } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../components/HeroPage'
 import { Scalars } from '../../graphql-operations'
@@ -31,7 +32,17 @@ export const ExecutorsOrgArea: React.FunctionComponent<React.PropsWithChildren<E
                 render={props => (
                     <OrgExecutorSecretsListPage
                         orgID={outerProps.namespaceID}
-                        headerLine={<>Configure executor secrets that will only be available to your executions.</>}
+                        headerLine={
+                            <>
+                                Configure executor secrets that will only be available to executions in this
+                                organization.
+                                <br />
+                                Global secrets are available to executions in this namespace. Secrets in this namespace
+                                with the same name as a global secret will overwrite the global secret. Site admins can
+                                configure global secrets{' '}
+                                <Link to="/admin/executors/secrets">in site admin settings</Link>.
+                            </>
+                        }
                         {...outerProps}
                         {...props}
                     />

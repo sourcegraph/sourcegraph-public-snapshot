@@ -3,13 +3,12 @@ import React, { useCallback, useState } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretFields } from '../../../graphql-operations'
 
 import { useUpdateExecutorSecret } from './backend'
-import { ModalHeader } from './ModalHeader'
 
 interface UpdateSecretModalProps {
     secret: ExecutorSecretFields
@@ -47,6 +46,7 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
 
                 afterUpdate()
             } catch (error) {
+                // Non-request error. API errors will be available under `error` above.
                 logger.error(error)
             }
         },
@@ -54,7 +54,11 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
     )
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <ModalHeader id={labelId} secretKey={secret.key} />
+            <H3 id={labelId}>Update secret value for {secret.key}</H3>
+            <Text>
+                Executor secrets are available to executor jobs as environment variables. They will never appear in
+                logs.
+            </Text>
 
             {error && <ErrorAlert error={error} />}
 

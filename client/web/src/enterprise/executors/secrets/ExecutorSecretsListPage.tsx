@@ -133,7 +133,12 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Executor secrets">
                         {connection?.nodes?.map(node => (
-                            <ExecutorSecretNode key={node.id} node={node} refetchAll={refetchAll} />
+                            <ExecutorSecretNode
+                                key={node.id}
+                                node={node}
+                                namespaceID={namespaceID}
+                                refetchAll={refetchAll}
+                            />
                         ))}
                     </ConnectionList>
                     {connection && (
