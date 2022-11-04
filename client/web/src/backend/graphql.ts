@@ -1,7 +1,5 @@
 import { memoize } from 'lodash'
-import { Headers } from 'node-fetch'
 import { Observable } from 'rxjs'
-
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
