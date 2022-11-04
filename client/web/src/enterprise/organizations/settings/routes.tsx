@@ -15,7 +15,6 @@ export const enterpriseOrgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = 
         path: '/executors/secrets',
         exact: true,
         render: props => <ExecutorsOrgArea {...props} namespaceID={props.org.id} />,
-        condition: ({ batchChangesEnabled, org: { viewerCanAdminister } }) =>
-            batchChangesEnabled && viewerCanAdminister,
+        condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
 ]
