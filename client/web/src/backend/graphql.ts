@@ -1,5 +1,6 @@
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
+
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
