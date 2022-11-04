@@ -140,25 +140,14 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
-}
-
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
-}
-
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error) {
-	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
+func (s *Service) ProcessStaleSourcedCommits(
+	ctx context.Context,
+	minimumTimeSinceLastCheck time.Duration,
+	commitResolverBatchSize int,
+	commitResolverMaximumCommitLag time.Duration,
+	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+) (_ int, err error) {
+	return s.store.ProcessStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, commitResolverMaximumCommitLag, shouldDelete)
 }
 
 func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {

@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -31,11 +32,15 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	clock := glock.NewMockClockAt(now)
 	bfs := newBackfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
+	permStore := store.NewInsightPermissionStore(database.NewMockDB())
+	seriesStore := store.New(insightsDB, permStore)
+
 	config := JobMonitorConfig{
 		InsightsDB:   insightsDB,
 		RepoStore:    repos,
 		ObsContext:   &observation.TestContext,
 		CostAnalyzer: priority.NewQueryAnalyzer(),
+		InsightStore: seriesStore,
 	}
 	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)
@@ -59,11 +64,12 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	handler := newBackfillHandler{
-		workerStore:   monitor.newBackfillStore,
-		backfillStore: bfs,
-		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(nil, repos),
-		costAnalyzer:  *config.CostAnalyzer,
+		workerStore:     monitor.newBackfillStore,
+		backfillStore:   bfs,
+		seriesReader:    store.NewInsightStore(insightsDB),
+		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos),
+		costAnalyzer:    *config.CostAnalyzer,
+		timeseriesStore: seriesStore,
 	}
 	err = handler.Handle(ctx, logger, newDequeue)
 	require.NoError(t, err)
@@ -82,4 +88,10 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	}
 	job, _ := inProgressDequeue.(*BaseJob)
 	require.Equal(t, backfill.Id, job.backfillId)
+
+	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
+	require.NoError(t, err)
+	if len(recordingTimes.RecordingTimes) == 0 {
+		t.Fatal(errors.New("recording times should have been saved after success"))
+	}
 }

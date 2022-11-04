@@ -1,10 +1,9 @@
-import React, { useEffect, Suspense } from 'react'
+import React, { Suspense } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
@@ -51,9 +50,7 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
     activeView: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<
-    React.PropsWithChildren<CodeInsightsRootPageProps>
-> = props => {
+export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
     const { telemetryService, activeView } = props
     const location = useLocation()
     const query = useQuery()
@@ -63,8 +60,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
         matchPath<{ dashboardId?: string }>(location.pathname, {
             path: `/insights${CodeInsightsRootPageURLPaths.CodeInsights}`,
         }) ?? {}
-
-    const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
 
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD.id
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD.id
@@ -77,12 +72,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                 return history.push(`/insights/about?dashboardId=${dashboardId}`)
         }
     }
-
-    useEffect(() => {
-        if (hasInsightPageBeenViewed === false) {
-            markMainPageAsViewed(true)
-        }
-    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
 
     return (
         <CodeInsightsPage>
@@ -122,7 +111,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
                     </TabPanel>
                     <TabPanel>
-                        <Suspense fallback={<LoadingSpinner />}>
+                        <Suspense fallback={<LoadingSpinner aria-label='Loading Code Insights Getting started page' />}>
                             <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                         </Suspense>
                     </TabPanel>
