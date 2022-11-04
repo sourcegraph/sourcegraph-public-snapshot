@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -71,7 +73,7 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 			status.Enabled = series.Enabled
 		}
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{status: status})
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId})
 	}
 	return resolvers, nil
 }
@@ -101,7 +103,9 @@ func (i *insightSeriesMetadataResolver) Enabled(ctx context.Context) (bool, erro
 }
 
 type insightSeriesQueryStatusResolver struct {
-	status types.InsightSeriesStatus
+	status          types.InsightSeriesStatus
+	seriesID        string
+	workerBaseStore *basestore.Store
 }
 
 func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
@@ -134,4 +138,45 @@ func (i *insightSeriesQueryStatusResolver) Failed(ctx context.Context) (int32, e
 
 func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, error) {
 	return int32(i.status.Queued), nil
+}
+
+func (i *insightSeriesQueryStatusResolver) QueueSearchFailures(ctx context.Context, args graphqlbackend.QueueSearchFailuresArgs) ([]graphqlbackend.InsightSearchErrorResolver, error) {
+	seriesFailures, err := queryrunner.QuerySeriesSearchFailures(ctx, i.workerBaseStore, i.seriesID, int(args.Limit))
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.InsightSearchErrorResolver, 0, len(seriesFailures))
+	for i := 0; i < len(seriesFailures); i++ {
+		resolvers = append(resolvers, &insightSearchErrorResolver{failure: seriesFailures[i]})
+	}
+
+	return resolvers, nil
+}
+
+type insightSearchErrorResolver struct {
+	failure types.InsightSearchFailure
+}
+
+func (i *insightSearchErrorResolver) Query(ctx context.Context) (string, error) {
+	return i.failure.Query, nil
+}
+
+func (i *insightSearchErrorResolver) QueuedAt(ctx context.Context) (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: i.failure.QueuedAt}, nil
+}
+
+func (i *insightSearchErrorResolver) RecordTime(ctx context.Context) (*gqlutil.DateTime, error) {
+	return gqlutil.DateTimeOrNil(i.failure.RecordTime), nil
+}
+
+func (i *insightSearchErrorResolver) SearchMode(ctx context.Context) (string, error) {
+	return i.failure.PersistMode, nil
+}
+
+func (i *insightSearchErrorResolver) FailureMessage(ctx context.Context) (string, error) {
+	return i.failure.FailureMessage, nil
+}
+
+func (i *insightSearchErrorResolver) State(ctx context.Context) (string, error) {
+	return i.failure.State, nil
 }

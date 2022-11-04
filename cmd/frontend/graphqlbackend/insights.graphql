@@ -497,6 +497,21 @@ type InsightSeriesQueryStatus {
     This count only represents the queries that have yet to be pruned by the background maintenance workers.
     """
     queued: Int!
+
+    """
+    A list of the `limit` most recent failure reasons for queries in the terminally `failed` state.
+    The max limit is 500.
+    """
+    queueSearchFailures(limit: Int = 50): [InsightSearchError]!
+}
+
+type InsightSearchError {
+    query: String!
+    searchMode: String!
+    failureMessage: String!
+    state: String!
+    queuedAt: DateTime!
+    recordTime: DateTime
 }
 
 """
