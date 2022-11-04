@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/url"
 	"strings"
 
