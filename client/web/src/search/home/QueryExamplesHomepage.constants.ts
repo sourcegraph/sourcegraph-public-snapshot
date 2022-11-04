@@ -28,7 +28,7 @@ export const basicSyntaxColumns = [
         {
             title: 'Scope search to specific repos',
             queryExamples: [
-                { id: 'org-repos', query: 'repo:sourcegraph/*' },
+                { id: 'org-repos', query: 'repo:sourcegraph/.*' },
                 { id: 'single-repo', query: 'repo:facebook/react' },
             ],
         },
