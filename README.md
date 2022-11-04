@@ -120,7 +120,11 @@ Run <code><strong>src login <i>SOURCEGRAPH-URL</i></strong></code> to authentica
 - `SRC_ENDPOINT`: the URL to your Sourcegraph instance (such as `https://sourcegraph.example.com`)
 - `SRC_ACCESS_TOKEN`: your Sourcegraph access token (on your Sourcegraph instance, click your user menu in the top right, then select **Settings > Access tokens** to create one)
 
-For convenience, you can export these environment variables in your shell profile. To configure them as environment variables, add the following to your terminal profile file, typically accessible at `~/.bash_profile` (if using Bash) or `~/.zprofile` (if using Zsh):
+For convenience, you can add these environment variables persistently. 
+
+### Configuration: Mac OS / Linux
+
+Add the following to your terminal profile file, typically accessible at `~/.bash_profile` (if using Bash) or `~/.zprofile` (if using Zsh):
 
 ```
 export SRC_ACCESS_TOKEN=my-token
@@ -134,6 +138,19 @@ You can also inline them in a single command with:
 ```sh
 SRC_ENDPOINT=https://sourcegraph.example.com SRC_ACCESS_TOKEN=my-token src search 'foo'
 ```
+
+### Configuration: Windows
+
+Type the following on your PowerShell terminal:
+
+```
+$env.SRC_ENDPOINT = 'https://sourcegraph.example.com'
+$env.SRC_ACCESS_TOKEN = 'my-token'
+```
+
+Replace `my-token` and `https://sourcegraph.example.com` with the appropriate values for your account and instance.
+
+You can also manually add them via the *System Properties* windows. Check [this post](https://www.computerhope.com/issues/ch000549.htm) for details.
 
 Is your Sourcegraph instance behind a custom auth proxy? See [auth proxy configuration](./AUTH_PROXY.md) docs.
 
