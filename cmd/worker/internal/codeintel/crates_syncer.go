@@ -35,7 +35,7 @@ func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, &observation.TestContext)
+	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "cratesyncer", "gitserver"))
 
 	services, err := codeintel.InitServices()
 	if err != nil {
@@ -46,6 +46,6 @@ func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger
 		services.DependenciesService,
 		gitserverClient,
 		db.ExternalServices(),
-		observation.ScopedContext("codeintel", "dependencies", "component string"),
+		observation.ContextWithLogger(logger),
 	), nil
 }
