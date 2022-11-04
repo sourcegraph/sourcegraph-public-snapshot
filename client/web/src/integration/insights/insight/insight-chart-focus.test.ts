@@ -49,7 +49,7 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         await driver.page.keyboard.press(Key.Tab)
         assert.strictEqual(
-            await hasFocus(driver, '[aria-label="Go to the insight page"]'),
+            await hasFocus(driver, '[aria-label="Insight card"] h2 a'),
             true,
             'Insight title should be focused'
         )
@@ -103,7 +103,7 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         await driver.page.keyboard.press(Key.Tab)
         assert.strictEqual(
-            await hasFocus(driver, '[aria-label="Go to the insight page"]'),
+            await hasFocus(driver, '[aria-label="Insight card"] h2 a'),
             true,
             'Insight title should be focused'
         )
