@@ -1,4 +1,5 @@
 import { last, take } from 'lodash'
+import { BehaviorSubject } from 'rxjs'
 
 import { FileSpec, RawRepoSpec, RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -46,29 +47,59 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
 }
 
 /**
- * Gets information about the page.
+ * Gets repo URL from on GitLab.
  */
-export function getPageInfo(): GitLabInfo {
+export const getGitlabRepoURL = (): string => {
     const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
     if (!projectLink) {
         throw new Error('Unable to determine project name')
     }
+    return projectLink.href // e.g. 'https://gitlab.com/sourcegraph/jsonrpc2'
+}
 
-    const projectFullName = new URL(projectLink.href).pathname.slice(1)
-
-    const parts = projectFullName.split('/')
-
+const parseFullProjectName = (fullProjectName: string): { owner: string; projectName: string } => {
+    const parts = fullProjectName.split('/')
     const owner = take(parts, parts.length - 1).join('/')
     const projectName = last(parts)!
+    return { owner, projectName }
+}
 
-    const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
-    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
+const parseGitLabRepoURL = (): { hostname: string; projectFullName: string; owner: string; projectName: string } => {
+    const url = new URL(getGitlabRepoURL())
+    const projectFullName = url.pathname.slice(1) // e.g. '/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+    const { owner, projectName } = parseFullProjectName(projectFullName)
+    return { hostname: url.hostname, projectFullName, owner, projectName }
+}
+
+/**
+ * Subject to store repo name on the Sourcegraph instance (e.g. 'gitlab.com/sourcegraph/jsonrpc2').
+ * It may be different from the repo name on the code host because of the name transformations applied
+ * (see {@link https://docs.sourcegraph.com/admin/external_service/gitlab#nameTransformations}).
+ * Set in `gitlabCodeHost.prepareCodeHost` method.
+ */
+export const repoNameOnSourcegraph = new BehaviorSubject<string>('')
+
+/**
+ * Gets information about the page.
+ */
+export function getPageInfo(): GitLabInfo {
+    const {
+        hostname,
+        projectFullName: projectFullNameOnGitLab,
+        owner: ownerOnGitLab,
+        projectName: projectNameOnGitLab,
+    } = parseGitLabRepoURL()
+    const projectFullName = repoNameOnSourcegraph.value
+        ? repoNameOnSourcegraph.value.split('/').slice(1).join('/') // e.g. 'gitlab.com/sourcegraph/jsonrpc2' -> 'sourcegraph/jsonrpc2'
+        : projectFullNameOnGitLab
+    const { owner, projectName } = parseFullProjectName(projectFullName)
+    const pageKind = getPageKindFromPathName(ownerOnGitLab, projectNameOnGitLab, window.location.pathname)
 
     return {
         owner,
         projectName,
-        rawRepoName: [hostname, owner, projectName].join('/'),
-        repoName: projectFullName,
+        rawRepoName: [isExtension ? hostname : new URL(gon.gitlab_url).hostname, owner, projectName].join('/'),
+        repoName: projectFullNameOnGitLab, // original (untransformed) repo name to be use in GitLab API calls
         pageKind,
     }
 }

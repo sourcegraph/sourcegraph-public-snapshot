@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
+	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -49,6 +50,8 @@ import (
 var (
 	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+
+	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
 )
 
 const port = "3181"
@@ -128,6 +131,11 @@ func run(logger log.Logger) error {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	maxTotalPathsLength, err := strconv.Atoi(maxTotalPathsLengthRaw)
+	if err != nil {
+		return errors.Wrapf(err, "invalid int %q for MAX_TOTAL_PATHS_LENGTH", maxTotalPathsLengthRaw)
+	}
+
 	if err := setupTmpDir(); err != nil {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
@@ -148,8 +156,9 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				// We pass in a nil sub-repo permissions checker here since searcher needs access
-				// to all data in the archive
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  gitserver.ArchiveFormatTar,
@@ -160,8 +169,9 @@ func run(logger log.Logger) error {
 				for i, p := range paths {
 					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				// We pass in a nil sub-repo permissions checker here since searcher needs access
-				// to all data in the archive
+				// We pass in a nil sub-repo permissions checker and an internal actor here since
+				// searcher needs access to all data in the archive.
+				ctx = actor.WithInternalActor(ctx)
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
 					Format:    gitserver.ArchiveFormatTar,
@@ -175,8 +185,17 @@ func run(logger log.Logger) error {
 			ObservationContext: storeObservationContext,
 			DB:                 db,
 		},
-		GitDiffSymbols: git.DiffSymbols,
-		Log:            logger,
+
+		Indexed: sharedsearch.Indexed(),
+
+		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+			// As this is an internal service call, we need an internal actor.
+			ctx = actor.WithInternalActor(ctx)
+			return git.DiffSymbols(ctx, repo, commitA, commitB)
+		},
+		MaxTotalPathsLength: maxTotalPathsLength,
+
+		Log: logger,
 	}
 	service.Store.Start()
 
@@ -248,7 +267,6 @@ func main() {
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the searcher service")

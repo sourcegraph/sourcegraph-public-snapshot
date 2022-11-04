@@ -1,1 +1,0 @@
--- Nothing to do, actually. We have not been using these backup tables since 2018.

@@ -4,7 +4,7 @@ import * as Monaco from 'monaco-editor'
 import { Observable } from 'rxjs'
 import * as uuid from 'uuid'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchPatternType } from '@sourcegraph/search'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'

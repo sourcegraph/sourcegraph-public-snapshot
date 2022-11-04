@@ -69,19 +69,30 @@ func writeNode(b *bytes.Buffer, depth int, style NodeStyle, id *int, label strin
 
 func buildLabel(j job.Describer, v job.Verbosity) string {
 	b := new(strings.Builder)
+	b.WriteRune('"')
 	b.WriteString(trimmedUpperName(j.Name()))
 	enc := fieldStringEncoder{mermaidKeyValueWriter{b}}
 	for _, field := range j.Fields(v) {
-		b.WriteString(" <br> ")
 		field.Marshal(enc)
 	}
+	b.WriteRune('"')
 	return b.String()
 }
 
 type mermaidKeyValueWriter struct{ io.StringWriter }
 
 func (w mermaidKeyValueWriter) Write(key, value string) {
-	w.WriteString(key)
+	w.WriteString(" <br> ")
+	w.WriteString(mermaidEscaper.Replace(key))
 	w.WriteString(": ")
-	w.WriteString(value)
+	w.WriteString(mermaidEscaper.Replace(value))
 }
+
+// Copied from the `html` package and modified for mermaid
+var mermaidEscaper = strings.NewReplacer(
+	`"`, "#quot;",
+	`'`, "#apos;",
+	`&`, "#amp;",
+	`<`, "#lt;",
+	`>`, "#gt;",
+)

@@ -6,8 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,12 +17,12 @@ type CommitCache interface {
 }
 
 type commitCache struct {
-	gitserverClient shared.GitserverClient
+	gitserverClient GitserverClient
 	mutex           sync.RWMutex
 	cache           map[int]map[string]bool
 }
 
-func NewCommitCache(client shared.GitserverClient) CommitCache {
+func NewCommitCache(client GitserverClient) CommitCache {
 	return &commitCache{
 		gitserverClient: client,
 		cache:           map[int]map[string]bool{},
@@ -64,7 +63,7 @@ func (c *commitCache) ExistsBatch(ctx context.Context, commits []gitserver.Repos
 	if len(e) != len(rcs) {
 		panic(strings.Join([]string{
 			fmt.Sprintf("Expected slice returned from CommitsExist to have len %d, but has len %d.", len(rcs), len(e)),
-			"If this panic occurred dcuring a test, your test is missing a mock definition for CommitsExist.",
+			"If this panic occurred during a test, your test is missing a mock definition for CommitsExist.",
 			"If this is occurred during runtime, please file a bug.",
 		}, " "))
 	}
@@ -112,7 +111,7 @@ func (c *commitCache) AreCommitsResolvable(ctx context.Context, commits []gitser
 	if len(e) != len(rcs) {
 		panic(strings.Join([]string{
 			fmt.Sprintf("Expected slice returned from CommitsExist to have len %d, but has len %d.", len(rcs), len(e)),
-			"If this panic occurred dcuring a test, your test is missing a mock definition for CommitsExist.",
+			"If this panic occurred during a test, your test is missing a mock definition for CommitsExist.",
 			"If this is occurred during runtime, please file a bug.",
 		}, " "))
 	}

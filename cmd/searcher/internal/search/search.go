@@ -2,13 +2,13 @@
 // a specific commit.
 //
 // Architecture Notes:
-//  * Archive is fetched from gitserver
-//  * Simple HTTP API exposed
-//  * Currently no concept of authorization
-//  * On disk cache of fetched archives to reduce load on gitserver
-//  * Run search on archive. Rely on OS file buffers
-//  * Simple to scale up since stateless
-//  * Use ingress with affinity to increase local cache hit ratio
+//   - Archive is fetched from gitserver
+//   - Simple HTTP API exposed
+//   - Currently no concept of authorization
+//   - On disk cache of fetched archives to reduce load on gitserver
+//   - Run search on archive. Rely on OS file buffers
+//   - Simple to scale up since stateless
+//   - Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (
@@ -26,6 +26,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -48,11 +49,18 @@ type Service struct {
 	Store *Store
 	Log   log.Logger
 
+	Indexed zoekt.Streamer
+
 	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
 	// --no-renames commitA commitB" against repo.
 	//
 	// TODO Git client should be exposing a better API here.
 	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
+	// single call to git archive. This mainly needs to be less than ARG_MAX
+	// for the exec.Command on gitserver.
+	MaxTotalPathsLength int
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -152,7 +160,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
 		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.StringSlice("indexerEndpoints", p.IndexerEndpoints),
 		attribute.String("select", p.Select),
 	)
 	defer func(start time.Time) {
@@ -190,14 +197,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("matches", sender.SentCount()),
 			log.String("code", code),
 			log.Duration("duration", time.Since(start)),
-			log.Strings("indexerEndpoints", p.IndexerEndpoints),
 			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.

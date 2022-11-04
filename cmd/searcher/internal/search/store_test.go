@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPrepareZip(t *testing.T) {
@@ -136,18 +137,20 @@ func TestPrepareZip_errHeader(t *testing.T) {
 	}
 }
 
-func TestIngoreSizeMax(t *testing.T) {
-	patterns := []string{
-		"foo",
-		"foo.*",
-		"foo_*",
-		"*.foo",
-		"bar.baz",
-		"**/*.bam",
-	}
+func TestSearchLargeFiles(t *testing.T) {
+	filter := newSearchableFilter(&schema.SiteConfiguration{
+		SearchLargeFiles: []string{
+			"foo",
+			"foo.*",
+			"foo_*",
+			"*.foo",
+			"bar.baz",
+			"**/*.bam",
+		},
+	})
 	tests := []struct {
-		name    string
-		ignored bool
+		name   string
+		search bool
 	}{
 		// Pass
 		{"foo", true},
@@ -166,7 +169,11 @@ func TestIngoreSizeMax(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if got, want := ignoreSizeMax(test.name, patterns), test.ignored; got != want {
+		hdr := &tar.Header{
+			Name: test.name,
+			Size: maxFileSize + 1,
+		}
+		if got, want := filter.SkipContent(hdr), !test.search; got != want {
 			t.Errorf("case %s got %v want %v", test.name, got, want)
 		}
 	}
@@ -188,9 +195,11 @@ func TestSymlink(t *testing.T) {
 	}
 	zw := zip.NewWriter(f)
 
-	if err := copySearchable(tarReader, zw, []string{}, func(hdr *tar.Header) bool {
+	filter := newSearchableFilter(&schema.SiteConfiguration{})
+	filter.CommitIgnore = func(hdr *tar.Header) bool {
 		return false
-	}); err != nil {
+	}
+	if err := copySearchable(tarReader, zw, filter); err != nil {
 		t.Fatal(err)
 	}
 	zw.Close()

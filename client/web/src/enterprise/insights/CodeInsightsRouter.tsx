@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../../auth'
 
 import { CodeInsightsBackendContext } from './core'
 import { useApi } from './hooks/use-api'
+import { useLicense } from './hooks/use-license'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
@@ -30,9 +31,10 @@ export interface CodeInsightsRouterProps extends TelemetryProps {
 }
 
 export const CodeInsightsRouter: React.FunctionComponent<React.PropsWithChildren<CodeInsightsRouterProps>> = props => {
+    const fetched = useLicense()
     const api = useApi()
 
-    if (!api) {
+    if (!fetched) {
         return null
     }
 

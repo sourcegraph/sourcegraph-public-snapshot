@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -22,11 +21,12 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -529,7 +529,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("missing access to namespace org", func(t *testing.T) {
-			orgID := bt.InsertTestOrg(t, db, "test-org")
+			orgID := bt.CreateTestOrg(t, db, "test-org").ID
 
 			opts := CreateBatchSpecOpts{
 				NamespaceOrgID:       orgID,
@@ -538,7 +538,7 @@ func TestService(t *testing.T) {
 			}
 
 			_, err := svc.CreateBatchSpec(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; have != want {
+			if have, want := err, auth.ErrNotAnOrgMember; have != want {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 
@@ -615,9 +615,8 @@ index e5af166..d44c3fc 100644
  Line 9
  Line 10
 `),
-				DiffStatAdded:     1,
-				DiffStatChanged:   2,
-				DiffStatDeleted:   1,
+				DiffStatAdded:     3,
+				DiffStatDeleted:   3,
 				BaseRepoID:        1,
 				UserID:            1,
 				BaseRev:           "d34db33f",
@@ -750,7 +749,7 @@ index e5af166..d44c3fc 100644
 		t.Run("new org namespace", func(t *testing.T) {
 			batchChange := createBatchChange(t, "old-name-1", admin.ID, admin.ID, 0)
 
-			orgID := bt.InsertTestOrg(t, db, "org")
+			orgID := bt.CreateTestOrg(t, db, "org").ID
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 			moved, err := svc.MoveBatchChange(ctx, opts)
@@ -770,12 +769,12 @@ index e5af166..d44c3fc 100644
 		t.Run("new org namespace but current user is missing access", func(t *testing.T) {
 			batchChange := createBatchChange(t, "old-name-2", user.ID, user.ID, 0)
 
-			orgID := bt.InsertTestOrg(t, db, "org-no-access")
+			orgID := bt.CreateTestOrg(t, db, "org-no-access").ID
 
 			opts := MoveBatchChangeOpts{BatchChangeID: batchChange.ID, NewNamespaceOrgID: orgID}
 
 			_, err := svc.MoveBatchChange(userCtx, opts)
-			if have, want := err, backend.ErrNotAnOrgMember; !errors.Is(have, want) {
+			if have, want := err, auth.ErrNotAnOrgMember; !errors.Is(have, want) {
 				t.Fatalf("expected %s error but got %s", want, have)
 			}
 		})
@@ -905,7 +904,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{Token: "test123"},
+				&extsvcauth.OAuthBearerToken{Token: "test123"},
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -920,7 +919,7 @@ index e5af166..d44c3fc 100644
 				ctx,
 				"https://github.com/",
 				extsvc.TypeGitHub,
-				&auth.OAuthBearerToken{Token: "test123"},
+				&extsvcauth.OAuthBearerToken{Token: "test123"},
 			); err == nil {
 				t.Fatal("unexpected nil-error returned from ValidateAuthenticator")
 			}
@@ -1541,6 +1540,76 @@ index e5af166..d44c3fc 100644
 			}
 		})
 
+		tests := []struct {
+			name    string
+			rawSpec string
+			wantErr error
+		}{
+			{
+				name:    "empty",
+				rawSpec: "",
+				wantErr: errors.New("Expected: object, given: null"),
+			},
+			{
+				name:    "invalid YAML",
+				rawSpec: "invalid YAML",
+				wantErr: errors.New("Expected: object, given: string"),
+			},
+			{
+				name:    "invalid name",
+				rawSpec: "name: invalid name",
+				wantErr: errors.New("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed."),
+			},
+			{
+				name: "requires changesetTemplate when steps are included",
+				rawSpec: `
+name: test
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello world"
+    container: alpine:3`,
+				wantErr: errors.New("batch spec includes steps but no changesetTemplate"),
+			},
+			{
+				name: "unknown templating variable",
+				rawSpec: `
+name: hello
+on:
+  - repository: github.com/sourcegraph-testing/some-repo
+steps:
+  - run: echo "Hello ${{ resopitory.name }}" >> message.txt
+    container: alpine:3
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Write a message to a text file
+`,
+				wantErr: errors.New("unknown templating variable: 'resopitory'"),
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run("batchSpec has invalid raw spec: "+tc.name, func(t *testing.T) {
+				spec := createBatchSpecWithWorkspaces(t)
+
+				_, gotErr := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+					BatchSpecRandID: spec.RandID,
+					RawSpec:         tc.rawSpec,
+				})
+
+				if gotErr == nil {
+					t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+				}
+
+				if !strings.Contains(gotErr.Error(), tc.wantErr.Error()) {
+					t.Fatalf("unexpected error.\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+				}
+			})
+		}
+
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
 				t.Helper()
@@ -1569,7 +1638,7 @@ index e5af166..d44c3fc 100644
 			assertNoChangesetSpecs(t, spec.ID)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
 
 			_, err := svc.ReplaceBatchSpecInput(adminCtx, ReplaceBatchSpecInputOpts{
@@ -1591,7 +1660,7 @@ changesetTemplate:
     message: Test
 `,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1701,7 +1770,7 @@ changesetTemplate:
 			}
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec: `
 name: test-spec
@@ -1721,7 +1790,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -1767,7 +1836,7 @@ changesetTemplate:
 			assert.Equal(t, store.ErrNoResults, err)
 		})
 
-		t.Run("mount error", func(t *testing.T) {
+		t.Run("has mount", func(t *testing.T) {
 			_, err := svc.UpsertBatchSpecInput(adminCtx, UpsertBatchSpecInputOpts{
 				RawSpec: `
 name: test-spec
@@ -1787,7 +1856,7 @@ changesetTemplate:
 `,
 				NamespaceUserID: admin.ID,
 			})
-			assert.Equal(t, "mounts are not allowed for server-side processing", err.Error())
+			assert.NoError(t, err)
 		})
 	})
 
@@ -2935,7 +3004,7 @@ func assertAuthError(t *testing.T, err error) {
 		t.Fatalf("expected error. got none")
 	}
 	if err != nil {
-		if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+		if !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 			t.Fatalf("wrong error: %s (%T)", err, err)
 		}
 	}
@@ -2945,7 +3014,7 @@ func assertNoAuthError(t *testing.T, err error) {
 	t.Helper()
 
 	// Ignore other errors, we only want to check whether it's an auth error
-	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+	if errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 		t.Fatalf("got auth error")
 	}
 }

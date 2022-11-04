@@ -1,8 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
-import { noop } from 'lodash'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Combobox } from '@sourcegraph/wildcard'
 
 import { SearchContextMenuItem } from './SearchContextMenu'
 
@@ -25,17 +24,15 @@ export default config
 export const SelectedDefaultItem: Story = () => (
     <BrandedStory>
         {() => (
-            <SearchContextMenuItem
-                spec="@user/test"
-                searchFilter=""
-                description="Default description"
-                query=""
-                selected={true}
-                isDefault={true}
-                selectSearchContextSpec={noop}
-                onKeyDown={noop}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-            />
+            <Combobox>
+                <SearchContextMenuItem
+                    spec="@user/test"
+                    description="Default description"
+                    query=""
+                    selected={true}
+                    isDefault={true}
+                />
+            </Combobox>
         )}
     </BrandedStory>
 )
@@ -45,17 +42,15 @@ SelectedDefaultItem.storyName = 'selected default item'
 export const HighlightedItem: Story = () => (
     <BrandedStory>
         {() => (
-            <SearchContextMenuItem
-                spec="@user/test"
-                searchFilter="@us/te"
-                description="Default description"
-                query=""
-                selected={false}
-                isDefault={false}
-                selectSearchContextSpec={noop}
-                onKeyDown={noop}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-            />
+            <Combobox>
+                <SearchContextMenuItem
+                    spec="@user/test"
+                    description="Default description"
+                    query=""
+                    selected={false}
+                    isDefault={false}
+                />
+            </Combobox>
         )}
     </BrandedStory>
 )

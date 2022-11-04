@@ -4,7 +4,6 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
@@ -16,31 +15,42 @@ export interface SearchFilterSectionProps {
     header: ReactNode
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
-    showSearch?: boolean // Search only works if children are FilterLink
+
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
 
     forcedRender?: boolean
 
     /**
-     * Shown when the built-in search doesn't find any results.
-     */
-    noResultText?: (links: ReactElement[]) => ReactNode
-
-    /**
-     * Clear the search input whenever this value changes. This is supposed to
-     * be used together with function children, which use the search input but
-     * handle search on their own.
-     * Defaults to the component's children.
-     */
-    clearSearchOnChange?: unknown
-
-    /**
-     * Minimal number of items to render the filter section.
-     * This prop is used for repositories filter section when we have only
-     * one repo the repo filter section shouldn't be rendered.
+     * Minimal number of items to render the filter section. Defaults to 1.
+     * This prop is set to 2 for repositories and languages filter sections:
+     * when we have only one repo or language, the section shouldn't be rendered.
      */
     minItems?: number
+
+    /**
+     * If present, search is shown.
+     * Search only works if children are FilterLink.
+     */
+    searchOptions?: {
+        /**
+         * Accessible label for the search box. These should all be unique.
+         */
+        ariaLabel: string
+
+        /**
+         * Shown when the built-in search doesn't find any results.
+         */
+        noResultText?: (links: ReactElement[]) => ReactNode
+
+        /**
+         * Clear the search input whenever this value changes. This is supposed to
+         * be used together with function children, which use the search input but
+         * handle search on their own.
+         * Defaults to the component's children.
+         */
+        clearSearchOnChange?: unknown
+    }
 }
 
 const defaultNoResult = (): string => 'No results'
@@ -59,16 +69,15 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         header,
         children = [],
         className,
-        showSearch = false,
+        searchOptions,
         forcedRender = true,
         onToggle,
         startCollapsed,
-        minItems = 0,
-        noResultText = defaultNoResult,
-        clearSearchOnChange = children,
+        minItems = 1,
     } = props
 
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const { ariaLabel = '', noResultText = defaultNoResult, clearSearchOnChange = children } = searchOptions ?? {}
+
     const [filter, setFilter] = useState('')
 
     // Clears the filter whenever clearSearchOnChange changes (defaults to the
@@ -76,7 +85,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     useEffect(() => setFilter(''), [clearSearchOnChange])
 
     let body
-    let searchVisible = showSearch
+    let searchVisible = !!searchOptions
     let visible = false
 
     // Supports render props approach
@@ -88,7 +97,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         // items (usually it's FilterLink components)
     } else if (Array.isArray(children)) {
         // Sometimes we don't need to render filter section with just one item (example - repositories filter section)
-        visible = children.length > minItems
+        visible = children.length >= minItems
 
         // We don't need to have a search UI if we're dealing with only one item
         searchVisible = searchVisible && children.length > 1
@@ -159,25 +168,16 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     >
                         {header}
                     </H5>
-                    <Icon
-                        aria-hidden={true}
-                        className={classNames(!coreWorkflowImprovementsEnabled && 'mr-1')}
-                        as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
-                    />
+                    <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                 </CollapseHeader>
 
                 <CollapsePanel forcedRender={forcedRender}>
-                    <div
-                        className={classNames(
-                            'pb-4',
-                            !searchVisible && !coreWorkflowImprovementsEnabled && 'border-top'
-                        )}
-                    >
+                    <div className="pb-4">
                         {searchVisible && (
                             <Input
                                 type="search"
                                 placeholder="Find..."
-                                aria-label="Find filters"
+                                aria-label={ariaLabel}
                                 value={filter}
                                 onChange={event => setFilter(event.currentTarget.value)}
                                 data-testid="sidebar-section-search-box"

@@ -4,12 +4,10 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { QueryState, SearchContextInputProps } from '@sourcegraph/search'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -21,7 +19,6 @@ import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
-import { LoggedOutHomepage } from './LoggedOutHomepage'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
@@ -32,7 +29,6 @@ export interface SearchPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'>,
@@ -56,7 +52,6 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -71,12 +66,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             {props.isSourcegraphDotCom && (
                 <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
             )}
-            <div
-                className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]:
-                        props.isSourcegraphDotCom || showEnterpriseHomePanels || coreWorkflowImprovementsEnabled,
-                })}
-            >
+            <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div
@@ -84,19 +74,21 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
+                <>
+                    {showEnterpriseHomePanels && !!props.authenticatedUser && !props.isSourcegraphDotCom && (
+                        <HomePanels showCollaborators={showCollaborators} {...props} />
+                    )}
 
-                {showEnterpriseHomePanels && props.authenticatedUser && (
-                    <HomePanels showCollaborators={showCollaborators} {...props} />
-                )}
-
-                {coreWorkflowImprovementsEnabled && !showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
-                    <QueryExamplesHomepage
-                        telemetryService={props.telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                    />
-                )}
+                    {((!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom) && (
+                        <QueryExamplesHomepage
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                    )}
+                </>
             </div>
 
             <SearchPageFooter {...props} />

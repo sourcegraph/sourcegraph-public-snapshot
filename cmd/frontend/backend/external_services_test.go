@@ -57,46 +57,6 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			expectNil:       true,
 			errMessage:      "got ErrNoAccessExternalService, want nil",
 		},
-		{
-			name:            "Returns error for personal code host connection and user not matching user ID",
-			ctx:             ctx,
-			mockCurrentUser: mockSiteAdmin(true),
-			mockOrgMember:   nil,
-			namespaceOrgID:  0,
-			namespaceUserID: 42,
-			expectNil:       false,
-			errMessage:      "got nil, want ErrNoAccessExternalService",
-		},
-		{
-			name:            "Returns nil for personal code host connection and user matching user ID",
-			ctx:             ctx,
-			mockCurrentUser: mockSiteAdmin(false),
-			mockOrgMember:   nil,
-			namespaceOrgID:  0,
-			namespaceUserID: 1,
-			expectNil:       true,
-			errMessage:      "got ErrNoAccessExternalService, want nil",
-		},
-		{
-			name:            "Returns error for org code host connection and user not being a member of the org",
-			ctx:             ctx,
-			mockCurrentUser: mockSiteAdmin(true),
-			mockOrgMember:   nil,
-			namespaceOrgID:  42,
-			namespaceUserID: 0,
-			expectNil:       false,
-			errMessage:      "got nil, want ErrNoAccessExternalService",
-		},
-		{
-			name:            "Returns nil for org code host connection and user is a member of the org",
-			ctx:             ctx,
-			mockCurrentUser: mockSiteAdmin(false),
-			mockOrgMember:   &types.OrgMembership{ID: 1, OrgID: 42, UserID: 1},
-			namespaceOrgID:  42,
-			namespaceUserID: 0,
-			expectNil:       true,
-			errMessage:      "got ErrNoAccessExternalService, want nil",
-		},
 	}
 
 	for _, test := range tests {
@@ -111,7 +71,7 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserID, test.namespaceOrgID)
+			result := CheckExternalServiceAccess(test.ctx, db)
 
 			if test.expectNil != (result == nil) {
 				t.Errorf(test.errMessage)

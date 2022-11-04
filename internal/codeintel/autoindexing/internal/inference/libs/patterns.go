@@ -40,6 +40,10 @@ func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
 	}
 
 	return map[string]lua.LGFunction{
+		"backdoor": util.WrapLuaFunction(func(state *lua.LState) error {
+			state.Push(luar.New(state, luatypes.NewPattern(state.CheckString(1))))
+			return nil
+		}),
 		"path_literal":   util.WrapLuaFunction(newPathPatternConstructor("^", "$")),
 		"path_segment":   util.WrapLuaFunction(newPathPatternConstructor("(^|/)", "(/|$)")),
 		"path_basename":  util.WrapLuaFunction(newPathPatternConstructor("(^|/)", "$")),

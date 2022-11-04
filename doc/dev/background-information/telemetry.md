@@ -26,19 +26,22 @@ Browser extension telemetry data is sent only to the connected Sourcegraph insta
   - or `Send telemetry` is checked on options page
 
 **All browser extension events are triggered with:**
+
+- `name`: event name
 - `source`: constant `CODEHOSTINTEGRATION`
-- `anonymizedUserId`: generated user ID, stored in browser local storage
-- `sourcegraphURL`: connected/configured Sourcegraph URL
-- `platform`: detected platform name (one of `chrome-extension` | `safari-extension` | `firefox-extension`)
+- `userCookieID`: anonymous identifier for this user (allows site admins on a private Sourcegraph instance to see a count of unique users on a daily, weekly, and monthly basis)
+- `url`: connected/configured Sourcegraph URL
+- `argument` / `publicArgument`: detected platform name (one of `chrome-extension` | `safari-extension` | `firefox-extension`) and version
 
 **Following event logs are triggered from the browser extension:**
-- `BrowserExtensionInstalled`: triggered on initial install
-- `hover`: when successfully showing non-empty/non-error hover information
-- `action.id`: Sourcegraph extension action ID
-  - when clicking any action from the command palette
-  - or when clicking from the code view toolbar (e.g., "open in vs code")
 
-  - > NOTE: Sourcegraph extensions don't have access to telemetry service/logging API when running in the browser extension
+- `BrowserExtensionInstalled`: triggered on initial install
+- `BrowserExtensionEnabled`/`BrowserExtensionDisabled`: triggered on browser extension enabled toggle change
+- `Bext_NumberURLs`: number of Sourcegraph instances added to the browser extension
+- `hover`: when successfully showing non-empty/non-error hover information
+- `goToDefinition.preloaded`: triggered when code-intel popup "Go to definition" button was clicked, preloading the definition succeeded and at least one definition was found
+- `findImplementations`: triggered when code-intel popup "Find implementations" button was clicked
+- `findReferences`: triggered when code-intel popup "Find references" button was clicked
 
 #### UTM markers
 

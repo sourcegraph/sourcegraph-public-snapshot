@@ -4,7 +4,7 @@ import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap
 import sourcegraph from 'sourcegraph'
 
 import { Contributions } from '@sourcegraph/client-api'
-import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable, logger } from '@sourcegraph/common'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
@@ -192,20 +192,20 @@ export function activateExtensions(
                                                     // noop
                                                 })
                                         } catch (error) {
-                                            console.error(
+                                            logger.error(
                                                 `Fail to log ExtensionActivation event for extension ${id}:`,
                                                 asError(error)
                                             )
                                         }
                                     }
-                                    console.log(`Activating Sourcegraph extension: ${id}`)
+                                    logger.log(`Activating Sourcegraph extension: ${id}`)
                                     return activate(id, scriptURL, createExtensionAPI).catch(error =>
-                                        console.error(`Error activating extension ${id}:`, asError(error))
+                                        logger.error(`Error activating extension ${id}:`, asError(error))
                                     )
                                 }),
                                 [...toDeactivate].map(id =>
                                     deactivate(id).catch(error =>
-                                        console.error(`Error deactivating extension ${id}:`, asError(error))
+                                        logger.error(`Error deactivating extension ${id}:`, asError(error))
                                     )
                                 ),
                             ])
@@ -213,7 +213,7 @@ export function activateExtensions(
                     }),
                     map(() => ({ activated: toActivate, deactivated: toDeactivate })),
                     catchError(error => {
-                        console.error('Uncaught error during extension activation', error)
+                        logger.error('Uncaught error during extension activation', error)
                         return []
                     })
                 )
@@ -343,29 +343,29 @@ export function extensionsWithMatchedActivationEvent<Extension extends Configure
             if (!extension.manifest) {
                 const match = /^sourcegraph\/lang-(.*)$/.exec(extension.id)
                 if (match) {
-                    console.warn(
+                    logger.warn(
                         `Extension ${extension.id} has been renamed to sourcegraph/${match[1]}. It's safe to remove ${extension.id} from your settings.`
                     )
                 } else {
-                    console.warn(
+                    logger.warn(
                         `Extension ${extension.id} was not found. Remove it from settings to suppress this warning.`
                     )
                 }
                 return false
             }
             if (isErrorLike(extension.manifest)) {
-                console.warn(extension.manifest)
+                logger.warn(extension.manifest)
                 return false
             }
             if (!extension.manifest.activationEvents) {
-                console.warn(`Extension ${extension.id} has no activation events, so it will never be activated.`)
+                logger.warn(`Extension ${extension.id} has no activation events, so it will never be activated.`)
                 return false
             }
             return extension.manifest.activationEvents.some(
                 event => event === '*' || languageActivationEvents.has(event)
             )
         } catch (error) {
-            console.error(error)
+            logger.error(error)
         }
         return false
     })

@@ -9,7 +9,6 @@ import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     Button,
     LoadingSpinner,
@@ -27,13 +26,18 @@ import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables } from '../../../../graphql-operations'
+import {
+    ArchiveProductSubscriptionResult,
+    ArchiveProductSubscriptionVariables,
+    DotComProductSubscriptionResult,
+    ProductLicensesResult,
+    ProductLicenseFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductSubscriptionHistory } from '../../../user/productSubscriptions/ProductSubscriptionHistory'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
@@ -41,7 +45,6 @@ import {
     SiteAdminProductLicenseNode,
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
-import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     /** For mocking in tests only. */
@@ -53,7 +56,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
 }
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
-    GQL.IProductLicense,
+    ProductLicenseFields,
     Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
 > {}
 
@@ -124,10 +127,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    /** Updates to the subscription. */
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onUpdate = useCallback(() => updates.next(), [updates])
-
     /** Updates to the subscription's licenses. */
     const licenseUpdates = useMemo(() => new Subject<void>(), [])
     const onLicenseUpdate = useCallback(() => {
@@ -190,15 +189,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                     </td>
                                 </tr>
                                 <tr>
-                                    <th className="text-nowrap">Billing</th>
-                                    <td className="w-100">
-                                        <SiteAdminProductSubscriptionBillingLink
-                                            productSubscription={productSubscription}
-                                            onDidUpdate={onUpdate}
-                                        />
-                                    </td>
-                                </tr>
-                                <tr>
                                     <th className="text-nowrap">Created at</th>
                                     <td className="w-100">
                                         <Timestamp date={productSubscription.createdAt} />
@@ -244,17 +234,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                             location={location}
                         />
                     </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </Card>
                 </>
             )}
         </div>
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
+function queryProductSubscription(
+    uuid: string
+): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
     return queryGraphQL(
         gql`
             query DotComProductSubscription($uuid: String!) {
@@ -263,30 +251,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         id
                         name
                         account {
-                            id
-                            username
-                            displayName
-                            emails {
-                                email
-                                verified
-                            }
-                        }
-                        invoiceItem {
-                            plan {
-                                billingPlanID
-                                name
-                                nameWithBrand
-                                pricePerUserPerYear
-                            }
-                            userCount
-                            expiresAt
-                        }
-                        events {
-                            id
-                            date
-                            title
-                            description
-                            url
+                            ...DotComProductSubscriptionEmailFields
                         }
                         productLicenses {
                             nodes {
@@ -304,11 +269,31 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                                 hasNextPage
                             }
                         }
+                        activeLicense {
+                            id
+                            info {
+                                productNameWithBrand
+                                tags
+                                userCount
+                                expiresAt
+                            }
+                            licenseKey
+                            createdAt
+                        }
                         createdAt
                         isArchived
                         url
-                        urlForSiteAdminBilling
                     }
+                }
+            }
+
+            fragment DotComProductSubscriptionEmailFields on User {
+                id
+                username
+                displayName
+                emails {
+                    email
+                    verified
                 }
             }
         `,
@@ -326,7 +311,7 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
 function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
-): Observable<GQL.IProductLicenseConnection> {
+): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
     return queryGraphQL(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {

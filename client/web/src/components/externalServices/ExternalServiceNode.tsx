@@ -23,6 +23,7 @@ export interface ExternalServiceNodeProps {
     history: H.History
     routingPrefix: string
     afterDeleteRoute: string
+    editingDisabled: boolean
 }
 
 export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildren<ExternalServiceNodeProps>> = ({
@@ -31,6 +32,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
     history,
     routingPrefix,
     afterDeleteRoute,
+    editingDisabled,
 }) => {
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
@@ -114,7 +116,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content="Edit code host connection settings">
+                    <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
                             to={`${routingPrefix}/external-services/${node.id}`}
@@ -122,7 +124,7 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                             size="sm"
                             as={Link}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> {editingDisabled ? 'View' : 'Edit'}
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content="Delete code host connection">

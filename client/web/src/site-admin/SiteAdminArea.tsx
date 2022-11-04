@@ -1,14 +1,13 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
+import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -43,10 +42,9 @@ const NotSiteAdminPage: React.ComponentType<React.PropsWithChildren<{}>> = () =>
 export interface SiteAdminAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
-    site: Pick<GQL.ISite, '__typename' | 'id'>
+    site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
     isSourcegraphDotCom: boolean
@@ -61,7 +59,6 @@ interface SiteAdminAreaProps
     extends RouteComponentProps<{}>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
@@ -96,6 +93,10 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
+            label: 'Insights',
+            to: '/site-admin/analytics/code-insights',
+        },
+        {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
         },
@@ -110,10 +111,6 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
-        },
-        {
-            label: 'Code insights (soon)',
-            to: '/site-admin/analytics/code-insights',
         },
     ],
 }
@@ -141,7 +138,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/code-insights',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeInsightsPage'), 'AnalyticsCodeInsightsPage'),
         exact: true,
     },
     {
@@ -155,11 +152,6 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/analytics/extensions',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
-        exact: true,
-    },
-    {
         path: '/',
         render: lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage'),
         exact: true,
@@ -167,15 +159,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
 ]
 
 const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildren<SiteAdminAreaProps>> = props => {
-    const { pathname } = useLocation()
-
     const reference = useRef<HTMLDivElement>(null)
-
-    useLayoutEffect(() => {
-        if (reference.current) {
-            reference.current.scrollIntoView()
-        }
-    }, [pathname])
 
     const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
@@ -205,7 +189,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
-        activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
@@ -213,7 +196,11 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <Page>
-            <PageHeader path={[{ text: 'Admin' }]} />
+            <PageHeader>
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <div className="d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3', styles.sidebar)}

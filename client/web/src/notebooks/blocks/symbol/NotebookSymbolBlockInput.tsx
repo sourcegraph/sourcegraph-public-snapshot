@@ -10,6 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Code } from '@sourcegraph/wildcard'
 
 import { BlockProps, SymbolBlockInput } from '../..'
+import { useExperimentalFeatures } from '../../../stores'
 import { SearchTypeSuggestionsInput } from '../suggestions/SearchTypeSuggestionsInput'
 import { fetchSuggestions } from '../suggestions/suggestions'
 
@@ -41,6 +42,9 @@ const editorAttributes = [
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
 > = ({ onSymbolSelected, isSourcegraphDotCom, globbing, ...inputProps }) => {
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
+
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>
             fetchSuggestions(
@@ -69,9 +73,10 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
                 isSourcegraphDotCom,
                 globbing,
                 fetchSuggestions: fetchStreamSuggestions,
+                applyOnEnter: applySuggestionsOnEnter,
                 disableSymbolCompletion: true,
             }),
-        [isSourcegraphDotCom, globbing]
+        [isSourcegraphDotCom, globbing, applySuggestionsOnEnter]
     )
 
     return (

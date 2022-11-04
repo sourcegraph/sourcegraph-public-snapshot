@@ -378,7 +378,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			desc: "valid with url, username, token, repositoryQuery",
 			config: `
 			{
-				"url": "https://bitbucket.com/",
+				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"token": "secret-token",
 				"repositoryQuery": ["none"]
@@ -390,7 +390,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			desc: "valid with url, username, token, repos",
 			config: `
 			{
-				"url": "https://bitbucket.com/",
+				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"token": "secret-token",
 				"repos": ["sourcegraph/sourcegraph"]
@@ -422,7 +422,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		{
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "bad url scheme",
-			config: `{"url": "badscheme://bitbucket.com"}`,
+			config: `{"url": "badscheme://bitbucket.org"}`,
 			assert: includes("url: Does not match pattern '^https?://'"),
 		},
 		{

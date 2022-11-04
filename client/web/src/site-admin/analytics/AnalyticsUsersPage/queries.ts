@@ -5,19 +5,19 @@ export const USERS_STATISTICS = gql`
         site {
             analytics {
                 users(dateRange: $dateRange, grouping: $grouping) {
-                    summary {
-                        avgDAU
-                        avgWAU
-                        avgMAU
+                    monthlyActiveUsers {
+                        date
+                        count
                     }
                     activity {
                         nodes {
                             date
                             count
-                            registeredUsers
+                            uniqueUsers
                         }
                         summary {
                             totalCount
+                            totalUniqueUsers
                             totalRegisteredUsers
                         }
                     }

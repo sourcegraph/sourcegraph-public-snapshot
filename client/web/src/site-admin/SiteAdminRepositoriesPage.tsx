@@ -5,6 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -149,11 +150,11 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
     useEffect(() => {
         refreshSiteFlags()
             .toPromise()
-            .then(null, error => console.error(error))
+            .then(null, error => logger.error(error))
         return () => {
             refreshSiteFlags()
                 .toPromise()
-                .then(null, error => console.error(error))
+                .then(null, error => logger.error(error))
         }
     }, [])
 
@@ -187,7 +188,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 description: 'Not cloned',
                 color: 'var(--body-color)',
                 position: 'right',
-                tooltip: 'The number of repositories that haven not been cloned yet.',
+                tooltip: 'The number of repositories that have not been cloned yet.',
+                filter: { name: 'status', value: 'not-cloned' },
             },
             {
                 value: data.repositoryStats.cloning,
@@ -195,6 +197,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
+                filter: { name: 'status', value: 'cloning' },
             },
             {
                 value: data.repositoryStats.cloned,
@@ -202,6 +205,14 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
+                filter: { name: 'status', value: 'cloned' },
+            },
+            {
+                value: data.repositoryStats.indexed,
+                description: 'Indexed',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been indexed for search.',
             },
             {
                 value: data.repositoryStats.failedFetch,
@@ -209,6 +220,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+                filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
     }, [data])

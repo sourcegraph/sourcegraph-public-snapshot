@@ -33,7 +33,6 @@ export function createProviders(hasImplementationsField: boolean, logger: Logger
         makeRangeWindowFactory(hasImplementationsField, sgQueryGraphQL)
     )
 
-    logger.log('LSIF providers are active')
     return providers
 }
 

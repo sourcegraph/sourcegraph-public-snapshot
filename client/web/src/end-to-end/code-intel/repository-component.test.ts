@@ -71,7 +71,7 @@ describe('Repository component', () => {
     }
 
     const hoverOver = async (lineBase1: number, characterBase1: number): Promise<void> => {
-        const codeSelector = `td[data-line="${lineBase1}"] + .code`
+        const codeSelector = `th[data-line="${lineBase1}"] + .code`
         await driver.page.waitForSelector(codeSelector, { visible: true })
 
         const findToken = (characterBase1Copy: number, codeSelectorCopy: string): string | undefined => {
@@ -313,6 +313,9 @@ describe('Repository component', () => {
                     'constant',
                     'constant',
                     'function',
+                    'unknown',
+                    'unknown',
+                    'unknown',
                 ],
             },
             {
@@ -463,25 +466,29 @@ describe('Repository component', () => {
                 name: 'highlights correct line for Go',
                 filePath:
                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.go',
-                index: 5,
+                symbol: 'diffTimeParseLayout',
                 line: 65,
             },
             {
                 name: 'highlights correct line for TypeScript',
                 filePath:
                     '/github.com/sourcegraph/sourcegraph-typescript@a7b7a61e31af76dad3543adec359fa68737a58a1/-/blob/server/src/cancellation.ts',
-                index: 2,
+                symbol: 'throwIfCancelled',
                 line: 17,
             },
         ]
 
-        for (const { name, filePath, index, line } of highlightSymbolTests) {
+        for (const { name, filePath, symbol, line } of highlightSymbolTests) {
             test(name, async () => {
                 await driver.page.goto(sourcegraphBaseUrl + filePath)
                 await driver.page.waitForSelector('[data-tab-content="symbols"]')
                 await driver.page.click('[data-tab-content="symbols"]')
                 await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
-                await driver.page.click(`[data-testid="filtered-connection-nodes"] li:nth-child(${index + 1}) a`)
+                const [link] = await driver.page.$x(`//*[@data-testid='symbol-name' and contains(text(), '${symbol}')]`)
+                if (!link) {
+                    throw new Error(`Could not find symbol "${symbol}" in the sidebar`)
+                }
+                await link.click()
 
                 await driver.page.waitForSelector('.test-blob .selected .line')
                 const selectedLineNumber = await driver.page.evaluate(() => {
@@ -496,16 +503,16 @@ describe('Repository component', () => {
 
     describe('hovers', () => {
         describe('Blob', () => {
-            test('gets displayed and updates URL when hovering over a token', async () => {
+            test.skip('gets displayed and updates URL when hovering over a token', async () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl +
                         '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                 )
                 await driver.page.waitForSelector(blobTableSelector)
 
-                await driver.page.waitForSelector('td[data-line="24"]', { visible: true })
+                await driver.page.waitForSelector('th[data-line="24"]', { visible: true })
                 await driver.page.evaluate(() => {
-                    document.querySelector('td[data-line="24"]')?.parentElement?.click()
+                    document.querySelector('th[data-line="24"]')?.parentElement?.click()
                 })
 
                 await driver.assertWindowLocation(

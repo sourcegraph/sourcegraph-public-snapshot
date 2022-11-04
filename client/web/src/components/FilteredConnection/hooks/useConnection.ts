@@ -17,6 +17,11 @@ export interface UseConnectionResult<TData> {
     refetchAll: () => void
     loading: boolean
     hasNextPage: boolean
+    /**
+     * NOTE: USE WITH CAUTION. Polling connection data is currently not recommended as
+     * Apollo does not reliably merge data from "Show More" (`fetchMore`) responses with
+     * the data from polling responses when the two are in flight simultaneously.
+     */
     startPolling: (pollInterval: number) => void
     stopPolling: () => void
 }
@@ -26,7 +31,13 @@ interface UseConnectionConfig<TResult> {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
-    /** Set to enable polling of all the nodes currently loaded in the connection */
+    /**
+     * Set to enable polling of all the nodes currently loaded in the connection.
+     *
+     * NOTE: USE WITH CAUTION. Polling connection data is currently not recommended as
+     * Apollo does not reliably merge data from "Show More" (`fetchMore`) responses with
+     * the data from polling responses when the two are in flight simultaneously.
+     */
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void

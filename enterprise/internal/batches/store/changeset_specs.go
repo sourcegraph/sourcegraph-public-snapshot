@@ -28,7 +28,6 @@ var changesetSpecInsertColumns = []string{
 	"repo_id",
 	"user_id",
 	"diff_stat_added",
-	"diff_stat_changed",
 	"diff_stat_deleted",
 	"created_at",
 	"updated_at",
@@ -57,7 +56,6 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.repo_id",
 	"changeset_specs.user_id",
 	"changeset_specs.diff_stat_added",
-	"changeset_specs.diff_stat_changed",
 	"changeset_specs.diff_stat_deleted",
 	"changeset_specs.created_at",
 	"changeset_specs.updated_at",
@@ -119,11 +117,10 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 			if err := inserter.Insert(
 				ctx,
 				c.RandID,
-				nullInt64Column(c.BatchSpecID),
+				dbutil.NullInt64Column(c.BatchSpecID),
 				c.BaseRepoID,
-				nullInt32Column(c.UserID),
+				dbutil.NullInt32Column(c.UserID),
 				c.DiffStatAdded,
-				c.DiffStatChanged,
 				c.DiffStatDeleted,
 				c.CreatedAt,
 				c.UpdatedAt,
@@ -177,7 +174,6 @@ func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, 
 }
 
 var updateChangesetSpecBatchSpecIDQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:UpdateChangesetSpecBatchSpecID
 UPDATE changeset_specs
 SET batch_spec_id = %s
 WHERE id = ANY (%s)
@@ -202,7 +198,6 @@ func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) (err error) {
 }
 
 var deleteChangesetSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:DeleteChangesetSpec
 DELETE FROM changeset_specs WHERE id = %s
 `
 
@@ -224,7 +219,6 @@ func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpec
 }
 
 var countChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:CountChangesetSpecs
 SELECT COUNT(changeset_specs.id)
 FROM changeset_specs
 INNER JOIN repo ON repo.id = changeset_specs.repo_id
@@ -295,7 +289,6 @@ func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.Cha
 }
 
 var getChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:GetChangesetSpec
 SELECT %s FROM changeset_specs
 INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
@@ -364,7 +357,6 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 }
 
 var listChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:ListChangesetSpecs
 SELECT %s FROM changeset_specs
 INNER JOIN repo ON repo.id = changeset_specs.repo_id
 WHERE %s
@@ -413,7 +405,6 @@ type ChangesetSpecHeadRefConflict struct {
 }
 
 var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
 SELECT
 	repo_id,
 	head_ref,
@@ -460,7 +451,6 @@ func (s *Store) DeleteUnattachedExpiredChangesetSpecs(ctx context.Context) (err 
 }
 
 var deleteUnattachedExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:DeleteUnattachedExpiredChangesetSpecs
 DELETE FROM
   changeset_specs
 WHERE
@@ -484,7 +474,6 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
 WITH candidates AS (
 	SELECT cs.id
 	FROM changeset_specs cs
@@ -528,7 +517,6 @@ func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSp
 }
 
 var deleteChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_specs.go:DeleteChangesetSpecs
 DELETE FROM changeset_specs
 WHERE
   %s
@@ -558,7 +546,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&c.BaseRepoID,
 		&dbutil.NullInt32{N: &c.UserID},
 		&c.DiffStatAdded,
-		&c.DiffStatChanged,
 		&c.DiffStatDeleted,
 		&c.CreatedAt,
 		&c.UpdatedAt,
@@ -618,14 +605,14 @@ type GetRewirerMappingsOpts struct {
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 //
 // We need to:
-// 1. Find out whether our new specs should _update_ an existing
-//    changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
-// 2. Since we can have multiple changesets per repository, we need to match
-//    based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
-// 3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
-//    In that case, we need to check whether the branch on which we _might_
-//    push the commit (because the changeset might not be published
-//    yet) is the same or compare the external IDs in the current and new specs.
+//  1. Find out whether our new specs should _update_ an existing
+//     changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
+//  2. Since we can have multiple changesets per repository, we need to match
+//     based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
+//  3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
+//     In that case, we need to check whether the branch on which we _might_
+//     push the commit (because the changeset might not be published
+//     yet) is the same or compare the external IDs in the current and new specs.
 //
 // What we want:
 //
@@ -792,8 +779,6 @@ func getRewirerMappingTextSearch(terms []search.TextSearchTerm) (detachTextSearc
 }
 
 var getRewirerMappingsQueryFmtstr = `
--- source: enterprise/internal/batches/store_changeset_specs.go:GetRewirerMappings
-
 SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM (
 	-- Fetch all changeset specs in the batch spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
 	-- Match the entries to changesets in the target batch change by external ID and repo.

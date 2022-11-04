@@ -1,13 +1,14 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsBackendContext, ALL_INSIGHTS_DASHBOARD } from '../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
+import { useInsightDashboards } from '../../../core'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -21,14 +22,15 @@ export interface DashboardsContentPageProps extends TelemetryProps {
     dashboardID?: string
 }
 
-export const DashboardsContentPage: React.FunctionComponent<
-    React.PropsWithChildren<DashboardsContentPageProps>
-> = props => {
+export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
-    const { getDashboards } = useContext(CodeInsightsBackendContext)
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const { dashboards, loading } = useInsightDashboards()
+    const currentDashboard = useMemo(
+        () => dashboards?.find(dashboard => dashboard.id === dashboardID),
+        [dashboardID, dashboards]
+    )
 
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fall back on
@@ -36,20 +38,22 @@ export const DashboardsContentPage: React.FunctionComponent<
         return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD.id}`} />
     }
 
-    if (dashboards === undefined) {
+    if (loading || !dashboards) {
         return (
             <div data-testid="loading-spinner">
-                <LoadingSpinner inline={false} />
+                <LoadingSpinner aria-live='off' inline={false} />
             </div>
         )
     }
 
-    const currentDashboard = dashboards.find(dashboard => dashboard.id === dashboardID)
-
     return (
         <>
             <PageTitle title={`${currentDashboard?.title || ''} - Code Insights`} />
-            <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} dashboards={dashboards} />
+            <DashboardsContent
+                currentDashboard={currentDashboard}
+                dashboards={dashboards}
+                telemetryService={telemetryService}
+            />
         </>
     )
 }

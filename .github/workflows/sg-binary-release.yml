@@ -5,8 +5,17 @@ on:
     branches:
       - main
     paths:
+      # Core sg code
       - 'dev/sg/**'
       - '.github/workflows/sg-binary-release.yml'
+      # Core sg dependencies
+      - 'lib/output/**'
+      - 'lib/errors/**'
+      - 'lib/group/**'
+      # Important things sg imports
+      - 'enterprise/dev/ci/images/**'    # sg ops
+      - 'internal/database/migration/**' # sg migration
+      - 'monitoring/**'                  # sg monitoring
 
 env:
   GOFLAGS: -trimpath
@@ -19,13 +28,13 @@ jobs:
     steps:
       - name: checkout-sourcegraph-sg
         uses: actions/checkout@v2
-        with: 
+        with:
           repository: sourcegraph/sg
           token: ${{ secrets.SG_RELEASE_TOKEN }}
       - name: touch-sourcegraph-sg
         run: |
           today=$(date +'%Y-%m-%d-%H-%M')
-          sed -i 's/Latest release: .*/Latest release: '"$today"'/' README.md 
+          sed -i 's/Latest release: .*/Latest release: '"$today"'/' README.md
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add README.md

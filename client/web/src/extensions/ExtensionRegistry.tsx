@@ -12,8 +12,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { AlertLink, useLocalStorage, useEventObservable, Alert, Link, Input } from '@sourcegraph/wildcard'
+import { useLocalStorage, useEventObservable, Link, Input } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -119,7 +118,7 @@ export type ConfiguredExtensionCache = Map<string, MinimalConfiguredRegistryExte
 export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => eventLogger.logViewEvent('ExtensionsOverview'), [])
 
-    const { history, location, settingsCascade, platformContext, authenticatedUser } = props
+    const { history, location, settingsCascade, platformContext } = props
 
     // Update the cache after each response. This speeds up client-side filtering.
     // Lazy initialize cache ref. Don't mind the `useState` abuse:
@@ -356,14 +355,6 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                                     spellCheck={false}
                                 />
                             </Form>
-                            {!authenticatedUser && (
-                                <Alert className="my-4" variant="info">
-                                    <span>An account is required to create, enable and disable extensions. </span>
-                                    <AlertLink to={buildGetStartedURL('extension-registry', '/extensions')}>
-                                        Get started!
-                                    </AlertLink>
-                                </Alert>
-                            )}
                             <ExtensionsList
                                 {...props}
                                 data={isLoading ? LOADING : data}

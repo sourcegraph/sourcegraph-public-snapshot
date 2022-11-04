@@ -43,7 +43,7 @@ type SubRepoPermissionChecker interface {
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 
-	// FilePermissionFunc returns a FilePermissionFunc for userID in repo.
+	// FilePermissionsFunc returns a FilePermissionFunc for userID in repo.
 	// This function should only be used during the lifetime of a request. It
 	// exists to amortize the cost of checking many files in a repo.
 	//
@@ -53,8 +53,8 @@ type SubRepoPermissionChecker interface {
 	// Enabled indicates whether sub-repo permissions are enabled.
 	Enabled() bool
 
-	// EnabledForRepoId indicates whether sub-repo permissions are enabled for the given repoID
-	EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error)
+	// EnabledForRepoID indicates whether sub-repo permissions are enabled for the given repoID
+	EnabledForRepoID(ctx context.Context, repoID api.RepoID) (bool, error)
 
 	// EnabledForRepo indicates whether sub-repo permissions are enabled for the given repo
 	EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error)
@@ -82,7 +82,7 @@ func (*noopPermsChecker) Enabled() bool {
 	return false
 }
 
-func (*noopPermsChecker) EnabledForRepoId(ctx context.Context, repoId api.RepoID) (bool, error) {
+func (*noopPermsChecker) EnabledForRepoID(ctx context.Context, repoID api.RepoID) (bool, error) {
 	return false, nil
 }
 
@@ -97,8 +97,8 @@ type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 
-	// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
-	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
+	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions
+	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 
 	// RepoSupported returns true if repo with the given name has sub-repo permissions
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
@@ -125,10 +125,33 @@ type cachedRules struct {
 	timestamp time.Time
 }
 
+type path struct {
+	globPath  glob.Glob
+	exclusion bool
+	// the original rule before it was compiled into a glob matcher
+	original string
+}
+
 type compiledRules struct {
-	includes    []glob.Glob
-	excludes    []glob.Glob
-	dirIncludes []glob.Glob
+	paths []path
+}
+
+// GetPermissionsForPath tries to match a given path to a list of rules.
+// Since the last applicable rule is the one that applies, the list is
+// traversed in reverse, and the function returns as soon as a match is found.
+// If no match is found, None is returned.
+func (rules compiledRules) GetPermissionsForPath(path string) Perms {
+	for i := len(rules.paths) - 1; i >= 0; i-- {
+		if rules.paths[i].globPath.Match(path) {
+			if rules.paths[i].exclusion {
+				return None
+			}
+			return Read
+		}
+	}
+
+	// Return None if no rule matches
+	return None
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -275,31 +298,14 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 			return Read, nil
 		}
 
-		// The current path needs to either be included or NOT excluded and we'll give
-		// preference to exclusion.
-		for _, rule := range rules.excludes {
-			if rule.Match(path) {
-				return None, nil
-			}
-		}
-		for _, rule := range rules.includes {
-			if rule.Match(path) {
-				return Read, nil
-			}
+		// Prefix path with "/", otherwise suffix rules like "**/file.txt" won't match
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
 		}
 
-		// We also want to match any directories above paths that we include so that we
-		// can browse down the file hierarchy.
-		if strings.HasSuffix(path, "/") {
-			for _, rule := range rules.dirIncludes {
-				if rule.Match(path) {
-					return Read, nil
-				}
-			}
-		}
-
-		// Return None if no rule matches to be safe
-		return None, nil
+		// Iterate through all rules for the current path, and the final match takes
+		// preference.
+		return rules.GetPermissionsForPath(path), nil
 	}, nil
 }
 
@@ -333,43 +339,62 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			timestamp: time.Time{},
 		}
 		for repo, perms := range repoPerms {
-			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
-			dirIncludes := make([]glob.Glob, 0)
-			dirSeen := make(map[string]struct{})
-			for _, rule := range perms.PathIncludes {
+			paths := make([]path, 0, len(perms.Paths))
+			for _, rule := range perms.Paths {
+				exclusion := strings.HasPrefix(rule, "-")
+				rule = strings.TrimPrefix(rule, "-")
+
+				if !strings.HasPrefix(rule, "/") {
+					rule = "/" + rule
+				}
+
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
-				includes = append(includes, g)
 
-				// We should include all directories above an include rule
+				paths = append(paths, path{globPath: g, exclusion: exclusion, original: rule})
+
+				// Special case. Our glob package does not handle rules starting with a double
+				// wildcard correctly. For example, we would expect `/**/*.java` to match all
+				// java files, but it does not match files at the root, eg `/foo.java`. To get
+				// around this we add an extra rule to cover this case.
+				if strings.HasPrefix(rule, "/**/") {
+					trimmed := rule
+					for {
+						trimmed = strings.TrimPrefix(trimmed, "/**")
+						if strings.HasPrefix(trimmed, "/**/") {
+							// Keep trimming
+							continue
+						}
+						g, err := glob.Compile(trimmed, '/')
+						if err != nil {
+							return nil, errors.Wrap(err, "building include matcher")
+						}
+						paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
+						break
+					}
+				}
+
+				// We should include all directories above an include rule so that we can browse
+				// to the included items.
+				if exclusion {
+					// Not required for an exclude rule
+					continue
+				}
+
 				dirs := expandDirs(rule)
 				for _, dir := range dirs {
-					if _, ok := dirSeen[dir]; ok {
-						continue
-					}
 					g, err := glob.Compile(dir, '/')
 					if err != nil {
 						return nil, errors.Wrap(err, "building include matcher for dir")
 					}
-					dirIncludes = append(dirIncludes, g)
-					dirSeen[dir] = struct{}{}
+					paths = append(paths, path{globPath: g, exclusion: false, original: dir})
 				}
 			}
 
-			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
-			for _, rule := range perms.PathExcludes {
-				g, err := glob.Compile(rule, '/')
-				if err != nil {
-					return nil, errors.Wrap(err, "building exclude matcher")
-				}
-				excludes = append(excludes, g)
-			}
 			toCache.rules[repo] = compiledRules{
-				includes:    includes,
-				excludes:    excludes,
-				dirIncludes: dirIncludes,
+				paths: paths,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -388,29 +413,37 @@ func (s *SubRepoPermsClient) Enabled() bool {
 	return s.enabled.Load()
 }
 
-func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID) (bool, error) {
-	return s.permissionsGetter.RepoIdSupported(ctx, id)
+func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID) (bool, error) {
+	return s.permissionsGetter.RepoIDSupported(ctx, id)
 }
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
-// expandDirs will return rules that match all parent directories of the given
-// rule.
+// expandDirs will return a new set of rules that will match all directories
+// above the supplied rule. As a special case, if the rule starts with a wildcard
+// we return a rule to match all directories.
 func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
 
-	// We can't support rules that start with a wildcard because we can only
-	// see one level of the tree at a time so we have no way of knowing which path leads
-	// to a file the user is allowed to see.
-	if strings.HasPrefix(rule, "*") {
+	// Make sure the rule starts with a slash
+	if !strings.HasPrefix(rule, "/") {
+		rule = "/" + rule
+	}
+
+	// If a rule starts with a wildcard it can match at any level in the tree
+	// structure so there's no way of walking up the tree and expand out to the list
+	// of valid directories. Instead, we just return a rule that matches any
+	// directory
+	if strings.HasPrefix(rule, "/*") {
+		dirs = append(dirs, "**/")
 		return dirs
 	}
 
 	for {
 		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash == -1 {
+		if lastSlash <= 0 { // we have to ignore the slash at index 0
 			break
 		}
 		// Drop anything after the last slash
@@ -425,18 +458,17 @@ func expandDirs(rule string) []string {
 // NewSimpleChecker is exposed for testing and allows creation of a simple
 // checker based on the rules provided. The rules are expected to be in glob
 // format.
-func NewSimpleChecker(repo api.RepoName, includes []string, excludes []string) (SubRepoPermissionChecker, error) {
+func NewSimpleChecker(repo api.RepoName, paths []string) (SubRepoPermissionChecker, error) {
 	getter := NewMockSubRepoPermissionsGetter()
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: includes,
-				PathExcludes: excludes,
+				Paths: paths,
 			},
 		}, nil
 	})
 	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
-	getter.RepoIdSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoIDSupportedFunc.SetDefaultReturn(true, nil)
 	return NewSubRepoPermsClient(getter)
 }
 
@@ -489,7 +521,7 @@ func SubRepoEnabledForRepoID(ctx context.Context, checker SubRepoPermissionCheck
 	if !SubRepoEnabled(checker) {
 		return false, nil
 	}
-	return checker.EnabledForRepoId(ctx, repoID)
+	return checker.EnabledForRepoID(ctx, repoID)
 }
 
 // SubRepoEnabledForRepo takes a SubRepoPermissionChecker and repo name and returns true if sub-repo

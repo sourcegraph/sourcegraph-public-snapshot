@@ -17,7 +17,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="true"
-      class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -79,7 +79,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -141,7 +141,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -203,7 +203,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -265,7 +265,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >

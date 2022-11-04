@@ -4,58 +4,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
-
-// Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
-// records.
-type Upload struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
-	FinishedAt        *time.Time
-	ProcessAfter      *time.Time
-	NumResets         int
-	NumFailures       int
-	RepositoryID      int
-	RepositoryName    string
-	Indexer           string
-	IndexerVersion    string
-	NumParts          int
-	UploadedParts     []int
-	UploadSize        *int64
-	UncompressedSize  *int64
-	Rank              *int
-	AssociatedIndexID *int
-}
-
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
-// and stores only processed records.
-type Dump struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
-	FinishedAt        *time.Time
-	ProcessAfter      *time.Time
-	NumResets         int
-	NumFailures       int
-	RepositoryID      int
-	RepositoryName    string
-	Indexer           string
-	IndexerVersion    string
-	AssociatedIndexID *int
-}
 
 type SourcedCommits struct {
 	RepositoryID   int
@@ -86,6 +37,13 @@ type GetUploadsOptions struct {
 	InCommitGraph bool
 }
 
+type DeleteUploadsOptions struct {
+	RepositoryID int
+	State        string
+	Term         string
+	VisibleAtTip bool
+}
+
 type DependencyReferenceCountUpdateType int
 
 const (
@@ -105,10 +63,16 @@ type CursorAdjustedUpload struct {
 // current target path and position adjusted so that it matches the data within the
 // underlying index.
 type AdjustedUpload struct {
-	Upload               Dump
+	Upload               types.Dump
 	AdjustedPath         string
-	AdjustedPosition     lsifstore.Position
+	AdjustedPosition     Position
 	AdjustedPathInBundle string
+}
+
+// Range is an inclusive bounds within a file.
+type Range struct {
+	Start Position
+	End   Position
 }
 
 // Position is a unique position within a file.
@@ -206,7 +170,7 @@ func (s *sliceScanner) Close() error {
 type UploadsWithRepositoryNamespace struct {
 	Root    string
 	Indexer string
-	Uploads []Upload
+	Uploads []types.Upload
 }
 
 type UploadLog struct {

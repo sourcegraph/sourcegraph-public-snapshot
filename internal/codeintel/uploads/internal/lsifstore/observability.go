@@ -9,6 +9,12 @@ import (
 
 type operations struct {
 	deleteLsifDataByUploadIds *observation.Operation
+	writeMeta                 *observation.Operation
+	writeDocuments            *observation.Operation
+	writeResultChunks         *observation.Operation
+	writeDefinitions          *observation.Operation
+	writeReferences           *observation.Operation
+	writeImplementations      *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -29,5 +35,11 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		deleteLsifDataByUploadIds: op("DeleteLsifDataByUploadIds"),
+		writeMeta:                 op("WriteMeta"),
+		writeDocuments:            op("WriteDocuments"),
+		writeResultChunks:         op("WriteResultChunks"),
+		writeDefinitions:          op("WriteDefinitions"),
+		writeReferences:           op("WriteReferences"),
+		writeImplementations:      op("WriteImplementations"),
 	}
 }

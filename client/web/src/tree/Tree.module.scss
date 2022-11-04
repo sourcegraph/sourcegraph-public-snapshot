@@ -1,4 +1,6 @@
-$row-vertical-spacing: 0.25rem;
+:root {
+    --row-vertical-spacing: 0.25rem;
+}
 
 .tree {
     isolation: isolate;
@@ -30,8 +32,8 @@ $row-vertical-spacing: 0.25rem;
     display: flex;
     color: inherit;
     align-items: center;
-    padding-top: $row-vertical-spacing;
-    padding-bottom: $row-vertical-spacing;
+    margin-top: var(--row-vertical-spacing);
+    margin-bottom: var(--row-vertical-spacing);
     cursor: pointer;
 }
 
@@ -40,9 +42,10 @@ $row-vertical-spacing: 0.25rem;
 }
 
 .tree-row-contents-text {
-    display: flex;
+    display: block;
     align-items: center;
     justify-content: space-between;
+    padding: 0 0 0 0.35rem;
 }
 
 .row {
@@ -68,8 +71,19 @@ $row-vertical-spacing: 0.25rem;
         color: var(--body-color);
     }
 
+    &--expanded {
+        position: sticky;
+        top: 0;
+        background-color: var(--color-bg-2);
+
+        &:hover {
+            background-color: var(--color-bg-3);
+        }
+    }
+
     &-contents,
     &-label {
+        width: 100%;
         &:hover {
             text-decoration: none;
         }
@@ -105,8 +119,8 @@ $row-vertical-spacing: 0.25rem;
 .tree-loading-spinner {
     display: flex;
     align-items: center;
-    padding-top: $row-vertical-spacing;
-    padding-bottom: $row-vertical-spacing;
+    padding-top: var(--row-vertical-spacing);
+    padding-bottom: var(--row-vertical-spacing);
 }
 
 .tree-icon {

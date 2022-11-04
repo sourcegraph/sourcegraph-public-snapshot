@@ -34,7 +34,7 @@ func TestBatchChangeResolver(t *testing.T) {
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
-	orgID := bt.InsertTestOrg(t, db, orgName)
+	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }

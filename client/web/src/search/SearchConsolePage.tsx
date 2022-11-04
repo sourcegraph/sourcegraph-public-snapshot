@@ -49,6 +49,8 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
         features => features.enableGoImportsSearchQueryTransform
     )
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -81,8 +83,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom]
+        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(
@@ -93,7 +96,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         ],
         [searchQuery, triggerSearch, autocompletion]
     )
-
     // Fetch search results when the `q` URL query parameter changes
     const results = useObservable(
         useMemo(

@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const OVERVIEW_STATISTICS = gql`
-    query OverviewStatistics($dateRange: AnalyticsDateRange!) {
+    query OverviewStatistics {
         site {
             productVersion
             productSubscription {
@@ -12,6 +12,31 @@ export const OVERVIEW_STATISTICS = gql`
                     expiresAt
                 }
             }
+            adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
+                totalCount
+            }
+        }
+        users {
+            totalCount
+        }
+        repositories {
+            totalCount(precise: true)
+        }
+        repositoryStats {
+            gitDirBytes
+            indexedLinesCount
+        }
+        surveyResponses {
+            totalCount
+            averageScore
+            netPromoterScore
+        }
+    }
+`
+
+export const OVERVIEW_DEV_TIME_SAVED = gql`
+    query OverviewDevTimeSaved($dateRange: AnalyticsDateRange!) {
+        site {
             analytics {
                 search(dateRange: $dateRange, grouping: WEEKLY) {
                     searches {
@@ -96,29 +121,12 @@ export const OVERVIEW_STATISTICS = gql`
                 users(dateRange: $dateRange, grouping: WEEKLY) {
                     activity {
                         summary {
+                            totalUniqueUsers
                             totalRegisteredUsers
                         }
                     }
                 }
             }
-            adminUsers: users(siteAdmin: true, deletedAt: { empty: true }) {
-                totalCount
-            }
-        }
-        users {
-            totalCount
-        }
-        repositories {
-            totalCount(precise: true)
-        }
-        repositoryStats {
-            gitDirBytes
-            indexedLinesCount
-        }
-        surveyResponses {
-            totalCount
-            averageScore
-            netPromoterScore
         }
     }
 `

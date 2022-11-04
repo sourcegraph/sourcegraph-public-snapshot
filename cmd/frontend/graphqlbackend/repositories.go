@@ -14,8 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -137,7 +139,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+			if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -168,6 +170,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -176,7 +179,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.logger, r.db).List(ctx, opt2)
+			repos, err := reposClient.List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -220,12 +223,13 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	client := gitserver.NewClient(r.db)
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
 	}
 	return resolvers, nil
 }
@@ -233,17 +237,17 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
 	if r.opt.UserID != 0 {
 		// 🚨 SECURITY: If filtering by user, restrict to that user
-		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+		if err := auth.CheckSameUser(ctx, r.opt.UserID); err != nil {
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	}

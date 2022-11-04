@@ -241,8 +241,12 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
-	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
+	searchOpts := (&Options{
+		Selector:       args.Select,
+		FileMatchLimit: args.FileMatchLimit,
+		Features:       args.Features,
+		GlobalSearch:   true,
+	}).ToSearch(ctx)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -261,7 +265,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 		defer cancel()
 	}
 
-	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, args.Query, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, pathRegexps, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
@@ -273,7 +277,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, feat search.Features, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -285,8 +289,12 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
-	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
+	searchOpts := (&Options{
+		Selector:       selector,
+		NumRepos:       len(repos.RepoRevs),
+		FileMatchLimit: fileMatchLimit,
+		Features:       feat,
+	}).ToSearch(ctx)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -309,7 +317,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 	}
 
 	foundResults := atomic.Bool{}
-	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	err := client.StreamSearch(ctx, finalQuery, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
 		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, selector, c)
 	}))
@@ -391,6 +399,9 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 					Repo:     repo,
 					Path:     file.FileName,
 				},
+			}
+			if debug := file.Debug; debug != "" {
+				fm.Debug = &debug
 			}
 			matches = append(matches, &fm)
 		}
@@ -624,6 +635,7 @@ type RepoSubsetTextSearchJob struct {
 	Typ               search.IndexedRequestType
 	FileMatchLimit    int32
 	Select            filter.SelectPath
+	Features          search.Features
 	Since             func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -644,7 +656,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {

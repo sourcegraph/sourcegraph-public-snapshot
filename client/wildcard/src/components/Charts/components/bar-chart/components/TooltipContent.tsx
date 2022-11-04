@@ -24,7 +24,7 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
     // Handle a special case when we don't have any multiple datum per group
     if (category.data.length === 1) {
         const datum = category.data[0]
-        const name = getDatumName(datum)
+        const name = getName(datum)
         const value = getDatumValue(datum)
 
         return (
@@ -38,7 +38,7 @@ export function BarTooltipContent<Datum>(props: BarTooltipContentProps<Datum>): 
     // Handle a special case when we don't have any multiple datum per group
     if (category.data.length === 1) {
         const datum = category.data[0]
-        const name = getDatumName(datum)
+        const name = getName(datum)
         const value = getDatumValue(datum)
 
         return (

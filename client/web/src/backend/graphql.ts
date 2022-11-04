@@ -4,12 +4,21 @@ import { Observable } from 'rxjs'
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-const getHeaders = (): { [header: string]: string } => ({
-    ...window?.context?.xhrHeaders,
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
-})
+const getHeaders = (): Headers => {
+    const headers = new Headers({
+        ...window?.context?.xhrHeaders,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+    })
+    const searchParameters = new URLSearchParams(window.location.search)
+    if (searchParameters.get('trace') === '1') {
+        headers.set('X-Sourcegraph-Should-Trace', 'true')
+    }
+    for (const feature of searchParameters.getAll('feat')) {
+        headers.append('X-Sourcegraph-Override-Feature', feature)
+    }
+    return headers
+}
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`

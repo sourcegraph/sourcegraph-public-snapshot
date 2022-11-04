@@ -6,7 +6,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
-import { useAutoFocus } from '../../../hooks/useAutoFocus'
+import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'
@@ -71,8 +71,11 @@ export const Input = forwardRef(function Input(props, reference) {
                 loading={status === InputStatus.loading}
             >
                 <Component
-                    disabled={disabled}
+                    {...otherProps}
                     type={type}
+                    disabled={disabled}
+                    ref={mergedReference}
+                    autoFocus={autoFocus}
                     className={classNames(
                         inputClassName,
                         status === InputStatus.loading && styles.inputLoading,
@@ -84,19 +87,17 @@ export const Input = forwardRef(function Input(props, reference) {
                             'form-control-sm': variant === 'small',
                         }
                     )}
-                    {...otherProps}
-                    ref={mergedReference}
-                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}
             </LoaderInput>
 
             {error && (
-                <small role="alert" className={classNames('text-danger', messageClassName)}>
+                <small role="alert" aria-live="polite" className={classNames('text-danger', messageClassName)}>
                     {error}
                 </small>
             )}
+
             {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}
         </>
     )

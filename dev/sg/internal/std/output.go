@@ -33,9 +33,7 @@ func NewOutput(dst io.Writer, verbose bool) *Output {
 
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
-			ForceColor: true,
-			ForceTTY:   true,
-			Verbose:    verbose,
+			Verbose: verbose,
 		}),
 		buildkite: inBuildkite,
 	}
@@ -85,11 +83,11 @@ func (o *Output) writeExpanded(line output.FancyLine) {
 	o.WriteLine(line)
 }
 
-// WriteHeading writes a line that is prefixed Buildkite log output management stuffs such
+// writeCollapsed writes a line that is prefixed Buildkite log output management stuffs such
 // that subsequent lines are collapsed if we are in Buildkite.
 //
 // Learn more: https://buildkite.com/docs/pipelines/managing-log-output
-func (o *Output) writeCollapsed(line output.FancyLine) {
+func (o *Output) writeCollapsed(line output.FancyLine) { //nolint:unused
 	if o.buildkite {
 		line.Prefix = "---"
 	}

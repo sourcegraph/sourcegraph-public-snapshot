@@ -31,15 +31,15 @@ func (j *compactor) Config() []env.Config {
 	return nil
 }
 
-func (j *compactor) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.Init()
+func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), 30*time.Minute, &handler{
-			store:  database.NewDB(logger, db).RepoStatistics(),
+			store:  db.RepoStatistics(),
 			logger: logger,
 		}),
 	}, nil

@@ -97,7 +97,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    smartSearchEnabled: smartSearchEnabled,
     prefetchFile,
     prefetchFileEnabled,
 }) => {
@@ -113,17 +112,23 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             telemetryService.log('search.ranking.result-clicked', { index, type })
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
-            if (smartSearchEnabled && !(results?.alert?.kind === 'lucky-search-queries')) {
+            if (
+                !(
+                    results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results'
+                )
+            ) {
                 telemetryService.log('SearchResultClickedAutoNone')
             }
 
             if (
-                smartSearchEnabled &&
-                results?.alert?.kind === 'lucky-search-queries' &&
+                (results?.alert?.kind === 'smart-search-additional-results' ||
+                    results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
                 results.alert.proposedQueries
             ) {
                 const event = smartSearchClickedEvent(
+                    results.alert.kind,
                     results.alert.title,
                     results.alert.proposedQueries.map(entry => entry.description || '')
                 )
@@ -131,7 +136,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, smartSearchEnabled]
+        [telemetryService, results]
     )
 
     const renderResult = useCallback(
@@ -250,7 +255,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
 function itemKey(item: SearchMatch): string {
     if (item.type === 'content') {
-        const lineStart = item.lineMatches.length > 0 ? item.lineMatches[0].lineNumber : 0
+        const lineStart = item.chunkMatches
+            ? item.chunkMatches.length > 0
+                ? item.chunkMatches[0].contentStart.line
+                : 0
+            : 0
         return `file:${getMatchUrl(item)}:${lineStart}`
     }
     if (item.type === 'symbol') {

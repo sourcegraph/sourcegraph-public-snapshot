@@ -19,10 +19,11 @@ export interface Theme {
 
 export interface PluginConfig {
     instanceURL: string
-    isGlobbingEnabled: boolean
     accessToken: string | null
-    anonymousUserId: string
+    customRequestHeadersAsString: string | null
+    isGlobbingEnabled: boolean
     pluginVersion: string
+    anonymousUserId: string
 }
 
 export interface Search {

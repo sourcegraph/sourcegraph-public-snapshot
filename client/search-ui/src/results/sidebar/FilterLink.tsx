@@ -66,23 +66,16 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string, kind?: string) => void,
-    coreWorkflowImprovementsEnabled: boolean | undefined
+    onFilterChosen: (value: string, kind?: string) => void
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = CodeHostIcon({
             repoName: label,
-            className: classNames(!coreWorkflowImprovementsEnabled && 'text-muted', styles.sidebarSectionIcon),
+            className: styles.sidebarSectionIcon,
         })
 
         return (
-            <span
-                className={classNames(
-                    !coreWorkflowImprovementsEnabled && 'text-monospace search-query-link',
-                    styles.sidebarSectionListItemBreakWords
-                )}
-            >
-                {!coreWorkflowImprovementsEnabled && <span className="search-filter-keyword">r:</span>}
+            <span className={styles.sidebarSectionListItemBreakWords}>
                 {Icon ? (
                     <>
                         {Icon}

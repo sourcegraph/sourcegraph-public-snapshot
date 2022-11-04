@@ -1,8 +1,4 @@
 .bar {
-    &--active {
-        filter: brightness(110%);
-    }
-
     // Based on the current bar fill color fade version of this color
     // for non active bars
     &--fade {

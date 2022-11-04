@@ -25,6 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -107,6 +108,77 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		db:         db,
 		operations: newOperations(&observation.TestContext),
 	}
+}
+
+// NewMockClientWithExecReader return new MockClient with provided mocked
+// behaviour of ExecReader function.
+func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
+	client := NewMockClient()
+	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error) {
+		if opts.Base == DevNullSHA {
+			opts.RangeType = ".."
+		} else if opts.RangeType != ".." {
+			opts.RangeType = "..."
+		}
+
+		rangeSpec := opts.Base + opts.RangeType + opts.Head
+		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
+			return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
+		}
+
+		// Here is where all the mocking happens!
+		rdr, err := execReader(ctx, opts.Repo, append([]string{
+			"diff",
+			"--find-renames",
+			"--full-index",
+			"--inter-hunk-context=3",
+			"--no-prefix",
+			rangeSpec,
+			"--",
+		}, opts.Paths...))
+		if err != nil {
+			return nil, errors.Wrap(err, "executing git diff")
+		}
+
+		return &DiffFileIterator{
+			rdr:            rdr,
+			mfdr:           diff.NewMultiFileDiffReader(rdr),
+			fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
+		}, nil
+	})
+
+	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
+	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+		a := actor.FromContext(ctx)
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+			return nil, err
+		} else if !hasAccess {
+			return nil, os.ErrNotExist
+		}
+		// Here is where all the mocking happens!
+		reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+
+		output, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+		if len(output) == 0 {
+			return nil, nil
+		}
+
+		d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+		if err != nil {
+			return nil, err
+		}
+		return d.Hunks, nil
+	})
+
+	return client
 }
 
 // clientImplementor is a gitserver client.
@@ -243,6 +315,9 @@ type Client interface {
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
+
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
 	// response.
@@ -335,6 +410,11 @@ type Client interface {
 
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
+
+	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
+	// at path. If the path is not an LFS pointer, the file contents from git
+	// are returned instead.
+	LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -539,6 +619,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
+		Stdin:          c.stdin,
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.execFn(ctx, repoName, "exec", req)
@@ -897,6 +978,29 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	return info, err
 }
 
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var info *protocol.RepoCloneResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
+}
+
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
 var MockIsRepoCloneable func(api.RepoName) error
 
@@ -1044,6 +1148,17 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
+	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
+	// signature prevents us from doing that.
+	//
+	// We should consolidate into a single method for creating requests so that we are
+	// setting all the required properties like headers, trace spans in a central place.
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -1123,8 +1238,9 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 // do performs a request to a gitserver instance based on the address in the uri argument.
+//
+//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
@@ -1148,6 +1264,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {

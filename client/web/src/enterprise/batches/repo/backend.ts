@@ -16,7 +16,6 @@ const repoBatchChangeStatsFragment = gql`
     fragment RepoBatchChangeStats on Repository {
         batchChangesDiffStat {
             added
-            changed
             deleted
         }
         changesetsStats {

@@ -3,7 +3,6 @@ import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 
 import {
     LSIFUploadState,
@@ -68,7 +67,7 @@ export const queryLsifUploadsByRepository = (
         first,
         after,
         includeDeleted,
-    }: GQL.ILsifUploadsOnRepositoryArguments,
+    }: Partial<LsifUploadsVariables>,
     repository: string,
     client: ApolloClient<object>
 ): Observable<LsifUploadConnectionFields> => {

@@ -9,9 +9,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -40,7 +41,7 @@ import (
 // It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
-func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
+func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []types.Dump, err error) {
 	ctx, trace, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -65,7 +66,6 @@ func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 }
 
 const findClosestDumpsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumps
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -94,7 +94,7 @@ ORDER BY u.finished_at DESC
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
+func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []types.Dump, err error) {
 	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
@@ -149,7 +149,6 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 }
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 WITH
 visible_uploads AS (%s)
 SELECT
@@ -162,7 +161,6 @@ JOIN lsif_uploads u ON u.id = vu.upload_id
 `
 
 const findClosestDumpsFromGraphFragmentQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:FindClosestDumpsFromGraphFragment
 SELECT
 	u.id,
 	u.commit,
@@ -189,7 +187,7 @@ WHERE u.id IN (%s) AND %s
 var DefinitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFINITION_DUMPS_LIMIT", "100", "The maximum number of dumps that can define the same package."), 10, 64)
 
 // GetDumpsWithDefinitionsForMonikers returns the set of dumps that define at least one of the given monikers.
-func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
+func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []types.Dump, err error) {
 	ctx, trace, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
@@ -221,7 +219,6 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 }
 
 const definitionDumpsQuery = `
--- source: internal/codeintel/stores/dbstore/xrepo.go:DefinitionDumps
 WITH
 ranked_uploads AS (
 	SELECT
@@ -270,7 +267,7 @@ WHERE u.id IN (SELECT id FROM canonical_uploads)
 `
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
-func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
+func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []types.Dump, err error) {
 	ctx, trace, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 		log.String("ids", intsToString(ids)),
@@ -296,7 +293,6 @@ func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, 
 }
 
 const getDumpsByIDsQuery = `
--- source: internal/codeintel/stores/dbstore/dumps.go:GetDumpsByIDs
 SELECT
 	u.id,
 	u.commit,
@@ -316,6 +312,54 @@ SELECT
 	u.indexer_version,
 	u.associated_index_id
 FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
+`
+
+// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
+// commit, root, and indexer. This is necessary to perform during conversions before changing
+// the state of a processing upload to completed as there is a unique index on these four columns.
+func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
+	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.String("root", root),
+		log.String("indexer", indexer),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload overlapping with a newer upload")
+	defer unset(ctx)
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer)))
+	if err != nil {
+		return err
+	}
+	trace.Log(log.Int("count", count))
+
+	return nil
+}
+
+const deleteOverlappingDumpsQuery = `
+WITH
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE
+		u.state = 'completed' AND
+		u.repository_id = %s AND
+		u.commit = %s AND
+		u.root = %s AND
+		u.indexer = %s
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+updated AS (
+	UPDATE lsif_uploads
+	SET state = 'deleting'
+	WHERE id IN (SELECT id FROM candidates)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM updated
 `
 
 func monikersToString(vs []precise.QualifiedMonikerData) string {
@@ -350,7 +394,6 @@ func makeVisibleUploadsQuery(repositoryID int, commit string) *sqlf.Query {
 }
 
 const visibleUploadsQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadsQuery
 SELECT
 	t.upload_id
 FROM (
@@ -383,7 +426,6 @@ func makeVisibleUploadCandidatesQuery(repositoryID int, commits ...string) *sqlf
 }
 
 const visibleUploadCandidatesQuery = `
--- source: internal/codeintel/uploads/internal/store/store_dumps.go:makeVisibleUploadCandidatesQuery
 SELECT
 	nu.repository_id,
 	upload_id::integer,

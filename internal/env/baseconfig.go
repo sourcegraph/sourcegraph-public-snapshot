@@ -23,31 +23,31 @@ type Config interface {
 // BaseConfig is a base struct for configuration objects. The following is a minimal
 // example of declaring, loading, and validating configuration from the environment.
 //
-//     type Config struct {
-//         env.BaseConfig
+//	type Config struct {
+//	    env.BaseConfig
 //
-//         Name   string
-//         Weight int
-//         Age    time.Duration
-//     }
+//	    Name   string
+//	    Weight int
+//	    Age    time.Duration
+//	}
 //
-//     func (c *Config) Load() {
-//         c.Name = c.Get("SRC_NAME", "test", "The service's name (wat).")
-//         c.Weight = c.GetInt("SRC_WEIGHT", "1m", "The service's weight (wat).")
-//         c.Age = c.GetInterval("SRC_AGE", "10s", "The service's age (wat).")
-//     }
+//	func (c *Config) Load() {
+//	    c.Name = c.Get("SRC_NAME", "test", "The service's name (wat).")
+//	    c.Weight = c.GetInt("SRC_WEIGHT", "1m", "The service's weight (wat).")
+//	    c.Age = c.GetInterval("SRC_AGE", "10s", "The service's age (wat).")
+//	}
 //
-//     func applicationInit() {
-//         config := &Config{}
-//         config.Load()
+//	func applicationInit() {
+//	    config := &Config{}
+//	    config.Load()
 //
-//         env.Lock()
-//         env.HandleHelpFlag()
+//	    env.Lock()
+//	    env.HandleHelpFlag()
 //
-//         if err := config.Validate(); err != nil{
-//             // handle me
-//         }
-//     }
+//	    if err := config.Validate(); err != nil{
+//	        // handle me
+//	    }
+//	}
 type BaseConfig struct {
 	errs []error
 

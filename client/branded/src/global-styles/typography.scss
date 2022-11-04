@@ -170,7 +170,9 @@ label.text-uppercase small,
 .theme-light,
 .theme-dark {
     @each $color, $value in $theme-colors {
-        @include text-emphasis-variant('.text-#{$color}', $value);
+        #{'.text-#{$color}'} {
+            color: $value !important;
+        }
     }
 }
 
@@ -207,6 +209,7 @@ mark,
     // stylelint-disable-next-line declaration-property-unit-allowed-list
     padding: 0.2em;
     background-color: var(--mark-bg);
+    color: var(--body-color);
 }
 
 .lead {

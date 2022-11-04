@@ -6,7 +6,6 @@ import {
     DeleteDashboardResult,
     ExampleFirstRepositoryResult,
     ExampleTodoRepositoryResult,
-    GetAccessibleInsightsListResult,
     GetDashboardInsightsResult,
     GetFrozenInsightsCountResult,
     GetInsightsResult,
@@ -17,33 +16,27 @@ import {
 
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
 import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
-    AccessibleInsightInfo,
     AssignInsightsToDashboardInput,
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
     GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
     CategoricalChartContent,
     SeriesChartContent,
-    UiFeaturesConfig,
     DashboardCreateResult,
     InsightPreviewSettings,
     BackendInsightDatum,
 } from '../code-insights-backend-types'
-import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
-import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 
 import { createInsightView } from './deserialization/create-insight-view'
-import { GET_ACCESSIBLE_INSIGHTS_LIST } from './gql/GetAccessibleInsightsList'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_EXAMPLE_FIRST_REPOSITORY_GQL, GET_EXAMPLE_TODO_REPOSITORY_GQL } from './gql/GetExampleRepository'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
@@ -52,10 +45,7 @@ import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
-import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
-import { getDashboardById } from './methods/get-dashboards/get-dashboard-by-id'
-import { getDashboards } from './methods/get-dashboards/get-dashboards'
 import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
@@ -159,20 +149,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // title field as soon as setting-based api will be deprecated
     public findInsightByName = (): Observable<Insight | null> => of(null)
 
-    public getAccessibleInsightsList = (): Observable<AccessibleInsightInfo[]> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetAccessibleInsightsListResult>({
-                query: GET_ACCESSIBLE_INSIGHTS_LIST,
-            })
-        ).pipe(
-            map(response =>
-                response.data.insightViews.nodes.map(view => ({
-                    id: view.id,
-                    title: view.presentation.title,
-                }))
-            )
-        )
-
     public getBuiltInInsightData = getBuiltInInsight
 
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
@@ -216,12 +192,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    // Dashboards
-    public getDashboards = (id?: string): Observable<InsightDashboard[]> => getDashboards(this.apolloClient, id)
-
-    public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> =>
-        getDashboardById(this.apolloClient, input)
-
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
@@ -254,8 +224,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
-        getSearchInsightContent(input).then(data => data.content)
 
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput
@@ -264,10 +232,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getInsightPreviewContent = (
         input: InsightPreviewSettings
     ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
-
-    // Repositories API
-    public getRepositorySuggestions = getRepositorySuggestions
-    public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     public assignInsightsToDashboard = ({
         id,
@@ -336,11 +300,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return todoRepository().pipe(
             switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
         )
-    }
-
-    public readonly UIFeatures: UiFeaturesConfig = {
-        licensed: true,
-        insightsLimit: null,
     }
 }
 

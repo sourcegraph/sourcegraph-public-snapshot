@@ -7,13 +7,17 @@ import type * as sourcegraph from 'sourcegraph'
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } from '../graphql-operations'
+import {
+    DiffHunkLineType,
+    RepositoryContributorsResult,
+    WebGraphQlOperations,
+    ExternalServiceKind,
+} from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -23,6 +27,7 @@ import {
     createBlobContentResult,
     createRepoChangesetsStatsResult,
     createFileNamesResult,
+    createResolveCloningRepoRevisionResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
@@ -565,6 +570,28 @@ describe('Repository', () => {
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
+        })
+
+        it('shows repo cloning in progress page', async () => {
+            const shortRepositoryName = 'sourcegraph/jsonrpc2'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                // Return cloning error instead of the successful GraphQL result here.
+                ResolveRepoRev: () => createResolveCloningRepoRevisionResult(repositoryName),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            // Wait for clone in progress message before Percy snapshot.
+            await driver.page.waitForSelector('[data-testid="hero-page-subtitle"]')
+            // Verify that we show the respective message in the UI.
+            await assertSelectorHasText('[data-testid="hero-page-subtitle"]', 'Cloning in progress')
+
+            await percySnapshotWithVariants(driver.page, 'Repository cloning in progress page')
         })
 
         it('works with spaces in the repository name', async () => {

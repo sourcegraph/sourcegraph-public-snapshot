@@ -1,6 +1,6 @@
 import vscode, { env } from 'vscode'
 
-import { generateSourcegraphBlobLink, vsceUtms } from './initialize'
+import { generateSourcegraphBlobLink } from './initialize'
 
 /**
  * browser Actions for Web does not run node modules to get git info
@@ -28,7 +28,7 @@ export async function browserActions(action: string, logRedirectEvent: (uri: str
         const repoInfo = uri.fsPath.split('/')
         const repositoryName = `${repoInfo[1]}/${repoInfo[2]}`
         const filePath = repoInfo.length === 4 ? repoInfo[3] : repoInfo.slice(3).join('/')
-        sourcegraphUrl = `${instanceUrl}github.com/${repositoryName}/-/blob/${filePath || ''}${vsceUtms}`
+        sourcegraphUrl = `${instanceUrl}github.com/${repositoryName}/-/blob/${filePath || ''}`
     } else {
         await vscode.window.showInformationMessage('Non-Remote files are not supported on VS Code Web currently')
     }

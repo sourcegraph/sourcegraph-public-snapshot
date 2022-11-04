@@ -104,6 +104,16 @@ type Mutation {
     deleteOrganization(organization: ID!, hard: Boolean): EmptyResponse
 
     """
+    Creates a webhook for the specified code host. Only site admins may perform this mutation.
+    """
+    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+
+    """
+    Deletes a webhook by given ID. Only site admins may perform this mutation.
+    """
+    deleteWebhook(id: ID!): EmptyResponse!
+
+    """
     Adds a external service. Only site admins may perform this mutation.
     """
     addExternalService(input: AddExternalServiceInput!): ExternalService!
@@ -563,10 +573,6 @@ type Mutation {
     """
     submitHappinessFeedback(input: HappinessFeedbackSubmissionInput!): EmptyResponse
     """
-    Submits a request for a Sourcegraph Enterprise trial license.
-    """
-    requestTrial(email: String!): EmptyResponse
-    """
     Manages the extension registry.
     """
     extensionRegistry: ExtensionRegistryMutation!
@@ -774,6 +780,13 @@ type Mutation {
     syncExternalService(id: ID!): EmptyResponse!
 
     """
+    Cancels an external service sync job. Must be in queued or processing state.
+
+    Site-admin or owner of the external service only.
+    """
+    cancelExternalServiceSync(id: ID!): EmptyResponse!
+
+    """
     Associate a new key-value pair with a repo.
     """
     addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
@@ -787,6 +800,19 @@ type Mutation {
     Delete a key-value pair associated with a repo.
     """
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
+    the file on disk, marking it as not-cloned in the database, and then initiating
+    a repo clone.
+    """
+    recloneRepository(repo: ID!): EmptyResponse!
+
+    """
+    INTERNAL ONLY: Delete a repository from the gitserver. This involves deleting
+    the file on disk, and marking it as not-cloned in the database.
+    """
+    deleteRepositoryFromDisk(repo: ID!): EmptyResponse!
 }
 
 """
@@ -1315,6 +1341,10 @@ type Query {
         """
         first: Int
         """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
         Return users whose usernames or display names match the query.
         """
         query: String
@@ -1326,6 +1356,10 @@ type Query {
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
+        """
+        Returns users who have NOT been active since a given point in time.
+        """
+        inactiveSince: DateTime
     ): UserConnection!
     """
     Looks up an organization by name.
@@ -1411,8 +1445,20 @@ type Query {
         """
         The parser to use for this query.
         """
-        patternType: SearchPatternType = literal
-    ): JSONValue
+        patternType: SearchPatternType = standard
+        """
+        The output corresponding to a phase in the parser pipeline.
+        """
+        outputPhase: SearchQueryOutputPhase = PARSE_TREE
+        """
+        The parser output format.
+        """
+        outputFormat: SearchQueryOutputFormat = JSON
+        """
+        The level of output format verbosity.
+        """
+        outputVerbosity: SearchQueryOutputVerbosity = BASIC
+    ): String!
     """
     The current site.
     """
@@ -1546,39 +1592,6 @@ type Query {
     ): WebhookLogConnection!
 
     """
-    Retrieve active executor compute instances.
-    """
-    executors(
-        """
-        An (optional) search query that searches over the hostname, queue name, os, architecture, and
-        version properties.
-        """
-        query: String
-
-        """
-        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
-        """
-        active: Boolean
-
-        """
-        Returns the first n executors.
-        """
-        first: Int
-
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-    ): ExecutorConnection!
-
-    """
-    Returns true if executors have been configured on the Sourcegraph instance.
-    This is based on heuristics and doesn't necessarily mean that they would be
-    working.
-    """
-    areExecutorsConfigured: Boolean!
-
-    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
@@ -1622,19 +1635,101 @@ type Query {
         """
         organization: ID!
     ): OrgMembersSummary!
+
+    """
+    Lists webhooks. Only available to site admins.
+    If no kind is given, it returns all webhooks.
+    If first is omitted, 20 items are returned
+    """
+    webhooks(
+        """
+        Returns the first n webhooks from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Optionally filter by kind.
+        """
+        kind: ExternalServiceKind
+    ): WebhookConnection!
 }
 
 """
-A list of active executors compute instances.
+Enum of the possible scopes for executor secrets.
 """
-type ExecutorConnection {
+enum ExecutorSecretScope {
     """
-    A list of executors.
+    The secret is meant to be used with Batch Changes execution.
     """
-    nodes: [Executor!]!
+    BATCHES
+}
+
+"""
+A secret to be used in executor jobs.
+"""
+type ExecutorSecret implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+    """
+    The key under which the secret is available. Secrets are usually exposed
+    as environment variables named using this key.
+    Recommended format: uppercase letters, numbers and underscores.
+    """
+    key: String!
+    """
+    The scope of this secret. The secret will only be usable for jobs in this
+    particular scope.
+    """
+    scope: ExecutorSecretScope!
+    """
+    The namespace this secret belongs to. Null, if a global secret.
+    Global secrets are available to every execution.
+    """
+    namespace: Namespace
+    """
+    The creator of the secret. Null, if the creator has been deleted.
+    """
+    creator: User
+    """
+    The date and time this secret has been created.
+    """
+    createdAt: DateTime!
+    """
+    The date and time this secret has been last updated.
+    """
+    updatedAt: DateTime!
+    """
+    The list of access events to this secret. Every time the secret value is
+    decoded and used, one of these entries is created.
+    """
+    accessLogs(
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretAccessLogConnection!
+}
+
+"""
+A list of executor secrets.
+"""
+type ExecutorSecretConnection {
+    """
+    A list of executor secrets.
+    """
+    nodes: [ExecutorSecret!]!
 
     """
-    The total number of executors in this result set.
+    The total number of records in this result set.
     """
     totalCount: Int!
 
@@ -1645,73 +1740,169 @@ type ExecutorConnection {
 }
 
 """
-An active executor compute instance.
+A list of executor secret access logs.
 """
-type Executor implements Node {
+type ExecutorSecretAccessLogConnection {
     """
-    The unique identifier of this executor.
+    A list of access logs.
+    """
+    nodes: [ExecutorSecretAccessLog!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An access log entry for an executor secret.
+These are created every time the secret value is decoded.
+"""
+type ExecutorSecretAccessLog implements Node {
+    """
+    The unique identifier of the log entry.
     """
     id: ID!
+    """
+    The secret that this log entry belongs to.
+    """
+    executorSecret: ExecutorSecret!
+    """
+    The user in which name the secret has been used.
+    """
+    user: User!
+    """
+    The date and time when the secret has been used.
+    """
+    createdAt: DateTime!
+}
+
+extend type Query {
+    """
+    The list of all globally available executor secrets.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type User {
+    """
+    The list of all available executor secrets for execution in this users namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Org {
+    """
+    The list of all available executor secrets for execution in this orgs namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Mutation {
+    """
+    Create a new executor secret.
+    See argument descriptions for more details.
+    """
+    createExecutorSecret(
+        """
+        The scope for which the secret is usable.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The key under which the secret is known. For executions, this is the name
+        of the environment variable this secret will be accessible under.
+        It is therefore advised that key only contains uppercase letters, numbers
+        and underscores.
+        """
+        key: String!
+        """
+        The secret value.
+        """
+        value: String!
+        """
+        The namespace this secret is for. If not set, a global secret is created
+        that is accessible by all users.
+        Creating a global secret requires site-admin permissions.
+        Creating a namespaced secret requires write-access to the namespace.
+        """
+        namespace: ID
+    ): ExecutorSecret!
 
     """
-    The hostname of the executor instance.
+    Update the value of an existing executor secret.
     """
-    hostname: String!
+    updateExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The idenitifier of the secret that shall be updated.
+        """
+        id: ID!
+        """
+        The new secret value.
+        """
+        value: String!
+    ): ExecutorSecret!
 
     """
-    The queue name that the executor polls for work.
+    Deletes the given executor secret.
     """
-    queueName: String!
-
-    """
-    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
-    """
-    active: Boolean!
-
-    """
-    The operating system running the executor.
-    """
-    os: String!
-
-    """
-    The machine architure running the executor.
-    """
-    architecture: String!
-
-    """
-    The version of Git used by the executor.
-    """
-    dockerVersion: String!
-
-    """
-    The version of the executor.
-    """
-    executorVersion: String!
-
-    """
-    The version of Docker used by the executor.
-    """
-    gitVersion: String!
-
-    """
-    The version of Ignite used by the executor.
-    """
-    igniteVersion: String!
-
-    """
-    The version of src-cli used by the executor.
-    """
-    srcCliVersion: String!
-
-    """
-    The first time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    firstSeenAt: DateTime!
-
-    """
-    The last time the executor sent a heartbeat to the Sourcegraph instance.
-    """
-    lastSeenAt: DateTime!
+    deleteExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The idenitifier of the secret that shall be deleted.
+        """
+        id: ID!
+    ): EmptyResponse
 }
 
 """
@@ -1924,6 +2115,54 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+}
+
+"""
+Represents phases in query parsing. The parse tree corresponds closely to the
+input query syntax. A subsequent processing phase on the parse tree generates a
+job tree. The job tree is an internal representation analogous to a database
+query plan. The job tree discards information about query syntax and corresponds
+closely to backend services (text search, git commit search, etc.).
+"""
+enum SearchQueryOutputPhase {
+    PARSE_TREE
+    JOB_TREE
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputVerbosity {
+    """
+    Minimal verbosity outputs only nodes.
+    """
+    MINIMAL
+    """
+    Basic verbosity outputs nodes and essential fields associated with nodes.
+    """
+    BASIC
+    """
+    Maximal verbosity outputs nodes and all information associated with nodes.
+    """
+    MAXIMAL
+}
+
+"""
+The output format to emit for a parsed query.
+"""
+enum SearchQueryOutputFormat {
+    """
+    JSON format.
+    """
+    JSON
+    """
+    S-expression format.
+    """
+    SEXP
+    """
+    Mermaid flowchart format.
+    """
+    MERMAID
 }
 
 """
@@ -2394,6 +2633,7 @@ enum ExternalServiceKind {
     PHABRICATOR
     PYTHONPACKAGES
     RUSTPACKAGES
+    RUBYPACKAGES
 }
 
 """
@@ -2580,6 +2820,16 @@ enum ExternalServiceSyncJobState {
     Sync finished successfully.
     """
     COMPLETED
+
+    """
+    Sync job is being canceled.
+    """
+    CANCELING
+
+    """
+    Sync job has been canceled.
+    """
+    CANCELED
 }
 
 """
@@ -2616,6 +2866,36 @@ type ExternalServiceSyncJob implements Node {
     Error message, if the sync failed.
     """
     failureMessage: String
+
+    """
+    The number of repos synced during this sync job.
+    """
+    reposSynced: Int!
+
+    """
+    The number of times an error occurred syncing a repo during this sync job.
+    """
+    repoSyncErrors: Int!
+
+    """
+    The number of new repos discovered during this sync job.
+    """
+    reposAdded: Int!
+
+    """
+    The number of repos deleted as a result of this sync job.
+    """
+    reposDeleted: Int!
+
+    """
+    The number of existing repos whose metadata has changed during this sync job.
+    """
+    reposModified: Int!
+
+    """
+    The number of existing repos whose metadata did not change during this sync job.
+    """
+    reposUnmodified: Int!
 }
 
 """
@@ -3003,7 +3283,12 @@ type MirrorRepositoryInfo {
     """
     The byte size of the repo.
     """
-    byteSize: Int!
+    byteSize: BigInt!
+    """
+    The gitserver shard on which the repository is or will be cloned.
+    Only site admins can access this field.
+    """
+    shard: String
 }
 
 """
@@ -3252,6 +3537,12 @@ type RepositoryComparison {
         Return the first n commits from the list.
         """
         first: Int
+
+        """
+        Filter to only the commits that modify files that match path.
+        Path can be either a file or a containing directory.
+        """
+        path: String
     ): GitCommitConnection!
     """
     The file diffs for each changed file.
@@ -3465,15 +3756,11 @@ Statistics about a diff.
 """
 type DiffStat {
     """
-    Number of additions.
+    Number of lines added.
     """
     added: Int!
     """
-    Number of changes.
-    """
-    changed: Int!
-    """
-    Number of deletions.
+    Number of lines deleted.
     """
     deleted: Int!
 }
@@ -3565,13 +3852,92 @@ type Symbol {
 }
 
 """
+A gitblob resolver specific to code intel.
+"""
+type CodeIntelGitBlob {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content: String!
+}
+
+"""
+A codeintel repository is a Git source control repository that is mirrored from some origin code host and it is specific to code intel.
+"""
+type CodeIntelRepository {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    The repository's name, as a path with one or more components. It conventionally consists of
+    the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    Examples:
+    - github.com/foo/bar
+    - my-code-host.example.com/myrepo
+    - myrepo
+    """
+    name: String!
+    """
+    The URL to this repository.
+    """
+    url: String!
+}
+
+"""
+A Code Intel Commit.
+"""
+type CodeIntelCommit {
+    """
+    The globally addressable ID for this commit.
+    """
+    id: ID!
+    """
+    This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    """
+    oid: GitObjectID!
+    """
+    The abbreviated form of this commit's OID.
+    """
+    abbreviatedOID: String!
+    """
+    The URL to this commit (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository that contains this commit.
+    """
+    repository: CodeIntelRepository!
+}
+
+"""
 A location inside a resource (in a repository at a specific commit).
 """
 type Location {
     """
     The file that this location refers to.
     """
-    resource: GitBlob!
+    resource: CodeIntelGitBlob!
     """
     The range inside the file that this location refers to.
     """
@@ -4273,6 +4639,36 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+}
+
+"""
+A Code Intel Git Tree.
+"""
+type CodeIntelGitTree {
+    """
+    The full path (relative to the root) of this tree.
+    """
+    path: String!
+    """
+    The base name (i.e., last path component only) of this tree.
+    """
+    name: String!
+    """
+    The Git commit containing this tree.
+    """
+    commit: CodeIntelCommit!
+    """
+    The URL to this tree (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The repository containing this tree.
+    """
+    repository: CodeIntelRepository!
+    """
+    The content of this blob.
+    """
+    content: String!
 }
 
 """
@@ -5363,7 +5759,20 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     A list of users who are members of this organization.
     """
-    members: UserConnection!
+    members(
+        """
+        Number of users to return after the given cursor.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Return users whose usernames or display names match the query.
+        """
+        query: String
+    ): UserConnection!
     """
     The latest settings for the organization.
     Only organization members and site admins can access this field.
@@ -5702,6 +6111,17 @@ type Site implements SettingsSubject {
     Whether the site needs to be configured to add repositories.
     """
     needsRepositoryConfiguration: Boolean!
+    """
+    Whether the external services haven been created from a configuration file
+    specified in the EXTSVC_CONFIG_FILE.
+    """
+    externalServicesFromFile: Boolean!
+    """
+    Whether the external services can be updated even if `externalServicesFromFile` is
+    true. All changes made while `externalServicesFromFile` is true will be discarded once
+    Sourcegraph restarts.
+    """
+    allowEditExternalServicesWithFile: Boolean!
     """
     Whether the site is over the limit for free user accounts, and a warning needs to be shown to all users.
     Only applies if the site does not have a valid license.
@@ -6216,6 +6636,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    Code copied from search results analytics
+    """
+    codeCopied: AnalyticsStatItem!
 }
 
 """
@@ -6255,21 +6679,17 @@ type AnalyticsUsersFrequencyItem {
 }
 
 """
-Average DAUs/WAUs/MAUs.
+Monthly active users
 """
-type AnalyticsUsersSummaryResult {
+type AnalyticsMonthlyActiveUsers {
     """
-    Average DAUs
+    year-month for which the total active users are calculated
     """
-    avgDAU: Float!
+    date: String!
     """
-    Average WAUs
+    total count of active users
     """
-    avgWAU: Float!
-    """
-    Average MAUs
-    """
-    avgMAU: Float!
+    count: Float!
 }
 
 """
@@ -6285,9 +6705,9 @@ type AnalyticsUsersResult {
     """
     frequencies: [AnalyticsUsersFrequencyItem!]!
     """
-    Average number of active users summary.
+    Monthly active users for last 3 months.
     """
-    summary: AnalyticsUsersSummaryResult!
+    monthlyActiveUsers: [AnalyticsMonthlyActiveUsers!]!
 }
 
 """
@@ -6420,6 +6840,19 @@ type AnalyticsExtensionsResult {
 }
 
 """
+Code insights analytics.
+"""
+type AnalyticsCodesInsightsResult {
+    """
+    Insights hovers statistics.
+    """
+    insightHovers: AnalyticsStatItem!
+    """
+    Insights data point clicks statistics.
+    """
+    insightDataPointClicks: AnalyticsStatItem!
+}
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6459,6 +6892,10 @@ type Analytics {
     Extensions statistics
     """
     extensions(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsExtensionsResult!
+    """
+    Code insights statistics
+    """
+    codeInsights(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodesInsightsResult!
 }
 
 """
@@ -7299,6 +7736,10 @@ type RepositoryStats {
     The number of repositories where initial cloning or subsequent fetching resulted in an error.
     """
     failedFetch: Int!
+    """
+    The number of indexed repositories
+    """
+    indexed: Int!
 }
 
 """
@@ -7444,6 +7885,64 @@ type TemporarySettings {
 }
 
 """
+Represents a webhook receiver from a code host.
+"""
+type Webhook implements Node {
+    """
+    The unique ID of the webhook.
+    """
+    id: ID!
+    """
+    The user facing UUID of the webhook.
+    """
+    uuid: String!
+    """
+    The URL of the webhook in the instance. This is the location where we expect to receive payloads.
+    """
+    url: String!
+    """
+    The kind of code host sending payloads. (eg. GitHub, GitLab)
+    """
+    codeHostKind: ExternalServiceKind!
+    """
+    The URN of the code host instance. (eg. https://gitlab.com)
+    """
+    codeHostURN: String!
+    """
+    Optional secret.
+    """
+    secret: String
+    """
+    The last time this webhook was updated.
+    """
+    updatedAt: DateTime!
+    """
+    When the webhook was created.
+    """
+    createdAt: DateTime!
+}
+
+"""
+A list of webhooks
+"""
+type WebhookConnection {
+    """
+    A list of webhooks.
+    """
+    nodes: [Webhook!]!
+
+    """
+    The total number of webhooks in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
 A list of logged webhook deliveries.
 """
 type WebhookLogConnection {
@@ -7580,4 +8079,157 @@ enum CloneStatus {
     NOT_CLONED
     CLONING
     CLONED
+}
+
+extend type Query {
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int = 50
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+
+    """
+    Returns true if executors have been configured on the Sourcegraph instance.
+    This is based on heuristics and doesn't necessarily mean that they would be
+    working.
+    """
+    areExecutorsConfigured: Boolean!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
+    """
+    The compatibility of the executor with respect to the Sourcegraph instance.
+    If outdated, please make sure that the executor and the Sourcegraph backend are of compatible versions. This means they should match in major and minor version, but they may be 1 minor version apart.
+    If too new, please update the Sourcegraph instance to match the version of the executor or downgrade the executor.
+
+    Compatibility can be null if the executor or Sourcegraph instance runs in dev mode or there's a version mismatch.
+    """
+    compatibility: ExecutorCompatibility
+}
+
+"""
+The compatibility of the executor with the sourcegraph instance.
+"""
+enum ExecutorCompatibility {
+    """
+    Executor version is more than one version behind the Sourcegraph instance.
+    """
+    OUTDATED
+
+    """
+    Executor is up-to-date with the Sourcegraph instance.
+    """
+    UP_TO_DATE
+
+    """
+    Executor version is more than one version ahead of the Sourcegraph instance.
+    """
+    VERSION_AHEAD
 }

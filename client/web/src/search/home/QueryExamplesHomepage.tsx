@@ -1,19 +1,24 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { useQueryExamples } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
 export interface QueryExamplesHomepageProps extends TelemetryProps {
+    selectedSearchContextSpec?: string
     queryState: QueryState
     setQueryState: (newState: QueryState) => void
+    isSourcegraphDotCom?: boolean
 }
 
 type Tip = 'rev' | 'lang' | 'before'
@@ -35,14 +40,16 @@ export const queryToTip = (id: string | undefined): Tip | null => {
 }
 
 export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepageProps> = ({
+    selectedSearchContextSpec,
     telemetryService,
     queryState,
     setQueryState,
+    isSourcegraphDotCom = false,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
 
-    const queryExampleSectionsColumns = useQueryExamples()
+    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string) => {
@@ -83,45 +90,77 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 
     return (
         <div>
-            <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
-                <strong>Tip</strong>
-                <span className="mx-1">–</span>
-                {selectedTip === 'rev' && (
-                    <>
-                        Add <QueryExampleChip query="rev:branchname" onClick={onQueryExampleClick} className="mx-1" />{' '}
-                        to query accross a specific branch or commit
-                    </>
-                )}
-                {selectedTip === 'lang' && (
-                    <>
-                        Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to query
-                        for matches only in a given language
-                    </>
-                )}
-                {selectedTip === 'before' && (
-                    <>
-                        Use{' '}
-                        <QueryExampleChip query={'before:"last week"'} onClick={onQueryExampleClick} className="mx-1" />{' '}
-                        to query within a time range
-                    </>
-                )}
-            </div>
-            <div className={styles.queryExamplesSectionsColumns}>
-                {queryExampleSectionsColumns.map((column, index) => (
-                    // eslint-disable-next-line react/no-array-index-key
-                    <div key={`column-${index}`}>
-                        {column.map(({ title, queryExamples, footer }) => (
-                            <QueryExamplesSection
-                                key={title}
-                                title={title}
-                                queryExamples={queryExamples}
-                                footer={footer}
-                                onQueryExampleClick={onQueryExampleClick}
-                            />
-                        ))}
+            <div>
+                {isSourcegraphDotCom ? (
+                    <div className="d-flex align-items-center mb-2">
+                        <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>Code Search Basics</Text>
                     </div>
-                ))}
+                ) : (
+                    <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
+                        <strong>Tip</strong>
+                        <span className="mx-1">–</span>
+                        {selectedTip === 'rev' && (
+                            <>
+                                Add{' '}
+                                <QueryExampleChip
+                                    query="rev:branchname"
+                                    onClick={onQueryExampleClick}
+                                    className="mx-1"
+                                />{' '}
+                                to query accross a specific branch or commit
+                            </>
+                        )}
+                        {selectedTip === 'lang' && (
+                            <>
+                                Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to
+                                query for matches only in a given language
+                            </>
+                        )}
+                        {selectedTip === 'before' && (
+                            <>
+                                Use{' '}
+                                <QueryExampleChip
+                                    query={'before:"last week"'}
+                                    onClick={onQueryExampleClick}
+                                    className="mx-1"
+                                />{' '}
+                                to query within a time range
+                            </>
+                        )}
+                    </div>
+                )}
+                <div className={styles.queryExamplesSectionsColumns}>
+                    {queryExampleSectionsColumns.map((column, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
+                        <div key={`column-${index}`}>
+                            {column.map(({ title, queryExamples }) => (
+                                <QueryExamplesSection
+                                    key={title}
+                                    title={title}
+                                    queryExamples={queryExamples}
+                                    onQueryExampleClick={onQueryExampleClick}
+                                />
+                            ))}
+                            {!!index && (
+                                <small className="d-block">
+                                    <Link target="blank" to="/help/code_search/reference/queries">
+                                        Complete query reference{' '}
+                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                    </Link>
+                                </small>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
+            {isSourcegraphDotCom && (
+                <div className="d-flex align-items-center justify-content-lg-center my-5">
+                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
+                    <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                        Search your private code with Sourcegraph Cloud.
+                    </Link>
+                </div>
+            )}
         </div>
     )
 }
@@ -129,19 +168,17 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 interface QueryExamplesSection {
     title: string
     queryExamples: QueryExample[]
-    footer?: React.ReactElement
     onQueryExampleClick: (id: string | undefined, query: string) => void
 }
 
 export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
     title,
     queryExamples,
-    footer,
     onQueryExampleClick,
 }) => (
     <div className={styles.queryExamplesSection}>
-        <div className={styles.queryExamplesSectionTitle}>{title}</div>
-        <div className={styles.queryExamplesItems}>
+        <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
+        <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
                 .map(({ id, query, helperText }) => (
@@ -153,8 +190,7 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
                         onClick={onQueryExampleClick}
                     />
                 ))}
-        </div>
-        {footer}
+        </ul>
     </div>
 )
 
@@ -176,7 +212,7 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
     className,
     onClick,
 }) => (
-    <span className={classNames('d-flex align-items-center', className)}>
+    <li className={classNames('d-flex align-items-center', className)}>
         <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
@@ -185,5 +221,5 @@ export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = 
                 <small>{helperText}</small>
             </span>
         )}
-    </span>
+    </li>
 )

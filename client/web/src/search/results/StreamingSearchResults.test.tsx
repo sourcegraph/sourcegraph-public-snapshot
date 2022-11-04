@@ -8,7 +8,7 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,7 +19,8 @@ import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
-    RESULT,
+    CHUNK_MATCH_RESULT,
+    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
@@ -116,7 +117,10 @@ describe('StreamingSearchResults', () => {
             version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
             trace: undefined,
+            chunkMatches: true,
+            featureOverrides: [],
         })
     })
 
@@ -156,7 +160,7 @@ describe('StreamingSearchResults', () => {
     it('should render correct components for file match and repository match', () => {
         const results: AggregateStreamingSearchResults = {
             ...streamingSearchResult,
-            results: [RESULT, REPO_MATCH_RESULT],
+            results: [CHUNK_MATCH_RESULT, REPO_MATCH_RESULT],
         }
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
         expect(screen.getAllByTestId('result-container').length).toBe(2)
@@ -164,6 +168,18 @@ describe('StreamingSearchResults', () => {
 
         expect(screen.getAllByTestId('result-container')[0]).toHaveAttribute('data-result-type', 'content')
         expect(screen.getAllByTestId('result-container')[1]).toHaveAttribute('data-result-type', 'repo')
+    })
+
+    it('should render correct components for file match using legacy line match format', () => {
+        const results: AggregateStreamingSearchResults = {
+            ...streamingSearchResult,
+            results: [LINE_MATCH_RESULT],
+        }
+
+        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
+        expect(screen.getAllByTestId('result-container').length).toBe(1)
+
+        expect(screen.getAllByTestId('result-container')[0]).toHaveAttribute('data-result-type', 'content')
     })
 
     it('should log view, query, and results fetched events', () => {

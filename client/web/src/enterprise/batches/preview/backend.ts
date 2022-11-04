@@ -14,16 +14,7 @@ import {
     QueryApplyPreviewStatsResult,
     ApplyPreviewStatsFields,
 } from '../../../graphql-operations'
-
-export const viewerBatchChangesCodeHostsFragment = gql`
-    fragment ViewerBatchChangesCodeHostsFields on BatchChangesCodeHostConnection {
-        totalCount
-        nodes {
-            externalServiceURL
-            externalServiceKind
-        }
-    }
-`
+import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
 const supersedingBatchSpecFragment = gql`
     fragment SupersedingBatchSpecFields on BatchSpec {
@@ -73,7 +64,7 @@ export const batchSpecFragment = gql`
         }
     }
 
-    ${viewerBatchChangesCodeHostsFragment}
+    ${VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT}
 
     ${diffStatFields}
 

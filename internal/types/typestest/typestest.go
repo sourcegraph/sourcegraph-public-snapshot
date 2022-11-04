@@ -105,7 +105,7 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
-// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+// MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
@@ -129,7 +129,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -137,7 +137,7 @@ func MakeExternalServices() types.ExternalServices {
 	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org", "username": "foo", "appPassword": "abc"}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
@@ -222,7 +222,7 @@ func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalSer
 	return services
 }
 
-// Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
+// GenerateExternalServices takes a list of base external services and generates n ones with different names.
 func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil

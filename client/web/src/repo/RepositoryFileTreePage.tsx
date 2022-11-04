@@ -12,7 +12,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
-import { BlobProps } from './blob/Blob'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -25,8 +24,7 @@ export interface RepositoryFileTreePageProps
             objectType: 'blob' | 'tree' | undefined
             filePath: string | undefined
             spec: string
-        }>,
-        Pick<BlobProps, 'onHandleFuzzyFinder'> {}
+        }> {}
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
@@ -36,7 +34,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const { repo, resolvedRev, repoName, match, globbing, ...context } = props
+    const { repo, resolvedRevision, repoName, match, globbing, ...context } = props
 
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
@@ -78,22 +76,24 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         return <Redirect to={url + formatHash(hashParameters)} />
     }
 
-    const repoRevisionProps = {
-        commitID: resolvedRev?.commitID,
-        filePath,
-        globbing,
-    }
-
     return (
         <>
             <RepoRevisionSidebar
-                {...context}
-                {...repoRevisionProps}
+                className="repo-revision-container__sidebar"
+                history={context.history}
+                revision={context.revision}
+                isLightTheme={context.isLightTheme}
+                settingsCascade={context.settingsCascade}
+                telemetryService={context.telemetryService}
+                authenticatedUser={context.authenticatedUser}
+                isSourcegraphDotCom={context.isSourcegraphDotCom}
+                extensionsController={context.extensionsController}
+                commitID={resolvedRevision?.commitID}
+                filePath={filePath}
                 repoID={repo?.id}
                 repoName={repoName}
-                className="repo-revision-container__sidebar"
                 isDir={objectType === 'tree'}
-                defaultBranch={resolvedRev?.defaultBranch || 'HEAD'}
+                defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the
@@ -105,7 +105,9 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                             <TraceSpanProvider name="BlobPage">
                                 <BlobPage
                                     {...context}
-                                    {...repoRevisionProps}
+                                    commitID={resolvedRevision?.commitID}
+                                    filePath={filePath}
+                                    globbing={globbing}
                                     repoID={repo?.id}
                                     repoName={repoName}
                                     repoUrl={repo?.url}
@@ -113,11 +115,11 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
-                                    onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                 />
                             </TraceSpanProvider>
-                        ) : resolvedRev ? (
-                            // TODO: see if we can render without resolvedRev.commitID
+                        ) : resolvedRevision ? (
+                            // TODO: see if we can render without resolvedRevision.commitID
                             <TreePage
                                 {...props}
                                 commitID={context.revision}

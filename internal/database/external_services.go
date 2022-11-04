@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -93,6 +94,13 @@ type ExternalServiceStore interface {
 
 	// CountSyncJobs counts all sync jobs.
 	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
+
+	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
+	// found or not in processing or queued state.
+	CancelSyncJob(ctx context.Context, id int64) error
+
+	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
+	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
@@ -214,6 +222,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
 	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -614,8 +623,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
-			nullInt32Column(es.NamespaceUserID),
-			nullInt32Column(es.NamespaceOrgID),
+			dbutil.NullInt32Column(es.NamespaceUserID),
+			dbutil.NullInt32Column(es.NamespaceOrgID),
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
@@ -643,10 +652,22 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
+		}
+
+		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
+			Kind:            s.Kind,
+			Config:          rawConfig,
+			AuthProviders:   authProviders,
+			NamespaceUserID: s.NamespaceUserID,
+			NamespaceOrgID:  s.NamespaceOrgID,
+		})
+		if err != nil {
+			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
 		}
 
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -661,7 +682,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			s.Config.Set(rawConfig)
 		}
 
-		if err := e.recalculateFields(s, rawConfig); err != nil {
+		if err := e.recalculateFields(s, string(normalized)); err != nil {
 			return err
 		}
 	}
@@ -754,11 +775,11 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			keyID,
 			s.CreatedAt.UTC(),
 			s.UpdatedAt.UTC(),
-			nullTimeColumn(s.DeletedAt),
-			nullTimeColumn(s.LastSyncAt),
-			nullTimeColumn(s.NextSyncAt),
-			nullInt32Column(s.NamespaceUserID),
-			nullInt32Column(s.NamespaceOrgID),
+			dbutil.NullTimeColumn(s.DeletedAt),
+			dbutil.NullTimeColumn(s.LastSyncAt),
+			dbutil.NullTimeColumn(s.NextSyncAt),
+			dbutil.NullInt32Column(s.NamespaceUserID),
+			dbutil.NullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -776,7 +797,6 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
--- source: internal/database/external_services.go:ExternalServiceStore.Upsert
 INSERT INTO external_services (
   id,
   kind,
@@ -967,6 +987,17 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// We take an advisory lock here and also when syncing an external service to
+	// ensure that they can't happen at the same time.
+	lock := locker.NewWith(tx, "external_service")
+	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	if err != nil {
+		return errors.Wrap(err, "getting advisory lock")
+	}
+	if !locked {
+		return errors.Errorf("could not get advisory lock for service %d", id)
+	}
+
 	// Create a temporary table where we'll store repos affected by the deletion of
 	// the external service
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
@@ -1060,7 +1091,14 @@ SELECT
 	process_after,
 	num_resets,
 	external_service_id,
-	num_failures
+	num_failures,
+	cancel,
+	repos_synced,
+	repo_sync_errors,
+	repos_added,
+	repos_modified,
+	repos_unmodified,
+	repos_deleted
 FROM
 	external_service_sync_jobs
 WHERE %s
@@ -1151,6 +1189,36 @@ func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*t
 	return &job, nil
 }
 
+// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
+func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
+	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
+	result, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "updating sync job counters")
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "checking affected rows")
+	}
+	if affected == 0 {
+		return &errSyncJobNotFound{id: job.ID}
+	}
+	return nil
+}
+
+const updateSyncJobQueryFmtstr = `
+UPDATE external_service_sync_jobs
+SET
+	repos_synced = %d,
+	repo_sync_errors = %d,
+	repos_added = %d,
+	repos_modified = %d,
+	repos_unmodified = %d,
+	repos_deleted = %d
+WHERE
+    id = %d
+`
+
 func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
 	return sc.Scan(
 		&job.ID,
@@ -1163,6 +1231,13 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyn
 		&job.NumResets,
 		&dbutil.NullInt64{N: &job.ExternalServiceID},
 		&job.NumFailures,
+		&job.Cancel,
+		&job.ReposSynced,
+		&job.RepoSyncErrors,
+		&job.ReposAdded,
+		&job.ReposModified,
+		&job.ReposUnmodified,
+		&job.ReposDeleted,
 	)
 }
 
@@ -1177,6 +1252,37 @@ LIMIT 1
 
 	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
 	return lastError, err
+}
+
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+	now := timeutil.Now()
+	q := sqlf.Sprintf(`
+UPDATE
+	external_service_sync_jobs
+SET
+	cancel = TRUE,
+	-- If the sync job is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can do teardown and, at some point, mark it failed itself.
+	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
+	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
+WHERE
+	id = %s
+	AND
+	state IN ('queued', 'processing')
+`, now, id)
+
+	res, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	af, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if af != 1 {
+		return &errSyncJobNotFound{id: id}
+	}
+	return nil
 }
 
 func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
+import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Text } from '@sourcegraph/wildcard'
 
@@ -31,7 +32,7 @@ export function useUserListActions(onEnd: (error?: any) => void): UseUserListAct
                 ),
                 isError: true,
             })
-            console.error(error)
+            logger.error(error)
             onEnd(error)
         },
         [onEnd]

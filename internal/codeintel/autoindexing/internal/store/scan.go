@@ -9,8 +9,10 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
@@ -19,8 +21,8 @@ var scanIndexes = basestore.NewSliceScanner(scanIndex)
 // scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
 var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
-	var executionLogs []shared.ExecutionLogEntry
+func scanIndex(s dbutil.Scanner) (index types.Index, err error) {
+	var executionLogs []workerutil.ExecutionLogEntry
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -43,6 +45,7 @@ func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
 		&index.Rank,
 		pq.Array(&index.LocalSteps),
 		&index.AssociatedUploadID,
+		&index.ShouldReindex,
 	); err != nil {
 		return index, err
 	}
@@ -76,8 +79,8 @@ func scanIndexConfiguration(s dbutil.Scanner) (indexConfiguration shared.IndexCo
 var scanIndexesWithCount = basestore.NewSliceWithCountScanner(scanIndexWithCount)
 
 // scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-func scanIndexWithCount(s dbutil.Scanner) (index shared.Index, count int, err error) {
-	var executionLogs []shared.ExecutionLogEntry
+func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err error) {
+	var executionLogs []workerutil.ExecutionLogEntry
 
 	if err := s.Scan(
 		&index.ID,
@@ -101,14 +104,13 @@ func scanIndexWithCount(s dbutil.Scanner) (index shared.Index, count int, err er
 		&index.Rank,
 		pq.Array(&index.LocalSteps),
 		&index.AssociatedUploadID,
+		&index.ShouldReindex,
 		&count,
 	); err != nil {
 		return index, 0, err
 	}
 
-	for _, entry := range executionLogs {
-		index.ExecutionLogs = append(index.ExecutionLogs, entry)
-	}
+	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
 
 	return index, count, nil
 }
@@ -171,17 +173,9 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 	return flattened, nil
 }
 
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
-	if queryErr != nil {
-		return 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
 
-	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return 0, err
-		}
-	}
-
-	return value, nil
+func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {
+	err = s.Scan(&rr.ID, &rr.RepositoryID, &rr.Rev)
+	return rr, err
 }

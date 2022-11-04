@@ -106,6 +106,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -113,11 +114,11 @@ describe('Blob viewer', () => {
                                     aborted: false,
                                     html:
                                         // Note: whitespace in this string is significant.
-                                        '<table class="test-log-token"><tbody><tr><td class="line" data-line="1"/>' +
+                                        '<table class="test-log-token"><tbody><tr><th class="line" data-line="1"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Log to console\n</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<tr><th class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
                                         '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
@@ -127,7 +128,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>Hello world' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<tr><th class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
@@ -190,6 +191,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")',
                                 richHTML: '',
@@ -198,11 +200,11 @@ describe('Blob viewer', () => {
                                     html:
                                         // Note: whitespace in this string is significant.
                                         '<table><tbody><tr>' +
-                                        '<td class="line" data-line="1"/>' +
+                                        '<th class="line" data-line="1"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Log to console\n</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="2"/>' +
+                                        '<tr><th class="line" data-line="2"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +
                                         '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
@@ -461,6 +463,7 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
@@ -468,11 +471,11 @@ describe('Blob viewer', () => {
                                     aborted: false,
                                     html:
                                         // Note: whitespace in this string is significant.
-                                        '<table class="test-log-token"><tbody><tr><td class="line" data-line="1"/>' +
+                                        '<table class="test-log-token"><tbody><tr><th class="line" data-line="1"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Log to console\n</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<tr><th class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
                                         '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
@@ -482,7 +485,7 @@ describe('Blob viewer', () => {
                                         '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>Hello world' +
                                         '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
                                         '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<tr><th class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
                                         '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
                                         'Third line\n</span></span></td></tr></tbody></table>',
@@ -732,9 +735,9 @@ describe('Blob viewer', () => {
                                       aborted: false,
                                       html:
                                           // Note: whitespace in this string is significant.
-                                          '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First word line\n' +
-                                          '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second line</span></td></tr>\n' +
-                                          '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third word line</span></td></tr></tbody></table>',
+                                          '<table><tbody><tr><th class="line" data-line="1"></th><td class="code"><div><span style="color: gray">&sol;&sol; First word line\n' +
+                                          '</span></div></td></tr><tr><th class="line" data-line="2"></th><td class="code"><div><span style="color: gray">&sol;&sol; Second line</span></td></tr>\n' +
+                                          '<tr><th class="line" data-line="3"></th><td class="code"><div><span style="color: gray">&sol;&sol; Third word line</span></td></tr></tbody></table>',
                                       lsif: '',
                                   },
                               }
@@ -745,9 +748,9 @@ describe('Blob viewer', () => {
                                       aborted: false,
                                       html:
                                           // Note: whitespace in this string is significant.
-                                          '<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color: gray">&sol;&sol; First line\n' +
-                                          '</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color: gray">&sol;&sol; Second word line</span></td></tr>\n' +
-                                          '<tr><td class="line" data-line="3"></td><td class="code"><div><span style="color: gray">&sol;&sol; Third line</span></td></tr></tbody></table>',
+                                          '<table><tbody><tr><th class="line" data-line="1"></th><td class="code"><div><span style="color: gray">&sol;&sol; First line\n' +
+                                          '</span></div></td></tr><tr><th class="line" data-line="2"></th><td class="code"><div><span style="color: gray">&sol;&sol; Second word line</span></td></tr>\n' +
+                                          '<tr><th class="line" data-line="3"></th><td class="code"><div><span style="color: gray">&sol;&sol; Third line</span></td></tr></tbody></table>',
                                       lsif: '',
                                   },
                               }
@@ -756,6 +759,7 @@ describe('Blob viewer', () => {
                         repository: {
                             commit: {
                                 file,
+                                blob: null,
                             },
                         },
                     }
@@ -921,18 +925,19 @@ describe('Blob viewer', () => {
                 Blob: ({ filePath }) => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
                                 richHTML: '',
                                 highlight: {
                                     aborted: false,
                                     html:
-                                        '<table><tbody><tr><td class="line" data-line="1"/><td class="code">' +
+                                        '<table><tbody><tr><th class="line" data-line="1"/><td class="code">' +
                                         '<span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span>' +
                                         ` file path: ${filePath}\n` +
                                         '</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="2"/>' +
+                                        '<tr><th class="line" data-line="2"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +
@@ -963,12 +968,12 @@ describe('Blob viewer', () => {
                                 highlight: {
                                     aborted: false,
                                     html:
-                                        '<table><tbody><tr><td class="line" data-line="1"/><td class="code">' +
+                                        '<table><tbody><tr><th class="line" data-line="1"/><td class="code">' +
                                         '<span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
                                         '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span>' +
                                         ` file path: ${filePath}\n` +
                                         '</span></span></td></tr>' +
-                                        '<tr><td class="line" data-line="2"/>' +
+                                        '<tr><th class="line" data-line="2"/>' +
                                         '<td class="code"><span class="hl-source hl-js hl-react">' +
                                         '<span class="hl-meta hl-function-call hl-method hl-js">' +
                                         '<span class="hl-support hl-type hl-object hl-console hl-js test-console-token">console</span>' +

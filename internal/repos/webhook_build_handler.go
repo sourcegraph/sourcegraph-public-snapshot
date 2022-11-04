@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"math/rand"
 	"net/url"
 
@@ -35,14 +34,14 @@ func newWebhookBuildHandler(store Store, doer httpcli.Doer) *webhookBuildHandler
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	job, ok := record.(*webhookworker.Job)
 	if !ok {
-		return errcode.MakeNonRetryable(errors.Newf("expected Job, got %T", record))
+		return errcode.MakeNonRetryable(errors.Newf("expected webhookworker.Job, got %T", record))
 	}
 
 	switch job.ExtSvcKind {
 	case extsvc.KindGitHub:
 		return w.handleKindGitHub(ctx, logger, job)
 	default:
-		return errcode.MakeNonRetryable(errors.New("Unable to determine external service kind"))
+		return errcode.MakeNonRetryable(errors.Errorf("unable to handle external service kind: %q", job.ExtSvcKind))
 	}
 }
 
@@ -62,19 +61,20 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Newf("handleKindGitHub: expected *schema.GitHubConnection, got %T", parsed))
 	}
 
-	baseURL, err := url.Parse("")
+	baseURL, err := url.Parse(conn.Url)
 	if err != nil {
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: parse baseURL failed"))
 	}
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: conn.Token}, w.doer)
 
-	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName) // TODO: Not make an API call upon every request
+	// TODO: Not make an API call upon every request. We would need a way to save
+	// whether or not we created a hook locally
+	webhookPayload, err := client.FindSyncWebhook(ctx, job.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
 		return errors.Wrap(err, "handleKindGitHub: FindSyncWebhook failed")
 	}
 
-	// found webhook from GitHub API
-	// don't build a new one
+	// found webhook from GitHub API, don't build a new one
 	if webhookPayload != nil {
 		if err := addWebhookToExtSvc(svc, conn, job.Org, webhookPayload.Config.Secret); err != nil {
 			return errors.Wrap(err, "handleKindGitHub: Webhook found but addWebhookToExtSvc failed")
@@ -89,7 +89,7 @@ func (w *webhookBuildHandler) handleKindGitHub(ctx context.Context, logger log.L
 		return errcode.MakeNonRetryable(errors.Wrap(err, "handleKindGitHub: secret generation failed"))
 	}
 
-	id, err := client.CreateSyncWebhook(ctx, job.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret) // TODO: store the webhook
+	id, err := client.CreateSyncWebhook(ctx, job.RepoName, globals.ExternalURL().Host, secret)
 	if err != nil {
 		return errors.Wrap(err, "handleKindGitHub: CreateSyncWebhook failed")
 	}
@@ -129,12 +129,11 @@ func webhookExistsInConfig(webhooks []*schema.GitHubWebhook, org string) bool {
 }
 
 func randomHex(n int) (string, error) {
-	r := make([]byte, n/2)
+	r := make([]byte, (n+1)/2)
 	_, err := rand.Read(r)
-
 	if err != nil {
 		return "", err
 	}
 
-	return hex.EncodeToString(r), nil
+	return hex.EncodeToString(r)[:n], nil
 }

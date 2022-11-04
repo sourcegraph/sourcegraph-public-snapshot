@@ -1,35 +1,5 @@
 package shared
 
-import "time"
-
-type Policy struct {
-	ID int
-}
-
-type GitObjectType string
-
-const (
-	GitObjectTypeCommit GitObjectType = "GIT_COMMIT"
-	GitObjectTypeTag    GitObjectType = "GIT_TAG"
-	GitObjectTypeTree   GitObjectType = "GIT_TREE"
-)
-
-type ConfigurationPolicy struct {
-	ID                        int
-	RepositoryID              *int
-	RepositoryPatterns        *[]string
-	Name                      string
-	Type                      GitObjectType
-	Pattern                   string
-	Protected                 bool
-	RetentionEnabled          bool
-	RetentionDuration         *time.Duration
-	RetainIntermediateCommits bool
-	IndexingEnabled           bool
-	IndexCommitMaxAge         *time.Duration
-	IndexIntermediateCommits  bool
-}
-
 type GetConfigurationPoliciesOptions struct {
 	// RepositoryID indicates that only configuration policies that apply to the
 	// specified repository (directly or via pattern) should be returned. This value
@@ -52,36 +22,4 @@ type GetConfigurationPoliciesOptions struct {
 
 	// Offset indicates the number of results to skip in the result set.
 	Offset int
-}
-
-// Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
-// records.
-type Upload struct {
-	ID                int
-	Commit            string
-	Root              string
-	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
-	FinishedAt        *time.Time
-	ProcessAfter      *time.Time
-	NumResets         int
-	NumFailures       int
-	RepositoryID      int
-	RepositoryName    string
-	Indexer           string
-	IndexerVersion    string
-	NumParts          int
-	UploadedParts     []int
-	UploadSize        *int64
-	Rank              *int
-	AssociatedIndexID *int
-}
-
-type RetentionPolicyMatchCandidate struct {
-	*ConfigurationPolicy
-	Matched           bool
-	ProtectingCommits []string
 }

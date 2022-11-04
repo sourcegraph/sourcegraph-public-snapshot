@@ -9,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -68,16 +67,15 @@ func TestDatabaseReferences(t *testing.T) {
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	store := New(codeIntelDB, &observation.TestContext)
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
 
-	tx, err := db.Transact(context.Background())
+	tx, err := codeIntelDB.Transact(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}

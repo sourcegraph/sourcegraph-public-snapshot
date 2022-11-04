@@ -33,40 +33,49 @@ type operations struct {
 	hasRepository                           *observation.Operation
 
 	// Uploads
-	getUploads                        *observation.Operation
-	getUploadByID                     *observation.Operation
-	getUploadsByIDs                   *observation.Operation
-	getVisibleUploadsMatchingMonikers *observation.Operation
-	updateUploadsVisibleToCommits     *observation.Operation
-	writeVisibleUploads               *observation.Operation
-	persistNearestUploads             *observation.Operation
-	persistNearestUploadsLinks        *observation.Operation
-	persistUploadsVisibleAtTip        *observation.Operation
-	updateUploadRetention             *observation.Operation
-	backfillReferenceCountBatch       *observation.Operation
-	updateCommittedAt                 *observation.Operation
-	sourcedCommitsWithoutCommittedAt  *observation.Operation
-	updateUploadsReferenceCounts      *observation.Operation
-	deleteUploadsWithoutRepository    *observation.Operation
-	deleteUploadsStuckUploading       *observation.Operation
-	softDeleteExpiredUploads          *observation.Operation
-	hardDeleteUploadsByIDs            *observation.Operation
-	deleteUploadByID                  *observation.Operation
+	getUploads                           *observation.Operation
+	getUploadByID                        *observation.Operation
+	getUploadsByIDs                      *observation.Operation
+	getVisibleUploadsMatchingMonikers    *observation.Operation
+	updateUploadsVisibleToCommits        *observation.Operation
+	writeVisibleUploads                  *observation.Operation
+	persistNearestUploads                *observation.Operation
+	persistNearestUploadsLinks           *observation.Operation
+	persistUploadsVisibleAtTip           *observation.Operation
+	updateUploadRetention                *observation.Operation
+	updateCommittedAt                    *observation.Operation
+	sourcedCommitsWithoutCommittedAt     *observation.Operation
+	deleteUploadsWithoutRepository       *observation.Operation
+	deleteUploadsStuckUploading          *observation.Operation
+	softDeleteExpiredUploadsViaTraversal *observation.Operation
+	softDeleteExpiredUploads             *observation.Operation
+	hardDeleteUploadsByIDs               *observation.Operation
+	deleteUploadByID                     *observation.Operation
+	insertUpload                         *observation.Operation
+	addUploadPart                        *observation.Operation
+	markQueued                           *observation.Operation
+	markFailed                           *observation.Operation
+	deleteUploads                        *observation.Operation
 
 	// Dumps
 	findClosestDumps                   *observation.Operation
 	findClosestDumpsFromGraphFragment  *observation.Operation
 	getDumpsWithDefinitionsForMonikers *observation.Operation
 	getDumpsByIDs                      *observation.Operation
+	deleteOverlappingDumps             *observation.Operation
 
 	// Packages
 	updatePackages *observation.Operation
 
 	// References
 	updatePackageReferences *observation.Operation
+	referencesForUpload     *observation.Operation
 
 	// Audit logs
 	deleteOldAuditLogs *observation.Operation
+
+	// Dependencies
+	insertDependencySyncingJob *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -111,21 +120,25 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasRepository:                           op("HasRepository"),
 
 		// Uploads
-		getUploads:                        op("GetUploads"),
-		getUploadByID:                     op("GetUploadByID"),
-		getUploadsByIDs:                   op("GetUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers: op("GetVisibleUploadsMatchingMonikers"),
-		updateUploadsVisibleToCommits:     op("UpdateUploadsVisibleToCommits"),
-		updateUploadRetention:             op("UpdateUploadRetention"),
-		backfillReferenceCountBatch:       op("BackfillReferenceCountBatch"),
-		updateCommittedAt:                 op("UpdateCommittedAt"),
-		sourcedCommitsWithoutCommittedAt:  op("SourcedCommitsWithoutCommittedAt"),
-		updateUploadsReferenceCounts:      op("UpdateUploadsReferenceCounts"),
-		deleteUploadsStuckUploading:       op("DeleteUploadsStuckUploading"),
-		deleteUploadsWithoutRepository:    op("DeleteUploadsWithoutRepository"),
-		softDeleteExpiredUploads:          op("SoftDeleteExpiredUploads"),
-		hardDeleteUploadsByIDs:            op("HardDeleteUploadsByIDs"),
-		deleteUploadByID:                  op("DeleteUploadByID"),
+		getUploads:                           op("GetUploads"),
+		getUploadByID:                        op("GetUploadByID"),
+		getUploadsByIDs:                      op("GetUploadsByIDs"),
+		getVisibleUploadsMatchingMonikers:    op("GetVisibleUploadsMatchingMonikers"),
+		updateUploadsVisibleToCommits:        op("UpdateUploadsVisibleToCommits"),
+		updateUploadRetention:                op("UpdateUploadRetention"),
+		updateCommittedAt:                    op("UpdateCommittedAt"),
+		sourcedCommitsWithoutCommittedAt:     op("SourcedCommitsWithoutCommittedAt"),
+		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
+		softDeleteExpiredUploadsViaTraversal: op("SoftDeleteExpiredUploadsViaTraversal"),
+		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
+		softDeleteExpiredUploads:             op("SoftDeleteExpiredUploads"),
+		hardDeleteUploadsByIDs:               op("HardDeleteUploadsByIDs"),
+		deleteUploadByID:                     op("DeleteUploadByID"),
+		insertUpload:                         op("InsertUpload"),
+		addUploadPart:                        op("AddUploadPart"),
+		markQueued:                           op("MarkQueued"),
+		markFailed:                           op("MarkFailed"),
+		deleteUploads:                        op("DeleteUploads"),
 
 		writeVisibleUploads:        op("writeVisibleUploads"),
 		persistNearestUploads:      op("persistNearestUploads"),
@@ -137,14 +150,19 @@ func newOperations(observationContext *observation.Context) *operations {
 		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
 		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
+		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
 
 		// Packages
 		updatePackages: op("UpdatePackages"),
 
 		// References
 		updatePackageReferences: op("UpdatePackageReferences"),
+		referencesForUpload:     op("ReferencesForUpload"),
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
+
+		// Dependencies
+		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 	}
 }

@@ -25,12 +25,43 @@
             margin: 20px 0;
         }
 
-        #webview {
+        #webview-and-overlay {
+            position: relative;
             width: 960px;
-            max-width: 100%;
             height: 400px;
+        }
+
+        #webview-overlay {
+            position: absolute;
+            visibility: hidden;
+            width: calc(100% - 2 * 150px);
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            padding: 0 150px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            line-height: 1.5em;
+        }
+
+        html.dark #webview-overlay, .dark body #webview-overlay {
+            background-color: #3c3f41;
+            color: #bbbbbb;
+        }
+
+        html.light #webview-overlay, .light body #webview-overlay {
+            background-color: rgb(242, 242, 242);
+            color: #bbbbbb;
+        }
+
+        #webview {
+            position: absolute;
+            width: 100%;
+            height: 100%;
             margin: 0;
             border-top: 0 !important;
+            z-index: 1
         }
 
         .dark #webview {
@@ -93,12 +124,12 @@
 
         .dark #code-details-highlight {
             background-color: #ebcb8b;
-            color:#4f5b66;
+            color: #4f5b66;
         }
 
         .light #code-details-highlight {
             background-color: #ebcb8b;
-            color:#4f5b66;
+            color: #4f5b66;
         }
     </style>
     <meta charset="UTF-8">
@@ -106,7 +137,10 @@
 <body>
 <div id="modal">
     <div id="title"><img alt="Sourcegraph logo" height="16" src="/icons/sourcegraphLogo.svg" width="16" /> Sourcegraph</div>
-    <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
+    <div id="webview-and-overlay">
+        <div id="webview-overlay"></div>
+        <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
+    </div>
     <div id="code-details"></div>
 
     <script type="module" src="/dist/bridgeMock.js"></script>

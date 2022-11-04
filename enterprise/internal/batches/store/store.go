@@ -196,6 +196,12 @@ type operations struct {
 	listBatchSpecRepoIDs    *observation.Operation
 	deleteExpiredBatchSpecs *observation.Operation
 
+	upsertBatchSpecWorkspaceFile *observation.Operation
+	deleteBatchSpecWorkspaceFile *observation.Operation
+	getBatchSpecWorkspaceFile    *observation.Operation
+	listBatchSpecWorkspaceFiles  *observation.Operation
+	countBatchSpecWorkspaceFiles *observation.Operation
+
 	getBulkOperation        *observation.Operation
 	listBulkOperations      *observation.Operation
 	countBulkOperations     *observation.Operation
@@ -237,6 +243,7 @@ type operations struct {
 	enqueueChangesetsToClose          *observation.Operation
 	getChangesetsStats                *observation.Operation
 	getRepoChangesetsStats            *observation.Operation
+	getGlobalChangesetsStats          *observation.Operation
 	enqueueNextScheduledChangeset     *observation.Operation
 	getChangesetPlaceInSchedulerQueue *observation.Operation
 	cleanDetachedChangesets           *observation.Operation
@@ -332,6 +339,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
 			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
 
+			upsertBatchSpecWorkspaceFile: op("UpsertBatchSpecWorkspaceFile"),
+			deleteBatchSpecWorkspaceFile: op("DeleteBatchSpecWorkspaceFile"),
+			getBatchSpecWorkspaceFile:    op("GetBatchSpecWorkspaceFile"),
+			listBatchSpecWorkspaceFiles:  op("ListBatchSpecWorkspaceFiles"),
+			countBatchSpecWorkspaceFiles: op("CountBatchSpecWorkspaceFiles"),
+
 			getBulkOperation:        op("GetBulkOperation"),
 			listBulkOperations:      op("ListBulkOperations"),
 			countBulkOperations:     op("CountBulkOperations"),
@@ -373,6 +386,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
 			getChangesetsStats:                op("GetChangesetsStats"),
 			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
+			getGlobalChangesetsStats:          op("GetGlobalChangesetsStats"),
 			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
 			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
 			cleanDetachedChangesets:           op("CleanDetachedChangesets"),
@@ -457,34 +471,6 @@ func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
 		msg, err = json.MarshalIndent(m, "        ", "    ")
 	}
 	return
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullInt64Column(n int64) *int64 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 type LimitOpts struct {

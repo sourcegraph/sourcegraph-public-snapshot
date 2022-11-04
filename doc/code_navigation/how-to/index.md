@@ -17,5 +17,5 @@
 
 - [Add precise indexing to many repositories](adding_lsif_to_many_repos.md)
 - [Adding precise indexing to CI workflows](adding_lsif_to_workflows.md)
-- <span class="badge badge-beta">Beta</span> [Enable auto-indexing](enable_auto_indexing.md)
-- <span class="badge badge-beta">Beta</span> [Configure auto-indexing](configure_auto_indexing.md)
+- [Enable auto-indexing](enable_auto_indexing.md)
+- [Configure auto-indexing](configure_auto_indexing.md)

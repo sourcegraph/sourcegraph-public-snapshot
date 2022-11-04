@@ -1,12 +1,12 @@
-local patterns = require "sg.patterns"
+local pattern = require "sg.autoindex.patterns"
 
-local exclude_paths = patterns.path_combine {
-  patterns.path_segment "example",
-  patterns.path_segment "examples",
-  patterns.path_segment "integration",
-  patterns.path_segment "test",
-  patterns.path_segment "testdata",
-  patterns.path_segment "tests",
+local exclude_paths = pattern.new_path_combine {
+  pattern.new_path_segment "example",
+  pattern.new_path_segment "examples",
+  pattern.new_path_segment "integration",
+  pattern.new_path_segment "test",
+  pattern.new_path_segment "testdata",
+  pattern.new_path_segment "tests",
 }
 
 return {

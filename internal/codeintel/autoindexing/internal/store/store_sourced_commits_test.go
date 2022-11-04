@@ -11,130 +11,63 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	logger "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestGetStaleSourcedCommits(t *testing.T) {
-	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
-
-	now := time.Unix(1587396557, 0).UTC()
-
-	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-	)
-
-	sourcedCommits, err := store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now)
-	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
-	}
-	expectedCommits := []shared.SourcedCommits{
-		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(2), makeCommit(3)}},
-		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(6)}},
-		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7)}},
-	}
-	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
-	}
-
-	// 120s away from next check (threshold is 60s)
-	if _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
-	}
-
-	// 30s away from next check (threshold is 60s)
-	if _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(2), now.Add(time.Second*90)); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
-	}
-
-	sourcedCommits, err = store.GetStaleSourcedCommits(context.Background(), time.Minute, 5, now.Add(time.Minute*2))
-	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
-	}
-	expectedCommits = []shared.SourcedCommits{
-		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(3)}},
-		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(6)}},
-		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7)}},
-	}
-	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+func newTest(db database.DB) *store {
+	return &store{
+		db:         basestore.NewWithHandle(db.Handle()),
+		logger:     logger.Scoped("autoindexing.store", ""),
+		operations: newOperations(&observation.TestContext),
 	}
 }
 
-func TestUpdateSourcedCommits(t *testing.T) {
+func TestProcessStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := newTest(db)
 
+	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()
 
 	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
+		types.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
+		types.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
+		types.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
+		types.Index{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
 
-	indexesUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
-	if err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
-	}
-	if indexesUpdated != 1 {
-		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
-	}
-
-	indexStates, err := getIndexStates(db, 1, 2, 3, 4, 5)
-	if err != nil {
-		t.Fatalf("unexpected error fetching index states: %s", err)
-	}
-	expectedIndexStates := map[int]string{
-		1: "completed",
-		2: "completed",
-		3: "completed",
-		4: "completed",
-		5: "completed",
-	}
-	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
-		t.Errorf("unexpected index states (-want +got):\n%s", diff)
-	}
-}
-
-func TestDeleteSourcedCommits(t *testing.T) {
-	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
-
-	insertIndexes(t, db,
-		shared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
-		shared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
-		shared.Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
-		shared.Index{ID: 4, RepositoryID: 51, Commit: makeCommit(6)},
-		shared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
+	const (
+		minimumTimeSinceLastCheck      = time.Minute
+		commitResolverBatchSize        = 5
+		commitResolverMaximumCommitLag = time.Hour
 	)
 
-	indexesDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour)
-	if err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	// First update
+	deleteCommit3 := func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+		return commit == makeCommit(3), nil
 	}
-	if indexesDeleted != 1 {
-		t.Fatalf("unexpected number of indexes deleted. want=%d have=%d", 1, indexesDeleted)
+	if numDeleted, err := store.processStaleSourcedCommits(
+		ctx,
+		minimumTimeSinceLastCheck,
+		commitResolverBatchSize,
+		commitResolverMaximumCommitLag,
+		deleteCommit3,
+		now,
+	); err != nil {
+		t.Fatalf("unexpected error processing stale sourced commits: %s", err)
+	} else if numDeleted != 1 {
+		t.Fatalf("unexpected number of deleted indexes. want=%d have=%d", 1, numDeleted)
 	}
-
 	indexStates, err := getIndexStates(db, 1, 2, 3, 4, 5)
 	if err != nil {
 		t.Fatalf("unexpected error fetching index states: %s", err)
@@ -149,10 +82,63 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
 		t.Errorf("unexpected index states (-want +got):\n%s", diff)
 	}
+
+	// Too soon after last update
+	deleteCommit2 := func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+		return commit == makeCommit(2), nil
+	}
+	if numDeleted, err := store.processStaleSourcedCommits(
+		ctx,
+		minimumTimeSinceLastCheck,
+		commitResolverBatchSize,
+		commitResolverMaximumCommitLag,
+		deleteCommit2,
+		now.Add(minimumTimeSinceLastCheck/2),
+	); err != nil {
+		t.Fatalf("unexpected error processing stale sourced commits: %s", err)
+	} else if numDeleted != 0 {
+		t.Fatalf("unexpected number of deleted indexes. want=%d have=%d", 0, numDeleted)
+	}
+	indexStates, err = getIndexStates(db, 1, 2, 3, 4, 5)
+	if err != nil {
+		t.Fatalf("unexpected error fetching index states: %s", err)
+	}
+	// no change in expectedIndexStates
+	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
+		t.Errorf("unexpected index states (-want +got):\n%s", diff)
+	}
+
+	// Enough time after previous update(s)
+	if numDeleted, err := store.processStaleSourcedCommits(
+		ctx,
+		minimumTimeSinceLastCheck,
+		commitResolverBatchSize,
+		commitResolverMaximumCommitLag,
+		deleteCommit2,
+		now.Add(minimumTimeSinceLastCheck/2*3),
+	); err != nil {
+		t.Fatalf("unexpected error processing stale sourced commits: %s", err)
+	} else if numDeleted != 1 {
+		t.Fatalf("unexpected number of deleted indexes. want=%d have=%d", 1, numDeleted)
+	}
+	indexStates, err = getIndexStates(db, 1, 2, 3, 4, 5)
+	if err != nil {
+		t.Fatalf("unexpected error fetching index states: %s", err)
+	}
+	expectedIndexStates = map[int]string{
+		1: "completed",
+		// 2 was deleted
+		// 3 was deleted
+		4: "completed",
+		5: "completed",
+	}
+	if diff := cmp.Diff(expectedIndexStates, indexStates); diff != "" {
+		t.Errorf("unexpected index states (-want +got):\n%s", diff)
+	}
 }
 
 // insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
+func insertIndexes(t testing.TB, db database.DB, indexes ...types.Index) {
 	for _, index := range indexes {
 		if index.Commit == "" {
 			index.Commit = makeCommit(index.ID)
@@ -164,7 +150,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
 			index.RepositoryID = 50
 		}
 		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+			index.DockerSteps = []types.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
@@ -195,8 +181,9 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
 				indexer_args,
 				outfile,
 				execution_logs,
-				local_steps
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				local_steps,
+				should_reindex
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
@@ -216,6 +203,7 @@ func insertIndexes(t testing.TB, db database.DB, indexes ...shared.Index) {
 			index.Outfile,
 			pq.Array(index.ExecutionLogs),
 			pq.Array(index.LocalSteps),
+			index.ShouldReindex,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {

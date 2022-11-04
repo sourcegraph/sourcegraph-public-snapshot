@@ -2,13 +2,13 @@
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers.
 </p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 When a commit of a repository is selected as a candidate for [auto-indexing](./auto_indexing.md) but does not have an explicitly supplied index job configuration, index jobs are inferred from the content of the repository at that commit.
+
+The site-config setting `codeIntelAutoIndexing.indexerMap` can be used to update the indexer image that is (globally) used on inferred jobs. For example, `"codeIntelAutoIndexing.indexerMap": {"go": "lsif-go:alternative-tag"}` will cause inferred jobs indexing Go code to use the specified container (with an alternative tag). This can also be useful for specifying alternative Docker registries.
 
 This document describes the heuristics used to determine the set of index jobs to schedule. See [configuration reference](../references/auto_indexing_configuration.md) for additional documentation on how index jobs are configured.
 

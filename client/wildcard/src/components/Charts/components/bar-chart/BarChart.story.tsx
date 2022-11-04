@@ -80,6 +80,7 @@ export const BarChartDemo: Story = () => (
         <GroupedBarExample />
         <StackedBarExample />
         <ManyBarsExample />
+        <CustomDimmedColor />
     </main>
 )
 
@@ -299,5 +300,27 @@ const ManyBarsExample = () => (
                 )}
             </ParentSize>
         </ResizableBox>
+    </section>
+)
+
+const CustomDimmedColor = () => (
+    <section style={{ flexBasis: 0 }}>
+        <H2>Dimmed colors</H2>
+
+        <Text style={{ maxWidth: 400, minWidth: 400 }}>
+            You can specify any dimmed colors for the non-active bars. (see bar chart README.md for more details about
+            chart colours.
+        </Text>
+
+        <BarChart
+            width={400}
+            height={400}
+            data={LANGUAGE_USAGE_DATA}
+            getDatumName={getName}
+            getDatumValue={getValue}
+            getDatumColor={getColor}
+            getDatumFadeColor={() => 'var(--blue)'}
+            getDatumLink={getLink}
+        />
     </section>
 )

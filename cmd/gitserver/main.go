@@ -29,8 +29,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -39,12 +40,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -99,7 +100,6 @@ func main() {
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")
@@ -123,7 +123,14 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	depsSvc := livedependencies.GetService(db)
+	services, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: stores.NoopDB,
+	})
+	if err != nil {
+		logger.Fatal("failed to initialize codeintel services", zap.Error(err))
+	}
+	depsSvc := services.DependenciesService
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
@@ -190,7 +197,7 @@ func main() {
 
 	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
-	go gitserver.Janitor(janitorInterval)
+	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
@@ -404,14 +411,20 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return "", nil
+	}
+
+	appAuther, err := github.NewGitHubAppAuthenticator(appID, pkey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
+	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
+	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
 
-	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
+	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 	if err != nil {
 		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 	}
@@ -419,11 +432,16 @@ func editGitHubAppExternalServiceConfigToken(
 	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
 	// validation with missing "repos" property when no repository has been selected,
 	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(rawConfig, token, "token")
+	config, err := jsonc.Edit(rawConfig, token.Token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
-	return config, nil
+	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
+		&database.ExternalServiceUpdate{
+			Config:         &config,
+			TokenExpiresAt: token.ExpiresAt,
+		})
+	return config, err
 }
 
 func getVCSSyncer(
@@ -512,6 +530,14 @@ func getVCSSyncer(
 		}
 		cli := crates.NewClient(urn, httpcli.ExternalDoer)
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRubyPackages:
+		var c schema.RubyPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
+		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

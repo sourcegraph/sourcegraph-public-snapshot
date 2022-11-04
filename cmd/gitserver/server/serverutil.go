@@ -30,7 +30,7 @@ import (
 // GitDir is an absolute path to a GIT_DIR.
 // They will all follow the form:
 //
-//    ${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${name}/.git
 type GitDir string
 
 // Path is a helper which returns filepath.Join(dir, elem...)
@@ -78,6 +78,11 @@ func cloneStatus(cloned, cloning bool) types.CloneStatus {
 
 func isAlwaysCloningTest(name api.RepoName) bool {
 	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
+}
+
+func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return (strings.EqualFold(remoteURL.Host, "github.com") &&
+		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest"))
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -239,7 +244,37 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 		extraArgs = append(extraArgs, "-c", "protocol.version=2")
 	}
 
+	if executable == "p4-fusion" {
+		extraArgs = removeUnsupportedP4Args(extraArgs)
+	}
+
 	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+}
+
+// removeUnsupportedP4Args removes all -c arguments as `p4-fusion` command doesn't
+// support -c argument and passing this causes warning logs.
+func removeUnsupportedP4Args(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+
+	idx := 0
+	foundC := false
+	for _, arg := range args {
+		if arg == "-c" {
+			// removing any -c
+			foundC = true
+		} else if foundC {
+			// removing the argument following -c and resetting the flag
+			foundC = false
+		} else {
+			// keep the argument
+			args[idx] = arg
+			idx++
+		}
+	}
+	args = args[:idx]
+	return args
 }
 
 // writeTempFile writes data to the TempFile with pattern. Returns the path of

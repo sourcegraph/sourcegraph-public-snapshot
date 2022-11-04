@@ -277,6 +277,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-case-sensitivity-toggle')
+                    await driver.page.click('aria/Search[role="button"]')
                     await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&case=yes')
                 })
 
@@ -308,6 +309,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-structural-search-toggle')
+                    await driver.page.click('aria/Search[role="button"]')
                     await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
                 })
 
@@ -334,9 +336,11 @@ describe('Search', () => {
     describe('Search button', () => {
         test('Clicking search button executes search', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            const editor = await createEditorAPI(driver, queryInputSelector)
+            await editor.focus()
+            await driver.page.keyboard.type(' hello')
+
             await driver.page.waitForSelector('.test-search-button', { visible: true })
-            // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
-            await driver.page.keyboard.type(' hello', { delay: 500 })
             await driver.page.click('.test-search-button')
             await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })

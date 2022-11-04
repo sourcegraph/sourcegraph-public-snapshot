@@ -2,7 +2,7 @@
 
 - [How to manually execute database migrations with `migrator`](manual_database_migrations.md)
   - Commands: [up](manual_database_migrations.md#up), [upto](manual_database_migrations.md#upto), [downto](manual_database_migrations.md#downto), [validate](manual_database_migrations.md#validate), [add-log](manual_database_migrations.md#add-log)
-  - Environments: [Kubernetes](manual_database_migrations.md#kubernetes), [Docker compose](manual_database_migrations.md#docker-compose), [Local development](manual_database_migrations.md#local-development)
+  - Environments: [Kubernetes](manual_database_migrations.md#kubernetes), [Docker compose](manual_database_migrations.md#docker--docker-compose), [Local development](manual_database_migrations.md#local-development)
 - [How to troubleshoot a dirty database](dirty_database.md)
 - [How to rollback the Postgres database](rollback_database.md)
 - [How to apply privileged migrations](privileged_migrations.md)
@@ -25,3 +25,5 @@
 - [How to address common monorepo problems](monorepo-issues.md)
 - [How to Set a password for Redis using a ConfigMap](redis_configmap.md)
 - [How to import a set of internal repositories to Sourcegraph](internal_github_repos.md)
+- [How to identify and resolve index corruption in postgres 14](postgres14-index-corruption.md)
+- [How to use a static endpoint for updates and pings](static-ip-for-updates-and-pings.md)

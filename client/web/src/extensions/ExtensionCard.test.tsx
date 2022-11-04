@@ -38,6 +38,18 @@ describe('ExtensionCard', () => {
                                     url: 'extensions/x/y',
                                     isWorkInProgress: false,
                                     viewerCanAdminister: false,
+                                    extensionID: 'extensions/x/y/id',
+                                    name: 'x/y',
+                                    createdAt: '2019-01-26T03:39:17Z',
+                                    updatedAt: '2019-01-26T03:39:17Z',
+                                    remoteURL: 'https://example.com/',
+                                    registryName: 'sourcegraph.com',
+                                    isLocal: false,
+                                    publisher: null,
+                                    manifest: {
+                                        raw: '',
+                                        description: 'x/y',
+                                    },
                                 },
                             }}
                             subject={{ id: 'u', viewerCanAdminister: false }}

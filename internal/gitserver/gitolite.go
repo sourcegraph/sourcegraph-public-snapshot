@@ -38,6 +38,8 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 	if err != nil {
 		return nil, err
 	}
+	// Set header so that the handler knows the request is from us
+	req.Header.Set("X-Requested-With", "Sourcegraph")
 
 	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {

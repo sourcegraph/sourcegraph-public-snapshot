@@ -32,7 +32,7 @@ func (j *recordEncrypterJob) Config() []env.Config {
 	}
 }
 
-func (j *recordEncrypterJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *recordEncrypterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "encrypter routines"),
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
@@ -40,11 +40,11 @@ func (j *recordEncrypterJob) Routines(ctx context.Context, logger log.Logger) ([
 	}
 	metrics := newMetrics(observationContext)
 
-	db, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
-	store := database.NewRecordEncrypter(database.NewDB(logger, db))
+	store := database.NewRecordEncrypter(db)
 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.EncryptionInterval, &recordEncrypter{

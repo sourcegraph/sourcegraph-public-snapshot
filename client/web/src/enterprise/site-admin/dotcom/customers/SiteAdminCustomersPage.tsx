@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
@@ -6,30 +6,26 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { H2, Text } from '@sourcegraph/wildcard'
+import { H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import { CustomerFields, CustomersResult, CustomersVariables } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { userURL } from '../../../../user'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
-
-import { SiteAdminCustomerBillingLink } from './SiteAdminCustomerBillingLink'
 
 const siteAdminCustomerFragment = gql`
     fragment CustomerFields on User {
         id
         username
         displayName
-        urlForSiteAdminBilling
     }
 `
 
 interface SiteAdminCustomerNodeProps {
-    node: Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>
-    onDidUpdate: () => void
+    node: CustomerFields
 }
 
 /**
@@ -37,14 +33,12 @@ interface SiteAdminCustomerNodeProps {
  */
 const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<SiteAdminCustomerNodeProps>> = ({
     node,
-    onDidUpdate,
 }) => (
     <li className="list-group-item py-2">
         <div className="d-flex align-items-center justify-content-between">
             <span className="mr-3">
                 <AccountName account={node} link={`${userURL(node.username)}/subscriptions`} />
             </span>
-            <SiteAdminCustomerBillingLink customer={node} onDidUpdate={onDidUpdate} />
         </div>
     </li>
 )
@@ -52,7 +46,7 @@ const SiteAdminCustomerNode: React.FunctionComponent<React.PropsWithChildren<Sit
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminCustomerConnection extends FilteredConnection<
-    Pick<GQL.IUser, 'id' | 'username' | 'displayName' | 'urlForSiteAdminBilling'>,
+    CustomerFields,
     Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>>
 > {}
 
@@ -63,10 +57,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductCustomers'), [])
 
     const updates = useMemo(() => new Subject<void>(), [])
-    const onUserUpdate = useCallback(() => updates.next(), [updates])
-    const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {
-        onDidUpdate: onUserUpdate,
-    }
+    const nodeProps: Pick<SiteAdminCustomerNodeProps, Exclude<keyof SiteAdminCustomerNodeProps, 'node'>> = {}
 
     return (
         <div className="site-admin-customers-page">
@@ -74,7 +65,6 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
             <div className="d-flex justify-content-between align-items-center mb-1">
                 <H2 className="mb-0">Customers</H2>
             </div>
-            <Text>User accounts may be linked to a customer on the billing system.</Text>
             <FilteredSiteAdminCustomerConnection
                 className="list-group list-group-flush mt-3"
                 noun="customer"
@@ -91,7 +81,7 @@ export const SiteAdminProductCustomersPage: React.FunctionComponent<React.PropsW
     )
 }
 
-function queryCustomers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
+function queryCustomers(args: Partial<CustomersVariables>): Observable<CustomersResult['users']> {
     return queryGraphQL(
         gql`
             query Customers($first: Int, $query: String) {
@@ -110,7 +100,7 @@ function queryCustomers(args: { first?: number; query?: string }): Observable<GQ
         {
             first: args.first,
             query: args.query,
-        } as GQL.IUsersOnQueryArguments
+        }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.users || (errors && errors.length > 0)) {

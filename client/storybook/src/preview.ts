@@ -59,11 +59,6 @@ if (!document.body.classList.contains('theme-dark')) {
     document.body.classList.add('theme-light')
 }
 
-// Always add class for coreWorkflowImprovements.enabled in Chromatic
-if (!document.body.classList.contains('core-workflow-improvements-enabled')) {
-    document.body.classList.add('core-workflow-improvements-enabled')
-}
-
 if (isChromatic()) {
     const style = document.createElement('style')
     style.innerHTML = `

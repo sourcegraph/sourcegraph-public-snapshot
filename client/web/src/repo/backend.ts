@@ -2,7 +2,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
     RepoNotFoundError,
@@ -12,12 +12,12 @@ import {
 import {
     makeRepoURI,
     RepoRevision,
-    RevisionSpec,
     RepoSpec,
     ResolvedRevisionSpec,
+    RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
-import { queryGraphQL } from '../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 
 export const externalLinkFieldsFragment = gql`
@@ -35,6 +35,10 @@ export const repositoryFragment = gql`
         externalURLs {
             url
             serviceKind
+        }
+        externalRepository {
+            serviceType
+            serviceID
         }
         description
         viewerCanAdminister
@@ -160,6 +164,35 @@ export const fetchFileExternalLinks = memoizeObservable(
                 }
                 return data.repository.commit.file.externalURLs
             })
+        ),
+    makeRepoURI
+)
+
+interface FetchCommitMessageResult {
+    __typename?: 'Query'
+    repository: {
+        commit: {
+            message: string
+        }
+    }
+}
+
+export const fetchCommitMessage = memoizeObservable(
+    (context: RepoRevision): Observable<string> =>
+        requestGraphQL<FetchCommitMessageResult, RepoRevision>(
+            gql`
+                query CommitMessage($repoName: String!, $revision: String!) {
+                    repository(name: $repoName) {
+                        commit(rev: $revision) {
+                            message
+                        }
+                    }
+                }
+            `,
+            context
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => data.repository.commit.message)
         ),
     makeRepoURI
 )

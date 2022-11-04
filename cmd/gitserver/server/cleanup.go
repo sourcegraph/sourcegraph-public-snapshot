@@ -67,12 +67,12 @@ var gitGCMode = func() int {
 	// EnableGCAuto is a temporary flag that allows us to control whether or not
 	// `git gc --auto` is invoked during janitorial activities. This flag will
 	// likely evolve into some form of site config value in the future.
-	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
 	// sg maintenance and git gc must not be enabled at the same time. However, both
 	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 	// SRC_ENABLE_SG_MAINTENANCE.
-	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 	if enableGCAuto && !enableSGMaintenance {
 		return gitGCModeJanitorAutoGC
@@ -172,7 +172,7 @@ const reposStatsName = "repos-stats.json"
 // 10. Perform sg-maintenance
 // 11. Git prune
 // 12. Only during first run: Set sizes of repos which don't have it in a database.
-func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
+func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitServerAddresses) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
 	defer func() {
@@ -226,6 +226,13 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
+		if err != nil {
+			s.Logger.Error("failed to get server address for repo", log.String("repoName", string(name)))
+			// We bail out here because it would mean that the hostname doesn't match below and
+			// it would remove repos if the DB is down for example
+			return
+		}
+
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
@@ -547,7 +554,7 @@ func (s *Server) cleanupRepos(gitServerAddrs gitserver.GitServerAddresses) {
 		logger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	err = s.setRepoSizes(context.Background(), repoToSize)
+	err = s.setRepoSizes(ctx, repoToSize)
 	if err != nil {
 		logger.Error("setting repo sizes", log.Error(err))
 	}
@@ -1098,12 +1105,12 @@ repository should be recloned.`
 )
 
 // writeSGMLog writes a log file with the format
-// 		<header>
 //
-// 		<sgmLogPrefix>=<int>
+//	<header>
 //
-// 		<error message>
+//	<sgmLogPrefix>=<int>
 //
+//	<error message>
 func writeSGMLog(dir GitDir, m []byte) error {
 	return os.WriteFile(
 		dir.Path(sgmLog),

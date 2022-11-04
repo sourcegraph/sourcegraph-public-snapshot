@@ -1,0 +1,3 @@
+ALTER TABLE webhooks
+    DROP COLUMN IF EXISTS rand_id,
+    ADD COLUMN IF NOT EXISTS uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid();

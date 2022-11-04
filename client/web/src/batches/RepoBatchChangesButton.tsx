@@ -1,32 +1,33 @@
-import { FC, useMemo } from 'react'
+import { FC } from 'react'
 
 import { encodeURIPathComponent, pluralize } from '@sourcegraph/common'
-import { Badge, useObservable, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { Badge, Button, Link, Icon } from '@sourcegraph/wildcard'
 
-import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
+import { RepoChangesetsStatsResult, RepoChangesetsStatsVariables } from '../graphql-operations'
+
+import { REPO_CHANGESETS_STATS } from './backend'
 import { BatchChangesIcon } from './icons'
 
 interface RepoBatchChangesButtonProps {
     className?: string
     repoName: string
-    /** For testing only. */
-    queryRepoChangesetsStats?: typeof _queryRepoChangesetsStats
 }
 
 export const RepoBatchChangesButton: FC<React.PropsWithChildren<RepoBatchChangesButtonProps>> = ({
     className,
     repoName,
-    queryRepoChangesetsStats = _queryRepoChangesetsStats,
 }) => {
-    const stats = useObservable(
-        useMemo(() => queryRepoChangesetsStats({ name: repoName }), [queryRepoChangesetsStats, repoName])
-    )
+    const { data } = useQuery<RepoChangesetsStatsResult, RepoChangesetsStatsVariables>(REPO_CHANGESETS_STATS, {
+        variables: { name: repoName },
+        fetchPolicy: 'cache-first',
+    })
 
-    if (!stats) {
+    if (!data || !data.repository) {
         return null
     }
 
-    const { open, merged } = stats.changesetsStats
+    const { open, merged } = data.repository.changesetsStats
 
     return (
         <Button

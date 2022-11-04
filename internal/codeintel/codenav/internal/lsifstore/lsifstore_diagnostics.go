@@ -53,7 +53,6 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 }
 
 const diagnosticsQuery = `
--- source: internal/codeintel/stores/lsifstore/diagnostics.go:Diagnostics
 SELECT
 	dump_id,
 	path,

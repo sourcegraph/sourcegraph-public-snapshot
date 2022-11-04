@@ -46,6 +46,9 @@ describe('useScrollManager', () => {
         act(() => {
             wrapper.history.push('/page-1')
         })
+        // Called when pushing history
+        assert.callCount(scrollToMock, 1)
+        assert.calledWith(scrollToMock, 0, 0)
 
         const pageOneContainer = screen.getByTestId('page-1')
         const PAGE_ONE_SCROLL_POSITION = 100
@@ -56,6 +59,9 @@ describe('useScrollManager', () => {
         act(() => {
             wrapper.history.push('/page-2')
         })
+        // Called when pushing history
+        assert.callCount(scrollToMock, 2)
+        assert.calledWith(scrollToMock, 0, 0)
 
         const pageTwoContainer = screen.getByTestId('page-2')
         const PAGE_TWO_SCROLL_POSITION = 300
@@ -67,7 +73,7 @@ describe('useScrollManager', () => {
             wrapper.history.goBack()
         })
         // Check that we attempt to scroll back to the correct position
-        assert.callCount(scrollToMock, 1)
+        assert.callCount(scrollToMock, 3)
         assert.calledWith(scrollToMock, 0, PAGE_ONE_SCROLL_POSITION)
 
         // Navigate forwards to second page
@@ -75,14 +81,22 @@ describe('useScrollManager', () => {
             wrapper.history.goForward()
         })
         // Check that we attempt to scroll back to the correct position
-        assert.callCount(scrollToMock, 2)
+        assert.callCount(scrollToMock, 4)
         assert.calledWith(scrollToMock, 0, PAGE_TWO_SCROLL_POSITION)
 
         // Navigate directly to the first page
         act(() => {
             wrapper.history.push('/page-1')
         })
-        // Check that we have not attempted to scroll (callCount is still 2)
-        assert.callCount(scrollToMock, 2)
+        // Check that we attempted to scroll back to top on push
+        assert.callCount(scrollToMock, 5)
+        assert.calledWith(scrollToMock, 0, 0)
+
+        // Replace history with second page
+        act(() => {
+            wrapper.history.replace('/page-2')
+        })
+        // Check that we did not attempt to scroll on history replace
+        assert.callCount(scrollToMock, 5)
     })
 })

@@ -29,7 +29,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
             aria-controls=""
             aria-haspopup="true"
             aria-label="Open search actions menu"
-            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
             id="menu-button-2"
             type="button"
@@ -53,7 +53,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       <button
         aria-label="Show filters"
         aria-pressed="false"
-        class="btn btnOutlineSecondary btnSm d-flex align-items-center d-lg-none filtersButton"
+        class="btn btnSecondary btnOutline btnSm d-flex align-items-center d-lg-none filtersButton"
         type="button"
       >
         Filters
@@ -105,7 +105,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-controls=""
             aria-haspopup="true"
             aria-label="Open search actions menu"
-            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
             id="menu-button-6"
             type="button"
@@ -129,7 +129,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       <button
         aria-label="Show filters"
         aria-pressed="false"
-        class="btn btnOutlineSecondary btnSm d-flex align-items-center d-lg-none filtersButton"
+        class="btn btnSecondary btnOutline btnSm d-flex align-items-center d-lg-none filtersButton"
         type="button"
       >
         Filters
@@ -181,7 +181,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             aria-controls=""
             aria-haspopup="true"
             aria-label="Open search actions menu"
-            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
             id="menu-button-8"
             type="button"
@@ -205,7 +205,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       <button
         aria-label="Show filters"
         aria-pressed="false"
-        class="btn btnOutlineSecondary btnSm d-flex align-items-center d-lg-none filtersButton"
+        class="btn btnSecondary btnOutline btnSm d-flex align-items-center d-lg-none filtersButton"
         type="button"
       >
         Filters
@@ -257,7 +257,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
             aria-controls=""
             aria-haspopup="true"
             aria-label="Open search actions menu"
-            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
             id="menu-button-4"
             type="button"
@@ -281,7 +281,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       <button
         aria-label="Show filters"
         aria-pressed="false"
-        class="btn btnOutlineSecondary btnSm d-flex align-items-center d-lg-none filtersButton"
+        class="btn btnSecondary btnOutline btnSm d-flex align-items-center d-lg-none filtersButton"
         type="button"
       >
         Filters
@@ -333,7 +333,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             aria-controls=""
             aria-haspopup="true"
             aria-label="Open search actions menu"
-            class="btn btnOutlineSecondary btnSm d-flex align-items-center text-decoration-none"
+            class="btn btnSecondary btnOutline btnSm d-flex align-items-center text-decoration-none"
             data-reach-menu-button=""
             id="menu-button-10"
             type="button"
@@ -357,7 +357,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       <button
         aria-label="Show filters"
         aria-pressed="false"
-        class="btn btnOutlineSecondary btnSm d-flex align-items-center d-lg-none filtersButton"
+        class="btn btnSecondary btnOutline btnSm d-flex align-items-center d-lg-none filtersButton"
         type="button"
       >
         Filters

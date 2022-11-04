@@ -20,10 +20,11 @@ type Options struct {
 	// PrivilegedMode controls how privileged migrations are applied.
 	PrivilegedMode PrivilegedMode
 
-	// PrivilegedHash is a user-supplied string indicating a deterministic hash of the set of
-	// privileged migrations that should be no-op'd. This value is only checked when running
-	// up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
-	PrivilegedHash string
+	// MatchPrivilegedHash is a function that matches a string indicating a deterministic hash
+	// of the set of privileged migrations that should be no-op'd against user-supplied strings
+	// given from a previous run with the same migration state. This value is only checked when
+	// running up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
+	MatchPrivilegedHash func(hash string) bool
 
 	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
 	// case when the _next_ migration application is the only failure. This is meant to enable

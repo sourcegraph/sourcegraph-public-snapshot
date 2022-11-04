@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchPatternType } from '@sourcegraph/search'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { getFullQuery, Toggles } from './Toggles'
