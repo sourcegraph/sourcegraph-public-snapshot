@@ -224,10 +224,7 @@ func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error
 }
 
 func (h *inProgressHandler) shouldInterrupt(duration time.Duration) bool {
-	if duration >= h.config.interruptAfter {
-		return true
-	}
-	return false
+	return duration >= h.config.interruptAfter
 }
 
 func getInterruptAfter() time.Duration {
