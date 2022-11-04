@@ -177,5 +177,5 @@ FOR UPDATE OF re SKIP LOCKED
 
 const deleteStaleExportedUploadsQuery = `
 DELETE FROM codeintel_ranking_exports re
-WHERE re.id = ANY(%q)
+WHERE re.id = ANY(%s)
 `
