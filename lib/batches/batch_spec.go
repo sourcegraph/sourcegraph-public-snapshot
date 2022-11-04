@@ -244,3 +244,19 @@ func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string)
 
 	return skipped, nil
 }
+
+// RequiredSecrets inspects all steps for outer environment variables used and
+// compiles a deduplicated list from those.
+func (s *BatchSpec) RequiredSecrets() []string {
+	requiredSecretsMap := map[string]struct{}{}
+	requiredSecrets := []string{}
+	for _, step := range s.Steps {
+		for _, v := range step.Env.OuterVars() {
+			if _, ok := requiredSecretsMap[v]; !ok {
+				requiredSecretsMap[v] = struct{}{}
+				requiredSecrets = append(requiredSecrets, v)
+			}
+		}
+	}
+	return requiredSecrets
+}

@@ -60,7 +60,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 
 	// Next, we fetch all secrets that are requested for the execution.
-	rk := requiredSecrets(batchSpec.Spec)
+	rk := batchSpec.Spec.RequiredSecrets()
 	var secrets []*database.ExecutorSecret
 	if len(rk) > 0 {
 		esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
@@ -205,20 +205,4 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		},
 		RedactedValues: redactedEnvVars,
 	}, nil
-}
-
-// requiredSecrets inspects all steps for env vars used and compiles a deduplicated
-// list from those.
-func requiredSecrets(spec *batcheslib.BatchSpec) []string {
-	requiredSecretsMap := map[string]struct{}{}
-	requiredSecrets := []string{}
-	for _, step := range spec.Steps {
-		for _, v := range step.Env.OuterVars() {
-			if _, ok := requiredSecretsMap[v]; !ok {
-				requiredSecretsMap[v] = struct{}{}
-				requiredSecrets = append(requiredSecrets, v)
-			}
-		}
-	}
-	return requiredSecrets
 }

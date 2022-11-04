@@ -79,7 +79,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	// Next, we fetch all secrets that are requested by the spec.
-	rk := requiredSecrets(spec.Spec)
+	rk := spec.Spec.RequiredSecrets()
 	var secrets []*database.ExecutorSecret
 	if len(rk) > 0 {
 		userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
@@ -87,7 +87,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		secrets, _, err = esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
 			NamespaceUserID: spec.NamespaceUserID,
 			NamespaceOrgID:  spec.NamespaceOrgID,
-			Keys:            requiredSecrets(spec.Spec),
+			Keys:            rk,
 		})
 		if err != nil {
 			return errors.Wrap(err, "fetching secrets")
@@ -418,20 +418,4 @@ func changesetSpecsForImports(ctx context.Context, s *store.Store, importChanges
 		cs = append(cs, changesetSpec)
 	}
 	return cs, nil
-}
-
-// requiredSecrets inspects all steps for env vars used and compiles a deduplicated
-// list from those.
-func requiredSecrets(spec *batcheslib.BatchSpec) []string {
-	requiredSecretsMap := map[string]struct{}{}
-	requiredSecrets := []string{}
-	for _, step := range spec.Steps {
-		for _, v := range step.Env.OuterVars() {
-			if _, ok := requiredSecretsMap[v]; !ok {
-				requiredSecretsMap[v] = struct{}{}
-				requiredSecrets = append(requiredSecrets, v)
-			}
-		}
-	}
-	return requiredSecrets
 }
