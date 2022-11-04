@@ -28,7 +28,7 @@ export const ExecutorsOrgArea: React.FunctionComponent<React.PropsWithChildren<E
     <>
         <Switch>
             <Route
-                path={`${match.url}`}
+                path={`${match.url}/secrets`}
                 render={props => (
                     <OrgExecutorSecretsListPage
                         orgID={outerProps.namespaceID}

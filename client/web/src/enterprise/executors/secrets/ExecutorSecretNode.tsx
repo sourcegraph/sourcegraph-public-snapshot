@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react'
 import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
 
-import { Badge, Button, Icon, H3 } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3, Link } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 
@@ -53,7 +53,6 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
 
     const headingAriaLabel = 'Secret value'
 
-    // TODO: Show creator.
     return (
         <>
             <li className={classNames(styles.executorSecretNodeContainer, 'list-group-item')}>
@@ -70,6 +69,7 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                                 variant="secondary"
                                 tooltip="This secret will be usable by all users of the Sourcegraph instance."
                                 aria-label="This secret will be usable by all users of the Sourcegraph instance."
+                                className="mr-2"
                             >
                                 Global secret
                             </Badge>
@@ -79,10 +79,15 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                                 variant="secondary"
                                 // tooltip="This secret will be usable by all users of the Sourcegraph instance."
                                 // aria-label="This secret will be usable by all users of the Sourcegraph instance."
+                                className="mr-2"
                             >
                                 Overwrites global secret
                             </Badge>
                         )}
+                        <small>
+                            By {node.creator && <Link to={node.creator.url}>{node.creator.username}</Link>}
+                            {!node.creator && <>deleted user</>}
+                        </small>
                     </H3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         <Button

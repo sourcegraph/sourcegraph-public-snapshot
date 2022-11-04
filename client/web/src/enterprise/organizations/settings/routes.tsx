@@ -12,8 +12,7 @@ const ExecutorsOrgArea = lazyComponent<ExecutorsOrgAreaProps, 'ExecutorsOrgArea'
 export const enterpriseOrgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[] = [
     ...orgSettingsAreaRoutes,
     {
-        path: '/executors/secrets',
-        exact: true,
+        path: '/executors',
         render: props => <ExecutorsOrgArea {...props} namespaceID={props.org.id} />,
         condition: ({ org: { viewerCanAdminister } }) => viewerCanAdminister,
     },
