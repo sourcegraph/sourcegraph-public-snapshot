@@ -120,6 +120,7 @@ describe('StreamingSearchResults', () => {
             searchMode: SearchMode.Precise,
             trace: undefined,
             chunkMatches: true,
+            featureOverrides: [],
         })
     })
 
