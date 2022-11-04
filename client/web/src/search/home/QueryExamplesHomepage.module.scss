@@ -86,17 +86,15 @@
     }
 }
 
+.tab-header {
+    border: none !important;
+    justify-content: center !important;
+}
+
 .title {
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     border-right: 1px solid var(--border-color);
     min-width: 60px;
-}
-
-.toggle-link {
-    color: var(--link-color);
-    &:hover {
-        text-decoration: var(--link-hover-decoration);
-    }
 }

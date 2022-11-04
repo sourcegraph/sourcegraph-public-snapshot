@@ -7,7 +7,7 @@ import { useHistory } from 'react-router'
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
@@ -50,15 +50,19 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
-    const [toggleSyntaxToQueryExamples, setToggleSyntaxToQueryExamples] = useState<boolean>(false)
+    const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
     const history = useHistory()
 
     const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    
+    const handleTabChange = (selectedTab: number): void => {
+        setQueryExampleTabActive(!!selectedTab)
+    }
 
     const onQueryExampleClick = useCallback(
         (id: string | undefined, query: string, slug: string | undefined) => {
             // Run search for dotcom longer query examples
-            if (isSourcegraphDotCom && toggleSyntaxToQueryExamples) {
+            if (isSourcegraphDotCom && queryExampleTabActive) {
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
                 history.push(slug!)
             }
@@ -95,7 +99,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             setSelectedTip,
             selectTipTimeout,
             setSelectTipTimeout,
-            toggleSyntaxToQueryExamples,
+            queryExampleTabActive,
             history,
             isSourcegraphDotCom
         ]
@@ -103,17 +107,75 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 
     return (
         <div>
-            <div>
-                {isSourcegraphDotCom ? (
-                    <div className="d-flex justify-content-center align-items-center mb-4">
-                        <Text className={classNames('mr-2 pr-2 mb-0', styles.title)}>
-                            {toggleSyntaxToQueryExamples ? 'Search Query Examples' : 'Code Search Basics'}
-                        </Text>
-                        <Text role="button" className={classNames('mb-0', styles.toggleLink)} onClick={() => setToggleSyntaxToQueryExamples(!toggleSyntaxToQueryExamples)}>
-                            {toggleSyntaxToQueryExamples ? 'Code search basics' : 'Search query examples'}
-                        </Text>
+            {isSourcegraphDotCom ? (
+                <>
+                    <Tabs size="medium" onChange={handleTabChange}>
+                        <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
+                            <Tab key="Code search basics" className="pr-3">Code search basics</Tab>
+                            <Tab key="Search query examples">Search query examples</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel>
+                                <div className={styles.queryExamplesSectionsColumns}>
+                                    {exampleSyntaxColumns.map((column, index) => (
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        <div key={`column-${index}`}>
+                                            {column.map(({ title, queryExamples }) => (
+                                                <QueryExamplesSection
+                                                    key={title}
+                                                    title={title}
+                                                    queryExamples={queryExamples}
+                                                    onQueryExampleClick={onQueryExampleClick}
+                                                />
+                                            ))}
+                                            {!!index && (
+                                                <small className="d-block">
+                                                    <Link target="blank" to="/help/code_search/reference/queries">
+                                                        Complete query reference{' '}
+                                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                                    </Link>
+                                                </small>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabPanel>
+                            <TabPanel>
+                                <div className={styles.queryExamplesSectionsColumns}>
+                                    {exampleQueryColumns.map((column, index) => (
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        <div key={`column-${index}`}>
+                                            {column.map(({ title, queryExamples }) => (
+                                                <QueryExamplesSection
+                                                    key={title}
+                                                    title={title}
+                                                    queryExamples={queryExamples}
+                                                    onQueryExampleClick={onQueryExampleClick}
+                                                />
+                                            ))}
+                                            {!!index && (
+                                                <small className="d-block">
+                                                    <Link target="blank" to="/help/code_search/reference/queries">
+                                                        Complete query reference{' '}
+                                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                                    </Link>
+                                                </small>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                    <div className="d-flex align-items-center justify-content-lg-center my-5">
+                        <H4 className={classNames('mr-2 mb-0 pr-2', styles.title)}>Pro Tip</H4>
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                            Use Sourcegraph to search across your team's code.
+                        </Link>
                     </div>
-                ) : (
+                </>
+            ) : (
+                <div>
                     <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
                         <strong>Tip</strong>
                         <span className="mx-1">–</span>
@@ -146,37 +208,29 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             </>
                         )}
                     </div>
-                )}
-                <div className={styles.queryExamplesSectionsColumns}>
-                    {(isSourcegraphDotCom && toggleSyntaxToQueryExamples ? exampleQueryColumns : exampleSyntaxColumns).map((column, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <div key={`column-${index}`}>
-                            {column.map(({ title, queryExamples }) => (
-                                <QueryExamplesSection
-                                    key={title}
-                                    title={title}
-                                    queryExamples={queryExamples}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            ))}
-                            {!!index && (
-                                <small className="d-block">
-                                    <Link target="blank" to="/help/code_search/reference/queries">
-                                        Complete query reference{' '}
-                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                                    </Link>
-                                </small>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {isSourcegraphDotCom && (
-                <div className="d-flex align-items-center justify-content-lg-center my-5">
-                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.title)}>Pro Tip</H4>
-                    <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
-                        Use Sourcegraph to search across your team's code.
-                    </Link>
+                    <div className={styles.queryExamplesSectionsColumns}>
+                        {exampleSyntaxColumns.map((column, index) => (
+                            // eslint-disable-next-line react/no-array-index-key
+                            <div key={`column-${index}`}>
+                                {column.map(({ title, queryExamples }) => (
+                                    <QueryExamplesSection
+                                        key={title}
+                                        title={title}
+                                        queryExamples={queryExamples}
+                                        onQueryExampleClick={onQueryExampleClick}
+                                    />
+                                ))}
+                                {!!index && (
+                                    <small className="d-block">
+                                        <Link target="blank" to="/help/code_search/reference/queries">
+                                            Complete query reference{' '}
+                                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                        </Link>
+                                    </small>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
