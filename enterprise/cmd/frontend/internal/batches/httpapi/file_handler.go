@@ -152,7 +152,7 @@ func getPathParts(r *http.Request) (string, string, error) {
 	batchSpecRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecRandID))
 	if err != nil {
 		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
-		// and it's not a valid graphl.ID.
+		// and it's not a valid graphql.ID.
 		batchSpecRandID = rawBatchSpecRandID
 	}
 
