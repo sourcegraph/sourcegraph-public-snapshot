@@ -11,7 +11,7 @@ import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results
  * This breaks all functionality that is built on top of URL query params and history
  * state. This list of query keys will be preserved between searches.
  */
-const PRESERVED_QUERY_PARAMETERS = ['feat', 'trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
+const PRESERVED_QUERY_PARAMETERS = ['trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -38,16 +38,13 @@ export function submitSearch({
     const existingParameters = new URLSearchParams(history.location.search)
 
     for (const key of PRESERVED_QUERY_PARAMETERS) {
-        const values = existingParameters.getAll(key)
-        if (values.length === 0) {
-            continue
+        const queryParameter = existingParameters.get(key)
+
+        if (queryParameter !== null) {
+            const parameters = new URLSearchParams(searchQueryParameter)
+            parameters.set(key, queryParameter)
+            searchQueryParameter = parameters.toString()
         }
-        const parameters = new URLSearchParams(searchQueryParameter)
-        parameters.delete(key)
-        for (const value of values) {
-            parameters.set(key, value)
-        }
-        searchQueryParameter = parameters.toString()
     }
 
     // Go to search results page

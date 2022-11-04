@@ -96,7 +96,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const extensionHostAPI =
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const featureOverrides = useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
 
     const options: StreamSearchOptions = useMemo(
         () => ({
@@ -104,11 +103,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             patternType: patternType ?? SearchPatternType.standard,
             caseSensitive,
             trace,
-            featureOverrides,
             searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
             chunkMatches: true,
         }),
-        [caseSensitive, patternType, searchMode, trace, featureOverrides]
+        [caseSensitive, patternType, searchMode, trace]
     )
 
     const results = useCachedSearchResults(streamSearch, submittedURLQuery, options, extensionHostAPI, telemetryService)

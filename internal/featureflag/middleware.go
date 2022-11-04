@@ -21,16 +21,7 @@ type Store interface {
 func Middleware(ffs Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
-
-		store := ffs
-		if flags, ok := requestOverrides(r); ok {
-			store = &overrideStore{
-				store: ffs,
-				flags: flags,
-			}
-		}
-
-		next.ServeHTTP(w, r.WithContext(WithFlags(r.Context(), store)))
+		next.ServeHTTP(w, r.WithContext(WithFlags(r.Context(), ffs)))
 	})
 }
 
