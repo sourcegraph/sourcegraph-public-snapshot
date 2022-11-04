@@ -221,6 +221,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         repoName: result.repository,
         repoStars: result.repoStars,
         repoLastFetched: result.repoLastFetched,
+        rankingDebug: result.debug,
         onResultClicked: props.onSelect,
         className: props.containerClassName,
         resultsClassName: props.result.type === 'symbol' ? styles.symbols : undefined,
