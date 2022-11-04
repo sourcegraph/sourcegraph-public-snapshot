@@ -177,7 +177,6 @@ export const BackendInsightView = forwardRef<HTMLLIElement, BackendInsightProps>
                         to={`${window.location.origin}/insights/insight/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Go to the insight page"
                     >
                         {insight.title}
                     </Link>
