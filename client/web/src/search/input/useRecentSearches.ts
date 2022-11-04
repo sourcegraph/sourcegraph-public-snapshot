@@ -100,7 +100,7 @@ export function useRecentSearches(): {
     const addRecentSearch = useCallback(
         (query: string) => {
             const searchContext = getGlobalSearchContextFilter(query)
-            if (searchContext && omitFilter(query, searchContext.filter).trim() !== '') {
+            if (!searchContext || omitFilter(query, searchContext.filter).trim() !== '') {
                 const recentSearch = { query, timestamp: new Date().toISOString() }
 
                 if (state === 'success') {
