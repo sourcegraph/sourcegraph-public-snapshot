@@ -39,19 +39,15 @@ func cleanup(ctx context.Context, db database.DB) error {
 	}
 
 	q := sqlf.Sprintf(`
-SELECT id
+SELECT user_id
 FROM users
+JOIN user_external_accounts ON user_external_accounts.user_id = users.id
 WHERE
-	id IN ( -- Only users with a single external account and the service_type is "sourcegraph-operator"
-		SELECT user_id
-		FROM user_external_accounts
-		WHERE
-			user_id IN (
-				SELECT user_id FROM user_external_accounts WHERE service_type = %s
-			)
-		GROUP BY user_id HAVING COUNT(*) = 1
+	users.id IN ( -- Only users with a single external account and the service_type is "sourcegraph-operator"
+	    SELECT user_id FROM user_external_accounts WHERE service_type = %s
 	)
-AND created_at <= %s
+AND users.created_at <= %s
+GROUP BY user_id HAVING COUNT(*) = 1
 `,
 		providerType,
 		time.Now().Add(-1*p.lifecycleDuration()),
