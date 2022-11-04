@@ -119,3 +119,17 @@
         display: none;
     }
 }
+
+.no-executors-warning-icon {
+    margin-top: 1rem;
+    color: var(--icon-muted);
+}
+
+.modal-link {
+    font-size: 1em;
+    padding: 0;
+    border: 0;
+    margin: 0;
+    font-weight: normal;
+    font-style: italic;
+}

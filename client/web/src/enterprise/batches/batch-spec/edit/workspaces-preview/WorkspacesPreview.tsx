@@ -6,18 +6,23 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { useQuery } from '@sourcegraph/http-client'
 import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
+    CheckExecutorsAccessTokenResult,
+    CheckExecutorsAccessTokenVariables,
     BatchSpecWorkspaceResolutionState,
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
+import { EXECUTORS } from '../../../create/backend'
 import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
+import { RunServerSideModal } from '../RunServerSideModal'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
@@ -61,14 +66,18 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
     isReadOnly = false,
 }) => {
     const { batchSpec, editor, workspacesPreview } = useBatchSpecContext()
+    // Check for active executors to tell if we are able to run batch changes server-side.
+    const { data } = useQuery<CheckExecutorsAccessTokenResult, CheckExecutorsAccessTokenVariables>(EXECUTORS, {})
 
-    return (
+    return data?.areExecutorsConfigured ? (
         <MemoizedWorkspacesPreview
             batchSpec={batchSpec}
             editor={editor}
             workspacesPreview={workspacesPreview}
             isReadOnly={isReadOnly}
         />
+    ) : (
+        <NoExecutorsWarning />
     )
 }
 
@@ -358,3 +367,36 @@ const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCou
         you can.
     </Alert>
 )
+
+const NoExecutorsWarning: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+    const [isRunServerSideModalOpen, setIsRunServerSideModalOpen] = useState(false)
+
+    return (
+        <div className={styles.container}>
+            <WorkspacesListHeader>Workspaces preview</WorkspacesListHeader>
+            <div className="d-flex flex-column align-items-center w-100 mb-3 px-5">
+                <Icon
+                    aria-label="The workspaces previewed below may not be up-to-date."
+                    className={styles.noExecutorsWarningIcon}
+                    inline={false}
+                    height="2.4rem"
+                    width="2.4rem"
+                    svgPath={mdiAlert}
+                />
+                <H4 className={styles.instruction}>
+                    Workspaces preview is only available when running batch changes server-side is enabled.{' '}
+                    <Button
+                        className={styles.modalLink}
+                        variant="link"
+                        onClick={() => setIsRunServerSideModalOpen(true)}
+                    >
+                        Learn how to enable it.
+                    </Button>
+                </H4>
+            </div>
+            {isRunServerSideModalOpen ? (
+                <RunServerSideModal setIsRunServerSideModalOpen={setIsRunServerSideModalOpen} />
+            ) : null}
+        </div>
+    )
+}
