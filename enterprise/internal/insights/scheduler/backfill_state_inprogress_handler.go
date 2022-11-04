@@ -75,20 +75,15 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
 	})
 
+	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")
 	mu := sync.Mutex{}
 	conf.Watch(func() {
-		c := conf.Get()
-		if c == nil {
-			return
-		}
-
 		mu.Lock()
 		defer mu.Unlock()
 		oldVal := task.config.interruptAfter
 		newVal := getInterruptAfter()
 		task.config.interruptAfter = newVal
-		logger := log.Scoped("insightsInProgressConfig", "")
-		logger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
+		configLogger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
 	})
 
 	return worker, resetter, workerStore
