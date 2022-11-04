@@ -14,6 +14,7 @@ const INSIGHT_DATA_SERIES_FRAGMENT = gql`
             pendingJobs
             failedJobs
             isLoadingData
+            percentComplete
         }
     }
 `

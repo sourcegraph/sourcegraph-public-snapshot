@@ -125,6 +125,7 @@ export interface BackendInsightDatum {
 
 export interface BackendInsightData {
     data: InsightContent<any>
+    percentComplete: number
     isFetchingHistoricalData: boolean
 }
 

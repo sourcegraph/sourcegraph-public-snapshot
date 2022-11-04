@@ -15,18 +15,22 @@ interface BackendAlertOverLayProps {
     isFetchingHistoricalData: boolean
     hasNoData: boolean
     className?: string
+    percentComplete: number
 }
 
 export const BackendAlertOverlay: React.FunctionComponent<
     React.PropsWithChildren<BackendAlertOverLayProps>
 > = props => {
-    const { isFetchingHistoricalData, hasNoData, className } = props
+    const { isFetchingHistoricalData, hasNoData, className, percentComplete } = props
+
+    const pct = percentComplete * 100
 
     if (isFetchingHistoricalData) {
+        const desc = `${pct.toFixed(0)}% complete`
         return (
             <AlertOverlay
-                title="This insight is still being processed"
-                description="Datapoints shown may be undercounted."
+                title="This insight is still being processed."
+                description={desc}
                 icon={<ProgressWrench className={classNames('mb-3')} size={33} />}
                 className={className}
             />

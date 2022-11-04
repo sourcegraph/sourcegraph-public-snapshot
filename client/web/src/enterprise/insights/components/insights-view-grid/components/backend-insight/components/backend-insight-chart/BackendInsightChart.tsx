@@ -52,7 +52,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
+    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState, percentComplete } = props
     const { ref, width = 0 } = useResizeObserver()
     const { setHoveredId } = seriesToggleState
 
@@ -84,6 +84,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     hasNoData={isEmptyDataset}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
+                                    percentComplete={percentComplete}
                                 />
 
                                 {data.type === InsightContentType.Series ? (

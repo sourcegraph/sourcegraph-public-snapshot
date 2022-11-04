@@ -89,15 +89,19 @@ type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time
 	isLoading                                           bool
+	percentComplete                                     float64
 }
 
 type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
 type GetSeriesBackfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
+type GetSeriesPercentCompleteFunc func(ctx context.Context, seriesID int) (float64, error)
+
 type insightStatusResolver struct {
-	getQueueStatus     GetSeriesQueueStatusFunc
-	getSeriesBackfills GetSeriesBackfillsFunc
-	statusOnce         sync.Once
-	series             types.InsightViewSeries
+	getQueueStatus           GetSeriesQueueStatusFunc
+	getSeriesBackfills       GetSeriesBackfillsFunc
+	getSeriesPercentComplete GetSeriesPercentCompleteFunc
+	statusOnce               sync.Once
+	series                   types.InsightViewSeries
 
 	status    statusInfo
 	statusErr error
@@ -129,6 +133,13 @@ func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error
 	}
 	return &status.isLoading, nil
 }
+func (i *insightStatusResolver) PercentComplete(ctx context.Context) (*float64, error) {
+	status, err := i.calculateStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &status.percentComplete, nil
+}
 
 func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
 	i.statusOnce.Do(func() {
@@ -154,27 +165,47 @@ func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo
 				break
 			}
 		}
+		if backfillInProgress {
+			pct, pctErr := i.getSeriesPercentComplete(ctx, i.series.InsightSeriesID)
+			if pctErr != nil {
+				i.statusErr = errors.Wrap(pctErr, "getSeriesPercentComplete")
+				return
+			}
+			i.status.percentComplete = pct
+
+		} else {
+			i.status.percentComplete = 100
+		}
 		i.status.isLoading = i.status.backfillQueuedAt == nil || i.status.pendingJobs > 0 || backfillInProgress
 	})
 	return i.status, i.statusErr
 }
 
 func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSeries) *insightStatusResolver {
+	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+
 	getStatus := func(ctx context.Context, series string) (*queryrunner.JobsStatus, error) {
 		return queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, series)
 	}
 	getBackfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
-		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
 		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
 	}
-	return newStatusResolver(getStatus, getBackfills, viewSeries)
+	getPercentComplete := func(ctx context.Context, seriesID int) (float64, error) {
+		percent, err := backfillStore.PercentComplete(ctx, seriesID)
+		if err != nil {
+			return 0, nil
+		}
+		return percent, nil
+	}
+	return newStatusResolver(getStatus, getBackfills, getPercentComplete, viewSeries)
 }
 
-func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, series types.InsightViewSeries) *insightStatusResolver {
+func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, getSeriesPercentComplete GetSeriesPercentCompleteFunc, series types.InsightViewSeries) *insightStatusResolver {
 	return &insightStatusResolver{
-		getQueueStatus:     getQueueStatus,
-		getSeriesBackfills: getSeriesBackfills,
-		series:             series,
+		getQueueStatus:           getQueueStatus,
+		getSeriesBackfills:       getSeriesBackfills,
+		series:                   series,
+		getSeriesPercentComplete: getSeriesPercentComplete,
 	}
 }
 

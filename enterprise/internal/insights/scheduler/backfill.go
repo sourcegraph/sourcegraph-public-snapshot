@@ -88,6 +88,22 @@ func scanBackfill(scanner dbutil.Scanner) (*SeriesBackfill, error) {
 	return &tmp, nil
 }
 
+func (b *BackfillStore) PercentComplete(ctx context.Context, seriesID int) (float64, error) {
+	q := sqlf.Sprintf("select coalesce(sum(ri.success_count), 0) success, coalesce(sum(ri.total_count), 0) total from insight_series_backfill isb join repo_iterator ri ON isb.repo_iterator_id = ri.id where isb.series_id = %s", seriesID)
+	row := b.QueryRow(ctx, q)
+	var success, total int
+	if err := row.Scan(
+		&success,
+		&total,
+	); err != nil {
+		return 0, err
+	}
+	if total == 0 {
+		return 0, nil
+	}
+	return float64(success) / float64(total), nil
+}
+
 func (b *SeriesBackfill) SetScope(ctx context.Context, store *BackfillStore, repos []int32, cost float64) (*SeriesBackfill, error) {
 	if b == nil || b.Id == 0 {
 		return nil, errors.New("invalid series backfill")
@@ -130,11 +146,11 @@ func (b *SeriesBackfill) IsTerminalState() bool {
 	return b.State == BackfillStateCompleted || b.State == BackfillStateFailed
 }
 
-func (sb *SeriesBackfill) repoIterator(ctx context.Context, store *BackfillStore) (*iterator.PersistentRepoIterator, error) {
-	if sb.repoIteratorId == 0 {
-		return nil, errors.Newf("invalid repo_iterator_id on backfill_id: %d", sb.Id)
+func (b *SeriesBackfill) repoIterator(ctx context.Context, store *BackfillStore) (*iterator.PersistentRepoIterator, error) {
+	if b.repoIteratorId == 0 {
+		return nil, errors.Newf("invalid repo_iterator_id on backfill_id: %d", b.Id)
 	}
-	return iterator.LoadWithClock(ctx, store.Store, sb.repoIteratorId, store.clock)
+	return iterator.LoadWithClock(ctx, store.Store, b.repoIteratorId, store.clock)
 }
 
 var backfillColumns = []*sqlf.Query{

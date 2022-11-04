@@ -87,6 +87,7 @@ type InsightStatusResolver interface {
 	FailedJobs(context.Context) (int32, error)
 	BackfillQueuedAt(context.Context) *gqlutil.DateTime
 	IsLoadingData(context.Context) (*bool, error)
+	PercentComplete(context.Context) (*float64, error)
 }
 
 type InsightsPointsArgs struct {

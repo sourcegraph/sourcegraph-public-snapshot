@@ -76,3 +76,8 @@ func (e emptyInsightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlut
 	current := time.Now().AddDate(-1, 0, 0)
 	return gqlutil.DateTimeOrNil(&current)
 }
+
+func (e emptyInsightStatusResolver) PercentComplete(ctx context.Context) (*float64, error) {
+	val := float64(0)
+	return &val, nil
+}

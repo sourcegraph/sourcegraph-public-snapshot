@@ -172,6 +172,11 @@ type InsightSeriesStatus {
     Indicates if the series is currently loading additional data
     """
     isLoadingData: Boolean
+
+    """
+    Percent complete based on the number of repositories, for example if 5 are successfully complete out of 10 total the result would be 0.5.
+    """
+    percentComplete: Float
 }
 
 extend type Query {
