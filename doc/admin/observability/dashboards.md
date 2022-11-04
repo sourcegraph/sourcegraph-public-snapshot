@@ -22587,141 +22587,15 @@ Query: `sum by (op)(increase(src_codeintel_ranking_store_errors_total{job=~"^${s
 
 ### Code Intelligence > Ranking: Codeintel: Ranking > PageRank
 
-#### codeintel-ranking: codeintel_codenav_ranking_uploads_read_total
-
-<p class="subtitle">Root for ranking_uploads_read title for ranking_uploads_read every 5m</p>
-
-The number of upload records read.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100200` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_codenav_ranking_uploads_read_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_codenav_ranking_bytes_uploaded_total
-
-<p class="subtitle">Root for ranking_bytes_uploaded title for ranking_bytes_uploaded every 5m</p>
-
-The number of bytes uploaded to GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_codenav_ranking_bytes_uploaded_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_codenav_ranking_stale_uploads_removed_total
-
-<p class="subtitle">Root for ranking_stale_uploads_removed title for ranking_stale_uploads_removed every 5m</p>
-
-The number of stale upload records removed from GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100202` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_codenav_ranking_stale_uploads_removed_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_codenav_ranking_bytes_deleted_total
-
-<p class="subtitle">Root for ranking_bytes_deleted title for ranking_bytes_deleted every 5m</p>
-
-The number of bytes deleted from GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100203` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_codenav_ranking_bytes_deleted_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_csv_files_processed_total
-
-<p class="subtitle">Root for csv_files_processed title for csv_files_processed every 5m</p>
-
-The number of input CSV records read from GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100210` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_csv_files_processed_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_csv_files_bytes_read_total
-
-<p class="subtitle">Root for csv_files_bytes_read title for csv_files_bytes_read every 5m</p>
-
-The number of bytes read from GCS.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100211` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_csv_files_bytes_read_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
 #### codeintel-ranking: codeintel_ranking_repositories_updated_total
 
-<p class="subtitle">Root for repositories_updated title for repositories_updated every 5m</p>
+<p class="subtitle">Repository path ranks updated repository path ranks updated every 5m</p>
 
 The number of updates to document scores of any repository.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100212` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -22734,15 +22608,36 @@ Query: `sum(increase(src_codeintel_ranking_repositories_updated_total{job=~"^${s
 
 <br />
 
+#### codeintel-ranking: codeintel_ranking_csv_files_processed_total
+
+<p class="subtitle">Csv files read and processed files read from GCS every 5m</p>
+
+The number of input CSV records read from GCS.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_csv_files_processed_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### codeintel-ranking: codeintel_ranking_input_rows_processed_total
 
-<p class="subtitle">Root for input_rows_processed title for input_rows_processed every 5m</p>
+<p class="subtitle">Csv result rows processed csv result rows processed every 5m</p>
 
 The number of input row records merged into document scores for
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100213` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100202` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -22750,6 +22645,111 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_codeintel_ranking_input_rows_processed_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_codenav_ranking_uploads_read_total
+
+<p class="subtitle">Uploads read uploads read for export every 5m</p>
+
+The number of upload records read.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_codenav_ranking_uploads_read_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_codenav_ranking_stale_uploads_removed_total
+
+<p class="subtitle">Uploads removed stale upload records removed every 5m</p>
+
+The number of stale upload records removed from GCS.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_codenav_ranking_stale_uploads_removed_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_ranking_csv_files_bytes_read_total
+
+<p class="subtitle">Bytes read bytes read from GCS every 5m</p>
+
+The number of bytes read from GCS.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100220` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_ranking_csv_files_bytes_read_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_codenav_ranking_bytes_uploaded_total
+
+<p class="subtitle">Bytes uploaded bytes uploaded to GCS every 5m</p>
+
+The number of bytes uploaded to GCS.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100221` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_codenav_ranking_bytes_uploaded_total{job=~"^${source:regex}.*"}[5m]))`
+
+</details>
+
+<br />
+
+#### codeintel-ranking: codeintel_codenav_ranking_bytes_deleted_total
+
+<p class="subtitle">Bytes deleted bytes deleted from GCS every 5m</p>
+
+The number of bytes deleted from GCS.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=100222` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_codenav_ranking_bytes_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
