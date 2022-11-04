@@ -104,7 +104,7 @@ function sendEvents(events: Event[]): Promise<void> {
     })
         .toPromise()
         .then(dataOrThrowErrors)
-        .then(() => { })
+        .then(() => {})
 }
 
 function sendEvent(event: Event): Promise<void> {
