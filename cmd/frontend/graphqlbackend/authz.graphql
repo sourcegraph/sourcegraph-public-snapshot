@@ -132,12 +132,6 @@ extend type Query {
     usersWithPendingPermissions: [String!]!
 
     """
-    INTERNAL ONLY: Returns a list of the types of authz providers that have been configured and will be used for
-    determining which repositories the user has access to.
-    """
-    authzProviderTypes: [String!]!
-
-    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(
