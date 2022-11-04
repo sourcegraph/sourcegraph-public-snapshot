@@ -82,9 +82,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	rk := spec.Spec.RequiredEnvVars()
 	var secrets []*database.ExecutorSecret
 	if len(rk) > 0 {
-		userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
 		esStore := r.store.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-		secrets, _, err = esStore.List(userCtx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
 			NamespaceUserID: spec.NamespaceUserID,
 			NamespaceOrgID:  spec.NamespaceOrgID,
 			Keys:            rk,

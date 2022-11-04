@@ -179,11 +179,16 @@ func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore
 	}, err
 }
 
-var ErrEmptyExecutorSecret = errors.New("empty executor secret is not allowed")
+var ErrEmptyExecutorSecretKey = errors.New("empty executor secret key is not allowed")
+var ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
 
 func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+	if len(secret.Key) == 0 {
+		return ErrEmptyExecutorSecretKey
+	}
+
 	if len(value) == 0 {
-		return ErrEmptyExecutorSecret
+		return ErrEmptyExecutorSecretValue
 	}
 
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
@@ -223,7 +228,7 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 
 func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
 	if len(value) == 0 {
-		return ErrEmptyExecutorSecret
+		return ErrEmptyExecutorSecretValue
 	}
 
 	// SECURITY: check that the current user is authorized to update a secret in the given namespace.
