@@ -627,3 +627,10 @@ func encryptExecutorSecret(ctx context.Context, key encryption.Key, raw string) 
 	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
 	return []byte(data), keyID, err
 }
+
+// NewMockExecutorSecret can be used in tests to create an executor secret with a
+// set inner value. DO NOT USE THIS OUTSIDE OF TESTS.
+func NewMockExecutorSecret(s *ExecutorSecret, v string) *ExecutorSecret {
+	s.encryptedValue = NewUnencryptedCredential([]byte(v))
+	return s
+}
