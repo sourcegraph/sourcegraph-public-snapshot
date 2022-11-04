@@ -35,7 +35,8 @@ async function gheLogin({ page }: Driver): Promise<void> {
     }
 }
 
-describe('Sourcegraph browser extension on GitHub Enterprise', () => {
+describe.skip('Sourcegraph browser extension on GitHub Enterprise', () => {
+
     let driver: Driver
 
     before(async function () {

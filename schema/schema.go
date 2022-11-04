@@ -112,12 +112,13 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
-	Builtin       *BuiltinAuthProvider
-	Saml          *SAMLAuthProvider
-	Openidconnect *OpenIDConnectAuthProvider
-	HttpHeader    *HTTPHeaderAuthProvider
-	Github        *GitHubAuthProvider
-	Gitlab        *GitLabAuthProvider
+	Builtin             *BuiltinAuthProvider
+	Saml                *SAMLAuthProvider
+	Openidconnect       *OpenIDConnectAuthProvider
+	SourcegraphOperator *SourcegraphOperatorAuthProvider
+	HttpHeader          *HTTPHeaderAuthProvider
+	Github              *GitHubAuthProvider
+	Gitlab              *GitLabAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -129,6 +130,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openidconnect != nil {
 		return json.Marshal(v.Openidconnect)
+	}
+	if v.SourcegraphOperator != nil {
+		return json.Marshal(v.SourcegraphOperator)
 	}
 	if v.HttpHeader != nil {
 		return json.Marshal(v.HttpHeader)
@@ -161,8 +165,10 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Openidconnect)
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
+	case "sourcegraph-operator":
+		return json.Unmarshal(data, &v.SourcegraphOperator)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "sourcegraph-operator", "http-header", "github", "gitlab"})
 }
 
 type BackendInsight struct {
@@ -2134,11 +2140,11 @@ type SiteConfiguration struct {
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
 	// InsightsComputeGraphql description: DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
-	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
+	// InsightsHistoricalFrameLength description: DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
-	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
+	// InsightsHistoricalFrames description: DEPRECATED: (debug) number of historical insights timeframes to populate
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
-	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
+	// InsightsHistoricalSpeedFactor description: DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
@@ -2210,6 +2216,19 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+}
+
+// SourcegraphOperatorAuthProvider description: Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.
+type SourcegraphOperatorAuthProvider struct {
+	// ClientID description: The client ID of the Sourcegraph Operator client for this site.
+	ClientID string `json:"clientID"`
+	// ClientSecret description: The client secret of the Sourcegraph Operator client for this site.
+	ClientSecret string `json:"clientSecret"`
+	// Issuer description: The URL of the Sourcegraph Operator issuer.
+	Issuer string `json:"issuer"`
+	// LifecycleDuration description: The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.
+	LifecycleDuration int    `json:"lifecycleDuration,omitempty"`
+	Type              string `json:"type"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

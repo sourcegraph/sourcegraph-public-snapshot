@@ -95,7 +95,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// anything else anyway; there's no point in showing them a signin screen with just a single
 	// signin option.
 	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
-		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, getProvider)
+		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -108,8 +108,9 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	next.ServeHTTP(w, r)
 }
 
-// mockVerifyIDToken mocks the OIDC ID Token verification step. It should only be set in tests.
-var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
+// MockVerifyIDToken mocks the OIDC ID Token verification step. It should only be
+// set in tests.
+var MockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 
 // authHandler handles the OIDC Authentication Code Flow
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
@@ -119,7 +120,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), getProvider)
+			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if err != nil {
 				log15.Error("Failed to get provider.", "error", err)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -129,7 +130,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", getProvider)
+			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", GetProvider)
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
@@ -220,7 +221,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Decode state param value
-	var state authnState
+	var state AuthnState
 	if err = state.Decode(stateParam); err != nil {
 		return nil,
 			"Authentication failed. OpenID Connect state parameter was malformed.",
@@ -256,8 +257,8 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 
 	// Parse and verify ID Token payload, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponseValidation.
 	var idToken *oidc.IDToken
-	if mockVerifyIDToken != nil {
-		idToken = mockVerifyIDToken(rawIDToken)
+	if MockVerifyIDToken != nil {
+		idToken = MockVerifyIDToken(rawIDToken)
 	} else {
 		idToken, err = p.oidcVerifier().Verify(r.Context(), rawIDToken)
 		if err != nil {
@@ -323,9 +324,9 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}, "", 0, nil
 }
 
-// authnState is the state parameter passed to the authentication request and
+// AuthnState is the state parameter passed to the authentication request and
 // returned to the authentication response callback.
-type authnState struct {
+type AuthnState struct {
 	CSRFToken string `json:"csrfToken"`
 	Redirect  string `json:"redirect"`
 
@@ -334,14 +335,14 @@ type authnState struct {
 }
 
 // Encode returns the base64-encoded JSON representation of the authn state.
-func (s *authnState) Encode() string {
+func (s *AuthnState) Encode() string {
 	b, _ := json.Marshal(s)
 	return base64.StdEncoding.EncodeToString(b)
 }
 
 // Decode decodes the base64-encoded JSON representation of the authn state into
 // the receiver.
-func (s *authnState) Decode(encoded string) error {
+func (s *AuthnState) Decode(encoded string) error {
 	b, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return err
@@ -364,7 +365,7 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	state := (&authnState{
+	state := (&AuthnState{
 		CSRFToken:  csrf.Token(r),
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,

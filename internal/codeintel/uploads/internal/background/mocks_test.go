@@ -2030,6 +2030,10 @@ type MockUploadService struct {
 	// BackfillCommittedAtBatchFunc is an instance of a mock function object
 	// controlling the behavior of the method BackfillCommittedAtBatch.
 	BackfillCommittedAtBatchFunc *UploadServiceBackfillCommittedAtBatchFunc
+	// CodeIntelDBReconcileCandidatesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CodeIntelDBReconcileCandidates.
+	CodeIntelDBReconcileCandidatesFunc *UploadServiceCodeIntelDBReconcileCandidatesFunc
 	// DeleteLsifDataByUploadIdsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteLsifDataByUploadIds.
@@ -2048,6 +2052,10 @@ type MockUploadService struct {
 	// object controlling the behavior of the method
 	// DeleteUploadsWithoutRepository.
 	DeleteUploadsWithoutRepositoryFunc *UploadServiceDeleteUploadsWithoutRepositoryFunc
+	// FrontendReconcileCandidatesFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// FrontendReconcileCandidates.
+	FrontendReconcileCandidatesFunc *UploadServiceFrontendReconcileCandidatesFunc
 	// GetDirtyRepositoriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDirtyRepositories.
 	GetDirtyRepositoriesFunc *UploadServiceGetDirtyRepositoriesFunc
@@ -2077,9 +2085,9 @@ type MockUploadService struct {
 	// HardDeleteUploadsByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method HardDeleteUploadsByIDs.
 	HardDeleteUploadsByIDsFunc *UploadServiceHardDeleteUploadsByIDsFunc
-	// ReconcileCandidatesFunc is an instance of a mock function object
-	// controlling the behavior of the method ReconcileCandidates.
-	ReconcileCandidatesFunc *UploadServiceReconcileCandidatesFunc
+	// IDsWithMetaFunc is an instance of a mock function object controlling
+	// the behavior of the method IDsWithMeta.
+	IDsWithMetaFunc *UploadServiceIDsWithMetaFunc
 	// SetRepositoriesForRetentionScanFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SetRepositoriesForRetentionScan.
@@ -2109,6 +2117,11 @@ func NewMockUploadService() *MockUploadService {
 				return
 			},
 		},
+		CodeIntelDBReconcileCandidatesFunc: &UploadServiceCodeIntelDBReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
+				return
+			},
+		},
 		DeleteLsifDataByUploadIdsFunc: &UploadServiceDeleteLsifDataByUploadIdsFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
 				return
@@ -2131,6 +2144,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: func(context.Context, time.Time) (r0 map[int]int, r1 error) {
+				return
+			},
+		},
+		FrontendReconcileCandidatesFunc: &UploadServiceFrontendReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -2179,8 +2197,8 @@ func NewMockUploadService() *MockUploadService {
 				return
 			},
 		},
-		ReconcileCandidatesFunc: &UploadServiceReconcileCandidatesFunc{
-			defaultHook: func(context.Context, int) (r0 []int, r1 error) {
+		IDsWithMetaFunc: &UploadServiceIDsWithMetaFunc{
+			defaultHook: func(context.Context, []int) (r0 []int, r1 error) {
 				return
 			},
 		},
@@ -2221,6 +2239,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.BackfillCommittedAtBatch")
 			},
 		},
+		CodeIntelDBReconcileCandidatesFunc: &UploadServiceCodeIntelDBReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) ([]int, error) {
+				panic("unexpected invocation of MockUploadService.CodeIntelDBReconcileCandidates")
+			},
+		},
 		DeleteLsifDataByUploadIdsFunc: &UploadServiceDeleteLsifDataByUploadIdsFunc{
 			defaultHook: func(context.Context, ...int) error {
 				panic("unexpected invocation of MockUploadService.DeleteLsifDataByUploadIds")
@@ -2244,6 +2267,11 @@ func NewStrictMockUploadService() *MockUploadService {
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
 				panic("unexpected invocation of MockUploadService.DeleteUploadsWithoutRepository")
+			},
+		},
+		FrontendReconcileCandidatesFunc: &UploadServiceFrontendReconcileCandidatesFunc{
+			defaultHook: func(context.Context, int) ([]int, error) {
+				panic("unexpected invocation of MockUploadService.FrontendReconcileCandidates")
 			},
 		},
 		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
@@ -2291,9 +2319,9 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.HardDeleteUploadsByIDs")
 			},
 		},
-		ReconcileCandidatesFunc: &UploadServiceReconcileCandidatesFunc{
-			defaultHook: func(context.Context, int) ([]int, error) {
-				panic("unexpected invocation of MockUploadService.ReconcileCandidates")
+		IDsWithMetaFunc: &UploadServiceIDsWithMetaFunc{
+			defaultHook: func(context.Context, []int) ([]int, error) {
+				panic("unexpected invocation of MockUploadService.IDsWithMeta")
 			},
 		},
 		SetRepositoriesForRetentionScanFunc: &UploadServiceSetRepositoriesForRetentionScanFunc{
@@ -2332,6 +2360,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		BackfillCommittedAtBatchFunc: &UploadServiceBackfillCommittedAtBatchFunc{
 			defaultHook: i.BackfillCommittedAtBatch,
 		},
+		CodeIntelDBReconcileCandidatesFunc: &UploadServiceCodeIntelDBReconcileCandidatesFunc{
+			defaultHook: i.CodeIntelDBReconcileCandidates,
+		},
 		DeleteLsifDataByUploadIdsFunc: &UploadServiceDeleteLsifDataByUploadIdsFunc{
 			defaultHook: i.DeleteLsifDataByUploadIds,
 		},
@@ -2346,6 +2377,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		DeleteUploadsWithoutRepositoryFunc: &UploadServiceDeleteUploadsWithoutRepositoryFunc{
 			defaultHook: i.DeleteUploadsWithoutRepository,
+		},
+		FrontendReconcileCandidatesFunc: &UploadServiceFrontendReconcileCandidatesFunc{
+			defaultHook: i.FrontendReconcileCandidates,
 		},
 		GetDirtyRepositoriesFunc: &UploadServiceGetDirtyRepositoriesFunc{
 			defaultHook: i.GetDirtyRepositories,
@@ -2374,8 +2408,8 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		HardDeleteUploadsByIDsFunc: &UploadServiceHardDeleteUploadsByIDsFunc{
 			defaultHook: i.HardDeleteUploadsByIDs,
 		},
-		ReconcileCandidatesFunc: &UploadServiceReconcileCandidatesFunc{
-			defaultHook: i.ReconcileCandidates,
+		IDsWithMetaFunc: &UploadServiceIDsWithMetaFunc{
+			defaultHook: i.IDsWithMeta,
 		},
 		SetRepositoriesForRetentionScanFunc: &UploadServiceSetRepositoriesForRetentionScanFunc{
 			defaultHook: i.SetRepositoriesForRetentionScan,
@@ -2502,6 +2536,118 @@ func (c UploadServiceBackfillCommittedAtBatchFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceBackfillCommittedAtBatchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// UploadServiceCodeIntelDBReconcileCandidatesFunc describes the behavior
+// when the CodeIntelDBReconcileCandidates method of the parent
+// MockUploadService instance is invoked.
+type UploadServiceCodeIntelDBReconcileCandidatesFunc struct {
+	defaultHook func(context.Context, int) ([]int, error)
+	hooks       []func(context.Context, int) ([]int, error)
+	history     []UploadServiceCodeIntelDBReconcileCandidatesFuncCall
+	mutex       sync.Mutex
+}
+
+// CodeIntelDBReconcileCandidates delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) CodeIntelDBReconcileCandidates(v0 context.Context, v1 int) ([]int, error) {
+	r0, r1 := m.CodeIntelDBReconcileCandidatesFunc.nextHook()(v0, v1)
+	m.CodeIntelDBReconcileCandidatesFunc.appendCall(UploadServiceCodeIntelDBReconcileCandidatesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CodeIntelDBReconcileCandidates method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) SetDefaultHook(hook func(context.Context, int) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CodeIntelDBReconcileCandidates method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) PushHook(hook func(context.Context, int) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) nextHook() func(context.Context, int) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) appendCall(r0 UploadServiceCodeIntelDBReconcileCandidatesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceCodeIntelDBReconcileCandidatesFuncCall objects describing
+// the invocations of this function.
+func (f *UploadServiceCodeIntelDBReconcileCandidatesFunc) History() []UploadServiceCodeIntelDBReconcileCandidatesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceCodeIntelDBReconcileCandidatesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceCodeIntelDBReconcileCandidatesFuncCall is an object that
+// describes an invocation of method CodeIntelDBReconcileCandidates on an
+// instance of MockUploadService.
+type UploadServiceCodeIntelDBReconcileCandidatesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceCodeIntelDBReconcileCandidatesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceCodeIntelDBReconcileCandidatesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UploadServiceDeleteLsifDataByUploadIdsFunc describes the behavior when
@@ -3078,6 +3224,118 @@ func (c UploadServiceDeleteUploadsWithoutRepositoryFuncCall) Args() []interface{
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadServiceDeleteUploadsWithoutRepositoryFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceFrontendReconcileCandidatesFunc describes the behavior when
+// the FrontendReconcileCandidates method of the parent MockUploadService
+// instance is invoked.
+type UploadServiceFrontendReconcileCandidatesFunc struct {
+	defaultHook func(context.Context, int) ([]int, error)
+	hooks       []func(context.Context, int) ([]int, error)
+	history     []UploadServiceFrontendReconcileCandidatesFuncCall
+	mutex       sync.Mutex
+}
+
+// FrontendReconcileCandidates delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUploadService) FrontendReconcileCandidates(v0 context.Context, v1 int) ([]int, error) {
+	r0, r1 := m.FrontendReconcileCandidatesFunc.nextHook()(v0, v1)
+	m.FrontendReconcileCandidatesFunc.appendCall(UploadServiceFrontendReconcileCandidatesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// FrontendReconcileCandidates method of the parent MockUploadService
+// instance is invoked and the hook queue is empty.
+func (f *UploadServiceFrontendReconcileCandidatesFunc) SetDefaultHook(hook func(context.Context, int) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FrontendReconcileCandidates method of the parent MockUploadService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UploadServiceFrontendReconcileCandidatesFunc) PushHook(hook func(context.Context, int) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceFrontendReconcileCandidatesFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceFrontendReconcileCandidatesFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadServiceFrontendReconcileCandidatesFunc) nextHook() func(context.Context, int) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceFrontendReconcileCandidatesFunc) appendCall(r0 UploadServiceFrontendReconcileCandidatesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UploadServiceFrontendReconcileCandidatesFuncCall objects describing the
+// invocations of this function.
+func (f *UploadServiceFrontendReconcileCandidatesFunc) History() []UploadServiceFrontendReconcileCandidatesFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceFrontendReconcileCandidatesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceFrontendReconcileCandidatesFuncCall is an object that
+// describes an invocation of method FrontendReconcileCandidates on an
+// instance of MockUploadService.
+type UploadServiceFrontendReconcileCandidatesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceFrontendReconcileCandidatesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceFrontendReconcileCandidatesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4081,37 +4339,35 @@ func (c UploadServiceHardDeleteUploadsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// UploadServiceReconcileCandidatesFunc describes the behavior when the
-// ReconcileCandidates method of the parent MockUploadService instance is
-// invoked.
-type UploadServiceReconcileCandidatesFunc struct {
-	defaultHook func(context.Context, int) ([]int, error)
-	hooks       []func(context.Context, int) ([]int, error)
-	history     []UploadServiceReconcileCandidatesFuncCall
+// UploadServiceIDsWithMetaFunc describes the behavior when the IDsWithMeta
+// method of the parent MockUploadService instance is invoked.
+type UploadServiceIDsWithMetaFunc struct {
+	defaultHook func(context.Context, []int) ([]int, error)
+	hooks       []func(context.Context, []int) ([]int, error)
+	history     []UploadServiceIDsWithMetaFuncCall
 	mutex       sync.Mutex
 }
 
-// ReconcileCandidates delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUploadService) ReconcileCandidates(v0 context.Context, v1 int) ([]int, error) {
-	r0, r1 := m.ReconcileCandidatesFunc.nextHook()(v0, v1)
-	m.ReconcileCandidatesFunc.appendCall(UploadServiceReconcileCandidatesFuncCall{v0, v1, r0, r1})
+// IDsWithMeta delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUploadService) IDsWithMeta(v0 context.Context, v1 []int) ([]int, error) {
+	r0, r1 := m.IDsWithMetaFunc.nextHook()(v0, v1)
+	m.IDsWithMetaFunc.appendCall(UploadServiceIDsWithMetaFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ReconcileCandidates
-// method of the parent MockUploadService instance is invoked and the hook
-// queue is empty.
-func (f *UploadServiceReconcileCandidatesFunc) SetDefaultHook(hook func(context.Context, int) ([]int, error)) {
+// SetDefaultHook sets function that is called when the IDsWithMeta method
+// of the parent MockUploadService instance is invoked and the hook queue is
+// empty.
+func (f *UploadServiceIDsWithMetaFunc) SetDefaultHook(hook func(context.Context, []int) ([]int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ReconcileCandidates method of the parent MockUploadService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UploadServiceReconcileCandidatesFunc) PushHook(hook func(context.Context, int) ([]int, error)) {
+// IDsWithMeta method of the parent MockUploadService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UploadServiceIDsWithMetaFunc) PushHook(hook func(context.Context, []int) ([]int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4119,20 +4375,20 @@ func (f *UploadServiceReconcileCandidatesFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *UploadServiceReconcileCandidatesFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) ([]int, error) {
+func (f *UploadServiceIDsWithMetaFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int) ([]int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceReconcileCandidatesFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, int) ([]int, error) {
+func (f *UploadServiceIDsWithMetaFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, []int) ([]int, error) {
 		return r0, r1
 	})
 }
 
-func (f *UploadServiceReconcileCandidatesFunc) nextHook() func(context.Context, int) ([]int, error) {
+func (f *UploadServiceIDsWithMetaFunc) nextHook() func(context.Context, []int) ([]int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4145,33 +4401,32 @@ func (f *UploadServiceReconcileCandidatesFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *UploadServiceReconcileCandidatesFunc) appendCall(r0 UploadServiceReconcileCandidatesFuncCall) {
+func (f *UploadServiceIDsWithMetaFunc) appendCall(r0 UploadServiceIDsWithMetaFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of UploadServiceReconcileCandidatesFuncCall
-// objects describing the invocations of this function.
-func (f *UploadServiceReconcileCandidatesFunc) History() []UploadServiceReconcileCandidatesFuncCall {
+// History returns a sequence of UploadServiceIDsWithMetaFuncCall objects
+// describing the invocations of this function.
+func (f *UploadServiceIDsWithMetaFunc) History() []UploadServiceIDsWithMetaFuncCall {
 	f.mutex.Lock()
-	history := make([]UploadServiceReconcileCandidatesFuncCall, len(f.history))
+	history := make([]UploadServiceIDsWithMetaFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UploadServiceReconcileCandidatesFuncCall is an object that describes an
-// invocation of method ReconcileCandidates on an instance of
-// MockUploadService.
-type UploadServiceReconcileCandidatesFuncCall struct {
+// UploadServiceIDsWithMetaFuncCall is an object that describes an
+// invocation of method IDsWithMeta on an instance of MockUploadService.
+type UploadServiceIDsWithMetaFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 []int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []int
@@ -4182,13 +4437,13 @@ type UploadServiceReconcileCandidatesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UploadServiceReconcileCandidatesFuncCall) Args() []interface{} {
+func (c UploadServiceIDsWithMetaFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UploadServiceReconcileCandidatesFuncCall) Results() []interface{} {
+func (c UploadServiceIDsWithMetaFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

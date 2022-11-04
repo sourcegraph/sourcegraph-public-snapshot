@@ -11,17 +11,15 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-ruby@v1
       with: { ruby-version: '2.6' }
-    - uses: actions/setup-go@v2
-      with: { go-version: '1.18' }
+    - name: Install asdf plugins
+      uses: asdf-vm/actions/install@v1
 
-    # set up correct version of node
-    - id: nvmrc
-      run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
-    - uses: actions/setup-node@v2
-      with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
+    # we use classic yarn to install the new version of yarn
+    - name: ensure the correct version of yarn
+      run: yarn
 
     - name: Install license_finder
-      run: gem install license_finder:6.9.0 # sync with licenses-check.yml
+      run: gem install license_finder:7.0.1 # sync with licenses-check.yml
 
     - name: Generate report
       run: ./dev/licenses.sh

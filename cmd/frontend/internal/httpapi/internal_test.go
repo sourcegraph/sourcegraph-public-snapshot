@@ -87,7 +87,7 @@ func TestDecodeSendEmail(t *testing.T) {
 	ts := httptest.NewServer(m)
 	t.Cleanup(ts.Close)
 
-	client := &(*internalapi.Client)
+	client := *internalapi.Client
 	client.URL = ts.URL
 
 	// Do not worry about error here, run assertions in the test handler

@@ -150,17 +150,26 @@ func TestInjectAsAlert(t *testing.T) {
 			wantErr:    true,
 		},
 		{
-			name:       "fancy example",
+			name:       "variable used as regexp match",
 			expression: `src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`,
 			vars:       VariableApplier{"queue": "foobar"},
 			want:       "src_executor_processor_handlers{sg_job=~\"^sourcegraph-executors.*\"}",
 			wantErr:    false,
+		},
+		{
+			name:       "variable used as regexp match without '${...:regex}'",
+			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
+			vars:       VariableApplier{"source": "frontend"},
+			want:       `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
+			wantErr:    true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			got, err := InjectAsAlert(tc.expression, tc.matchers, tc.vars)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("unexpected result '%+v'", err)
+			} else if err != nil {
+				t.Logf("got expected error '%s'", err.Error())
 			}
 			assert.Equal(t, tc.want, got)
 		})

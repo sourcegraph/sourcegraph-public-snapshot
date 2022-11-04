@@ -126,7 +126,6 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			return
 		}
 		http.Redirect(w, req, "/install-github-app-success", http.StatusFound)
-		return
 	}))
 	mux.Handle("/get-github-app-installation", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		logger := log.Scoped("get-github-app-installation", "handler for getting github app installations")

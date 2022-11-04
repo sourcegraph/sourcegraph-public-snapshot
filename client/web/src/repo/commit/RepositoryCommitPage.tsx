@@ -117,7 +117,7 @@ interface RepositoryCommitPageProps
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 }
 
-export type DiffMode = 'split' | 'unified'
+export type { DiffMode } from '@sourcegraph/shared/src/settings/temporary/diffMode'
 
 /** Displays a commit. */
 export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {

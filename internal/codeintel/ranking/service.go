@@ -99,12 +99,12 @@ var allPathsPattern = lazyregexp.New(".*")
 //
 // Rank vector index labels:
 //   - precision                   [0 to 1]
-//   - global document rank        [0 to 1] (w   pagerank)
-//   - generated                   [0 or 1] (w/o pagerank)
-//   - vendor                      [0 or 1] (w/o pagerank)
-//   - test                        [0 or 1] (w/o pagerank)
-//   - name length                 [0 to 1] (w/o pagerank)
-//   - lexicographic order in repo [0 to 1] (w/o pagerank)
+//   - generated                   [0 or 1]
+//   - vendor                      [0 or 1]
+//   - test                        [0 or 1]
+//   - global document rank        [0 to 1] (=0 w/o pagerank)
+//   - name length                 [0 to 1] (=1 w/  pagerank)
+//   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -117,13 +117,13 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	if ok {
 		for path, rank := range documentRanks {
 			ranks[path] = []float64{
-				rank[0], // precise
-				rank[1], // global document rank
-				0,       // generated
-				0,       // vendor
-				0,       // test
-				0,       // name length
-				0,       // lexicographic order in repo
+				rank[0],                             // precision level (0, 1]
+				1 - boolRank(isPathGenerated(path)), // rank generated paths lower
+				1 - boolRank(isPathVendored(path)),  // rank vendored paths lower
+				1 - boolRank(isPathTest(path)),      // rank test paths lower
+				squashRange(rank[1]),                // global document rank
+				1,                                   // name length
+				1,                                   // lexicographic order in repo
 			}
 		}
 	}
@@ -139,16 +139,14 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 			continue
 		}
 
-		impreciseDocumentRank := rank(path, 1.0-float64(i)/float64(len(paths)))
-
 		ranks[path] = []float64{
-			1,                        // imprecise
-			1,                        // no global document rank
-			impreciseDocumentRank[0], // generated
-			impreciseDocumentRank[1], // vendor
-			impreciseDocumentRank[2], // test
-			impreciseDocumentRank[3], // name length
-			impreciseDocumentRank[4], // lexicographic order in repo
+			0,                                     // imprecise
+			1 - boolRank(isPathGenerated(path)),   // rank generated paths lower
+			1 - boolRank(isPathVendored(path)),    // rank vendored paths lower
+			1 - boolRank(isPathTest(path)),        // rank test paths lower
+			0,                                     // no global document rank
+			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
+			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
 		}
 	}
 
@@ -163,37 +161,31 @@ func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName
 	return s.store.UpdatedAfter(ctx, t)
 }
 
-var testPattern = lazyregexp.New("test")
-
-// copy pasta + modified
-// https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
-func rank(name string, nameRank float64) [5]float64 {
-	generated := 1.0
-	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 0.0
-	}
-
-	vendor := 1.0
-	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 0.0
-	}
-
-	test := 1.0
-	if testPattern.MatchString(name) {
-		test = 0.0
-	}
-
-	// Bigger is earlier (=better).
-	return [5]float64{
-		generated,                             // Prefer non-generated text documents
-		vendor,                                // Prefer non-vendored text documents
-		test,                                  // Prefer non-tests text documents
-		1.0 - squashRange(float64(len(name))), // Prefer short names
-		nameRank,                              // Lexicographic ordering ordering
-	}
+func isPathGenerated(path string) bool {
+	return strings.HasSuffix(path, "min.js") || strings.HasSuffix(path, "js.map")
 }
 
-// map [0,inf) to [0,1) monotonically
+func isPathVendored(path string) bool {
+	return strings.Contains(path, "vendor/") || strings.Contains(path, "node_modules/")
+}
+
+var testPattern = lazyregexp.New("test")
+
+func isPathTest(path string) bool {
+	return testPattern.MatchString(path)
+}
+
+// Converts a boolean to a [0, 1] rank (where true is ordered before false).
+func boolRank(v bool) float64 {
+	if v {
+		return 1.0
+	}
+
+	return 0.0
+}
+
+// squashRange maps a value in the range [0, inf) to a value in the range
+// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
 func squashRange(j float64) float64 {
 	return j / (1 + j)
 }
