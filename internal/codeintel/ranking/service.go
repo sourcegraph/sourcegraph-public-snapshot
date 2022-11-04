@@ -117,13 +117,13 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	if ok {
 		for path, rank := range documentRanks {
 			ranks[path] = []float64{
-				rank[0],             // precision level (0, 1]
-				generatedRank(path), // generated
-				vendorRank(path),    // vendor
-				testRank(path),      // test
-				rank[1],             // global document rank
-				1,                   // name length
-				1,                   // lexicographic order in repo
+				rank[0],                             // precision level (0, 1]
+				1 - boolRank(isPathGenerated(path)), // rank generated paths lower
+				1 - boolRank(isPathVendored(path)),  // rank vendored paths lower
+				1 - boolRank(isPathTest(path)),      // rank test paths lower
+				rank[1],                             // global document rank
+				1,                                   // name length
+				1,                                   // lexicographic order in repo
 			}
 		}
 	}
@@ -141,9 +141,9 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 		ranks[path] = []float64{
 			0,                                     // imprecise
-			generatedRank(path),                   // generated
-			vendorRank(path),                      // vendor
-			testRank(path),                        // test
+			1 - boolRank(isPathGenerated(path)),   // rank generated paths lower
+			1 - boolRank(isPathVendored(path)),    // rank vendored paths lower
+			1 - boolRank(isPathTest(path)),        // rank test paths lower
 			0,                                     // no global document rank
 			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
 			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
@@ -161,33 +161,31 @@ func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName
 	return s.store.UpdatedAfter(ctx, t)
 }
 
-func generatedRank(name string) float64 {
-	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		return 0.0
-	}
-
-	return 1.0
+func isPathGenerated(path string) bool {
+	return strings.HasSuffix(path, "min.js") || strings.HasSuffix(path, "js.map")
 }
 
-func vendorRank(name string) float64 {
-	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		return 0.0
-	}
-
-	return 1.0
+func isPathVendored(path string) bool {
+	return strings.Contains(path, "vendor/") || strings.Contains(path, "node_modules/")
 }
 
 var testPattern = lazyregexp.New("test")
 
-func testRank(name string) float64 {
-	if testPattern.MatchString(name) {
-		return 0.0
-	}
-
-	return 1.0
+func isPathTest(path string) bool {
+	return testPattern.MatchString(path)
 }
 
-// map [0,inf) to [0,1) monotonically
+// Converts a boolean to a [0, 1] rank (where true is ordered before false).
+func boolRank(v bool) float64 {
+	if v {
+		return 1.0
+	}
+
+	return 0.0
+}
+
+// squashRange maps a value in the range [0, inf) to a value in the range
+// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
 func squashRange(j float64) float64 {
 	return j / (1 + j)
 }
