@@ -41,7 +41,7 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	var repos []*github.Repository
 
 	if strings.HasPrefix(g.def.Path, "@") {
-		// If we're given a user and not an organization, query the use repos.
+		// If we're given a user and not an organization, query the user repos.
 		opts := &github.RepositoryListOptions{
 			ListOptions: github.ListOptions{},
 		}
