@@ -4,6 +4,12 @@ import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/vie
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 /**
+ * Transactions which modify the input because a history item was selected are
+ * tagged with this user event.
+ */
+export const HISTORY_USER_EVENT = 'input.sg-history'
+
+/**
  * This view plugin binds arrow up/down keyboard event handlers and loads
  * the provided search history entries into the input.
  * The plugin does _not_ "wrap around" to the beginning or end of the history.
@@ -29,7 +35,7 @@ const historyView = ViewPlugin.fromClass(
                 if (update.state.doc.length === 0) {
                     this.view.dom.addEventListener('keydown', this.onKeyDown)
                     this.currentHistoryEntry = -1
-                } else if (update.transactions.some(transaction => !transaction.isUserEvent('input.sg-history'))) {
+                } else if (update.transactions.some(transaction => !transaction.isUserEvent(HISTORY_USER_EVENT))) {
                     this.view.dom.removeEventListener('keydown', this.onKeyDown)
                 }
             }
@@ -51,7 +57,7 @@ const historyView = ViewPlugin.fromClass(
             this.view.dispatch({
                 changes: { from: 0, to: this.view.state.doc.length, insert: query },
                 selection: { anchor: query.length },
-                userEvent: 'input.sg-history',
+                userEvent: HISTORY_USER_EVENT,
             })
         }
 
@@ -81,7 +87,7 @@ const historyView = ViewPlugin.fromClass(
 )
 
 /**
- * If provided this Facet enables command-line style history cycling.
+ * If provided this facet enables command-line style history cycling.
  */
 export const searchHistory = Facet.define<RecentSearch[], RecentSearch[]>({
     combine(searches) {

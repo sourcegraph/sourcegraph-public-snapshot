@@ -15,6 +15,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import {
@@ -30,7 +31,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 const buttonContent: React.ReactElement = <Icon svgPath={mdiClockOutline} aria-hidden="true" />
 

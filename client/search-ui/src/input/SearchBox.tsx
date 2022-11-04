@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -9,6 +9,7 @@ import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/que
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -78,6 +79,15 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         selectedSearchContextSpec,
         recentSearches,
     } = props
+
+    const [usedInlineHistory, setUsedInlineHistory] = useTemporarySetting('search.input.usedInlineHistory', false)
+    const usedInlineHistoryRef = useRef(usedInlineHistory)
+
+    const onInlineSearchHistorySelect = useCallback(() => {
+        if (usedInlineHistoryRef.current !== true) {
+            setUsedInlineHistory(true)
+        }
+    }, [setUsedInlineHistory, usedInlineHistoryRef])
 
     const onEditorCreated = useCallback(
         (editor: IEditor) => {
@@ -161,7 +171,13 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                     <LazyMonacoQueryInput
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
-                        placeholder="Search for code and files"
+                        placeholder={
+                            historyWithoutSelectedContext &&
+                            historyWithoutSelectedContext.length > 0 &&
+                            usedInlineHistory === false
+                                ? 'Tip: Use ↑ for previous searches'
+                                : 'Search for code or files'
+                        }
                         preventNewLine={true}
                         autoFocus={props.autoFocus}
                         caseSensitive={props.caseSensitive}
@@ -180,6 +196,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         searchHistory={historyWithoutSelectedContext}
+                        onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />
                     <Toggles
                         patternType={props.patternType}
