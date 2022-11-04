@@ -30,10 +30,11 @@ import {
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 const buttonContent: React.ReactElement = <Icon svgPath={mdiClockOutline} aria-hidden="true" />
 
-interface SearchHistoryDropdownProps {
+interface SearchHistoryDropdownProps extends TelemetryProps {
     className?: string
     recentSearches: RecentSearch[]
     onSelect: (search: RecentSearch) => void
@@ -45,22 +46,29 @@ const recentSearchTooltipContent = `Recent searches ${shortcutDisplayName('Mod+A
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
-    ({ recentSearches = [], onSelect, className }) => {
+    ({ recentSearches = [], onSelect, className, telemetryService }) => {
         const [isOpen, setIsOpen] = useState(false)
 
         const handlePopoverToggle = useCallback(
             (event: PopoverOpenEvent): void => {
                 setIsOpen(event.isOpen)
+                telemetryService.log(event.isOpen ? 'RecentSearchesListOpened' : 'RecentSearchesListDismissed')
             },
-            [setIsOpen]
+            [telemetryService, setIsOpen]
         )
+
+        const openOnShortcut = useCallback(() => {
+            telemetryService.log('RecentSearchesListOpened')
+            setIsOpen(true)
+        }, [telemetryService, setIsOpen])
 
         const onSelectInternal = useCallback(
             (search: RecentSearch) => {
+                telemetryService.log('RecentSearchSelected')
                 onSelect(search)
                 setIsOpen(false)
             },
-            [onSelect, setIsOpen]
+            [telemetryService, onSelect, setIsOpen]
         )
 
         return (
@@ -79,7 +87,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                         <SearchHistoryEntries onSelect={onSelectInternal} recentSearches={recentSearches} />
                     </PopoverContent>
                 </Popover>
-                <Shortcut onMatch={() => setIsOpen(true)} held={['Mod']} ordered={['ArrowDown']} ignoreInput={true} />
+                <Shortcut onMatch={openOnShortcut} held={['Mod']} ordered={['ArrowDown']} ignoreInput={true} />
             </>
         )
     }

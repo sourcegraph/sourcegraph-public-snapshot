@@ -137,6 +137,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                             className={styles.searchBoxAlignMiddle}
                             recentSearches={props.recentSearches ?? []}
                             onSelect={onSearchHistorySelect}
+                            telemetryService={props.telemetryService}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
