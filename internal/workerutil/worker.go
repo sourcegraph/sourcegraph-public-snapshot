@@ -86,7 +86,7 @@ type WorkerOptions struct {
 	MaximumRuntimePerJob time.Duration
 
 	// Metrics configures logging, tracing, and metrics for the work loop.
-	Metrics WorkerMetrics
+	Metrics WorkerObservability
 }
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
@@ -312,7 +312,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(
+		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
+		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
+		w.options.Name,
+	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 

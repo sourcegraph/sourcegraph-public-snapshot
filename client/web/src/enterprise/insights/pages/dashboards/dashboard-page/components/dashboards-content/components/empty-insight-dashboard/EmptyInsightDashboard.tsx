@@ -4,7 +4,8 @@ import { mdiPlus } from '@mdi/js'
 
 import { Button, Link, Card, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD, InsightDashboard } from '../../../../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../constants'
+import { InsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 

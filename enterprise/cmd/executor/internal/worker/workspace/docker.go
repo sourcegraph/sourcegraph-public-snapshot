@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 )
 
@@ -14,6 +15,7 @@ import (
 // the host will be used to set up the workspace, clone the repo and put script files.
 func NewDockerWorkspace(
 	ctx context.Context,
+	filesStore store.FilesStore,
 	job executor.Job,
 	commandRunner command.Runner,
 	logger command.Logger,
@@ -32,7 +34,7 @@ func NewDockerWorkspace(
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, job, workspaceDir, commandRunner, logger)
+	scriptPaths, err := prepareScripts(ctx, filesStore, job, workspaceDir, logger)
 	if err != nil {
 		_ = os.RemoveAll(workspaceDir)
 		return nil, err

@@ -40,18 +40,15 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	t.Cleanup(gitserver.ResetMocks)
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec != wantBaseRevision && spec != wantHeadRevision {
 			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
 		}
 		return api.CommitID(spec), nil
-	}
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		return "", errors.Errorf("merge base doesn't exist!")
-	}
+	})
 
-	gsClient := gitserver.NewClient(db)
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
 	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
@@ -78,15 +75,7 @@ func TestRepositoryComparison(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
-			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
-		}
-		return api.CommitID(spec), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
-
-	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gsClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
@@ -94,19 +83,23 @@ func TestRepositoryComparison(t *testing.T) {
 			return io.NopCloser(strings.NewReader(testDiffJokesOnly)), nil
 		}
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
+	})
 
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
+			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	})
+
+	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b api.CommitID) (api.CommitID, error) {
 		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
 			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
 		}
 		return api.CommitID(wantMergeBaseRevision), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
+	})
 
 	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
-	gsClient := gitserver.NewClient(db)
 	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
 	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)

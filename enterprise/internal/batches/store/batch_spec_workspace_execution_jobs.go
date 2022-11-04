@@ -71,7 +71,6 @@ FROM batch_spec_workspace_execution_queue
 `
 
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
 INSERT INTO
 	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
 SELECT
@@ -111,7 +110,6 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 }
 
 const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobsForWorkspaces
 INSERT INTO
 	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
 SELECT
@@ -141,7 +139,6 @@ type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
 }
 
 const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:DeleteBatchSpecWorkspaceExecutionJobs
 DELETE FROM
 	batch_spec_workspace_execution_jobs
 WHERE
@@ -224,7 +221,6 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 }
 
 var getBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:GetBatchSpecWorkspaceExecutionJob
 SELECT
 	%s
 FROM
@@ -304,7 +300,6 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 }
 
 var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListBatchSpecWorkspaceExecutionJobs
 SELECT
 	%s
 FROM
@@ -409,7 +404,6 @@ func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 }
 
 var cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CancelBatchSpecWorkspaceExecutionJobs
 WITH candidates AS (
 	SELECT
 		batch_spec_workspace_execution_jobs.id

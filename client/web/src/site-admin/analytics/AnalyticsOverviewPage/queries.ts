@@ -121,6 +121,7 @@ export const OVERVIEW_DEV_TIME_SAVED = gql`
                 users(dateRange: $dateRange, grouping: WEEKLY) {
                     activity {
                         summary {
+                            totalUniqueUsers
                             totalRegisteredUsers
                         }
                     }

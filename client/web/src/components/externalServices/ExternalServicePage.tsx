@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Redirect, useHistory } from 'react-router'
@@ -9,9 +10,8 @@ import { delay, repeatWhen } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { hasProperty } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2, H3, Badge, Container } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, H2, H3, Badge, Container, Icon } from '@sourcegraph/wildcard'
 
 import {
     ExternalServiceFields,
@@ -22,12 +22,14 @@ import {
     ExternalServiceResult,
     ExternalServiceVariables,
     ExternalServiceSyncJobState,
+    ExternalServiceKind,
 } from '../../graphql-operations'
+import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
 import { Duration } from '../time/Duration'
-import { Timestamp } from '../time/Timestamp'
+import { Timestamp, TimestampFormat } from '../time/Timestamp'
 
 import {
     useSyncExternalService,
@@ -48,6 +50,9 @@ interface Props extends TelemetryProps {
     isLightTheme: boolean
     history: H.History
     afterUpdateRoute: string
+
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServiceSyncJobs?: typeof _queryExternalServiceSyncJobs
@@ -72,6 +77,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     isLightTheme,
     telemetryService,
     afterUpdateRoute,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServiceSyncJobs = _queryExternalServiceSyncJobs,
     autoFocusForm,
 }) => {
@@ -153,10 +160,7 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
     )
 
     let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
-    if (
-        externalService &&
-        [GQL.ExternalServiceKind.GITHUB, GQL.ExternalServiceKind.GITLAB].includes(externalService.kind)
-    ) {
+    if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
         const parsedConfig: unknown = parseJSONC(externalService.config)
         const url =
             typeof parsedConfig === 'object' &&
@@ -167,11 +171,11 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 ? new URL(parsedConfig.url)
                 : undefined
         // We have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the URL.
-        if (externalService.kind === GQL.ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
+        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
             externalServiceCategory = codeHostExternalServices.ghe
         }
         // We have no way of finding out whether a externalservice of kind GITLAB is Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
-        if (externalService.kind === GQL.ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
             externalServiceCategory = codeHostExternalServices.gitlab
         }
     }
@@ -215,6 +219,8 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                             isLightTheme={isLightTheme}
                             telemetryService={telemetryService}
                             autoFocus={autoFocusForm}
+                            externalServicesFromFile={externalServicesFromFile}
+                            allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
                         />
                     )}
                     <LoaderButton
@@ -309,16 +315,105 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
         [cancelExternalServiceSync, node, onUpdate]
     )
 
+    const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
+        if (!node) {
+            return undefined
+        }
+        return [
+            {
+                value: node.reposAdded,
+                description: 'Added',
+                tooltip: 'The number of new repos discovered during this sync job.',
+            },
+            {
+                value: node.reposDeleted,
+                description: 'Deleted',
+                tooltip: 'The number of repos deleted as a result of this sync job.',
+            },
+            {
+                value: node.reposModified,
+                description: 'Modified',
+                tooltip: 'The number of existing repos whose metadata has changed during this sync job.',
+            },
+            {
+                value: node.reposUnmodified,
+                description: 'Unmodified',
+                tooltip: 'The number of existing repos whose metadata did not change during this sync job.',
+            },
+            {
+                value: node.reposSynced,
+                description: 'Synced',
+                color: 'var(--green)',
+                tooltip: 'The number of repos synced during this sync job.',
+                position: 'right',
+            },
+            {
+                value: node.repoSyncErrors,
+                description: 'Errors',
+                color: 'var(--red)',
+                tooltip: 'The number of times an error occurred syncing a repo during this sync job.',
+                position: 'right',
+            },
+        ]
+    }, [node])
+
+    const runningStatuses = new Set<ExternalServiceSyncJobState>([
+        ExternalServiceSyncJobState.QUEUED,
+        ExternalServiceSyncJobState.PROCESSING,
+        ExternalServiceSyncJobState.CANCELING,
+    ])
+    const [isExpanded, setIsExpanded] = useState(runningStatuses.has(node.state))
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
+        setIsExpanded(!isExpanded)
+    }, [isExpanded])
+
     return (
         <li className="list-group-item py-3">
-            <div className="d-flex align-items-center justify-content-between">
-                <div className="flex-shrink-0 mr-2">
+            <div className="d-flex justify-content-left">
+                <div className="d-flex mr-2 justify-content-left">
+                    <Button
+                        variant="icon"
+                        aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
+                        onClick={toggleIsExpanded}
+                    >
+                        <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
+                    </Button>
+                </div>
+                <div className="d-flex mr-2 justify-content-left">
                     <Badge>{node.state}</Badge>
                 </div>
-                <div className="flex-shrink-0 flex-grow-1 mr-2">
+                <div className="flex-shrink-1 flex-grow-0 mr-1">
+                    {node.startedAt === null && 'Not started yet.'}
+                    {node.startedAt !== null && (
+                        <>
+                            Started at{' '}
+                            <Timestamp
+                                date={node.startedAt}
+                                preferAbsolute={true}
+                                timestampFormat={TimestampFormat.FULL_TIME}
+                            />
+                            .
+                        </>
+                    )}
+                </div>
+                <div className="flex-shrink-1 flex-grow-0 mr-1">
+                    {node.finishedAt === null && 'Not finished yet.'}
+                    {node.finishedAt !== null && (
+                        <>
+                            Finished at{' '}
+                            <Timestamp
+                                date={node.finishedAt}
+                                preferAbsolute={true}
+                                timestampFormat={TimestampFormat.FULL_TIME}
+                            />
+                            .
+                        </>
+                    )}
+                </div>
+                <div className="flex-shrink-0 flex-grow-1 mr-1">
                     {node.startedAt && (
                         <>
-                            {node.finishedAt === null && <>Running since </>}
+                            {node.finishedAt === null && <>Running for </>}
                             {node.finishedAt !== null && <>Ran for </>}
                             <Duration
                                 start={node.startedAt}
@@ -330,11 +425,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         </>
                     )}
                 </div>
-                {[
-                    ExternalServiceSyncJobState.QUEUED,
-                    ExternalServiceSyncJobState.PROCESSING,
-                    ExternalServiceSyncJobState.CANCELING,
-                ].includes(node.state) && (
+                {runningStatuses.has(node.state) && (
                     <LoaderButton
                         label="Cancel"
                         alwaysShowLabel={true}
@@ -347,25 +438,8 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                         className={styles.cancelButton}
                     />
                 )}
-                <div className="text-right flex-shrink-0">
-                    <div>
-                        {node.startedAt === null && 'Not started yet'}
-                        {node.startedAt !== null && (
-                            <>
-                                Started <Timestamp date={node.startedAt} />
-                            </>
-                        )}
-                    </div>
-                    <div>
-                        {node.finishedAt === null && 'Not finished yet'}
-                        {node.finishedAt !== null && (
-                            <>
-                                Finished <Timestamp date={node.finishedAt} />
-                            </>
-                        )}
-                    </div>
-                </div>
             </div>
+            {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
             {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
         </li>
     )

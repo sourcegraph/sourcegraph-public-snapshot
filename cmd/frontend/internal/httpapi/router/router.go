@@ -23,6 +23,7 @@ const (
 	RepoRefresh = "repo.refresh"
 	Telemetry   = "telemetry"
 
+	Webhooks                = "webhooks"
 	GitHubWebhooks          = "github.webhooks"
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
@@ -41,7 +42,9 @@ const (
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	StreamingSearch        = "internal.stream-search"
-	Checks                 = "internal.checks"
+	RepoRank               = "internal.repo-rank"
+	DocumentRanks          = "internal.document-ranks"
+	UpdateIndexStatus      = "internal.update-index-status"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -55,6 +58,7 @@ func New(base *mux.Router) *mux.Router {
 
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
+	base.Path("/webhooks/{webhook_uuid}").Methods("POST").Name(Webhooks)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/gitlab-webhooks").Methods("POST").Name(GitLabWebhooks)
 	base.Path("/bitbucket-server-webhooks").Methods("POST").Name(BitbucketServerWebhooks)
@@ -95,12 +99,14 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
+	base.Path("/ranks/{RepoName:.*}/documents").Methods("GET").Name(DocumentRanks)
+	base.Path("/ranks/{RepoName:.*}").Methods("GET").Name(RepoRank)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
+	base.Path("/search/index-status").Methods("POST").Name(UpdateIndexStatus)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
-	base.Path("/checks").Methods("GET").Name(Checks)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

@@ -917,6 +917,18 @@ func Zoekt() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "data",
+
+					MetricMountNameLabel: "indexDir",
+					MetricNamespace:      "zoekt_indexserver",
+
+					ServiceName:         "zoekt",
+					InstanceFilterRegex: `${instance:regex}`,
+				},
+				monitoring.ObservableOwnerSearchCore,
+			),
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service

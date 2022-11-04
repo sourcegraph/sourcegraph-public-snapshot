@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,7 +19,7 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
 		Level: log.LevelError,
 	})
-	codeIntelDB := stores.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
 	store := New(codeIntelDB, &observation.TestContext)
 
 	for i := 0; i < 5; i++ {

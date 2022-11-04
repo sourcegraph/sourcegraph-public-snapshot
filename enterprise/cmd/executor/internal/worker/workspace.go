@@ -21,15 +21,16 @@ func (h *handler) prepareWorkspace(
 	if h.options.FirecrackerOptions.Enabled {
 		return workspace.NewFirecrackerWorkspace(
 			ctx,
+			h.filesStore,
 			job,
 			h.options.ResourceOptions.DiskSpace,
 			h.options.KeepWorkspaces,
 			commandRunner,
 			commandLogger,
 			workspace.CloneOptions{
-				EndpointURL:    h.options.ClientOptions.EndpointOptions.URL,
+				EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 				GitServicePath: h.options.GitServicePath,
-				ExecutorToken:  h.options.ClientOptions.EndpointOptions.Token,
+				ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
 			},
 			h.operations,
 		)
@@ -37,13 +38,14 @@ func (h *handler) prepareWorkspace(
 
 	return workspace.NewDockerWorkspace(
 		ctx,
+		h.filesStore,
 		job,
 		commandRunner,
 		commandLogger,
 		workspace.CloneOptions{
-			EndpointURL:    h.options.ClientOptions.EndpointOptions.URL,
+			EndpointURL:    h.options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
 			GitServicePath: h.options.GitServicePath,
-			ExecutorToken:  h.options.ClientOptions.EndpointOptions.Token,
+			ExecutorToken:  h.options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
 		},
 		h.operations,
 	)

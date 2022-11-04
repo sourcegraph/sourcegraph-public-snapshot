@@ -1,9 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { BatchSpecState } from '../../../../graphql-operations'
+import { BatchSpecSource, BatchSpecState } from '../../../../graphql-operations'
 import { mockBatchChange, mockFullBatchSpec } from '../batch-spec.mock'
 import { BatchSpecContextProvider } from '../BatchSpecContext'
 

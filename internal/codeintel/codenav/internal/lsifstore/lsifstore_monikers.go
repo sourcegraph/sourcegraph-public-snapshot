@@ -54,7 +54,6 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 }
 
 const monikersDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/monikers.go:MonikersByPosition
 SELECT
 	dump_id,
 	path,
@@ -152,7 +151,6 @@ outer:
 }
 
 const bulkMonikerResultsQuery = `
--- source: internal/codeintel/stores/lsifstore/monikers.go:BulkMonikerResults
 SELECT dump_id, scheme, identifier, data
 FROM %s
 WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s)

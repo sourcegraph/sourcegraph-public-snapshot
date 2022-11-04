@@ -7,10 +7,11 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
  */
 
 export interface AuthProvider {
-    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
+    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'sourcegraph-operator' | 'saml' | 'builtin'
     displayName: string
     isBuiltin: boolean
     authenticationURL: string
+    serviceID: string
 }
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {

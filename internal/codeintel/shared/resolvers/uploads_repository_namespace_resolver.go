@@ -1,7 +1,7 @@
 package sharedresolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 )
 
@@ -29,8 +29,8 @@ func (r *lsifUploadsWithRepositoryNamespaceResolver) Root() string {
 
 func (r *lsifUploadsWithRepositoryNamespaceResolver) Indexer() types.CodeIntelIndexerResolver {
 	for _, indexer := range types.AllIndexers {
-		if indexer.Name() == r.uploadsSummary.Indexer {
-			return indexer
+		if indexer.Name == r.uploadsSummary.Indexer {
+			return types.NewCodeIntelIndexerResolverFrom(indexer)
 		}
 	}
 

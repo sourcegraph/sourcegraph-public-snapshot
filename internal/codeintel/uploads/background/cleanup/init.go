@@ -4,9 +4,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewJanitor(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewJanitor(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewJanitor(
+		backgroundJobs.NewJanitor(
 			ConfigInst.Interval,
 			ConfigInst.UploadTimeout,
 			ConfigInst.AuditLogMaxAge,
@@ -17,8 +17,14 @@ func NewJanitor(uploadSvc UploadService) []goroutine.BackgroundRoutine {
 	}
 }
 
-func NewResetters(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewReconciler(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		uploadSvc.NewUploadResetter(ConfigInst.Interval),
+		backgroundJobs.NewReconciler(ConfigInst.Interval, ConfigInst.ReconcilerBatchSize),
+	}
+}
+
+func NewResetters(backgroundJobs UploadServiceBackgroundJobs) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		backgroundJobs.NewUploadResetter(ConfigInst.Interval),
 	}
 }

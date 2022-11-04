@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
+	zoektquery "github.com/sourcegraph/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -37,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 func TestNewPlanJob(t *testing.T) {
@@ -865,9 +866,8 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		types, _ := b.ToParseTree().StringValues(query.FieldType)
 		mode := search.Batch
-		resultTypes := computeResultTypes(types, b, query.SearchTypeLiteral)
+		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
 		p := toTextPatternInfo(b, resultTypes, mode)
 		v, _ := json.Marshal(p)
 		return string(v)
@@ -899,6 +899,23 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		}
 	})
 	return searchType
+}
+
+func Test_computeResultTypes(t *testing.T) {
+	test := func(input string) string {
+		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+		b := plan[0]
+		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		return resultTypes.String()
+	}
+
+	t.Run("only search file content when type not set", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo content:bar")))
+	})
+
+	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test("path:foo bar")))
+	})
 }
 
 func TestRepoSubsetTextSearch(t *testing.T) {

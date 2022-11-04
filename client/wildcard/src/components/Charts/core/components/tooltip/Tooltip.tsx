@@ -60,9 +60,10 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
         <PopoverContent
             isOpen={true}
             pin={!target ? pinPoint : null}
-            targetElement={target}
+            target={target}
             autoFocus={false}
             focusLocked={false}
+            returnTargetFocus={false}
             targetPadding={TOOLTIP_PADDING}
             position={Position.rightStart}
             className={styles.tooltip}

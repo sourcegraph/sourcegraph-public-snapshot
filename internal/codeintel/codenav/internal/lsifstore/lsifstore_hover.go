@@ -6,7 +6,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -40,7 +40,6 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 }
 
 const hoverDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/hover.go:Hover
 SELECT
 	dump_id,
 	path,

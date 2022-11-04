@@ -286,7 +286,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 }
 
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
 UPDATE
 	batch_spec_workspaces
 SET
@@ -341,7 +340,7 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 	)
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" {
+		if e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
 			entry = e
 			found = true
 			break

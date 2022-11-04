@@ -36,6 +36,7 @@ export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendI
 }) => (
     <li {...attributes} className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}>
         <span
+            aria-hidden={true}
             /* eslint-disable-next-line react/forbid-dom-props */
             style={{ backgroundColor: selected || hovered ? color : undefined }}
             className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}

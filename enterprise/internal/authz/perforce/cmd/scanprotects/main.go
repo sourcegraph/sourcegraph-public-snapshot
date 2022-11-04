@@ -34,11 +34,7 @@ func main() {
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
-	defer func() {
-		if err := liblog.Sync(); err != nil {
-			fmt.Println("Error syncing logger", err)
-		}
-	}()
+	defer liblog.Sync()
 
 	logger := log.Scoped("scanprotects", "")
 	run(logger, *depot, os.Stdin)

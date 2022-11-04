@@ -1,4 +1,5 @@
-import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
+import { SeriesSortDirection, SeriesSortMode } from '@sourcegraph/shared/src/graphql-operations'
+
 import { SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 
 import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'

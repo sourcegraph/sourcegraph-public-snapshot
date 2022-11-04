@@ -1,4 +1,4 @@
-import { PointerEventHandler, ReactElement } from 'react'
+import { ReactElement, SVGProps } from 'react'
 
 import { Annotation, HtmlLabel, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'
@@ -6,7 +6,7 @@ import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
 import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
 
-import { H3 } from '../../../../Typography'
+import { Text } from '../../../../Typography'
 import { DEFAULT_FALLBACK_COLOR } from '../../../constants'
 
 import styles from './PieArc.module.scss'
@@ -15,19 +15,17 @@ import styles from './PieArc.module.scss'
 const CONNECTION_LINE_LENGTH = 15
 const CONNECTION_LINE_MARGIN = 2
 
-interface PieArcProps<Datum> {
+interface PieArcProps<Datum> extends Omit<SVGProps<SVGGElement>, 'path'> {
     title: string
     subtitle: string
     path: ArcType<unknown, PieArcDatum<Datum>>
     arc: PieArcDatum<Datum>
     className?: string
     getColor: (datum: Datum) => string | undefined
-    onPointerMove?: PointerEventHandler
-    onPointerOut?: PointerEventHandler
 }
 
 export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
-    const { title, subtitle, path, arc, getColor, className, onPointerMove, onPointerOut } = props
+    const { title, subtitle, path, arc, getColor, className, ...attributes } = props
 
     const pathValue = path(arc) ?? ''
 
@@ -53,24 +51,30 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
     return (
-        <Group aria-hidden={true} className={styles.arc} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <Group {...attributes} className={styles.arc}>
             <path
                 data-testid="pie-chart-arc-element"
-                className={classNames(className, styles.arcPath)}
                 d={pathValue}
                 fill={getColor(arc.data) ?? DEFAULT_FALLBACK_COLOR}
+                className={classNames(className, styles.arcPath)}
             />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>
                 <Connector className={styles.labelLine} type="line" />
 
                 <HtmlLabel showAnchorLine={false} className={styles.label}>
-                    <H3 className={styles.labelTitle}>{title}</H3>
+                    <Text className={styles.labelTitle}>{title}</Text>
                     <small className={styles.labelSubTitle}>{subtitle}</small>
                 </HtmlLabel>
             </Annotation>
 
-            <circle className={styles.labelCircle} r={2} cx={surfaceX + labelX} cy={surfaceY + labelY} />
+            <circle
+                aria-hidden={true}
+                className={styles.labelCircle}
+                r={2}
+                cx={surfaceX + labelX}
+                cy={surfaceY + labelY}
+            />
         </Group>
     )
 }

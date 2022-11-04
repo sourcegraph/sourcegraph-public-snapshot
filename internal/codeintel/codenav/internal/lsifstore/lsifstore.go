@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -40,7 +40,13 @@ type LsifStore interface {
 	// Ranges
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
 
+	// Paths
 	GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error)
+
+	// Stream
+	ScanDocuments(ctx context.Context, id int, f func(path string, ranges map[precise.ID]precise.RangeData) error) (err error)
+	ScanResultChunks(ctx context.Context, id int, f func(idx int, resultChunk precise.ResultChunkData) error) (err error)
+	ScanLocations(ctx context.Context, id int, f func(scheme, identifier, monikerType string, locations []precise.LocationData) error) (err error)
 }
 
 type store struct {
@@ -49,7 +55,7 @@ type store struct {
 	operations *operations
 }
 
-func New(db stores.CodeIntelDB, observationContext *observation.Context) LsifStore {
+func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),

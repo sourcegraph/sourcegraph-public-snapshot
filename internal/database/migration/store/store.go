@@ -131,7 +131,6 @@ func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
 }
 
 const backfillSchemaVersionsQuery = `
--- source: internal/database/migration/store/store.go:BackfillSchemaVersions
 WITH candidates AS (
 	SELECT
 		%s::integer AS migration_logs_schema_version,
@@ -233,7 +232,6 @@ func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, b
 }
 
 const inferBackfillTargetViaGolangMigrateQuery = `
--- source: internal/database/migration/store/store.go:inferBackfillTargetViaGolangMigrate
 SELECT version::integer FROM %s WHERE NOT dirty
 `
 
@@ -276,7 +274,6 @@ func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions,
 }
 
 const versionsQuery = `
--- source: internal/database/migration/store/store.go:Versions
 WITH ranked_migration_logs AS (
 	SELECT
 		migration_logs.*,
@@ -361,7 +358,6 @@ func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_
 }
 
 const indexStatusQuery = `
--- source: internal/database/migration/store/store.go:IndexStatus
 SELECT
 	pi.indisvalid,
 	pi.indisready,

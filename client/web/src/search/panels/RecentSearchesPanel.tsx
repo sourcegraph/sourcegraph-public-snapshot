@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -19,7 +19,6 @@ import { HomePanelsFetchMore, RECENT_SEARCHES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
-import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
 

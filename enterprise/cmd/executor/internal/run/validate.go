@@ -34,13 +34,16 @@ func RunValidate(cliCtx *cli.Context, logger log.Logger, config *config.Config) 
 		return err
 	}
 
-	telemetryOptions := newTelemetryOptions(cliCtx.Context, config.UseFirecracker, logger)
-	copts := clientOptions(config, telemetryOptions)
-	client := apiclient.NewBaseClient(copts.BaseClientOptions)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, config.UseFirecracker, logger)
+	copts := queueOptions(config, telemetryOptions)
+	client, err := apiclient.NewBaseClient(copts.BaseClientOptions)
+	if err != nil {
+		return err
+	}
 	// TODO: Validate access token.
 	// Validate src-cli is of a good version, rely on the connected instance to tell
 	// us what "good" means.
-	if err := validateSrcCLIVersion(cliCtx.Context, logger, client, copts.EndpointOptions); err != nil {
+	if err := validateSrcCLIVersion(cliCtx.Context, logger, client, copts.BaseClientOptions.EndpointOptions); err != nil {
 		return err
 	}
 
@@ -115,7 +118,7 @@ func validateSrcCLIVersion(ctx context.Context, logger log.Logger, client *apicl
 }
 
 func latestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) (_ string, err error) {
-	req, err := client.MakeRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)
+	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)
 	if err != nil {
 		return "", err
 	}
@@ -140,11 +143,13 @@ func validateToolsRequired(useFirecracker bool) error {
 			notFoundTools = append(notFoundTools, tool)
 		}
 	}
-	for _, tool := range config.RequiredCLIToolsFirecracker {
-		if found, err := existsPath(tool); err != nil {
-			return err
-		} else if !found {
-			notFoundTools = append(notFoundTools, tool)
+	if useFirecracker {
+		for _, tool := range config.RequiredCLIToolsFirecracker {
+			if found, err := existsPath(tool); err != nil {
+				return err
+			} else if !found {
+				notFoundTools = append(notFoundTools, tool)
+			}
 		}
 	}
 
@@ -152,6 +157,7 @@ func validateToolsRequired(useFirecracker bool) error {
 		var errs error
 		for _, tool := range notFoundTools {
 			helptext, ok := config.RequiredCLITools[tool]
+			// TODO: Help lines for config.RequiredCLIToolsFirecracker.
 			helpLine := ""
 			if ok {
 				helpLine = fmt.Sprintf("\n%s", helptext)

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
@@ -80,7 +81,7 @@ export interface ResultContainerProps {
     /**
      * The result type
      */
-    resultType?: string
+    resultType?: SearchMatch['type']
 
     /**
      * The name of the repository
@@ -98,6 +99,11 @@ export interface ResultContainerProps {
     repoLastFetched?: string
 
     /**
+     * A string sent down explaining ranking for a file when debug is enabled.
+     */
+    rankingDebug?: string
+
+    /**
      * Click event for when the result is clicked
      */
     onResultClicked?: () => void
@@ -111,6 +117,14 @@ export interface ResultContainerProps {
 
     as?: React.ElementType
     index: number
+}
+
+const accessibleResultType: Record<SearchMatch['type'], string> = {
+    symbol: 'symbol',
+    content: 'file content',
+    repo: 'repository',
+    path: 'file path',
+    commit: 'commit',
 }
 
 /**
@@ -129,6 +143,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     description,
     repoName,
     repoStars,
+    rankingDebug,
     onResultClicked,
     className,
     resultsClassName,
@@ -173,6 +188,9 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
+                    {/* Add a result type to be read out to screen readers only, so that screen reader users can
+                    easily scan the search results list (for example, by navigating by landmarks). */}
+                    <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
                     <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
@@ -190,6 +208,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
+                {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.collapsibleResults, resultsClassName)}>
                     <div>{expanded ? expandedChildren : collapsedChildren}</div>
                     {collapsible && (

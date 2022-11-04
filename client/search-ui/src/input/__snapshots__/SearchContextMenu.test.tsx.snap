@@ -14,7 +14,6 @@ Array [
   >
     <small
       class="itemName"
-      data-state="closed"
       data-testid="search-context-menu-item-name"
     >
       <span
@@ -36,10 +35,14 @@ Array [
         name
       </span>
     </small>
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      ,
+    </span>
      
     <small
       class="itemDescription"
-      data-state="closed"
     >
       Your repositories on Sourcegraph
     </small>
@@ -56,7 +59,6 @@ Array [
   >
     <small
       class="itemName"
-      data-state="closed"
       data-testid="search-context-menu-item-name"
     >
       <span
@@ -78,10 +80,14 @@ Array [
         name/test-version-1.5
       </span>
     </small>
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      ,
+    </span>
      
     <small
       class="itemDescription"
-      data-state="closed"
     >
       Only code in version 1.5
     </small>

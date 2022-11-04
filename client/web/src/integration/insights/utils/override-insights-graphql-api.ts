@@ -44,22 +44,14 @@ export interface OverrideGraphQLExtensionsProps {
 export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps): void {
     const { testContext, overrides = {} } = props
 
+    // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
+    // modal UI on all code insights related pages.
+    testContext.overrideInitialTemporarySettings({
+        'insights.freeGaAccepted': true,
+        'insights.wasMainPageOpen': true,
+    })
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
-        // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
-        // modal UI on all code insights related pages.
-        GetTemporarySettings: () => ({
-            temporarySettings: {
-                __typename: 'TemporarySettings',
-                contents: JSON.stringify({
-                    'user.daysActiveCount': 1,
-                    'user.lastDayActive': new Date().toDateString(),
-                    'search.usedNonGlobalContext': true,
-                    'insights.freeGaAccepted': true,
-                    'insights.wasMainPageOpen': true,
-                }),
-            },
-        }),
         // Mock insight config query
         GetInsights: () => ({
             __typename: 'Query',

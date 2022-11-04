@@ -2,26 +2,27 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/lib/pq"
-	log "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 
 	"github.com/keegancsmith/sqlf"
 
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type BaseJob struct {
@@ -38,6 +39,7 @@ type BaseJob struct {
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
+	backfillId      int
 }
 
 func (b *BaseJob) RecordID() int {
@@ -45,19 +47,20 @@ func (b *BaseJob) RecordID() int {
 }
 
 var baseJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("insights_background_jobs.id"),
-	sqlf.Sprintf("insights_background_jobs.state"),
-	sqlf.Sprintf("insights_background_jobs.failure_message"),
-	sqlf.Sprintf("insights_background_jobs.queued_at"),
-	sqlf.Sprintf("insights_background_jobs.started_at"),
-	sqlf.Sprintf("insights_background_jobs.finished_at"),
-	sqlf.Sprintf("insights_background_jobs.process_after"),
-	sqlf.Sprintf("insights_background_jobs.num_resets"),
-	sqlf.Sprintf("insights_background_jobs.num_failures"),
-	sqlf.Sprintf("insights_background_jobs.last_heartbeat_at"),
-	sqlf.Sprintf("insights_background_jobs.execution_logs"),
-	sqlf.Sprintf("insights_background_jobs.worker_hostname"),
-	sqlf.Sprintf("insights_background_jobs.cancel"),
+	sqlf.Sprintf("id"),
+	sqlf.Sprintf("state"),
+	sqlf.Sprintf("failure_message"),
+	sqlf.Sprintf("queued_at"),
+	sqlf.Sprintf("started_at"),
+	sqlf.Sprintf("finished_at"),
+	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("num_resets"),
+	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("last_heartbeat_at"),
+	sqlf.Sprintf("execution_logs"),
+	sqlf.Sprintf("worker_hostname"),
+	sqlf.Sprintf("cancel"),
+	sqlf.Sprintf("backfill_id"),
 }
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
@@ -78,6 +81,7 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
+		&dbutil.NullInt{N: &job.backfillId},
 	); err != nil {
 		return nil, err
 	}
@@ -89,72 +93,82 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	return &job, nil
 }
 
-type scheduler struct {
-	workerStore dbworkerstore.Store
-	worker      *workerutil.Worker
-	resetter    *dbworker.Resetter
+type BackgroundJobMonitor struct {
+	inProgressWorker   *workerutil.Worker
+	inProgressResetter *dbworker.Resetter
+	inProgressStore    dbworkerstore.Store
+
+	newBackfillWorker   *workerutil.Worker
+	newBackfillResetter *dbworker.Resetter
+	newBackfillStore    dbworkerstore.Store
 }
 
-func NewScheduler(ctx context.Context, db edb.InsightsDB, obsContext *observation.Context) *scheduler {
-	workerStore := makeStore(db.Handle(), obsContext)
-	worker := makeWorker(ctx, workerStore, obsContext)
-	resetter := makeResetter(workerStore, obsContext)
-
-	return &scheduler{
-		workerStore: workerStore,
-		worker:      worker,
-		resetter:    resetter,
-	}
+type JobMonitorConfig struct {
+	InsightsDB      edb.InsightsDB
+	InsightStore    store.Interface
+	RepoStore       database.RepoStore
+	BackfillRunner  pipeline.Backfiller
+	ObsContext      *observation.Context
+	AllRepoIterator *discovery.AllReposIterator
+	CostAnalyzer    *priority.QueryAnalyzer
 }
 
-func (s *scheduler) Routines() []goroutine.BackgroundRoutine {
+func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
+	monitor := &BackgroundJobMonitor{}
+
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, config)
+	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, config)
+
+	return monitor
+}
+
+func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		s.worker,
-		s.resetter,
+		s.inProgressWorker,
+		s.inProgressResetter,
+		s.newBackfillWorker,
+		s.newBackfillResetter,
 	}
 }
 
-func makeStore(db basestore.TransactableHandle, obsContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(db, dbworkerstore.Options{
-		Name:              "insights_background_job_worker_store",
-		TableName:         "insights_background_jobs",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("insights_background_jobs.id"),
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
-	}, obsContext)
+type SeriesReader interface {
+	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
 }
 
-const jobName = "insights_background_job_scheduler"
-
-func makeWorker(ctx context.Context, store dbworkerstore.Store, obsContext *observation.Context) *workerutil.Worker {
-	task := &handler{}
-	name := fmt.Sprintf("%s_worker", jobName)
-	return dbworker.NewWorker(ctx, store, task, workerutil.WorkerOptions{
-		Name:        name,
-		NumHandlers: 1,
-		Interval:    5 * time.Second,
-		Metrics:     workerutil.NewMetrics(obsContext, name),
-	})
+type Scheduler struct {
+	backfillStore *BackfillStore
 }
 
-func makeResetter(store dbworkerstore.Store, obsContext *observation.Context) *dbworker.Resetter {
-	name := fmt.Sprintf("%s_resetter", jobName)
-	return dbworker.NewResetter(log.Scoped("", ""), store, dbworker.ResetterOptions{
-		Name:     name,
-		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(obsContext, name),
-	})
+func NewScheduler(db edb.InsightsDB) *Scheduler {
+	return &Scheduler{backfillStore: NewBackfillStore(db)}
 }
 
-type handler struct {
-	store dbworkerstore.Store
+func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, backfill *SeriesBackfill) error {
+	if backfill == nil || backfill.Id == 0 {
+		return errors.New("invalid series backfill")
+	}
+	return basestore.NewWithHandle(handle).Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
 }
 
-var _ workerutil.Handler = &handler{}
+func (s *Scheduler) With(other basestore.ShareableStore) *Scheduler {
+	return &Scheduler{backfillStore: s.backfillStore.With(other)}
+}
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	logger.Info("handler called", log.String("job", jobName), log.Int("recordId", record.RecordID()))
-	return nil
+func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {
+	tx, err := s.backfillStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	bf, err := tx.NewBackfill(ctx, series)
+	if err != nil {
+		return nil, errors.Wrap(err, "NewBackfill")
+	}
+
+	err = enqueueBackfill(ctx, tx.Handle(), bf)
+	if err != nil {
+		return nil, errors.Wrap(err, "enqueueBackfill")
+	}
+	return bf, nil
 }

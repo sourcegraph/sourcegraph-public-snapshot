@@ -547,6 +547,36 @@ type RepoChangesetsStats {
 }
 
 """
+Stats on all the changesets across the instance.
+"""
+type GlobalChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
 A list of changesets.
 """
 type ChangesetConnection {
@@ -1772,6 +1802,10 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+    """
+    Stats on all the changesets across the instance for Batch Changes.
+    """
+    globalChangesetsStats: GlobalChangesetsStats!
 
     """
     All globally configured code hosts usable with Batch Changes.
@@ -1822,6 +1856,10 @@ extend type Query {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2700,6 +2738,10 @@ type BatchChange implements Node {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 

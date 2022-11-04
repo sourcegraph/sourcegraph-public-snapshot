@@ -13,7 +13,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
 
-import styles from './NewOrgPage.module.scss'
+import styles from './NewOrganizationPage.module.scss'
 
 interface Props {
     history: H.History

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -9,9 +9,10 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
-import { InsightDashboard, isVirtualDashboard, ALL_INSIGHTS_DASHBOARD } from '../../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
+import { InsightDashboard, isVirtualDashboard } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
-import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
+import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
 import { DashboardSelect } from '../dashboard-select/DashboardSelect'
 import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardModal'
@@ -44,7 +45,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
     const [copyURL, isCopied] = useCopyURLHandler()
-    const menuReference = useRef<HTMLButtonElement | null>(null)
 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
@@ -71,14 +71,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             }
             case DashboardMenuAction.CopyLink: {
                 copyURL()
-
-                // Re-trigger trigger tooltip event catching logic to activate
-                // copied tooltip appearance
-                requestAnimationFrame(() => {
-                    menuReference.current?.blur()
-                    menuReference.current?.focus()
-                })
-
                 return
             }
         }
@@ -96,18 +88,17 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
-                    value={currentDashboard?.id}
+                    dashboard={currentDashboard}
                     dashboards={dashboards}
-                    className={classNames(styles.dashboardSelect, 'mr-2')}
+                    className={styles.dashboardSelect}
                     onSelect={handleDashboardSelect}
                 />
 
                 <DashboardMenu
-                    innerRef={menuReference}
-                    tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
-                    onSelect={handleSelect}
+                    tooltipText={isCopied ? 'Copied!' : undefined}
                     className="mr-auto"
+                    onSelect={handleSelect}
                 />
 
                 <Tooltip content={addRemovePermissions.tooltip} placement="bottom">

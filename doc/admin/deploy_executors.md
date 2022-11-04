@@ -1,39 +1,3 @@
-<style>
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1em;
-    margin-bottom: 1em;
-  }
-  .app-btn {
-    font-size: 0.85rem;
-    cursor: pointer;
-    text-decoration: none;
-    padding-top: 1.5rem !important;
-    width: 100%;
-    border-radius: 1em;
-    border: 2px solid var(--input-focus-border);
-    color: var(--text-color);
-    background-color: var(--sidebar-bg);
-    text-align: center;
-    font-weight: 500;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased;
-  }
-  .app-btn:hover {
-    box-shadow: 0 0 10px var(--link-hover-color);
-  }
-  .app-btn > p {
-    margin-bottom: 0 !important;
-  }
-  .app-btn > h3 {
-    font-size: 1.5em;
-    font-weight: 400;
-    margin-top: .2em;
-    margin-bottom: 1em;
-  }
-</style>
-
 # Deploying Sourcegraph executors
 
 <aside class="beta">
@@ -73,12 +37,12 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
 ### Supported installation types
 
 <div class="grid">
-  <a class="app-btn btn" href="/admin/deploy_executors_terraform">
+  <a class="btn-app btn" href="/admin/deploy_executors_terraform">
     <h3>Terraform</h3>
     <p>Simply launch executors on AWS or GCP using Sourcegraph-maintained modules and machine images.</p>
     <p>Supports auto scaling.</p>
   </a>
-  <a class="app-btn btn" href="/admin/deploy_executors_binary">
+  <a class="btn-app btn" href="/admin/deploy_executors_binary">
     <h3>Install executor on your machine</h3>
     <p>Run executors on any linux amd64 machine.</p>
   </a>

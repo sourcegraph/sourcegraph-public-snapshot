@@ -509,7 +509,7 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	return u.DeleteList(ctx, []int32{id})
 }
 
-// Bulk "Delete" action.
+// DeleteList performs a bulk "Delete" action.
 func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -566,7 +566,7 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 	return u.HardDeleteList(ctx, []int32{id})
 }
 
-// Bulk "HardDelete" action.
+// HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
@@ -616,8 +616,10 @@ func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error)
 		return err
 	}
 	// Anonymize all entries for the deleted user
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id IN (%s)", uuid.New().String(), idsCond)); err != nil {
-		return err
+	for _, uid := range userIDs {
+		if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE event_logs SET user_id=0, anonymous_user_id=%s WHERE user_id=%s", uuid.New().String(), uid)); err != nil {
+			return err
+		}
 	}
 	// Settings that were merely authored by this user should not be deleted. They may be global or
 	// org settings that apply to other users, too. There is currently no way to hard-delete
@@ -800,12 +802,16 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Only show users inside this org
+	OrgID int32
 
 	Tag string // only include users with this tag
 
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
+
+	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
 
 	*LimitOffset
 }
@@ -853,7 +859,6 @@ func (u *userStore) ListDates(ctx context.Context) (dates []types.UserDates, _ e
 }
 
 const listDatesQuery = `
--- source: internal/database/users.go:ListDates
 SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
@@ -866,6 +871,14 @@ const listUsersInactiveCond = `
 	AND
 		timestamp >= %s
 ))
+`
+const orgMembershipCond = `
+EXISTS (
+	SELECT 1
+	FROM org_members
+	WHERE
+		org_members.user_id = u.id
+		AND org_members.org_id = %d)
 `
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
@@ -887,6 +900,9 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
 	}
+	if opt.OrgID != 0 {
+		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
+	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
@@ -895,6 +911,38 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
 	}
 
+	// NOTE: This is a hack which should be replaced when we have proper user types.
+	// However, for billing purposes and more accurate ping data, we need a way to
+	// exclude Sourcegraph (employee) admins when counting users. The following
+	// username patterns, in conjunction with the presence of a corresponding
+	// "@sourcegraph.com" email address, are used to filter out Sourcegraph admins:
+	//
+	// - managed-*
+	// - sourcegraph-management-*
+	// - sourcegraph-admin
+	//
+	// This method of filtering is imperfect and may still incur false positives, but
+	// the two together should help prevent that in the majority of cases, and we
+	// acknowledge this risk as we would prefer to undercount rather than overcount.
+	if opt.ExcludeSourcegraphAdmins {
+		conds = append(conds, sqlf.Sprintf(`
+-- The user does not...
+NOT(
+	-- ...have a known Sourcegraph admin username pattern
+	(u.username ILIKE 'managed-%%'
+		OR u.username ILIKE 'sourcegraph-management-%%'
+		OR u.username = 'sourcegraph-admin')
+	-- ...and have a matching sourcegraph email address
+	AND EXISTS (
+		SELECT
+			1 FROM user_emails
+		WHERE
+			user_emails.user_id = u.id
+			AND user_emails.email ILIKE '%%@sourcegraph.com')
+)
+`))
+
+	}
 	return conds
 }
 

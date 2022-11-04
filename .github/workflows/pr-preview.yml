@@ -28,7 +28,7 @@ jobs:
           BUILDKITE_BRANCH: ${{ github.head_ref }}
 
   clean-up-inactive-pr-preview-apps:
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'schedule' && github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
 
     steps:

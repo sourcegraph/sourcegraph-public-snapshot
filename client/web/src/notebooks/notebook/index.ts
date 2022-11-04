@@ -114,6 +114,16 @@ export class Notebook {
         }
     }
 
+    public getBlockIndex(id: string): number {
+        const blocks = this.getBlocks()
+        for (let idx = 0; idx < blocks.length; idx++) {
+            if (blocks[idx].id === id) {
+                return idx
+            }
+        }
+        return -1
+    }
+
     public getBlocks(): Block[] {
         return this.blockOrder.map(blockId => {
             const block = this.blocks.get(blockId)
@@ -169,6 +179,7 @@ export class Notebook {
                             patternType: SearchPatternType.standard,
                             caseSensitive: false,
                             trace: undefined,
+                            chunkMatches: true,
                         }
                     ).pipe(startWith(emptyAggregateResults)),
                 })
@@ -220,9 +231,10 @@ export class Notebook {
                             endLine: range.end.line + lineContext,
                         }
                         const highlightSymbolRange = {
-                            line: range.start.line - 1,
-                            character: range.start.character - 1,
-                            highlightLength: range.end.character - range.start.character,
+                            startLine: range.start.line - 1,
+                            startCharacter: range.start.character - 1,
+                            endLine: range.end.line - 1,
+                            endCharacter: range.end.character - 1,
                         }
                         return this.dependencies
                             .fetchHighlightedFileLineRanges({

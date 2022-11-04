@@ -40,7 +40,6 @@ func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (str
 }
 
 const getFirstServiceVersionQuery = `
--- source: internal/version/store/store.go:GetFirstServiceVersion
 SELECT first_version FROM versions WHERE service = %s
 `
 
@@ -53,7 +52,6 @@ func (s *store) GetServiceVersion(ctx context.Context, service string) (string, 
 }
 
 const getServiceVersionQuery = `
--- source: internal/version/store/store.go:GetServiceVersion
 SELECT version FROM versions WHERE service = %s
 `
 
@@ -102,12 +100,10 @@ func (s *store) updateServiceVersion(ctx context.Context, service, version strin
 }
 
 const updateServiceVersionSelectQuery = `
--- source: internal/version/store/store.go:updateServiceVersion
 SELECT version FROM versions WHERE service = %s
 `
 
 const updateServiceVersionSelectUpsertQuery = `
--- source: internal/version/store/store.go:updateServiceVersion
 INSERT INTO versions (service, version, updated_at)
 VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) = (excluded.version, excluded.updated_at)
@@ -122,7 +118,6 @@ func (s *store) SetServiceVersion(ctx context.Context, service, version string) 
 }
 
 const setServiceVersionQuery = `
--- source: internal/version/store/store.go:SetServiceVersion
 UPDATE versions SET version = %s, updated_at = %s WHERE versions.service = %s
 `
 

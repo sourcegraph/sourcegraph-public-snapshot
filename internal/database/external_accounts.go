@@ -149,7 +149,6 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 	}
 
 	err = s.Handle().QueryRowContext(ctx, `
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.LookupUserAndSave
 UPDATE user_external_accounts
 SET
 	auth_data = $5,
@@ -185,7 +184,6 @@ func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, us
 	var exists bool
 	var existingID, associatedUserID int32
 	err = tx.QueryRow(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.AssociateUserAndSave
 SELECT id, user_id
 FROM user_external_accounts
 WHERE
@@ -227,7 +225,6 @@ AND deleted_at IS NULL
 
 	// Update the external account (it exists).
 	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.AssociateUserAndSave
 UPDATE user_external_accounts
 SET
 	auth_data = %s,
@@ -291,7 +288,6 @@ func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, sp
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
@@ -307,7 +303,6 @@ func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int
 		idStrings[i] = strconv.Itoa(int(id))
 	}
 	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
 WHERE id IN (%s)
@@ -317,7 +312,6 @@ WHERE id IN (%s)
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
 	_, err := s.Handle().ExecContext(ctx, `
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
 SET
 	expired_at = NULL,
@@ -333,7 +327,6 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) er
 		idStrings[i] = strconv.Itoa(int(id))
 	}
 	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.Delete
 UPDATE user_external_accounts
 SET deleted_at=now()
 WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))

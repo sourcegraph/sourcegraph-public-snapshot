@@ -2,9 +2,9 @@ package dependencies
 
 import "github.com/sourcegraph/sourcegraph/internal/goroutine"
 
-func NewSchedulers(autoIndexingSvc AutoIndexingService) []goroutine.BackgroundRoutine {
+func NewSchedulers(backgroundJobs AutoIndexingServiceBackgroundJobs) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		autoIndexingSvc.NewDependencySyncScheduler(ConfigInst.DependencyIndexerSchedulerPollInterval),
-		autoIndexingSvc.NewDependencyIndexingScheduler(ConfigInst.DependencyIndexerSchedulerPollInterval, ConfigInst.DependencyIndexerSchedulerConcurrency),
+		backgroundJobs.NewDependencySyncScheduler(ConfigInst.DependencyIndexerSchedulerPollInterval),
+		backgroundJobs.NewDependencyIndexingScheduler(ConfigInst.DependencyIndexerSchedulerPollInterval, ConfigInst.DependencyIndexerSchedulerConcurrency),
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
@@ -22,9 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -139,8 +142,8 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
 		return false, err
@@ -153,8 +156,8 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return nil, nil // not an error
 		}
 		return nil, err
@@ -194,7 +197,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -242,14 +245,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	gsClient := gitserver.NewClient(r.db)
-	commitID, err := backend.NewRepos(r.logger, r.db, gsClient).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gsClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -265,11 +267,11 @@ func (r *RepositoryResolver) Enabled() bool { return true }
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
 // https://github.com/sourcegraph/sourcegraph/pull/4668
-func (r *RepositoryResolver) CreatedAt() DateTime {
-	return DateTime{Time: time.Now()}
+func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: time.Now()}
 }
 
-func (r *RepositoryResolver) UpdatedAt() *DateTime {
+func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }
 
@@ -452,19 +454,18 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
+		_, err = r.gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, gitserver.NewClient(db), repo)
+		r := NewRepositoryResolver(db, r.gitserverClient, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -530,7 +531,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = r.gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
@@ -620,8 +621,12 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -638,8 +643,12 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -656,8 +665,12 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)

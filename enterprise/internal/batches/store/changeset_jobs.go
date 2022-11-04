@@ -87,9 +87,9 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 				payload,
 				c.State.ToDB(),
 				c.FailureMessage,
-				nullTimeColumn(c.StartedAt),
-				nullTimeColumn(c.FinishedAt),
-				nullTimeColumn(c.ProcessAfter),
+				dbutil.NullTimeColumn(c.StartedAt),
+				dbutil.NullTimeColumn(c.FinishedAt),
+				dbutil.NullTimeColumn(c.ProcessAfter),
 				c.NumResets,
 				c.NumFailures,
 				c.CreatedAt,
@@ -147,7 +147,6 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 }
 
 var getChangesetJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:GetChangesetJob
 SELECT %s FROM changeset_jobs
 INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id

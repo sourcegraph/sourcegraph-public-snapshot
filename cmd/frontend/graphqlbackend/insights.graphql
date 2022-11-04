@@ -1,16 +1,3 @@
-extend type Query {
-    """
-    [Experimental] Query for all insights and return their aggregations.
-    """
-    insights(
-        """
-        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
-        """
-        ids: [ID!]
-    ): InsightConnection
-        @deprecated(reason: "Use insightViews instead. This is deprecated and will be removed in a future release.")
-}
-
 """
 A list of insights.
 """
@@ -180,6 +167,11 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+
+    """
+    Indicates if the series is currently loading additional data
+    """
+    isLoadingData: Boolean
 }
 
 extend type Query {

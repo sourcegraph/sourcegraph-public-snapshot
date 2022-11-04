@@ -1,7 +1,6 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
-
+import { ProductSubscriptionFields, SiteAdminProductSubscriptionFields } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 
 /**
@@ -10,8 +9,7 @@ import { formatUserCount } from '../../../productSubscription/helpers'
  */
 export const ProductSubscriptionLabel: React.FunctionComponent<
     React.PropsWithChildren<{
-        productSubscription: Pick<GQL.IProductSubscription, 'activeLicense'>
-
+        productSubscription: ProductSubscriptionFields | SiteAdminProductSubscriptionFields
         className?: string
     }>
 > = ({ productSubscription, className = '' }) => (

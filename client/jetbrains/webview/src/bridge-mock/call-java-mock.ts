@@ -38,7 +38,7 @@ export function callJava(request: Request): Promise<object> {
         const onFailureCallback = (errorCode: number, errorMessage: string): void => {
             reject(new Error(`${errorCode} - ${errorMessage}`))
         }
-        console.log(`Got this request: ${requestAsString}`)
+        console.log(`The mock Java backend just received this request: ${requestAsString}`)
         handleRequest(request, onSuccessCallback, onFailureCallback)
     })
 }
@@ -54,10 +54,11 @@ function handleRequest(
             onSuccessCallback(
                 JSON.stringify({
                     instanceURL,
-                    isGlobbingEnabled: true,
                     accessToken,
-                    anonymousUserId: 'test',
+                    customRequestHeadersAsString: 'Client-ID,99999,X-Test-Header,Some value',
+                    isGlobbingEnabled: true,
                     pluginVersion: '1.2.3',
+                    anonymousUserId: 'test',
                 })
             )
             break

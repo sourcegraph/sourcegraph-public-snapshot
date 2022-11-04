@@ -3,6 +3,8 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 // flatten combines string values and (non-recursive) string slice values
@@ -31,17 +33,13 @@ func intersperse(flag string, values []string) []string {
 	return interspersed
 }
 
-// quoteEnv returns a slice of env vars in which env vars that contain a whitespace have been quoted
+// quoteEnv returns a slice of env vars in which the values are properly shell quoted.
 func quoteEnv(env []string) []string {
 	quotedEnv := make([]string, len(env))
 
 	for i, e := range env {
-		if strings.Contains(e, " ") {
-			elems := strings.SplitN(e, "=", 2)
-			quotedEnv[i] = fmt.Sprintf(`%s=%q`, elems[0], elems[1])
-		} else {
-			quotedEnv[i] = e
-		}
+		elems := strings.SplitN(e, "=", 2)
+		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
 	}
 
 	return quotedEnv

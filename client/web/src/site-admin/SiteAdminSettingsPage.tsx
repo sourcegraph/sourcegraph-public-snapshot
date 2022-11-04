@@ -3,7 +3,6 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -11,6 +10,7 @@ import { Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
+import { SiteResult } from '../graphql-operations'
 import { SettingsArea } from '../settings/SettingsArea'
 
 interface Props
@@ -20,7 +20,7 @@ interface Props
         ThemeProps,
         TelemetryProps {
     authenticatedUser: AuthenticatedUser
-    site: Pick<GQL.ISite, '__typename' | 'id'>
+    site: Pick<SiteResult['site'], '__typename' | 'id'>
 }
 
 export const SiteAdminSettingsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (

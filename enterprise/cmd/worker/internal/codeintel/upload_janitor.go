@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -34,8 +35,13 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logge
 		return nil, err
 	}
 
+	bkg := uploads.GetBackgroundJob(services.UploadsService)
+
 	return append(
-		cleanup.NewJanitor(services.UploadsService),
-		cleanup.NewResetters(services.UploadsService)...,
+		cleanup.NewJanitor(bkg),
+		append(
+			cleanup.NewReconciler(bkg),
+			cleanup.NewResetters(bkg)...,
+		)...,
 	), nil
 }

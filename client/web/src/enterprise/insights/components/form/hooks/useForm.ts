@@ -22,7 +22,6 @@ export const FORM_ERROR = 'useForm/submissionErrors'
 
 export type SubmissionErrors = Record<string, any> | undefined
 export type SubmissionResult = SubmissionErrors | Promise<SubmissionErrors> | void
-export type ValidationResult = string | undefined | void
 
 export interface FormChangeEvent<FormValues> {
     values: FormValues
@@ -186,6 +185,8 @@ export interface FieldMetaState<Value> {
      * Null when useField is used for some custom elements instead of native input.
      */
     validity: ValidityState | null
+
+    errorContext?: unknown
 
     initialValue: Value
 }

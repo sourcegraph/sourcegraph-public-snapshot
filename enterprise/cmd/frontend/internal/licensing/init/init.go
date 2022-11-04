@@ -2,6 +2,7 @@ package init
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/log"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -24,7 +26,14 @@ import (
 
 // TODO(efritz) - de-globalize assignments in this function
 // TODO(efritz) - refactor licensing packages - this is a huge mess!
-func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	codeIntelServices codeintel.Services,
+	conf conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
 	// Enforce the license's max user count by preventing the creation of new users when the max is
 	// reached.
 	database.BeforeCreateUser = enforcement.NewBeforeCreateUserHook()
@@ -51,8 +60,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			return nil
 		}
 
-		// We don't enforce anything in Free instance as of 4.0 launch.
-		if info == nil {
+		if info.Plan() == licensing.PlanFree0 {
+			// We don't enforce anything on the free plan
 			return nil
 		}
 
@@ -112,6 +121,16 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 			UserCountValue: info.UserCount,
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
+	}
+
+	graphqlbackend.IsFreePlan = func(info *graphqlbackend.ProductLicenseInfo) bool {
+		for _, tag := range info.Tags() {
+			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) {
+				return true
+			}
+		}
+
+		return false
 	}
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}

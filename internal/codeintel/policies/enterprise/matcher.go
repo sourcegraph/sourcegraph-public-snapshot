@@ -7,7 +7,7 @@ import (
 
 	"github.com/gobwas/glob"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -104,10 +104,6 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	}
 
 	return context.commitMap, nil
-}
-
-func (m *Matcher) CommitsDescribedByPolicyInternal(ctx context.Context, repositoryID int, policies []types.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
-	return m.CommitsDescribedByPolicy(ctx, repositoryID, policies, now, filterCommits...)
 }
 
 type matcherContext struct {

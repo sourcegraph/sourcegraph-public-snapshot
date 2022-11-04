@@ -47,7 +47,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	conn := *&schema.GitHubConnection{
+	conn := schema.GitHubConnection{
 		Url:      "https://github.com",
 		Token:    "token",
 		Repos:    []string{"owner/name"},
@@ -70,9 +70,11 @@ func TestGitHubWebhookHandle(t *testing.T) {
 
 	handler := repos.GitHubWebhookHandler{}
 	router := &webhooks.GitHubWebhook{
-		ExternalServices: esStore,
+		WebhookRouter: &webhooks.WebhookRouter{
+			DB: db,
+		},
 	}
-	handler.Register(router)
+	handler.Register(router.WebhookRouter)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {

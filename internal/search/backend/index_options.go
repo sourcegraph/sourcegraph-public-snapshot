@@ -48,6 +48,11 @@ type zoektIndexOptions struct {
 	// Priority indicates ranking in results, higher first.
 	Priority float64 `json:",omitempty"`
 
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string `json:",omitempty"`
+
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
 }
@@ -67,6 +72,11 @@ type RepoIndexOptions struct {
 
 	// Priority indicates ranking in results, higher first.
 	Priority float64
+
+	// DocumentRanksVersion when non-empty will lead to indexing using offline
+	// ranking. When the string changes this will also cause us to re-index
+	// with new ranks.
+	DocumentRanksVersion string
 
 	// Fork is true if the repository is a fork.
 	Fork bool
@@ -134,6 +144,8 @@ func getIndexOptions(
 		Archived:   opts.Archived,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+
+		DocumentRanksVersion: opts.DocumentRanksVersion,
 	}
 
 	// Set of branch names. Always index HEAD

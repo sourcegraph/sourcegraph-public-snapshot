@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
+import { useCodeInsightsState } from '../../../../../../../../stores'
 import {
     InsightCard,
     InsightCardHeader,
@@ -14,7 +15,8 @@ import {
     SeriesBasedChartTypes,
     SeriesChart,
 } from '../../../../../../components'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../../core'
+import { InsightType } from '../../../../../../core'
+import { useUiFeatures } from '../../../../../../hooks'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
 import {
     CodeInsightsLandingPageContext,
@@ -51,9 +53,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -135,9 +135,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     } = props
     const seriesToggleState = useSeriesToggle()
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useCodeInsightsState()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')

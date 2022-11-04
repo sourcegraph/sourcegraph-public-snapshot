@@ -2,7 +2,7 @@ local path = require "path"
 local pattern = require "sg.autoindex.patterns"
 local recognizer = require "sg.autoindex.recognizer"
 
-local indexer = "sourcegraph/lsif-clang"
+local indexer = require("sg.indexes").get "clang"
 
 local is_cmakelist_file = function(base)
   return string.lower(base) == "cmakelists.txt"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -138,7 +138,7 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 
@@ -159,7 +159,7 @@ func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUp
 	ctx, _, endObservation := r.operations.deleteLsifUploads.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.autoindexSvc.GetUnsafeDB()); err != nil {
 		return nil, err
 	}
 

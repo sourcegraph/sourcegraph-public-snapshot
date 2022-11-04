@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -17,13 +18,14 @@ import (
 // enterprise frontend setup hook.
 type Services struct {
 	GitHubWebhook                   webhooks.Registerer
-	GitLabWebhook                   http.Handler
+	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
+	CodeIntelAutoIndexingService    *autoindexing.Service
 	NewExecutorProxyHandler         NewExecutorProxyHandler
 	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
 	NewComputeStreamHandler         NewComputeStreamHandler
@@ -59,14 +61,15 @@ type NewComputeStreamHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:                   registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
-		GitLabWebhook:                   makeNotFoundHandler("gitlab webhook"),
+		GitHubWebhook:                   &emptyWebhookHandler{name: "github webhook"},
+		GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		CodeIntelAutoIndexingService:    nil,
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
@@ -81,10 +84,20 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 	})
 }
 
-type registerFunc func(webhook *webhooks.GitHubWebhook)
+type registerFunc func(webhook *webhooks.WebhookRouter)
 
-func (fn registerFunc) Register(w *webhooks.GitHubWebhook) {
+func (fn registerFunc) Register(w *webhooks.WebhookRouter) {
 	fn(w)
+}
+
+type emptyWebhookHandler struct {
+	name string
+}
+
+func (e *emptyWebhookHandler) Register(w *webhooks.WebhookRouter) {}
+
+func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	makeNotFoundHandler(e.name)
 }
 
 type ErrBatchChangesDisabledDotcom struct{}
@@ -127,7 +140,7 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 		return err
 	}
 
-	if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(ctx, db) != nil {
+	if conf.BatchChangesRestrictedToAdmins() && auth.CheckCurrentUserIsSiteAdmin(ctx, db) != nil {
 		return ErrBatchChangesDisabledForUser{}
 	}
 	return nil

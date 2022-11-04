@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -13,14 +14,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -61,7 +63,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -234,7 +236,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -295,7 +297,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -339,7 +341,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -438,8 +440,8 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.SetRepositoryPermissionsForBitbucketProject(ctx, nil)
 
-		if !errors.Is(err, backend.ErrMustBeSiteAdmin) {
-			t.Errorf("err: want %q, but got %q", backend.ErrMustBeSiteAdmin, err)
+		if !errors.Is(err, auth.ErrMustBeSiteAdmin) {
+			t.Errorf("err: want %q, but got %q", auth.ErrMustBeSiteAdmin, err)
 		}
 
 		if result != nil {
@@ -602,7 +604,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).AuthorizedUserRepositories(ctx, &graphqlbackend.AuthorizedRepoArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -869,7 +871,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).UsersWithPendingPermissions(ctx)
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -920,6 +922,51 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 	}
 }
 
+func TestResolver_AuthzProviderTypes(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("get authz provider types", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			SiteAdmin: true,
+		}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		authz.SetProviders(false, []authz.Provider{ghProvider})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"github"}, result)
+	})
+}
+
+func mustURL(t *testing.T, u string) *url.URL {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
+}
+
 func TestResolver_AuthorizedUsers(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
@@ -930,7 +977,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).AuthorizedUsers(ctx, &graphqlbackend.RepoAuthorizedUserArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -1113,7 +1160,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).RepositoryPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -1198,7 +1245,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -1287,7 +1334,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := (&Resolver{db: db}).SetSubRepositoryPermissionsForUsers(ctx, &graphqlbackend.SubRepoPermsArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -1481,7 +1528,7 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		result, err := r.BitbucketProjectPermissionJobs(ctx, nil)
 
-		require.ErrorIs(t, err, backend.ErrMustBeSiteAdmin)
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 		require.Nil(t, result)
 	})
 
