@@ -79,7 +79,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	// Next, we fetch all secrets that are requested by the spec.
-	rk := spec.Spec.RequiredSecrets()
+	rk := spec.Spec.RequiredEnvVars()
 	var secrets []*database.ExecutorSecret
 	if len(rk) > 0 {
 		userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))

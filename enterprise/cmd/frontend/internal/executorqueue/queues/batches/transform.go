@@ -60,7 +60,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
 
 	// Next, we fetch all secrets that are requested for the execution.
-	rk := batchSpec.Spec.RequiredSecrets()
+	rk := batchSpec.Spec.RequiredEnvVars()
 	var secrets []*database.ExecutorSecret
 	if len(rk) > 0 {
 		esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)

@@ -379,7 +379,7 @@ func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
 
 func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func TestBatchSpec_RequiredSecrets(t *testing.T) {
+func TestBatchSpec_RequiredEnvVars(t *testing.T) {
 	for name, tc := range map[string]struct {
 		in   string
 		want []string
@@ -407,7 +407,7 @@ func TestBatchSpec_RequiredSecrets(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			have := spec.RequiredSecrets()
+			have := spec.RequiredEnvVars()
 
 			if diff := cmp.Diff(have, tc.want); diff != "" {
 				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
