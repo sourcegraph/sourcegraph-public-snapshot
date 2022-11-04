@@ -1,4 +1,4 @@
-package repomatcher
+package policies
 
 import (
 	"time"
@@ -6,16 +6,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-type config struct {
+type policyMatcherConfig struct {
 	env.BaseConfig
 
 	Interval                               time.Duration
 	ConfigurationPolicyMembershipBatchSize int
 }
 
-var ConfigInst = &config{}
+var PolicyMatcherConfigInst = &policyMatcherConfig{}
 
-func (c *config) Load() {
+func (c *policyMatcherConfig) Load() {
 	configurationPolicyMembershipBatchSize := env.ChooseFallbackVariableName("CODEINTEL_POLICIES_REPO_MATCHER_CONFIGURATION_POLICY_MEMBERSHIP_BATCH_SIZE", "PRECISE_CODE_INTEL_CONFIGURATION_POLICY_MEMBERSHIP_BATCH_SIZE")
 
 	c.Interval = c.GetInterval("CODEINTEL_POLICIES_REPO_MATCHER_INTERVAL", "1m", "How frequently to run the policies repository matcher routine.")

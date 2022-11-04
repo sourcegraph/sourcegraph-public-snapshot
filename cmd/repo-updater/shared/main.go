@@ -550,10 +550,10 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		if envvar.SourcegraphDotComMode() {
 			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 			// scheduler
-			opts := database.ListIndexableReposOptions{
+			opts := database.ListSourcegraphDotComIndexableReposOptions{
 				CloneStatus: types.CloneStatusNotCloned,
 			}
-			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
+			indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
 			if err != nil {
 				logger.Error("listing indexable repos", log.Error(err))
 				return

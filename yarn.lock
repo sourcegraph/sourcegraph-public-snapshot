@@ -28853,7 +28853,6 @@ pvutils@latest:
     monaco-yaml: ^3.2.1
     mz: ^2.7.0
     nice-ticks: ^1.0.1
-    node-fetch: ^2.6.7
     nyc: ^15.1.0
     octokit: ^2.0.7
     open: ^7.0.4
