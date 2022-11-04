@@ -35,7 +35,7 @@ import {
 
 import styles from './BackendInsight.module.scss'
 
-interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLLIElement> {
     insight: BackendInsight
     resizing?: boolean
 }
