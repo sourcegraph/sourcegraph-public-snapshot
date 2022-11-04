@@ -48,7 +48,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumRetries:     3,
 	}, config.ObsContext)
 
-	handlerConfig := handlerConfig{interruptAfter: getInterruptAfter()}
+	handlerConfig := newHandlerConfig()
 
 	task := &inProgressHandler{
 		workerStore:    workerStore,
@@ -103,6 +103,10 @@ type inProgressHandler struct {
 
 type handlerConfig struct {
 	interruptAfter time.Duration
+}
+
+func newHandlerConfig() handlerConfig {
+	return handlerConfig{interruptAfter: getInterruptAfter()}
 }
 
 var _ workerutil.Handler = &inProgressHandler{}

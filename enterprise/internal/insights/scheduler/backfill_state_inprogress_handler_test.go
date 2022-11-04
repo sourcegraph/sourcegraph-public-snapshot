@@ -94,6 +94,9 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		repoStore:      repos,
 		insightsStore:  seriesStore,
 		backfillRunner: &noopBackfillRunner{},
+		config:         newHandlerConfig(),
+
+		clock: clock,
 	}
 	err = handler.Handle(ctx, logger, dequeue)
 	require.NoError(t, err)
@@ -249,6 +252,8 @@ func Test_BackfillWithRetry(t *testing.T) {
 		repoStore:      repos,
 		insightsStore:  seriesStore,
 		backfillRunner: runner,
+		config:         newHandlerConfig(),
+		clock:          clock,
 	}
 
 	// we should get an errored record here that will be retried by the overall queue
@@ -324,6 +329,8 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 		repoStore:      repos,
 		insightsStore:  seriesStore,
 		backfillRunner: runner,
+		config:         newHandlerConfig(),
+		clock:          clock,
 	}
 
 	// we should get an errored record here that will be retried by the overall queue
