@@ -321,18 +321,18 @@ const HIGHLIGHTED_FILE_MOCK = {
     },
 }
 
-export const NOOP_SETTINGS_CASCADE = {
+const NOOP_SETTINGS_CASCADE = {
     subjects: null,
     final: null,
 }
 
-export const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
+const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
     requestGraphQL: () => EMPTY,
     urlToFile: () => '',
     settings: of(NOOP_SETTINGS_CASCADE),
 }
 
-export const NOOP_EXTENSIONS_CONTROLLER: Controller = {
+const NOOP_EXTENSIONS_CONTROLLER: Controller = {
     executeCommand: () => Promise.resolve(),
     registerCommand: () => new Subscription(),
     extHostAPI: Promise.resolve(
