@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -54,7 +53,6 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),

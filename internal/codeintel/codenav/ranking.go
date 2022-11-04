@@ -13,6 +13,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
+	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -60,6 +61,48 @@ func (s *Service) SerializeRankingGraph(
 	return nil
 }
 
+func (s *Service) VacuumRankingGraph(
+	ctx context.Context,
+) error {
+	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		return nil
+	}
+	if s.rankingBucket == nil {
+		s.logger.Warn("No ranking bucket is configured")
+		return nil
+	}
+
+	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, id int) error {
+		objects := s.rankingBucket.Objects(ctx, &storage.Query{
+			Prefix: makeObjectPrefix(id),
+		})
+		for {
+			attrs, err := objects.Next()
+			if err != nil {
+				if err == iterator.Done {
+					break
+				}
+
+				return err
+			}
+
+			if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
+				return err
+			}
+
+			s.operations.numBytesDeleted.Add(float64(attrs.Size))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	s.operations.numStaleRecordsDeleted.Add(float64(numDeleted))
+	return nil
+}
+
 const maxBytesPerObject = 1024 * 1024 * 1024 // 1GB
 
 func (s *Service) serializeAndPersistRankingGraphForUpload(
@@ -78,7 +121,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	}()
 
 	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-		path := filepath.Join("ranking", rankingGraphKey, strconv.Itoa(id), filename)
+		path := filepath.Join(makeObjectPrefix(id), filename)
 
 		ow, ok := writers[path]
 		if !ok {
@@ -97,6 +140,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 		}
 
 		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+
 			return err
 		} else {
 			ow.written += n
@@ -109,6 +153,10 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 
 		return nil
 	})
+}
+
+func makeObjectPrefix(id int) string {
+	return filepath.Join("ranking", rankingGraphKey, strconv.Itoa(id))
 }
 
 type gcsObjectWriter struct {

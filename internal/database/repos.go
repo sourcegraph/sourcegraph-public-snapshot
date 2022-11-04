@@ -81,7 +81,15 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
+	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
+	// plus all repos from the following data sources:
+	// - src.fedoraproject.org
+	// - maven
+	// - NPM
+	// - JDK
+	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
+	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
@@ -1165,23 +1173,17 @@ const userPublicReposCTEFmtstr = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
-type ListIndexableReposOptions struct {
+type ListSourcegraphDotComIndexableReposOptions struct {
 	// CloneStatus if set will only return indexable repos of that clone
 	// status.
 	CloneStatus types.CloneStatus
-
-	*LimitOffset
 }
 
-var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
-	"SRC_INDEXABLE_REPOS_MIN_STARS",
-	"8",
-	"Minimum stars needed for a public repo to be indexed on sourcegraph.com",
-))
+// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
+// repo to be indexed on sourcegraph.com.
+const listSourcegraphDotComIndexableReposMinStars = 5
 
-// ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
+func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1203,17 +1205,11 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		where = append(where, sqlf.Sprintf("TRUE"))
 	}
 
-	minStars := listIndexableReposMinStars
-	if minStars == 0 {
-		minStars = 8
-	}
-
 	q := sqlf.Sprintf(
-		listIndexableReposQuery,
+		listSourcegraphDotComIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
-		minStars,
+		listSourcegraphDotComIndexableReposMinStars,
 		sqlf.Join(where, "\nAND"),
-		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1236,7 +1232,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	return results, nil
 }
 
-const listIndexableReposQuery = `
+const listSourcegraphDotComIndexableReposQuery = `
 SELECT
 	repo.id, repo.name, repo.stars
 FROM repo
@@ -1246,24 +1242,6 @@ WHERE
 		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
-		OR
-		repo.id IN (
-			SELECT
-				repo_id
-			FROM
-				external_service_repos
-			WHERE
-				external_service_repos.user_id IS NOT NULL
-				OR
-				external_service_repos.org_id IS NOT NULL
-
-			UNION ALL
-
-			SELECT
-				repo_id
-			FROM
-				user_public_repos
-		)
 	)
 	AND
 	deleted_at IS NULL
@@ -1272,7 +1250,6 @@ WHERE
 	AND
 	%s
 ORDER BY stars DESC NULLS LAST
-%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.

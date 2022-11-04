@@ -122,43 +122,6 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:        "site-admin: subset cloned",
-			repos:       []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "1 repository enqueued for cloning.",
-					},
-				},
-			},
-		},
-		{
-			name:  "site-admin: more cloned than stored",
-			repos: []*types.Repo{{Name: "foobar"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"foobar": types.CloneStatusCloned,
-				"barfoo": types.CloneStatusCloned,
-			},
-			res: nil,
-		},
-		{
-			name:  "site-admin: cloned different than stored",
-			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"one":   types.CloneStatusCloned,
-				"two":   types.CloneStatusCloned,
-				"three": types.CloneStatusCloned,
-			},
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "2 repositories enqueued for cloning.",
-					},
-				},
-			},
-		},
-		{
 			name:  "site-admin: one repo failed to sync",
 			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
 			cloneStatus: map[string]types.CloneStatus{

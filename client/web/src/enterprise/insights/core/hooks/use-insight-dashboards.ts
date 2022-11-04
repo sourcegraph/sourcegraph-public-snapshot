@@ -96,16 +96,22 @@ interface useInsightDashboardResult {
  * all insights dashboard, because it doesn't exist in the DB)
  */
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
-    const { id = '' } = props
+    const { id } = props
 
+    // Backend GQL API doesn't support non ID like values for id input
+    // Skip any get insight dashboard request in case of virtual dashboard
+    // that has non-ID like id value (id='all')
     const isVirtualDashboardId = id === ALL_INSIGHTS_DASHBOARD.id
+    const shouldRunQuery = id && !isVirtualDashboardId
     const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
-        skip: isVirtualDashboardId,
+        skip: !shouldRunQuery,
         variables: { id },
         fetchPolicy: 'cache-first',
     })
 
-    if (isVirtualDashboardId) {
+    // If query wasn't run return null value as a sign that we couldn't find any
+    // dashboard with the current id
+    if (!shouldRunQuery) {
         return { dashboard: null, loading, error }
     }
 

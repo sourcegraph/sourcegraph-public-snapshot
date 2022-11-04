@@ -25,7 +25,7 @@ type SessionData struct {
 // SignOut clears OpenID Connect-related data from the session. If possible, it revokes the token
 // from the OP. If there is an end-session endpoint, it returns that for the caller to present to
 // the user.
-func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string) (endSessionEndpoint string, err error) {
+func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvider func(id string) *Provider) (endSessionEndpoint string, err error) {
 	defer func() {
 		if err != nil {
 			_ = session.SetData(w, r, sessionKey, nil) // clear the bad data

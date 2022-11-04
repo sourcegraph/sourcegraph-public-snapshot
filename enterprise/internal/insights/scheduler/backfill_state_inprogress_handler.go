@@ -116,15 +116,6 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		log.Int("erroredRepos", itr.ErroredRepos()),
 		log.Int("totalErrors", itr.TotalErrors()))
 
-	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, []itypes.InsightSeriesRecordingTimes{
-		{
-			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
-		},
-	}); err != nil {
-		return errors.Wrap(err, "InProgressHandler.SetInsightSeriesRecordingTimes")
-	}
-
 	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) error {
 		for {

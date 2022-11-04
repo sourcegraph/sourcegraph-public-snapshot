@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -26,11 +27,12 @@ import (
 // The new state is the initial state post creation of a series.  This handler is responsible only for determining the work
 // that needs to be completed to backfill this series.  It then requeues the backfill record into "processing" to perform the actual backfill work.
 type newBackfillHandler struct {
-	workerStore   dbworkerstore.Store
-	backfillStore *BackfillStore
-	seriesReader  SeriesReader
-	repoIterator  discovery.SeriesRepoIterator
-	costAnalyzer  priority.QueryAnalyzer
+	workerStore     dbworkerstore.Store
+	backfillStore   *BackfillStore
+	seriesReader    SeriesReader
+	repoIterator    discovery.SeriesRepoIterator
+	costAnalyzer    priority.QueryAnalyzer
+	timeseriesStore store.Interface
 }
 
 // makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
@@ -54,11 +56,12 @@ func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*worke
 	}, config.ObsContext)
 
 	task := newBackfillHandler{
-		workerStore:   workerStore,
-		backfillStore: backfillStore,
-		seriesReader:  store.NewInsightStore(insightsDB),
-		repoIterator:  discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
-		costAnalyzer:  *config.CostAnalyzer,
+		workerStore:     workerStore,
+		backfillStore:   backfillStore,
+		seriesReader:    store.NewInsightStore(insightsDB),
+		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore),
+		costAnalyzer:    *config.CostAnalyzer,
+		timeseriesStore: config.InsightStore,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
@@ -131,6 +134,20 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, reco
 	backfill, err = backfill.SetScope(ctx, tx, repoIds, cost)
 	if err != nil {
 		return errors.Wrap(err, "backfill.SetScope")
+	}
+
+	frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}, series.CreatedAt.Truncate(time.Hour*24))
+
+	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
+		{
+			InsightSeriesID: series.ID,
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+		},
+	}); err != nil {
+		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")
 	}
 
 	// update series state
