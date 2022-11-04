@@ -51,7 +51,7 @@ func executorSecretByID(ctx context.Context, db database.DB, gqlID graphql.ID) (
 		return nil, err
 	}
 
-	// Security: Only allow access to secrets if the user has access to the namespace.
+	// 🚨 SECURITY: Only allow access to secrets if the user has access to the namespace.
 	if err := checkNamespaceAccess(ctx, db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
 		return nil, err
 	}

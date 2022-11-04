@@ -1669,7 +1669,7 @@ type ExecutorSecret implements Node {
     id: ID!
     """
     The key under which the secret is available. Secrets are usually exposed
-    as environment variables under this key.
+    as environment variables named using this key.
     Recommended format: uppercase letters, numbers and underscores.
     """
     key: String!

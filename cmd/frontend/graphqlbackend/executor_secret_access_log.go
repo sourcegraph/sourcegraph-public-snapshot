@@ -42,7 +42,7 @@ func executorSecretAccessLogByID(ctx context.Context, db database.DB, gqlID grap
 		return nil, err
 	}
 
-	// Security: Only allow access if the user has access to the namespace.
+	// 🚨 SECURITY: Only allow access if the user has access to the namespace.
 	if err := checkNamespaceAccess(ctx, db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
 		return nil, err
 	}

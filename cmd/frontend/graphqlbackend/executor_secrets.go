@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var executorSecretKeyPattern = regexp.MustCompile("^[A-Z][A-Z|0-9|_]*$")
+var executorSecretKeyPattern = regexp.MustCompile("^[A-Z][A-Z0-9_]*$")
 
 type ExecutorSecretScope string
 
@@ -47,7 +47,7 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 		return nil, auth.ErrNotAuthenticated
 	}
 
-	// Security: Check namespace access.
+	// 🚨 SECURITY: Check namespace access.
 	if err := checkNamespaceAccess(ctx, r.db, userID, orgID); err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 		return nil, err
 	}
 
-	// Security: Check namespace access.
+	// 🚨 SECURITY: Check namespace access.
 	if err := checkNamespaceAccess(ctx, r.db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteEx
 		return nil, err
 	}
 
-	// Security: Check namespace access.
+	// 🚨 SECURITY: Check namespace access.
 	if err := checkNamespaceAccess(ctx, r.db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (o ExecutorSecretsListArgs) LimitOffset() (*database.LimitOffset, error) {
 
 // ExecutorSecrets returns the global executor secrets.
 func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
-	// Security: Only allow access to list global secrets if the user is admin.
+	// 🚨 SECURITY: Only allow access to list global secrets if the user is admin.
 	// This is not terribly bad, since the secrets are also part of the user's namespace
 	// secrets, but this endpoint is useless to non-admins.
 	if err := checkNamespaceAccess(ctx, r.db, 0, 0); err != nil {
@@ -218,7 +218,7 @@ func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecre
 }
 
 func (r *UserResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
-	// Security: Only allow access to list secrets if the user has access to the namespace.
+	// 🚨 SECURITY: Only allow access to list secrets if the user has access to the namespace.
 	if err := checkNamespaceAccess(ctx, r.db, r.user.ID, 0); err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (r *UserResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecrets
 }
 
 func (r *OrgResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecretsListArgs) (*executorSecretConnectionResolver, error) {
-	// Security: Only allow access to list secrets if the user has access to the namespace.
+	// 🚨 SECURITY: Only allow access to list secrets if the user has access to the namespace.
 	if err := checkNamespaceAccess(ctx, r.db, 0, r.org.ID); err != nil {
 		return nil, err
 	}
