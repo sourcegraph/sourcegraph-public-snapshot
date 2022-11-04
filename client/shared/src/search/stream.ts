@@ -435,6 +435,7 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
@@ -450,6 +451,7 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        featureOverrides,
         decorationKinds,
         decorationContextLines,
         searchMode = SearchMode.Precise,
@@ -475,6 +477,9 @@ function initiateSearchStream(
         ]
         if (trace) {
             parameters.push(['trace', trace])
+        }
+        for (const v of featureOverrides || []) {
+            parameters.push(['feat', v])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
