@@ -209,7 +209,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         )}
                     </div>
                     <div className={styles.queryExamplesSectionsColumns}>
-                        {exampleSyntaxColumns.map((column, index) => (
+                        {queryExampleSectionsColumns.map((column, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <div key={`column-${index}`}>
                                 {column.map(({ title, queryExamples }) => (

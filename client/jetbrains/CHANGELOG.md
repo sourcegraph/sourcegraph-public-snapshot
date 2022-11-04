@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.1.0]
+
+### Added
+
 - Perforce support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
 - Multi-repo project support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
 

@@ -2140,11 +2140,11 @@ type SiteConfiguration struct {
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
 	// InsightsComputeGraphql description: DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
-	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
+	// InsightsHistoricalFrameLength description: DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
-	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
+	// InsightsHistoricalFrames description: DEPRECATED: (debug) number of historical insights timeframes to populate
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
-	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
+	// InsightsHistoricalSpeedFactor description: DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`

@@ -6,16 +6,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (b backgroundJob) NewRepositoryMatcher(interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+func NewRepositoryMatcher(policiesService PolicyService, observationContext *observation.Context, interval time.Duration, configurationPolicyMembershipBatchSize int) goroutine.BackgroundRoutine {
+	metrics := newMetrics(observationContext)
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
+		return handleRepositoryMatcherBatch(ctx, policiesService, configurationPolicyMembershipBatchSize, metrics)
 	}))
 }
 
-func (b backgroundJob) handleRepositoryMatcherBatch(ctx context.Context, batchSize int) error {
-	policies, err := b.policySvc.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
+func handleRepositoryMatcherBatch(ctx context.Context, service PolicyService, batchSize int, metrics *matcherMetrics) error {
+	policies, err := service.SelectPoliciesForRepositoryMembershipUpdate(ctx, batchSize)
 	if err != nil {
 		return err
 	}
@@ -34,11 +36,11 @@ func (b backgroundJob) handleRepositoryMatcherBatch(ctx context.Context, batchSi
 		// Always call this even if patterns are not supplied. Otherwise we run into the
 		// situation where we have deleted all of the patterns associated with a policy
 		// but it still has entries in the lookup table.
-		if err := b.policySvc.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+		if err := service.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 			return err
 		}
 
-		b.matcherMetrics.numPoliciesUpdated.Inc()
+		metrics.numPoliciesUpdated.Inc()
 	}
 
 	return nil

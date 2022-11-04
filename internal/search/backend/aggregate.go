@@ -24,23 +24,14 @@ var (
 // Note: It aggregates Progress as well, and expects that the
 // MaxPendingPriority it receives are monotonically decreasing.
 type collectSender struct {
-	aggregate          *zoekt.SearchResult
-	maxDocDisplayCount int
-	useDocumentRanks   bool
-	sizeBytes          uint64
+	aggregate *zoekt.SearchResult
+	opts      *zoekt.SearchOptions
+	sizeBytes uint64
 }
 
-type collectOpts struct {
-	maxDocDisplayCount int
-	flushWallTime      time.Duration
-	useDocumentRanks   bool
-	maxSizeBytes       int
-}
-
-func newCollectSender(opts *collectOpts) *collectSender {
+func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
 	return &collectSender{
-		maxDocDisplayCount: opts.maxDocDisplayCount,
-		useDocumentRanks:   opts.useDocumentRanks,
+		opts: opts,
 	}
 }
 
@@ -81,9 +72,9 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 	c.aggregate = nil
 	c.sizeBytes = 0
 
-	zoekt.SortFiles(agg.Files, c.useDocumentRanks)
+	zoekt.SortFiles(agg.Files, c.opts)
 
-	if max := c.maxDocDisplayCount; max > 0 && len(agg.Files) > max {
+	if max := c.opts.MaxDocDisplayCount; max > 0 && len(agg.Files) > max {
 		agg.Files = agg.Files[:max]
 	}
 
@@ -93,10 +84,10 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 // newFlushCollectSender creates a sender which will collect and rank results
 // until opts.flushWallTime. After that it will stream each result as it is
 // sent.
-func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender, func()) {
+func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender zoekt.Sender) (zoekt.Sender, func()) {
 	// We don't need to do any collecting, so just pass back the sender to use
 	// directly.
-	if opts.flushWallTime == 0 {
+	if opts.FlushWallTime == 0 {
 		return sender, func() {}
 	}
 
@@ -132,7 +123,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 	// Wait flushWallTime to call stopCollecting.
 	go func() {
-		timer := time.NewTimer(opts.flushWallTime)
+		timer := time.NewTimer(opts.FlushWallTime)
 		select {
 		case <-timerCancel:
 			timer.Stop()
@@ -150,7 +141,7 @@ func newFlushCollectSender(opts *collectOpts, sender zoekt.Sender) (zoekt.Sender
 
 				// Protect against too large aggregates. This should be the exception and only
 				// happen for queries yielding an extreme number of results.
-				if opts.maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(opts.maxSizeBytes) {
+				if maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(maxSizeBytes) {
 					stopCollectingAndFlush("max_size_reached")
 
 				}

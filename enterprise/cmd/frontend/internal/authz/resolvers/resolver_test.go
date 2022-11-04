@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -918,6 +920,51 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
+}
+
+func TestResolver_AuthzProviderTypes(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		if want := auth.ErrMustBeSiteAdmin; err != want {
+			t.Errorf("err: want %q but got %v", want, err)
+		}
+		if result != nil {
+			t.Errorf("result: want nil but got %v", result)
+		}
+	})
+
+	t.Run("get authz provider types", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			SiteAdmin: true,
+		}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		ghProvider := github.NewProvider("https://github.com", github.ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
+		authz.SetProviders(false, []authz.Provider{ghProvider})
+		result, err := (&Resolver{db: db}).AuthzProviderTypes(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"github"}, result)
+	})
+}
+
+func mustURL(t *testing.T, u string) *url.URL {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
 }
 
 func TestResolver_AuthorizedUsers(t *testing.T) {

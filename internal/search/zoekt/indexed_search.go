@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -402,9 +401,6 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 				},
 			}
 			if debug := file.Debug; debug != "" {
-				if len(file.Ranks) > 0 {
-					debug = fmt.Sprintf("%s ranks=%v", debug, file.Ranks)
-				}
 				fm.Debug = &debug
 			}
 			matches = append(matches, &fm)

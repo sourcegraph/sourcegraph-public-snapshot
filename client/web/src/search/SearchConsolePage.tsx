@@ -96,7 +96,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         ],
         [searchQuery, triggerSearch, autocompletion]
     )
-
     // Fetch search results when the `q` URL query parameter changes
     const results = useObservable(
         useMemo(

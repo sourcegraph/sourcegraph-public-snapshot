@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,13 +27,17 @@ type operations struct {
 	listTags              *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
+var once = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_gitserver",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	), nil
+})
+
+func newOperations(observationContext *observation.Context) *operations {
+	metrics, _ := once.Init(observationContext)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
