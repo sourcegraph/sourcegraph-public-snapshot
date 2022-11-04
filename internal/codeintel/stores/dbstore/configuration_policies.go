@@ -38,7 +38,6 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
-	LockfileIndexingEnabled   bool
 }
 
 func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy ConfigurationPolicy, err error) {
@@ -59,7 +58,6 @@ func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy Configuratio
 		&configurationPolicy.IndexingEnabled,
 		&indexCommitMaxAgeHours,
 		&configurationPolicy.IndexIntermediateCommits,
-		&configurationPolicy.LockfileIndexingEnabled,
 	); err != nil {
 		return configurationPolicy, err
 	}
@@ -102,137 +100,11 @@ type GetConfigurationPoliciesOptions struct {
 	// be returned.
 	ForIndexing bool
 
-	// ForLockfileIndexing indicates that only configuration policies with
-	// lockfile indexing enabled should be returned.
-	ForLockfileIndexing bool
-
 	// Limit indicates the number of results to take from the result set.
 	Limit int
 
 	// Offset indicates the number of results to skip in the result set.
 	Offset int
-}
-
-// GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
-// If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
-// to repository are returned. If repository is not supplied, then all policies may be returned.
-func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("term", opts.Term),
-		log.Bool("forDataRetention", opts.ForDataRetention),
-		log.Bool("forIndexing", opts.ForIndexing),
-		log.Bool("forLockfileIndexing", opts.ForLockfileIndexing),
-		log.Int("limit", opts.Limit),
-		log.Int("offset", opts.Offset),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	conds := make([]*sqlf.Query, 0, 5)
-	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf(`(
-			(p.repository_id IS NULL AND p.repository_patterns IS NULL) OR
-			p.repository_id = %s OR
-			EXISTS (
-				SELECT 1
-				FROM lsif_configuration_policies_repository_pattern_lookup l
-				WHERE l.policy_id = p.id AND l.repo_id = %s
-			)
-		)`, opts.RepositoryID, opts.RepositoryID))
-	}
-	if opts.Term != "" {
-		conds = append(conds, makeConfigurationPolicySearchCondition(opts.Term))
-	}
-	if opts.ForDataRetention {
-		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
-	}
-	if opts.ForIndexing {
-		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
-	}
-	if opts.ForLockfileIndexing {
-		conds = append(conds, sqlf.Sprintf("p.lockfile_indexing_enabled"))
-	}
-	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
-	}
-
-	tx, err := s.transact(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	totalCount, _, err = basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		getConfigurationPoliciesCountQuery,
-		sqlf.Join(conds, "AND"),
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.Log(log.Int("totalCount", totalCount))
-
-	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(
-		getConfigurationPoliciesLimitedQuery,
-		sqlf.Join(conds, "AND"),
-		opts.Limit,
-		opts.Offset,
-	)))
-	if err != nil {
-		return nil, 0, err
-	}
-	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
-
-	return configurationPolicies, totalCount, nil
-}
-
-const getConfigurationPoliciesCountQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
-SELECT COUNT(*)
-FROM lsif_configuration_policies p
-LEFT JOIN repo ON repo.id = p.repository_id
-WHERE %s
-`
-
-const getConfigurationPoliciesUnlimitedQuery = `
--- source: internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
-SELECT
-	p.id,
-	p.repository_id,
-	p.repository_patterns,
-	p.name,
-	p.type,
-	p.pattern,
-	p.protected,
-	p.retention_enabled,
-	p.retention_duration_hours,
-	p.retain_intermediate_commits,
-	p.indexing_enabled,
-	p.index_commit_max_age_hours,
-	p.index_intermediate_commits,
-	p.lockfile_indexing_enabled
-FROM lsif_configuration_policies p
-LEFT JOIN repo ON repo.id = p.repository_id
-WHERE %s
-ORDER BY p.name
-`
-
-const getConfigurationPoliciesLimitedQuery = getConfigurationPoliciesUnlimitedQuery + `
-LIMIT %s OFFSET %s
-`
-
-// makeConfigurationPolicySearchCondition returns a disjunction of LIKE clauses against all searchable
-// columns of an configuration policy.
-func makeConfigurationPolicySearchCondition(term string) *sqlf.Query {
-	searchableColumns := []string{
-		"p.name",
-	}
-
-	var termConds []*sqlf.Query
-	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
-	}
-
-	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
 // GetConfigurationPolicyByID retrieves the configuration policy with the given identifier.
@@ -265,8 +137,7 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits,
-	p.lockfile_indexing_enabled
+	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 -- Global policies are visible to anyone
@@ -310,7 +181,6 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.IndexingEnabled,
 		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
-		configurationPolicy.LockfileIndexingEnabled,
 	)))
 	if err != nil {
 		return ConfigurationPolicy{}, err
@@ -332,9 +202,8 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	lockfile_indexing_enabled
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	index_intermediate_commits
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -348,8 +217,7 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	lockfile_indexing_enabled
+	index_intermediate_commits
 `
 
 var (
@@ -416,7 +284,6 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		policy.IndexingEnabled,
 		indexCommitMaxAge,
 		policy.IndexIntermediateCommits,
-		policy.LockfileIndexingEnabled,
 		policy.ID,
 	))
 }
@@ -436,8 +303,7 @@ SELECT
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	lockfile_indexing_enabled
+	index_intermediate_commits
 FROM lsif_configuration_policies
 WHERE id = %s
 FOR UPDATE
@@ -455,8 +321,7 @@ UPDATE lsif_configuration_policies SET
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
-	index_intermediate_commits = %s,
-	lockfile_indexing_enabled = %s
+	index_intermediate_commits = %s
 WHERE id = %s
 `
 
@@ -541,6 +406,5 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	lockfile_indexing_enabled
+	index_intermediate_commits
 `

@@ -91,10 +91,11 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         }
                     />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
+                        display="block"
                     >
                         {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
                     </Button>
@@ -201,7 +202,8 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                         disabled={this.state.submitOrError === 'loading'}
                     />
                     <Button
-                        className="btn-block mt-4"
+                        className="mt-4"
+                        display="block"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"

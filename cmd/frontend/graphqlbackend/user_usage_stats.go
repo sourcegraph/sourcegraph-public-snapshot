@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -28,7 +27,7 @@ func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatistic
 		}
 	}
 
-	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
+	stats, err := usagestats.GetByUserID(ctx, r.db, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,30 +68,31 @@ func (s *userUsageStatisticsResolver) LastActiveCodeHostIntegrationTime() *strin
 	return nil
 }
 
+// No longer used, only here for backwards compatibility with IDE and browser extensions.
+// Functionality removed in https://github.com/sourcegraph/sourcegraph/pull/38826.
 func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+	return nil, nil
 }
 
 type Event struct {
-	Event          string
-	UserCookieID   string
-	FirstSourceURL *string
-	LastSourceURL  *string
-	URL            string
-	Source         string
-	Argument       *string
-	CohortID       *string
-	Referrer       *string
-	SessionID      *string
-	PublicArgument *string
-	UserProperties *string
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Event           string
+	UserCookieID    string
+	FirstSourceURL  *string
+	LastSourceURL   *string
+	URL             string
+	Source          string
+	Argument        *string
+	CohortID        *string
+	Referrer        *string
+	DeviceSessionID *string
+	PublicArgument  *string
+	UserProperties  *string
+	DeviceID        *string
+	InsertID        *string
+	EventID         *int32
 }
 
 type EventBatch struct {
@@ -181,7 +181,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			DeviceID:         args.DeviceID,
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
-			SessionID:        args.SessionID,
+			DeviceSessionID:  args.DeviceSessionID,
 		})
 	}
 

@@ -12,7 +12,7 @@ type CreateBatchSpecer interface {
 	CreateBatchSpec(ctx context.Context, batchSpec *btypes.BatchSpec) error
 }
 
-func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32) *btypes.BatchSpec {
+func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32, bcID int64) *btypes.BatchSpec {
 	t.Helper()
 
 	s := &btypes.BatchSpec{
@@ -25,6 +25,7 @@ func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer,
 				Branch: "branch-name",
 			},
 		},
+		BatchChangeID: bcID,
 	}
 
 	if err := store.CreateBatchSpec(ctx, s); err != nil {

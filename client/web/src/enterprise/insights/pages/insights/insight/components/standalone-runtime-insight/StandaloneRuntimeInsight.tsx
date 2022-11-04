@@ -4,8 +4,8 @@ import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ParentSize } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../../../charts'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
 import {
     CategoricalBasedChartTypes,

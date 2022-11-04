@@ -15,9 +15,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -104,7 +105,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		},
 	}
 
-	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)), livedependencies.NewSyncer())
+	depsSvc := livedependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	s := NewNpmPackagesSyncer(
 		schema.NpmPackagesConnection{Dependencies: []string{}},

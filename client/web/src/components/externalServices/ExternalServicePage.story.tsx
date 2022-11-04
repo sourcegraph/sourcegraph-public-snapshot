@@ -1,12 +1,15 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceKind } from '../../graphql-operations'
+import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 import { WebStory } from '../WebStory'
 
-import { fetchExternalService as _fetchExternalService } from './backend'
+import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
 import { ExternalServicePage } from './ExternalServicePage'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -25,6 +28,7 @@ const config: Meta = {
 export default config
 
 const externalService = {
+    __typename: 'ExternalService' as const,
     id: 'service123',
     kind: ExternalServiceKind.GITHUB,
     warning: null,
@@ -45,22 +49,39 @@ const externalService = {
     },
 }
 
-const fetchExternalService: typeof _fetchExternalService = () => of(externalService)
+const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
+    of({
+        totalCount: 0,
+        pageInfo: { endCursor: null, hasNextPage: false },
+        nodes: [],
+    })
 
-const fetchExternalServiceWithInvalidConfigURL: typeof _fetchExternalService = () =>
-    of({ ...externalService, config: '{"url": "invalid-url"}' })
+function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
+    return new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(FETCH_EXTERNAL_SERVICE),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: { node } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+}
 
 export const ViewConfig: Story = () => (
     <WebStory>
         {webProps => (
-            <ExternalServicePage
-                {...webProps}
-                afterUpdateRoute="/site-admin/after"
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                externalServiceID="service123"
-                fetchExternalService={fetchExternalService}
-                autoFocusForm={false}
-            />
+            <MockedTestProvider link={newFetchMock(externalService)}>
+                <ExternalServicePage
+                    {...webProps}
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    afterUpdateRoute="/site-admin/after"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    externalServiceID="service123"
+                    autoFocusForm={false}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )
@@ -70,16 +91,39 @@ ViewConfig.storyName = 'View external service config'
 export const ConfigWithInvalidUrl: Story = () => (
     <WebStory>
         {webProps => (
-            <ExternalServicePage
-                {...webProps}
-                afterUpdateRoute="/site-admin/after"
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                externalServiceID="service123"
-                fetchExternalService={fetchExternalServiceWithInvalidConfigURL}
-                autoFocusForm={false}
-            />
+            <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
+                <ExternalServicePage
+                    {...webProps}
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    afterUpdateRoute="/site-admin/after"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    externalServiceID="service123"
+                    autoFocusForm={false}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )
 
 ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
+
+export const ConfigWithWarning: Story = () => (
+    <WebStory>
+        {webProps => (
+            <MockedTestProvider
+                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
+            >
+                <ExternalServicePage
+                    {...webProps}
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    afterUpdateRoute="/site-admin/after"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    externalServiceID="service123"
+                    autoFocusForm={false}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+ConfigWithWarning.storyName = 'External service config with warning after update'

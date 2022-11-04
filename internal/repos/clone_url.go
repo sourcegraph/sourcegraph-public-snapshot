@@ -1,6 +1,7 @@
 package repos
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
@@ -24,6 +25,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func EncryptableCloneURL(ctx context.Context, logger log.Logger, kind string, config *extsvc.EncryptableConfig, repo *types.Repo) (string, error) {
+	parsed, err := extsvc.ParseEncryptableConfig(ctx, kind, config)
+	if err != nil {
+		return "", errors.Wrap(err, "loading service configuration")
+	}
+
+	return cloneURL(parsed, logger, kind, repo)
+}
+
 // CloneURL builds a cloneURL for the given repo based on the external service
 // configuration. If authentication information is found in the configuration, it
 // returns an authenticated URL for the selected code host.
@@ -33,6 +43,10 @@ func CloneURL(logger log.Logger, kind, config string, repo *types.Repo) (string,
 		return "", errors.Wrap(err, "loading service configuration")
 	}
 
+	return cloneURL(parsed, logger, kind, repo)
+}
+
+func cloneURL(parsed any, logger log.Logger, kind string, repo *types.Repo) (string, error) {
 	switch t := parsed.(type) {
 	case *schema.AWSCodeCommitConnection:
 		if r, ok := repo.Metadata.(*awscodecommit.Repository); ok {

@@ -218,6 +218,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'jsx':
         case 'es':
         case 'es6':
+        case 'mjs':
         case 'jss':
         case 'jsm':
             return 'javascript'

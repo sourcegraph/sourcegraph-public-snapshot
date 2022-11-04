@@ -14,8 +14,8 @@ const (
 	SearchStream  = "search.stream"
 	ComputeStream = "compute.stream"
 
-	SrcCliVersion  = "src-cli.version"
-	SrcCliDownload = "src-cli.download"
+	SrcCli             = "src-cli"
+	SrcCliVersionCache = "src-cli.version-cache"
 
 	Registry = "registry"
 
@@ -31,9 +31,7 @@ const (
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
 	GitInfoRefs            = "internal.git.info-refs"
-	GitResolveRevision     = "internal.git.resolve-revision"
 	GitUploadPack          = "internal.git.upload-pack"
-	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposIndex             = "internal.repos.index"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
@@ -60,8 +58,8 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(SearchStream)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
-	base.Path("/src-cli/version").Methods("GET").Name(SrcCliVersion)
-	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCliDownload)
+	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
+	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -86,9 +84,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
-	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
-	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)

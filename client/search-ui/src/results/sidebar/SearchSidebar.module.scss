@@ -46,7 +46,8 @@
 
     :global(.core-workflow-improvements-enabled) & {
         display: flex;
-        justify-content: flex-end;
+        align-items: center;
+        justify-content: space-between;
         margin: -0.25rem -0.75rem 0.75rem -0.75rem;
         padding: 0 0.75rem 0.5rem 0.75rem;
         border-bottom: 1px solid var(--sidebar-border-color);

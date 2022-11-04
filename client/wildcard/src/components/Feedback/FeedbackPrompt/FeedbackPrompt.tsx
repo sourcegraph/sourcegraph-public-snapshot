@@ -4,10 +4,10 @@ import { mdiClose, mdiCheck } from '@mdi/js'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Icon } from '@sourcegraph/wildcard'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
+import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'

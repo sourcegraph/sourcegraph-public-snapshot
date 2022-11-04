@@ -17,38 +17,42 @@ import (
 // `unquotePatterns` rule for an example.
 type rule struct {
 	description string
-	transform   transform
+	transform   []transform
 }
 
-type transform []func(query.Basic) *query.Basic
+type transform func(query.Basic) *query.Basic
 
 var rulesNarrow = []rule{
 	{
 		description: "unquote patterns",
-		transform:   transform{unquotePatterns},
+		transform:   []transform{unquotePatterns},
 	},
 	{
 		description: "apply search type for pattern",
-		transform:   transform{typePatterns},
+		transform:   []transform{typePatterns},
 	},
 	{
 		description: "apply language filter for pattern",
-		transform:   transform{langPatterns},
+		transform:   []transform{langPatterns},
+	},
+	{
+		description: "apply symbol select for pattern",
+		transform:   []transform{symbolPatterns},
 	},
 	{
 		description: "expand URL to filters",
-		transform:   transform{patternsToCodeHostFilters},
+		transform:   []transform{patternsToCodeHostFilters},
 	},
 }
 
 var rulesWiden = []rule{
 	{
 		description: "patterns as regular expressions",
-		transform:   transform{regexpPatterns},
+		transform:   []transform{regexpPatterns},
 	},
 	{
 		description: "AND patterns together",
-		transform:   transform{unorderedPatterns},
+		transform:   []transform{unorderedPatterns},
 	},
 }
 
@@ -279,6 +283,92 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 		mapped = append(mapped, node)
 	}
 	return mapped, changed
+}
+
+var symbolTypes = map[string]string{
+	"function":       "function",
+	"func":           "function",
+	"module":         "module",
+	"namespace":      "namespace",
+	"package":        "package",
+	"class":          "class",
+	"method":         "method",
+	"property":       "property",
+	"field":          "field",
+	"constructor":    "constructor",
+	"interface":      "interface",
+	"variable":       "variable",
+	"var":            "variable",
+	"constant":       "constant",
+	"const":          "constant",
+	"string":         "string",
+	"number":         "number",
+	"boolean":        "boolean",
+	"bool":           "boolean",
+	"array":          "array",
+	"object":         "object",
+	"key":            "key",
+	"enum":           "enum-member",
+	"struct":         "struct",
+	"type-parameter": "type-parameter",
+}
+
+func symbolPatterns(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	changed := false
+	var symbolType string // store the first pattern that matches a recognized symbol type.
+	isNegated := false
+	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		symbolAlias, ok := symbolTypes[value]
+		if !ok || changed {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+		changed = true
+		symbolType = symbolAlias
+		isNegated = negated
+		// remove this node
+		return nil
+	})
+
+	if !changed {
+		return nil
+	}
+
+	selectParam := query.Parameter{
+		Field:      query.FieldSelect,
+		Value:      fmt.Sprintf("symbol.%s", symbolType),
+		Negated:    isNegated,
+		Annotation: query.Annotation{},
+	}
+	symbolParam := query.Parameter{
+		Field:      query.FieldType,
+		Value:      "symbol",
+		Negated:    false,
+		Annotation: query.Annotation{},
+	}
+
+	var pattern query.Node
+	if len(newPattern) > 0 {
+		// Process concat nodes
+		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+		if err != nil {
+			return nil
+		}
+		pattern = nodes[0] // guaranteed root at first node
+	}
+
+	return &query.Basic{
+		Parameters: append(b.Parameters, selectParam, symbolParam),
+		Pattern:    pattern,
+	}
 }
 
 func langPatterns(b query.Basic) *query.Basic {

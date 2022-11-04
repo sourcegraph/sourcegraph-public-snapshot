@@ -22,14 +22,10 @@ const NOOP_SETTINGS_CASCADE = {
     final: null,
 }
 
-const NOOP_PLATFORM_CONTEXT: Pick<
-    PlatformContext,
-    'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'
-> = {
+const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
     requestGraphQL: () => EMPTY,
     urlToFile: () => '',
     settings: of(NOOP_SETTINGS_CASCADE),
-    forceUpdateTooltip: () => {},
 }
 
 const NOOP_EXTENSIONS_CONTROLLER: Controller = {
@@ -51,7 +47,7 @@ const NOOP_EXTENSIONS_CONTROLLER: Controller = {
 }
 
 const defaultProps: SettingsCascadeProps &
-    PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'> &
+    PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'> &
     TelemetryProps &
     HoverThresholdProps &
     ExtensionsControllerProps &

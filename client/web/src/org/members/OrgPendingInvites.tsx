@@ -389,7 +389,6 @@ export const OrgPendingInvitesPage: React.FunctionComponent<React.PropsWithChild
                                     onInviteSent={onInviteSent}
                                     eventLoggerEventName="InviteMemberCTAClicked"
                                     className={styles.inviteMemberLink}
-                                    as="a"
                                     variant="link"
                                 />
                                 {` to join you on ${org.name} on Sourcegraph`}

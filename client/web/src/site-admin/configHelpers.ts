@@ -1,5 +1,6 @@
 import { ModificationOptions, modify } from 'jsonc-parser'
 
+import { EditorAction } from '../settings/EditorActionsGroup'
 import { ConfigInsertionFunction } from '../settings/MonacoSettingsEditor'
 
 const defaultModificationOptions: ModificationOptions = {
@@ -31,12 +32,6 @@ const addQuickLinkToSettings: ConfigInsertionFunction = config => {
     }
     const edits = modify(config, ['quicklinks', -1], value, defaultModificationOptions)
     return { edits, selectText: '<name>' }
-}
-
-export interface EditorAction {
-    id: string
-    label: string
-    run: ConfigInsertionFunction
 }
 
 export const settingsActions: EditorAction[] = [

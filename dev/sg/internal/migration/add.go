@@ -34,10 +34,10 @@ const newDownMigrationFileTemplate = `-- Undo the changes made in the up migrati
 // Add creates a new directory with stub migration files in the given schema and returns the
 // names of the newly created files. If there was an error, the filesystem is rolled-back.
 func Add(database db.Database, migrationName string) error {
-	return add(database, migrationName, newUpMigrationFileTemplate, newDownMigrationFileTemplate)
+	return AddWithTemplate(database, migrationName, newUpMigrationFileTemplate, newDownMigrationFileTemplate)
 }
 
-func add(database db.Database, migrationName, upMigrationFileTemplate, downMigrationFileTemplate string) error {
+func AddWithTemplate(database db.Database, migrationName, upMigrationFileTemplate, downMigrationFileTemplate string) error {
 	definitions, err := readDefinitions(database)
 	if err != nil {
 		return err

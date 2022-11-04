@@ -1,9 +1,8 @@
 import React, { useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text } from '@sourcegraph/wildcard'
+import { useDeepMemo, Text, Series } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../../charts'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
     SeriesChart,

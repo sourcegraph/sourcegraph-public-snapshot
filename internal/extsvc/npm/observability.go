@@ -5,8 +5,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -59,7 +59,7 @@ func getOperations() *operations {
 	opsOnce.Do(func() {
 		observationContext := &observation.Context{
 			Logger:     log.Scoped("npm", ""),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
 

@@ -151,7 +151,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     variant="link"
                     className={classNames(styles.actionButton, styles.actionButtonWithCollapsed)}
                     onClick={() => onVisualModeChange(FilterSectionVisualMode.HorizontalSections)}
-                    aria-label="Switch to horizontal mode"
+                    aria-label="Open filters panel"
                 >
                     <Icon aria-hidden={true} svgPath={mdiArrowExpand} />
                 </Button>
@@ -183,7 +183,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         variant="link"
                         className={styles.actionButton}
                         onClick={() => onVisualModeChange(FilterSectionVisualMode.Preview)}
-                        aria-label="Switch to preview mode"
+                        aria-label="Close filters panel"
                     >
                         <Icon aria-hidden={true} svgPath={mdiArrowCollapse} />
                     </Button>

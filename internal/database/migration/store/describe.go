@@ -230,6 +230,7 @@ FROM pg_catalog.pg_extension e
 JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -251,6 +252,7 @@ JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
 JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -279,6 +281,7 @@ JOIN pg_language l ON l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
 LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	-- function is not defined in an extension
 	d.objid IS NULL
@@ -305,6 +308,7 @@ SELECT
 FROM information_schema.sequences s
 WHERE
 	s.sequence_schema NOT LIKE 'pg_%%' AND
+	s.sequence_schema NOT LIKE '_timescaledb_%%' AND
 	s.sequence_schema != 'information_schema'
 ORDER BY
 	s.sequence_schema,
@@ -325,6 +329,7 @@ FROM information_schema.tables t
 WHERE
 	t.table_type = 'BASE TABLE' AND
 	t.table_schema NOT LIKE 'pg_%%' AND
+	t.table_schema NOT LIKE '_timescaledb_%%' AND
 	t.table_schema != 'information_schema'
 ORDER BY
 	t.table_schema,
@@ -346,6 +351,7 @@ tables AS MATERIALIZED (
 	WHERE
 		t.table_type = 'BASE TABLE' AND
 		t.table_schema NOT LIKE 'pg_%%' AND
+		t.table_schema NOT LIKE '_timescaledb_%%' AND
 		t.table_schema != 'information_schema'
 ),
 element_types AS MATERIALIZED (
@@ -421,6 +427,7 @@ LEFT OUTER JOIN pg_catalog.pg_constraint con ON (
 )
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema'
 ORDER BY
 	n.nspname,
@@ -448,6 +455,7 @@ JOIN pg_catalog.pg_namespace n ON n.oid = table_class.relnamespace
 LEFT OUTER JOIN pg_catalog.pg_class reftable_class ON reftable_class.oid = con.confrelid
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	con.contype IN ('c', 'f', 't')
 ORDER BY
@@ -472,6 +480,7 @@ JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
 JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
 WHERE
 	n.nspname NOT LIKE 'pg_%%' AND
+	n.nspname NOT LIKE '_timescaledb_%%' AND
 	n.nspname != 'information_schema' AND
 	NOT t.tgisinternal
 ORDER BY
@@ -493,6 +502,7 @@ SELECT
 FROM pg_catalog.pg_views v
 WHERE
 	v.schemaname NOT LIKE 'pg_%%' AND
+	v.schemaname NOT LIKE '_timescaledb_%%' AND
 	v.schemaname != 'information_schema' AND
 	v.viewname NOT LIKE 'pg_stat_%%'
 ORDER BY

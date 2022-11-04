@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -26,6 +26,7 @@ type Resetter struct {
 	ctx      context.Context // root context passed to the database
 	cancel   func()          // cancels the root context
 	finished chan struct{}   // signals that Start has finished
+	logger   log.Logger
 }
 
 type ResetterOptions struct {
@@ -69,11 +70,11 @@ func NewMetrics(observationContext *observation.Context, metricNameRoot string) 
 	}
 }
 
-func NewResetter(store store.Store, options ResetterOptions) *Resetter {
-	return newResetter(store, options, glock.NewRealClock())
+func NewResetter(logger log.Logger, store store.Store, options ResetterOptions) *Resetter {
+	return newResetter(logger, store, options, glock.NewRealClock())
 }
 
-func newResetter(store store.Store, options ResetterOptions, clock glock.Clock) *Resetter {
+func newResetter(logger log.Logger, store store.Store, options ResetterOptions, clock glock.Clock) *Resetter {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/newResetter")
 	}
@@ -87,6 +88,7 @@ func newResetter(store store.Store, options ResetterOptions, clock glock.Clock) 
 		ctx:      ctx,
 		cancel:   cancel,
 		finished: make(chan struct{}),
+		logger:   logger,
 	}
 }
 
@@ -104,14 +106,14 @@ loop:
 			}
 
 			r.options.Metrics.Errors.Inc()
-			log15.Error("Failed to reset stalled records", "name", r.options.Name, "error", err)
+			r.logger.Error("Failed to reset stalled records", log.String("name", r.options.Name), log.Error(err))
 		}
 
 		for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
+			r.logger.Warn("Reset stalled record back to 'queued' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
 		}
 		for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
+			r.logger.Warn("Reset stalled record to 'failed' state", log.String("name", r.options.Name), log.Int("id", id), log.Duration("timeSinceLastHeartbeat", lastHeartbeatAge))
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))

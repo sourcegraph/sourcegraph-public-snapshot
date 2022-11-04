@@ -68,6 +68,13 @@ func TestNew(t *testing.T) {
 			dsn: "postgres://foo@bar/bam",
 		},
 		{
+			name: "datasource search_path",
+			env: map[string]string{
+				"PGDATASOURCE": "postgres://sg:REDACTED@pgsql:5432/sg?sslmode=disable&search_path=application",
+			},
+			dsn: "postgres://sg:REDACTED@pgsql:5432/sg?sslmode=disable&search_path=application",
+		},
+		{
 			name: "datasource ignore",
 			env: map[string]string{
 				"PGHOST":       "pgsql",

@@ -655,7 +655,7 @@ func space(patterns []Pattern) []Node {
 //
 // The callback parameter defines how the function concatenates patterns. The
 // return value of callback is substituted in-place in the tree.
-func substituteConcat(callback func([]Pattern) []Node) func(nodes []Node) []Node {
+func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true

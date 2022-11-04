@@ -96,7 +96,7 @@ export const CodeIntelligenceBadgeMenu: React.FunctionComponent<
     const dotStyle = showDotError ? styles.braindotError : showDotAttention ? styles.braindotAttention : ''
 
     return (
-        <Menu className="btn-icon">
+        <Menu>
             <>
                 <MenuButton
                     className={classNames('text-decoration-none', styles.braindot, dotStyle)}

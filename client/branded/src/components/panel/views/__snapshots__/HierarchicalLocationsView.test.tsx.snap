@@ -10,39 +10,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       <div
         class="fileLocations fileLocations"
       >
-        <div
-          aria-live="polite"
-          class="alert alertInfo mr-4 container"
-          role="alert"
-        >
-          <span>
-            Try out our 
-            <button
-              class="btn btnLink m-0 p-0 border-0 button"
-              type="button"
-            >
-              brand new reference panel experience
-            </button>
-          </span>
-          <button
-            class="btn btnLink m-0 p-0 text-right button"
-            type="button"
-          >
-            <svg
-              aria-label="Close"
-              class="mdi-icon"
-              fill="currentColor"
-              height="16"
-              role="img"
-              viewBox="0 0 24 24"
-              width="16"
-            >
-              <path
-                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-              />
-            </svg>
-          </button>
-        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -57,22 +24,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="header"
                 id="result-container-0"
               >
-                <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
@@ -92,7 +43,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -117,16 +68,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    1 match
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div
@@ -238,9 +182,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 <span
                   class=""
                 >
-                   
                   <span>
-                    file1.txt
+                    <span>
+                      file1.txt
+                    </span>
                   </span>
                 </span>
               </span>
@@ -267,9 +212,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 <span
                   class=""
                 >
-                   
                   <span>
-                    file2.txt
+                    <span>
+                      file2.txt
+                    </span>
                   </span>
                 </span>
               </span>
@@ -285,39 +231,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       <div
         class="fileLocations fileLocations"
       >
-        <div
-          aria-live="polite"
-          class="alert alertInfo mr-4 container"
-          role="alert"
-        >
-          <span>
-            Try out our 
-            <button
-              class="btn btnLink m-0 p-0 border-0 button"
-              type="button"
-            >
-              brand new reference panel experience
-            </button>
-          </span>
-          <button
-            class="btn btnLink m-0 p-0 text-right button"
-            type="button"
-          >
-            <svg
-              aria-label="Close"
-              class="mdi-icon"
-              fill="currentColor"
-              height="16"
-              role="img"
-              viewBox="0 0 24 24"
-              width="16"
-            >
-              <path
-                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-              />
-            </svg>
-          </button>
-        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -332,22 +245,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="header"
                 id="result-container-0"
               >
-                <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
@@ -367,7 +264,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -394,16 +291,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    2 matches
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div
@@ -510,39 +400,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       <div
         class="fileLocations fileLocations"
       >
-        <div
-          aria-live="polite"
-          class="alert alertInfo mr-4 container"
-          role="alert"
-        >
-          <span>
-            Try out our 
-            <button
-              class="btn btnLink m-0 p-0 border-0 button"
-              type="button"
-            >
-              brand new reference panel experience
-            </button>
-          </span>
-          <button
-            class="btn btnLink m-0 p-0 text-right button"
-            type="button"
-          >
-            <svg
-              aria-label="Close"
-              class="mdi-icon"
-              fill="currentColor"
-              height="16"
-              role="img"
-              viewBox="0 0 24 24"
-              width="16"
-            >
-              <path
-                d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-              />
-            </svg>
-          </button>
-        </div>
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
@@ -557,22 +414,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="header"
                 id="result-container-0"
               >
-                <svg
-                  aria-label="content result"
-                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
-                  fill="currentColor"
-                  height="24"
-                  role="img"
-                  viewBox="0 0 24 24"
-                  width="24"
-                >
-                  <path
-                    d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
-                  />
-                </svg>
-                <div
-                  class="mx-1 headerDivider"
-                />
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
@@ -592,7 +433,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   data-testid="result-container-header"
                 >
                   <div
-                    class="titleInner"
+                    class="titleInner mutedRepoFileLink"
                   >
                     <a
                       class="anchorLink"
@@ -617,16 +458,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <span
-                  class="d-flex align-items-center"
-                >
-                  <small>
-                    1 match
-                  </small>
-                </span>
               </div>
               <div
-                class=""
+                class="collapsibleResults"
               >
                 <div>
                   <div

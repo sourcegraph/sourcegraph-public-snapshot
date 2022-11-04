@@ -62,7 +62,9 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
 }) {
     const history = useHistory()
 
-    const deselectWorkspace = useCallback(() => history.push(batchSpec.executionURL), [batchSpec.executionURL, history])
+    const deselectWorkspace = useCallback(() => {
+        history.push({ ...history.location, pathname: `${batchSpec.executionURL}/execution` })
+    }, [batchSpec.executionURL, history])
 
     const videoRef = useRef<HTMLVideoElement | null>(null)
     // Pause the execution animation loop when the batch spec stops executing.

@@ -2,6 +2,7 @@ package insights
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -18,6 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
+
+func TestMain(m *testing.M) {
+	logtest.Init(m)
+	os.Exit(m.Run())
+}
 
 func TestGetSearchInsights(t *testing.T) {
 	ctx := context.Background()

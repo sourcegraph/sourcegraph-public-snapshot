@@ -40,7 +40,8 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ gq
 			log.Bool("ctagsSupported", ctagsSupported))
 	}()
 
-	ctagsSupported, language, err = r.resolver.SupportedByCtags(ctx, r.path, r.repo)
+	codeNavResolver := r.resolver.CodeNavResolver()
+	ctagsSupported, language, err = codeNavResolver.GetSupportedByCtags(ctx, r.path, r.repo)
 	if err != nil {
 		return nil, err
 	}

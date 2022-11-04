@@ -5,9 +5,11 @@ exports[`RepoLink renders a fragment when "to" is null 1`] = `
   <span
     class=""
   >
-     my/
     <span>
-      repo
+      my/
+      <span>
+        repo
+      </span>
     </span>
   </span>
 </DocumentFragment>
@@ -19,10 +21,8 @@ exports[`RepoLink renders a link when "to" is set 1`] = `
     class=""
     href="http://example.com"
   >
-    <span
-      class=""
-    >
-       my/
+    <span>
+      my/
       <span>
         repo
       </span>

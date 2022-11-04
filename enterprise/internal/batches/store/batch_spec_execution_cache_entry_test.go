@@ -13,7 +13,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	entries := make([]*btypes.BatchSpecExecutionCacheEntry, 0, 3)
 	for i := 0; i < cap(entries); i++ {
 		job := &btypes.BatchSpecExecutionCacheEntry{
@@ -150,9 +150,9 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	c := &ct.TestClock{Time: timeutil.Now()}
+	c := &bt.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	maxSize := 10 * 1024 // 10kb
 

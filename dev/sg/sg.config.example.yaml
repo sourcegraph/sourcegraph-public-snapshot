@@ -85,7 +85,7 @@ commands:
 
   web:
     cmd: ./node_modules/.bin/gulp --silent --color dev
-    install: yarn --no-progress
+    install: yarn
     env:
       WEBPACK_DEV_SERVER: 1
       NODE_ENV: development

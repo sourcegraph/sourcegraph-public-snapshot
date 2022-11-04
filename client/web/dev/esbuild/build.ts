@@ -1,6 +1,7 @@
 import path from 'path'
 
 import * as esbuild from 'esbuild'
+import ElmPlugin from 'esbuild-plugin-elm'
 
 import {
     MONACO_LANGUAGES_AND_FEATURES,
@@ -33,6 +34,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     bundle: true,
     format: 'esm',
     logLevel: 'error',
+    jsx: 'automatic',
+    jsxDev: true, // we're only using esbuild for dev server right now
     splitting: true,
     chunkNames: 'chunks/chunk-[name]-[hash]',
     outdir: STATIC_ASSETS_PATH,
@@ -47,6 +50,10 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
         monacoPlugin(MONACO_LANGUAGES_AND_FEATURES),
         buildTimerPlugin,
         experimentalNoticePlugin,
+        ElmPlugin({
+            cwd: path.join(ROOT_PATH, 'client/web/src/search/results/components/compute'),
+            pathToElm: path.join(ROOT_PATH, 'node_modules/.bin/elm'),
+        }),
     ],
     define: {
         ...Object.fromEntries(

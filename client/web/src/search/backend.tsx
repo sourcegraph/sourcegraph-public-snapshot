@@ -5,7 +5,6 @@ import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-import { InvitableCollaborator } from '../auth/welcome/InviteCollaborators/InviteCollaborators'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     EventLogsDataResult,
@@ -17,8 +16,6 @@ import {
     UpdateSavedSearchResult,
     UpdateSavedSearchVariables,
     Scalars,
-    InvitableCollaboratorsResult,
-    InvitableCollaboratorsVariables,
 } from '../graphql-operations'
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -270,34 +267,4 @@ export function fetchRecentSearches(userId: Scalars['ID'], first: number): Obser
 
 export function fetchRecentFileViews(userId: Scalars['ID'], first: number): Observable<EventLogResult | null> {
     return fetchEvents(userId, first, 'ViewBlob')
-}
-
-export function fetchCollaborators(userId: Scalars['ID']): Observable<InvitableCollaborator[]> {
-    if (!userId) {
-        return of([])
-    }
-
-    const result = requestGraphQL<InvitableCollaboratorsResult, InvitableCollaboratorsVariables>(
-        gql`
-            query InvitableCollaborators {
-                currentUser {
-                    invitableCollaborators {
-                        name
-                        email
-                        displayName
-                        avatarURL
-                    }
-                }
-            }
-        `,
-        {}
-    )
-
-    return result.pipe(
-        map(dataOrThrowErrors),
-        map(
-            (data: InvitableCollaboratorsResult): InvitableCollaborator[] =>
-                data.currentUser?.invitableCollaborators ?? []
-        )
-    )
 }

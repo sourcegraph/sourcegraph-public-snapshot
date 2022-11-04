@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func AddLog(logger log.Logger, commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
+func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "db",
 		Usage:    "The target `schema` to modify.",
@@ -34,6 +34,7 @@ func AddLog(logger log.Logger, commandName string, factory RunnerFactory, outFac
 			schemaName  = schemaNameFlag.Get(cmd)
 			versionFlag = versionFlag.Get(cmd)
 			upFlag      = upFlag.Get(cmd)
+			logger      = log.Scoped("up", "migration up command")
 		)
 
 		_, store, err := setupStore(ctx, factory, schemaName)

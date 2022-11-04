@@ -255,13 +255,14 @@ func tarArchive(dir string) (*tar.Reader, error) {
 		"archive",
 		"--worktree-attributes",
 		"--format=tar",
-		"master",
+		"HEAD",
 		"--",
 	}
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
 	b := bytes.Buffer{}
 	cmd.Stdout = &b
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}

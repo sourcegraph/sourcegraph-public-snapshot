@@ -31,7 +31,7 @@ body,
 
 // Selection highlight is the background color for matched/highlighted tokens,
 // e.g. for search results, for identifying the token currently being hovered over,
-// or identifying the token the references panel is toggled for
+// or identifying the token the references panel is toggled for.
 .selection-highlight,
 .selection-highlight-sticky {
     background-color: var(--mark-bg);

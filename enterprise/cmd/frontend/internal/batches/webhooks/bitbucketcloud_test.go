@@ -440,12 +440,12 @@ func createBitbucketCloudExternalService(t *testing.T, ctx context.Context, esSt
 	es := &types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "bitbucketcloud",
-		Config: bt.MarshalJSON(t, &schema.BitbucketCloudConnection{
+		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.BitbucketCloudConnection{
 			Url:           bitbucketCloudExternalServiceURL,
 			Username:      "user",
 			AppPassword:   "password",
 			WebhookSecret: "secret",
-		}),
+		})),
 	}
 	if err := esStore.Upsert(ctx, es); err != nil {
 		t.Fatal(err)

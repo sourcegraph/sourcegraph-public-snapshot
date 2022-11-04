@@ -106,6 +106,10 @@ const story: Meta = {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
+        controls: {
+            hideNoControlsWarning: true,
+            exclude: ['now', 'queryLsifUploadsList', 'queryLisfUploadFields', 'queryRetentionMatches'],
+        },
     },
 }
 export default story

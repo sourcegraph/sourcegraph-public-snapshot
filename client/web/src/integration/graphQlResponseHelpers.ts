@@ -4,8 +4,7 @@ import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 import {
     BlobResult,
     FileExternalLinksResult,
-    RepositoryRedirectResult,
-    ResolveRevResult,
+    ResolveRepoRevResult,
     ExternalServiceKind,
     RepoChangesetsStatsResult,
     FileNamesResult,
@@ -62,22 +61,6 @@ export const createFileExternalLinksResult = (
     },
 })
 
-export const createRepositoryRedirectResult = (
-    repoName: string,
-    serviceKind: ExternalServiceKind = ExternalServiceKind.GITHUB
-): RepositoryRedirectResult => ({
-    repositoryRedirect: {
-        __typename: 'Repository',
-        id: `RepositoryID:${repoName}`,
-        name: repoName,
-        url: `/${encodeURIPathComponent(repoName)}`,
-        externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
-        description: 'bla',
-        viewerCanAdminister: false,
-        defaultBranch: { displayName: 'master', abbrevName: 'master' },
-    },
-})
-
 export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => ({
     repository: {
         changesetsStats: {
@@ -87,15 +70,26 @@ export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => 
     },
 })
 
-export const createResolveRevisionResult = (treeUrl: string, oid = '1'.repeat(40)): ResolveRevResult => ({
+export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repeat(40)): ResolveRepoRevResult => ({
     repositoryRedirect: {
         __typename: 'Repository',
+        id: `RepositoryID:${treeUrl}`,
+        name: treeUrl,
+        url: `/${encodeURIPathComponent(treeUrl)}`,
+        externalURLs: [
+            {
+                url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
+                serviceKind: ExternalServiceKind.GITHUB,
+            },
+        ],
+        description: 'bla',
+        viewerCanAdminister: false,
+        defaultBranch: { displayName: 'master', abbrevName: 'master' },
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
             oid,
             tree: { url: '/' + treeUrl },
         },
-        defaultBranch: { abbrevName: 'master' },
     },
 })
 

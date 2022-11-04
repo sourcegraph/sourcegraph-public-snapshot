@@ -10,7 +10,7 @@ import { TreeLayerTable } from './components'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, SingleChildGitTree } from './util'
+import { SingleChildGitTree } from './util'
 
 interface SingleChildTreeLayerProps extends TreeLayerProps {
     childrenEntries: SingleChildGitTree[]
@@ -134,7 +134,6 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             depth={this.props.depth}
                             index={this.props.index}
                             isLightTheme={this.props.isLightTheme}
-                            maxEntries={maxEntries}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}

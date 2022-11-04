@@ -53,6 +53,10 @@
     &-description {
         line-height: (14/11);
     }
+
+    :global(.match-highlight) {
+        color: var(--text-muted-highlighted);
+    }
 }
 
 .toggle-matches-container {

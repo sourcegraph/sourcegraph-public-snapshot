@@ -706,7 +706,7 @@ function getLabel(entry: NotepadEntry): string {
 
 function toSearchQuery(entry: SearchEntry): string {
     let { query } = entry
-    if (entry.patternType !== SearchPatternType.literal) {
+    if (entry.patternType !== SearchPatternType.standard) {
         query = updateFilter(entry.query, FilterType.patterntype, entry.patternType)
     }
     if (entry.caseSensitive) {

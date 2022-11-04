@@ -69,18 +69,18 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -183,18 +183,18 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -267,18 +267,18 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -345,18 +345,18 @@ func TestBitbucketServerSource_ReopenChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -433,18 +433,18 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -511,18 +511,18 @@ func TestBitbucketServerSource_CreateComment(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -594,18 +594,18 @@ func TestBitbucketServerSource_MergeChangeset(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindBitbucketServer,
-				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-				}),
+				})),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
@@ -630,13 +630,14 @@ func TestBitbucketServerSource_MergeChangeset(t *testing.T) {
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
-		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-		}),
+		})),
 	}
 
-	bbsSrc, err := NewBitbucketServerSource(svc, nil)
+	ctx := context.Background()
+	bbsSrc, err := NewBitbucketServerSource(ctx, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,18 +713,16 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 
 		return &types.ExternalService{
 			Kind: extsvc.KindBitbucketServer,
-			Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
 				Url:   instanceURL,
 				Token: actualToken,
-			}),
+			})),
 		}
 	}
 
 	testName := func(t *testing.T) string {
 		return strings.ReplaceAll(t.Name(), "/", "_")
 	}
-
-	ctx := context.Background()
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
@@ -734,7 +733,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 
 		svc := newExternalService(t, strPtr("invalid"))
 
-		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo("SOUR", "read-only", 10103))
@@ -753,7 +753,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		// repo that isn't a fork.
 		target := newBitbucketServerRepo("~AHARVEY", "old-talk", 0)
 
-		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetUserFork(ctx, target)
@@ -771,7 +772,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		// parent check in getFork() failing.
 		target := newBitbucketServerRepo("SOUR", "read-only", 0)
 
-		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
 		fork, err := bbsSrc.GetUserFork(ctx, target)
@@ -787,7 +789,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		svc := newExternalService(t, nil)
 		target := newBitbucketServerRepo("SOUR", "read-only", 10103)
 
-		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
@@ -809,7 +812,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		svc := newExternalService(t, nil)
 		target := newBitbucketServerRepo("SGDEMO", "go", 10060)
 
-		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)

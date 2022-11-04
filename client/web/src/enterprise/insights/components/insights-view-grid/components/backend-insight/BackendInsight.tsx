@@ -32,8 +32,8 @@ import {
     DrillDownFiltersPopover,
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
+    parseSeriesLimit,
 } from './components'
-import { parseSeriesLimit } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -67,14 +67,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
     const { wasEverVisible, isVisible } = useVisibility(insightCardReference)
 
-    // Use deep copy check in case if a setting subject has re-created copy of
-    // the insight config with same structure and values. To avoid insight data
-    // re-fetching.
-    const cachedInsight = useDeepMemo(insight)
-
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
-    const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
+    const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
@@ -181,8 +176,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
-    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
-
     return (
         <InsightCard
             {...otherProps}
@@ -194,7 +187,11 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         >
             <InsightCardHeader
                 title={
-                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                    <Link
+                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
                         {insight.title}
                     </Link>
                 }

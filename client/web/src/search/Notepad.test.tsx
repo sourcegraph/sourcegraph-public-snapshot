@@ -43,7 +43,7 @@ describe('Notepad', () => {
     afterEach(cleanup)
 
     const mockEntries: NotepadEntry[] = [
-        { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.literal },
+        { id: 0, type: 'search', query: 'TODO', caseSensitive: false, patternType: SearchPatternType.standard },
         { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
     ]
 
@@ -88,7 +88,7 @@ describe('Notepad', () => {
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     { id: 1, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                 ],
@@ -112,7 +112,7 @@ describe('Notepad', () => {
 
             // Entries are in reverse order
             expect(entryLinks[0]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
-            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=literal')
+            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard')
         })
 
         it('creates notebooks', () => {
@@ -163,7 +163,7 @@ describe('Notepad', () => {
                         type: 'search',
                         query: 'TODO',
                         caseSensitive: false,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     { id: 2, type: 'file', path: 'path/to/file', repo: 'test', revision: 'master', lineRange: null },
                     {
@@ -171,14 +171,14 @@ describe('Notepad', () => {
                         type: 'search',
                         query: 'another query',
                         caseSensitive: true,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                     {
                         id: 4,
                         type: 'search',
                         query: 'yet another query',
                         caseSensitive: true,
-                        patternType: SearchPatternType.literal,
+                        patternType: SearchPatternType.standard,
                     },
                 ],
             })
@@ -470,7 +470,7 @@ describe('Notepad', () => {
             act(() => {
                 addNotepadEntry({
                     type: 'search',
-                    patternType: SearchPatternType.literal,
+                    patternType: SearchPatternType.standard,
                     query: 'new TODO',
                     caseSensitive: false,
                 })

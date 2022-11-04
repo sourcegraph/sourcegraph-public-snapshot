@@ -4,11 +4,13 @@ import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
+import { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     useLocalStorage,
@@ -32,8 +34,13 @@ import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebar.module.scss'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    repoID: Scalars['ID']
+interface RepoRevisionSidebarProps
+    extends RepoFile,
+        ExtensionsControllerProps,
+        ThemeProps,
+        TelemetryProps,
+        SettingsCascadeProps {
+    repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
     className: string
@@ -49,7 +56,9 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
-export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const RepoRevisionSidebar: React.FunctionComponent<
+    React.PropsWithChildren<RepoRevisionSidebarProps>
+> = props => {
     const [persistedTabIndex, setPersistedTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
@@ -58,6 +67,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+
+    const enableMergedFileSymbolSidebar =
+        props.settingsCascade.final &&
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade.final.experimentalFeatures &&
+        props.settingsCascade.final.experimentalFeatures.enableMergedFileSymbolSidebar
 
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
@@ -101,9 +116,13 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     isAuthenticated={!!props.authenticatedUser}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
+                {/* `key` is used to force rerendering the Tabs component when the UI
+                    setting changes. This is necessary to force registering Tabs and
+                    TabPanels properly. */}
                 <Tabs
+                    key={`ui-${enableMergedFileSymbolSidebar}`}
                     className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
-                    defaultIndex={persistedTabIndex}
+                    defaultIndex={enableMergedFileSymbolSidebar ? 0 : persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
                 >
@@ -127,39 +146,48 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                         <Tab data-tab-content="files">
                             <span className="tablist-wrapper--tab-label">Files</span>
                         </Tab>
-                        <Tab data-tab-content="symbols">
-                            <span className="tablist-wrapper--tab-label">Symbols</span>
-                        </Tab>
+                        {!enableMergedFileSymbolSidebar && (
+                            <Tab data-tab-content="symbols">
+                                <span className="tablist-wrapper--tab-label">Symbols</span>
+                            </Tab>
+                        )}
                     </TabList>
                     <div className={classNames('flex w-100 overflow-auto explorer', styles.tabpanels)} tabIndex={-1}>
-                        <TabPanels>
-                            <TabPanel>
-                                <Tree
-                                    key="files"
-                                    repoName={props.repoName}
-                                    revision={props.revision}
-                                    commitID={props.commitID}
-                                    history={props.history}
-                                    location={props.location}
-                                    scrollRootSelector=".explorer"
-                                    activePath={props.filePath}
-                                    activePathIsDir={props.isDir}
-                                    sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
-                                    extensionsController={props.extensionsController}
-                                    isLightTheme={props.isLightTheme}
-                                    telemetryService={props.telemetryService}
-                                />
-                            </TabPanel>
-                            <TabPanel>
-                                <RepoRevisionSidebarSymbols
-                                    key="symbols"
-                                    repoID={props.repoID}
-                                    revision={props.revision}
-                                    activePath={props.filePath}
-                                    onHandleSymbolClick={handleSymbolClick}
-                                />
-                            </TabPanel>
-                        </TabPanels>
+                        {/* TODO: See if we can render more here, instead of waiting for these props */}
+                        {props.repoID && props.commitID && (
+                            <TabPanels>
+                                <TabPanel>
+                                    <Tree
+                                        key="files"
+                                        repoName={props.repoName}
+                                        repoID={props.repoID}
+                                        revision={props.revision}
+                                        commitID={props.commitID}
+                                        history={props.history}
+                                        location={props.location}
+                                        scrollRootSelector=".explorer"
+                                        activePath={props.filePath}
+                                        activePathIsDir={props.isDir}
+                                        sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
+                                        extensionsController={props.extensionsController}
+                                        isLightTheme={props.isLightTheme}
+                                        telemetryService={props.telemetryService}
+                                        enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
+                                    />
+                                </TabPanel>
+                                {!enableMergedFileSymbolSidebar && (
+                                    <TabPanel>
+                                        <RepoRevisionSidebarSymbols
+                                            key="symbols"
+                                            repoID={props.repoID}
+                                            revision={props.revision}
+                                            activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
+                                        />
+                                    </TabPanel>
+                                )}
+                            </TabPanels>
+                        )}
                     </div>
                 </Tabs>
             </div>

@@ -9,9 +9,15 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { useQueryStringParameters } from '../../members/utils'
 
-import { GitHubAppInstallation } from './ConnectGitHubAppPage'
-
 import styles from './AppLogo.module.scss'
+
+interface GitHubAppInstallation {
+    id: number
+    account: {
+        login: string
+        avatar_url: string
+    }
+}
 
 export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
     const [data, setData] = useState<GitHubAppInstallation | null>()

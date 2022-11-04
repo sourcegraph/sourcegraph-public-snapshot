@@ -11,7 +11,7 @@ import { SERIES_MOCK_CHART } from '../../../../components'
 import { ComputeInsightCreationPage as ComputeInsightCreationPageComponent } from './ComputeInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/ComputeInsightCreationPage',
+    title: 'web/insights/creation-ui/compute/ComputeInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {

@@ -1,14 +1,12 @@
 package store
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -27,9 +25,7 @@ var reconcilerWorkerStoreOpts = dbworkerstore.Options{
 	AlternateColumnNames: map[string]string{"state": "reconciler_state"},
 	ColumnExpressions:    changesetColumns,
 
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstChangeset(rows, err)
-	},
+	Scan: dbworkerstore.BuildWorkerScan(buildRecordScanner(scanChangeset)),
 
 	// Order changesets by state, so that freshly enqueued changesets have
 	// higher priority.

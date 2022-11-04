@@ -4,11 +4,10 @@ import (
 	"context"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 type CodeIntelligenceRangeConnectionResolver struct {
-	ranges           []resolvers.AdjustedCodeIntelligenceRange
+	ranges           []AdjustedCodeIntelligenceRange
 	locationResolver *CachedLocationResolver
 }
 

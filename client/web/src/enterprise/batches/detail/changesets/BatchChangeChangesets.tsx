@@ -324,7 +324,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>
-                {hoverState?.hoverOverlayProps && (
+                {hoverState?.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         nav={url => history.push(url)}

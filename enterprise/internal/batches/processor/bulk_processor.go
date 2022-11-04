@@ -76,13 +76,9 @@ func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (
 	}
 
 	// Construct changeset source.
-	b.css, err = b.sourcer.ForRepo(ctx, b.tx, b.repo)
+	b.css, err = b.sourcer.ForUser(ctx, b.tx, job.UserID, b.repo)
 	if err != nil {
 		return errors.Wrap(err, "loading ChangesetSource")
-	}
-	b.css, err = sources.WithAuthenticatorForUser(ctx, b.tx, b.css, job.UserID, b.repo)
-	if err != nil {
-		return errors.Wrap(err, "authenticating ChangesetSource")
 	}
 
 	log15.Info("processing changeset job", "type", job.JobType)
@@ -257,7 +253,7 @@ func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.Change
 		return errcode.MakeNonRetryable(errors.Newf("no changeset spec for changeset %d", b.ch.ID))
 	}
 
-	if !spec.Spec.Published.Nil() {
+	if !spec.Published.Nil() {
 		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
 	}
 

@@ -12,17 +12,12 @@ import (
 )
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	currentUser, err := backend.CurrentUser(ctx, r.db)
-	if err != nil {
+	// 🚨 SECURITY: Only site admins can fetch status messages.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	if currentUser == nil {
-		return nil, backend.ErrNotAuthenticated
-	}
 
-	// 🚨 SECURITY: Users will fetch status messages for any external services they
-	// own. In addition, site admins will also fetch site level external services.
-	messages, err := repos.FetchStatusMessages(ctx, r.db, currentUser)
+	messages, err := repos.FetchStatusMessages(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -44,20 +39,12 @@ func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, boo
 	return r, r.message.Cloning != nil
 }
 
-func (r *statusMessageResolver) ToIndexingProgress() (*statusMessageResolver, bool) {
-	return r, r.message.Indexing != nil
-}
-
 func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.ExternalServiceSyncError != nil
 }
 
 func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
-}
-
-func (r *statusMessageResolver) ToIndexingError() (*statusMessageResolver, bool) {
-	return r, r.message.IndexingError != nil
 }
 
 func (r *statusMessageResolver) Message() (string, error) {
@@ -69,9 +56,6 @@ func (r *statusMessageResolver) Message() (string, error) {
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
-	}
-	if r.message.IndexingError != nil {
-		return r.message.IndexingError.Message, nil
 	}
 	return "", errors.New("status message is of unknown type")
 }

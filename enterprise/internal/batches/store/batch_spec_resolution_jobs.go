@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -255,21 +254,4 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	}
 
 	return nil
-}
-
-func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecResolutionJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.BatchSpecResolutionJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecResolutionJob
-		if err = scanBatchSpecResolutionJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }

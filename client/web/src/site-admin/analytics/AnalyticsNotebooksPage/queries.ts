@@ -5,20 +5,20 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
 
 export const NOTEBOOKS_STATISTICS = gql`
-    query NotebooksStatistics($dateRange: AnalyticsDateRange!) {
+    query NotebooksStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
-                notebooks(dateRange: $dateRange) {
+                notebooks(dateRange: $dateRange, grouping: $grouping) {
                     creations {
                         ...AnalyticsStatItemFragment
                     }
@@ -28,7 +28,7 @@ export const NOTEBOOKS_STATISTICS = gql`
                     blockRuns {
                         summary {
                             totalCount
-                            totalUniqueUsers
+                            totalRegisteredUsers
                         }
                     }
                 }

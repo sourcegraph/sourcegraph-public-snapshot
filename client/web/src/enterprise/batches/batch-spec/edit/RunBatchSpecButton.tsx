@@ -19,6 +19,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../../../tracking/eventLogger'
 import { ExecutionOptions } from '../BatchSpecContext'
 
 import styles from './RunBatchSpecButton.module.scss'
@@ -49,7 +50,14 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <ButtonGroup className="mb-2">
                 <Tooltip content={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}>
-                    <Button variant="primary" onClick={execute} disabled={!!isExecutionDisabled}>
+                    <Button
+                        variant="primary"
+                        onClick={() => {
+                            execute()
+                            eventLogger.log('batch_change_editor:run_batch_spec:clicked')
+                        }}
+                        disabled={!!isExecutionDisabled}
+                    >
                         Run batch spec
                     </Button>
                 </Tooltip>

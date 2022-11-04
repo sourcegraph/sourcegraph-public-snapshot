@@ -21,7 +21,7 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GITHUB #1",
-			Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
 		}},
 		nil,
 	)

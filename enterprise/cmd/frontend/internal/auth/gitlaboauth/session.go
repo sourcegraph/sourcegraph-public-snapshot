@@ -42,7 +42,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
+	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil, nil)
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
@@ -61,7 +61,9 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	signupAllowed := s.allowSignup == nil || *s.allowSignup
 
 	var data extsvc.AccountData
-	gitlab.SetExternalAccountData(&data, gUser, token)
+	if err := gitlab.SetExternalAccountData(&data, gUser, token); err != nil {
+		return nil, "", err
+	}
 
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
 	// because the GitLab API does not return whether an email has been verified. The user's primary
@@ -144,7 +146,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 		svc = &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: fmt.Sprintf("GitLab (%s)", gUser.Username),
-			Config: fmt.Sprintf(`
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
@@ -153,7 +155,7 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
   "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, p.ServiceID, token.AccessToken, token.RefreshToken, token.Expiry.Unix()),
+`, p.ServiceID, token.AccessToken, token.RefreshToken, token.Expiry.Unix())),
 			NamespaceUserID: actor.UID,
 		}
 	} else if len(services) > 1 {
@@ -161,22 +163,29 @@ func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, toke
 	} else {
 		// We have an existing service, update it
 		svc = services[0]
-		svc.Config, err = jsonc.Edit(svc.Config, token.AccessToken, "token")
+
+		rawConfig, err := svc.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, "", err
+		}
+
+		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
 		if err != nil {
 			return nil, "Error updating OAuth token", err
 		}
-		svc.Config, err = jsonc.Edit(svc.Config, "oauth", "token.type")
+		rawConfig, err = jsonc.Edit(rawConfig, "oauth", "token.type")
 		if err != nil {
 			return nil, "Error updating token type", err
 		}
-		svc.Config, err = jsonc.Edit(svc.Config, token.RefreshToken, "token.oauth.refresh")
+		rawConfig, err = jsonc.Edit(rawConfig, token.RefreshToken, "token.oauth.refresh")
 		if err != nil {
 			return nil, "Error updating refresh token", err
 		}
-		svc.Config, err = jsonc.Edit(svc.Config, token.Expiry.Unix(), "token.oauth.expiry")
+		rawConfig, err = jsonc.Edit(rawConfig, token.Expiry.Unix(), "token.oauth.expiry")
 		if err != nil {
 			return nil, "Error updating token expiry", err
 		}
+		svc.Config.Set(rawConfig)
 		svc.UpdatedAt = now
 	}
 	err = tx.Upsert(ctx, svc)

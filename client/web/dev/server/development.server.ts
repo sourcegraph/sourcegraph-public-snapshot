@@ -124,7 +124,7 @@ async function startEsbuildDevelopmentServer({
     const manifest = getManifest()
     const htmlPage = getHTMLPage(manifest)
 
-    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
+    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTP_PORT }, app => {
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
             response.send(htmlPage)

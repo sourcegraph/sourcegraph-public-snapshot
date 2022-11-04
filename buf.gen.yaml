@@ -10,8 +10,8 @@ plugins:
     path: ./node_modules/.bin/protoc-gen-ts
   - name: doc
     path: ./.bin/protoc-gen-doc
-    out: ./doc/code_intelligence/references
-    opt: doc/code_intelligence/references/lsif.sprig,lsif.md
+    out: ./doc/code_navigation/references
+    opt: doc/code_navigation/references/lsif.sprig,lsif.md
   - name: rust
     path: ./.bin/bin/protoc-gen-rust
     out: ./docker-images/syntax-highlighter/crates/sg-lsif/src/

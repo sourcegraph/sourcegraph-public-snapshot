@@ -68,7 +68,6 @@ type operations struct {
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
 	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
-	selectRepositoriesForIndexScan              *observation.Operation
 	selectRepositoriesForRetentionScan          *observation.Operation
 	selectRepositoriesForLockfileIndexScan      *observation.Operation
 	updateCommitedAt                            *observation.Operation
@@ -169,7 +168,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 		requeueIndex:                         op("RequeueIndex"),
 
 		selectPoliciesForRepositoryMembershipUpdate: op("selectPoliciesForRepositoryMembershipUpdate"),
-		selectRepositoriesForIndexScan:              op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:          op("SelectRepositoriesForRetentionScan"),
 		selectRepositoriesForLockfileIndexScan:      op("SelectRepositoriesForLockfileIndexScan"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),

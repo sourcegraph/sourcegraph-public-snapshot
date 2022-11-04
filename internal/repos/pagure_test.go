@@ -21,10 +21,11 @@ func TestPagureSource_ListRepos(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindPagure,
-		Config: marshalJSON(t, conf),
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
 	}
 
-	src, err := NewPagureSource(svc, cf)
+	ctx := context.Background()
+	src, err := NewPagureSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

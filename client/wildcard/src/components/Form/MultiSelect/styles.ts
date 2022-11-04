@@ -21,7 +21,7 @@ export const STYLES: StylesConfig = {
             ? state.theme.colors.primary
             : 'var(--input-border-color)',
         boxShadow: state.isFocused
-            ? // These are stolen from `wildcard/Input` and `wildcard/Select`, which seem to come from Bootstrap
+            ? // These are stolen from `wildcard/Input` and `wildcard/Select`, which come from `client/branded/src/global-styles/forms.scss`
               state.selectProps.isValid
                 ? 'var(--input-focus-box-shadow-valid)'
                 : state.selectProps.isValid === false

@@ -1,9 +1,16 @@
 # npm dependencies
 
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+</aside>
+
 Site admins can sync npm packages from any npm registry, including open source code from npmjs.com or a private registry such as Verdaccio, to their Sourcegraph instance so that users can search and navigate the repositories.
 
 To add npm dependencies to Sourcegraph you need to setup an npm dependencies code host:
 
+1. As *site admin*: go to **Site admin > Global settings** and enable the experimental feature by adding: `{"experimentalFeatures": {"npmPackages": "enabled"} }`
 1. As *site admin*: go to **Site admin > Manage code hosts**
 1. Select **npm Dependencies**.
 1. [Configure the connection](#configuration) by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
@@ -14,7 +21,6 @@ To add npm dependencies to Sourcegraph you need to setup an npm dependencies cod
 There are three ways to sync npm dependency repositories.
 
 * **SCIP** (recommended): run [`scip-typescript`](https://github.com/sourcegraph/scip-typescript) on your JavaScript/TypeScript codebase and upload the generated index to Sourcegraph using the [src-cli](https://github.com/sourcegraph/src-cli) command `src code-intel upload`. Sourcegraph automatically synchronizes npm dependency repositories based on the dependencies that are discovered by `scip-typescript`.
-* **Dependencies search**: Sourcegraph automatically synchronizes npm dependency repositories that are in `package-lock.json` or `yarn.lock` files during a [dependencies search](../../code_search/how-to/dependencies_search.md).
 * **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the npm dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to upload an index.
 
 ## Credentials

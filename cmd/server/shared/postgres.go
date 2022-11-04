@@ -14,6 +14,10 @@ var databases = map[string]string{
 }
 
 func maybePostgresProcFile() (string, error) {
+	if AllowSingleDockerCodeInsights {
+		databases["CODEINSIGHTS_"] = "sourcegraph-codeinsights"
+	}
+
 	missingExternalConfig := false
 	for prefix := range databases {
 		if !isPostgresConfigured(prefix) {

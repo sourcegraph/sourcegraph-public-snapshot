@@ -5,20 +5,20 @@ const analyticsStatItemFragment = gql`
         nodes {
             date
             count
-            uniqueUsers
+            registeredUsers
         }
         summary {
             totalCount
-            totalUniqueUsers
+            totalRegisteredUsers
         }
     }
 `
 
 export const SEARCH_STATISTICS = gql`
-    query SearchStatistics($dateRange: AnalyticsDateRange!) {
+    query SearchStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
         site {
             analytics {
-                search(dateRange: $dateRange) {
+                search(dateRange: $dateRange, grouping: $grouping) {
                     searches {
                         ...AnalyticsStatItemFragment
                     }

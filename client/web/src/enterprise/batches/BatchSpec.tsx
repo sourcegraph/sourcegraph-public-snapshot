@@ -4,10 +4,11 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Link, Icon, Text, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { MonacoBatchSpecEditor } from './batch-spec/edit/editor/MonacoBatchSpecEditor'
 
@@ -66,12 +67,13 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
     const component = asButton ? (
         <Button
             variant="primary"
-            as="a"
+            as={AnchorLink}
             download={getFileName(name)}
-            href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+            to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             target="_blank"
             rel="noopener noreferrer"
             className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Button>
@@ -80,6 +82,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Link>

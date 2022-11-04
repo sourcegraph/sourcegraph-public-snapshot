@@ -122,7 +122,6 @@ func TestLockoutStore(t *testing.T) {
 	})
 
 	t.Run("generates an expected jwt token", func(t *testing.T) {
-		expiryTime := time.Now().Add(5 * time.Minute)
 		rcache.SetupForTest(t)
 
 		s := NewLockoutStore(2, time.Minute, time.Second)
@@ -154,10 +153,20 @@ func TestLockoutStore(t *testing.T) {
 		if !ok {
 			t.Fatalf("parsed JWT claims not ok")
 		}
-		if claims.Subject != "1" || claims.ExpiresAt == nil || *claims.ExpiresAt != *jwt.NewNumericDate(expiryTime) {
+
+		if claims.Subject != "1" || claims.ExpiresAt == nil {
 			t.Fatalf("claims from JWT do not match expectations %v", claims)
 		}
 
+		// if GenerateUnlockAccountURL runs within a different second
+		// (jwt.TimePrecision) to the next line, our want will be different
+		// than the claims ExpiresAt. Additionally CI can be busy, so lets add
+		// a decent amount of fudge to this (10s).
+		want := time.Now().Add(5 * time.Minute).Truncate(jwt.TimePrecision)
+		got := *&claims.ExpiresAt.Time
+		if durationAbs(want.Sub(got)) > 10*time.Second {
+			t.Fatalf("unexpected ExpiresAt time:\ngot:  %s\nwant: %s", got, want)
+		}
 	})
 
 	t.Run("correctly verifies unlock account token", func(t *testing.T) {
@@ -201,4 +210,19 @@ func TestLockoutStore(t *testing.T) {
 		assert.EqualError(t, error, "No previously generated token exists for the specified user")
 		assert.False(t, valid)
 	})
+}
+
+// durationAbs returns the absolute value of d.
+//
+// Copy-pasta from Duration.Abs in the stdlib, but only available in go1.19.
+// Can remove this helper once we require go1.19 as a minimum.
+func durationAbs(d time.Duration) time.Duration {
+	switch {
+	case d >= 0:
+		return d
+	case d == -1<<63:
+		return 1<<63 - 1
+	default:
+		return -d
+	}
 }

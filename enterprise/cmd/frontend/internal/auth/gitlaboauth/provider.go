@@ -8,6 +8,7 @@ import (
 	"github.com/dghubble/gologin"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,7 +19,7 @@ import (
 
 const sessionKey = "gitlaboauth@0"
 
-func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
+func parseProvider(logger log.Logger, db database.DB, callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
 		rawURL = "https://gitlab.com/"
@@ -54,7 +55,7 @@ func parseProvider(db database.DB, callbackURL string, p *schema.GitLabAuthProvi
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(db, &sessionIssuerHelper{
+				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					db:          db,
 					CodeHost:    codeHost,
 					clientID:    p.ClientID,

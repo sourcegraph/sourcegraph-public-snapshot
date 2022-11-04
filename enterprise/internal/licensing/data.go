@@ -7,25 +7,41 @@ const (
 	// oldEnterprise is the old "Enterprise" plan.
 	oldEnterprise Plan = "old-enterprise-0"
 
-	// team is the "Team" plan.
-	team Plan = "team-0"
-	// enterprise is the "Enterprise" plan.
-	enterprise Plan = "enterprise-0"
+	// PlanTeam0 is the "Team" plan pre-4.0.
+	PlanTeam0 Plan = "team-0"
+	// enterprise0 is the "Enterprise" plan pre-4.0.
+	enterprise0 Plan = "enterprise-0"
+
+	// PlanBusiness0 is the "Business" plan for 4.0.
+	PlanBusiness0 Plan = "business-0"
+	// enterprise1 is the "Enterprise" plan for 4.0.
+	enterprise1 Plan = "enterprise-1"
 )
 
 var allPlans = []Plan{
 	oldEnterpriseStarter,
 	oldEnterprise,
-	team,
-	enterprise,
+	PlanTeam0,
+	enterprise0,
+
+	PlanBusiness0,
+	enterprise1,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
 // isFeatureEnabled.
 const (
-	// FeatureACLs is whether ACLs may be used, such as GitHub, GitLab or Bitbucket Server repository
-	// permissions and integration with GitHub, GitLab or Bitbucket Server for user authentication.
+	// FeatureSSO is whether non-builtin authentication may be used, such as GitHub
+	// OAuth, GitLab OAuth, SAML, and OpenID.
+	FeatureSSO Feature = "sso"
+
+	// FeatureACLs is whether the Background Permissions Syncing may be be used for
+	// setting repository permissions.
 	FeatureACLs Feature = "acls"
+
+	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
+	// setting repository permissions.
+	FeatureExplicitPermissionsAPI Feature = "explicit-permissions-api"
 
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
 	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
@@ -63,7 +79,9 @@ const (
 var planFeatures = map[Plan][]Feature{
 	oldEnterpriseStarter: {},
 	oldEnterprise: {
+		FeatureSSO,
 		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
 		FeatureBranding,
@@ -73,10 +91,30 @@ var planFeatures = map[Plan][]Feature{
 		FeatureBackupAndRestore,
 		FeatureCodeInsights,
 	},
-	team:       {},
-	enterprise: {},
-}
+	PlanTeam0: {
+		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
+		FeatureSSO,
+	},
+	enterprise0: {
+		FeatureACLs,
+		FeatureExplicitPermissionsAPI,
+		FeatureSSO,
+	},
 
-// NoLicenseMaximumExternalServiceCount is the maximum number of external services that the
-// instance supports when running without a license.
-const NoLicenseMaximumExternalServiceCount = 1
+	PlanBusiness0: {
+		FeatureACLs,
+		FeatureCampaigns,
+		FeatureBatchChanges,
+		FeatureCodeInsights,
+		FeatureSSO,
+	},
+	enterprise1: {
+		FeatureACLs,
+		FeatureCampaigns,
+		FeatureCodeInsights,
+		FeatureBatchChanges,
+		FeatureExplicitPermissionsAPI,
+		FeatureSSO,
+	},
+}

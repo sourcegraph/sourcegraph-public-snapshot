@@ -15,7 +15,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
-import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
+import { getReturnTo } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
@@ -66,11 +66,6 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
         return <Navigate to="/sign-in" replace={true} />
     }
 
-    let newUserFromEmailInvitation = false
-    if (context.sourcegraphDotComMode && returnTo.includes('/organizations/invitation/')) {
-        newUserFromEmailInvitation = true
-    }
-
     const handleSignUp = (args: SignUpArguments): Promise<void> =>
         fetch('/-/sign-up', {
             credentials: 'same-origin',
@@ -86,14 +81,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            // if sign up is successful and enablePostSignupFlow feature is ON
-            // and user is not signing up from an email invitation to join an org -
-            // redirect user to the /post-sign-up page
-            if (context.experimentalFeatures.enablePostSignupFlow && !newUserFromEmailInvitation) {
-                window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
-            } else {
-                window.location.replace(returnTo)
-            }
+            window.location.replace(returnTo)
 
             return Promise.resolve()
         })

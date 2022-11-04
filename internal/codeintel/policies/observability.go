@@ -11,14 +11,20 @@ type operations struct {
 	// Not used yet.
 	commitsMatchingIndexingPolicies  *observation.Operation
 	commitsMatchingRetentionPolicies *observation.Operation
-	create                           *observation.Operation
-	delete                           *observation.Operation
-	get                              *observation.Operation
-	list                             *observation.Operation
-	update                           *observation.Operation
 
 	// Configurations
-	getConfigurationPolicies *observation.Operation
+	getConfigurationPolicies      *observation.Operation
+	getConfigurationPoliciesByID  *observation.Operation
+	createConfigurationPolicy     *observation.Operation
+	updateConfigurationPolicy     *observation.Operation
+	deleteConfigurationPolicyByID *observation.Operation
+
+	// Retention Policy
+	getRetentionPolicyOverview *observation.Operation
+
+	// Repository
+	getPreviewRepositoryFilter *observation.Operation
+	getPreviewGitObjectFilter  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,13 +47,19 @@ func newOperations(observationContext *observation.Context) *operations {
 		// Not used yet.
 		commitsMatchingIndexingPolicies:  op("CommitsMatchingIndexingPolicies"),
 		commitsMatchingRetentionPolicies: op("CommitsMatchingRetentionPolicies"),
-		create:                           op("Create"),
-		delete:                           op("Delete"),
-		get:                              op("Get"),
-		list:                             op("List"),
-		update:                           op("Update"),
 
 		// Configurations
-		getConfigurationPolicies: op("GetConfigurationPolicies"),
+		getConfigurationPolicies:      op("GetConfigurationPolicies"),
+		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),
+		createConfigurationPolicy:     op("CreateConfigurationPolicy"),
+		updateConfigurationPolicy:     op("UpdateConfigurationPolicy"),
+		deleteConfigurationPolicyByID: op("DeleteConfigurationPolicyByID"),
+
+		// Retention
+		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
+
+		// Repository
+		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
+		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),
 	}
 }

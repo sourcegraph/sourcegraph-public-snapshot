@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Story, Meta, DecoratorFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
@@ -23,11 +22,17 @@ const decorator: DecoratorFn = story => (
 const config: Meta = {
     title: 'web/batches/ExternalChangesetNode',
     decorators: [decorator],
+    argTypes: {
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
 
-export const AllStates: Story = () => {
+export const AllStates: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -93,7 +98,7 @@ export const AllStates: Story = () => {
                                                 : { pushUser: false, namespace: null },
                                     },
                                 }}
-                                viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                                viewerCanAdminister={args.viewerCanAdminister}
                                 queryExternalChangesetWithFileDiffs={() =>
                                     of({
                                         diff: {
@@ -119,7 +124,7 @@ export const AllStates: Story = () => {
 
 AllStates.storyName = 'All states'
 
-export const Unpublished: Story = () => {
+export const Unpublished: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -172,7 +177,7 @@ export const Unpublished: Story = () => {
                             forkTarget: null,
                         },
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: {
@@ -194,7 +199,7 @@ export const Unpublished: Story = () => {
     )
 }
 
-export const Importing: Story = () => {
+export const Importing: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -234,7 +239,7 @@ export const Importing: Story = () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: {
@@ -256,7 +261,7 @@ export const Importing: Story = () => {
     )
 }
 
-export const ImportingFailed: Story = () => {
+export const ImportingFailed: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -296,7 +301,7 @@ export const ImportingFailed: Story = () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: null,
@@ -310,7 +315,7 @@ export const ImportingFailed: Story = () => {
 
 ImportingFailed.storyName = 'Importing failed'
 
-export const SyncFailed: Story = () => {
+export const SyncFailed: Story = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -350,7 +355,7 @@ export const SyncFailed: Story = () => {
                         reviewState: null,
                         currentSpec: null,
                     }}
-                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    viewerCanAdminister={args.viewerCanAdminister}
                     queryExternalChangesetWithFileDiffs={() =>
                         of({
                             diff: null,

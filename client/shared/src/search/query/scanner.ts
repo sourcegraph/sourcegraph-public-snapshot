@@ -279,7 +279,7 @@ export const scanBalancedLiteral: Scanner<Literal> = (input, start) => {
 }
 
 /**
- * Scan predicate syntax like repo:contains(file:README.md). Predicate scanning
+ * Scan predicate syntax like repo:contains.file(path:README.md). Predicate scanning
  * takes precedence over other value scanners like scanBalancedLiteral.
  */
 export const scanPredicateValue = (input: string, start: number, field: Literal): ScanResult<Literal> => {
@@ -531,6 +531,7 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
+        case SearchPatternType.keyword:
             return scanStandard(query)
         case SearchPatternType.literal:
             patternKind = PatternKind.Literal

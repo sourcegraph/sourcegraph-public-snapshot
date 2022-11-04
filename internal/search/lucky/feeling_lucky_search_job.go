@@ -99,19 +99,11 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	} else {
 		luckyAlertType = alertobserver.LuckyAlertAdded
 	}
-	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.ProposedQuery{}}
+	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.QueryDescription{}}
 	var autoQ *autoQuery
 	for _, next := range f.generators {
-		for {
+		for next != nil {
 			autoQ, next = next()
-			if autoQ == nil {
-				if next == nil {
-					// No query and generator is exhausted.
-					break
-				}
-				continue
-			}
-
 			j := f.newGeneratedJob(autoQ)
 			if j == nil {
 				// Generated an invalid job with this query, just continue.
@@ -139,10 +131,6 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 			}
 
 			maxAlerter.Add(alert)
-
-			if next == nil {
-				break
-			}
 		}
 	}
 
@@ -229,10 +217,15 @@ func (n *notifier) New(count int) error {
 	} else {
 		resultCountString = fmt.Sprintf("%d additional results", count)
 	}
+	annotations := make(map[search.AnnotationName]string)
+	annotations[search.ResultCount] = resultCountString
 
 	return &alertobserver.ErrLuckyQueries{
-		ProposedQueries: []*search.ProposedQuery{{
-			Description: fmt.Sprintf("%s (%s)", n.description, resultCountString),
+		ProposedQueries: []*search.QueryDescription{{
+			Description: n.description,
+			Annotations: map[search.AnnotationName]string{
+				search.ResultCount: resultCountString,
+			},
 			Query:       query.StringHuman(n.query.ToParseTree()),
 			PatternType: query.SearchTypeLucky,
 		}},

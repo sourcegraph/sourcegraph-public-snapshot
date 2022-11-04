@@ -15,11 +15,11 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
-	sentrylib "github.com/getsentry/sentry-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -36,11 +36,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -135,7 +135,7 @@ func run(logger log.Logger) error {
 	storeObservationContext := &observation.Context{
 		// Explicitly don't scope Store logger under the parent logger
 		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -148,9 +148,11 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
-					Format:  "tar",
+					Format:  gitserver.ArchiveFormatTar,
 				})
 			},
 			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
@@ -158,9 +160,11 @@ func run(logger log.Logger) error {
 				for i, p := range paths {
 					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
+				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
-					Format:    "tar",
+					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,
 				})
 			},
@@ -177,9 +181,9 @@ func run(logger log.Logger) error {
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
+	handler := actor.HTTPMiddleware(logger, service)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -234,7 +238,11 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	conf.Init()

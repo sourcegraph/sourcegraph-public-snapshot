@@ -45,6 +45,7 @@ type FileMatch struct {
 
 	ChunkMatches ChunkMatches
 	Symbols      []*SymbolMatch `json:"-"`
+	PathMatches  []Range
 
 	LimitHit bool
 }

@@ -126,15 +126,29 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
-		return nil, err
-	}
-	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
 	}
 	return b, nil
+}
+
+func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit string) (*buildkite.Build, error) {
+	b, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
+		Commit: commit,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	if len(b) == 0 {
+		return nil, errors.New("no build found")
+	}
+	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
+	return &b[0], nil
 }
 
 // ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build

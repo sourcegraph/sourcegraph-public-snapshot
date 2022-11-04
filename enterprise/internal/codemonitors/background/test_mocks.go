@@ -20,7 +20,7 @@ var diffResultMock = result.CommitMatch{
 		Name: api.RepoName("github.com/test/test"),
 	},
 	DiffPreview: &result.MatchedString{
-		Content: "file1.go file2.go\n@ -97,5 +97,5 @ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n",
+		Content: "file1.go file2.go\n@@ -97,5 +97,5 @@ func Test() {\n leading context\n+matched added\n-matched removed\n trailing context\n",
 		MatchedRanges: result.Ranges{{
 			Start: result.Location{Line: 3, Offset: 66, Column: 1},
 			End:   result.Location{Line: 3, Offset: 73, Column: 8},

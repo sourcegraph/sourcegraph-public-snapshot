@@ -1,7 +1,7 @@
 # Scaling Sourcegraph with Kubernetes
 
 Sourcegraph can be configured to scale to very large codebases and large numbers of
-users. If you notice latency for search or code intelligence is higher than desired, changing these
+users. If you notice latency for search or code navigation is higher than desired, changing these
 parameters can yield a drastic improvement in performance.
 
 See [Scaling Overview for Services](../scale.md) for more information about scaling.

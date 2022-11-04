@@ -28,7 +28,6 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
-	LockfileIndexingEnabled   bool
 }
 
 type GetConfigurationPoliciesOptions struct {
@@ -48,13 +47,41 @@ type GetConfigurationPoliciesOptions struct {
 	// be returned.
 	ForIndexing bool
 
-	// ForLockfileIndexing indicates that only configuration policies with
-	// lockfile indexing enabled should be returned.
-	ForLockfileIndexing bool
-
 	// Limit indicates the number of results to take from the result set.
 	Limit int
 
 	// Offset indicates the number of results to skip in the result set.
 	Offset int
+}
+
+// Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
+// records.
+type Upload struct {
+	ID                int
+	Commit            string
+	Root              string
+	VisibleAtTip      bool
+	UploadedAt        time.Time
+	State             string
+	FailureMessage    *string
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	ProcessAfter      *time.Time
+	NumResets         int
+	NumFailures       int
+	RepositoryID      int
+	RepositoryName    string
+	Indexer           string
+	IndexerVersion    string
+	NumParts          int
+	UploadedParts     []int
+	UploadSize        *int64
+	Rank              *int
+	AssociatedIndexID *int
+}
+
+type RetentionPolicyMatchCandidate struct {
+	*ConfigurationPolicy
+	Matched           bool
+	ProtectingCommits []string
 }

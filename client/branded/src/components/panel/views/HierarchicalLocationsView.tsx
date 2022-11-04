@@ -127,15 +127,18 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                             }),
                             tap(({ result }) => {
                                 const hasResults = !isErrorLike(result) && result.locations.length > 0
-                                this.props.extensionsController.extHostAPI
-                                    .then(extensionHostAPI =>
-                                        extensionHostAPI.updateContext({
-                                            'panel.locations.hasResults': hasResults,
+                                const { extensionsController } = this.props
+                                if (extensionsController !== null) {
+                                    extensionsController.extHostAPI
+                                        .then(extensionHostAPI =>
+                                            extensionHostAPI.updateContext({
+                                                'panel.locations.hasResults': hasResults,
+                                            })
+                                        )
+                                        .catch(() => {
+                                            // noop
                                         })
-                                    )
-                                    .catch(() => {
-                                        // noop
-                                    })
+                                }
                             }),
                             endWith({ isLoading: false })
                         )

@@ -94,28 +94,34 @@ export function handleContentViews(
                 linkPreviewSubscriptions.set(element, subscriptions)
 
                 // Add link preview content.
-                for (const link of element.querySelectorAll<HTMLAnchorElement>('a[href]')) {
-                    subscriptions.add(
-                        from(extensionsController.extHostAPI)
-                            .pipe(
-                                switchMap(extensionHostAPI =>
-                                    wrapRemoteObservable(extensionHostAPI.getLinkPreviews(link.href))
+                if (extensionsController !== null) {
+                    for (const link of element.querySelectorAll<HTMLAnchorElement>('a[href]')) {
+                        subscriptions.add(
+                            from(extensionsController.extHostAPI)
+                                .pipe(
+                                    switchMap(extensionHostAPI =>
+                                        wrapRemoteObservable(extensionHostAPI.getLinkPreviews(link.href))
+                                    )
                                 )
-                            )
-                            // The nested subscribe cannot be replaced with a switchMap()
-                            // because we are managing a stateful Map. The subscription is
-                            // managed correctly.
-                            //
-                            // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(linkPreview => {
-                                try {
-                                    pauseMutationObserver.next(true) // ignore DOM mutations we make
-                                    applyLinkPreview({ setElementTooltip, linkPreviewContentClass }, link, linkPreview)
-                                } finally {
-                                    pauseMutationObserver.next(false) // stop ignoring DOM mutations
-                                }
-                            })
-                    )
+                                // The nested subscribe cannot be replaced with a switchMap()
+                                // because we are managing a stateful Map. The subscription is
+                                // managed correctly.
+                                //
+                                // eslint-disable-next-line rxjs/no-nested-subscribe
+                                .subscribe(linkPreview => {
+                                    try {
+                                        pauseMutationObserver.next(true) // ignore DOM mutations we make
+                                        applyLinkPreview(
+                                            { setElementTooltip, linkPreviewContentClass },
+                                            link,
+                                            linkPreview
+                                        )
+                                    } finally {
+                                        pauseMutationObserver.next(false) // stop ignoring DOM mutations
+                                    }
+                                })
+                        )
+                    }
                 }
             })
         )

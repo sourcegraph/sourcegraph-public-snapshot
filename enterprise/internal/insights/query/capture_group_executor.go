@@ -99,7 +99,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 
 			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
-				return nil, errors.Wrap(err, "SingleRepoQuery")
+				return nil, errors.Wrap(err, "query validation")
 			}
 
 			log15.Debug("executing query", "query", modifiedQuery)

@@ -23,7 +23,7 @@
           },
           {
             "field": "repo",
-            "value": "contains.file(gordo)",
+            "value": "contains.path(gordo)",
             "negated": false,
             "labels": [
               "IsPredicate"
@@ -63,7 +63,7 @@
           },
           {
             "field": "repo",
-            "value": "contains.file(gordo)",
+            "value": "contains.path(gordo)",
             "negated": false,
             "labels": [
               "IsPredicate"

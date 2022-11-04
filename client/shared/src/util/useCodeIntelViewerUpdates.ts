@@ -27,6 +27,10 @@ export function useCodeIntelViewerUpdates(props?: UseCodeIntelViewerUpdatesProps
 
         const { extensionsController, repositoryName, revision, filePath } = props
 
+        if (extensionsController === null) {
+            return
+        }
+
         let previousViewerId: ViewerId | undefined
         const commitID = revision || 'HEAD'
         const uri = toURIWithPath({ repoName: repositoryName, filePath, commitID })

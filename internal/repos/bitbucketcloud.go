@@ -33,9 +33,13 @@ type BitbucketCloudSource struct {
 var _ UserSource = &BitbucketCloudSource{}
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
-func NewBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.BitbucketCloudConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newBitbucketCloudSource(logger, svc, &c, cf)

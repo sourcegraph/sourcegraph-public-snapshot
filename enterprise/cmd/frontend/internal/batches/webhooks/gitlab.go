@@ -48,7 +48,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Verify the shared secret against the GitLab external service
 	// configuration. If there isn't a webhook defined in the service with this
 	// secret, or the header is empty, then we return a 401 to the client.
-	if ok, err := validateGitLabSecret(extSvc, r.Header.Get(webhooks.TokenHeaderName)); err != nil {
+	if ok, err := validateGitLabSecret(r.Context(), extSvc, r.Header.Get(webhooks.TokenHeaderName)); err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "validating the shared secret"))
 		return
 	} else if !ok {
@@ -139,7 +139,7 @@ func (h *GitLabWebhook) getExternalServiceFromRawID(ctx context.Context, raw str
 func (h *GitLabWebhook) handleEvent(ctx context.Context, extSvc *types.ExternalService, event any) *httpError {
 	log15.Debug("GitLab webhook received", "type", fmt.Sprintf("%T", event))
 
-	esID, err := extractExternalServiceID(extSvc)
+	esID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {
 		return &httpError{
 			code: http.StatusInternalServerError,
@@ -275,14 +275,14 @@ func gitlabToPR(project *gitlab.ProjectCommon, mr *gitlab.MergeRequest) PR {
 
 // validateGitLabSecret validates that the given secret matches one of the
 // webhooks in the external service.
-func validateGitLabSecret(extSvc *types.ExternalService, secret string) (bool, error) {
+func validateGitLabSecret(ctx context.Context, extSvc *types.ExternalService, secret string) (bool, error) {
 	// An empty secret never succeeds.
 	if secret == "" {
 		return false, nil
 	}
 
 	// Get the typed configuration.
-	c, err := extSvc.Configuration()
+	c, err := extSvc.Configuration(ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "getting external service configuration")
 	}

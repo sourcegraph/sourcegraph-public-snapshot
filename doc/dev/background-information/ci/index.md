@@ -150,7 +150,6 @@ An example use of `Skip`:
 
 > NOTE: If it's hard to make sure that the flake is fixed, another approach is to monitor the step wihout breaking the build, see [How to allow a CI step to fail without breaking the build and still receive a notification](../../how-to/ci_soft_failure_and_still_notify.md).
 
-
 ##### Assessing flaky client steps
 
 See more information on how to assess flaky client steps [here](../../how-to/testing.md#assessing-flaky-client-steps).
@@ -160,6 +159,22 @@ See more information on how to assess flaky client steps [here](../../how-to/tes
 If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).
 
 Also see [Buildkite infrastructure](#buildkite-infrastructure).
+
+##### Flaky linters
+
+Linters are all run through [`sg lint`](../sg/reference.md#sg-lint), with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
+If a linter is flaky, you can modify the `dev/sg/linters` package to disable the specific linter (or entire category of linters) with the `Enabled: disabled(...)` helper:
+
+```diff
+  {
+    Name:        "svg",
+    Description: "Check svg assets",
++   Enabled:     disabled("reported as unreliable"),
+    Checks: []*linter{
+      checkSVGCompression(),
+    },
+  },
+```
 
 ### Pipeline development
 

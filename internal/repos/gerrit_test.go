@@ -20,10 +20,11 @@ func TestGerritSource_ListRepos(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindGerrit,
-		Config: marshalJSON(t, conf),
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
 	}
 
-	src, err := NewGerritSource(svc, cf)
+	ctx := context.Background()
+	src, err := NewGerritSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

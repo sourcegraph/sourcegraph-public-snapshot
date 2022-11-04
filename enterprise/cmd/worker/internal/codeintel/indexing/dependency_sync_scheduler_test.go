@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -117,7 +118,7 @@ func TestNewPackage(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		in   shared.Package
-		out  precise.Package
+		out  *precise.Package
 	}{
 		{
 			name: "jvm name normalization",
@@ -126,7 +127,7 @@ func TestNewPackage(t *testing.T) {
 				Name:    "maven/junit/junit",
 				Version: "4.2",
 			},
-			out: precise.Package{
+			out: &precise.Package{
 				Scheme:  dependencies.JVMPackagesScheme,
 				Name:    "junit:junit",
 				Version: "4.2",
@@ -139,7 +140,7 @@ func TestNewPackage(t *testing.T) {
 				Name:    "junit:junit",
 				Version: "4.2",
 			},
-			out: precise.Package{
+			out: &precise.Package{
 				Scheme:  dependencies.JVMPackagesScheme,
 				Name:    "junit:junit",
 				Version: "4.2",
@@ -152,11 +153,20 @@ func TestNewPackage(t *testing.T) {
 				Name:    "@graphql-mesh/graphql",
 				Version: "0.24.0",
 			},
-			out: precise.Package{
+			out: &precise.Package{
 				Scheme:  dependencies.NpmPackagesScheme,
 				Name:    "@graphql-mesh/graphql",
 				Version: "0.24.0",
 			},
+		},
+		{
+			name: "npm bad-name",
+			in: shared.Package{
+				Scheme:  dependencies.NpmPackagesScheme,
+				Name:    "@automapper/classes/transformer-plugin",
+				Version: "0.24.0",
+			},
+			out: nil,
 		},
 		{
 			name: "go no-op",
@@ -165,7 +175,7 @@ func TestNewPackage(t *testing.T) {
 				Name:    "github.com/tsenart/vegeta/v12",
 				Version: "12.7.0",
 			},
-			out: precise.Package{
+			out: &precise.Package{
 				Scheme:  dependencies.GoPackagesScheme,
 				Name:    "github.com/tsenart/vegeta/v12",
 				Version: "12.7.0",
@@ -173,8 +183,14 @@ func TestNewPackage(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			have := newPackage(tc.in)
+			have, err := newPackage(tc.in)
 			want := tc.out
+
+			if want == nil {
+				require.Nil(t, have)
+				require.NotNil(t, err)
+				return
+			}
 
 			if diff := cmp.Diff(want, have); diff != "" {
 				t.Fatalf("mismatch (-want, +have): %s", diff)

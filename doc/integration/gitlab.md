@@ -24,7 +24,7 @@ Site admins can [configure Sourcegraph to allow users to sign in via GitLab](../
 
 ## GitLab UI native integration
 
-GitLab instances can be configured to show Sourcegraph code intelligence and navigation natively. See the [GitLab integration docs](../admin/external_service/gitlab.md#native-integration) for how to enable this on your GitLab instance.
+GitLab instances can be configured to show Sourcegraph code navigation natively. See the [GitLab integration docs](../admin/external_service/gitlab.md#native-integration) for how to enable this on your GitLab instance.
 
 ![GitLab native integration](img/gitlab-code-intel.gif)
 

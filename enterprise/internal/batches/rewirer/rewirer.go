@@ -69,15 +69,15 @@ func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) 
 
 		if m.Changeset != nil {
 			changeset = m.Changeset
-			if spec.Spec.IsImportingExisting() {
+			if spec.Type == btypes.ChangesetSpecTypeExisting {
 				r.attachTrackingChangeset(changeset)
-			} else if spec.Spec.IsBranch() {
+			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				r.updateChangesetToNewSpec(changeset, spec)
 			}
 		} else {
-			if spec.Spec.IsImportingExisting() {
-				changeset = r.createTrackingChangeset(repo, spec.Spec.ExternalID)
-			} else if spec.Spec.IsBranch() {
+			if spec.Type == btypes.ChangesetSpecTypeExisting {
+				changeset = r.createTrackingChangeset(repo, spec.ExternalID)
+			} else if spec.Type == btypes.ChangesetSpecTypeBranch {
 				changeset = r.createChangesetForSpec(repo, spec)
 			}
 		}
@@ -89,7 +89,7 @@ func (r *ChangesetRewirer) Rewire() (changesets []*btypes.Changeset, err error) 
 
 func (r *ChangesetRewirer) createChangesetForSpec(repo *types.Repo, spec *btypes.ChangesetSpec) *btypes.Changeset {
 	newChangeset := &btypes.Changeset{
-		RepoID:              spec.RepoID,
+		RepoID:              spec.BaseRepoID,
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 
 		BatchChanges:         []btypes.BatchChangeAssoc{{BatchChangeID: r.batchChangeID}},

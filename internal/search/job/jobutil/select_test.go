@@ -48,11 +48,13 @@ func TestWithSelect(t *testing.T) {
   {
     "Path": "pokeman/",
     "ChunkMatches": null,
+    "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
     "ChunkMatches": null,
+    "PathMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file.directory"))
@@ -61,16 +63,19 @@ func TestWithSelect(t *testing.T) {
   {
     "Path": "pokeman/charmandar",
     "ChunkMatches": null,
+    "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
     "ChunkMatches": null,
+    "PathMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
     "ChunkMatches": null,
+    "PathMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("file"))
@@ -124,6 +129,7 @@ func TestWithSelect(t *testing.T) {
         ]
       }
     ],
+    "PathMatches": null,
     "LimitHit": false
   },
   {
@@ -152,6 +158,7 @@ func TestWithSelect(t *testing.T) {
         ]
       }
     ],
+    "PathMatches": null,
     "LimitHit": false
   },
   {
@@ -180,6 +187,7 @@ func TestWithSelect(t *testing.T) {
         ]
       }
     ],
+    "PathMatches": null,
     "LimitHit": false
   },
   {
@@ -208,6 +216,7 @@ func TestWithSelect(t *testing.T) {
         ]
       }
     ],
+    "PathMatches": null,
     "LimitHit": false
   }
 ]`).Equal(t, test("content"))

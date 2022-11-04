@@ -13,7 +13,6 @@ import (
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -29,8 +28,9 @@ func TestNewBitbucketCloudSource(t *testing.T) {
 			"bad URN":        `{"apiURL": "http://[::1]:namedport"}`,
 		} {
 			t.Run(name, func(t *testing.T) {
-				s, err := NewBitbucketCloudSource(&types.ExternalService{
-					Config: input,
+				ctx := context.Background()
+				s, err := NewBitbucketCloudSource(ctx, &types.ExternalService{
+					Config: extsvc.NewUnencryptedConfig(input),
 				}, nil)
 				assert.Nil(t, s)
 				assert.NotNil(t, err)
@@ -39,7 +39,8 @@ func TestNewBitbucketCloudSource(t *testing.T) {
 	})
 
 	t.Run("valid", func(t *testing.T) {
-		s, err := NewBitbucketCloudSource(&types.ExternalService{}, nil)
+		ctx := context.Background()
+		s, err := NewBitbucketCloudSource(ctx, &types.ExternalService{Config: extsvc.NewEmptyConfig()}, nil)
 		assert.NotNil(t, s)
 		assert.Nil(t, err)
 	})
@@ -58,15 +59,6 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 	}
 	s, client := mockBitbucketCloudSource()
 	client.AuthenticatorFunc.SetDefaultReturn(&au)
-
-	ctx := context.Background()
-
-	svc := types.ExternalService{
-		Kind:   extsvc.KindBitbucketCloud,
-		Config: `{}`,
-	}
-	store := database.NewStrictMockExternalServiceStore()
-	store.ListFunc.SetDefaultReturn([]*types.ExternalService{&svc}, nil)
 
 	repo := &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
@@ -90,7 +82,7 @@ func TestBitbucketCloudSource_GitserverPushConfig(t *testing.T) {
 		},
 	}
 
-	pushConfig, err := s.GitserverPushConfig(ctx, store, repo)
+	pushConfig, err := s.GitserverPushConfig(repo)
 	assert.Nil(t, err)
 	assert.NotNil(t, pushConfig)
 	assert.Equal(t, "https://user:pass@bitbucket.org/clone/link", pushConfig.RemoteURL)

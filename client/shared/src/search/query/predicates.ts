@@ -19,6 +19,7 @@ export const PREDICATES: Access[] = [
                 name: 'contains',
                 fields: [
                     { name: 'file' },
+                    { name: 'path' },
                     { name: 'content' },
                     {
                         name: 'commit',
@@ -28,19 +29,17 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [{ name: 'description' }],
-            },
-            {
-                name: 'dependencies',
-            },
-            {
-                name: 'deps',
-            },
-            {
-                name: 'dependents',
-            },
-            {
-                name: 'revdeps',
+                fields: [
+                    { name: 'file' },
+                    { name: 'path' },
+                    { name: 'content' },
+                    {
+                        name: 'commit',
+                        fields: [{ name: 'after' }],
+                    },
+                    { name: 'description' },
+                    { name: 'tag' },
+                ],
             },
         ],
     },
@@ -49,6 +48,10 @@ export const PREDICATES: Access[] = [
         fields: [
             {
                 name: 'contains',
+                fields: [{ name: 'content' }],
+            },
+            {
+                name: 'has',
                 fields: [{ name: 'content' }],
             },
         ],
@@ -66,6 +69,12 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
     if (path.length === 0) {
         return tree
     }
+
+    // repo:contains() and file:contains() are not supported
+    if (path.length === 1 && path[0] === 'contains') {
+        return undefined
+    }
+
     const subtree = tree.find(value => value.name === path[0])
     if (!subtree) {
         return undefined
@@ -140,6 +149,10 @@ export const scanPredicate = (field: string, value: string): Predicate | undefin
     }
     const name = match[0]
     const path = name.split('.')
+    // Remove negation from the field for lookup
+    if (field.startsWith('-')) {
+        field = field.slice(1)
+    }
     field = resolveFieldAlias(field)
     const access = resolveAccess([field, ...path], PREDICATES)
     if (!access) {
@@ -161,43 +174,23 @@ export const predicateCompletion = (field: string): Completion[] => {
     if (field === 'repo') {
         return [
             {
-                label: 'contains.file(...)',
-                insertText: 'contains.file(${1:CHANGELOG})',
+                label: 'has.path(...)',
+                insertText: 'has.path(${1:CHANGELOG})',
                 asSnippet: true,
             },
             {
-                label: 'contains.content(...)',
-                insertText: 'contains.content(${1:TODO})',
+                label: 'has.content(...)',
+                insertText: 'has.content(${1:TODO})',
                 asSnippet: true,
             },
             {
-                label: 'contains(...)',
-                insertText: 'contains(file:${1:CHANGELOG} content:${2:fix})',
+                label: 'has.file(...)',
+                insertText: 'has.file(path:${1:CHANGELOG} content:${2:fix})',
                 asSnippet: true,
             },
             {
-                label: 'contains.commit.after(...)',
-                insertText: 'contains.commit.after(${1:1 month ago})',
-                asSnippet: true,
-            },
-            {
-                label: 'deps(...)',
-                insertText: 'deps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependencies(...)',
-                insertText: 'dependencies(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'revdeps(...)',
-                insertText: 'revdeps(${1})',
-                asSnippet: true,
-            },
-            {
-                label: 'dependents(...)',
-                insertText: 'dependents(${1})',
+                label: 'has.commit.after(...)',
+                insertText: 'has.commit.after(${1:1 month ago})',
                 asSnippet: true,
             },
             {

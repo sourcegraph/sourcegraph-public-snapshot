@@ -11,7 +11,6 @@ import styles from './OrgSettingsSidebar.module.scss'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
-    showOrgCode: boolean
 }
 
 /**
@@ -22,7 +21,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
     authenticatedUser,
     className,
     match,
-    showOrgCode,
     newMembersInviteEnabled,
 }) => {
     if (!org) {
@@ -52,16 +50,6 @@ export const OrgSettingsSidebar: React.FunctionComponent<React.PropsWithChildren
                     <SidebarNavItem to={`${match.url}/members`} exact={true}>
                         Members
                     </SidebarNavItem>
-                )}
-                {showOrgCode && (
-                    <>
-                        <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>
-                            Code host connections
-                        </SidebarNavItem>
-                        <SidebarNavItem to={`${match.url}/repositories`} exact={true}>
-                            Repositories
-                        </SidebarNavItem>
-                    </>
                 )}
             </SidebarGroup>
         </div>

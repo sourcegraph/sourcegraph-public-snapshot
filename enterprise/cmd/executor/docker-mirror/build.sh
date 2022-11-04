@@ -21,7 +21,7 @@ cp -R ./* "$TMR_WORKDIR"
 cp ../../../../.tool-versions "$TMR_WORKDIR"
 
 export NAME
-NAME=executor-docker-mirror-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}
+NAME="${IMAGE_FAMILY}-${BUILDKITE_BUILD_NUMBER}"
 export AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
 export AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
 # This should prevent some occurrences of Failed waiting for AMI failures:

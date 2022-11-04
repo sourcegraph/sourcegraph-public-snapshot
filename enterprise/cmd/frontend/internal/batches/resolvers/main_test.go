@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -118,6 +119,10 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
+func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+}
+
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
@@ -128,7 +133,7 @@ func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore)
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		// The authorization field is needed to enforce permissions
-		Config:    `{"url": "https://github.com", "authorization": {}}`,
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}}`),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -240,14 +245,14 @@ func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	}
 }
 
-func pruneSiteCredentials(t *testing.T, cstore *store.Store) {
+func pruneSiteCredentials(t *testing.T, bstore *store.Store) {
 	t.Helper()
-	creds, _, err := cstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
+	creds, _, err := bstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := cstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
+		if err := bstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

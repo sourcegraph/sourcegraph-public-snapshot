@@ -45,7 +45,9 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                         >
                             <div className="d-flex flex-column align-items-center mr-3">
                                 <Tooltip content={formatPersonName(previousCommit.author)}>
-                                    <UserAvatar inline={true} className="mb-1" user={previousCommit.author} />
+                                    <span>
+                                        <UserAvatar inline={true} className="mb-1" user={previousCommit.author} />
+                                    </span>
                                 </Tooltip>{' '}
                                 <PersonLink person={previousCommit.author} className="font-weight-bold text-nowrap" />
                             </div>
@@ -64,7 +66,9 @@ export const GitBranchChangesetDescriptionInfo: React.FunctionComponent<React.Pr
                 )}
             <div className="d-flex flex-column align-items-center mr-3">
                 <Tooltip content={formatPersonName(commit.author)}>
-                    <UserAvatar inline={true} className="mb-1" user={commit.author} />
+                    <span>
+                        <UserAvatar inline={true} className="mb-1" user={commit.author} />
+                    </span>
                 </Tooltip>{' '}
                 <PersonLink person={commit.author} className="font-weight-bold text-nowrap" />
             </div>

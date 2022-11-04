@@ -2,18 +2,17 @@ package graphql
 
 import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type RetentionPolicyMatcherResolver struct {
 	db           database.DB
-	policy       resolvers.RetentionPolicyMatchCandidate
+	policy       RetentionPolicyMatchCandidate
 	errCollector *observation.ErrCollector
 }
 
-func NewRetentionPolicyMatcherResolver(db database.DB, policy resolvers.RetentionPolicyMatchCandidate) *RetentionPolicyMatcherResolver {
+func NewRetentionPolicyMatcherResolver(db database.DB, policy RetentionPolicyMatchCandidate) *RetentionPolicyMatcherResolver {
 	return &RetentionPolicyMatcherResolver{db: db, policy: policy}
 }
 

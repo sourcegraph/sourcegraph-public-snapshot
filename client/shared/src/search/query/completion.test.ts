@@ -1,7 +1,7 @@
 import { SymbolKind } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import { FetchSuggestions, getCompletionItems, repositoryCompletionItemKind } from './completion'
+import { FetchSuggestions, getCompletionItems } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
 import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
 import { Token } from './token'
@@ -322,26 +322,6 @@ describe('getCompletionItems()', () => {
         ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
     })
 
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    { column: 21 },
-                    createFetcher([
-                        {
-                            type: 'repo',
-                            repository: 'github.com/sourcegraph/jsonrpc2.go',
-                        },
-                    ]),
-                    {}
-                )
-            )?.suggestions
-                .filter(({ kind }) => kind === repositoryCompletionItemKind)
-                .map(({ insertText }) => insertText)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
-    })
-
     test('sets current filter value as filterText', async () => {
         expect(
             (
@@ -392,19 +372,16 @@ describe('getCompletionItems()', () => {
                             repository: 'repo/with a space',
                         },
                     ]),
+
                     {}
                 )
             )?.suggestions.map(({ insertText }) => insertText)
         ).toMatchInlineSnapshot(`
             [
-              "contains.file(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
-              "deps(\${1}) ",
-              "dependencies(\${1}) ",
-              "revdeps(\${1}) ",
-              "dependents(\${1}) ",
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
@@ -423,14 +400,10 @@ describe('getCompletionItems()', () => {
               "^github\\\\.com/\${1:ORGANIZATION}/.* ",
               "^github\\\\.com/\${1:ORGANIZATION}/\${2:REPO-NAME}$ ",
               "\${1:STRING} ",
-              "contains.file(\${1:CHANGELOG}) ",
-              "contains.content(\${1:TODO}) ",
-              "contains(file:\${1:CHANGELOG} content:\${2:fix}) ",
-              "contains.commit.after(\${1:1 month ago}) ",
-              "deps(\${1}) ",
-              "dependencies(\${1}) ",
-              "revdeps(\${1}) ",
-              "dependents(\${1}) ",
+              "has.path(\${1:CHANGELOG}) ",
+              "has.content(\${1:TODO}) ",
+              "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
+              "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) "
             ]
         `)

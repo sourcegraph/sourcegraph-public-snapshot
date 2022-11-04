@@ -110,11 +110,22 @@ export const CollapseHeader = React.forwardRef(function CollapseHeader(props, re
     )
 }) as ForwardReferenceComponent<'button', CollapseHeaderProps>
 
-export const CollapsePanel = React.forwardRef(function CollapsePanel(
-    { children, className, as: Component = 'div', ...attributes },
-    reference
-) {
+interface CollapsePanelProps {
+    forcedRender?: boolean
+}
+
+export const CollapsePanel = React.forwardRef(function CollapsePanel(props, reference) {
+    const { forcedRender = true, children, className, as: Component = 'div', ...attributes } = props
     const { isOpen } = useContext(CollapseContext)
+
+    // When we enforce rendering we always render a DOM element and hide it with
+    // display: none CSS rule, on other cases when we explicitly say forcedRender={false}
+    // we render/not render DOM element based on isOpen state
+    const shouldRender = forcedRender ? true : isOpen
+
+    if (!shouldRender) {
+        return null
+    }
 
     return (
         <Component
@@ -125,4 +136,4 @@ export const CollapsePanel = React.forwardRef(function CollapsePanel(
             {children}
         </Component>
     )
-}) as ForwardReferenceComponent<'div'>
+}) as ForwardReferenceComponent<'div', CollapsePanelProps>

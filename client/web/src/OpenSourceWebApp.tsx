@@ -1,7 +1,5 @@
 import React from 'react'
 
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-
 import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -29,8 +27,10 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
     <SourcegraphWebApp
         extensionAreaRoutes={extensionAreaRoutes}
         extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
-        extensionsAreaRoutes={extensionsAreaRoutes}
-        extensionsAreaHeaderActionButtons={extensionsAreaHeaderActionButtons}
+        extensionsAreaRoutes={window.context.enableLegacyExtensions ? extensionsAreaRoutes : undefined}
+        extensionsAreaHeaderActionButtons={
+            window.context.enableLegacyExtensions ? extensionsAreaHeaderActionButtons : undefined
+        }
         siteAdminAreaRoutes={siteAdminAreaRoutes}
         siteAdminSideBarGroups={siteAdminSidebarGroups}
         siteAdminOverviewComponents={siteAdminOverviewComponents}
@@ -46,7 +46,6 @@ export const OpenSourceWebApp: React.FunctionComponent<React.PropsWithChildren<u
         repoSettingsAreaRoutes={repoSettingsAreaRoutes}
         repoSettingsSidebarGroups={repoSettingsSideBarGroups}
         routes={routes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={false}
         batchChangesEnabled={false}
         searchContextsEnabled={false}

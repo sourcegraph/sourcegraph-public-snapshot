@@ -9,7 +9,7 @@ import { PopoverOpenEventReason } from '../Popover'
 
 interface PopoverTriggerProps {}
 
-export const PopoverTrigger = forwardRef((props, reference) => {
+export const PopoverTrigger = forwardRef(function PopoverTrigger(props, reference) {
     const { as: Component = 'button', onClick = noop, ...otherProps } = props
     const { setTargetElement, setOpen, isOpen } = useContext(PopoverContext)
 

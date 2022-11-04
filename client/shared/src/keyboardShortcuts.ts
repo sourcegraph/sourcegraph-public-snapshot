@@ -4,9 +4,6 @@ import { Key, ModifierKey } from '@slimsag/react-shortcuts'
  * An action and its associated keybindings.
  */
 export interface KeyboardShortcut {
-    /** A unique ID for this keybinding. */
-    id: string
-
     /** A descriptive title. */
     title: string
 

@@ -302,7 +302,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getTextDecorations: ({ viewerId }) => {
             const viewer = getViewer(viewerId)
             assertViewerType(viewer, 'CodeEditor')
-            return proxySubscribable(viewer.decorationsByType)
+            return proxySubscribable(viewer.mergedDecorations)
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
@@ -398,7 +398,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
 
                         // TODO(sqs): Observe context so that we update immediately upon changes.
                         const computedContext = computeContext(activeEditor, settings, context, scope)
-
                         return multiContributions.map(contributions => {
                             try {
                                 const evaluatedContributions = evaluateContributions(computedContext, contributions)

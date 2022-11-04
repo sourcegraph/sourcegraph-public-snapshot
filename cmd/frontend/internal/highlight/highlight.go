@@ -105,6 +105,9 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
+
+	// Format defines the response format of the syntax highlighting request.
+	Format gosyntect.HighlightResponseType
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -391,6 +394,19 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
+		errCollector.Collect(&err)
+		plainResponse, tableErr := generatePlainTable(code)
+		if tableErr != nil {
+			return nil, false, errors.CombineErrors(err, tableErr)
+		}
+		return plainResponse, true, nil
+	}
+
+	if p.Format == gosyntect.FormatHTMLPlaintext {
+		return unhighlightedCode(err, code)
+	}
+
 	var stabilizeTimeout time.Duration
 	if p.DisableTimeout {
 		// The user wants to wait longer for results, so the default 10s worker
@@ -413,6 +429,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
+		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
 	// Set the Filetype part of the command if:
@@ -425,16 +442,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
-
-	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
-		errCollector.Collect(&err)
-		plainResponse, tableErr := generatePlainTable(code)
-		if tableErr != nil {
-			return nil, false, errors.CombineErrors(err, tableErr)
-		}
-		return plainResponse, true, nil
-	}
+	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -478,7 +486,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return unhighlightedCode(err, code)
 	}
 
-	if filetypeQuery.Engine == EngineTreeSitter {
+	// We need to return SCIP data if explicitly requested or if the selected
+	// engine is tree sitter.
+	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine == EngineTreeSitter {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 

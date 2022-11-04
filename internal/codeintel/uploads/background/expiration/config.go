@@ -12,12 +12,15 @@ type config struct {
 	BranchesCacheMaxKeys   int
 	CleanupTaskInterval    time.Duration
 	CommitBatchSize        int
-	Interval               time.Duration
+	ExpirerInterval        time.Duration
 	PolicyBatchSize        int
 	RepositoryBatchSize    int
 	RepositoryProcessDelay time.Duration
 	UploadBatchSize        int
 	UploadProcessDelay     time.Duration
+
+	ReferenceCountUpdaterInterval  time.Duration
+	ReferenceCountUpdaterBatchSize int
 }
 
 var ConfigInst = &config{}
@@ -34,10 +37,12 @@ func (c *config) Load() {
 	c.BranchesCacheMaxKeys = c.GetInt(branchesCacheMaxKeys, "10000", "The number of maximum keys used to cache the set of branches visible from a commit.")
 	c.CleanupTaskInterval = c.GetInterval("CODEINTEL_UPLOAD_EXPIRER_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
 	c.CommitBatchSize = c.GetInt(commitBatchSize, "100", "The number of commits to process per upload at a time.")
-	c.Interval = c.GetInterval("CODEINTEL_UPLOAD_EXPIRER_INTERVAL", "1s", "How frequently to run the upload expirer routine.")
+	c.ExpirerInterval = c.GetInterval("CODEINTEL_UPLOAD_EXPIRER_INTERVAL", "1s", "How frequently to run the upload expirer routine.")
 	c.PolicyBatchSize = c.GetInt(policyBatchSize, "100", "The number of policies to consider for expiration at a time.")
 	c.RepositoryBatchSize = c.GetInt(repositoryBatchSize, "100", "The number of repositories to consider for expiration at a time.")
 	c.RepositoryProcessDelay = c.GetInterval(repositoryProcessDelay, "24h", "The minimum frequency that the same repository's uploads can be considered for expiration.")
 	c.UploadBatchSize = c.GetInt(uploadBatchSize, "100", "The number of uploads to consider for expiration at a time.")
 	c.UploadProcessDelay = c.GetInterval(uploadProcessDelay, "24h", "The minimum frequency that the same upload record can be considered for expiration.")
+	c.ReferenceCountUpdaterInterval = c.GetInterval("CODEINTEL_UPLOAD_REFERENCE_COUNT_UPDATER_INTERVAL", "1m", "How frequently to run the reference count updater routine.")
+	c.ReferenceCountUpdaterBatchSize = c.GetInt("CODEINTEL_UPLOAD_REFERENCE_COUNT_UPDATER_BATCH_SIZE", "100", "How many upload reference counts to backfill per batch.")
 }

@@ -2,9 +2,11 @@
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes any special manual migration steps you must perform per-version.
 
+## Upgrade procedure
+
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
-3. After checking the relevant update notes, to upgrade your instance refer to either:
+3. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
     * [Kubernetes with Helm upgrade guide](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
     * [Kubernetes without Helm upgrade guide](../deploy/kubernetes/update.md)
 
@@ -12,11 +14,25 @@
 
 ## Unreleased
 
-## 3.41 -> 3.42
+* `jaeger-agent` sidecars have been removed in favor of an  [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) DaemonSet + Deployment configuration. See [Configure a tracing backend section.](#configure-a-tracing-backend)
+* Exporting traces to an external observability backend is now available. Read the [documentation](../deploy/kubernetes/configure.md#configure-a-tracing-backend) to configure.
+* The bundled Jaeger instance is now disabled by default. It can be [enabled](../deploy/kubernetes/configure.md#enable-the-bundled-jaeger-deployment) if you do not wish to utilise your own external tracing backend.
+
+<!-- Add changes changes to this section before release. -->
+
+Follow the [steps](#upgrade-procedure) outlined at the top of this page to upgrade.
+
+## 3.42 -> 3.43.2
 
 Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.43).*
+
+## 3.41 -> 3.42.2
+
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
@@ -210,7 +226,7 @@ This release introduces a second database instance, `codeintel-db`. If you have 
 
 ### If you wish to keep existing LSIF data
 
-> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
+> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
 
 If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
@@ -277,11 +293,11 @@ This change was made to ensure that even if another Sourcegraph service starts c
 
 ### (optional) Keep LSIF data through manual migration
 
-If you have previously uploaded LSIF precise code intelligence data and wish to retain it after upgrading, you will need to perform this migration.
+If you have previously uploaded code graph data and wish to retain it after upgrading, you will need to perform this migration.
 
 **Skipping the migration**
 
-If you choose not to migrate the data, Sourcegraph will use search-based code intelligence until you upload LSIF data again.
+If you choose not to migrate the data, Sourcegraph will use search-based code navigation until you upload code graph data again.
 
 You may run the following commands to remove the now unused resources:
 
@@ -299,7 +315,7 @@ and the persistent volume claim in which lsif-server  stored converted LSIF uplo
 
 Upgrading to 3.15 will create a new empty volume for LSIF data. Without any action, the LSIF data previously uploaded
 to the instance will be lost. To retain old LSIF data, perform the following migration steps. This will cause some
-temporary downtime for precise code intelligence.
+temporary downtime for precise code navigation.
 
 **Migrating**
 
@@ -406,10 +422,6 @@ service and then create the new one (this will result in a few seconds of downti
 kubectl delete svc sourcegraph-frontend
 kubectl apply -f base/frontend/sourcegraph-frontend.Service.yaml
 ```
-
-### Language server deployment
-
-Sourcegraph 3.0 removed lsp-proxy and automatic language server deployment in favor of [Sourcegraph extensions](https://docs.sourcegraph.com/extensions). As a consequence, Sourcegraph 3.0 does not automatically run or manage language servers. If you had code intelligence enabled in 2.x, you will need to follow the instructions for each language extension and deploy them individually. Read the [code intelligence documentation](https://docs.sourcegraph.com/user/code_intelligence).
 
 ### HTTPS / TLS
 

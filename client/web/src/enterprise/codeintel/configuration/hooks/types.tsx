@@ -17,7 +17,6 @@ export const nullPolicy = {
     indexCommitMaxAgeHours: null,
     indexIntermediateCommits: false,
     repository: null,
-    lockfileIndexingEnabled: false,
 }
 
 export const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
@@ -39,6 +38,5 @@ export const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
         indexingEnabled
         indexCommitMaxAgeHours
         indexIntermediateCommits
-        lockfileIndexingEnabled
     }
 `

@@ -17,6 +17,19 @@ var generateAnnotations = &cli.BoolFlag{
 	Usage: "Write helpful output to ./annotations directory",
 }
 
+var lintFix = &cli.BoolFlag{
+	Name:    "fix",
+	Aliases: []string{"f"},
+	Usage:   "Try to fix any lint issues",
+}
+
+var lintFailFast = &cli.BoolFlag{
+	Name:    "fail-fast",
+	Aliases: []string{"ff"},
+	Usage:   "Exit immediately if an issue is encountered (not available with '-fix')",
+	Value:   true,
+}
+
 var lintCommand = &cli.Command{
 	Name:        "lint",
 	ArgsUsage:   "[targets...]",
@@ -41,11 +54,8 @@ sg lint --help
 	Category: CategoryDev,
 	Flags: []cli.Flag{
 		generateAnnotations,
-		&cli.BoolFlag{
-			Name:    "fix",
-			Aliases: []string{"f"},
-			Usage:   "Try to fix any lint issues",
-		},
+		lintFix,
+		lintFailFast,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -86,11 +96,13 @@ sg lint --help
 			return errors.Wrap(err, "repo.GetState")
 		}
 
-		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 		if cmd.Bool("fix") {
+			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
 			return runner.Fix(cmd.Context, repoState)
 		}
+		runner.FailFast = lintFailFast.Get(cmd)
+		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
 	Subcommands: lintTargets(linters.Targets).Commands(),
@@ -116,9 +128,14 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return errors.Wrap(err, "repo.GetState")
 				}
 
+				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), target)
+				if lintFix.Get(cmd) {
+					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
+					return runner.Fix(cmd.Context, repoState)
+				}
+				runner.FailFast = lintFailFast.Get(cmd)
 				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
-				return linters.NewRunner(std.Out, generateAnnotations.Get(cmd), target).
-					Check(cmd.Context, repoState)
+				return runner.Check(cmd.Context, repoState)
 			},
 			// Completions to chain multiple commands
 			BashComplete: completeOptions(func() (options []string) {

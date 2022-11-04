@@ -19,6 +19,7 @@ func Symbols() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewSymbolsRepositoryFetcherGroup(containerName),
 			shared.CodeIntelligence.NewSymbolsGitserverClientGroup(containerName),
 
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

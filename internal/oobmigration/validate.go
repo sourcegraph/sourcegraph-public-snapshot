@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -20,12 +20,12 @@ const RefreshInterval = time.Second * 30
 // left in an unexpected state for the current application version.
 func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runner *Runner) error {
 	if version.IsDev(version.Version()) {
-		log15.Warn("Skipping out-of-band migrations check (dev mode)", "version", version.Version())
+		runner.logger.Warn("Skipping out-of-band migrations check (dev mode)", log.String("version", version.Version()))
 		return nil
 	}
 	currentVersionSemver, err := semver.NewVersion(version.Version())
 	if err != nil {
-		log15.Warn("Skipping out-of-band migrations check", "version", version.Version(), "error", err)
+		runner.logger.Warn("Skipping out-of-band migrations check", log.Error(err), log.String("version", version.Version()))
 		return nil
 	}
 
@@ -34,13 +34,13 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		return errors.Wrap(err, "failed to retrieve first instance version")
 	}
 	if !ok {
-		log15.Warn("Skipping out-of-band migrations check (fresh instance)", "version", version.Version())
+		runner.logger.Warn("Skipping out-of-band migrations check (fresh instance)", log.String("version", version.Version()))
 		return nil
 	}
 
 	firstVersionSemver, err := semver.NewVersion(firstSemverString)
 	if err != nil {
-		log15.Warn("Skipping out-of-band migrations check", "version", version.Version(), "error", err)
+		runner.logger.Warn("Skipping out-of-band migrations check", log.Error(err), log.String("version", version.Version()))
 		return nil
 	}
 

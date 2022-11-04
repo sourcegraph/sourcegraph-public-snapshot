@@ -1,0 +1,31 @@
+---
+name: hello
+json:
+- rigid
+- better for data interchange
+yaml:
+- slim and flexible
+- better for configuration
+object:
+  key: value
+  array:
+  - array_value: [1,2,3]
+  - null_value:
+  - boolean: true
+  - integer: 1
+  - alias: aliases are like variables
+  - alias: aliases are like variables
+paragraph: |
+  Blank lines denote
+  paragraph breaks
+content: |-
+  Or we
+  can auto
+  convert line breaks
+  to save space
+alias:
+  - "media/**"
+jobs:
+bar: baz
+alias_reuse:
+  bar: baz

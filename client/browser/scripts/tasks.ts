@@ -159,8 +159,6 @@ function writeSchema(writeDirectory: string): void {
 
 const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
 
-const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
-
 function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     const extensionInfo = cloneDeep(manifestSpec)
     const manifest = {
@@ -190,14 +188,9 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         }
     }
 
-    if (shouldBuildWithInlineExtensions(browser)) {
-        // Add the inline extensions to web accessible resources
-        manifest.web_accessible_resources = manifest.web_accessible_resources || []
-        manifest.web_accessible_resources.push('extensions/*')
-
-        // Revert the CSP to default, in order to remove the `blob` policy exception.
-        delete manifest.content_security_policy
-    }
+    // Add the inline extensions to web accessible resources
+    manifest.web_accessible_resources = manifest.web_accessible_resources || []
+    manifest.web_accessible_resources.push('extensions/*')
 
     delete manifest.$schema
 
@@ -226,9 +219,7 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    if (shouldBuildWithInlineExtensions(browser)) {
-        copyInlineExtensions(buildDirectory)
-    }
+    copyInlineExtensions(buildDirectory)
 
     // Create a bundle by zipping the web extension directory.
     const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]

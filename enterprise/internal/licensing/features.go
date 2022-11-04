@@ -60,6 +60,15 @@ func checkFeature(info *Info, feature Feature) error {
 	return nil // feature is activated for current license
 }
 
+func MockCheckFeatureError(expectedError string) {
+	MockCheckFeature = func(feature Feature) error {
+		if expectedError == "" {
+			return nil
+		}
+		return errors.New(expectedError)
+	}
+}
+
 // MockCheckFeature is for mocking Check in tests.
 var MockCheckFeature func(feature Feature) error
 

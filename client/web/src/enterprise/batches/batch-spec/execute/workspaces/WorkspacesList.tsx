@@ -44,7 +44,12 @@ export const WorkspacesList: React.FunctionComponent<React.PropsWithChildren<Wor
                         key={node.id}
                         workspace={node}
                         isSelected={node.id === selectedNode}
-                        onSelect={() => history.push(`${executionURL}/execution/workspaces/${node.id}`)}
+                        onSelect={() =>
+                            history.replace({
+                                ...history.location,
+                                pathname: `${executionURL}/execution/workspaces/${node.id}`,
+                            })
+                        }
                     />
                 ))}
             </ConnectionList>

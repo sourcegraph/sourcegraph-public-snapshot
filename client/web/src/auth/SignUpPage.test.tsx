@@ -18,11 +18,13 @@ describe('SignUpPage', () => {
             displayName: 'Builtin username-password authentication',
             isBuiltin: true,
             serviceType: 'builtin',
+            authenticationURL: '',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
+            authenticationURL: '/.auth/github/login?pc=f00bar',
         },
     ]
 

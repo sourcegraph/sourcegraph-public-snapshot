@@ -17,7 +17,6 @@ import {
     RenderModeSpec,
     UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
-import { DeprecatedTooltipController } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { eventLogger } from '../tracking/eventLogger'
@@ -73,7 +72,6 @@ export function createPlatformContext(): PlatformContext {
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        forceUpdateTooltip: () => DeprecatedTooltipController.forceUpdate(),
         createExtensionHost: async () =>
             (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
         urlToFile: toPrettyWebBlobURL,

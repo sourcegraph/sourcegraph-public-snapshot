@@ -64,7 +64,7 @@ import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-ap
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -327,23 +327,22 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        | 'forceUpdateTooltip'
-        | 'urlToFile'
-        | 'sideloadedExtensionURL'
-        | 'requestGraphQL'
-        | 'settings'
-        | 'refreshSettings'
-        | 'sourcegraphURL'
+        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    container.append(mount)
+export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
+    let mount = container.querySelector<HTMLDivElement>(`.hover-overlay-mount.hover-overlay-mount__${codeHostName}`)
+
+    if (!mount) {
+        mount = document.createElement('div')
+        mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+        container.append(mount)
+    }
+
     return mount
 }
 
@@ -602,7 +601,7 @@ function initCodeIntelligence({
     if (!getHoverOverlayMountLocation) {
         // This renders to document.body, which we can assume is never removed,
         // so we don't need to subscribe to mutations.
-        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        const overlayMount = getExistingOrCreateOverlayMount(codeHost.type, document.body)
         render(<HoverOverlayContainer />, overlayMount)
     } else {
         let previousMount: HTMLElement | null = null
@@ -613,7 +612,7 @@ function initCodeIntelligence({
                 if (previousMount) {
                     previousMount.remove()
                 }
-                const mount = createOverlayMount(codeHost.type, mountLocation)
+                const mount = getExistingOrCreateOverlayMount(codeHost.type, mountLocation)
                 previousMount = mount
                 render(<HoverOverlayContainer />, mount)
             })
@@ -922,7 +921,7 @@ export async function handleCodeHost({
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount && !minimalUI) {
+    if (codeHost.getCommandPaletteMount && !minimalUI && extensionsController !== null) {
         subscriptions.add(
             addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
                 renderCommandPalette({
@@ -941,7 +940,7 @@ export async function handleCodeHost({
     // Render extension debug menu
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    if (showGlobalDebug) {
+    if (showGlobalDebug && extensionsController !== null) {
         const mount = createGlobalDebugMount()
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
@@ -1377,9 +1376,7 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) =>
-                                update(flattenDecorations(decorations), isLightTheme)
-                            )
+                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
                     )
                 }
 
@@ -1574,7 +1571,9 @@ export function injectCodeIntelligenceToCodeHost(
     )
     const { requestGraphQL } = platformContext
 
-    subscriptions.add(extensionsController)
+    if (extensionsController !== null) {
+        subscriptions.add(extensionsController)
+    }
 
     const isTelemetryEnabled = combineLatest([
         observeSendTelemetry(isExtension),
@@ -1623,7 +1622,7 @@ export function injectCodeIntelligenceToCodeHost(
                     codeHostSubscription.unsubscribe()
                 }
                 console.log('Browser extension is disabled')
-            } else {
+            } else if (extensionsController !== null) {
                 codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,

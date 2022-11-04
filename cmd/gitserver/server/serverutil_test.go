@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http/httptest"
+	"os"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -9,7 +10,63 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestGetTlsExternal(t *testing.T) {
+	t.Run("test multiple certs", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					TlsExternal: &schema.TlsExternal{
+						Certificates: []string{
+							"foo",
+							"bar",
+							"baz",
+						},
+					},
+				},
+			},
+		})
+
+		tls := getTlsExternalDoNotInvoke()
+
+		if tls.SSLNoVerify {
+			t.Error("expected SSLNoVerify to be false, but got true")
+		}
+
+		got, err := os.ReadFile(tls.SSLCAInfo)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We also include system certificates, so when comparing only compare
+		// the first 3 lines.
+		got = head(got, 3)
+
+		want := `foo
+bar
+baz
+`
+
+		if diff := cmp.Diff(want, string(got)); diff != "" {
+			t.Errorf("mismatch in contenst of SSLCAInfo file (-want +got):\n%s", diff)
+		}
+	})
+}
+
+// head will return the first n lines of data.
+func head(data []byte, n int) []byte {
+	for i, b := range data {
+		if b == '\n' {
+			n--
+			if n == 0 {
+				return data[:i+1]
+			}
+		}
+	}
+	return data
+}
 
 func TestConfigureRemoteGitCommand(t *testing.T) {
 	expectedEnv := []string{

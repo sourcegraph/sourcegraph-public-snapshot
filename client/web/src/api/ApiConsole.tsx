@@ -168,12 +168,22 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                     <GraphiQL.Logo>GraphQL API console</GraphiQL.Logo>
                     <GraphiQL.Toolbar>
                         <div className="d-flex align-items-center">
-                            <GraphiQL.Button
-                                onClick={this.handlePrettifyQuery}
+                            <Button
+                                variant="secondary"
                                 title="Prettify Query (Shift-Ctrl-P)"
-                                label="Prettify"
-                            />
-                            <GraphiQL.Button onClick={this.handleToggleHistory} title="Show History" label="History" />
+                                onClick={this.handlePrettifyQuery}
+                                className={styles.toolbarButton}
+                            >
+                                Prettify
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                title="Show History"
+                                onClick={this.handleToggleHistory}
+                                className={styles.toolbarButton}
+                            >
+                                History
+                            </Button>
                             <Button to="/help/api/graphql" variant="link" as={Link}>
                                 Docs
                             </Button>

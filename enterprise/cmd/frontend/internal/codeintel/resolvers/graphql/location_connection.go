@@ -5,16 +5,15 @@ import (
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 type LocationConnectionResolver struct {
-	locations        []resolvers.AdjustedLocation
+	locations        []AdjustedLocation
 	cursor           *string
 	locationResolver *CachedLocationResolver
 }
 
-func NewLocationConnectionResolver(locations []resolvers.AdjustedLocation, cursor *string, locationResolver *CachedLocationResolver) gql.LocationConnectionResolver {
+func NewLocationConnectionResolver(locations []AdjustedLocation, cursor *string, locationResolver *CachedLocationResolver) gql.LocationConnectionResolver {
 	return &LocationConnectionResolver{
 		locations:        locations,
 		cursor:           cursor,

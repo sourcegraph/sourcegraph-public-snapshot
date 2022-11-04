@@ -88,9 +88,11 @@ func (f ObservableOption) and(m ObservableOption) ObservableOption {
 
 // WarningOption creates an ObservableOption that overrides this Observable's
 // warning-level alert with the given alert.
-func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {
+func WarningOption(a *monitoring.ObservableAlertDefinition, possibleSolution string) ObservableOption {
 	return func(observable Observable) Observable {
-		return observable.WithWarning(a)
+		observable = observable.WithWarning(a)
+		observable.NextSteps = possibleSolution
+		return observable
 	}
 }
 

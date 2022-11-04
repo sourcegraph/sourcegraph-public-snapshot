@@ -91,7 +91,8 @@ func (r *Resolver) RequestLanguageSupport(ctx context.Context, args *gql.Request
 		return nil, errors.Newf("language support requests only logged for authenticated users")
 	}
 
-	if err := r.resolver.RequestLanguageSupport(ctx, userID, args.Language); err != nil {
+	codeNavResolver := r.resolver.CodeNavResolver()
+	if err := codeNavResolver.SetRequestLanguageSupport(ctx, userID, args.Language); err != nil {
 		return nil, err
 	}
 
@@ -107,5 +108,6 @@ func (r *Resolver) RequestedLanguageSupport(ctx context.Context) (_ []string, er
 		return nil, errors.Newf("language support requests only logged for authenticated users")
 	}
 
-	return r.resolver.RequestedLanguageSupport(ctx, userID)
+	codeNavResolver := r.resolver.CodeNavResolver()
+	return codeNavResolver.GetLanguagesRequestedBy(ctx, userID)
 }

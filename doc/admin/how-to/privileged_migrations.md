@@ -4,6 +4,8 @@ Postgres database migrations can be _privileged_ or _unprivileged_. The vast maj
 
 If your Sourcegraph instance does not connect to the database with a superuser, then privileged migrations will fail. There are currently two methods to apply privileged migrations by hand to allow the installation or update of your Sourcegraph instance to proceed.
 
+Note that these flags affect the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`.
+
 ## Option 1: `--unprivileged-only`
 
 Add the optional flag `--unprivileged-only` when [running the migrator](manual_database_migrations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will halt with an error message similar to the following.

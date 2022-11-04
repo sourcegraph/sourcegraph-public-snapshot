@@ -76,8 +76,8 @@ export const ComputeInsightCard: React.FunctionComponent<React.PropsWithChildren
     <InsightCard {...props}>
         <ComputeInsightChart className={styles.chart} />
         <InsightCardBody title="Group results" className="mb-3">
-            Insight that <b>groups results</b> by repository, path, author or date. You will define each data series
-            manually.
+            Insight based on a custom Sourcegraph search query that <b>groups results by</b> repository, path, author or
+            date.
         </InsightCardBody>
 
         <InsightCardExampleBlock>Tracking a migration by repository.</InsightCardExampleBlock>

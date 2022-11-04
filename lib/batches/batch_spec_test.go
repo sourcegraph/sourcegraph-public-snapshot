@@ -28,7 +28,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
@@ -45,7 +45,7 @@ steps:
     container: alpine:3
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -75,7 +75,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -83,38 +83,6 @@ changesetTemplate:
 		// We expect this error to be user-friendly, which is why we test for
 		// it specifically here.
 		wantErr := `The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.`
-		haveErr := err.Error()
-		if haveErr != wantErr {
-			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
-		}
-	})
-
-	t.Run("uses unsupported conditional exec", func(t *testing.T) {
-		const spec = `
-name: hello-world
-description: Add Hello World to READMEs
-on:
-  - repositoriesMatchingQuery: file:README.md
-steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    if: "false"
-    container: alpine:3
-
-changesetTemplate:
-  title: Hello World
-  body: My first batch change!
-  branch: hello-world
-  commit:
-    message: Append Hello World to all README.md files
-  published: false
-`
-
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
-		if err == nil {
-			t.Fatal("no error returned")
-		}
-
-		wantErr := `step 1 in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
@@ -154,7 +122,7 @@ changesetTemplate:
 			{raw: `foobar`, want: "foobar"},
 		} {
 			spec := fmt.Sprintf(specTemplate, tt.raw)
-			batchSpec, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowConditionalExec: true})
+			batchSpec, err := ParseBatchSpec([]byte(spec))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -185,7 +153,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -217,7 +185,7 @@ changesetTemplate:
   commit:
     message: Test
 `
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		assert.Equal(t, "step 1 mount path contains invalid characters", err.Error())
 	})
 
@@ -238,7 +206,7 @@ changesetTemplate:
   commit:
     message: Test
 `
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		assert.Equal(t, "step 1 mount mountpoint contains invalid characters", err.Error())
 	})
 }

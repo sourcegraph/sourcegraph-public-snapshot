@@ -69,19 +69,19 @@ func TestEditorRedirect(t *testing.T) {
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
 				DisplayName: "GITHUB #1",
-				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
 			{
 				ID:          2,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherPretty",
-				Config:      `{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`),
 			},
 			{
 				ID:          3,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherDefault",
-				Config:      `{"url": "https://default.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://default.com"}`),
 			},
 			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoName returned an error when
 			// Phabricator was iterated over before the actual code host (e.g. The clone URL is handled by reposource.GitLab).
@@ -89,14 +89,14 @@ func TestEditorRedirect(t *testing.T) {
 				ID:          4,
 				Kind:        extsvc.KindPhabricator,
 				DisplayName: "PHABRICATOR #1",
-				Config:      `{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`),
 			},
 			// Code host with SCP-style remote URLs
 			{
 				ID:          5,
 				Kind:        extsvc.KindOther,
 				DisplayName: "OtherSCP",
-				Config:      `{"url":"ssh://git@git.codehost.com"}`,
+				Config:      extsvc.NewUnencryptedConfig(`{"url":"ssh://git@git.codehost.com"}`),
 			},
 		},
 		nil,

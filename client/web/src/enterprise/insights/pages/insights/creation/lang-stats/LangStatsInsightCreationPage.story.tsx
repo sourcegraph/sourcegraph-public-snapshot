@@ -11,7 +11,7 @@ import { getRandomLangStatsMock } from './components/live-preview-chart/constant
 import { LangStatsInsightCreationPage as LangStatsInsightCreationPageComponent } from './LangStatsInsightCreationPage'
 
 const defaultStory: Meta = {
-    title: 'web/insights/creation-ui/LangStatsInsightCreationPage',
+    title: 'web/insights/creation-ui/lang-stats/LangStatsInsightCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
         chromatic: {

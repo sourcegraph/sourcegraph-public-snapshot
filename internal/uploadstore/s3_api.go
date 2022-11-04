@@ -23,11 +23,15 @@ type s3Uploader interface {
 	Upload(ctx context.Context, input *s3.PutObjectInput) error
 }
 
-type s3APIShim struct{ *s3.Client }
-type s3UploaderShim struct{ *manager.Uploader }
+type (
+	s3APIShim      struct{ *s3.Client }
+	s3UploaderShim struct{ *manager.Uploader }
+)
 
-var _ s3API = &s3APIShim{}
-var _ s3Uploader = &s3UploaderShim{}
+var (
+	_ s3API      = &s3APIShim{}
+	_ s3Uploader = &s3UploaderShim{}
+)
 
 func (s *s3APIShim) CreateBucket(ctx context.Context, input *s3.CreateBucketInput) (*s3.CreateBucketOutput, error) {
 	return s.Client.CreateBucket(ctx, input)

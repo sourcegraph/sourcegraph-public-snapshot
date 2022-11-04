@@ -83,7 +83,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindBitbucketCloud,
-				Config: marshalJSON(t, tc.conf),
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
 			}
 
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
@@ -114,7 +114,11 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketCloud,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	tests := []struct {
 		name   string
@@ -215,7 +219,11 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := types.ExternalService{ID: 1, Kind: extsvc.KindBitbucketCloud}
+	svc := types.ExternalService{
+		ID:     1,
+		Kind:   extsvc.KindBitbucketCloud,
+		Config: extsvc.NewEmptyConfig(),
+	}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {

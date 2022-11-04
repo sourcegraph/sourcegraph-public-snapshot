@@ -13,7 +13,6 @@ import {
 } from '@sourcegraph/search-ui/src/input/LazyMonacoQueryInput'
 import { SearchContextDropdown } from '@sourcegraph/search-ui/src/input/SearchContextDropdown'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -46,7 +45,6 @@ export interface JetBrainsSearchBoxProps
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
-    keyboardShortcutForFocus?: KeyboardShortcut
     className?: string
     containerClassName?: string
 

@@ -18,6 +18,8 @@ type ExpectedSchemaFactory func(filename, version string) (descriptions.SchemaDe
 // a version of Sourcegraph that did not yet contain the squashed schema description file in-tree. These files
 // have been backfilled to this bucket by hand. A false-valued flag is returned if the schema does not exist
 // for this version.
+//
+// See the ./drift-schemas directory for more details on how this data was generated.
 func GCSExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
 	return fetchSchema(fmt.Sprintf("https://storage.googleapis.com/sourcegraph-assets/migrations/drift/%s-%s", version, strings.ReplaceAll(filename, "/", "_")))
 }

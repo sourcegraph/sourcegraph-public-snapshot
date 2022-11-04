@@ -1,8 +1,8 @@
 package codeintel
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -22,7 +22,7 @@ func InitLSIFStore() (*lsifstore.Store, error) {
 var initLSFIStore = memo.NewMemoizedConstructor(func() (*lsifstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.lsif", "lsif store"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 

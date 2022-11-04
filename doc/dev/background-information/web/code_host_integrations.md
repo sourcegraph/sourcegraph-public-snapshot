@@ -23,7 +23,7 @@ Code host integrations work by first [identifying all code views on a given page
 
 ## Relationship to the web UI
 
-Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web UI. Both support [Sourcegraph extensions](../../../extensions/index.md), which is how Sourcegraph provides code intelligence hovers, code decorations, action buttons, and other features.
+Sourcegraph code host integrations share some functionality and source code with the Sourcegraph web UI. Both support [Sourcegraph extensions](../../../extensions/index.md), which is how Sourcegraph provides code navigation hovers, code decorations, action buttons, and other features.
 
 The browser extensions, native integrations, and the web UI are collectively labeled as the [web clients](index.md).
 

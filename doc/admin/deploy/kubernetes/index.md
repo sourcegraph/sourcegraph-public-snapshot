@@ -1,7 +1,7 @@
 # Sourcegraph with Kubernetes
 
 <p class="lead">
-Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code intelligence.
+Deploying Sourcegraph on Kubernetes is for organizations that need highly scalable and available code search and code navigation.
 </p>
 
 > NOTE: Sourcegraph recommends [using Helm to deploy Sourcegraph](helm.md) if possible.

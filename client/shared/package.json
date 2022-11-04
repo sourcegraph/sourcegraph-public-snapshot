@@ -4,14 +4,14 @@
   "version": "1.0.0",
   "license": "Apache-2.0",
   "scripts": {
-    "storybook": "STORIES_GLOB=client/shared/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
-    "lint:js": "eslint --cache '**/*.[jt]s?(x)'",
-    "lint:css": "stylelint 'src/**/*.scss' --quiet",
-    "test": "jest",
-    "graphql": "gulp graphQlSchema",
-    "schema": "gulp schema",
-    "graphql-operations": "gulp graphQlOperations",
-    "watch-schema": "gulp watchSchema"
+    "storybook": "STORIES_GLOB='client/shared/src/**/*.story.tsx' yarn workspace @sourcegraph/storybook run start",
+    "lint:js": "yarn run -T eslint --cache '**/*.[jt]s?(x)'",
+    "lint:css": "yarn run -T stylelint 'src/**/*.scss' --quiet",
+    "test": "yarn run -T jest",
+    "graphql": "yarn run -T gulp graphQlSchema",
+    "schema": "yarn run -T gulp schema",
+    "graphql-operations": "yarn run -T gulp graphQlOperations",
+    "watch-schema": "yarn run -T gulp watchSchema"
   },
   "sideEffects": true
 }

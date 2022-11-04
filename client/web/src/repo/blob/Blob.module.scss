@@ -36,6 +36,11 @@
         &:global(.selected),
         &:global(.highlighted) {
             background: var(--code-selection-bg);
+
+            > :global(.code) {
+                // override the color set by extension decoration
+                background: var(--code-selection-bg) !important;
+            }
         }
 
         &:first-child td:global(.line) {

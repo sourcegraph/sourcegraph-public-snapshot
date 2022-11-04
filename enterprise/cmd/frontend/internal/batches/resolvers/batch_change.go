@@ -76,10 +76,6 @@ func (r *batchChangeResolver) State() string {
 	return state.ToGraphQL()
 }
 
-func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return r.Creator(ctx)
-}
-
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
 	if errcode.IsNotFound(err) {
@@ -107,20 +103,6 @@ func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
 	}
 
 	return &graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
-}
-
-func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.computeBatchSpec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), spec.UserID)
-	if errcode.IsNotFound(err) {
-		return nil, nil
-	}
-
-	return user, err
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {

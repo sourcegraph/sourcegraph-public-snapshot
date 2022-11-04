@@ -17,10 +17,6 @@ type frankenResolver struct {
 
 func (r *frankenResolver) getAutoindexingServiceResolver() gql.AutoindexingServiceResolver {
 	return r.Resolver
-
-	// TODO
-	// Uncomment after https://github.com/sourcegraph/sourcegraph/issues/33377
-	// return r.AutoindexingServiceResolver
 }
 
 func (r *frankenResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIFIndexResolver, err error) {

@@ -86,8 +86,10 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
         __typename
         id
         state
+        startedAt
         finishedAt
         createdAt
+        source
         description {
             name
         }

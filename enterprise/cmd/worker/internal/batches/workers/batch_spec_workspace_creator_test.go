@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,13 +32,13 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
+	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 4)
 
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	s := store.New(db, &observation.TestContext, nil)
 
-	batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML)
+	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpecYAML)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,9 +175,9 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
 
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -261,7 +261,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	t.Run("caching enabled", func(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled")
 
-		batchSpec := createBatchSpec(t, false, ct.TestRawBatchSpecYAML)
+		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
@@ -305,11 +305,8 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		haveDiff, err := changesetSpec.Spec.Diff()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if haveDiff != testDiff {
+		haveDiff := changesetSpec.Diff
+		if !bytes.Equal(haveDiff, []byte(testDiff)) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -439,7 +436,7 @@ changesetTemplate:
 	t.Run("caching enabled but no diff in cache entry", func(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled-no-diff")
 
-		batchSpec := createBatchSpec(t, false, ct.TestRawBatchSpecYAML)
+		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
 		resultWithoutDiff := *executionResult
 		resultWithoutDiff.Diff = ""
@@ -481,7 +478,7 @@ changesetTemplate:
 	t.Run("caching disabled", func(t *testing.T) {
 		workspace := buildWorkspace("caching-disabled")
 
-		batchSpec := createBatchSpec(t, true, ct.TestRawBatchSpecYAML)
+		batchSpec := createBatchSpec(t, true, bt.TestRawBatchSpecYAML)
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
@@ -529,7 +526,7 @@ changesetTemplate:
 		workspace := buildWorkspace("caching-enabled-ignored")
 		workspace.Ignored = true
 
-		batchSpec := createBatchSpec(t, false, ct.TestRawBatchSpecYAML)
+		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
@@ -559,7 +556,7 @@ changesetTemplate:
 		workspace := buildWorkspace("caching-enabled-ignored")
 		workspace.Unsupported = true
 
-		batchSpec := createBatchSpec(t, false, ct.TestRawBatchSpecYAML)
+		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
 		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
@@ -590,9 +587,9 @@ func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
 
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -630,14 +627,12 @@ importChangesets:
 			ID:          have[0].ID,
 			RandID:      have[0].RandID,
 			UserID:      user.ID,
-			RepoID:      repos[0].ID,
+			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
-			Spec: &batcheslib.ChangesetSpec{
-				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
-				ExternalID:     "123",
-			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			Type:        btypes.ChangesetSpecTypeExisting,
+			ExternalID:  "123",
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		},
 	}
 
@@ -650,9 +645,9 @@ func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
 
-	user := ct.CreateTestUser(t, db, true)
+	user := bt.CreateTestUser(t, db, true)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -690,14 +685,12 @@ importChangesets:
 			ID:          have[0].ID,
 			RandID:      have[0].RandID,
 			UserID:      user.ID,
-			RepoID:      repos[0].ID,
+			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
-			Spec: &batcheslib.ChangesetSpec{
-				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
-				ExternalID:     "123",
-			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			Type:        btypes.ChangesetSpecTypeExisting,
+			ExternalID:  "123",
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		},
 	}
 

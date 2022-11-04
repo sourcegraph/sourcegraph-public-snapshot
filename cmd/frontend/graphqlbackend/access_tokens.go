@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -88,8 +88,8 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
-			log15.Warn("Failed to send email to inform user of access token creation", "error", err)
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "created an access token"); err != nil {
+			r.logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
 
@@ -153,8 +153,8 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, subjectUserID, "deleted an access token"); err != nil {
-			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, subjectUserID, "deleted an access token"); err != nil {
+			r.logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}
 

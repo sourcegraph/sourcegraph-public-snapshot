@@ -53,7 +53,7 @@ func dockerResourceFlags(options ResourceOptions) []string {
 	if options.NumCPUs != 0 {
 		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
 	}
-	if options.Memory != "0" {
+	if options.Memory != "0" && options.Memory != "" {
 		flags = append(flags, "--memory", options.Memory)
 	}
 

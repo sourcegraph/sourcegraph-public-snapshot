@@ -1,8 +1,8 @@
 package background
 
 import (
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -21,7 +21,7 @@ type codeMonitorsMetrics struct {
 func newMetricsForTriggerQueries(logger log.Logger) codeMonitorsMetrics {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("triggers", "code monitor triggers"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -54,7 +54,7 @@ func newMetricsForTriggerQueries(logger log.Logger) codeMonitorsMetrics {
 func newActionMetrics(logger log.Logger) codeMonitorsMetrics {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("actions", "code monitors actions"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
