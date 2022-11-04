@@ -164,7 +164,7 @@ func TestUsers_InactiveSince(t *testing.T) {
 	})
 }
 
-func TestUsers_HasBeenActive(t *testing.T) {
+func TestUsers_NeverActive(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -209,70 +209,41 @@ func TestUsers_HasBeenActive(t *testing.T) {
 
 	ctx = actor.WithInternalActor(ctx)
 
-	// TODO: Fix the query
 	query := `
-		query InactiveUsers($since: DateTime) {
-			users(hasBeenActive: $since) {
+		query InactiveUsers($neverActive: Bool) {
+			users(neverActive: $neverActive) {
 				nodes { username }
 				totalCount
 			}
 		}
 	`
 
-	// fix the assertions
 	RunTests(t, []*Test{
 		{
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(4).Format(time.RFC3339Nano)},
+			Variables: map[string]any{"neverActive": true},
 			ExpectedResult: `
-			{"users": { "nodes": [], "totalCount": 0 }}
+			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,
 		},
 		{
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano)},
+			Variables: map[string]any{"neverActive": false},
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-4" }], "totalCount": 1 }}
+			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,
 		},
 		{
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(2).Format(time.RFC3339Nano)},
+			Variables: map[string]any{},
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-3" }, { "username": "user-4" }], "totalCount": 2 }}
-			`,
-		},
-		{
-			Context:   ctx,
-			Schema:    schema,
-			Query:     query,
-			Variables: map[string]any{"since": daysAgo(1).Format(time.RFC3339Nano)},
-			ExpectedResult: `
-			{"users": { "nodes": [
-				{ "username": "user-2" },
-				{ "username": "user-3" },
-				{ "username": "user-4" }
-			], "totalCount": 3 }}
-			`,
-		},
-		{
-			Context:   ctx,
-			Schema:    schema,
-			Query:     query,
-			Variables: map[string]any{"since": daysAgo(0).Format(time.RFC3339Nano)},
-			ExpectedResult: `
-			{"users": { "nodes": [
-				{ "username": "user-1" },
-				{ "username": "user-2" },
-				{ "username": "user-3" },
-				{ "username": "user-4" }
-			], "totalCount": 4 }}
+			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,
 		},
 	})

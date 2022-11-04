@@ -21,7 +21,7 @@ type usersArgs struct {
 	Tag           *string
 	ActivePeriod  *string
 	InactiveSince *gqlutil.DateTime
-	HasBeenActive *bool
+	NeverActive   *bool
 }
 
 func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
@@ -35,8 +35,8 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	if args.InactiveSince != nil {
 		opt.InactiveSince = args.InactiveSince.Time
 	}
-	if args.HasBeenActive != nil {
-		opt.HasBeenActive = *args.HasBeenActive
+	if args.NeverActive != nil {
+		opt.NeverActive = *args.NeverActive
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}

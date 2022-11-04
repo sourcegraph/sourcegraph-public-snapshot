@@ -1354,9 +1354,9 @@ type Query {
         inactiveSince: DateTime
 
         """
-        Returns users that have at any point in time been active.
+        Returns users that have not been active at any point in time. 
         """
-        hasBeenActive: Bool
+        neverActive: Bool
     ): UserConnection!
     """
     Looks up an organization by name.
