@@ -111,7 +111,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
                     </TabPanel>
                     <TabPanel>
-                        <Suspense fallback={<LoadingSpinner aria-label='Loading Code Insights Getting started page' />}>
+                        <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
                             <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                         </Suspense>
                     </TabPanel>
