@@ -1,4 +1,4 @@
-package sourcegraphoperator
+package auth
 
 import (
 	"context"
@@ -9,36 +9,43 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestCleanUp(t *testing.T) {
+func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	// NOTE: We cannot run this test with t.Parallel() because of this mock.
-	mockProvider := newProvider(
-		schema.SourcegraphOperatorAuthProvider{
-			ClientID:          testClientID,
-			ClientSecret:      "testClientSecret",
-			LifecycleDuration: 60,
-			Type:              providerType,
+	conf.Mock(
+		&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{
+						SourcegraphOperator: &schema.SourcegraphOperatorAuthProvider{
+							LifecycleDuration: 60,
+							Type:              sourcegraphoperator.ProviderType,
+						},
+					},
+				},
+			},
 		},
-	).(*provider)
-	providers.MockProviders = []providers.Provider{mockProvider}
-	defer func() { providers.MockProviders = nil }()
+	)
+	defer conf.Mock(nil)
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	handler := sourcegraphOperatorCleanHandler{db: db}
 
 	// Make sure it doesn't blow up if there is nothing to clean up
-	err := cleanup(ctx, db)
+	err := handler.Handle(ctx)
 	require.NoError(t, err)
 
 	// Create test users:
@@ -61,7 +68,7 @@ func TestCleanUp(t *testing.T) {
 			Username: "morgan",
 		},
 		extsvc.AccountSpec{
-			ServiceType: providerType,
+			ServiceType: sourcegraphoperator.ProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "morgan",
@@ -90,7 +97,7 @@ func TestCleanUp(t *testing.T) {
 			Username: "jordan",
 		},
 		extsvc.AccountSpec{
-			ServiceType: providerType,
+			ServiceType: sourcegraphoperator.ProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "jordan",
@@ -105,7 +112,7 @@ func TestCleanUp(t *testing.T) {
 			Username: "riley",
 		},
 		extsvc.AccountSpec{
-			ServiceType: providerType,
+			ServiceType: sourcegraphoperator.ProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "riley",
@@ -131,7 +138,7 @@ func TestCleanUp(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	err = cleanup(ctx, db)
+	err = handler.Handle(ctx)
 	require.NoError(t, err)
 
 	users, err := db.Users().List(ctx, nil)

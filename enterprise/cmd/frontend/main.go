@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
@@ -35,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -94,11 +92,6 @@ func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, c
 	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
-
-	// TODO(jchen): Once https://github.com/sourcegraph/customer/issues/1427 is
-	// implemented, use the env var as the toggle to determine if we need to run this
-	// background job.
-	goroutine.Go(func() { sourcegraphoperator.CleanUp(ctx, logger, db) })
 
 	return enterpriseServices
 }
