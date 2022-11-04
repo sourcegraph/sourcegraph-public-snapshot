@@ -82,7 +82,11 @@ func (s *Service) GetWorkerutilStore() dbworkerstore.Store {
 	return s.workerutilStore
 }
 
-func (s *Service) ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error) {
+func (s *Service) FrontendReconcileCandidates(ctx context.Context, batchSize int) ([]int, error) {
+	return s.store.ReconcileCandidates(ctx, batchSize)
+}
+
+func (s *Service) CodeIntelDBReconcileCandidates(ctx context.Context, batchSize int) ([]int, error) {
 	return s.lsifstore.ReconcileCandidates(ctx, batchSize)
 }
 
@@ -544,6 +548,10 @@ func (s *Service) UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonSt
 	}
 
 	return updateErr
+}
+
+func (s *Service) IDsWithMeta(ctx context.Context, ids []int) ([]int, error) {
+	return s.lsifstore.IDsWithMeta(ctx, ids)
 }
 
 // lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
