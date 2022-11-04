@@ -3,13 +3,16 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -23,6 +26,8 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const defaultInterruptSeconds = 60
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	db := config.InsightsDB
@@ -43,16 +48,20 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumRetries:     3,
 	}, config.ObsContext)
 
-	task := inProgressHandler{
+	handlerConfig := handlerConfig{interruptAfter: defaultInterruptSeconds}
+
+	task := &inProgressHandler{
 		workerStore:    workerStore,
 		backfillStore:  backfillStore,
 		seriesReader:   store.NewInsightStore(db),
 		insightsStore:  config.InsightStore,
 		backfillRunner: config.BackfillRunner,
 		repoStore:      config.RepoStore,
+		clock:          glock.NewRealClock(),
+		config:         handlerConfig,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
 		Name:              name,
 		NumHandlers:       1,
 		Interval:          5 * time.Second,
@@ -66,6 +75,19 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
 	})
 
+	mu := sync.Mutex{}
+	conf.Watch(func() {
+		c := conf.Get()
+		if c == nil {
+			return
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+		task.config.interruptAfter = getInterruptAfter()
+		// logger.Info("insights backfiller interrupt time changed", log.Duration("old", interruptAfter), log.Duration("new", newVal))
+	})
+
 	return worker, resetter, workerStore
 }
 
@@ -76,11 +98,20 @@ type inProgressHandler struct {
 	repoStore      database.RepoStore
 	insightsStore  store.Interface
 	backfillRunner pipeline.Backfiller
+	config         handlerConfig
+
+	clock glock.Clock
+}
+
+type handlerConfig struct {
+	interruptAfter time.Duration
 }
 
 var _ workerutil.Handler = &inProgressHandler{}
 
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	start := h.clock.Now()
+
 	ctx = actor.WithInternalActor(ctx)
 	job, ok := record.(*BaseJob)
 	if !ok {
@@ -119,6 +150,16 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) error {
 		for {
+			if h.shouldInterrupt(h.clock.Now().Sub(start)) {
+				err = h.doInterrupt(ctx, job)
+				if err != nil {
+					// this shouldn't break the job state if this happens because the record never got set to queued
+					return errors.Wrap(err, "doInterrupt")
+				}
+				logger.Info("interrupted insight series backfill", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+				return nil
+			}
+
 			repoId, more, finish := nextFunc()
 			if !more {
 				break
@@ -173,6 +214,25 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	}
 
 	return nil
+}
+
+func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error {
+	return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(time.Second*10))
+}
+
+func (h *inProgressHandler) shouldInterrupt(duration time.Duration) bool {
+	if duration >= h.config.interruptAfter {
+		return true
+	}
+	return false
+}
+
+func getInterruptAfter() time.Duration {
+	val := conf.Get().InsightsBackfillInterruptAfter
+	if val != 0 {
+		return time.Duration(val) * time.Second
+	}
+	return time.Duration(defaultInterruptSeconds) * time.Second
 }
 
 var incompleteBackfillErr error = errors.New("incomplete backfill")
