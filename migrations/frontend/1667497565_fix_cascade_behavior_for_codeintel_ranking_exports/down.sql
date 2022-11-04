@@ -14,5 +14,5 @@ ALTER TABLE codeintel_ranking_exports ADD PRIMARY KEY (upload_id, graph_key);
 -- Drop now duplicate index
 DROP INDEX IF EXISTS codeintel_ranking_exports_upload_id_graph_key;
 
--- TODO
+-- Drop new column
 ALTER TABLE codeintel_ranking_exports DROP COLUMN IF EXISTS object_prefix;
