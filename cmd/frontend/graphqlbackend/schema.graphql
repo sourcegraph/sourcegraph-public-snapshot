@@ -1650,6 +1650,254 @@ type Query {
 }
 
 """
+Enum of the possible scopes for executor secrets.
+"""
+enum ExecutorSecretScope {
+    """
+    The secret is meant to be used with Batch Changes execution.
+    """
+    BATCHES
+}
+
+"""
+A secret to be used in executor jobs.
+"""
+type ExecutorSecret implements Node {
+    """
+    The unique identifier of the secret.
+    """
+    id: ID!
+    """
+    The key under which the secret is available. Secrets are usually exposed
+    as environment variables named using this key.
+    Recommended format: uppercase letters, numbers and underscores.
+    """
+    key: String!
+    """
+    The scope of this secret. The secret will only be usable for jobs in this
+    particular scope.
+    """
+    scope: ExecutorSecretScope!
+    """
+    The namespace this secret belongs to. Null, if a global secret.
+    Global secrets are available to every execution.
+    """
+    namespace: Namespace
+    """
+    The creator of the secret. Null, if the creator has been deleted.
+    """
+    creator: User
+    """
+    The date and time this secret has been created.
+    """
+    createdAt: DateTime!
+    """
+    The date and time this secret has been last updated.
+    """
+    updatedAt: DateTime!
+    """
+    The list of access events to this secret. Every time the secret value is
+    decoded and used, one of these entries is created.
+    """
+    accessLogs(
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretAccessLogConnection!
+}
+
+"""
+A list of executor secrets.
+"""
+type ExecutorSecretConnection {
+    """
+    A list of executor secrets.
+    """
+    nodes: [ExecutorSecret!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A list of executor secret access logs.
+"""
+type ExecutorSecretAccessLogConnection {
+    """
+    A list of access logs.
+    """
+    nodes: [ExecutorSecretAccessLog!]!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An access log entry for an executor secret.
+These are created every time the secret value is decoded.
+"""
+type ExecutorSecretAccessLog implements Node {
+    """
+    The unique identifier of the log entry.
+    """
+    id: ID!
+    """
+    The secret that this log entry belongs to.
+    """
+    executorSecret: ExecutorSecret!
+    """
+    The user in which name the secret has been used.
+    """
+    user: User!
+    """
+    The date and time when the secret has been used.
+    """
+    createdAt: DateTime!
+}
+
+extend type Query {
+    """
+    The list of all globally available executor secrets.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type User {
+    """
+    The list of all available executor secrets for execution in this users namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Org {
+    """
+    The list of all available executor secrets for execution in this orgs namespace.
+    """
+    executorSecrets(
+        """
+        The scope for which secrets shall be returned.
+        """
+        scope: ExecutorSecretScope!
+        """
+        Only return N records.
+        """
+        first: Int = 50
+        """
+        Opaque cursor for pagination.
+        """
+        after: String
+    ): ExecutorSecretConnection!
+}
+
+extend type Mutation {
+    """
+    Create a new executor secret.
+    See argument descriptions for more details.
+    """
+    createExecutorSecret(
+        """
+        The scope for which the secret is usable.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The key under which the secret is known. For executions, this is the name
+        of the environment variable this secret will be accessible under.
+        It is therefore advised that key only contains uppercase letters, numbers
+        and underscores.
+        """
+        key: String!
+        """
+        The secret value.
+        """
+        value: String!
+        """
+        The namespace this secret is for. If not set, a global secret is created
+        that is accessible by all users.
+        Creating a global secret requires site-admin permissions.
+        Creating a namespaced secret requires write-access to the namespace.
+        """
+        namespace: ID
+    ): ExecutorSecret!
+
+    """
+    Update the value of an existing executor secret.
+    """
+    updateExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The idenitifier of the secret that shall be updated.
+        """
+        id: ID!
+        """
+        The new secret value.
+        """
+        value: String!
+    ): ExecutorSecret!
+
+    """
+    Deletes the given executor secret.
+    """
+    deleteExecutorSecret(
+        """
+        The scope of the secret.
+        """
+        scope: ExecutorSecretScope!
+        """
+        The idenitifier of the secret that shall be deleted.
+        """
+        id: ID!
+    ): EmptyResponse
+}
+
+"""
 A feature flag is either a static boolean feature flag or a rollout feature flag
 """
 union FeatureFlag = FeatureFlagBoolean | FeatureFlagRollout

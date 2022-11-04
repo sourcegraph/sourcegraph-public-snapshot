@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -87,7 +86,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),

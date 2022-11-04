@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -37,21 +38,41 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 }
 
 func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
-	opts := github.RepositoryListByOrgOptions{
-		ListOptions: github.ListOptions{},
-	}
 	var repos []*github.Repository
-	for {
-		rs, resp, err := g.c.Repositories.ListByOrg(ctx, g.def.Path, &opts)
-		if err != nil {
-			return nil, err
-		}
-		repos = append(repos, rs...)
 
-		if resp.NextPage == 0 {
-			break
+	if strings.HasPrefix(g.def.Path, "@") {
+		// If we're given a user and not an organization, query the user repos.
+		opts := github.RepositoryListOptions{
+			ListOptions: github.ListOptions{},
 		}
-		opts.ListOptions.Page = resp.NextPage
+		for {
+			rs, resp, err := g.c.Repositories.List(ctx, strings.Replace(g.def.Path, "@", "", 1), &opts)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, rs...)
+
+			if resp.NextPage == 0 {
+				break
+			}
+			opts.ListOptions.Page = resp.NextPage
+		}
+	} else {
+		opts := github.RepositoryListByOrgOptions{
+			ListOptions: github.ListOptions{},
+		}
+		for {
+			rs, resp, err := g.c.Repositories.ListByOrg(ctx, g.def.Path, &opts)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, rs...)
+
+			if resp.NextPage == 0 {
+				break
+			}
+			opts.ListOptions.Page = resp.NextPage
+		}
 	}
 
 	res := make([]*store.Repo, 0, len(repos))

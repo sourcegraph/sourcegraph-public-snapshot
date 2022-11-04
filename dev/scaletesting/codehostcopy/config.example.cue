@@ -3,7 +3,7 @@
 		kind:     "github"
 		token:    "1235"
 		url:      "https://$GHE_HOST"
-		path:     "baz"
+		path:     "baz" // Use @myusername if you're targeting a user instead of an organization
 		username: "my-user"
 		password: "my-password"
 	}

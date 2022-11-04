@@ -4,14 +4,10 @@ Site admins can sync Git repositories hosted on [GitLab](https://gitlab.com) (Gi
 
 To connect GitLab to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-    1. *Site admin*: Go to **Site admin > Manage code hosts > Add repositories**
-    1. *User*: Go to **Settings > Manage code hosts**.
-1. Select **GitLab**.
-1. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
-1. Press **Add repositories**.
-
-**NOTE** That adding code hosts as a user is currently in private beta.
+1. Go to **Site admin > Manage code hosts > Add repositories**
+2. Select **GitLab**.
+3. Configure the connection to GitLab using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+4. Press **Add repositories**.
 
 ## Supported versions
 
@@ -102,7 +98,7 @@ We are actively collaborating with GitLab to improve our integration (e.g. the [
 | [`GET /projects/:id/repository/tree`](https://docs.gitlab.com/ee/api/repositories.html#list-repository-tree) | `api` or `read_api` | If using GitLab OAuth and repository permissions, used to verify a given user has access to the file contents of a repository within a project (i.e. does not merely have `Guest` permissions). |
 | Batch Changes requests | `api` or `read_api`, `read_repository`, `write_repository` | [Batch Changes](../../batch_changes/index.md) require write access to push commits and create, update and close merge requests on GitLab repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details. |
 
-## Webhooks
+## Webhook setup
 
 The `webhooks` setting allows specifying the webhook secrets necessary to authenticate incoming webhook requests to `/.api/gitlab-webhooks`.
 
