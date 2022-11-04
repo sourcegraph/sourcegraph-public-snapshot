@@ -1,5 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
@@ -11,6 +11,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
+import { GET_LICENSE_AND_USAGE_INFO } from '../../list/backend'
+import { getLicenseAndUsageInfoResult } from '../../list/testData'
 import {
     ACTIVE_EXECUTORS_MOCK,
     mockBatchChange,
@@ -61,6 +63,15 @@ const SETTINGS_CASCADE = {
     ],
 }
 
+const LICENSED: WildcardMockedResponse = {
+    request: {
+        query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: { data: getLicenseAndUsageInfoResult(true) },
+    nMatches: Number.POSITIVE_INFINITY,
+}
+
 const FIRST_TIME_MOCKS = new WildcardMockLink([
     {
         request: {
@@ -82,6 +93,7 @@ const FIRST_TIME_MOCKS = new WildcardMockLink([
         },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    LICENSED,
     ACTIVE_EXECUTORS_MOCK,
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
@@ -129,6 +141,7 @@ const MULTIPLE_SPEC_MOCKS = new WildcardMockLink([
         },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    LICENSED,
     ACTIVE_EXECUTORS_MOCK,
     ...UNSTARTED_WITH_CACHE_CONNECTION_MOCKS,
 ])
@@ -161,6 +174,7 @@ const NOT_FOUND_MOCKS = new WildcardMockLink([
         result: { data: { batchChange: null } },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    LICENSED,
     ACTIVE_EXECUTORS_MOCK,
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
@@ -191,6 +205,7 @@ const INVALID_SPEC_MOCKS = new WildcardMockLink([
         result: { data: { batchChange: mockBatchChange() } },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    LICENSED,
     ACTIVE_EXECUTORS_MOCK,
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
@@ -225,6 +240,7 @@ const NO_EXECUTORS_MOCKS = new WildcardMockLink([
         result: { data: { batchChange: mockBatchChange({ name: 'hello-world' }) } },
         nMatches: Number.POSITIVE_INFINITY,
     },
+    LICENSED,
     NO_ACTIVE_EXECUTORS_MOCK,
     ...UNSTARTED_CONNECTION_MOCKS,
 ])

@@ -69,16 +69,18 @@ export const WorkspacesPreview: React.FunctionComponent<React.PropsWithChildren<
     // Check for active executors to tell if we are able to run batch changes server-side.
     const { data } = useQuery<CheckExecutorsAccessTokenResult, CheckExecutorsAccessTokenVariables>(EXECUTORS, {})
 
-    return data?.areExecutorsConfigured ? (
-        <MemoizedWorkspacesPreview
-            batchSpec={batchSpec}
-            editor={editor}
-            workspacesPreview={workspacesPreview}
-            isReadOnly={isReadOnly}
-        />
-    ) : (
-        <NoExecutorsWarning />
-    )
+    return data ? (
+        data.areExecutorsConfigured ? (
+            <MemoizedWorkspacesPreview
+                batchSpec={batchSpec}
+                editor={editor}
+                workspacesPreview={workspacesPreview}
+                isReadOnly={isReadOnly}
+            />
+        ) : (
+            <NoExecutorsWarning />
+        )
+    ) : null
 }
 
 type MemoizedWorkspacesPreviewProps = WorkspacesPreviewProps &
