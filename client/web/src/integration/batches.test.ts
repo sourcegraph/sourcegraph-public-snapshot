@@ -282,6 +282,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                         username: 'alice',
                     },
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
+                    files: null
                 },
             ],
         },
@@ -409,6 +410,11 @@ function mockCommonGraphQLResponses(
                         __typename: 'BatchChangesCodeHostConnection',
                         nodes: [],
                         totalCount: 0,
+                    },
+                    files: null,
+                    description: {
+                        __typename: 'BatchChangeDescription',
+                        name: 'awesome batch spec'
                     },
                 },
                 batchSpecs: {
