@@ -41,6 +41,10 @@ const config: Meta = {
             control: { type: 'boolean' },
             defaultValue: true,
         },
+        productResearchEnabled: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
     },
 }
 
@@ -59,9 +63,13 @@ const handleErrorSubmit = () =>
 
 const commonProps = (
     props: Args
-): Pick<React.ComponentProps<typeof FeedbackPrompt>, 'authenticatedUser' | 'openByDefault'> => ({
+): Pick<
+    React.ComponentProps<typeof FeedbackPrompt>,
+    'authenticatedUser' | 'openByDefault' | 'productResearchEnabled'
+> => ({
     authenticatedUser: props.authenticatedUser ? { username: 'logan', email: 'logan@example.com' } : null,
     openByDefault: true, // to save storybook viewers from needing to click to see the prompt
+    productResearchEnabled: props.productResearchEnabled,
 })
 
 export const FeedbackPromptWithSuccessResponse: Story = args => (

@@ -120,7 +120,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     <H3>We‘ve received your feedback!</H3>
                     <Text className="d-inline">
                         Thank you for your help.
-                        {productResearchEnabled && (
+                        {productResearchEnabled && authenticatedUser && (
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
