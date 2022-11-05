@@ -243,7 +243,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 function queryProductSubscription(
     uuid: string
 ): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
-    return queryGraphQL(
+    return queryGraphQL<DotComProductSubscriptionResult>(
         gql`
             query DotComProductSubscription($uuid: String!) {
                 dotcom {
@@ -312,7 +312,7 @@ function queryProductLicenses(
     subscriptionUUID: string,
     args: { first?: number }
 ): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
-    return queryGraphQL(
+    return queryGraphQL<ProductLicensesResult>(
         gql`
             query ProductLicenses($first: Int, $subscriptionUUID: String!) {
                 dotcom {

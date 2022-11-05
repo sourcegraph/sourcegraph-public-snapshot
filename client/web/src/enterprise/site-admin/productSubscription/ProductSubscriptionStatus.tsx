@@ -20,7 +20,7 @@ const queryProductLicenseInfo = (): Observable<{
     productSubscription: ProductLicenseInfoResult['site']['productSubscription']
     currentUserCount: number
 }> =>
-    queryGraphQL(gql`
+    queryGraphQL<ProductLicenseInfoResult>(gql`
         query ProductLicenseInfo {
             site {
                 productSubscription {

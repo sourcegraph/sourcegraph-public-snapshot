@@ -13,7 +13,11 @@ import { Link, LoadingSpinner, CardHeader, Card, Icon } from '@sourcegraph/wildc
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefFields, RepositoryGitBranchesOverviewRepository } from '../../graphql-operations'
+import {
+    GitRefFields,
+    RepositoryGitBranchesOverviewRepository,
+    RepositoryGitBranchesOverviewResult,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
@@ -29,7 +33,7 @@ interface Data {
 
 export const queryGitBranches = memoizeObservable(
     (args: { repo: Scalars['ID']; first: number }): Observable<Data> =>
-        queryGraphQL(
+        queryGraphQL<RepositoryGitBranchesOverviewResult>(
             gql`
                 query RepositoryGitBranchesOverview($repo: ID!, $first: Int!, $withBehindAhead: Boolean!) {
                     node(id: $repo) {

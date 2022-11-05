@@ -1,12 +1,15 @@
-import { GroupByField, SeriesSortDirection, SeriesSortMode, TimeIntervalStepUnit } from '@sourcegraph/shared/src/schema'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import {
     GetDashboardInsightsResult,
     GetInsightViewResult,
+    GroupByField,
     InsightsDashboardNode,
     InsightsDashboardsResult,
     InsightViewNode,
+    SeriesSortDirection,
+    SeriesSortMode,
+    TimeIntervalStepUnit,
 } from '../../../graphql-operations'
 
 export const EMPTY_DASHBOARD: InsightsDashboardNode = {

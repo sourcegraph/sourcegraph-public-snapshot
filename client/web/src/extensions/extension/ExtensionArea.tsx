@@ -25,7 +25,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { RegistryExtensionFields } from '../../graphql-operations'
+import { RegistryExtensionFields, RegistryExtensionResult } from '../../graphql-operations'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 
@@ -252,7 +252,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 }
 
 function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<RegistryExtensionFields>> {
-    return queryGraphQL(
+    return queryGraphQL<RegistryExtensionResult>(
         gql`
             query RegistryExtension($extensionID: String!) {
                 extensionRegistry {

@@ -59,12 +59,17 @@ describe('ExtensionCard', () => {
                                 displayName: 'u',
                                 id: 'u',
                                 viewerCanAdminister: false,
+                                settingsURL: null,
+                                latestSettings: null,
                             }}
                             siteSubject={{
                                 __typename: 'Site',
                                 id: 's',
                                 viewerCanAdminister: true,
                                 allowSiteSettingsEdits: true,
+                                settingsURL: null,
+                                latestSettings: null,
+                                siteID: 'TestSiteID',
                             }}
                             settingsCascade={{ final: null, subjects: null }}
                             platformContext={NOOP_PLATFORM_CONTEXT}

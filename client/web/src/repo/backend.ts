@@ -18,7 +18,12 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import {
+    ExternalLinkFields,
+    FileExternalLinksResult,
+    RepositoryFields,
+    ResolveRepoRevResult,
+} from '../graphql-operations'
 
 export const externalLinkFieldsFragment = gql`
     fragment ExternalLinkFields on ExternalLink {
@@ -67,7 +72,7 @@ export interface Repo {
  */
 export const resolveRepoRevision = memoizeObservable(
     ({ repoName, revision }: RepoSpec & Partial<RevisionSpec>): Observable<ResolvedRevision & Repo> =>
-        queryGraphQL(
+        queryGraphQL<ResolveRepoRevResult>(
             gql`
                 query ResolveRepoRev($repoName: String!, $revision: String!) {
                     repositoryRedirect(name: $repoName) {
@@ -140,7 +145,7 @@ export const resolveRepoRevision = memoizeObservable(
 
 export const fetchFileExternalLinks = memoizeObservable(
     (context: RepoRevision & { filePath: string }): Observable<ExternalLinkFields[]> =>
-        queryGraphQL(
+        queryGraphQL<FileExternalLinksResult>(
             gql`
                 query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
                     repository(name: $repoName) {

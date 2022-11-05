@@ -227,7 +227,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
         local?: boolean
         remote?: boolean
     }): Observable<SiteAdminRegistryExtensionsResult['extensionRegistry']['extensions']> =>
-        queryGraphQL(
+        queryGraphQL<SiteAdminRegistryExtensionsResult>(
             gql`
                 query SiteAdminRegistryExtensions(
                     $first: Int

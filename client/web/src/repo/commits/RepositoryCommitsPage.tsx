@@ -77,7 +77,7 @@ const fetchGitCommits = (args: {
     first?: number
     query?: string
 }): Observable<NonNullable<RepositoryGitCommitsRepository['commit']>['ancestors']> =>
-    queryGraphQL(
+    queryGraphQL<RepositoryGitCommitsResult>(
         gql`
             query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
                 node(id: $repo) {

@@ -2,7 +2,7 @@ import { cloneDeep, isFunction } from 'lodash'
 
 import { createAggregateError, ErrorLike, isErrorLike, parseJSONCOrError } from '@sourcegraph/common'
 
-import * as GQL from '../schema'
+import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
 import { Settings as GeneratedSettingsType } from '../schema/settings.schema'
 
 /**
@@ -29,25 +29,22 @@ export interface Settings extends GeneratedSettingsType {
     final?: never
 }
 
-export type SettingsSubjectCommonFields = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+export type SettingsSubjectCommonFields = Pick<DefaultSettingFields, 'id' | 'viewerCanAdminister'>
 
-export type SettingsClientSubject = Pick<IClient, '__typename' | 'displayName'> & SettingsSubjectCommonFields
-export type SettingsUserSubject = Pick<GQL.IUser, '__typename' | 'username' | 'displayName'> &
+export type ClientSettingFields = Pick<IClient, '__typename' | 'displayName'> &
+    Pick<DefaultSettingFields, 'latestSettings'> &
     SettingsSubjectCommonFields
-export type SettingsOrgSubject = Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'> & SettingsSubjectCommonFields
-export type SettingsSiteSubject = Pick<GQL.ISite, '__typename' | 'allowSiteSettingsEdits'> & SettingsSubjectCommonFields
-export type SettingsDefaultSubject = Pick<GQL.IDefaultSettings, '__typename'> & SettingsSubjectCommonFields
 
 /**
  * A settings subject is something that can have settings associated with it, such as a site ("global
  * settings"), an organization ("organization settings"), a user ("user settings"), etc.
  */
 export type SettingsSubject =
-    | SettingsClientSubject
-    | SettingsUserSubject
-    | SettingsOrgSubject
-    | SettingsSiteSubject
-    | SettingsDefaultSubject
+    | ClientSettingFields
+    | UserSettingFields
+    | OrgSettingFields
+    | SiteSettingFields
+    | DefaultSettingFields
 
 /**
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
@@ -136,24 +133,12 @@ export interface ConfiguredSubjectOrError<S extends Settings = Settings>
     settings: S | ErrorLike | null
 }
 
-/** A minimal subset of a GraphQL SettingsSubject type that includes only the single contents value. */
-export interface SubjectSettingsContents {
-    latestSettings: {
-        id: number
-        contents: string
-    } | null
-}
-
 /**
  * Converts a GraphQL SettingsCascade value to a SettingsCascadeOrError value.
  *
  * @param subjects A list of settings subjects in the settings cascade. If empty, an error is thrown.
  */
-export function gqlToCascade({
-    subjects,
-}: {
-    subjects: (SettingsSubject & SubjectSettingsContents)[]
-}): SettingsCascadeOrError {
+export function gqlToCascade({ subjects }: { subjects: SettingsSubject[] }): SettingsCascadeOrError {
     const configuredSubjects: ConfiguredSubjectOrError[] = []
     const allSettings: Settings[] = []
     const allSettingsErrors: ErrorLike[] = []

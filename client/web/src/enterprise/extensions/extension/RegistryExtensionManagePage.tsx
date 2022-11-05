@@ -32,7 +32,7 @@ import styles from './RegistryExtensionManagePage.module.scss'
 type UpdateExtensionResult = UpdateRegistryExtensionResult['extensionRegistry']['updateExtension']
 
 function updateExtension(args: UpdateRegistryExtensionVariables): Observable<UpdateExtensionResult> {
-    return mutateGraphQL(
+    return mutateGraphQL<UpdateRegistryExtensionResult>(
         gql`
             mutation UpdateRegistryExtension($extension: ID!, $name: String) {
                 extensionRegistry {

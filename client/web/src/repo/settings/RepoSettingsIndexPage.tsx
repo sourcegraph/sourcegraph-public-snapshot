@@ -16,7 +16,12 @@ import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } fr
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    RepositoryTextSearchIndexRepository,
+    RepositoryTextSearchIndexResult,
+    Scalars,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
@@ -27,7 +32,7 @@ type RepositoryTextSearchIndex = RepositoryTextSearchIndexRepository['textSearch
  * Fetches a repository's text search index information.
  */
 function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<RepositoryTextSearchIndex> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryTextSearchIndexResult>(
         gql`
             query RepositoryTextSearchIndex($id: ID!) {
                 node(id: $id) {

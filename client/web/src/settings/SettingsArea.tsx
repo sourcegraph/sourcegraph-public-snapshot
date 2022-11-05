@@ -15,12 +15,7 @@ import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/ext
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import {
-    gqlToCascade,
-    SettingsCascadeProps,
-    SettingsSubject,
-    SubjectSettingsContents,
-} from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
@@ -28,6 +23,7 @@ import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
+import { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -40,7 +36,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
     /** The subject whose settings to edit. */
-    subject: Pick<SettingsSubject & SubjectSettingsContents, '__typename' | 'id'>
+    subject: Pick<SettingsSubject, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -48,9 +44,8 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     authenticatedUser: AuthenticatedUser | null
 }
 
-type SettingsCascadeSubject = (SettingsSubject & SubjectSettingsContents)[]
 interface SettingsData {
-    subjects: SettingsCascadeSubject
+    subjects: SettingsSubject[]
     settingsJSONSchema: { $id: string }
 }
 
@@ -195,7 +190,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsCascadeSubject }): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsSubject[] }): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
@@ -227,20 +222,78 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsCascadeSubject }> {
-    return queryGraphQL(
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsSubject[] }> {
+    return queryGraphQL<SettingsCascadeResult>(
         gql`
             query SettingsCascade($subject: ID!) {
                 settingsSubject(id: $subject) {
                     settingsCascade {
-                        subjects {
-                            latestSettings {
-                                id
-                                contents
-                            }
-                        }
+                        ...SettingsCascadeFields
                     }
                 }
+            }
+            fragment SettingsCascadeFields on SettingsCascade {
+                subjects {
+                    __typename
+                    ...OrgSettingFields
+                    ...UserSettingFields
+                    ...SiteSettingFields
+                    ...DefaultSettingFields
+                }
+                final
+            }
+
+            fragment OrgSettingFields on Org {
+                __typename
+                latestSettings {
+                    id
+                    contents
+                }
+                id
+                settingsURL
+                viewerCanAdminister
+
+                name
+                displayName
+            }
+
+            fragment UserSettingFields on User {
+                __typename
+                latestSettings {
+                    id
+                    contents
+                }
+                id
+                settingsURL
+                viewerCanAdminister
+
+                username
+                displayName
+            }
+
+            fragment SiteSettingFields on Site {
+                __typename
+                latestSettings {
+                    id
+                    contents
+                }
+                id
+                settingsURL
+                viewerCanAdminister
+
+                siteID
+                allowSiteSettingsEdits
+            }
+
+            fragment DefaultSettingFields on DefaultSettings {
+                __typename
+                latestSettings {
+                    id
+                    contents
+                }
+                id
+                settingsURL
+                viewerCanAdminister
             }
         `,
         { subject }

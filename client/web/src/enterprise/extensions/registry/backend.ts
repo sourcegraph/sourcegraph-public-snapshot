@@ -5,16 +5,14 @@ import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../../../backend/graphql'
+import { RegistryPublisher } from '../../../extensions/extension/extension'
 import {
     DeleteRegistryExtensionResult,
     DeleteRegistryExtensionVariables,
     Scalars,
-    UserAreaUserFields,
-    OrgAreaOrganizationFields,
     CreateRegistryExtensionResult,
+    ViewerRegistryPublishersResult,
 } from '../../../graphql-operations'
-
-type RegistryPublisher = UserAreaUserFields | OrgAreaOrganizationFields
 
 export function deleteRegistryExtensionWithConfirmation(extension: Scalars['ID']): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
@@ -46,7 +44,7 @@ export function deleteRegistryExtensionWithConfirmation(extension: Scalars['ID']
 }
 
 export function queryViewerRegistryPublishers(): Observable<RegistryPublisher[]> {
-    return queryGraphQL(gql`
+    return queryGraphQL<ViewerRegistryPublishersResult>(gql`
         query ViewerRegistryPublishers {
             extensionRegistry {
                 viewerPublishers {
@@ -80,7 +78,7 @@ export function createExtension(
     publisher: Scalars['ID'],
     name: string
 ): Observable<CreateRegistryExtensionResult['extensionRegistry']['createExtension']> {
-    return mutateGraphQL(
+    return mutateGraphQL<CreateRegistryExtensionResult>(
         gql`
             mutation CreateRegistryExtension($publisher: ID!, $name: String!) {
                 extensionRegistry {

@@ -65,7 +65,7 @@ import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
  * Fetches all users.
  */
 export function fetchAllUsers(args: { first?: number; query?: string }): Observable<UsersResult['users']> {
-    return queryGraphQL(
+    return queryGraphQL<UsersResult>(
         gql`
             query Users($first: Int, $query: String) {
                 users(first: $first, query: $query) {
@@ -289,7 +289,7 @@ export function checkMirrorRepositoryConnection(
               name: string
           }
 ): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
+    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
@@ -331,7 +331,7 @@ export function fetchUserUsageStatistics(args: {
     query?: string
     first?: number
 }): Observable<UserUsageStatisticsResult['users']> {
-    return queryGraphQL(
+    return queryGraphQL<UserUsageStatisticsResult>(
         gql`
             query UserUsageStatistics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
                 users(activePeriod: $activePeriod, query: $query, first: $first) {
@@ -367,7 +367,7 @@ export function fetchUserUsageStatistics(args: {
  * @returns Observable that emits the list of users and their usage data
  */
 export function fetchSiteUsageStatistics(): Observable<SiteUsageStatisticsResult['site']['usageStatistics']> {
-    return queryGraphQL(gql`
+    return queryGraphQL<SiteUsageStatisticsResult>(gql`
         query SiteUsageStatistics {
             site {
                 usageStatistics {
@@ -396,7 +396,7 @@ export function fetchSiteUsageStatistics(): Observable<SiteUsageStatisticsResult
  * @returns Observable that emits the site
  */
 export function fetchSite(): Observable<SiteResult['site']> {
-    return queryGraphQL(gql`
+    return queryGraphQL<SiteResult>(gql`
         query Site {
             site {
                 __typename
@@ -440,7 +440,7 @@ interface AllConfig {
  * Fetches all the configuration and settings (requires site admin privileges).
  */
 export function fetchAllConfigAndSettings(): Observable<AllConfig> {
-    return queryGraphQL(
+    return queryGraphQL<AllConfigResult>(
         gql`
             query AllConfig($first: Int) {
                 site {
@@ -604,7 +604,7 @@ export function invalidateSessionsByID(userID: Scalars['ID']): Observable<void> 
 export function randomizeUserPassword(
     user: Scalars['ID']
 ): Observable<RandomizeUserPasswordResult['randomizeUserPassword']> {
-    return mutateGraphQL(
+    return mutateGraphQL<RandomizeUserPasswordResult>(
         gql`
             mutation RandomizeUserPassword($user: ID!) {
                 randomizeUserPassword(user: $user) {
@@ -640,7 +640,7 @@ export function deleteUser(user: Scalars['ID'], hard?: boolean): Observable<void
 }
 
 export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
-    return mutateGraphQL(
+    return mutateGraphQL<CreateUserResult>(
         gql`
             mutation CreateUser($username: String!, $email: String) {
                 createUser(username: $username, email: $email) {
@@ -729,7 +729,7 @@ export function fetchMonitoringStats(
 ): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
     // more details in /internal/srcprometheus.ErrPrometheusUnavailable
     const errorPrometheusUnavailable = 'prometheus API is unavailable'
-    return queryGraphQL(
+    return queryGraphQL<SiteMonitoringStatisticsResult>(
         gql`
             query SiteMonitoringStatistics($days: Int!) {
                 site {

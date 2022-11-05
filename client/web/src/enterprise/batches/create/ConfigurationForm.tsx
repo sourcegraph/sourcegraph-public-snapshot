@@ -8,12 +8,9 @@ import { useHistory, useLocation } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
+import { UserSettingFields, OrgSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
@@ -97,7 +94,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
-        Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
+        Pick<UserSettingFields, 'id'> | Pick<OrgSettingFields, 'id'>
     >(defaultSelectedNamespace)
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')

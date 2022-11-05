@@ -45,7 +45,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/Dynam
 const publishExtension = (
     args: PublishRegistryExtensionVariables
 ): Promise<PublishRegistryExtensionResult['extensionRegistry']['publishExtension']> =>
-    mutateGraphQL(
+    mutateGraphQL<PublishRegistryExtensionResult>(
         gql`
             mutation PublishRegistryExtension($extensionID: String!, $manifest: String!, $bundle: String!) {
                 extensionRegistry {

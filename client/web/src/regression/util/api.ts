@@ -17,6 +17,8 @@ import {
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
+import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
+import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { Config } from '@sourcegraph/shared/src/testing/config'
 
@@ -40,7 +42,6 @@ import {
     ResolveRevVariables,
     OrganizationsVariables,
     SettingsCascadeFields,
-    ViewerSettingsResult,
     addExternalServiceVariables,
     SearchResult,
     SearchVariables,
@@ -52,7 +53,6 @@ import {
     SiteProductVersionVariables,
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
-    ViewerSettingsVariables,
     DeleteOrganizationVariables,
     CreateOrganizationVariables,
     CreateUserVariables,
@@ -506,39 +506,7 @@ export function getViewerSettings({
     requestGraphQL,
 }: Pick<PlatformContext, 'requestGraphQL'>): Promise<SettingsCascadeFields> {
     return requestGraphQL<ViewerSettingsResult, ViewerSettingsVariables>({
-        request: gql`
-            query ViewerSettings {
-                viewerSettings {
-                    ...SettingsCascadeFields
-                }
-            }
-
-            fragment SettingsCascadeFields on SettingsCascade {
-                subjects {
-                    __typename
-                    ... on Org {
-                        name
-                        displayName
-                    }
-                    ... on User {
-                        username
-                        displayName
-                    }
-                    ... on Site {
-                        siteID
-                        allowSiteSettingsEdits
-                    }
-                    latestSettings {
-                        id
-                        contents
-                    }
-                    id
-                    settingsURL
-                    viewerCanAdminister
-                }
-                final
-            }
-        `,
+        request: viewerSettingsQuery,
         variables: {},
         mightContainPrivateInfo: true,
     })

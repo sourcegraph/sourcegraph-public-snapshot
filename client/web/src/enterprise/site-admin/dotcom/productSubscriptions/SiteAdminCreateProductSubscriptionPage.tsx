@@ -39,7 +39,7 @@ interface UserCreateSubscriptionNodeProps {
 const createProductSubscription = (
     args: CreateProductSubscriptionVariables
 ): Observable<CreateProductSubscriptionResult['dotcom']['createProductSubscription']> =>
-    mutateGraphQL(
+    mutateGraphQL<CreateProductSubscriptionResult>(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
                 dotcom {
@@ -160,7 +160,7 @@ export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<
 function queryAccounts(
     args: Partial<ProductSubscriptionAccountsVariables>
 ): Observable<ProductSubscriptionAccountsResult['users']> {
-    return queryGraphQL(
+    return queryGraphQL<ProductSubscriptionAccountsResult>(
         gql`
             query ProductSubscriptionAccounts($first: Int, $query: String) {
                 users(first: $first, query: $query) {

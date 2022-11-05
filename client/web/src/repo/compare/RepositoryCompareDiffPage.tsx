@@ -33,7 +33,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     after?: string | null
     paths?: string[]
 }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
-    return queryGraphQL(
+    return queryGraphQL<RepositoryComparisonDiffResult>(
         gql`
             query RepositoryComparisonDiff(
                 $repo: ID!
