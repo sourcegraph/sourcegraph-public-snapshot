@@ -648,17 +648,6 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
           class="d-inline"
         >
           Thank you for your help.
-           
-          Want to help keep making Sourcegraph better?
-           
-          <a
-            class=""
-            href="/user/settings/product-research"
-          >
-            Join us for occasional user research
-          </a>
-           
-          and share your feedback on our latest features and ideas.
         </p>
       </div>
     </div>
