@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,13 +30,13 @@ func (s *Service) SerializeRankingGraph(
 		return nil
 	}
 
-	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, rankingGraphBatchSize)
+	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, "ranking", rankingGraphBatchSize)
 	if err != nil {
 		return err
 	}
 
 	for _, upload := range uploads {
-		if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root); err != nil {
+		if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
 			s.logger.Error(
 				"Failed to process upload for ranking graph",
 				log.Int("id", upload.ID),
@@ -72,9 +71,14 @@ func (s *Service) VacuumRankingGraph(
 		return nil
 	}
 
-	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, id int) error {
+	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
+		if objectPrefix == "" {
+			// Special case: we haven't backfilled some data on dotcom yet
+			return nil
+		}
+
 		objects := s.rankingBucket.Objects(ctx, &storage.Query{
-			Prefix: makeObjectPrefix(id),
+			Prefix: objectPrefix,
 		})
 		for {
 			attrs, err := objects.Next()
@@ -110,6 +114,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	id int,
 	repo string,
 	root string,
+	objectPrefix string,
 ) (err error) {
 	writers := map[string]*gcsObjectWriter{}
 	defer func() {
@@ -121,7 +126,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	}()
 
 	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-		path := filepath.Join(makeObjectPrefix(id), filename)
+		path := fmt.Sprintf("%s/%s", objectPrefix, filename)
 
 		ow, ok := writers[path]
 		if !ok {
@@ -153,10 +158,6 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 
 		return nil
 	})
-}
-
-func makeObjectPrefix(id int) string {
-	return filepath.Join("ranking", rankingGraphKey, strconv.Itoa(id))
 }
 
 type gcsObjectWriter struct {
