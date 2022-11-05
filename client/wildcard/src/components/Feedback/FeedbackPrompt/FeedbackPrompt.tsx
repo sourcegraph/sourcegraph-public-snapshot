@@ -12,40 +12,14 @@ import { useAutoFocus, useLocalStorage } from '../../..'
 import { Icon } from '../../Icon'
 import { Modal } from '../../Modal'
 
-import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
-import { IconRadioButtons } from './IconRadioButtons'
-
 import styles from './FeedbackPrompt.module.scss'
-
-export const HAPPINESS_FEEDBACK_OPTIONS = [
-    {
-        name: 'Very sad',
-        value: 1,
-        icon: VerySad,
-    },
-    {
-        name: 'Sad',
-        value: 2,
-        icon: Sad,
-    },
-    {
-        name: 'Happy',
-        value: 3,
-        icon: Happy,
-    },
-    {
-        name: 'Very Happy',
-        value: 4,
-        icon: VeryHappy,
-    },
-]
 
 interface FeedbackPromptSubmitResponse {
     isHappinessFeedback?: boolean
     errorMessage?: string
 }
 
-export type FeedbackPromptSubmitEventHandler = (text: string, rating: number) => Promise<FeedbackPromptSubmitResponse>
+export type FeedbackPromptSubmitEventHandler = (text: string) => Promise<FeedbackPromptSubmitResponse>
 
 export interface FeedbackPromptAuthenticatedUserProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username' | 'email'> | null
@@ -57,7 +31,6 @@ interface FeedbackPromptContentProps extends FeedbackPromptAuthenticatedUserProp
     productResearchEnabled?: boolean
     onSubmit: FeedbackPromptSubmitEventHandler
 }
-const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
 const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 
 const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptContentProps>> = ({
@@ -66,10 +39,8 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     onSubmit,
     authenticatedUser,
 }) => {
-    const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
     const textAreaReference = useRef<HTMLInputElement>(null)
-    const handleRateChange = useCallback((value: number) => setRating(value), [setRating])
     const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setText(event.target.value), [
         setText,
     ])
@@ -81,13 +52,9 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
         async event => {
             event.preventDefault()
 
-            if (!rating) {
-                return
-            }
-
             setSubmitting(true)
 
-            const { isHappinessFeedback, errorMessage } = await onSubmit(text, rating)
+            const { isHappinessFeedback, errorMessage } = await onSubmit(text)
 
             setSubmitResponse({
                 isHappinessFeedback,
@@ -96,14 +63,13 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
 
             setSubmitting(false)
         },
-        [rating, onSubmit, text]
+        [onSubmit, text]
     )
 
     useEffect(() => {
         if (submitResponse?.isHappinessFeedback) {
             // Reset local storage when successfully submitted
             localStorage.removeItem(LOCAL_STORAGE_KEY_TEXT)
-            localStorage.removeItem(LOCAL_STORAGE_KEY_RATING)
         }
     }, [submitResponse])
 
@@ -160,14 +126,6 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                         </Text>
                     )}
 
-                    <IconRadioButtons
-                        name="emoji-selector"
-                        icons={HAPPINESS_FEEDBACK_OPTIONS}
-                        selected={rating}
-                        onChange={handleRateChange}
-                        disabled={submitting}
-                        className="mt-3"
-                    />
                     {submitResponse?.errorMessage && (
                         <ErrorAlert
                             error={submitResponse?.errorMessage}
@@ -177,7 +135,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                         />
                     )}
                     <Button
-                        disabled={!rating || !text || submitting}
+                        disabled={!text || submitting}
                         role="menuitem"
                         type="submit"
                         display="block"
