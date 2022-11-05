@@ -1,19 +1,31 @@
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, PopoverTrigger, FeedbackPrompt, H2, H3, Text } from '@sourcegraph/wildcard'
+import {
+    FeedbackPromptAuthenticatedUserProps,
+    Button,
+    Link,
+    PopoverTrigger,
+    FeedbackPrompt,
+    H2,
+    H3,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { useHandleSubmitFeedback } from '../../../../../../../hooks'
 import { useLogEventName } from '../../../CodeInsightsLandingPageContext'
 
 import styles from './CodeInsightsLearnMore.module.scss'
 
-interface CodeInsightsLearnMoreProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {}
+interface CodeInsightsLearnMoreProps
+    extends TelemetryProps,
+        FeedbackPromptAuthenticatedUserProps,
+        React.HTMLAttributes<HTMLElement> {}
 
 export const CodeInsightsLearnMore: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsLearnMoreProps>
 > = props => {
-    const { telemetryService, ...otherProps } = props
+    const { telemetryService, authenticatedUser, ...otherProps } = props
     const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
@@ -62,7 +74,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
                         Have a question or idea about Code Insights? We want to hear your feedback!
                     </Text>
 
-                    <FeedbackPrompt onSubmit={handleSubmitFeedback}>
+                    <FeedbackPrompt onSubmit={handleSubmitFeedback} authenticatedUser={authenticatedUser}>
                         <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
                             Share your thoughts
                         </PopoverTrigger>

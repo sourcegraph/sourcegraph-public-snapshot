@@ -3,7 +3,17 @@ import React, { useEffect } from 'react'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, PageHeader, H2, H3, Text } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Card,
+    CardBody,
+    Link,
+    PageHeader,
+    H2,
+    H3,
+    Text,
+    FeedbackPromptAuthenticatedUserProps,
+} from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -19,12 +29,12 @@ import styles from './CodeInsightsDotComGetStarted.module.scss'
 
 const DOT_COM_CONTEXT = { mode: CodeInsightsLandingPageType.Cloud }
 
-export interface CodeInsightsDotComGetStartedProps extends TelemetryProps {}
+export interface CodeInsightsDotComGetStartedProps extends TelemetryProps, FeedbackPromptAuthenticatedUserProps {}
 
 export const CodeInsightsDotComGetStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsDotComGetStartedProps>
 > = props => {
-    const { telemetryService } = props
+    const { telemetryService, authenticatedUser } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
@@ -181,7 +191,11 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         className={styles.videoSection}
                     />
 
-                    <CodeInsightsLearnMore className={styles.learnMoreSection} telemetryService={telemetryService} />
+                    <CodeInsightsLearnMore
+                        className={styles.learnMoreSection}
+                        telemetryService={telemetryService}
+                        authenticatedUser={authenticatedUser}
+                    />
                 </main>
             </Page>
         </CodeInsightsLandingPageContext.Provider>

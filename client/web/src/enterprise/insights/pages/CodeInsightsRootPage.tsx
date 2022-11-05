@@ -17,6 +17,7 @@ import {
     TabPanels,
     TabPanel,
     LoadingSpinner,
+    FeedbackPromptAuthenticatedUserProps,
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
@@ -46,12 +47,14 @@ function useQuery(): URLSearchParams {
     return React.useMemo(() => new URLSearchParams(search), [search])
 }
 
-interface CodeInsightsRootPageProps extends TelemetryProps {
+interface CodeInsightsRootPageProps extends TelemetryProps, FeedbackPromptAuthenticatedUserProps {
     activeView: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
-    const { telemetryService, activeView } = props
+export const CodeInsightsRootPage: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsRootPageProps>
+> = props => {
+    const { telemetryService, activeView, authenticatedUser } = props
     const location = useLocation()
     const query = useQuery()
     const history = useHistory()
@@ -112,7 +115,10 @@ export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageP
                     </TabPanel>
                     <TabPanel>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
-                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
+                            <LazyCodeInsightsGettingStartedPage
+                                telemetryService={telemetryService}
+                                authenticatedUser={authenticatedUser}
+                            />
                         </Suspense>
                     </TabPanel>
                 </TabPanels>
