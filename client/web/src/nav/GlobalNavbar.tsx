@@ -283,7 +283,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
+                            <FeedbackPrompt
+                                onSubmit={handleSubmitFeedback}
+                                productResearchEnabled={true}
+                                authenticatedUser={props.authenticatedUser}
+                            >
                                 <PopoverTrigger
                                     as={Button}
                                     aria-label="Feedback"

@@ -1,9 +1,11 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiCheck } from '@mdi/js'
+import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
@@ -45,7 +47,11 @@ interface FeedbackPromptSubmitResponse {
 
 export type FeedbackPromptSubmitEventHandler = (text: string, rating: number) => Promise<FeedbackPromptSubmitResponse>
 
-interface FeedbackPromptContentProps {
+export interface FeedbackPromptAuthenticatedUserProps {
+    authenticatedUser: Pick<AuthenticatedUser, 'username' | 'email'> | null
+}
+
+interface FeedbackPromptContentProps extends FeedbackPromptAuthenticatedUserProps {
     onClose?: () => void
     /** Boolean for displaying the Join Research link */
     productResearchEnabled?: boolean
@@ -58,6 +64,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     onClose,
     productResearchEnabled,
     onSubmit,
+    authenticatedUser,
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
     const [text, setText] = useLocalStorage<string>(LOCAL_STORAGE_KEY_TEXT, '')
@@ -128,20 +135,30 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
             ) : (
                 <Form onSubmit={handleSubmit}>
                     <H3 className="mb-3" id="feedback-prompt-question">
-                        What’s on your mind?
+                        Send feedback to Sourcegraph
                     </H3>
 
+                    {authenticatedUser && (
+                        <Text className={styles.from} size="small">
+                            From: {authenticatedUser.username} ({authenticatedUser.email})
+                        </Text>
+                    )}
                     <FlexTextArea
                         aria-labelledby="feedback-prompt-question"
+                        data-testid="feedback-text"
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
                         maxRows={6}
-                        placeholder="What’s going well? What could be better?"
-                        className={styles.textarea}
+                        className={classNames(styles.textarea, authenticatedUser ? styles.textareaWithFrom : '')}
                         autoFocus={true}
                         ref={textAreaReference}
                     />
+                    {!authenticatedUser && (
+                        <Text className="text-muted" size="small">
+                            You're not signed in. Please tell us how to contact you if you want a reply.
+                        </Text>
+                    )}
 
                     <IconRadioButtons
                         name="emoji-selector"
@@ -202,6 +219,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     modal = false,
     modalLabelId = 'sourcegraph-feedback-modal',
     productResearchEnabled,
+    authenticatedUser,
 }) => {
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const ChildrenComponent = typeof children === 'function' && children
@@ -221,6 +239,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
             onSubmit={onSubmit}
             productResearchEnabled={productResearchEnabled}
             onClose={handleClosePrompt}
+            authenticatedUser={authenticatedUser}
         />
     )
 

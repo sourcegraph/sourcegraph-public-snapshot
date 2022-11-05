@@ -17,7 +17,12 @@ describe('FeedbackPrompt', () => {
 
     beforeEach(() => {
         render(
-            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit} productResearchEnabled={true}>
+            <FeedbackPrompt
+                openByDefault={true}
+                onSubmit={onSubmit}
+                productResearchEnabled={true}
+                authenticatedUser={null}
+            >
                 <PopoverTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <span>Feedback</span>
                 </PopoverTrigger>
@@ -32,7 +37,7 @@ describe('FeedbackPrompt', () => {
 
     const submitFeedback = () => {
         userEvent.click(screen.getByLabelText('Very Happy'))
-        fireEvent.change(screen.getByPlaceholderText('What’s going well? What could be better?'), {
+        fireEvent.change(screen.getByTestId('feedback-text'), {
             target: { value: sampleFeedback.feedback },
         })
 
@@ -50,7 +55,7 @@ describe('FeedbackPrompt', () => {
 
         expect(screen.getByText('Send')).toBeDisabled()
 
-        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), sampleFeedback.feedback)
+        userEvent.type(screen.getByTestId('feedback-text'), sampleFeedback.feedback)
 
         expect(screen.getByText('Send')).toBeEnabled()
     })

@@ -93,6 +93,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
+                authenticatedUser={null}
             />,
             {
                 route: '/insights/dashboards/',
@@ -111,6 +112,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
+                authenticatedUser={null}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -130,6 +132,7 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeView={CodeInsightsRootPageTab.CodeInsights}
                 telemetryService={mockTelemetryService}
+                authenticatedUser={null}
             />,
             {
                 route: '/insights/dashboards/foo',

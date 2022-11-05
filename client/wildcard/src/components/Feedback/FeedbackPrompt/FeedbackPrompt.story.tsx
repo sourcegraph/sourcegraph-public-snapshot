@@ -1,3 +1,6 @@
+import React from 'react'
+
+import { Args, useMemo } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -33,6 +36,12 @@ const config: Meta = {
             url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A1',
         },
     },
+    argTypes: {
+        authenticatedUser: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
@@ -48,10 +57,14 @@ const handleErrorSubmit = () =>
         isHappinessFeedback: false,
     })
 
-export const FeedbackPromptWithSuccessResponse: Story = () => (
+const commonProps = (props: Args): Pick<React.ComponentProps<typeof FeedbackPrompt>, 'authenticatedUser'> => ({
+    authenticatedUser: props.authenticatedUser ? { username: 'logan', email: 'logan@example.com' } : null,
+})
+
+export const FeedbackPromptWithSuccessResponse: Story = args => (
     <>
         <H1>This is a feedbackPrompt with success response</H1>
-        <FeedbackPrompt onSubmit={handleSuccessSubmit}>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit} {...useMemo(() => commonProps(args), [args])}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
                 as={Button}
@@ -66,10 +79,10 @@ export const FeedbackPromptWithSuccessResponse: Story = () => (
     </>
 )
 
-export const FeedbackPromptWithErrorResponse: Story = () => (
+export const FeedbackPromptWithErrorResponse: Story = args => (
     <>
         <H1>This is a feedbackPrompt with error response</H1>
-        <FeedbackPrompt onSubmit={handleErrorSubmit}>
+        <FeedbackPrompt onSubmit={handleErrorSubmit} {...useMemo(() => commonProps(args), [args])}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
                 as={Button}
@@ -84,10 +97,10 @@ export const FeedbackPromptWithErrorResponse: Story = () => (
     </>
 )
 
-export const FeedbackPromptWithInModal: Story = () => (
+export const FeedbackPromptWithInModal: Story = args => (
     <>
         <H1>This is a feedbackPrompt in modal</H1>
-        <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true}>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true} {...useMemo(() => commonProps(args), [args])}>
             {({ onClick }) => (
                 <Button onClick={onClick} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <small>Feedback</small>

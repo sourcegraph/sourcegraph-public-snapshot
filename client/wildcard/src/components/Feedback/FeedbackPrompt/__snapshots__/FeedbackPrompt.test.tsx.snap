@@ -57,7 +57,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
           class="h3 mb-3"
           id="feedback-prompt-question"
         >
-          What’s on your mind?
+          Send feedback to Sourcegraph
         </h3>
         <label
           class="label label textarea"
@@ -65,10 +65,15 @@ exports[`FeedbackPrompt should render correctly 1`] = `
           <textarea
             aria-labelledby="feedback-prompt-question"
             class="textarea form-control resizeNone textarea"
-            placeholder="What’s going well? What could be better?"
+            data-testid="feedback-text"
             rows="3"
           />
         </label>
+        <p
+          class="small text-muted"
+        >
+          You're not signed in. Please tell us how to contact you if you want a reply.
+        </p>
         <ul
           class="mt-3 buttons"
         >
@@ -329,7 +334,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           class="h3 mb-3"
           id="feedback-prompt-question"
         >
-          What’s on your mind?
+          Send feedback to Sourcegraph
         </h3>
         <label
           class="label label textarea"
@@ -337,12 +342,17 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           <textarea
             aria-labelledby="feedback-prompt-question"
             class="textarea form-control resizeNone textarea"
-            placeholder="What’s going well? What could be better?"
+            data-testid="feedback-text"
             rows="3"
           >
             Lorem ipsum dolor sit amet
           </textarea>
         </label>
+        <p
+          class="small text-muted"
+        >
+          You're not signed in. Please tell us how to contact you if you want a reply.
+        </p>
         <ul
           class="mt-3 buttons"
         >

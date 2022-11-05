@@ -114,6 +114,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                                     : CodeInsightsRootPageTab.GettingStarted
                             }
                             telemetryService={telemetryService}
+                            authenticatedUser={authenticatedUser}
                         />
                     )}
                 />

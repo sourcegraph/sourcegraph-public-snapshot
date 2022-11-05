@@ -33,6 +33,7 @@ export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
+export type { FeedbackPromptAuthenticatedUserProps } from './Feedback'
 export {
     Popover,
     PopoverTrigger,
