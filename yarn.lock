@@ -7380,16 +7380,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/babel__core@npm:7.1.12":
-  version: 7.1.12
-  resolution: "@types/babel__core@npm:7.1.12"
+"@types/babel__core@npm:7.1.19":
+  version: 7.1.19
+  resolution: "@types/babel__core@npm:7.1.19"
   dependencies:
     "@babel/parser": ^7.1.0
     "@babel/types": ^7.0.0
     "@types/babel__generator": "*"
     "@types/babel__template": "*"
     "@types/babel__traverse": "*"
-  checksum: ea3b2eee3bc7d06929bd0d921734e7a4afb5eecd0e4ceb5479ba01d00638fe12f59b1e82c917c8776479d8e1eb0f6a515ba9b4df552606fa571dce60a226e9ce
+  checksum: 8c9fa87a1c2224cbec251683a58bebb0d74c497118034166aaa0491a4e2627998a6621fc71f8a60ffd27d9c0c52097defedf7637adc6618d0331c15adb302338
   languageName: node
   linkType: hard
 
@@ -28649,7 +28649,7 @@ pvutils@latest:
     "@testing-library/react": ^13.1.1
     "@testing-library/react-hooks": ^8.0.0
     "@testing-library/user-event": ^13.5.0
-    "@types/babel__core": 7.1.12
+    "@types/babel__core": 7.1.19
     "@types/bloomfilter": 0.0.0
     "@types/case-sensitive-paths-webpack-plugin": 2.1.5
     "@types/chai": 4.2.14

@@ -158,7 +158,7 @@
     "@testing-library/react": "^13.1.1",
     "@testing-library/react-hooks": "^8.0.0",
     "@testing-library/user-event": "^13.5.0",
-    "@types/babel__core": "7.1.12",
+    "@types/babel__core": "7.1.19",
     "@types/bloomfilter": "0.0.0",
     "@types/case-sensitive-paths-webpack-plugin": "2.1.5",
     "@types/chai": "4.2.14",
