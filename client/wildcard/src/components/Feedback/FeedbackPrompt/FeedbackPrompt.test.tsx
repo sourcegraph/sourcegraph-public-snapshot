@@ -8,7 +8,6 @@ import { PopoverTrigger } from '../../Popover'
 import { FeedbackPrompt } from '.'
 
 const sampleFeedback = {
-    score: 4,
     feedback: 'Lorem ipsum dolor sit amet',
 }
 
@@ -36,7 +35,6 @@ describe('FeedbackPrompt', () => {
     })
 
     const submitFeedback = () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
         fireEvent.change(screen.getByTestId('feedback-text'), {
             target: { value: sampleFeedback.feedback },
         })
@@ -51,8 +49,6 @@ describe('FeedbackPrompt', () => {
     })
 
     test('should enable/disable submit button correctly', () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
-
         expect(screen.getByText('Send')).toBeDisabled()
 
         userEvent.type(screen.getByTestId('feedback-text'), sampleFeedback.feedback)
@@ -66,7 +62,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })
@@ -77,7 +73,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/something went really wrong/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })
