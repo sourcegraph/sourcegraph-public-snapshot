@@ -17,7 +17,6 @@ import {
     insightRepositoriesAsyncValidator,
 } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
 
@@ -43,7 +42,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     const { telemetryService, ...otherProps } = props
 
     const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
-    const { licensed } = useUiFeatures()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -133,11 +131,9 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
             <div>
                 <CodeInsightsDescription />
                 <footer className={styles.footer}>
-                    {licensed && (
-                        <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
-                        </Button>
-                    )}
+                    <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
+                    </Button>
                 </footer>
                 <CalloutArrow className={styles.calloutBlockHorizontal} />
             </div>
