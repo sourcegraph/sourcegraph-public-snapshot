@@ -78,7 +78,6 @@ export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
-export type { FeedbackPromptAuthenticatedUserProps } from './Feedback'
 
 /**
  * Class name helpers to be used with plain DOM nodes.

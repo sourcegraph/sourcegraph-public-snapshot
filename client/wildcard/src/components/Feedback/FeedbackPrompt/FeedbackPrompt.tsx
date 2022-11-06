@@ -21,7 +21,7 @@ interface FeedbackPromptSubmitResponse {
 
 export type FeedbackPromptSubmitEventHandler = (text: string) => Promise<FeedbackPromptSubmitResponse>
 
-export interface FeedbackPromptAuthenticatedUserProps {
+interface FeedbackPromptAuthenticatedUserProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username' | 'email'> | null
 }
 
