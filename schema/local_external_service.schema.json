@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "other_external_service.schema.json#",
+  "title": "OtherExternalServiceConnection",
+  "description": "Configuration for a Connection to Git repositories for which an external service integration isn't yet available.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["root"],
+  "properties": {
+    "root": {
+      "title": "Path to root directory containing source repositories within the Sourcegraph Docker container",
+      "type": "string",
+      "format": "uri",
+      "not": {
+        "type": "string",
+        "pattern": "^(git|ssh|https?)://"
+      },
+      "examples": ["/src/"]
+    },
+    "repositoryPathPattern": {
+      "description": "The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable \"{base}\" is replaced with the Git clone base URL host and path, and \"{repo}\" is replaced with the repository path taken from the `repos` field.\n\nFor example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value \"my/repo\", then a repositoryPathPattern of \"{base}/{repo}\" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.\n\nIt is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.",
+      "type": "string",
+      "default": "{root}/{repo}",
+      "examples": ["pretty-host-name/{repo}"]
+    }
+  }
+}
