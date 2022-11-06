@@ -2620,6 +2620,7 @@ enum ExternalServiceKind {
     JVMPACKAGES
     NPMPACKAGES
     OTHER
+    LOCAL
     PAGURE
     PERFORCE
     PHABRICATOR

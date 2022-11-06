@@ -579,7 +579,7 @@ func upsertAuthorizationToExternalService(kind, config string) (string, error) {
 func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error {
 	rawConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Config.Decrypt")
 	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
@@ -590,7 +590,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		NamespaceOrgID:  es.NamespaceOrgID,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "ValidateExternalServiceConfig")
 	}
 
 	// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -599,7 +599,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	if envvar.SourcegraphDotComMode() {
 		rawConfig, err = upsertAuthorizationToExternalService(es.Kind, rawConfig)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "upsertAuthorizationToExternalService")
 		}
 
 		es.Config.Set(rawConfig)
@@ -611,18 +611,18 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
 		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
-			return err
+			return errors.Wrap(err, "BeforeCreateExternalService")
 		}
 	}
 
 	// Ensure the calculated fields in the external service are up to date.
 	if err := e.recalculateFields(es, string(normalized)); err != nil {
-		return err
+		return errors.Wrap(err, "recalculateFields")
 	}
 
 	encryptedConfig, keyID, err := es.Config.Encrypt(ctx, e.getEncryptionKey())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Config.Encrypt")
 	}
 
 	return e.QueryRow(
