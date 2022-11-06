@@ -66,7 +66,7 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {
-	vfr, _ := r.ToVirtualFile()
+	vfr := r.createVirtualFile()
 	return vfr.Binary(ctx)
 }
 
@@ -87,7 +87,7 @@ func (r *batchSpecWorkspaceFileResolver) ExternalURLs(ctx context.Context) ([]*e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
-	vfr, _ := r.ToVirtualFile()
+	vfr := r.createVirtualFile()
 	return vfr.Highlight(ctx, args)
 }
 
@@ -96,12 +96,16 @@ func (r *batchSpecWorkspaceFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEnt
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileResolver, bool) {
-	fileInfo := graphqlbackend.CreateFileInfo(r.file.Path, false)
-	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
-		return string(r.file.Content), nil
-	}), true
+	return nil, false
 }
 
 func (r *batchSpecWorkspaceFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {
 	return r, true
+}
+
+func (r *batchSpecWorkspaceFileResolver) createVirtualFile() *graphqlbackend.VirtualFileResolver {
+	fileInfo := graphqlbackend.CreateFileInfo(r.file.Path, false)
+	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
+		return string(r.file.Content), nil
+	})
 }
