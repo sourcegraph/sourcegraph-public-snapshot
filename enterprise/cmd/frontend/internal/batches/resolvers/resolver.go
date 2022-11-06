@@ -1886,6 +1886,39 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	return nil, errors.New("not implemented yet")
 }
 
+func (r *Resolver) BatchWorkspaceFile(ctx context.Context, args *graphqlbackend.BatchWorkspaceFileArgs) (_ graphqlbackend.BatchWorkspaceFileResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.BatchWorkspaceFile", fmt.Sprintf("BatchSpec: %q, BatchWorkspaceFile: %q", args.BatchSpec, args.BatchWorkspaceFile))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, nil
+	}
+
+	batchWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(args.BatchWorkspaceFile)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchWorkspaceFileRandID == "" {
+		return nil, nil
+	}
+
+	file, err := r.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: batchWorkspaceFileRandID})
+	return &batchSpecWorkspaceFileResolver{batchSpecRandID: batchSpecRandID, file: file}, nil
+}
+
 func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.AvailableBulkOperations", fmt.Sprintf("BatchChange: %q, len(Changesets): %d", args.BatchChange, len(args.Changesets)))
 	defer func() {

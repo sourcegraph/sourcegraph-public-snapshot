@@ -1836,6 +1836,20 @@ extend type Query {
     ): [BulkOperationType!]!
 
     """
+    Looks up a batch spec workspace file by ID.
+    """
+    batchWorkspaceFile(
+        """
+        The batch spec the workspace file belongs to.
+        """
+        batchSpec: ID!
+        """
+        The ID of the workspace file
+        """
+        batchWorkspaceFile: ID!
+    ): BatchSpecWorkspaceFile
+
+    """
     A list of batch specs.
 
 

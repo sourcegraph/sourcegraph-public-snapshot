@@ -19,6 +19,11 @@ func marshalWorkspaceFileRandID(id string) graphql.ID {
 	return relay.MarshalID(workspaceFileIDKind, id)
 }
 
+func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
+	return
+}
+
 var _ graphqlbackend.BatchWorkspaceFileResolver = &batchSpecWorkspaceFileResolver{}
 
 type batchSpecWorkspaceFileResolver struct {
