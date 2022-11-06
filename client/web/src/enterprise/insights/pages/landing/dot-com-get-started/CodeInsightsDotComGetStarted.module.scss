@@ -71,35 +71,10 @@
     margin: 0 auto;
 }
 
-.install-locally-section {
+.cta-section {
+    display: flex;
+    justify-content: flex-start;
     margin-top: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    grid-gap: 1rem;
-}
-
-.install-locally-requirements {
-    flex-grow: 2;
-    flex-basis: 15rem;
-    padding: 1.5rem 1rem;
-}
-
-.install-locally-requirements-list {
-    padding: 0 0 0 1rem;
-}
-
-.install-locally-get-started {
-    flex-grow: 4;
-    flex-basis: 15rem;
-    display: flex;
-    gap: 0.5rem;
-    flex-direction: row;
-    padding: 1.5rem 1rem;
-}
-
-.install-locally-get-started-content {
-    display: flex;
-    gap: 0.5rem;
 }
 
 .template-section {

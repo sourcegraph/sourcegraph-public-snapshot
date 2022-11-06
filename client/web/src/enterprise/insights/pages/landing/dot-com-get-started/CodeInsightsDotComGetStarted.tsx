@@ -150,22 +150,13 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
 
-                    <section className={styles.installLocallySection}>
-                        <Card as={CardBody} className={styles.installLocallyRequirements}>
-                            <H3>Code Insights requirements</H3>
-                            <ul className={styles.installLocallyRequirementsList}>
-                                <li>Create up to 2 code insights for free</li>
-                                <li>Get unlimited insights with an Enterprise plan (or trial)</li>
-                            </ul>
-                        </Card>
-
+                    <section className={styles.ctaSection}>
                         <CtaBanner
                             bodyText="Code Insights requires a Sourcegraph Cloud or self-hosted instance."
                             title={<H3>Start using Code Insights</H3>}
                             linkText="Get started"
                             href="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
                             icon={<DownloadSourcegraphIcon />}
-                            className="ml-3"
                             onClick={handleInstallLocalInstanceClick}
                         />
                     </section>
