@@ -80,6 +80,8 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 		return NewRubyPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
+	case extsvc.KindLocal:
+		return NewLocalSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
