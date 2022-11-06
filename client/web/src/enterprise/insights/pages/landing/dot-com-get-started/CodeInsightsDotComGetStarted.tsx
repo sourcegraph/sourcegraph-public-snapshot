@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
+import { DownloadSourcegraphIcon } from '@sourcegraph/branded/src/components/DownloadSourcegraphIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -15,6 +16,7 @@ import {
     FeedbackPromptAuthenticatedUserProps,
 } from '@sourcegraph/wildcard'
 
+import { CtaBanner } from '../../../../../components/CtaBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -23,7 +25,6 @@ import { CodeInsightsLearnMore } from '../getting-started/components/code-insigh
 import { CodeInsightsTemplates } from '../getting-started/components/code-insights-templates/CodeInsightsTemplates'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
-import { SourcegraphInstallLocallyIcon } from './components/SourcegraphInstallLocallyIcon'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
 
@@ -158,26 +159,15 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                             </ul>
                         </Card>
 
-                        <Card as={CardBody} className={styles.installLocallyGetStarted}>
-                            <SourcegraphInstallLocallyIcon className="flex-shrink-0" />
-                            <div>
-                                <H3>Install locally to get started</H3>
-
-                                <Text>
-                                    Code Insights requires a local Sourcegraph installation via Docker Compose or
-                                    Kubernetes. You can check it out for free by installing locally.
-                                </Text>
-
-                                <Button
-                                    as={Link}
-                                    variant="primary"
-                                    to="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
-                                    onClick={handleInstallLocalInstanceClick}
-                                >
-                                    Install local instance
-                                </Button>
-                            </div>
-                        </Card>
+                        <CtaBanner
+                            bodyText="Code Insights requires a Sourcegraph Cloud or self-hosted instance."
+                            title={<H3>Start using Code Insights</H3>}
+                            linkText="Get started"
+                            href="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
+                            icon={<DownloadSourcegraphIcon />}
+                            className="ml-3"
+                            onClick={handleInstallLocalInstanceClick}
+                        />
                     </section>
 
                     <CodeInsightsTemplates className={styles.templateSection} telemetryService={telemetryService} />
