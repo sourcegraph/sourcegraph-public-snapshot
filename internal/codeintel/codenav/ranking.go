@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +21,7 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
 	if s.rankingBucket == nil {
@@ -63,7 +62,7 @@ func (s *Service) SerializeRankingGraph(
 func (s *Service) VacuumRankingGraph(
 	ctx context.Context,
 ) error {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
 	if s.rankingBucket == nil {
