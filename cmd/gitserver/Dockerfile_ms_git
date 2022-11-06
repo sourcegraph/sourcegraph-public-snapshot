@@ -51,7 +51,7 @@ WORKDIR git-$GIT_VERSION
 RUN make -j12 prefix=/usr/local \
   && make -j12 prefix=/usr/local install
 
-RUN apk $PACKAGES
+RUN apk del $PACKAGES
 RUN rm -fr git-$GIT_VERSION.tar.gz && rm -fr ../git-$GIT_VERSION
 
 RUN apk add --no-cache \
