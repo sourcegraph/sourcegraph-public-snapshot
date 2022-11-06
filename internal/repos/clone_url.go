@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -92,6 +93,8 @@ func cloneURL(parsed any, logger log.Logger, kind string, repo *types.Repo) (str
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
+	case *schema.LocalExternalServiceConnection:
+		return filepath.Join(t.Root, string(repo.Name)), nil
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil
 	case *schema.PythonPackagesConnection:

@@ -129,6 +129,7 @@ const (
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
 	KindOther           = "OTHER"
+	KindLocal           = "LOCAL"
 )
 
 const (
@@ -193,6 +194,9 @@ const (
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
+
+	// TypeLocal is the (api.LocalRepoSpec).ServiceType value for local projects.
+	TypeLocal = "local"
 )
 
 // KindToType returns a Type constants given a Kind
@@ -233,6 +237,8 @@ func KindToType(kind string) string {
 		return TypePagure
 	case KindOther:
 		return TypeOther
+	case KindLocal:
+		return TypeLocal
 	default:
 		panic(fmt.Sprintf("unknown kind: %q", kind))
 	}
@@ -276,6 +282,8 @@ func TypeToKind(t string) string {
 		return KindPagure
 	case TypeOther:
 		return KindOther
+	case TypeLocal:
+		return KindLocal
 	default:
 		panic(fmt.Sprintf("unknown type: %q", t))
 	}
@@ -331,6 +339,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePagure, true
 	case TypeOther:
 		return TypeOther, true
+	case TypeLocal:
+		return TypeLocal, true
 	default:
 		return "", false
 	}
@@ -372,6 +382,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPagure, true
 	case KindOther:
 		return KindOther, true
+	case KindLocal:
+		return KindLocal, true
 	default:
 		return "", false
 	}
@@ -453,6 +465,8 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
+	case KindLocal:
+		return &schema.LocalExternalServiceConnection{}, nil
 	default:
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}

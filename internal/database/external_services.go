@@ -217,6 +217,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.KindLocal:           {CodeHost: true, JSONSchema: schema.LocalExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
@@ -456,6 +457,12 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 				return nil, err
 			}
 			err = validateOtherExternalServiceConnection(&c)
+		case extsvc.KindLocal:
+			var c schema.LocalExternalServiceConnection
+			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+				return nil, err
+			}
+			err = validateLocalExternalServiceConnection(&c)
 		}
 
 		return normalized, errors.Append(errs, err)
@@ -488,6 +495,11 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 		}
 	}
 
+	return nil
+}
+
+func validateLocalExternalServiceConnection(c *schema.LocalExternalServiceConnection) error {
+	// TODO
 	return nil
 }
 

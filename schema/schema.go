@@ -1133,6 +1133,17 @@ type JVMPackagesConnection struct {
 	Maven *Maven `json:"maven,omitempty"`
 }
 
+// LocalExternalServiceConnection description: Configuration for local Git repositories.
+type LocalExternalServiceConnection struct {
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
+	//
+	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
+	Root                  string `json:"root"`
+}
+
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
@@ -1397,17 +1408,6 @@ type OrganizationInvitations struct {
 	//
 	// The legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.
 	SigningKey string `json:"signingKey"`
-}
-
-// OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
-type OtherExternalServiceConnection struct {
-	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
-	//
-	// For example, if your Git clone base URL is https://git.example.com/repos and `repos` contains the value "my/repo", then a repositoryPathPattern of "{base}/{repo}" would mean that a repository at https://git.example.com/repos/my/repo is available on Sourcegraph at https://sourcegraph.example.com/git.example.com/repos/my/repo.
-	//
-	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
-	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	Root                  string `json:"root"`
 }
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.

@@ -92,6 +92,8 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	case *schema.LocalExternalServiceConnection:
+		// TODO(beyang)
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))
@@ -196,6 +198,8 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		if err != nil {
 			return err
 		}
+	case *schema.LocalExternalServiceConnection:
+		// TODO(beyang)
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(newCfg))

@@ -70,6 +70,11 @@ var RubyPackagesSchemaJSON string
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string
 
+// LocalExternalServiceSchemaJSON is the content of the file "local_external_service.schema.json".
+//
+//go:embed local_external_service.schema.json
+var LocalExternalServiceSchemaJSON string
+
 // PerforceSchemaJSON is the content of the file "perforce.schema.json".
 //
 //go:embed perforce.schema.json

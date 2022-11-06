@@ -139,6 +139,8 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 	case *schema.OtherExternalServiceConnection:
 		rs = reposource.Other{OtherExternalServiceConnection: c}
 		host = c.Url
+	case *schema.LocalExternalServiceConnection:
+		rs = reposource.Local{LocalExternalServiceConnection: c}
 	default:
 		return "", errors.Errorf("unexpected connection type: %T", cfg)
 	}
