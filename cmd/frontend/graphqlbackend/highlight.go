@@ -86,12 +86,6 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
 	)
 
-	if metadata.IsBinary {
-		result.aborted = false
-		result.response = &highlight.HighlightedCode{}
-		return result, nil
-	}
-
 	response, aborted, err := highlight.Code(ctx, highlight.Params{
 		Content:            []byte(content),
 		Filepath:           path,

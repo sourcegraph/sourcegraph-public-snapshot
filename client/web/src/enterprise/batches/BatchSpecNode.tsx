@@ -122,7 +122,6 @@ interface BatchSpecInfoProps {
 
 interface BatchSpecFile {
     isBinary: boolean
-    content: string
     isSpecFile: boolean
     name: string
     id: string
@@ -132,7 +131,6 @@ interface BatchSpecFile {
 export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
     const specFile: BatchSpecFile = {
         isBinary: false,
-        content: spec.originalInput,
         isSpecFile: true,
         name: 'spec_file.yaml',
         id: spec.id,
@@ -143,7 +141,6 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
     if (spec.files && spec.files.totalCount > 0) {
         const mountedFiles: BatchSpecFile[] = spec.files.nodes.map(file => ({
             isBinary: file.binary,
-            content: file.highlight.html,
             isSpecFile: false,
             name: file.name,
             id: file.id,
@@ -182,7 +179,6 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                 ) : (
                     <BatchSpecWorkspaceFileContent
                         name={selectedFile.name}
-                        content={selectedFile.content}
                         isBinary={selectedFile.isBinary}
                         size={selectedFile.size}
                     />
@@ -212,7 +208,6 @@ interface BatchSpecWorkspaceFileContentProps {
 }
 
 const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({
-    content,
     isBinary,
     name,
     size,
@@ -233,16 +228,18 @@ const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceF
         )
     }
 
-    return (
-        <pre className={styles.blobWrapper}>
-            <Code
-                className={styles.blobCode}
-                dangerouslySetInnerHTML={{
-                    __html: content,
-                }}
-            />
-        </pre>
-    )
+    return <div>Render something nice</div>
+
+    // return (
+    //     <pre className={styles.blobWrapper}>
+    //         <Code
+    //             className={styles.blobCode}
+    //             dangerouslySetInnerHTML={{
+    //                 __html: content,
+    //             }}
+    //         />
+    //     </pre>
+    // )
 }
 
 const StateIcon: React.FunctionComponent<

@@ -119,7 +119,6 @@ type Params struct {
 type Metadata struct {
 	RepoName string
 	Revision string
-	IsBinary bool
 }
 
 // ErrBinary is returned when a binary file was attempted to be highlighted.

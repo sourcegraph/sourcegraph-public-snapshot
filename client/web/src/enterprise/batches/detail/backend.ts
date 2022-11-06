@@ -172,9 +172,6 @@ const batchChangeFragment = gql`
                     name
                     binary
                     byteSize
-                    highlight(disableTimeout: false) {
-                        html
-                    }
                 }
             }
             source

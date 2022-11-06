@@ -161,6 +161,11 @@ type BatchChangeArgs struct {
 	Name      string
 }
 
+type BatchSpecWorkspaceFileArgs struct {
+	BatchSpec              string
+	BatchSpecWorkspaceFile string
+}
+
 type ChangesetEventsConnectionArgs struct {
 	First int32
 	After *string
