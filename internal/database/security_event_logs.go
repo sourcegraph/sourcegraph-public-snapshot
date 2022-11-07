@@ -46,11 +46,11 @@ const (
 	SecurityEventAccessTokenDeleted     SecurityEventName = "AccessTokenDeleted"
 	SecurityEventAccessTokenHardDeleted SecurityEventName = "AccessTokenHardDeleted"
 
-	SecurityEventGithubAuthSucceeded SecurityEventName = "GithubAuthSucceeded"
-	SecurityEventGithubAuthFailed    SecurityEventName = "GithubAuthFailed"
+	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
+	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
 
-	SecurityEventGitlabAuthSucceeded SecurityEventName = "GitlabAuthSucceeded"
-	SecurityEventGitlabAuthFailed    SecurityEventName = "GitlabAuthFailed"
+	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
+	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
