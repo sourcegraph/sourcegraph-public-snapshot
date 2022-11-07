@@ -228,6 +228,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
     return (
         <ReferencesList
+            // Force the references list to recreate when the user settings
+            // change. This way we avoid showing stale results.
             key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
             token={props.token}
