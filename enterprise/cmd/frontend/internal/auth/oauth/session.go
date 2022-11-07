@@ -146,7 +146,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			return
 		}
 
-		// since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
+		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
 		ctx = actor.WithActor(ctx, actr)
 		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
 			Name:      s.AuthSucceededEventName(),
