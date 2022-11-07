@@ -21,7 +21,6 @@ const config: Meta = {
     parameters: {
         component: ReferencesPanelWithMemoryRouter,
         chromatic: {
-            enableDarkMode: true,
             disableSnapshot: false,
         },
     },
