@@ -520,6 +520,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	if err != nil {
 		return nil, err
 	}
+	gsClient := gitserver.NewClient(r.db)
 	var out []*RepositoryResolver
 	for _, repo := range repos {
 		out = append(out, &RepositoryResolver{
@@ -529,7 +530,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 				Name: api.RepoName(repo.RepoURI),
 			},
 			db:              r.db,
-			gitserverClient: gitserver.NewClient(r.db),
+			gitserverClient: gsClient,
 			innerRepo: &types.Repo{
 				ID: repo.RepoID,
 			},

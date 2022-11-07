@@ -7,11 +7,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	gh "github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -24,15 +28,15 @@ import (
 )
 
 func TestGithubWebhookDispatchSuccess(t *testing.T) {
-	h := GitHubWebhook{}
+	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 	var called bool
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called = true
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 	if !called {
@@ -41,30 +45,30 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 }
 
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
-	h := GitHubWebhook{}
+	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 	ctx := context.Background()
-	// no op
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
+
+	eventType := "test-event-1"
+	err := h.Dispatch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil)
+	assert.Equal(t, eventTypeNotFoundError{codeHostKind: extsvc.KindGitHub, eventType: eventType}, err)
 }
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 	var (
-		h      = GitHubWebhook{}
+		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil); err != nil {
+	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 	if len(called) != 2 {
@@ -74,20 +78,20 @@ func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
 
 func TestGithubWebhookDispatchError(t *testing.T) {
 	var (
-		h      = GitHubWebhook{}
+		h      = GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 		called = make(chan struct{}, 2)
 	)
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return errors.Errorf("oh no")
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		called <- struct{}{}
 		return nil
-	}, "test-event-1")
+	}, extsvc.KindGitHub, "test-event-1")
 
 	ctx := context.Background()
-	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
+	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
 		t.Errorf("Expected %q, got %q", want, have)
 	}
 	if len(called) != 2 {
@@ -121,20 +125,38 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-			Url:      "https://github.com",
-			Token:    "fake",
-			Repos:    []string{"sourcegraph/sourcegraph"},
-			Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
+			Authorization: &schema.GitHubAuthorization{},
+			Url:           "https://github.com",
+			Token:         "fake",
+			Repos:         []string{"sourcegraph/sourcegraph"},
+			Webhooks:      []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 		})),
 	}
 
 	err := esStore.Upsert(ctx, extSvc)
+	externalServiceConfig := fmt.Sprintf(`
+{
+    // Some comment to mess with json decoding
+    "url": "https://github.com",
+    "token": "fake",
+    "repos": ["sourcegraph/sourcegraph"],
+    "webhooks": [
+        {
+            "org": "sourcegraph",
+            "secret": %q
+        }
+    ]
+}
+`, secret)
+	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	hook := GitHubWebhook{
-		DB: db,
+		WebhookRouter: &WebhookRouter{
+			DB: db,
+		},
 	}
 
 	var called bool
@@ -148,7 +170,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		}
 		called = true
 		return nil
-	}, "public")
+	}, extsvc.KindGitHub, "public")
 
 	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 	if err != nil {

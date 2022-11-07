@@ -87,7 +87,7 @@ const domFunctions: DOMFunctions = {
         return row.cells[1]
     },
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
-        const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
+        const lineElement = codeView.querySelector(`th[data-line="${line}"]`)
         if (!lineElement) {
             return null
         }
@@ -341,7 +341,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                         <tbody>
                             {range(startLine, endLine).map(index => (
                                 <tr key={index}>
-                                    <td className="line" data-line={index + 1} />
+                                    <th className="line" data-line={index + 1} />
                                     {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                     <td className="code"> </td>
                                 </tr>

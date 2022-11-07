@@ -11,6 +11,8 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -103,10 +105,12 @@ type BackgroundJobMonitor struct {
 
 type JobMonitorConfig struct {
 	InsightsDB      edb.InsightsDB
+	InsightStore    store.Interface
 	RepoStore       database.RepoStore
 	BackfillRunner  pipeline.Backfiller
 	ObsContext      *observation.Context
 	AllRepoIterator *discovery.AllReposIterator
+	CostAnalyzer    *priority.QueryAnalyzer
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
@@ -136,7 +140,7 @@ type Scheduler struct {
 }
 
 func NewScheduler(db edb.InsightsDB) *Scheduler {
-	return &Scheduler{backfillStore: newBackfillStore(db)}
+	return &Scheduler{backfillStore: NewBackfillStore(db)}
 }
 
 func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, backfill *SeriesBackfill) error {

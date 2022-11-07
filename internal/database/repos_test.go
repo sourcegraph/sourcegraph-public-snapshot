@@ -775,6 +775,17 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoCloneStatus(t, db, r2.Name, types.CloneStatusCloned)
 	setGitserverRepoLastChanged(t, db, r2.Name, now)
 
+	// we create a repo that has recently had new page rank scores committed to the database
+	r3 := mustCreate(ctx, t, db, &types.Repo{Name: "ranked"})
+	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
+	{
+		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, precision, updated_at, payload) VALUES ($1, 0, $2, '{}'::jsonb)`, r3.ID, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	// Our test helpers don't do updated_at, so manually doing it.
 	_, err := db.Handle().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
 	if err != nil {
@@ -782,9 +793,9 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	}
 
 	// will have update_at set to now, so should be included as often as new.
-	r3 := mustCreate(ctx, t, db, &types.Repo{Name: "newMeta"})
-	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
-	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-24*time.Hour))
+	r4 := mustCreate(ctx, t, db, &types.Repo{Name: "newMeta"})
+	setGitserverRepoCloneStatus(t, db, r4.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r4.Name, now.Add(-24*time.Hour))
 	_, err = db.Handle().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
 	if err != nil {
 		t.Fatal(err)
@@ -792,9 +803,9 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	// we create two search contexts, with one being updated recently only
 	// including "newSearchContext".
-	r4 := mustCreate(ctx, t, db, &types.Repo{Name: "newSearchContext"})
-	setGitserverRepoCloneStatus(t, db, r4.Name, types.CloneStatusCloned)
-	setGitserverRepoLastChanged(t, db, r4.Name, now.Add(-24*time.Hour))
+	r5 := mustCreate(ctx, t, db, &types.Repo{Name: "newSearchContext"})
+	setGitserverRepoCloneStatus(t, db, r5.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r5.Name, now.Add(-24*time.Hour))
 	{
 		mkSearchContext := func(name string, opts ReposListOptions) {
 			t.Helper()
@@ -829,15 +840,15 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		Want           []string
 	}{{
 		Name: "not specified",
-		Want: []string{"old", "new", "newMeta", "newSearchContext"},
+		Want: []string{"old", "new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "old",
 		MinLastChanged: now.Add(-24 * time.Hour),
-		Want:           []string{"old", "new", "newMeta", "newSearchContext"},
+		Want:           []string{"old", "new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "new",
 		MinLastChanged: now.Add(-time.Minute),
-		Want:           []string{"new", "newMeta", "newSearchContext"},
+		Want:           []string{"new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "none",
 		MinLastChanged: now.Add(time.Minute),
@@ -2691,7 +2702,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListIndexableRepos(t *testing.T) {
+func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2713,9 +2724,9 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			ID:      api.RepoID(3),
-			Name:    "github.com/foo/bar3",
+			Name:    "github.com/baz/bar3",
+			Stars:   15,
 			Private: true,
-			Stars:   0, // Will still be returned because it gets added by a user.
 		},
 		{
 			ID:    api.RepoID(4),
@@ -2742,9 +2753,6 @@ func TestListIndexableRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO users(id, username) VALUES (1, 'bob')`); err != nil {
-		t.Fatal(err)
-	}
 	for _, r := range reposToAdd {
 		blocked, err := json.Marshal(r.Blocked)
 		if err != nil {
@@ -2759,7 +2767,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2, 1);`, r.ID, r.Name); err != nil {
+			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -2776,7 +2784,7 @@ func TestListIndexableRepos(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		opts ListIndexableReposOptions
+		opts ListSourcegraphDotComIndexableReposOptions
 		want []api.RepoID
 	}{
 		{
@@ -2785,20 +2793,15 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			name: "only uncloned",
-			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
+			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
-		},
-		{
-			name: "limit 1",
-			opts: ListIndexableReposOptions{LimitOffset: &LimitOffset{Limit: 1}},
-			want: []api.RepoID{2},
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}

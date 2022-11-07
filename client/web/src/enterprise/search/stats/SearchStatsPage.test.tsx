@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { SearchResultsStatsFields } from '../../../graphql-operations'
 
 import { SearchStatsPage } from './SearchStatsPage'
 
@@ -17,16 +17,14 @@ describe('SearchStatsPage', () => {
                         location={H.createLocation({ pathname: '/stats', search: 'q=abc' })}
                         history={H.createMemoryHistory()}
                         _querySearchResultsStats={() =>
-                            of<GQL.ISearchResultsStats & { limitHit: boolean }>({
+                            of<SearchResultsStatsFields & { limitHit: boolean }>({
                                 __typename: 'SearchResultsStats',
-                                approximateResultCount: '123',
-                                sparkline: [],
                                 languages: [
-                                    { __typename: 'LanguageStatistics', name: 'A', totalBytes: 0, totalLines: 100 },
-                                    { __typename: 'LanguageStatistics', name: 'B', totalBytes: 0, totalLines: 50 },
-                                    { __typename: 'LanguageStatistics', name: 'C', totalBytes: 0, totalLines: 10 },
-                                    { __typename: 'LanguageStatistics', name: 'D', totalBytes: 0, totalLines: 5 },
-                                    { __typename: 'LanguageStatistics', name: '', totalBytes: 0, totalLines: 35 },
+                                    { __typename: 'LanguageStatistics', name: 'A', totalLines: 100 },
+                                    { __typename: 'LanguageStatistics', name: 'B', totalLines: 50 },
+                                    { __typename: 'LanguageStatistics', name: 'C', totalLines: 10 },
+                                    { __typename: 'LanguageStatistics', name: 'D', totalLines: 5 },
+                                    { __typename: 'LanguageStatistics', name: '', totalLines: 35 },
                                 ],
                                 limitHit: false,
                             })
@@ -47,13 +45,9 @@ describe('SearchStatsPage', () => {
                         location={H.createLocation({ pathname: '/stats', search: 'q=abc' })}
                         history={H.createMemoryHistory()}
                         _querySearchResultsStats={() =>
-                            of<GQL.ISearchResultsStats & { limitHit: boolean }>({
+                            of<SearchResultsStatsFields & { limitHit: boolean }>({
                                 __typename: 'SearchResultsStats',
-                                approximateResultCount: '123',
-                                sparkline: [],
-                                languages: [
-                                    { __typename: 'LanguageStatistics', name: 'A', totalBytes: 0, totalLines: 100 },
-                                ],
+                                languages: [{ __typename: 'LanguageStatistics', name: 'A', totalLines: 100 }],
                                 limitHit: true,
                             })
                         }

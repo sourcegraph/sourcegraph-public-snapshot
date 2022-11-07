@@ -575,8 +575,10 @@ export class API {
             __type: { fields: { name: string }[] }
         }
 
-        return (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type.fields.some(
-            field => field.name === 'stencil'
+        return Boolean(
+            (await queryGraphQL<IntrospectionResponse>(introspectionQuery)).__type?.fields.some(
+                field => field.name === 'stencil'
+            )
         )
     }
 }

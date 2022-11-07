@@ -35,8 +35,13 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logge
 		return nil, err
 	}
 
+	bkg := uploads.GetBackgroundJob(services.UploadsService)
+
 	return append(
-		cleanup.NewJanitor(uploads.GetBackgroundJob(services.UploadsService)),
-		cleanup.NewResetters(uploads.GetBackgroundJob(services.UploadsService))...,
+		cleanup.NewJanitor(bkg),
+		append(
+			cleanup.NewReconciler(bkg),
+			cleanup.NewResetters(bkg)...,
+		)...,
 	), nil
 }

@@ -2,27 +2,20 @@ package background
 
 import (
 	"context"
-	"sort"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/derision-test/glock"
-	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func TestUnknownCommitsJanitor(t *testing.T) {
+func TestShouldDeleteUploadsForCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		return nil
 	}
 
-	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", false},
 		{1, "foo-z", false},
@@ -35,7 +28,7 @@ func TestUnknownCommitsJanitor(t *testing.T) {
 	})
 }
 
-func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
+func TestShouldDeleteUploadsForCommitUnknownCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if commit == "foo-y" || commit == "bar-x" || commit == "baz-z" {
 			return &gitdomain.RevisionNotFoundError{}
@@ -44,7 +37,7 @@ func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 		return nil
 	}
 
-	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", true},
 		{1, "foo-z", false},
@@ -57,7 +50,7 @@ func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 	})
 }
 
-func TestUnknownCommitsJanitorUnknownRepository(t *testing.T) {
+func TestShouldDeleteUploadsForCommitUnknownRepository(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if strings.HasPrefix(commit, "foo-") {
 			return &gitdomain.RepoNotExistError{}
@@ -66,7 +59,7 @@ func TestUnknownCommitsJanitorUnknownRepository(t *testing.T) {
 		return nil
 	}
 
-	testUnknownCommitsJanitor(t, resolveRevisionFunc, []updateInvocation{
+	testShouldDeleteUploadsForCommit(t, resolveRevisionFunc, []updateInvocation{
 		{1, "foo-x", false},
 		{1, "foo-y", false},
 		{1, "foo-z", false},
@@ -91,56 +84,26 @@ var testSourcedCommits = []shared.SourcedCommits{
 	{RepositoryID: 3, RepositoryName: "baz", Commits: []string{"baz-x", "baz-y", "baz-z"}},
 }
 
-func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
+func testShouldDeleteUploadsForCommit(t *testing.T, resolveRevisionFunc func(commit string) error, expectedCalls []updateInvocation) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, i int, spec string) (api.CommitID, error) {
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	mockAutoindexingSvc := NewMockAutoIndexingService()
-	mockAutoindexingSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	janitor := &backgroundJob{
-		autoindexingSvc: mockAutoindexingSvc,
-		gitserverClient: gitserverClient,
-		clock:           glock.NewRealClock(),
-		logger:          logtest.Scoped(t),
-		operations:      newOperations(&observation.TestContext),
-		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
-	}
+	for _, sc := range testSourcedCommits {
+		for _, commit := range sc.Commits {
+			shouldDelete, err := shouldDeleteUploadsForCommit(context.Background(), gitserverClient, sc.RepositoryID, commit)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
 
-	if err := janitor.handleCleanup(
-		context.Background(), janitorConfig{
-			minimumTimeSinceLastCheck:      1 * time.Hour,
-			commitResolverBatchSize:        10,
-			commitResolverMaximumCommitLag: 1 * time.Hour,
-		}); err != nil {
-		t.Fatalf("unexpected error running janitor: %s", err)
-	}
-
-	var sanitizedCalls []updateInvocation
-	for _, call := range mockAutoindexingSvc.UpdateSourcedCommitsFunc.History() {
-		sanitizedCalls = append(sanitizedCalls, updateInvocation{
-			RepositoryID: call.Arg1,
-			Commit:       call.Arg2,
-			Delete:       false,
-		})
-	}
-	for _, call := range mockAutoindexingSvc.DeleteSourcedCommitsFunc.History() {
-		sanitizedCalls = append(sanitizedCalls, updateInvocation{
-			RepositoryID: call.Arg1,
-			Commit:       call.Arg2,
-			Delete:       true,
-		})
-	}
-	sort.Slice(sanitizedCalls, func(i, j int) bool {
-		if sanitizedCalls[i].RepositoryID < sanitizedCalls[j].RepositoryID {
-			return true
+			for _, c := range expectedCalls {
+				if c.RepositoryID == sc.RepositoryID && c.Commit == commit {
+					if shouldDelete != c.Delete {
+						t.Fatalf("unexpected result for %d@%s (want=%v have=%v)", sc.RepositoryID, commit, c.Delete, shouldDelete)
+					}
+				}
+			}
 		}
-
-		return sanitizedCalls[i].RepositoryID == sanitizedCalls[j].RepositoryID && sanitizedCalls[i].Commit < sanitizedCalls[j].Commit
-	})
-
-	if diff := cmp.Diff(expectedCalls, sanitizedCalls); diff != "" {
-		t.Errorf("unexpected calls to UpdateSourcedCommits and DeleteSourcedCommits (-want +got):\n%s", diff)
 	}
 }

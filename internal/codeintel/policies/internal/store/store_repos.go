@@ -190,7 +190,7 @@ WITH
 candidate_policies AS (
 	SELECT p.id
 	FROM lsif_configuration_policies p
-	ORDER BY p.last_resolved_at NULLS FIRST
+	ORDER BY p.last_resolved_at NULLS FIRST, p.id
 	LIMIT %d
 ),
 locked_policies AS (

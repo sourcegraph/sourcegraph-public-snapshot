@@ -65,6 +65,10 @@ var dbTemplateOnce sync.Once
 // NewDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's production Postgres database.
 func NewDB(logger log.Logger, t testing.TB) *sql.DB {
+	if testing.Short() {
+		t.Skip("DB tests disabled since go test -short is specified")
+	}
+
 	dbTemplateOnce.Do(func() {
 		initTemplateDB(logger, t, "migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
 	})
@@ -77,6 +81,10 @@ var insightsTemplateOnce sync.Once
 // NewInsightsDB returns a connection to a clean, new temporary testing database with
 // the same schema as Sourcegraph's CodeInsights production Postgres database.
 func NewInsightsDB(logger log.Logger, t testing.TB) *sql.DB {
+	if testing.Short() {
+		t.Skip("DB tests disabled since go test -short is specified")
+	}
+
 	insightsTemplateOnce.Do(func() {
 		initTemplateDB(logger, t, "insights", []*schemas.Schema{schemas.CodeInsights})
 	})
@@ -87,6 +95,10 @@ var rawTemplateOnce sync.Once
 
 // NewRawDB returns a connection to a clean, new temporary testing database.
 func NewRawDB(logger log.Logger, t testing.TB) *sql.DB {
+	if testing.Short() {
+		t.Skip("DB tests disabled since go test -short is specified")
+	}
+
 	rawTemplateOnce.Do(func() {
 		initTemplateDB(logger, t, "raw", nil)
 	})

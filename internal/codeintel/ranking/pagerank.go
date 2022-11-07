@@ -9,7 +9,7 @@ import (
 const pageRankFollowProbability = 0.85 // random jump 15% of the time
 const pageRankTolerance = 0.0001
 
-func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamingGraph) (map[string][]float64, error) {
+func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamingGraph) (map[string]float64, error) {
 	g := pagerank.New()
 	idsToName := map[int]string{}
 	nameToIDs := map[string]int{}
@@ -40,9 +40,9 @@ func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamin
 		g.Link(fromID, toID)
 	}
 
-	ranks := map[string][]float64{}
+	ranks := map[string]float64{}
 	g.Rank(pageRankFollowProbability, pageRankTolerance, func(identifier int, rank float64) {
-		ranks[idsToName[identifier]] = []float64{rank}
+		ranks[idsToName[identifier]] = rank
 	})
 
 	return ranks, nil

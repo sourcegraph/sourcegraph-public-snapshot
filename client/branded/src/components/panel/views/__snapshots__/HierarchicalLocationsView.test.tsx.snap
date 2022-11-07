@@ -24,10 +24,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -95,7 +99,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -106,7 +110,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -117,7 +121,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />
@@ -245,10 +249,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -318,7 +326,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -329,7 +337,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -340,7 +348,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />
@@ -351,7 +359,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="4"
                                   />
@@ -362,7 +370,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="5"
                                   />
@@ -414,10 +422,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -485,7 +497,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                             <table>
                               <tbody>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="1"
                                   />
@@ -496,7 +508,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="2"
                                   />
@@ -507,7 +519,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                                   </td>
                                 </tr>
                                 <tr>
-                                  <td
+                                  <th
                                     class="line"
                                     data-line="3"
                                   />

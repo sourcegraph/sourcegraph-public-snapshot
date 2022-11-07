@@ -430,6 +430,23 @@ export class FilteredConnection<
                     )
                 )
         )
+
+        // React to location changes.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ location }) => location.search),
+                    distinctUntilChanged(),
+                    map(searchParams => new URLSearchParams(searchParams)),
+                    skip(1)
+                )
+                .subscribe(searchParameters => {
+                    if (this.props.useURLQuery) {
+                        this.activeValuesChanges.next(getFilterFromURL(searchParameters, this.props.filters))
+                    }
+                })
+        )
+
         this.componentUpdates.next(this.props)
     }
 

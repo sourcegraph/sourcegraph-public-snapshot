@@ -8,7 +8,6 @@ import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/Ta
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -23,11 +22,12 @@ import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { FuzzyFinderContainer } from './components/fuzzyFinder/FuzzyFinder'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -40,7 +40,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput } from './notebooks'
+import type { BlockInput, NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -72,12 +72,13 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        ActivationProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
@@ -116,7 +117,6 @@ export interface LayoutProps
     isSourcegraphDotCom: boolean
     children?: never
 }
-
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
@@ -128,8 +128,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
+    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
@@ -287,7 +287,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
             {fuzzyFinder && (
-                <FuzzyFinderContainer
+                <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
                     themeState={themeStateRef}

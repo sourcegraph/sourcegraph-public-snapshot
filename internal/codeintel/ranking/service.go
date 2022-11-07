@@ -4,7 +4,9 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,6 +24,7 @@ type Service struct {
 	gitserverClient GitserverClient
 	symbolsClient   SymbolsClient
 	getConf         conftypes.SiteConfigQuerier
+	resultsBucket   *storage.BucketHandle
 	operations      *operations
 	logger          log.Logger
 }
@@ -32,6 +35,7 @@ func newService(
 	gitserverClient GitserverClient,
 	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
+	resultsBucket *storage.BucketHandle,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
@@ -40,6 +44,7 @@ func newService(
 		gitserverClient: gitserverClient,
 		symbolsClient:   symbolsClient,
 		getConf:         getConf,
+		resultsBucket:   resultsBucket,
 		operations:      newOperations(observationContext),
 		logger:          observationContext.Logger,
 	}
@@ -91,16 +96,36 @@ var allPathsPattern = lazyregexp.New(".*")
 // assumed to be ordered by each pairwise component of the resulting vector, higher ranks coming
 // earlier. We currently rank documents by path name length and lexicographic order, while performing
 // a few heuristics to sink generated, test, and vendor files lower in the ranking.
+//
+// Rank vector index labels:
+//   - precision                   [0 to 1]
+//   - generated                   [0 or 1]
+//   - vendor                      [0 or 1]
+//   - test                        [0 or 1]
+//   - global document rank        [0 to 1] (=0 w/o pagerank)
+//   - name length                 [0 to 1] (=1 w/  pagerank)
+//   - lexicographic order in repo [0 to 1] (=1 w/  pagerank)
 func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
 	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	ranks := map[string][]float64{}
 	documentRanks, ok, err := s.store.GetDocumentRanks(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
 	if ok {
-		return documentRanks, nil
+		for path, rank := range documentRanks {
+			ranks[path] = []float64{
+				rank[0],                             // precision level (0, 1]
+				1 - boolRank(isPathGenerated(path)), // rank generated paths lower
+				1 - boolRank(isPathVendored(path)),  // rank vendored paths lower
+				1 - boolRank(isPathTest(path)),      // rank test paths lower
+				squashRange(rank[1]),                // global document rank
+				1,                                   // name length
+				1,                                   // lexicographic order in repo
+			}
+		}
 	}
 
 	paths, err := s.gitserverClient.ListFilesForRepo(ctx, repoName, "HEAD", allPathsPattern.Re())
@@ -109,64 +134,58 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	}
 	sort.Strings(paths)
 
-	n := float64(len(paths))
-	ranks := make(map[string][]float64, len(paths))
 	for i, path := range paths {
-		ranks[path] = rank(path, 1.0-float64(i)/n)
+		if _, ok := ranks[path]; ok {
+			continue
+		}
+
+		ranks[path] = []float64{
+			0,                                     // imprecise
+			1 - boolRank(isPathGenerated(path)),   // rank generated paths lower
+			1 - boolRank(isPathVendored(path)),    // rank vendored paths lower
+			1 - boolRank(isPathTest(path)),        // rank test paths lower
+			0,                                     // no global document rank
+			1.0 - squashRange(float64(len(path))), // name length (prefer short names)
+			1.0 - float64(i)/float64(len(paths)),  // lexicographic order in repo
+		}
 	}
 
 	return ranks, nil
 }
 
-var testPattern = lazyregexp.New("test")
-
-// copy pasta + modified
-// https://github.com/sourcegraph/zoekt/blob/f89a534103a224663d23b4579959854dd7816942/build/builder.go#L872-L918
-func rank(name string, nameRank float64) []float64 {
-	generated := 1.0
-	if strings.HasSuffix(name, "min.js") || strings.HasSuffix(name, "js.map") {
-		generated = 0.0
-	}
-
-	vendor := 1.0
-	if strings.Contains(name, "vendor/") || strings.Contains(name, "node_modules/") {
-		vendor = 0.0
-	}
-
-	test := 1.0
-	if testPattern.MatchString(name) {
-		test = 0.0
-	}
-
-	// Bigger is earlier (=better).
-	return []float64{
-		// Prefer docs that are not generated
-		generated,
-
-		// Prefer docs that are not vendored
-		vendor,
-
-		// Prefer docs that are not tests
-		test,
-
-		// With short names
-		1.0 - squashRange(float64(len(name))),
-
-		// // With many symbols
-		// squashRange(len(d.Symbols)),
-
-		// // With short content
-		// 1.0 - squashRange(len(d.Content)),
-
-		// // That is present is as many branches as possible
-		// squashRange(len(d.Branches)),
-
-		// Preserve original ordering.
-		nameRank,
-	}
+func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return s.store.LastUpdatedAt(ctx, repoIDs)
 }
 
-// map [0,inf) to [0,1) monotonically
+func (s *Service) UpdatedAfter(ctx context.Context, t time.Time) ([]api.RepoName, error) {
+	return s.store.UpdatedAfter(ctx, t)
+}
+
+func isPathGenerated(path string) bool {
+	return strings.HasSuffix(path, "min.js") || strings.HasSuffix(path, "js.map")
+}
+
+func isPathVendored(path string) bool {
+	return strings.Contains(path, "vendor/") || strings.Contains(path, "node_modules/")
+}
+
+var testPattern = lazyregexp.New("test")
+
+func isPathTest(path string) bool {
+	return testPattern.MatchString(path)
+}
+
+// Converts a boolean to a [0, 1] rank (where true is ordered before false).
+func boolRank(v bool) float64 {
+	if v {
+		return 1.0
+	}
+
+	return 0.0
+}
+
+// squashRange maps a value in the range [0, inf) to a value in the range
+// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
 func squashRange(j float64) float64 {
 	return j / (1 + j)
 }

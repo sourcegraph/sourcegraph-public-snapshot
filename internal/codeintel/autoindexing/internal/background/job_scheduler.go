@@ -112,7 +112,7 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 		offset += len(policies)
 
 		// Get the set of commits within this repository that match an indexing policy
-		commitMap, err := b.policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, policies, now)
+		commitMap, err := b.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 		if err != nil {
 			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}
