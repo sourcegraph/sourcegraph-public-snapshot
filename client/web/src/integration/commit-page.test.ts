@@ -1,3 +1,5 @@
+import { subDays } from 'date-fns'
+
 import {
     DiffHunkLineType,
     ExternalServiceKind,
@@ -16,6 +18,7 @@ import { percySnapshotWithVariants } from './utils'
 describe('RepositoryCommitPage', () => {
     const repositoryName = 'github.com/sourcegraph/sourcegraph'
     const commitID = '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416'
+    const commitDate = subDays(new Date(), 7).toISOString()
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
         RepositoryCommit: () => ({
@@ -46,7 +49,7 @@ describe('RepositoryCommitPage', () => {
                                 displayName: 'Becca Steinbrecher',
                             },
                         },
-                        date: '2022-10-27T21:31:53Z',
+                        date: commitDate,
                     },
                     committer: {
                         __typename: 'Signature',
@@ -58,7 +61,7 @@ describe('RepositoryCommitPage', () => {
                             displayName: 'GitHub',
                             user: null,
                         },
-                        date: '2022-10-27T21:31:53Z',
+                        date: commitDate,
                     },
                     parents: [
                         {
