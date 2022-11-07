@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -76,6 +78,31 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId})
 	}
 	return resolvers, nil
+}
+
+func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+		return nil, err
+	}
+	var viewId string
+	err := relay.UnmarshalSpec(args.Id, &viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authoriztion
+	viewSeries, err := r.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, err
+	}
+
+	resolver := &insightViewDebugResolver{
+		insightViewID:   viewId,
+		viewSeries:      viewSeries,
+		workerBaseStore: r.workerBaseStore,
+	}
+	return resolver, nil
 }
 
 type insightSeriesMetadataPayloadResolver struct {
@@ -179,4 +206,43 @@ func (i *insightSearchErrorResolver) FailureMessage(ctx context.Context) (string
 
 func (i *insightSearchErrorResolver) State(ctx context.Context) (string, error) {
 	return i.failure.State, nil
+}
+
+type insightViewDebugResolver struct {
+	insightViewID   string
+	viewSeries      []types.InsightViewSeries
+	workerBaseStore *basestore.Store
+}
+
+func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
+
+	ids := make([]string, 0, len(r.viewSeries))
+	for i := 0; i < len(r.viewSeries); i++ {
+		ids = append(ids, r.viewSeries[i].SeriesID)
+	}
+
+	// this will get the queue information from the primary postgres database
+	seriesStatus, err := queryrunner.QuerySeriesStatus(ctx, r.workerBaseStore, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	// index the metadata by seriesId to perform lookups
+	metadataBySeries := make(map[string]*types.InsightViewSeries)
+	for i, series := range r.viewSeries {
+		metadataBySeries[series.SeriesID] = &r.viewSeries[i]
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesQueryStatusResolver
+	// we will treat the results from the queue as the "primary" and perform a left join on query metadata. That way
+	// we never have a situation where we can't inspect the records in the queue, that's the entire point of this operation.
+	for _, status := range seriesStatus {
+		if series, ok := metadataBySeries[status.SeriesId]; ok {
+			status.Query = series.Query
+			status.Enabled = true //it's true because it's on the insight view enabled == not deleted at
+		}
+
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId})
+	}
+	return resolvers, nil
 }

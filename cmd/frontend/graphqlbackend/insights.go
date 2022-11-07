@@ -39,12 +39,12 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
 }
-
 type SearchInsightPreviewArgs struct {
 	Input SearchInsightPreviewInput
 }
@@ -75,11 +75,18 @@ type InsightsArgs struct {
 	Ids *[]graphql.ID
 }
 
+type InsightViewDebugArgs struct {
+	Id graphql.ID
+}
+
 type InsightsDataPointResolver interface {
 	DateTime() gqlutil.DateTime
 	Value() float64
 }
 
+type InsightViewDebugResolver interface {
+	Series(context.Context) ([]InsightSeriesQueryStatusResolver, error)
+}
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
 	PendingJobs(context.Context) (int32, error)

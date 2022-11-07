@@ -301,12 +301,18 @@ SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
-	q := sqlf.Sprintf(queryAllSeriesStatusSql)
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, true)
 	query, err := workerBaseStore.Query(ctx, q)
-	return scanAllSeriesStatusRows(query, err)
+	return scanSeriesStatusRows(query, err)
 }
 
-func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
+func QuerySeriesStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesIDs []string) (_ []types.InsightSeriesStatus, err error) {
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, sqlf.Sprintf("series_id = ANY(%s)", pq.Array(seriesIDs)))
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanSeriesStatusRows(query, err)
+}
+
+func scanSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -339,6 +345,7 @@ select
        sum(case when state = 'completed' then 1 else 0 end) as completed,
        sum(case when state = 'queued' then 1 else 0 end) as queued
 from insights_query_runner_jobs
+WHERE %s
 group by series_id
 order by series_id;
 `
