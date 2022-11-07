@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -20,7 +21,7 @@ func TestIndexRepository(t *testing.T) {
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 	symbolsClient := NewMockSymbolsClient()
-	svc := newService(mockStore, nil, gitserverClient, symbolsClient, siteConfigQuerier{}, nil, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, symbolsClient, conf.DefaultClient(), nil, &observation.TestContext)
 
 	repositoryContents := map[string]string{
 		"foo.go": "func Foo()",

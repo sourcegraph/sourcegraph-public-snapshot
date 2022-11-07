@@ -17,8 +17,10 @@ type operations struct {
 	uploadProcessor *observation.Operation
 	uploadSizeGuage prometheus.Gauge
 
-	numReconcileScans   prometheus.Counter
-	numReconcileDeletes prometheus.Counter
+	numReconcileScansFromFrontend      prometheus.Counter
+	numReconcileDeletesFromFrontend    prometheus.Counter
+	numReconcileScansFromCodeIntelDB   prometheus.Counter
+	numReconcileDeletesFromCodeIntelDB prometheus.Counter
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -47,12 +49,20 @@ func newOperations(observationContext *observation.Context) *operations {
 		return counter
 	}
 
-	numReconcileScans := counter(
-		"src_codeintel_uploads_reconciliation_records_scanned_total",
-		"The number of upload records read from codeintel-db for reconciliation.",
+	numReconcileScansFromFrontend := counter(
+		"src_codeintel_uploads_frontend_reconciliation_records_scanned_total",
+		"The number of upload records read from the frontend db for reconciliation.",
 	)
-	numReconcileDeletes := counter(
-		"src_codeintel_uploads_reconciliation_records_deleted_total",
+	numReconcileDeletesFromFrontend := counter(
+		"src_codeintel_uploads_frontend_reconciliation_records_deleted_total",
+		"The number of abandoned uploads deleted from the frontend db.",
+	)
+	numReconcileScansFromCodeIntelDB := counter(
+		"src_codeintel_uploads_codeinteldb_reconciliation_records_scanned_total",
+		"The number of upload records read from the codeintel-db for reconciliation.",
+	)
+	numReconcileDeletesFromCodeIntelDB := counter(
+		"src_codeintel_uploads_codeinteldb_reconciliation_records_deleted_total",
 		"The number of abandoned uploads deleted from the codeintel-db.",
 	)
 
@@ -78,7 +88,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		uploadProcessor: uploadProcessor,
 		uploadSizeGuage: uploadSizeGuage,
 
-		numReconcileScans:   numReconcileScans,
-		numReconcileDeletes: numReconcileDeletes,
+		numReconcileScansFromFrontend:      numReconcileScansFromFrontend,
+		numReconcileDeletesFromFrontend:    numReconcileDeletesFromFrontend,
+		numReconcileScansFromCodeIntelDB:   numReconcileScansFromCodeIntelDB,
+		numReconcileDeletesFromCodeIntelDB: numReconcileDeletesFromCodeIntelDB,
 	}
 }

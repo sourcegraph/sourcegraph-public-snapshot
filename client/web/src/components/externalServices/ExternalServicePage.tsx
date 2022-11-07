@@ -440,7 +440,7 @@ const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJob
                 )}
             </div>
             {isExpanded && legends && <ValueLegendList className="mb-0" items={legends} />}
-            {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+            {isExpanded && node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
         </li>
     )
 }

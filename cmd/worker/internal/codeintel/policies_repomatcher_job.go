@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/background/repomatcher"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type policiesRepositoryMatcherJob struct{}
@@ -25,7 +25,7 @@ func (j *policiesRepositoryMatcherJob) Description() string {
 
 func (j *policiesRepositoryMatcherJob) Config() []env.Config {
 	return []env.Config{
-		repomatcher.ConfigInst,
+		policies.PolicyMatcherConfigInst,
 	}
 }
 
@@ -35,5 +35,6 @@ func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logg
 		return nil, err
 	}
 
-	return repomatcher.NewRepositoryMatcher(policies.GetBackgroundJobs(services.PoliciesService)), nil
+	// TODO(nsc): https://github.com/sourcegraph/sourcegraph/pull/42765
+	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob")), nil
 }

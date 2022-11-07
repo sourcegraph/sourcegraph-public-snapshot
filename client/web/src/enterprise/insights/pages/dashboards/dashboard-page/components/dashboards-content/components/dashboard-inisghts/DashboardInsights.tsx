@@ -35,7 +35,7 @@ export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<
     const insightContextValue = useMemo(() => ({ currentDashboard, dashboards }), [currentDashboard, dashboards])
 
     if (insights === undefined) {
-        return <LoadingSpinner inline={false} />
+        return <LoadingSpinner aria-hidden={true} inline={false} />
     }
 
     return (
