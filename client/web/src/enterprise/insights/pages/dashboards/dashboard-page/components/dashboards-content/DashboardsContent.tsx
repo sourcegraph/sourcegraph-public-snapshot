@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -45,7 +45,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
     const [copyURL, isCopied] = useCopyURLHandler()
-    const menuReference = useRef<HTMLButtonElement | null>(null)
 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
@@ -72,14 +71,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             }
             case DashboardMenuAction.CopyLink: {
                 copyURL()
-
-                // Re-trigger trigger tooltip event catching logic to activate
-                // copied tooltip appearance
-                requestAnimationFrame(() => {
-                    menuReference.current?.blur()
-                    menuReference.current?.focus()
-                })
-
                 return
             }
         }
@@ -104,11 +95,10 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 />
 
                 <DashboardMenu
-                    innerRef={menuReference}
-                    tooltipText={isCopied ? 'Copied!' : undefined}
                     dashboard={currentDashboard}
-                    onSelect={handleSelect}
+                    tooltipText={isCopied ? 'Copied!' : undefined}
                     className="mr-auto"
+                    onSelect={handleSelect}
                 />
 
                 <Tooltip content={addRemovePermissions.tooltip} placement="bottom">

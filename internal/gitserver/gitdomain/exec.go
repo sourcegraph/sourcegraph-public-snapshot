@@ -37,6 +37,13 @@ var (
 		"lfs":          {},
 		"apply":        {"--cached", "-p0"},
 
+		// Commands used by Batch Changes when publishing changesets.
+		"init":       {},
+		"reset":      {"-q"},
+		"commit":     {"-m"},
+		"push":       {"--force"},
+		"update-ref": {},
+
 		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
 		"testcommand": {},
 		"testerror":   {},
@@ -105,10 +112,15 @@ func isAllowedDiffArg(arg string) bool {
 func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the allowlist args.
 	splitArg := strings.Split(arg, "=")[0]
+
+	// We use -- to specify the end of command options.
+	// See: https://unix.stackexchange.com/a/11382/214756.
+	if splitArg == "--" {
+		return true
+	}
+
 	for _, allowedArg := range allowedArgs {
-		// We use -- to specify the end of command options.
-		// See: https://unix.stackexchange.com/a/11382/214756.
-		if splitArg == allowedArg || splitArg == "--" {
+		if splitArg == allowedArg {
 			return true
 		}
 	}

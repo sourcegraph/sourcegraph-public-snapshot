@@ -101,7 +101,11 @@ const getNormalizedAccount = (
     accounts: Partial<Record<string, UserExternalAccount>>,
     authProvider: AuthProvider
 ): NormalizedMinAccount | null => {
-    if (authProvider.serviceType === 'builtin' || authProvider.serviceType === 'http-header') {
+    if (
+        authProvider.serviceType === 'builtin' ||
+        authProvider.serviceType === 'http-header' ||
+        authProvider.serviceType === 'sourcegraph-operator'
+    ) {
         return null
     }
 

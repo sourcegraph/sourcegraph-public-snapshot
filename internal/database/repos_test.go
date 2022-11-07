@@ -2702,7 +2702,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListIndexableRepos(t *testing.T) {
+func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2724,9 +2724,9 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			ID:      api.RepoID(3),
-			Name:    "github.com/foo/bar3",
+			Name:    "github.com/baz/bar3",
+			Stars:   15,
 			Private: true,
-			Stars:   0, // Will still be returned because it gets added by a user.
 		},
 		{
 			ID:    api.RepoID(4),
@@ -2753,9 +2753,6 @@ func TestListIndexableRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO users(id, username) VALUES (1, 'bob')`); err != nil {
-		t.Fatal(err)
-	}
 	for _, r := range reposToAdd {
 		blocked, err := json.Marshal(r.Blocked)
 		if err != nil {
@@ -2770,7 +2767,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2, 1);`, r.ID, r.Name); err != nil {
+			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -2787,7 +2784,7 @@ func TestListIndexableRepos(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		opts ListIndexableReposOptions
+		opts ListSourcegraphDotComIndexableReposOptions
 		want []api.RepoID
 	}{
 		{
@@ -2796,20 +2793,15 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			name: "only uncloned",
-			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
+			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
 			want: []api.RepoID{1},
-		},
-		{
-			name: "limit 1",
-			opts: ListIndexableReposOptions{LimitOffset: &LimitOffset{Limit: 1}},
-			want: []api.RepoID{2},
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}
