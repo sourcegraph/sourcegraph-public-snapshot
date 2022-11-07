@@ -1401,6 +1401,12 @@
       "group": "Debug",
       "examples": [["10000"]]
     },
+    "insights.backfill.interruptAfter": {
+      "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60
+    },
     "insights.historical.frames": {
       "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
