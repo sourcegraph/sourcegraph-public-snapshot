@@ -6,8 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -93,7 +93,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 				RepoStore:      mainAppDB.Repos(),
 				BackfillRunner: backfillRunner,
 				ObsContext:     observationContext,
-				AllRepoIterator: discovery.NewAllReposIterator(dbcache.NewIndexableReposLister(observationContext.Logger, mainAppDB.Repos()),
+				AllRepoIterator: discovery.NewAllReposIterator(
 					mainAppDB.Repos(),
 					time.Now,
 					envvar.SourcegraphDotComMode(),
@@ -113,13 +113,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	}
 
-	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
-	// should not be published as an option externally, and will be deprecated as soon as possible.
-	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	if enableSync {
-		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
-		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
-	}
 	routines = append(
 		routines,
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),

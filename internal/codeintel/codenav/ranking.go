@@ -7,14 +7,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/sourcegraph/log"
+	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +21,7 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
 	if s.rankingBucket == nil {
@@ -30,13 +29,13 @@ func (s *Service) SerializeRankingGraph(
 		return nil
 	}
 
-	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, rankingGraphBatchSize)
+	uploads, err := s.store.GetUploadsForRanking(ctx, rankingGraphKey, "ranking", rankingGraphBatchSize)
 	if err != nil {
 		return err
 	}
 
 	for _, upload := range uploads {
-		if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root); err != nil {
+		if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
 			s.logger.Error(
 				"Failed to process upload for ranking graph",
 				log.Int("id", upload.ID),
@@ -60,6 +59,53 @@ func (s *Service) SerializeRankingGraph(
 	return nil
 }
 
+func (s *Service) VacuumRankingGraph(
+	ctx context.Context,
+) error {
+	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+		return nil
+	}
+	if s.rankingBucket == nil {
+		s.logger.Warn("No ranking bucket is configured")
+		return nil
+	}
+
+	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
+		if objectPrefix == "" {
+			// Special case: we haven't backfilled some data on dotcom yet
+			return nil
+		}
+
+		objects := s.rankingBucket.Objects(ctx, &storage.Query{
+			Prefix: objectPrefix,
+		})
+		for {
+			attrs, err := objects.Next()
+			if err != nil {
+				if err == iterator.Done {
+					break
+				}
+
+				return err
+			}
+
+			if err := s.rankingBucket.Object(attrs.Name).Delete(ctx); err != nil {
+				return err
+			}
+
+			s.operations.numBytesDeleted.Add(float64(attrs.Size))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	s.operations.numStaleRecordsDeleted.Add(float64(numDeleted))
+	return nil
+}
+
 const maxBytesPerObject = 1024 * 1024 * 1024 // 1GB
 
 func (s *Service) serializeAndPersistRankingGraphForUpload(
@@ -67,6 +113,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	id int,
 	repo string,
 	root string,
+	objectPrefix string,
 ) (err error) {
 	writers := map[string]*gcsObjectWriter{}
 	defer func() {
@@ -78,7 +125,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 	}()
 
 	return s.serializeRankingGraphForUpload(ctx, id, repo, root, func(filename string, format string, args ...any) error {
-		path := filepath.Join("ranking", rankingGraphKey, strconv.Itoa(id), filename)
+		path := fmt.Sprintf("%s/%s", objectPrefix, filename)
 
 		ow, ok := writers[path]
 		if !ok {
@@ -97,6 +144,7 @@ func (s *Service) serializeAndPersistRankingGraphForUpload(
 		}
 
 		if n, err := io.Copy(ow, strings.NewReader(fmt.Sprintf(format, args...))); err != nil {
+
 			return err
 		} else {
 			ow.written += n

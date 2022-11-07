@@ -2,7 +2,11 @@ package cliutil
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"sort"
 
+	"cuelang.org/go/pkg/strings"
 	"github.com/urfave/cli/v2"
 
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -37,9 +41,11 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		}
 
 		if file != "" {
-			expectedSchemaFactories = []ExpectedSchemaFactory{ExplicitFileSchemaFactory(file)}
+			expectedSchemaFactories = []ExpectedSchemaFactory{
+				NewExplicitFileSchemaFactory(file),
+			}
 		}
-		expectedSchema, err := fetchExpectedSchema(schemaName, version, out, expectedSchemaFactories)
+		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
@@ -71,6 +77,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 }
 
 func fetchExpectedSchema(
+	ctx context.Context,
 	schemaName string,
 	version string,
 	out *output.Output,
@@ -84,19 +91,84 @@ func fetchExpectedSchema(
 	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locating schema description"))
 
 	for i, factory := range expectedSchemaFactories {
-		name, expectedSchema, err := factory(filename, version)
+		matches := false
+		patterns := factory.VersionPatterns()
+		for _, pattern := range patterns {
+			if pattern.MatchString(version) {
+				matches = true
+				break
+			}
+		}
+		if len(patterns) > 0 && !matches {
+			continue
+		}
+
+		resourcePath := factory.ResourcePath(filename, version)
+		expectedSchema, err := factory.CreateFromPath(ctx, resourcePath)
 		if err != nil {
 			suffix := ""
 			if i < len(expectedSchemaFactories)-1 {
 				suffix = " Will attempt a fallback source."
 			}
 
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition from %s... Schema not found (%s).%s", name, err, suffix))
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition in %s (%s)... Schema not found (%s).%s", factory.Name(), resourcePath, err, suffix))
 			continue
 		}
 
-		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found at %s.", name))
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found in %s (%s).", factory.Name(), resourcePath))
 		return expectedSchema, nil
+	}
+
+	exampleMap := map[string]struct{}{}
+	failedPaths := map[string]struct{}{}
+	for _, factory := range expectedSchemaFactories {
+		for _, pattern := range factory.VersionPatterns() {
+			if !pattern.MatchString(version) {
+				exampleMap[pattern.Example()] = struct{}{}
+			} else {
+				failedPaths[factory.ResourcePath(filename, version)] = struct{}{}
+			}
+		}
+	}
+
+	versionExamples := make([]string, 0, len(exampleMap))
+	for pattern := range exampleMap {
+		versionExamples = append(versionExamples, pattern)
+	}
+	sort.Strings(versionExamples)
+
+	paths := make([]string, 0, len(exampleMap))
+	for path := range failedPaths {
+		if u, err := url.Parse(path); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+			paths = append(paths, path)
+		}
+	}
+	sort.Strings(paths)
+
+	if len(paths) > 0 {
+		var additionalHints string
+		if len(versionExamples) > 0 {
+			additionalHints = fmt.Sprintf(
+				"Alternative, provide a different version that matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+			)
+		}
+
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb,
+			output.StyleFailure,
+			"Schema not found. "+
+				"Check if the following resources exist. "+
+				"If they do, then the context in which this migrator is being run may not be permitted to reach the public internet."+
+				"\n  - %s\n%s",
+			strings.Join(paths, "\n  - "),
+			additionalHints,
+		))
+	} else if len(versionExamples) > 0 {
+		out.WriteLine(output.Linef(
+			output.EmojiLightbulb,
+			output.StyleFailure,
+			"Schema not found. Ensure your supplied version matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+		))
 	}
 
 	return descriptions.SchemaDescription{}, errors.Newf("failed to locate target schema description")

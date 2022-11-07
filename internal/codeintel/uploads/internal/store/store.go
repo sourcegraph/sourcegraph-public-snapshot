@@ -91,6 +91,8 @@ type Store interface {
 
 	// Workerutil
 	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
+
+	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 }
 
 // store manages the database operations for uploads.

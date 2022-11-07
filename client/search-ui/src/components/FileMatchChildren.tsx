@@ -25,6 +25,7 @@ import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
+import { useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
 import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from './CodeExcerpt'
 import { LastSyncedIcon } from './LastSyncedIcon'
@@ -268,6 +269,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.log(...codeCopiedEvent('file-match'))
     }, [telemetryService])
 
+    const getItemRef = useFocusOnLoadedMore<HTMLDivElement>(grouped.length ?? 0)
+
     return (
         <div
             className={classNames(styles.fileMatchChildren, result.type === 'symbol' && styles.symbols)}
@@ -320,7 +323,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>
-                    {grouped.map(group => (
+                    {grouped.map((group, index) => (
                         <div
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
@@ -340,6 +343,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
+                                ref={getItemRef(index)}
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}

@@ -210,14 +210,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	streamer, flushAll := newFlushCollectSender(
-		&collectOpts{
-			maxDocDisplayCount: opts.MaxDocDisplayCount,
-			flushWallTime:      opts.FlushWallTime,
-			maxSizeBytes:       siteConfig.maxSizeBytes,
-		},
-		streamer,
-	)
+	streamer, flushAll := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
 	defer flushAll()
 
 	// We give each zoekt a little less time to flush so the frontend has a

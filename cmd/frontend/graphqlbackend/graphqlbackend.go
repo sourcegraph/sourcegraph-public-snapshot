@@ -537,6 +537,12 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return externalServiceSyncJobByID(ctx, db, id)
 		},
+		"ExecutorSecret": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorSecretByID(ctx, db, id)
+		},
+		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorSecretAccessLogByID(ctx, db, id)
+		},
 	}
 	return r
 }
