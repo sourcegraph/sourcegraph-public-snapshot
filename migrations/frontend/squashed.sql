@@ -4342,6 +4342,8 @@ CREATE UNIQUE INDEX codeintel_lockfiles_repository_id_commit_bytea_lockfile ON c
 
 CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE (NOT processed);
 
+CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE (NOT processed);
+
 CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks USING btree (repository_id, "precision");
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
