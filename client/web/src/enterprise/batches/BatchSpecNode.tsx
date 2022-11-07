@@ -21,7 +21,7 @@ import { Code, Link, Icon, H3, H4, Tooltip, Text, Button } from '@sourcegraph/wi
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
-import { BatchSpecListFields, Scalars } from '../../graphql-operations'
+import { BatchSpecListFields, Scalars, PartialBatchWorkspaceFileFields } from '../../graphql-operations'
 
 import { BatchSpec } from './BatchSpec'
 import { humanizeSize } from './utils/size'
@@ -120,33 +120,26 @@ interface BatchSpecInfoProps {
     isLightTheme: boolean
 }
 
-interface BatchSpecFile {
-    isBinary: boolean
+type BatchWorkspaceFile = {
     isSpecFile: boolean
-    name: string
-    id: string
-    size: number
-}
+} & Omit<PartialBatchWorkspaceFileFields, '__typename'>
 
 export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
-    const specFile: BatchSpecFile = {
-        isBinary: false,
+    const specFile: BatchWorkspaceFile = {
+        binary: false,
         isSpecFile: true,
         name: 'spec_file.yaml',
         id: spec.id,
-        size: spec.originalInput.length,
+        byteSize: spec.originalInput.length,
     }
-    const [selectedFile, setSelectedFile] = useState<BatchSpecFile>(specFile)
+    const [selectedFile, setSelectedFile] = useState<BatchWorkspaceFile>(specFile)
 
     if (spec.files && spec.files.totalCount > 0) {
-        const mountedFiles: BatchSpecFile[] = spec.files.nodes.map(file => ({
-            isBinary: file.binary,
+        const mountedFiles: BatchWorkspaceFile[] = spec.files.nodes.map(file => ({
             isSpecFile: false,
-            name: file.name,
-            id: file.id,
-            size: file.byteSize,
+            ...file,
         }))
-        const allFiles: BatchSpecFile[] = [specFile, ...mountedFiles]
+        const allFiles = [specFile, ...mountedFiles]
 
         return (
             <div className={styles.specFilesContainer}>
@@ -177,11 +170,7 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
                         className={classNames(styles.batchSpec, 'mb-0')}
                     />
                 ) : (
-                    <BatchSpecWorkspaceFileContent
-                        name={selectedFile.name}
-                        isBinary={selectedFile.isBinary}
-                        size={selectedFile.size}
-                    />
+                    <BatchWorkspaceFileContent file={selectedFile} specId={spec.id} />
                 )}
             </div>
         )
@@ -200,24 +189,18 @@ export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spe
     )
 }
 
-interface BatchSpecWorkspaceFileContentProps {
-    content: string
-    isBinary: boolean
-    name: string
-    size: number
+interface BatchWorkspaceFileContentProps {
+    specId: string
+    file: BatchWorkspaceFile
 }
 
-const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceFileContentProps> = ({
-    isBinary,
-    name,
-    size,
-}) => {
-    if (isBinary) {
+const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+    if (file.binary) {
         return (
             <div className={styles.specFileBinary}>
                 <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
                 <Text className={styles.specFileBinaryName}>
-                    {name} <span className={styles.specFileBinarySize}>{humanizeSize(size)}</span>
+                    {file.name} <span className={styles.specFileBinarySize}>{humanizeSize(file.byteSize)}</span>
                 </Text>
                 <Button className={styles.specFileBinaryBtn}>
                     <Icon aria-hidden={true} svgPath={mdiFileDownload} />
@@ -228,8 +211,12 @@ const BatchSpecWorkspaceFileContent: React.FunctionComponent<BatchSpecWorkspaceF
         )
     }
 
-    return <div>Render something nice</div>
+    return <NonBinaryBatchWorkspaceFile file={file} specId={specId} />
+}
 
+const NonBinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+
+    return <div>Render something nice: {specId}</div>
     // return (
     //     <pre className={styles.blobWrapper}>
     //         <Code
