@@ -35,9 +35,9 @@ on:
 # goreleaser_post [if case 1.]  - updates symlink to latest version
 # npm             [always]      - publishes to npm
 jobs:
-  # release_type compares the most recently created tag to the highest versioned tag
-  # available on the repo to determine if this release is for a new latest version or a
-  # patch of an older version.
+  # release_type compares the current tag to the highest versioned tag available on the
+  # repo to determine if this release is for a new latest version or a patch of an older
+  # version.
   release_type:
     name: Determine release type
     runs-on: ubuntu-latest
@@ -50,12 +50,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Fetch most recent tag, latest (highest version) tag, and second latest tag
+      - name: Set current tag, latest (highest version) tag, and second latest tag
         # For latest and second latest tags, we can't use git tag --sort=version:refname
         # because git doesn't have a concept of pre-release versions and thus mis-sorts
         # versions like 4.0.0-rc.0 *after* 4.0.0.
         run: |
-          echo "most_recent_tag=$(git tag --sort=taggerdate | tail -1)" >> $GITHUB_ENV
+          echo "current_tag=${GITHUB_REF_NAME}" >> $GITHUB_ENV
           echo "latest_tag=$(git tag | tr - \~ | sort --version-sort | tr \~ - | tail -1)" >> $GITHUB_ENV
           echo "second_latest_tag=$(git tag | tr - \~ | sort --version-sort | tr \~ - | tail -2 | sed -n 1p)" >> $GITHUB_ENV
       - name: Install semver
@@ -63,10 +63,14 @@ jobs:
           wget -O /usr/local/bin/semver https://raw.githubusercontent.com/fsaintjacques/semver-tool/master/src/semver
           chmod +x /usr/local/bin/semver
       - name: Compare tags
-        # If the most recent tag is also the latest tag, semver compare returns 0. If it's
-        # a patch of an older version, semver compare will return -1.
+        # If the current tag is also the latest (highest-versioned) tag, semver compare
+        # returns 0. If the current tag is older (i.e. it's a patch for an older version),
+        # semver compare will return -1. By definition, it should be impossible for the
+        # current tag to be newer than the latest tag unless somehow the current tag is
+        # not a real tag, but if for some reason this happens, it will be treated the same
+        # as if it were the latest.
         run: |
-          if [[ $(semver compare ${{ env.latest_tag }} ${{ env.most_recent_tag }}) == 0 ]]
+          if [ "$(semver compare ${{ env.current_tag }} ${{ env.latest_tag }})" -ge 0 ]
           then
             echo "is_latest_version=1" >> $GITHUB_ENV
           else
@@ -74,9 +78,14 @@ jobs:
           fi
       - name: Log variables
         run: |
-          echo "Most recent (current) tag: ${{ env.most_recent_tag }}"
-          echo "Latest version tag: ${{ env.latest_tag }}"
-          echo "Building current version as new latest?: ${{ env.is_latest_version }}"
+          echo "Version for this release: ${{ env.current_tag }}"
+          echo "Latest version: ${{ env.latest_tag }}"
+          if [[ ${{ env.is_latest_version }} == 1 ]]
+          then
+            echo "Releasing new latest version."
+          else
+            echo "Releasing patch of older version."
+          fi
 
   # goreleaser_pre copies the main formula in our Homebrew tap for the previous latest
   # release (second latest tag) to a versioned formula, so that it is preserved when
@@ -103,7 +112,7 @@ jobs:
           echo "versioned_classname=SrcCliAT$(echo ${{ env.second_latest_tag }} | sed 's/\.//g')" >> $GITHUB_ENV
       - name: Log variables
         run: |
-          echo "Second latest tag: ${{ env.second_latest_tag }}"
+          echo "Second latest tag (previous latest release): ${{ env.second_latest_tag }}"
           echo "Versioned formula file: ${{ env.versioned_formula_file }}"
           echo "Versioned classname: ${{ env.versioned_classname }}"
       - name: Checkout Homebrew tap
