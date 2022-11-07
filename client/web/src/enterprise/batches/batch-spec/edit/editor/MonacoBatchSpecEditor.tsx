@@ -8,7 +8,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
 
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
@@ -18,8 +18,8 @@ import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schem
 import { requestGraphQL } from '../../../../../backend/graphql'
 import {
     Scalars,
-    UserBatchSpecExecutionAvailableSecretKeysResult,
-    UserBatchSpecExecutionAvailableSecretKeysVariables,
+    BatchSpecExecutionAvailableSecretKeysResult,
+    BatchSpecExecutionAvailableSecretKeysVariables,
 } from '../../../../../graphql-operations'
 
 import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'
@@ -36,7 +36,7 @@ interface JSONSchema {
 
 export interface Props extends ThemeProps {
     className?: string
-    batchChangeNamespace: { id: Scalars['ID']; __typename: 'User' | 'Org' }
+    batchChangeNamespace?: { id: Scalars['ID']; __typename: 'User' | 'Org' }
     batchChangeName: string
     value: string | undefined
     onChange?: (newValue: string) => void
@@ -64,35 +64,33 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
 
-        if (this.props.batchChangeNamespace?.__typename === 'User') {
-            this.subscriptions.add(
-                requestGraphQL<
-                    UserBatchSpecExecutionAvailableSecretKeysResult,
-                    UserBatchSpecExecutionAvailableSecretKeysVariables
-                >(BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS, {
-                    user: this.props.batchChangeNamespace.id,
-                })
-                    .pipe(map(dataOrThrowErrors))
-                    .subscribe(data => {
-                        if (data.node && data.node.__typename === 'User') {
-                            this.setState({ availableSecrets: data.node.executorSecrets.nodes.map(node => node.key) })
-                            if (this.monaco) {
-                                setDiagnosticsOptions(
-                                    this.monaco,
-                                    this.props.batchChangeName,
-                                    data.node.executorSecrets.nodes.map(node => node.key)
-                                )
-                            }
+        this.subscriptions.add(
+            componentUpdates
+                .pipe(
+                    filter(props => !props.readOnly && props.batchChangeNamespace !== undefined),
+                    switchMap(props =>
+                        requestGraphQL<
+                            BatchSpecExecutionAvailableSecretKeysResult,
+                            BatchSpecExecutionAvailableSecretKeysVariables
+                        >(BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS, {
+                            namespace: props.batchChangeNamespace!.id,
+                        })
+                    ),
+                    map(dataOrThrowErrors)
+                )
+                .subscribe(data => {
+                    if (data.node && (data.node.__typename === 'User' || data.node.__typename === 'Org')) {
+                        this.setState({ availableSecrets: data.node.executorSecrets.nodes.map(node => node.key) })
+                        if (this.monaco) {
+                            setDiagnosticsOptions(
+                                this.monaco,
+                                this.props.batchChangeName,
+                                data.node.executorSecrets.nodes.map(node => node.key)
+                            )
                         }
-                    })
-            )
-        } else {
-            // const { connection } = useOrgExecutorSecretsConnection(
-            //     this.props.batchChangeNamespace.id,
-            //     ExecutorSecretScope.BATCHES
-            // )
-            // availableSecrets = connection?.nodes.map(node => node.key)
-        }
+                    }
+                })
+        )
 
         this.subscriptions.add(
             componentUpdates
@@ -202,10 +200,10 @@ function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string, a
     if (availableSecrets !== undefined) {
         // Rewrite the JSON schema so that the env field has proper auto completion and
         // warns if any secrets referenced don't exist.
-        const envVarString: JSONSchemaType<'string'> = schema.properties.steps.items.properties.env.oneOf[2].items!
-            .oneOf[0]
-        envVarString.examples = availableSecrets
-        envVarString.enum = availableSecrets
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
+            .oneOf[0] as JSONSchemaType<'string'>).examples = availableSecrets
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
+            .oneOf[0] as JSONSchemaType<'string'>).enum = availableSecrets
     }
 
     // Enforce the exact name match. The user must use the settings UI to change the name.
