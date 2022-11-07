@@ -8,7 +8,6 @@ import { InstrumentationOption, registerInstrumentations } from '@opentelemetry/
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch'
 import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 import {
@@ -18,6 +17,7 @@ import {
     SharedSpanStoreProcessor,
     ClientAttributesSpanProcessor,
     getTracingURL,
+    SourcegraphWebTracerProvider,
 } from '@sourcegraph/observability-client'
 
 import { PageRoutes } from '../../routes.constants'
@@ -35,7 +35,7 @@ export function initOpenTelemetry(): void {
      *
      */
     if (openTelemetry?.endpoint && (process.env.NODE_ENV === 'production' || process.env.ENABLE_OPEN_TELEMETRY)) {
-        const provider = new WebTracerProvider({
+        const provider = new SourcegraphWebTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'web-app',
             }),
