@@ -112,8 +112,6 @@ func newHandlerConfig() handlerConfig {
 var _ workerutil.Handler = &inProgressHandler{}
 
 func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	start := h.clock.Now()
-
 	ctx = actor.WithInternalActor(ctx)
 	job, ok := record.(*BaseJob)
 	if !ok {
@@ -149,6 +147,8 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		log.Int("erroredRepos", itr.ErroredRepos()),
 		log.Int("totalErrors", itr.TotalErrors()))
 
+	timeExpired := h.clock.After(h.config.interruptAfter)
+
 	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {
 		for {
@@ -156,29 +156,28 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 			if !more {
 				break
 			}
-			if h.shouldInterrupt(h.clock.Now().Sub(start)) {
-				// the check for interrupt is after the check for more values so that completed series are not interrupted
-				// this is safe as long as the next operation doesn't mutate the persistable state of the iterator
+			select {
+			case <-timeExpired:
 				return true, nil
-			}
+			default:
+				repo, repoErr := h.repoStore.Get(ctx, repoId)
+				if repoErr != nil {
+					err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
+					if err != nil {
+						return false, err
+					}
+					continue
+				}
 
-			repo, repoErr := h.repoStore.Get(ctx, repoId)
-			if repoErr != nil {
-				err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
+				logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
+				if runErr != nil {
+					logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
+				}
+				err = finish(ctx, h.backfillStore.Store, runErr)
 				if err != nil {
 					return false, err
 				}
-				continue
-			}
-
-			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-			runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
-			if runErr != nil {
-				logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
-			}
-			err = finish(ctx, h.backfillStore.Store, runErr)
-			if err != nil {
-				return false, err
 			}
 		}
 		return false, nil
@@ -221,10 +220,6 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error {
 	return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(time.Second*10))
-}
-
-func (h *inProgressHandler) shouldInterrupt(duration time.Duration) bool {
-	return duration >= h.config.interruptAfter
 }
 
 func getInterruptAfter() time.Duration {
