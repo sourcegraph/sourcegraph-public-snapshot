@@ -1,7 +1,5 @@
 import { useCallback } from 'react'
 
-import { useLocation } from 'react-router'
-
 import { parseBrowserRepoURL } from '../util/url'
 
 import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
@@ -15,16 +13,15 @@ export const useOpenCurrentUrlInEditor = (): ((
     externalServiceType: string | undefined,
     sourcegraphURL: string,
     editorIndex?: number
-) => void) => {
-    const location = useLocation()
-    return useCallback(
+) => void) =>
+    useCallback(
         (
             editorSettings: EditorSettings | undefined,
             externalServiceType: string | undefined,
             sourcegraphURL: string,
             editorIndex = 0
         ) => {
-            const { repoName, filePath, range } = parseBrowserRepoURL(location.pathname)
+            const { repoName, filePath, range } = parseBrowserRepoURL(window.location.href)
             const url = buildEditorUrl(
                 buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
                 range,
@@ -36,4 +33,3 @@ export const useOpenCurrentUrlInEditor = (): ((
         },
         [location.pathname]
     )
-}
