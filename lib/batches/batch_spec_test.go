@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -377,3 +378,40 @@ func (s sortableInt32) Len() int { return len(s) }
 func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
 
 func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func TestBatchSpec_RequiredEnvVars(t *testing.T) {
+	for name, tc := range map[string]struct {
+		in   string
+		want []string
+	}{
+		"no steps": {
+			in:   `steps:`,
+			want: []string{},
+		},
+		"no env vars": {
+			in:   `steps: [run: asdf]`,
+			want: []string{},
+		},
+		"static variable": {
+			in:   `steps: [{run: asdf, env: [a: b]}]`,
+			want: []string{},
+		},
+		"dynamic variable": {
+			in:   `steps: [{run: asdf, env: [a]}]`,
+			want: []string{"a"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var spec BatchSpec
+			err := yaml.Unmarshal([]byte(tc.in), &spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := spec.RequiredEnvVars()
+
+			if diff := cmp.Diff(have, tc.want); diff != "" {
+				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}

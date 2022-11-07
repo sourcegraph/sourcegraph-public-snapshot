@@ -3,6 +3,7 @@ package workers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -175,9 +177,22 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
+	ctx := context.Background()
+
+	repos, _ := bt.CreateTestRepos(t, ctx, db, 1)
 
 	user := bt.CreateTestUser(t, db, true)
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+
+	secret := &database.ExecutorSecret{
+		Key:       "FOO",
+		CreatorID: user.ID,
+	}
+	secretValue := "sosecret"
+	err := db.ExecutorSecrets(nil).Create(userCtx, database.ExecutorSecretScopeBatches, secret, secretValue)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -231,7 +246,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 	}
 
-	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, mounts []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecExecutionCacheEntry {
+	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, envVarValue string, mounts []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
 		key := cache.KeyForWorkspace(
@@ -247,6 +262,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches: workspace.FileMatches,
 			},
 			workspace.Path,
+			[]string{fmt.Sprintf("FOO=%s", envVarValue)},
 			workspace.OnlyFetchWorkspace,
 			batchSpec.Spec.Steps,
 			result.StepIndex,
@@ -271,11 +287,11 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled")
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -335,6 +351,53 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 	})
 
+	t.Run("secret value changed", func(t *testing.T) {
+		workspace := buildWorkspace("secret-value-changed")
+
+		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, "not the secret value", nil)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			t.Fatalf("listing workspaces failed: %s", err)
+		}
+
+		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+			{
+				RepoID:             repos[0].ID,
+				BatchSpecID:        batchSpec.ID,
+				ChangesetSpecIDs:   []int64{},
+				Branch:             "refs/heads/main",
+				Commit:             "secret-value-changed",
+				FileMatches:        []string{},
+				Path:               "",
+				OnlyFetchWorkspace: true,
+				CachedResultFound:  false,
+			},
+		})
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.Equal(entry.LastUsedAt) {
+			t.Fatalf("cache entry LastUsedAt updated. want=%s, have=%s", entry.LastUsedAt, reloadedEntry.LastUsedAt)
+		}
+	})
+
 	t.Run("only step is statically skipped", func(t *testing.T) {
 		workspace := buildWorkspace("no-step-after-eval")
 
@@ -358,7 +421,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -413,7 +476,7 @@ changesetTemplate:
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -450,11 +513,11 @@ changesetTemplate:
 		resultWithoutDiff := *executionResult
 		resultWithoutDiff.Diff = ""
 
-		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff, nil)
+		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff, secretValue, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -488,11 +551,11 @@ changesetTemplate:
 		workspace := buildWorkspace("caching-disabled")
 
 		batchSpec := createBatchSpec(t, true, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -537,11 +600,11 @@ changesetTemplate:
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -567,11 +630,11 @@ changesetTemplate:
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -620,11 +683,11 @@ changesetTemplate:
 		batchSpec := createBatchSpec(t, false, rawSpec)
 		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
 		createBatchSpecMounts(t, mounts)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, mounts)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -718,11 +781,11 @@ changesetTemplate:
 			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
 		}
 		createBatchSpecMounts(t, mounts)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, mounts)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
 			t.Fatalf("proces failed: %s", err)
 		}
 
@@ -896,6 +959,88 @@ importChangesets:
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestBatchSpecWorkspaceCreatorProcess_Secrets(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	user := bt.CreateTestUser(t, db, true)
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+
+	repos, _ := bt.CreateTestRepos(t, ctx, db, 4)
+
+	s := store.New(db, &observation.TestContext, nil)
+
+	secret := &database.ExecutorSecret{
+		Key:       "FOO",
+		CreatorID: user.ID,
+	}
+	err := db.ExecutorSecrets(nil).Create(userCtx, database.ExecutorSecretScopeBatches, secret, "sosecret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpecYAML)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchSpec.UserID = user.ID
+	batchSpec.NamespaceUserID = user.ID
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+
+	resolver := &dummyWorkspaceResolver{
+		workspaces: []*service.RepoWorkspace{
+			{
+				RepoRevision: &service.RepoRevision{
+					Repo:        repos[0],
+					Branch:      "refs/heads/main",
+					Commit:      "d34db33f",
+					FileMatches: []string{},
+				},
+				Path:               "",
+				OnlyFetchWorkspace: true,
+			},
+		},
+	}
+
+	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
+	if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
+		t.Fatalf("proces failed: %s", err)
+	}
+
+	have, _, err := s.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		t.Fatalf("listing workspaces failed: %s", err)
+	}
+
+	want := []*btypes.BatchSpecWorkspace{
+		{
+			RepoID:             repos[0].ID,
+			BatchSpecID:        batchSpec.ID,
+			ChangesetSpecIDs:   []int64{},
+			Branch:             "refs/heads/main",
+			Commit:             "d34db33f",
+			FileMatches:        []string{},
+			Path:               "",
+			OnlyFetchWorkspace: true,
+		},
+	}
+
+	assertWorkspacesEqual(t, have, want)
+
+	c, err := db.ExecutorSecretAccessLogs().Count(ctx, database.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have, want := c, 1; have != want {
+		t.Fatalf("invalid number of access logs created: have=%d want=%d", have, want)
 	}
 }
 
