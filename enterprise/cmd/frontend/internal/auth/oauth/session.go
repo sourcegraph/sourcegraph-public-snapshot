@@ -130,7 +130,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
 				Name:            s.AuthFailedEventName(),
-				URL:             r.URL.Path,
+				URL:             r.URL.Path, // don't log query params w/ OAuth data
 				AnonymousUserID: anonymousId,
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
@@ -150,7 +150,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		ctx = actor.WithActor(ctx, actr)
 		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
 			Name:      s.AuthSucceededEventName(),
-			URL:       r.URL.Path,
+			URL:       r.URL.Path, // don't log query params w/ OAuth data
 			UserID:    uint32(user.ID),
 			Source:    "BACKEND",
 			Timestamp: time.Now(),
