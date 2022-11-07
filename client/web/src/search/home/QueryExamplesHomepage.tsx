@@ -111,63 +111,19 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                 <>
                     <Tabs size="medium" onChange={handleTabChange}>
                         <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
-                            <Tab key="Code search basics" className="pr-3">Code search basics</Tab>
+                            <Tab key="Code search basics">Code search basics</Tab>
                             <Tab key="Search query examples">Search query examples</Tab>
                         </TabList>
                         <TabPanels>
                             <TabPanel>
-                                <div className={styles.queryExamplesSectionsColumns}>
-                                    {exampleSyntaxColumns.map((column, index) => (
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        <div key={`column-${index}`}>
-                                            {column.map(({ title, queryExamples }) => (
-                                                <QueryExamplesSection
-                                                    key={title}
-                                                    title={title}
-                                                    queryExamples={queryExamples}
-                                                    onQueryExampleClick={onQueryExampleClick}
-                                                />
-                                            ))}
-                                            {!!index && (
-                                                <small className="d-block">
-                                                    <Link target="blank" to="/help/code_search/reference/queries">
-                                                        Complete query reference{' '}
-                                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                                                    </Link>
-                                                </small>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
                             </TabPanel>
                             <TabPanel>
-                                <div className={styles.queryExamplesSectionsColumns}>
-                                    {exampleQueryColumns.map((column, index) => (
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        <div key={`column-${index}`}>
-                                            {column.map(({ title, queryExamples }) => (
-                                                <QueryExamplesSection
-                                                    key={title}
-                                                    title={title}
-                                                    queryExamples={queryExamples}
-                                                    onQueryExampleClick={onQueryExampleClick}
-                                                />
-                                            ))}
-                                            {!!index && (
-                                                <small className="d-block">
-                                                    <Link target="blank" to="/help/code_search/reference/queries">
-                                                        Complete query reference{' '}
-                                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                                                    </Link>
-                                                </small>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                <QueryExamplesLayout queryColumns={exampleQueryColumns} onQueryExampleClick={onQueryExampleClick} />
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
-                    <div className="d-flex align-items-center justify-content-lg-center my-5">
+                    <div className="d-flex align-items-baseline justify-content-lg-center my-5">
                         <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
                         <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                             Use Sourcegraph to search across your team's code.
@@ -208,39 +164,48 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             </>
                         )}
                     </div>
-                    <div className={styles.queryExamplesSectionsColumns}>
-                        {exampleSyntaxColumns.map((column, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <div key={`column-${index}`}>
-                                {column.map(({ title, queryExamples }) => (
-                                    <QueryExamplesSection
-                                        key={title}
-                                        title={title}
-                                        queryExamples={queryExamples}
-                                        onQueryExampleClick={onQueryExampleClick}
-                                    />
-                                ))}
-                                {!!index && (
-                                    <small className="d-block">
-                                        <Link target="blank" to="/help/code_search/reference/queries">
-                                            Complete query reference{' '}
-                                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                                        </Link>
-                                    </small>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                    <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
                 </div>
             )}
         </div>
     )
 }
 
+interface QueryExamplesLayout {
+    queryColumns: QueryExamplesSection[][]
+    onQueryExampleClick?: (id: string, query: string, slug?: string) => void
+}
+
+export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ queryColumns, onQueryExampleClick }) => (
+    <div className={styles.queryExamplesSectionsColumns}>
+        {queryColumns.map((column, index) => (
+            <div key={`column-${queryColumns[0][0].title}`}>
+                {column.map(({ title, queryExamples }) => (
+                    <QueryExamplesSection
+                        key={title}
+                        title={title}
+                        queryExamples={queryExamples}
+                        onQueryExampleClick={onQueryExampleClick}
+                    />
+                ))}
+                {/* Add docs link to last column */}
+                {queryColumns.length === (index + 1) && (
+                    <small className="d-block">
+                        <Link target="blank" to="/help/code_search/reference/queries">
+                            Complete query reference{' '}
+                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                        </Link>
+                    </small>
+                )}
+            </div>
+        ))}
+    </div>
+)
+
 interface QueryExamplesSection {
     title: string
     queryExamples: QueryExample[]
-    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
+    onQueryExampleClick?: (id: string, query: string, slug?: string) => void
 }
 
 export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
