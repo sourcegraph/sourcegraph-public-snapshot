@@ -38,15 +38,10 @@ type ChangesetSpecInput struct {
 }
 
 func BuildChangesetSpecs(input *ChangesetSpecInput) ([]*ChangesetSpec, error) {
-	changes, err := git.ChangesInDiff([]byte(input.Result.Diff))
-	if err != nil {
-		return nil, errors.Wrap(err, "getting changed files")
-	}
-
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
-			Changes: changes,
+			Changes: input.Result.ChangedFiles,
 			Path:    input.Path,
 		},
 		Outputs: input.Result.Outputs,
