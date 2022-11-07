@@ -51,7 +51,10 @@ func ValidateBatchSpecTemplate(spec string) (bool, error) {
 	// dry run on the batch spec to determine if it's valid or not, before we actually
 	// execute it.
 	sc := &StepContext{}
-	sfm := sc.ToFuncMap()
+	sfm, err := sc.ToFuncMap()
+	if err != nil {
+		return false, err
+	}
 	cstc := &ChangesetTemplateContext{}
 	cstfm := cstc.ToFuncMap()
 
@@ -119,6 +122,10 @@ func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 }
 
 func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
+	funcMap, err := stepCtx.ToFuncMap()
+	if err != nil {
+		return err
+	}
 	// By default, text/template will continue even if it encounters a key that is not
 	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
 	// value>". This means that a mis-typed variable such as "${{
@@ -127,7 +134,7 @@ func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) 
 	// user as an error during execution. Instead, we prefer to fail immediately if we
 	// encounter an unknown variable. We accomplish this by setting the option
 	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := New(name, tmpl, "missingkey=error", stepCtx.ToFuncMap())
+	t, err := New(name, tmpl, "missingkey=error", funcMap)
 	if err != nil {
 		return errors.Wrap(err, "parsing step run")
 	}
@@ -194,8 +201,13 @@ type StepContext struct {
 
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
 // text/template.
-func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
-	newStepResult := func(res *execution.AfterStepResult) map[string]any {
+func (stepCtx *StepContext) ToFuncMap() (template.FuncMap, error) {
+	newStepResult := func(res *execution.AfterStepResult) (map[string]any, error) {
+		changes, err := git.ChangesInDiff([]byte(res.Diff))
+		if err != nil {
+			return nil, errors.Wrap(err, "getting changed files in step")
+		}
+
 		m := map[string]any{
 			"modified_files": "",
 			"added_files":    "",
@@ -205,28 +217,47 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			"stderr":         "",
 		}
 		if res == nil {
-			return m
+			return m, nil
 		}
 
-		m["modified_files"] = res.ChangedFiles.Modified
-		m["added_files"] = res.ChangedFiles.Added
-		m["deleted_files"] = res.ChangedFiles.Deleted
-		m["renamed_files"] = res.ChangedFiles.Renamed
+		m["modified_files"] = changes.Modified
+		m["added_files"] = changes.Added
+		m["deleted_files"] = changes.Deleted
+		m["renamed_files"] = changes.Renamed
 		m["stdout"] = res.Stdout
 		m["stderr"] = res.Stderr
 
-		return m
+		return m, nil
+	}
+	// TODO: This pointer doesn't actually signify presence.
+	prev, err := newStepResult(&stepCtx.PreviousStep)
+	if err != nil {
+		return nil, err
+	}
+	current, err := newStepResult(&stepCtx.Step)
+	if err != nil {
+		return nil, err
+	}
+
+	overallChanges, err := git.ChangesInDiff([]byte(stepCtx.Step.Diff))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting changed files in step")
 	}
 
 	return template.FuncMap{
 		"previous_step": func() map[string]any {
-			return newStepResult(&stepCtx.PreviousStep)
+			return prev
 		},
 		"step": func() map[string]any {
-			return newStepResult(&stepCtx.Step)
+			return current
 		},
 		"steps": func() map[string]any {
-			res := newStepResult(&execution.AfterStepResult{ChangedFiles: stepCtx.Steps.Changes})
+			res := map[string]any{
+				"modified_files": overallChanges.Modified,
+				"added_files":    overallChanges.Added,
+				"deleted_files":  overallChanges.Deleted,
+				"renamed_files":  overallChanges.Renamed,
+			}
 			res["path"] = stepCtx.Steps.Path
 			return res
 		},
@@ -246,7 +277,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 				"description": stepCtx.BatchChange.Description,
 			}
 		},
-	}
+	}, nil
 }
 
 type StepsContext struct {

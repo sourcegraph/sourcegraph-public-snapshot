@@ -209,8 +209,8 @@ func IsValidationError(err error) bool {
 }
 
 // SkippedStepsForRepo calculates the steps required to run on the given repo.
-func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string) (skipped map[int32]struct{}, err error) {
-	skipped = map[int32]struct{}{}
+func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string) (skipped map[int]struct{}, err error) {
+	skipped = map[int]struct{}{}
 
 	for idx, step := range spec.Steps {
 		// If no if condition is set the step is always run.
@@ -238,7 +238,7 @@ func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string)
 		}
 
 		if static && !boolVal {
-			skipped[int32(idx)] = struct{}{}
+			skipped[idx] = struct{}{}
 		}
 	}
 

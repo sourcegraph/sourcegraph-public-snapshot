@@ -63,11 +63,15 @@ func IsStaticBool(input string, ctx *StepContext) (isStatic bool, boolVal bool, 
 // outside the `parse` package. In other words: we evaluate
 // all-parse.ActionNode-or-nothing.
 func parseAndPartialEval(input string, ctx *StepContext) (*template.Template, error) {
+	funcMap, err := ctx.ToFuncMap()
+	if err != nil {
+		return nil, err
+	}
 	t, err := template.
 		New("partial-eval").
 		Delims(startDelim, endDelim).
 		Funcs(builtins).
-		Funcs(ctx.ToFuncMap()).
+		Funcs(funcMap).
 		Parse(input)
 
 	if err != nil {
