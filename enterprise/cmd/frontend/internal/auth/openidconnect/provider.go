@@ -44,7 +44,7 @@ func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string) pro
 // ConfigID implements providers.Provider.
 func (p *Provider) ConfigID() providers.ConfigID {
 	return providers.ConfigID{
-		Type: providerType,
+		Type: p.config.Type,
 		ID:   providerConfigID(&p.config),
 	}
 }

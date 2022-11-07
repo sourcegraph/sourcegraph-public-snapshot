@@ -437,6 +437,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeintel_ranking_exports_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "configuration_policies_audit_logs_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -7076,7 +7085,7 @@
       "Triggers": [
         {
           "Name": "update_codeintel_path_ranks_updated_at",
-          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"
+          "Definition": "CREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()"
         }
       ]
     },
@@ -7098,6 +7107,19 @@
           "Comment": ""
         },
         {
+          "Name": "id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_ranking_exports_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "locked_at",
           "Index": 3,
           "TypeName": "timestamp with time zone",
@@ -7111,10 +7133,23 @@
           "Comment": ""
         },
         {
+          "Name": "object_prefix",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "upload_id",
           "Index": 1,
           "TypeName": "integer",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -7131,9 +7166,19 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_pkey ON codeintel_ranking_exports USING btree (upload_id, graph_key)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_pkey ON codeintel_ranking_exports USING btree (id)",
           "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (upload_id, graph_key)"
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_exports_upload_id_graph_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports USING btree (upload_id, graph_key)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -7142,7 +7187,7 @@
           "ConstraintType": "f",
           "RefTableName": "lsif_uploads",
           "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE"
+          "ConstraintDefinition": "FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL"
         }
       ],
       "Triggers": []
@@ -13608,6 +13653,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_reconcile_at",
+          "Index": 33,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "last_referenced_scan_at",
           "Index": 31,
           "TypeName": "timestamp with time zone",
@@ -13903,6 +13961,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_uploads_committed_at ON lsif_uploads USING btree (committed_at) WHERE state = 'completed'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_uploads_last_reconcile_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_reconcile_at, id) WHERE state = 'completed'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

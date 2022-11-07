@@ -26,7 +26,6 @@ import {
     DashboardUpdateInput,
     DashboardUpdateResult,
     GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
@@ -46,7 +45,6 @@ import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
-import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
 import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
@@ -226,8 +224,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
-        getSearchInsightContent(input).then(data => data.content)
 
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput

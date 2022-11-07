@@ -914,21 +914,24 @@ Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
-    update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
+    update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
 
 ```
 
 # Table "public.codeintel_ranking_exports"
 ```
-  Column   |           Type           | Collation | Nullable | Default 
------------+--------------------------+-----------+----------+---------
- upload_id | integer                  |           | not null | 
- graph_key | text                     |           | not null | 
- locked_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ upload_id     | integer                  |           |          | 
+ graph_key     | text                     |           | not null | 
+ locked_at     | timestamp with time zone |           | not null | now()
+ id            | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
+ object_prefix | text                     |           |          | 
 Indexes:
-    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (upload_id, graph_key)
+    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_exports_upload_id_graph_key" UNIQUE, btree (upload_id, graph_key)
 Foreign-key constraints:
-    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
 ```
 
@@ -2052,19 +2055,21 @@ Stores the retention policy of code intellience data for a repository.
  uncompressed_size       | bigint                   |           |          | 
  last_referenced_scan_at | timestamp with time zone |           |          | 
  last_traversal_scan_at  | timestamp with time zone |           |          | 
+ last_reconcile_at       | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
+    "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE

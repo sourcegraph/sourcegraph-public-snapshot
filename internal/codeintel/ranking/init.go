@@ -44,7 +44,7 @@ var (
 	resultsGraphKey               = env.Get("CODEINTEL_RANKING_RESULTS_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new import from the configured bucket.")
 	resultsObjectKeyPrefix        = env.Get("CODEINTEL_RANKING_RESULTS_OBJECT_KEY_PREFIX", "ranks/", "The object key prefix that holds results of the last PageRank batch job.")
 	resultsBucketCredentialsFile  = env.Get("CODEINTEL_RANKING_RESULTS_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
-	exportObjectKeyPrefix         = env.Get("CODEINTEL_RANKING_DEVELOPEMNT_EXPORT_OBJECT_KEY_PREFIX", "", "The object key prefix that should be used for development exports.")
+	exportObjectKeyPrefix         = env.Get("CODEINTEL_RANKING_DEVELOPMENT_EXPORT_OBJECT_KEY_PREFIX", "", "The object key prefix that should be used for development exports.")
 	developmentExportRepositories = env.Get("CODEINTEL_RANKING_DEVELOPMENT_EXPORT_REPOSITORIES", "github.com/sourcegraph/sourcegraph,github.com/sourcegraph/lsif-go", "Comma-separated list of repositories whose ranks should be exported for development.")
 
 	// Backdoor tuning for dotcom

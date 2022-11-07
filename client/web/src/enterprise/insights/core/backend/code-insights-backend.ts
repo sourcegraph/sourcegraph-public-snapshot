@@ -12,7 +12,6 @@ import {
     FindInsightByNameInput,
     GetBuiltInsightInput,
     GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
@@ -78,11 +77,6 @@ export interface CodeInsightsBackend {
      * network utils to Sourcegraph search API.
      */
     getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
-
-    /**
-     * Returns content for the search based insight live preview chart.
-     */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns content for the code stats insight live preview chart.

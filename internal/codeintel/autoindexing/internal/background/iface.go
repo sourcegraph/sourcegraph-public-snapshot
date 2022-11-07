@@ -7,7 +7,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
@@ -53,9 +52,13 @@ type AutoIndexingService interface {
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) error
 
-	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []autoindexingshared.SourcedCommits, err error)
-	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
-	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
+	ProcessStaleSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+		shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	) (indexesDeleted int, _ error)
 
 	ProcessRepoRevs(ctx context.Context, batchSize int) (err error)
 }

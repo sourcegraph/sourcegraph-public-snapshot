@@ -114,6 +114,16 @@ export class Notebook {
         }
     }
 
+    public getBlockIndex(id: string): number {
+        const blocks = this.getBlocks()
+        for (let idx = 0; idx < blocks.length; idx++) {
+            if (blocks[idx].id === id) {
+                return idx
+            }
+        }
+        return -1
+    }
+
     public getBlocks(): Block[] {
         return this.blockOrder.map(blockId => {
             const block = this.blocks.get(blockId)
