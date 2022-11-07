@@ -217,8 +217,12 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
 				Key:   fmt.Sprintf("step.%d.pre", i),
 				Image: helperImage,
-				Dir:   ".",
+				// Inject secret values. TODO: Only the ones that are requested.
+				Env: []string{},
+				Dir: ".",
 				Commands: []string{
+					// TODO: This doesn't handle skipped steps right, it assumes
+					// there are outputs from i-1 present at all times.
 					shellquote.Join("batcheshelper", "pre", strconv.Itoa(i)),
 				},
 			})
@@ -227,8 +231,6 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Key:   fmt.Sprintf("step.%d.run", i),
 				Image: step.Container,
 				Dir:   runDir,
-				// Inject secret values. TODO: Only the ones that are requested.
-				Env: []string{},
 				// Invoke the script file but also write stdout and stderr to separate files, which will then be
 				// consumed by the post step to build the AfterStepResult.
 				Commands: []string{
