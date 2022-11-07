@@ -28,6 +28,7 @@ import (
 )
 
 const defaultInterruptSeconds = 60
+const inProgressPollingInterval = time.Second * 5
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	db := config.InsightsDB
@@ -64,7 +65,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	worker := dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
 		Name:              name,
 		NumHandlers:       1,
-		Interval:          5 * time.Second,
+		Interval:          inProgressPollingInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
 	})
@@ -219,7 +220,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 }
 
 func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error {
-	return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(time.Second*10))
+	return h.workerStore.Requeue(ctx, job.ID, h.clock.Now().Add(inProgressPollingInterval))
 }
 
 func getInterruptAfter() time.Duration {
