@@ -23,6 +23,11 @@ export const allStatusMessages: StatusMessagesResult['statusMessages'] = [
         __typename: 'CloningProgress',
         message: '477260 repositories enqueued for cloning. 11 repositories currently cloning...',
     },
+    {
+        __typename: 'IndexingProgress',
+        indexed: 15,
+        notIndexed: 23,
+    },
 ]
 
 export const newStatusMessageMock = (
