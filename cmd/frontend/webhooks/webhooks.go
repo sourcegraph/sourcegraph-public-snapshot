@@ -131,6 +131,9 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
+	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
+		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
+	}
 	for _, handler := range h.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
@@ -139,4 +142,13 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
+}
+
+type eventTypeNotFoundError struct {
+	eventType    string
+	codeHostKind string
+}
+
+func (e eventTypeNotFoundError) Error() string {
+	return fmt.Sprintf("event type %s not supported for code host kind %s", e.eventType, e.codeHostKind)
 }
