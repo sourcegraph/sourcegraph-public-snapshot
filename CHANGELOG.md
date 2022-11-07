@@ -13,8 +13,6 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
-- Mounted file are now uploaded to the Sourcegraph instance when running `src batch preview` and `src batch apply`. [#861](https://github.com/sourcegraph/src-cli/pull/861)
-
 ### Changed
 
 ### Fixed
@@ -22,6 +20,10 @@ All notable changes to `src-cli` are documented in this file.
 ### Removed
 
 ## 4.1.1
+
+### Added
+
+- Mounted files are now uploaded to the Sourcegraph instance when running `src batch preview` and `src batch apply`. [#861](https://github.com/sourcegraph/src-cli/pull/861)
 
 ### Changed
 
