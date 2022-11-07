@@ -1,4 +1,4 @@
-Please note: this docs page was last updated 2022-11-07, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve. 
+Please note: this page was last updated 2022-11-07, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve. 
 
 
 # GitHub code search vs. Sourcegraph
