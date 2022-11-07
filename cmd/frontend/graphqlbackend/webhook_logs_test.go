@@ -301,56 +301,22 @@ func TestListWebhookLogs(t *testing.T) {
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookLogsStore := database.NewMockWebhookLogStore()
 	webhookLogs := []*types.WebhookLog{
-		{
-			ID:         1,
-			WebhookID:  int32Ptr(1),
-			StatusCode: 200,
-		},
-		{
-			ID:         2,
-			WebhookID:  int32Ptr(1),
-			StatusCode: 500,
-		},
-		{
-			ID:         3,
-			WebhookID:  int32Ptr(1),
-			StatusCode: 200,
-		},
-		{
-			ID:         4,
-			WebhookID:  int32Ptr(2),
-			StatusCode: 200,
-		},
-		{
-			ID:         5,
-			WebhookID:  int32Ptr(2),
-			StatusCode: 200,
-		},
-		{
-			ID:         6,
-			WebhookID:  int32Ptr(2),
-			StatusCode: 200,
-		},
-		{
-			ID:         7,
-			WebhookID:  int32Ptr(3),
-			StatusCode: 500,
-		},
-		{
-			ID:         8,
-			WebhookID:  int32Ptr(3),
-			StatusCode: 500,
-		},
+		{ID: 1, WebhookID: int32Ptr(1), StatusCode: 200},
+		{ID: 2, WebhookID: int32Ptr(1), StatusCode: 500},
+		{ID: 3, WebhookID: int32Ptr(1), StatusCode: 200},
+		{ID: 4, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 5, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 6, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 7, WebhookID: int32Ptr(3), StatusCode: 500},
+		{ID: 8, WebhookID: int32Ptr(3), StatusCode: 500},
 	}
 	webhookLogsStore.ListFunc.SetDefaultHook(func(_ context.Context, options database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
-		var filteredWebhookLogs []*types.WebhookLog
-		for _, wl := range webhookLogs {
-			filteredWebhookLogs = append(filteredWebhookLogs, wl)
-		}
+		var logs []*types.WebhookLog
+		logs = append(logs, webhookLogs...)
 
 		filter := func(items []*types.WebhookLog, predicate func(log *types.WebhookLog) bool) []*types.WebhookLog {
 			var filtered []*types.WebhookLog
-			for _, wl := range filteredWebhookLogs {
+			for _, wl := range items {
 				if predicate(wl) {
 					filtered = append(filtered, wl)
 				}
@@ -359,8 +325,8 @@ func TestListWebhookLogs(t *testing.T) {
 		}
 
 		if options.WebhookID != nil {
-			filteredWebhookLogs = filter(
-				filteredWebhookLogs,
+			logs = filter(
+				logs,
 				func(wl *types.WebhookLog) bool {
 					return *wl.WebhookID == *options.WebhookID
 				},
@@ -368,15 +334,15 @@ func TestListWebhookLogs(t *testing.T) {
 		}
 
 		if options.OnlyErrors {
-			filteredWebhookLogs = filter(
-				filteredWebhookLogs,
+			logs = filter(
+				logs,
 				func(wl *types.WebhookLog) bool {
 					return wl.StatusCode < 100 || wl.StatusCode > 399
 				},
 			)
 		}
 
-		return filteredWebhookLogs, int64(len(filteredWebhookLogs)), nil
+		return logs, int64(len(logs)), nil
 	})
 
 	webhookLogsStore.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.WebhookLogListOpts) (int64, error) {
