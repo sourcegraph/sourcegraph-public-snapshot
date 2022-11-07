@@ -21,15 +21,16 @@ export const useOpenCurrentUrlInEditor = (): ((
             sourcegraphURL: string,
             editorIndex = 0
         ) => {
-            const { repoName, filePath, range } = parseBrowserRepoURL(window.location.href)
+            const { repoName, filePath, position, range } = parseBrowserRepoURL(window.location.href)
+            const start = position || range?.start
             const url = buildEditorUrl(
                 buildRepoBaseNameAndPath(repoName, externalServiceType, filePath),
-                range,
+                start,
                 editorSettings,
                 sourcegraphURL,
                 editorIndex
             )
             window.open(url.toString(), '_blank')
         },
-        [location.pathname]
+        []
     )
