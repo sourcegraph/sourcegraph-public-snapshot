@@ -41,7 +41,7 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
  * Component sends FE network request to get and process information but does that in
  * main work thread instead of using Extension API.
  */
-export const  BuiltInInsight = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
+export const BuiltInInsight = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
     const { insight, resizing, telemetryService, children, ...attributes } = props
 
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
@@ -69,7 +69,7 @@ export const  BuiltInInsight = forwardRef<HTMLElement, BuiltInInsightProps>((pro
             ref={cardRef}
             data-testid={`insight-card.${insight.id}`}
             aria-label={`${insight.title} insight`}
-            role='listitem'
+            role="listitem"
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >

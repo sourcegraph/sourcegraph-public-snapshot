@@ -9,7 +9,7 @@ import { Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
-import { ViewGridItem } from './view-grid/ViewGrid';
+import { ViewGridItem } from './view-grid/ViewGrid'
 
 export interface SmartInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: Insight
@@ -41,22 +41,15 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
 
     return (
         <ViewGridItem id={insight.id} ref={mergedReference} {...attributes}>
-            { isBackendInsight(insight)
-                ? <BackendInsightView
-                    insight={insight}
-                    resizing={resizing}
-                    telemetryService={telemetryService}
-                >
+            {isBackendInsight(insight) ? (
+                <BackendInsightView insight={insight} resizing={resizing} telemetryService={telemetryService}>
                     {children}
                 </BackendInsightView>
-                : <BuiltInInsight
-                    insight={insight}
-                    resizing={resizing}
-                    telemetryService={telemetryService}
-                >
+            ) : (
+                <BuiltInInsight insight={insight} resizing={resizing} telemetryService={telemetryService}>
                     {children}
                 </BuiltInInsight>
-            }
+            )}
         </ViewGridItem>
     )
 })

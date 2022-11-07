@@ -2,11 +2,15 @@ import React, {
     createContext,
     FC,
     forwardRef,
-    PropsWithChildren, ReactElement,
-    useCallback, useContext, useEffect,
+    PropsWithChildren,
+    ReactElement,
+    useCallback,
+    useContext,
+    useEffect,
     useLayoutEffect,
     useMemo,
-    useRef, useState,
+    useRef,
+    useState,
 } from 'react'
 
 import classNames from 'classnames'
@@ -17,13 +21,13 @@ import {
     Layouts as ReactGridLayouts,
     Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
-import { Key } from 'ts-key-enum';
-import { useMergeRefs } from 'use-callback-ref';
+import { Key } from 'ts-key-enum'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { isFirefox } from '@sourcegraph/common'
 import { useMeasure } from '@sourcegraph/wildcard'
 
-import { Direction, findNextLayout } from './focus-management';
+import { Direction, findNextLayout } from './focus-management'
 
 import styles from './ViewGrid.module.scss'
 
@@ -85,7 +89,7 @@ interface GridViewContextInfo {
 
 const GridViewContext = createContext<GridViewContextInfo>({
     gridElements: new Map(),
-    activeLayout: []
+    activeLayout: [],
 })
 
 export type ViewGridProps =
@@ -133,10 +137,11 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
     const activeBreakpoint = useMemo(() => findBreakpointByWidth(width), [width])
 
-    const context = useMemo(
-        () => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }),
-        [gridElements, gridLayouts, activeBreakpoint]
-    )
+    const context = useMemo(() => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }), [
+        gridElements,
+        gridLayouts,
+        activeBreakpoint,
+    ])
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),
@@ -224,27 +229,30 @@ export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, r
         }
     }, [id, mergedRef, gridElements])
 
-    const handleKeydown = useCallback((event: KeyboardEvent): void => {
-        const direction = KEY_NAVIGATION_DIRECTIONS[event.key as Key]
+    const handleKeydown = useCallback(
+        (event: KeyboardEvent): void => {
+            const direction = KEY_NAVIGATION_DIRECTIONS[event.key as Key]
 
-        // No support key, just skip the navigation action and do nothing
-        if (!direction) {
-            return
-        }
+            // No support key, just skip the navigation action and do nothing
+            if (!direction) {
+                return
+            }
 
-        const nextLayout = findNextLayout(direction, id, activeLayout)
-        const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
+            const nextLayout = findNextLayout(direction, id, activeLayout)
+            const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
 
-        if (nextLayoutElement) {
-            nextLayoutElement.focus()
-        }
-    }, [activeLayout, gridElements, id])
+            if (nextLayoutElement) {
+                nextLayoutElement.focus()
+            }
+        },
+        [activeLayout, gridElements, id]
+    )
 
     if (React.isValidElement(children)) {
         return React.cloneElement(children as ReactElement, {
             ...attributes,
             ref: mergedRef,
-            onKeyDown: handleKeydown
+            onKeyDown: handleKeydown,
         })
     }
 

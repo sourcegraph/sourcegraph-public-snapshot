@@ -87,8 +87,8 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                         <MenuList
                             position={Position.bottomStart}
                             data-testid={`context-menu.${insightID}`}
-                            onKeyDown={event => event.stopPropagation()}>
-
+                            onKeyDown={event => event.stopPropagation()}
+                        >
                             <MenuLink
                                 as={Link}
                                 data-testid="InsightContextMenuEditLink"
