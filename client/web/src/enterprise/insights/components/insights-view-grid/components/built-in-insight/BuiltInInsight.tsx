@@ -68,7 +68,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             role="listitem"
             ref={cardRef}
             data-testid={`insight-card.${insight.id}`}
-            aria-label="Insight card"
+            aria-label={`${insight.title} insight`}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
             {...attributes}
