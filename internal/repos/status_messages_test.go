@@ -25,42 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func newMockFeatureFlagStore(user, anonymous, global map[string]bool) *mockFeatureFlagStore {
-	if user == nil {
-		user = make(map[string]bool)
-	}
-	if anonymous == nil {
-		anonymous = make(map[string]bool)
-	}
-	if global == nil {
-		global = make(map[string]bool)
-	}
-
-	return &mockFeatureFlagStore{
-		userFlags:          user,
-		anonymousUserFlags: anonymous,
-		globalFlags:        global,
-	}
-}
-
-type mockFeatureFlagStore struct {
-	userFlags          map[string]bool
-	anonymousUserFlags map[string]bool
-	globalFlags        map[string]bool
-}
-
-func (m *mockFeatureFlagStore) GetUserFlags(context.Context, int32) (map[string]bool, error) {
-	return m.userFlags, nil
-}
-
-func (m *mockFeatureFlagStore) GetAnonymousUserFlags(context.Context, string) (map[string]bool, error) {
-	return m.anonymousUserFlags, nil
-}
-
-func (m *mockFeatureFlagStore) GetGlobalFeatureFlags(context.Context) (map[string]bool, error) {
-	return m.globalFlags, nil
-}
-
 func TestStatusMessages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -68,7 +32,7 @@ func TestStatusMessages(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	memoryStore := newMockFeatureFlagStore(nil, nil, map[string]bool{"indexing-status-message": true})
+	memoryStore := featureflag.NewMemoryStore(nil, nil, map[string]bool{"indexing-status-message": true})
 	ctx = featureflag.WithFlags(ctx, memoryStore)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
