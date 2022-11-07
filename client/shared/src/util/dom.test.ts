@@ -38,7 +38,6 @@ describe('createSVGIcon', () => {
     test('create SVG icon', () => {
         expect(createSVGIcon('M 10 10')).toMatchInlineSnapshot(`
             <svg
-              aria-hidden="true"
               viewBox="0 0 24 24"
             >
               <path
