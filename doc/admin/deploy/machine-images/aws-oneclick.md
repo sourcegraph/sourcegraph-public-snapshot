@@ -94,11 +94,11 @@ Click [here](https://github.com/sourcegraph/deploy#amazon-ec2-amis) to see the c
 
 ### Networking
 
-Follow the [manual ami networking](aws-ami#networking) instructions to configure a domain and SSL.
+Follow the [manual ami networking](aws-ami.md#networking) instructions to configure a domain and SSL.
 
 ## Upgrade
 
-Follow the [manual ami](aws-ami#upgrade) instructions to upgrade your instance.
+Follow the [manual ami](aws-ami.md#upgrade) instructions to upgrade your instance.
 
 ## Manual deploy on AWS EC2
 
