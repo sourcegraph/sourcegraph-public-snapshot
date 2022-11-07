@@ -65,7 +65,7 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     return (
         <InsightCard
-            as="li"
+            role="listitem"
             ref={cardRef}
             data-testid={`insight-card.${insight.id}`}
             aria-label="Insight card"

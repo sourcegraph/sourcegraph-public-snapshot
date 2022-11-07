@@ -162,7 +162,7 @@ export const BackendInsightView = forwardRef<HTMLLIElement, BackendInsightProps>
 
     return (
         <InsightCard
-            as="li"
+            role="listitem"
             ref={cardElementRef}
             data-testid={`insight-card.${insight.id}`}
             aria-label="Insight card"
