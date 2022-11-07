@@ -2,7 +2,9 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -333,8 +335,11 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		createdFork := parent.Project.Key + "-" + parent.Slug
+		createdFork := strings.TrimPrefix(parent.Project.Key+"-"+parent.Slug, "~")
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork})
+
+		fmt.Println(createdFork)
+		fmt.Println(parent.Project.Key)
 
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
@@ -392,6 +397,7 @@ var (
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
 	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
+	fmt.Println(parent.Project.Key)
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
 			return nil, nil

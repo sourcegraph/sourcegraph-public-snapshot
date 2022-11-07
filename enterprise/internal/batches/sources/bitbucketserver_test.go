@@ -759,7 +759,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 	// 	// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
 	// 	// access or update this test. If an update is run by someone who's not aharvey, this
 	// 	// needs to be a repo that isn't a fork.
-	// 	target := newBitbucketServerRepo(urn, "BAT","vcr-fork-test-repo", 0)
+	// 	target := newBitbucketServerRepo(urn, "~milton", "vcr-fork-test-repo", 0)
 
 	// 	ctx := context.Background()
 	// 	bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
