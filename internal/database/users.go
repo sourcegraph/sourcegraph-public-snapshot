@@ -806,10 +806,10 @@ type UsersListOptions struct {
 	Tag string // only include users with this tag
 
 	// InactiveSince filters out users that have had an eventlog entry with a
-	// `timestamp` greater-than-or-equal to the given timestamp.
+	// `timestamp` greater-than-or-equal to the given timestamp, excluding users who have never been active.
 	InactiveSince time.Time
-	// NeverActive filters out users that have never had an eventlog entry if true.
-	NeverActive bool
+	// IncludeNeverActive includes users that have never had an eventlog entry if true.
+	IncludeNeverActive bool
 
 	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
 
@@ -863,20 +863,31 @@ SELECT id, created_at, deleted_at
 FROM users
 ORDER BY id ASC
 `
-const listUsersInactiveCond = `
+const listUsersInactiveWithoutNeverActiveCond = `
+(
+	(
+		EXISTS (SELECT 1 FROM event_logs WHERE event_logs.user_id = u.id)
+	)
+AND
+	(
+		NOT EXISTS (
+			SELECT 1 FROM event_logs
+			WHERE
+				event_logs.user_id = u.id
+			AND
+				timestamp >= %s
+		)
+	)
+)
+`
+
+const listUsersInactiveWithNeverActiveCond = `
 (NOT EXISTS (
 	SELECT 1 FROM event_logs
 	WHERE
 		event_logs.user_id = u.id
 	AND
 		timestamp >= %s
-))
-`
-
-const listUsersNeverActiveCond = `
-(NOT EXISTS (
-	SELECT 1 FROM event_logs
-	WHERE event_logs.user_id = u.id
 ))
 `
 
@@ -904,11 +915,11 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 
 	if !opt.InactiveSince.IsZero() {
-		conds = append(conds, sqlf.Sprintf(listUsersInactiveCond, opt.InactiveSince))
-	}
-
-	if opt.NeverActive {
-		conds = append(conds, sqlf.Sprintf(listUsersNeverActiveCond))
+		if opt.IncludeNeverActive {
+			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithNeverActiveCond))
+		} else {
+			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithoutNeverActiveCond))
+		}
 	}
 
 	// NOTE: This is a hack which should be replaced when we have proper user types.

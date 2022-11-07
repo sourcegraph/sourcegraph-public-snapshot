@@ -1356,7 +1356,7 @@ type Query {
         """
         Returns users that have not been active at any point in time. 
         """
-        neverActive: Bool
+        includeNeverActive: Bool
     ): UserConnection!
     """
     Looks up an organization by name.

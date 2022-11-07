@@ -164,7 +164,7 @@ func TestUsers_InactiveSince(t *testing.T) {
 	})
 }
 
-func TestUsers_NeverActive(t *testing.T) {
+func TestUsers_IncludeNeverActive(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -184,8 +184,10 @@ func TestUsers_NeverActive(t *testing.T) {
 		user        database.NewUser
 		lastEventAt time.Time
 	}{
-		{user: database.NewUser{Username: "user-1", Password: "user-1"}, lastEventAt: daysAgo(1)},
-		{user: database.NewUser{Username: "user-2", Password: "user-2"}},
+		{user: database.NewUser{Username: "user-1", Password: "user-1"}, lastEventAt: daysAgo(5)},
+		{user: database.NewUser{Username: "user-2", Password: "user-2"}, lastEventAt: daysAgo(3)},
+		{user: database.NewUser{Username: "user-3", Password: "user-3"}, lastEventAt: daysAgo(1)},
+		{user: database.NewUser{Username: "user-4", Password: "user-4"}},
 	}
 
 	for _, newUser := range users {
@@ -210,8 +212,8 @@ func TestUsers_NeverActive(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 
 	query := `
-		query InactiveUsers($neverActive: Bool) {
-			users(neverActive: $neverActive) {
+		query InactiveUsers($since: DateTime, $includeNeverActive: Bool) {
+			users(inactiveSince: $since, neverActive: $includeNeverActive) {
 				nodes { username }
 				totalCount
 			}
@@ -220,19 +222,23 @@ func TestUsers_NeverActive(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Context:   ctx,
-			Schema:    schema,
-			Query:     query,
-			Variables: map[string]any{"neverActive": true},
+			Context: ctx,
+			Schema:  schema,
+			Query:   query,
+			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
+			Variables: map[string]any{"includeNeverActive": true},
+			// TODO: Should return all users, because `inactiveSince` is not set
 			ExpectedResult: `
 			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,
 		},
 		{
-			Context:   ctx,
-			Schema:    schema,
-			Query:     query,
-			Variables: map[string]any{"neverActive": false},
+			Context: ctx,
+			Schema:  schema,
+			Query:   query,
+			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
+			Variables: map[string]any{"includeNeverActive": false},
+			// TODO: Should return all users, because `inactiveSince` is not set
 			ExpectedResult: `
 			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,
@@ -242,6 +248,27 @@ func TestUsers_NeverActive(t *testing.T) {
 			Schema:    schema,
 			Query:     query,
 			Variables: map[string]any{},
+			// TODO: Should return all users
+			ExpectedResult: `
+			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": true},
+			// TODO: fix expectations
+			ExpectedResult: `
+			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			`,
+		},
+		{
+			Context:   ctx,
+			Schema:    schema,
+			Query:     query,
+			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": false},
+			// TODO: fix expectations - should not include never active users
 			ExpectedResult: `
 			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
 			`,

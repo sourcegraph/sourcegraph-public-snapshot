@@ -17,11 +17,11 @@ import (
 
 type usersArgs struct {
 	graphqlutil.ConnectionArgs
-	Query         *string
-	Tag           *string
-	ActivePeriod  *string
-	InactiveSince *gqlutil.DateTime
-	NeverActive   *bool
+	Query              *string
+	Tag                *string
+	ActivePeriod       *string
+	InactiveSince      *gqlutil.DateTime
+	IncludeNeverActive *bool
 }
 
 func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
@@ -35,8 +35,8 @@ func (r *schemaResolver) Users(args *usersArgs) *userConnectionResolver {
 	if args.InactiveSince != nil {
 		opt.InactiveSince = args.InactiveSince.Time
 	}
-	if args.NeverActive != nil {
-		opt.NeverActive = *args.NeverActive
+	if args.IncludeNeverActive != nil {
+		opt.IncludeNeverActive = *args.IncludeNeverActive
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}
