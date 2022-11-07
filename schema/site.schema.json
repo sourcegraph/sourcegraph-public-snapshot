@@ -556,6 +556,11 @@
           "description": "Enables hiding Sourcegraph operator auth provider on login page.",
           "type": "boolean",
           "default": false
+        },
+        "insightsBackfillerV2": {
+          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
