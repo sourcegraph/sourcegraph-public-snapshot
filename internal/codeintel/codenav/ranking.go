@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,11 +20,7 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
 	if s.rankingBucket == nil {
-		s.logger.Warn("No ranking bucket is configured")
 		return nil
 	}
 
@@ -62,11 +57,7 @@ func (s *Service) SerializeRankingGraph(
 func (s *Service) VacuumRankingGraph(
 	ctx context.Context,
 ) error {
-	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
 	if s.rankingBucket == nil {
-		s.logger.Warn("No ranking bucket is configured")
 		return nil
 	}
 
