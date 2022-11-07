@@ -6,6 +6,7 @@ import (
 	"time"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/stretchr/testify/assert"
 
@@ -19,8 +20,9 @@ import (
 func TestWebhookLogsArgs(t *testing.T) {
 	// Create two times for easier reuse in test cases.
 	var (
-		now   = time.Date(2021, 11, 1, 18, 25, 10, 0, time.UTC)
-		later = now.Add(1 * time.Hour)
+		now       = time.Date(2021, 11, 1, 18, 25, 10, 0, time.UTC)
+		later     = now.Add(1 * time.Hour)
+		webhookID = marshalWebhookID(123)
 	)
 
 	t.Run("success", func(t *testing.T) {
@@ -50,7 +52,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 			"WebhookID is -1": {
 				id: webhookLogsUnmatchedExternalService,
 				input: webhookLogsArgs{
-					WebhookID: int32Ptr(-1),
+					WebhookID: gqlIDPtr(marshalWebhookID(-1)),
 				},
 				want: database.WebhookLogListOpts{
 					ExternalServiceID: int64Ptr(0),
@@ -67,7 +69,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 					OnlyErrors: boolPtr(true),
 					Since:      timePtr(now),
 					Until:      timePtr(later),
-					WebhookID:  int32Ptr(123),
+					WebhookID:  gqlIDPtr(webhookID),
 				},
 				want: database.WebhookLogListOpts{
 					Limit:             25,
@@ -415,7 +417,7 @@ func TestListWebhookLogs(t *testing.T) {
 			Label:   "specific webhook ID",
 			Context: ctx,
 			Schema:  schema,
-			Query: `query WebhookLogs($webhookID: Int!) {
+			Query: `query WebhookLogs($webhookID: ID!) {
 						webhookLogs(webhookID: $webhookID) {
 							nodes { id }
 							totalCount
@@ -423,7 +425,7 @@ func TestListWebhookLogs(t *testing.T) {
 					}
 			`,
 			Variables: map[string]any{
-				"webhookID": 1,
+				"webhookID": "V2ViaG9vazox",
 			},
 			ExpectedResult: `{"webhookLogs":
 				{
@@ -439,7 +441,7 @@ func TestListWebhookLogs(t *testing.T) {
 			Label:   "only errors for a specific webhook ID",
 			Context: ctx,
 			Schema:  schema,
-			Query: `query WebhookLogs($webhookID: Int!, $onlyErrors: Boolean!) {
+			Query: `query WebhookLogs($webhookID: ID!, $onlyErrors: Boolean!) {
 						webhookLogs(webhookID: $webhookID, onlyErrors: $onlyErrors) {
 							nodes { id }
 							totalCount
@@ -447,7 +449,7 @@ func TestListWebhookLogs(t *testing.T) {
 					}
 			`,
 			Variables: map[string]any{
-				"webhookID":  1,
+				"webhookID":  "V2ViaG9vazox",
 				"onlyErrors": true,
 			},
 			ExpectedResult: `{"webhookLogs":
@@ -461,8 +463,9 @@ func TestListWebhookLogs(t *testing.T) {
 	})
 }
 
-func boolPtr(v bool) *bool           { return &v }
-func int32Ptr(v int32) *int32        { return &v }
-func int64Ptr(v int64) *int64        { return &v }
-func stringPtr(v string) *string     { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
+func boolPtr(v bool) *bool              { return &v }
+func int32Ptr(v int32) *int32           { return &v }
+func int64Ptr(v int64) *int64           { return &v }
+func stringPtr(v string) *string        { return &v }
+func timePtr(v time.Time) *time.Time    { return &v }
+func gqlIDPtr(v graphql.ID) *graphql.ID { return &v }

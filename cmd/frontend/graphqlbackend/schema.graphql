@@ -1585,7 +1585,7 @@ type Query {
         """
         Only include webhook logs of given webhook ID.
         """
-        webhookID: Int
+        webhookID: ID
     ): WebhookLogConnection!
 
     """
