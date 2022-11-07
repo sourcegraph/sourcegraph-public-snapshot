@@ -3,11 +3,12 @@ import { useEffect } from 'react'
 import create from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+
+import { HighlightLineRange } from '../graphql-operations'
 
 export type NotepadEntryID = number
 export interface SearchEntry {
@@ -32,7 +33,7 @@ export interface FileEntry {
     path: string
     repo: string
     revision: string
-    lineRange: IHighlightLineRange | null
+    lineRange: HighlightLineRange | null
     annotation?: string
 }
 

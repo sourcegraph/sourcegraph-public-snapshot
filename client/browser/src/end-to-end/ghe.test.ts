@@ -35,7 +35,8 @@ async function gheLogin({ page }: Driver): Promise<void> {
     }
 }
 
-describe('Sourcegraph browser extension on GitHub Enterprise', () => {
+describe.skip('Sourcegraph browser extension on GitHub Enterprise', () => {
+
     let driver: Driver
 
     before(async function () {
@@ -44,7 +45,7 @@ describe('Sourcegraph browser extension on GitHub Enterprise', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await gheLogin(driver)
             await driver.setExtensionSourcegraphUrl()

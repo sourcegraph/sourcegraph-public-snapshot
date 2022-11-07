@@ -4,82 +4,43 @@ package main
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/sourcegraph/log"
+	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegraph/sourcegraph/monitoring/command"
 )
 
-func optsFromEnv() monitoring.GenerateOptions {
-	return monitoring.GenerateOptions{
-		DisablePrune: getEnvBool("NO_PRUNE", false),
-		Reload:       getEnvBool("RELOAD", false),
-
-		GrafanaDir:    getEnvStr("GRAFANA_DIR", "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"),
-		PrometheusDir: getEnvStr("PROMETHEUS_DIR", "../docker-images/prometheus/config/"),
-		DocsDir:       getEnvStr("DOCS_DIR", "../doc/admin/observability/"),
-	}
-}
-
 func main() {
-	// Use standard Sourcegraph logging options and flags.
-	logging.Init()
+	// Configure logger
+	if _, set := os.LookupEnv(log.EnvDevelopment); !set {
+		os.Setenv(log.EnvDevelopment, "true")
+	}
+	if _, set := os.LookupEnv(log.EnvLogFormat); !set {
+		os.Setenv(log.EnvLogFormat, "console")
+	}
+
 	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
+		Name:       "monitoring-generator",
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	})
 	defer liblog.Sync()
+	logger := log.Scoped("monitoring", "main Sourcegraph monitoring entrypoint")
 
-	logger := log.Scoped("monitoring-generator", "generates monitoring dashboards")
-
-	// Runs the monitoring generator. Ensure that any dashboards created or removed are
-	// updated in the arguments here as required.
-	if err := monitoring.Generate(logger, optsFromEnv(),
-		definitions.Frontend(),
-		definitions.GitServer(),
-		definitions.GitHubProxy(),
-		definitions.Postgres(),
-		definitions.PreciseCodeIntelWorker(),
-		definitions.Redis(),
-		definitions.Worker(),
-		definitions.RepoUpdater(),
-		definitions.Searcher(),
-		definitions.Symbols(),
-		definitions.SyntectServer(),
-		definitions.Zoekt(),
-		definitions.Prometheus(),
-		definitions.Executor(),
-		definitions.Containers(),
-		definitions.CodeIntelAutoIndexing(),
-		definitions.CodeIntelUploads(),
-		definitions.CodeIntelPolicies(),
-		definitions.Telemetry(),
-	); err != nil {
-		logger.Fatal(err.Error())
+	// Create an app that only runs the generate command
+	app := &cli.App{
+		Name: "monitoring-generator",
+		Commands: []*cli.Command{
+			command.Generate("", "../"),
+		},
+		DefaultCommand: "generate",
 	}
-}
-
-func getEnvStr(key, defaultValue string) string {
-	if v, ok := os.LookupEnv(key); ok {
-		return v
+	if err := app.Run([]string{""}); err != nil {
+		// Render in plain text for human readability
+		println(err.Error())
+		logger.Fatal("error encountered")
 	}
-	return defaultValue
-}
-
-func getEnvBool(key string, defaultValue bool) bool {
-	if v, ok := os.LookupEnv(key); ok {
-		b, err := strconv.ParseBool(v)
-		if err != nil {
-			panic(err)
-		}
-		return b
-	}
-	return defaultValue
 }

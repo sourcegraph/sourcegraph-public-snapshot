@@ -30,7 +30,7 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 	}
 
 	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
-	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, matches)
+	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(srs.sr.db), matches)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 	return srs.results, srs.err
 }
 
-func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db database.DB, matches []result.Match) ([]inventory.Lang, error) {
+func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db database.DB, gsClient gitserver.Client, matches []result.Match) ([]inventory.Lang, error) {
 	// Batch our operations by repo-commit.
 	type repoCommit struct {
 		repo     api.RepoID
@@ -134,12 +134,12 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 				defer run.Release()
 
 				repoName := repoMatch.RepoName()
-				_, oid, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repoName.Name, false)
+				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName.Name, false)
 				if err != nil {
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(logger, db).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
 				if err != nil {
 					run.Error(err)
 					return
@@ -160,7 +160,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 		goroutine.Go(func() {
 			defer run.Release()
 
-			invCtx, err := backend.InventoryContext(logger, repos[key.repo].Name, db, key.commitID, true)
+			invCtx, err := backend.InventoryContext(logger, repos[key.repo].Name, gsClient, key.commitID, true)
 			if err != nil {
 				run.Error(err)
 				return

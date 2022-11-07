@@ -129,7 +129,7 @@ func TestAlertsStatusReporterHistory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mock.QueryRangeFunc.SetDefaultHook(func(ctx context.Context, query string, r prometheus.Range) (model.Value, prometheus.Warnings, error) {
+			mock.QueryRangeFunc.SetDefaultHook(func(ctx context.Context, query string, r prometheus.Range, o ...prometheus.Option) (model.Value, prometheus.Warnings, error) {
 				return tt.fields.queryValue, tt.fields.queryWarnings, tt.fields.queryErr
 			})
 			r := &AlertsStatusReporter{prometheus: mock}

@@ -58,7 +58,7 @@ interface InjectProps
 interface RenderCommandPaletteProps
     extends TelemetryProps,
         InjectProps,
-        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> {
+        Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName'> {
     notificationClassNames: UnbrandedNotificationItemStyleProps['notificationItemClassNames']
 }
 
@@ -73,7 +73,6 @@ export const renderCommandPalette = ({
             <CommandListPopoverButton
                 {...props}
                 popoverClassName={classNames('command-list-popover', props.popoverClassName)}
-                popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
                 location={history.location}

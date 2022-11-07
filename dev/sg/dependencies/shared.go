@@ -116,8 +116,9 @@ NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
 }
 
 // categoryProgrammingLanguagesAndTools sets up programming languages and tooling using
-// asdf, which is uniform across platforms.
-func categoryProgrammingLanguagesAndTools() category {
+// asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
+// when they depend on the plaftorm we're installing them on.
+func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
 	return category{
 		Name:      "Programming languages & tooling",
 		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
@@ -285,8 +286,10 @@ func dependencyGcloud() *dependency {
 		Check: checkAction(
 			check.Combine(
 				check.InPath("gcloud"),
+				check.FileExists("~/.config/gcloud/application_default_credentials.json"),
 				// User should have logged in with a sourcegraph.com account
-				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com")),
+				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com"),
+			),
 		),
 		Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 			if cio.Input == nil {
@@ -340,11 +343,11 @@ func dependencyGcloud() *dependency {
 				}
 			}
 
-			if err := run.Cmd(ctx, "gcloud auth login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+			if err := usershell.Command(ctx, "gcloud auth application-default login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
 				return err
 			}
 
-			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
+			return usershell.Command(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
 	}
 }

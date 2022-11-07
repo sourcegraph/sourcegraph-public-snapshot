@@ -14,10 +14,6 @@ const config: Meta = {
             type: 'number',
             defaultValue: 10,
         },
-        changed: {
-            type: 'number',
-            defaultValue: 4,
-        },
         deleted: {
             type: 'number',
             defaultValue: 8,

@@ -11,8 +11,9 @@ import {
     SearchQueryState,
     updateQuery,
     InitialParametersSource,
+    SearchPatternType,
+    SearchMode,
 } from '@sourcegraph/search'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -27,6 +28,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
+    searchMode: SearchMode.Precise,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -74,7 +76,12 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     const newState: Partial<
         Pick<
             NavbarQueryState,
-            'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+            | 'queryState'
+            | 'searchPatternType'
+            | 'searchCaseSensitivity'
+            | 'searchQueryFromURL'
+            | 'parametersSource'
+            | 'searchMode'
         >
     > = {}
 
@@ -87,6 +94,7 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query
+        newState.searchMode = parsedSearchURL.searchMode
     }
 
     // The way Zustand is designed makes it difficult to build up a partial new

@@ -65,10 +65,6 @@ describe('Code insight edit insight page', () => {
             driver,
             currentTest: this.currentTest!,
             directory: __dirname,
-            customContext: {
-                // Enforces a new GQL backend for the creation UI
-                codeInsightsGqlApiEnabled: true,
-            },
         })
     })
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -285,12 +286,6 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 	return deleteSession(w, r)
 }
 
-// InvalidateSessionsByID invalidates all sessions for a user
-// If an error occurs, it returns the error
-func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
-	return InvalidateSessionsByIDs(ctx, db, []int32{id})
-}
-
 // Bulk "InvalidateSessionsByID" action.
 func InvalidateSessionsByIDs(ctx context.Context, db database.DB, ids []int32) error {
 	return db.Users().InvalidateSessionsByIDs(ctx, ids)
@@ -308,10 +303,10 @@ func CookieMiddleware(logger log.Logger, db database.DB, next http.Handler) http
 // CookieMiddlewareWithCSRFSafety is a middleware that authenticates HTTP requests using the
 // provided cookie (if any), *only if* one of the following is true.
 //
-// - The request originates from a trusted origin (the same origin, browser extension origin, or one
-//   in the site configuration corsOrigin allow list.)
-// - The request has the special X-Requested-With header present, which is only possible to send in
-//   browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
+//   - The request originates from a trusted origin (the same origin, browser extension origin, or one
+//     in the site configuration corsOrigin allow list.)
+//   - The request has the special X-Requested-With header present, which is only possible to send in
+//     browsers if the request passed the CORS preflight request (see the handleCORSRequest function.)
 //
 // If one of the above are not true, the request is still allowed to proceed but will be
 // unauthenticated unless some other authentication is provided, such as an access token.
@@ -365,7 +360,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") {
+		if errors.HasType(err, &net.OpError{}) {
 			// If fetching session info failed because of a Redis error, return empty Context
 			// without deleting the session cookie and throw an internal server error.
 			// This prevents background requests made by off-screen tabs from signing

@@ -1,9 +1,9 @@
 import React, { FunctionComponent } from 'react'
 
-import { mdiChevronRight } from '@mdi/js'
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link, H3, Icon } from '@sourcegraph/wildcard'
+import { Link, H3, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -19,14 +19,25 @@ import styles from './CodeIntelUploadNode.module.scss'
 export interface CodeIntelUploadNodeProps {
     node: LsifUploadFields
     now?: () => Date
+    selection: Set<string> | 'all'
+    onCheckboxToggle: (id: string, checked: boolean) => void
 }
 
 export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<CodeIntelUploadNodeProps>> = ({
     node,
     now,
+    selection,
+    onCheckboxToggle,
 }) => (
     <>
         <span className={styles.separator} />
+        <Checkbox
+            label=""
+            id="disabledFieldsetCheck"
+            disabled={selection === 'all'}
+            checked={selection === 'all' ? true : selection.has(node.id)}
+            onChange={input => onCheckboxToggle(node.id, input.target.checked)}
+        />
 
         <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
@@ -58,7 +69,7 @@ export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<Code
         </span>
         <span>
             <Link to={`./uploads/${node.id}`}>
-                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
+                <Icon svgPath={mdiDotsVertical} inline={false} aria-label="View more information" />
             </Link>
         </span>
     </>

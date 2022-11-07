@@ -8,7 +8,6 @@ import { catchError, startWith } from 'rxjs/operators'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,7 +33,6 @@ export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
@@ -246,7 +244,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
                 </Link>
             </>
         )}
-        {repo.startsWith('bitbucket.com') && (
+        {repo.startsWith('bitbucket.org') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />

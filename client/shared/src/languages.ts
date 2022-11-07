@@ -361,7 +361,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'rsx':
             return 'r'
         case 'repro':
-            return 'repro'
+            return 'reprolang'
 
         // Ruby
         case 'rb':

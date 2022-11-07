@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { from } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -21,10 +22,11 @@ import styles from './OpenInEditorActionItem.module.scss'
 
 export interface OpenInEditorActionItemProps {
     platformContext: PlatformContext
+    externalServiceType?: string
     assetsRoot?: string
 }
 
-// We only want to attemt to upgrade the legacy open in editor settings once per
+// We only want to attempt to upgrade the legacy open in editor settings once per
 // page load.
 let didAttemptToUpgradeSettings = false
 
@@ -89,6 +91,7 @@ export const OpenInEditorActionItem: React.FunctionComponent<OpenInEditorActionI
                                 eventLogger.log('OpenInEditorClicked', { editor: editor.id }, { editor: editor.id })
                                 openCurrentUrlInEditor(
                                     settings?.openInEditor,
+                                    props.externalServiceType,
                                     props.platformContext.sourcegraphURL,
                                     index
                                 )
@@ -136,10 +139,10 @@ function upgradeSettings(platformContext: PlatformContext, settings: Settings, u
                 value: openInEditor,
             })
             .then(() => {
-                console.log('Migrated items successfully.')
+                logger.log('Migrated items successfully.')
             })
             .catch(error => {
-                console.error('Setting migration failed.', error)
+                logger.error('Setting migration failed.', error)
             })
     }
 }

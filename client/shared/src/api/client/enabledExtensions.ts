@@ -3,7 +3,7 @@ import { combineLatest, from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, logger } from '@sourcegraph/common'
 import { checkOk } from '@sourcegraph/http-client'
 
 import {
@@ -95,7 +95,7 @@ export const getEnabledExtensions = once(
         const sideloadedExtension = from(context.sideloadedExtensionURL).pipe(
             switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
             catchError(error => {
-                console.error('Error sideloading extension', error)
+                logger.error('Error sideloading extension', error)
                 return of(null)
             })
         )

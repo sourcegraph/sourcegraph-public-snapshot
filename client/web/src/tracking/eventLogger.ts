@@ -3,7 +3,7 @@ import { EMPTY, fromEvent, merge, Observable } from 'rxjs'
 import { catchError, map, publishReplay, refCount, take } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { isErrorLike, isFirefox } from '@sourcegraph/common'
+import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
 import { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
@@ -18,7 +18,7 @@ export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
-export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
+export const SESSION_ID_KEY = 'sourcegraphSessionId'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -67,13 +67,14 @@ const browserExtensionMessageReceived: Observable<{ platform?: string; version?:
     refCount()
 )
 
-export class EventLogger implements TelemetryService, SharedEventLogger {
+export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
 
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
     private lastSourceURL?: string
+    private sessionID = ''
     private deviceID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
@@ -92,7 +93,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         domain: location.hostname,
     }
 
-    private readonly deviceSessionCookieSettings: CookieAttributes = {
+    private readonly sessionCookieSettings: CookieAttributes = {
         // ~30 minutes expiry, but renewed on activity.
         expires: 0.0208,
         // Enforce HTTPS
@@ -114,7 +115,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             this.log('BrowserExtensionConnectedToServer', args, args)
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-                console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
+                logger.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
             }
         })
 
@@ -184,7 +185,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     private logToConsole(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
-            console.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
+            logger.debug('%cEVENT %s', 'color: #aaa', eventLabel, eventProperties, publicArgument)
         }
     }
 
@@ -233,13 +234,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         return lastSourceURL
     }
 
-    public getDeviceSessionID(): string {
-        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
-        if (!deviceSessionID || deviceSessionID == '') {
-            deviceSessionID = uuid.v4()
-            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+    public getSessionID(): string {
+        let sessionID = cookies.get(SESSION_ID_KEY)
+        if (!sessionID || sessionID === '') {
+            sessionID = uuid.v4()
+            cookies.set(SESSION_ID_KEY, sessionID, this.sessionCookieSettings)
         }
-        return deviceSessionID
+        return sessionID
     }
 
     // Device ID is a require field for Amplitude events.

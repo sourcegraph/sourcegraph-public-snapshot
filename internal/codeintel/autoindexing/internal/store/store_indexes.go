@@ -9,13 +9,14 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // InsertIndexes inserts a new index and returns the hydrated index models.
-func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error) {
+func (s *store) InsertIndexes(ctx context.Context, indexes []types.Index) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.insertIndex.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
@@ -30,7 +31,7 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 	values := make([]*sqlf.Query, 0, len(indexes))
 	for _, index := range indexes {
 		if index.DockerSteps == nil {
-			index.DockerSteps = []shared.DockerStep{}
+			index.DockerSteps = []types.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
@@ -71,7 +72,6 @@ func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []
 }
 
 const insertIndexQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:InsertIndex
 INSERT INTO lsif_indexes (
 	state,
 	commit,
@@ -88,7 +88,7 @@ RETURNING id
 `
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
+func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("state", opts.State),
@@ -135,7 +135,6 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 }
 
 const getIndexesQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexes
 SELECT
 	u.id,
 	u.commit,
@@ -158,12 +157,121 @@ SELECT
 	s.rank,
 	u.local_steps,
 	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex,
 	COUNT(*) OVER() AS count
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND %s ORDER BY queued_at DESC, u.id LIMIT %d OFFSET %d
+`
+
+// DeleteIndexes deletes indexes matching the given filter criteria.
+func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+	if opts.Term != "" {
+		conds = append(conds, makeIndexSearchCondition(opts.Term))
+	}
+	if opts.State != "" {
+		conds = append(conds, makeStateCondition(opts.State))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return err
+	}
+	conds = append(conds, authzConds)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct delete by filter criteria request")
+	defer unset(ctx)
+
+	err = tx.db.Exec(ctx, sqlf.Sprintf(deleteIndexesQuery, sqlf.Join(conds, " AND ")))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const deleteIndexesQuery = `
+DELETE FROM lsif_indexes u
+USING repo
+WHERE u.repository_id = repo.id AND %s
+`
+
+// ReindexIndexes reindexes indexes matching the given filter criteria.
+func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", opts.RepositoryID),
+		log.String("state", opts.State),
+		log.String("term", opts.Term),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var conds []*sqlf.Query
+
+	if opts.RepositoryID != 0 {
+		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+	}
+	if opts.Term != "" {
+		conds = append(conds, makeIndexSearchCondition(opts.Term))
+	}
+	if opts.State != "" {
+		conds = append(conds, makeStateCondition(opts.State))
+	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	if err != nil {
+		return err
+	}
+	conds = append(conds, authzConds)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
+	defer unset(ctx)
+
+	err = tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const reindexIndexesQuery = `
+WITH candidates AS (
+    SELECT u.id
+	FROM lsif_indexes u
+	JOIN repo ON repo.id = u.repository_id
+	WHERE %s
+    ORDER BY u.id
+    FOR UPDATE
+)
+UPDATE lsif_indexes u
+SET should_reindex = true
+WHERE u.id IN (SELECT id FROM candidates)
 `
 
 // makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
@@ -204,7 +312,7 @@ func makeStateCondition(state string) *sqlf.Query {
 }
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ types.Index, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", id),
 	}})
@@ -212,7 +320,7 @@ func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ boo
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.Index{}, false, err
+		return types.Index{}, false, err
 	}
 
 	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
@@ -233,7 +341,6 @@ WHERE r.state = 'queued'
 `
 
 const getIndexByIDQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexByID
 SELECT
 	u.id,
 	u.commit,
@@ -255,7 +362,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -265,7 +373,7 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []types.Index, err error) {
 	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -289,7 +397,6 @@ func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Ind
 }
 
 const getIndexesByIDsQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:GetIndexesByIDs
 SELECT
 	u.id,
 	u.commit,
@@ -311,7 +418,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex
 FROM lsif_indexes u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id
@@ -337,7 +445,6 @@ func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID 
 }
 
 const lastIndexScanForRepositoryQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:LastIndexScanForRepository
 SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
 `
 
@@ -359,8 +466,29 @@ func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error)
 }
 
 const deleteIndexByIDQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:DeleteIndexByID
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
+`
+
+// ReindexIndexByID reindexes an index by its identifier.
+func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.db.Done(err) }()
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
+}
+
+const reindexIndexByIDQuery = `
+UPDATE lsif_indexes u
+SET should_reindex = true
+WHERE id = %s
 `
 
 // DeletedRepositoryGracePeriod is the minimum allowable duration between
@@ -400,7 +528,6 @@ func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Tim
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
--- source: internal/codeintel/autoindexing/internal/store/store_indexes.go:DeleteIndexesWithoutRepository
 WITH
 candidates AS (
 	SELECT u.id
@@ -428,17 +555,144 @@ func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(isQueuedQuery, repositoryID, commit, repositoryID, commit)))
-	return count > 0, err
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(
+		isQueuedQuery,
+		repositoryID, commit,
+		repositoryID, commit,
+	)))
+	return isQueued, err
 }
 
 const isQueuedQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:IsQueued
-SELECT COUNT(*) WHERE EXISTS (
-	SELECT id FROM lsif_uploads_with_repository_name WHERE repository_id = %s AND commit = %s AND state NOT IN ('deleted', 'deleting')
-	UNION
-	SELECT id FROM lsif_indexes_with_repository_name WHERE repository_id = %s AND commit = %s
-)
+SELECT
+	EXISTS (
+		SELECT 1
+		FROM lsif_uploads u
+		WHERE
+			repository_id = %s AND
+			commit = %s AND
+			state NOT IN ('deleting', 'deleted') AND
+			associated_index_id IS NULL
+	)
+
+	OR
+
+	-- We want IsQueued to return true when there exists auto-indexing job records
+	-- and none of them are marked for reindexing. If we have one or more rows and
+	-- ALL of them are not marked for re-indexing, we'll block additional indexing
+	-- attempts.
+	(
+		SELECT COALESCE(bool_and(NOT should_reindex), false)
+		FROM (
+			-- For each distinct (root, indexer) pair, use the most recently queued
+			-- index as the authoritative attempt.
+			SELECT DISTINCT ON (root, indexer) should_reindex
+			FROM lsif_indexes
+			WHERE repository_id = %s AND commit = %s
+			ORDER BY root, indexer, queued_at DESC
+		) _
+	)
+`
+
+// IsQueuedRootIndexer returns true if there is an index or an upload for the given (repository, commit, root, indexer).
+func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+		log.String("root", root),
+		log.String("indexer", indexer),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	isQueued, _, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(isQueuedRootIndexerQuery, repositoryID, commit, root, indexer)))
+	return isQueued, err
+}
+
+const isQueuedRootIndexerQuery = `
+SELECT NOT should_reindex
+FROM lsif_indexes
+WHERE
+	repository_id  = %s AND
+	commit         = %s AND
+	root           = %s AND
+	indexer        = %s
+ORDER BY queued_at DESC
+LIMIT 1
+`
+
+// QueueRepoRev enqueues the given repository and rev to be processed by the auto-indexing scheduler.
+// This method is ultimately used to index on-demand (with deduplication) from transport layers.
+func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("rev", rev),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	isQueued, err := tx.IsQueued(ctx, repositoryID, rev)
+	if err != nil {
+		return err
+	}
+	if isQueued {
+		return nil
+	}
+
+	return tx.db.Exec(ctx, sqlf.Sprintf(queueRepoRevQuery, repositoryID, rev))
+}
+
+const queueRepoRevQuery = `
+INSERT INTO codeintel_autoindex_queue (repository_id, rev)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
+`
+
+type RepoRev struct {
+	ID           int
+	RepositoryID int
+	Rev          string
+}
+
+// GetQueuedRepoRev selects a batch of repository and revisions to be processed by the auto-indexing
+// scheduler. If in a transaction, the seleted records will remain locked until the enclosing transaction
+// has been committed or rolled back.
+func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSize", batchSize),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return ScanRepoRevs(s.db.Query(ctx, sqlf.Sprintf(getQueuedRepoRevQuery, batchSize)))
+}
+
+const getQueuedRepoRevQuery = `
+SELECT id, repository_id, rev
+FROM codeintel_autoindex_queue
+WHERE processed_at IS NULL
+ORDER BY queued_at ASC
+FOR UPDATE SKIP LOCKED
+LIMIT %s
+`
+
+// MarkRepoRevsAsProcessed sets processed_at for each matching record in codeintel_autoindex_queue.
+func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(markRepoRevsAsProcessedQuery, pq.Array(ids)))
+}
+
+const markRepoRevsAsProcessedQuery = `
+UPDATE codeintel_autoindex_queue
+SET processed_at = NOW()
+WHERE id = ANY(%s)
 `
 
 // GetRecentIndexesSummary returns the set of "interesting" indexes for the repository with the given identifier.
@@ -474,7 +728,6 @@ func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (
 }
 
 const recentIndexesSummaryQuery = `
--- source: internal/codeintel/stores/dbstore/indexes.go:RecentIndexesSummary
 WITH ranked_completed AS (
 	SELECT
 		u.id,
@@ -535,7 +788,8 @@ SELECT
 	u.execution_logs,
 	s.rank,
 	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `
+	` + indexAssociatedUploadIDQueryFragment + `,
+	u.should_reindex
 FROM lsif_indexes_with_repository_name u
 LEFT JOIN (` + indexRankQueryFragment + `) s
 ON u.id = s.id

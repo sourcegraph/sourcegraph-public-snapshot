@@ -18,9 +18,9 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -234,10 +234,10 @@ func addSentry(r *mux.Router) {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return
 			}
+			resp.Body.Close()
 		}()
 
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 
@@ -303,7 +303,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 
 	// If no endpoint is configured, we export a no-op handler
 	if endpoint == "" {
-		logger.Error("unable to parse OTLP export target")
+		logger.Info("no OTLP endpoint configured, data received at /-/debug/otlp will not be exported")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
@@ -319,7 +319,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler, db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}

@@ -31,7 +31,7 @@ export const Draft: Story = () => (
                         total: 0,
                         unpublished: 0,
                     },
-                    diffStat: { added: 0, changed: 0, deleted: 0, __typename: 'DiffStat' },
+                    diffStat: { added: 0, deleted: 0, __typename: 'DiffStat' },
                     state: BatchChangeState.DRAFT,
                 }}
             />
@@ -56,7 +56,7 @@ export const Open: Story = () => (
                         archived: 18,
                         unpublished: 55,
                     },
-                    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
                     state: BatchChangeState.OPEN,
                 }}
             />
@@ -81,7 +81,7 @@ export const OpenAndComplete: Story = () => (
                         total: 100,
                         unpublished: 0,
                     },
-                    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
                     state: BatchChangeState.OPEN,
                 }}
             />
@@ -108,7 +108,7 @@ export const Closed: Story = () => (
                         total: 100,
                         unpublished: 60,
                     },
-                    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+                    diffStat: { added: 3000, deleted: 3000, __typename: 'DiffStat' },
                     state: BatchChangeState.CLOSED,
                 }}
             />

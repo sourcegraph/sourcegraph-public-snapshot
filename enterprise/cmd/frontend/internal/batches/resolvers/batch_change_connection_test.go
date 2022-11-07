@@ -186,7 +186,7 @@ func TestBatchChangesListing(t *testing.T) {
 	userID := bt.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	orgID := bt.InsertTestOrg(t, db, "org")
+	orgID := bt.CreateTestOrg(t, db, "org").ID
 
 	store := store.New(db, &observation.TestContext, nil)
 

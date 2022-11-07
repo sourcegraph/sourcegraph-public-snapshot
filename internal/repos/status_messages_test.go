@@ -36,7 +36,7 @@ func TestStatusMessages(t *testing.T) {
 
 	extSvc := &types.ExternalService{
 		ID:          1,
-		Config:      extsvc.NewEmptyConfig(),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`),
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "github.com - site",
 	}
@@ -117,43 +117,6 @@ func TestStatusMessages(t *testing.T) {
 				{
 					Cloning: &CloningProgress{
 						Message: "2 repositories enqueued for cloning. 2 repositories currently cloning...",
-					},
-				},
-			},
-		},
-		{
-			name:        "site-admin: subset cloned",
-			repos:       []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "1 repository enqueued for cloning.",
-					},
-				},
-			},
-		},
-		{
-			name:  "site-admin: more cloned than stored",
-			repos: []*types.Repo{{Name: "foobar"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"foobar": types.CloneStatusCloned,
-				"barfoo": types.CloneStatusCloned,
-			},
-			res: nil,
-		},
-		{
-			name:  "site-admin: cloned different than stored",
-			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"one":   types.CloneStatusCloned,
-				"two":   types.CloneStatusCloned,
-				"three": types.CloneStatusCloned,
-			},
-			res: []StatusMessage{
-				{
-					Cloning: &CloningProgress{
-						Message: "2 repositories enqueued for cloning.",
 					},
 				},
 			},
@@ -283,7 +246,10 @@ func TestStatusMessages(t *testing.T) {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(extSvc, nil))
 				syncer.Sourcer = sourcer
 
-				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond)
+				noopRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
+					return nil
+				}
+				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond, noopRecorder)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
 				// returned will be stored in the external_service_sync_jobs table, so we fake
 				// that here.

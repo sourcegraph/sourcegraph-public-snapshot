@@ -180,6 +180,10 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
         }
 
+        // Parse out the optional filePath search param, which is used to show only a single file in the compare view
+        const searchParams = new URLSearchParams(this.props.location.search)
+        const path = searchParams.get('filePath')
+
         if (!this.props.repo) {
             return <LoadingSpinner />
         }
@@ -209,6 +213,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                                 <RepositoryCompareOverviewPage
                                     {...routeComponentProps}
                                     {...commonProps}
+                                    path={path}
                                     hoverifier={this.hoverifier}
                                     isLightTheme={this.props.isLightTheme}
                                     extensionsController={this.props.extensionsController}

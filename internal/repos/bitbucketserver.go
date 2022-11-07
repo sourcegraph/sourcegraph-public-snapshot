@@ -222,6 +222,11 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		// Admins normally add to end of lists, so end of list most likely has new repos
 		// => stream them first.
 		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			if err := ctx.Err(); err != nil {
+				ch <- batch{err: err}
+				break
+			}
+
 			name := s.config.Repos[i]
 			ps := strings.SplitN(name, "/", 2)
 			if len(ps) != 2 {

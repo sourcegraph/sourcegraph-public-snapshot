@@ -547,6 +547,36 @@ type RepoChangesetsStats {
 }
 
 """
+Stats on all the changesets across the instance.
+"""
+type GlobalChangesetsStats {
+    """
+    The count of unpublished changesets.
+    """
+    unpublished: Int!
+    """
+    The count of draft changesets.
+    """
+    draft: Int!
+    """
+    The count of open changesets.
+    """
+    open: Int!
+    """
+    The count of merged changesets.
+    """
+    merged: Int!
+    """
+    The count of closed changesets.
+    """
+    closed: Int!
+    """
+    The count of all changesets.
+    """
+    total: Int!
+}
+
+"""
 A list of changesets.
 """
 type ChangesetConnection {
@@ -1772,6 +1802,10 @@ extend type Query {
         """
         name: String!
     ): BatchChange
+    """
+    Stats on all the changesets across the instance for Batch Changes.
+    """
+    globalChangesetsStats: GlobalChangesetsStats!
 
     """
     All globally configured code hosts usable with Batch Changes.
@@ -1822,6 +1856,10 @@ extend type Query {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2700,6 +2738,10 @@ type BatchChange implements Node {
         Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
         """
         includeLocallyExecutedSpecs: Boolean
+        """
+        Exclude the empty batch specs that are initially created and applied to draft batch changes.
+        """
+        excludeEmptySpecs: Boolean
     ): BatchSpecConnection!
 }
 
@@ -3148,6 +3190,20 @@ type BatchSpec implements Node {
     server-side execution.
     """
     source: BatchSpecSource!
+
+    """
+    The files that are mounted in the steps of a batch spec.
+    """
+    files(
+        """
+        Returns the first n files from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): BatchSpecWorkspaceFileConnection
 }
 
 """
@@ -3404,4 +3460,106 @@ input ChangesetSpecPublicationStateInput {
     The desired publication state.
     """
     publicationState: PublishedValue!
+}
+
+"""
+A list of BatchSpecMounts.
+"""
+type BatchSpecWorkspaceFileConnection {
+    """
+    The total number of files.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+    """
+    A list of workspace files in a batch spec.
+    """
+    nodes: [BatchSpecWorkspaceFile!]!
+}
+
+"""
+The metadata of a file being used in a batch spec step.
+"""
+type BatchSpecWorkspaceFile implements File2 & Node {
+    """
+    The ID of the file.
+    """
+    id: ID!
+    """
+    When the file was last touched.
+    """
+    modifiedAt: DateTime!
+    """
+    When the file is initially created at.
+    """
+    createdAt: DateTime!
+    """
+    When the file is updated at.
+    """
+    updatedAt: DateTime!
+
+    """
+    The full path (relative to the root) of this file.
+    """
+    path: String!
+    """
+    The base name (i.e., file name only) of this file.
+    """
+    name: String!
+    """
+    False because this is a file, not a directory.
+    """
+    isDirectory: Boolean!
+    """
+    The content of this file.
+    """
+    content: String!
+    """
+    The file size in bytes.
+    """
+    byteSize: Int!
+    """
+    Whether or not it is binary.
+    """
+    binary: Boolean!
+    """
+    The file rendered as rich HTML, or an empty string if it is not a supported
+    rich file type.
+    This HTML string is already escaped and thus is always safe to render.
+    """
+    richHTML: String!
+    """
+    The URL to this file (using the input revision specifier, which may not be immutable).
+    """
+    url: String!
+    """
+    The canonical URL to this file (using an immutable revision specifier).
+    """
+    canonicalURL: String!
+    """
+    The URLs to this file on external services.
+    """
+    externalURLs: [ExternalLink!]!
+    """
+    Highlight the file.
+    """
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+        """
+        If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        2000 bytes is enabled. This may produce a significant amount of HTML
+        which some browsers (such as Chrome, but not Firefox) may have trouble
+        rendering efficiently.
+        """
+        highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
+    ): HighlightedFile!
 }

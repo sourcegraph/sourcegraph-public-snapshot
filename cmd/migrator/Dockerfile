@@ -1,4 +1,4 @@
-FROM sourcegraph/alpine-3.14:166590_2022-08-11_7ebaa5ea4d88@sha256:f6b878c33efb48a151f112a996f3f71b59e3052288cade537bc6b538f0a2450e
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -15,3 +15,4 @@ RUN apk update && apk add --no-cache \
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/migrator"]
 COPY migrator /usr/local/bin/
+COPY schema-descriptions /schema-descriptions

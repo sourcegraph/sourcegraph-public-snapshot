@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -93,7 +94,7 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 	for _, c := range gt {
 		var completions cli.BashCompleteFunc
 		if c.Completer != nil {
-			completions = completeOptions(c.Completer)
+			completions = cliutil.CompleteOptions(c.Completer)
 		}
 		cmds = append(cmds, &cli.Command{
 			Name:         c.Name,

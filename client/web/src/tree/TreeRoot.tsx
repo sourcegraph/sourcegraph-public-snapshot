@@ -1,7 +1,6 @@
 /* eslint jsx-a11y/no-noninteractive-tabindex: warn*/
 import * as React from 'react'
 
-import * as H from 'history'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -15,7 +14,7 @@ import {
     takeUntil,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -42,7 +41,6 @@ const errorWidth = (width?: string): { width: string } => ({
 })
 
 export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    location: H.Location
     activeNode: TreeNode
     activePath: string
     depth: number
@@ -117,7 +115,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     // clear file decorations before latest file decorations come
                     this.setState({ treeOrError, fileDecorationsByPath: {} })
                 },
-                error => console.error(error)
+                error => logger.error(error)
             )
         )
 

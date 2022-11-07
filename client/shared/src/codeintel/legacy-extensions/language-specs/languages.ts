@@ -27,6 +27,13 @@ const apexSpec: LanguageSpec = {
     commentStyles: [javaStyleComment],
 }
 
+const reprolangSpec: LanguageSpec = {
+    languageID: 'reprolang',
+    stylized: 'Reprolang',
+    fileExts: ['repro'],
+    commentStyles: pythonSpec.commentStyles,
+}
+
 const starlarkSpec: LanguageSpec = {
     languageID: 'starlark',
     stylized: 'Starlark',
@@ -385,6 +392,7 @@ export const languageSpecs: LanguageSpec[] = [
     pythonSpec,
     tclSpec,
     rSpec,
+    reprolangSpec,
     rubySpec,
     rustSpec,
     scalaSpec,
@@ -403,7 +411,9 @@ export const languageSpecs: LanguageSpec[] = [
  * matches is configured with the given identifier an error is thrown.
  */
 export function findLanguageSpec(languageID: string): LanguageSpec {
-    const languageSpec = languageSpecs.find(spec => spec.languageID === languageID)
+    const languageSpec = languageSpecs.find(
+        spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID)
+    )
     if (languageSpec) {
         return languageSpec
     }

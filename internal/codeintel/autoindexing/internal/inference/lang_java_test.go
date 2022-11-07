@@ -3,10 +3,13 @@ package inference
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestJavaGenerator(t *testing.T) {
+	expectedIndexerImage, _ := libs.DefaultIndexerForLang("java")
+
 	testGenerators(t,
 		generatorTestCase{
 			description: "java project with lsif-java.json",
@@ -20,7 +23,7 @@ func TestJavaGenerator(t *testing.T) {
 					Steps:       nil,
 					LocalSteps:  nil,
 					Root:        "",
-					Indexer:     "sourcegraph/scip-java",
+					Indexer:     expectedIndexerImage,
 					IndexerArgs: []string{"scip-java", "index", "--build-tool=scip"},
 					Outfile:     "index.scip",
 				},
@@ -38,6 +41,8 @@ func TestJavaGenerator(t *testing.T) {
 }
 
 func TestJavaHinter(t *testing.T) {
+	expectedIndexerImage := "sourcegraph/scip-java@sha256:eb3996bdc8ab3a56600e7d647bc1ef72f3db8cfffc2026550095a0af7bb762bd"
+
 	testHinters(t,
 		hinterTestCase{
 			description: "basic hints",
@@ -52,32 +57,32 @@ func TestJavaHinter(t *testing.T) {
 			expected: []config.IndexJobHint{
 				{
 					Root:           "",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
 					Root:           "kt",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
 					Root:           "maven",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
 					Root:           "subdir/src/java",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceLanguageSupport,
 				},
 				{
 					Root:           "subdir/src/kotlin",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceLanguageSupport,
 				},
 				{
 					Root:           "subdir/src/scala",
-					Indexer:        "sourcegraph/scip-java",
+					Indexer:        expectedIndexerImage,
 					HintConfidence: config.HintConfidenceLanguageSupport,
 				},
 			},

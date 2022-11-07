@@ -1,12 +1,15 @@
 package commitgraph
 
 import (
-	"context"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type UploadService interface {
-	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
-	GetDirtyRepositories(ctx context.Context) (map[int]int, error)
-	UpdateDirtyRepositories(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error)
+type UploadServiceBackgroundJobs interface {
+	NewCommitGraphUpdater(
+		interval time.Duration,
+		maxAgeForNonStaleBranches time.Duration,
+		maxAgeForNonStaleTags time.Duration,
+	) goroutine.BackgroundRoutine
 }

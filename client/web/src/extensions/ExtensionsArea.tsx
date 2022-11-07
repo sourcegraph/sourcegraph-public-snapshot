@@ -4,8 +4,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -40,7 +39,7 @@ export interface ExtensionsAreaRouteContext
     authenticatedUser: AuthenticatedUser | null
 
     /** The subject whose extensions and configuration to display. */
-    subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    subject: SettingsSubjectCommonFields
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     isSourcegraphDotCom: boolean
@@ -59,7 +58,7 @@ interface ExtensionsAreaProps
      */
     authenticatedUser: AuthenticatedUser | null
 
-    viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
+    viewerSubject: SettingsSubjectCommonFields
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

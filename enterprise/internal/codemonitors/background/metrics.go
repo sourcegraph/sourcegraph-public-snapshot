@@ -12,7 +12,7 @@ import (
 )
 
 type codeMonitorsMetrics struct {
-	workerMetrics workerutil.WorkerMetrics
+	workerMetrics workerutil.WorkerObservability
 	resets        prometheus.Counter
 	resetFailures prometheus.Counter
 	errors        prometheus.Counter

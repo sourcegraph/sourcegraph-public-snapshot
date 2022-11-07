@@ -94,7 +94,7 @@ func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*List
 
 	u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}

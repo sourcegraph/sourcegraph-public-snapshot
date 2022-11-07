@@ -12,10 +12,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/cliutil"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
@@ -32,6 +36,9 @@ var (
 		Name:  "db",
 		Usage: "Interact with local Sourcegraph databases for development",
 		UsageText: `
+# Delete test databases
+sg db delete-test-dbs
+
 # Reset the Sourcegraph 'frontend' database
 sg db reset-pg
 
@@ -49,6 +56,11 @@ sg db add-user -name=foo
 `,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
+			{
+				Name:   "delete-test-dbs",
+				Usage:  "Drops all databases that have the prefix `sourcegraph-test-`",
+				Action: deleteTestDBsExec,
+			},
 			{
 				Name:        "reset-pg",
 				Usage:       "Drops, recreates and migrates the specified Sourcegraph database",
@@ -170,6 +182,43 @@ func dbResetRedisExec(ctx *cli.Context) error {
 	return nil
 }
 
+func deleteTestDBsExec(ctx *cli.Context) error {
+	config, err := dbtest.GetDSN()
+	if err != nil {
+		return err
+	}
+	dsn := config.String()
+
+	db, err := dbconn.ConnectInternal(log.Scoped("sg", ""), dsn, "", "")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			if closeErr := db.Close(); closeErr != nil {
+				err = errors.Append(err, closeErr)
+			}
+		}
+	}()
+
+	names, err := basestore.ScanStrings(db.QueryContext(ctx.Context, `SELECT datname FROM pg_database WHERE datname LIKE 'sourcegraph-test-%'`))
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		_, err := db.ExecContext(ctx.Context, fmt.Sprintf(`DROP DATABASE %q`, name))
+		if err != nil {
+			return err
+		}
+
+		std.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleReset, fmt.Sprintf("Deleted %s", name)))
+	}
+
+	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("%d databases deleted.", len(names))))
+	return nil
+}
+
 func dbResetPGExec(ctx *cli.Context) error {
 	// Read the configuration.
 	config, _ := getConfig()
@@ -199,7 +248,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
 		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
 	if ok := getBool(); !ok {
-		return NewEmptyExitErr(1)
+		return cliutil.NewEmptyExitErr(1)
 	}
 
 	for _, dsn := range dsnMap {

@@ -13,6 +13,7 @@
     "enableSearchFilePrefetch": true,
     "enableSidebarFilePrefetch": true
   },
+  "codeIntel.referencesPanel": "tree-view",
   "insights": [
     {
       "title": "fmt usage",

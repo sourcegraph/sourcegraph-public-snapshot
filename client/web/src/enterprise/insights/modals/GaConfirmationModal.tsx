@@ -1,9 +1,9 @@
-import React, { useContext } from 'react'
+import React from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBackendContext } from '../core'
+import { useUiFeatures } from '../hooks'
 
 import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'
 
@@ -11,9 +11,7 @@ import styles from './GaConfirmationModal.module.scss'
 
 export const GaConfirmationModal: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
+    const { licensed } = useUiFeatures()
 
     const showConfirmationModal = !licensed && isGaAccepted === false
 

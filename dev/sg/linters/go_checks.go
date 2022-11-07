@@ -68,7 +68,7 @@ func lintSGExit() *linter {
 
 // lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
 func lintLoggingLibraries() *linter {
-	return newUsageLinter(usageLinterOptions{
+	return newUsageLinter("Logging libraries linter", usageLinterOptions{
 		Target: "**/*.go",
 		BannedUsages: []string{
 			// No standard log library
@@ -101,7 +101,7 @@ func lintLoggingLibraries() *linter {
 }
 
 func lintTracingLibraries() *linter {
-	return newUsageLinter(usageLinterOptions{
+	return newUsageLinter("Tracing libraries linter", usageLinterOptions{
 		Target: "**/*.go",
 		BannedUsages: []string{
 			// No OpenTracing

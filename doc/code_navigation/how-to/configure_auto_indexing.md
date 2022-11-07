@@ -13,10 +13,8 @@ img.screenshot {
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta for self-hosted customers.
 </p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 Precise code navigation [auto-indexing](../explanations/auto_indexing.md) jobs are scheduled based on two fronts of configuration.

@@ -97,9 +97,9 @@ func (c *Monitor) Get() (remaining int, reset, retry time.Duration, known bool) 
 // want to perform a cost-500 operation. Only 4 more cost-500 operations are allowed in the next 30 minutes (per
 // the rate limit):
 //
-//                          -500         -500         -500
-//         Now   |------------*------------*------------*------------| 30 min from now
-//   Remaining  1500         1000         500           0           5000 (reset)
+//	                       -500         -500         -500
+//	      Now   |------------*------------*------------*------------| 30 min from now
+//	Remaining  1500         1000         500           0           5000 (reset)
 //
 // Assuming no other operations are being performed (that count against the rate limit), the recommended wait would
 // be 7.5 minutes (30 minutes / 4), so that the operations are evenly spaced out.

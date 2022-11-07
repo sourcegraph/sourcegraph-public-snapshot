@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -71,7 +72,6 @@ func (s *store) getLocations(ctx context.Context, extractor func(r precise.Range
 }
 
 const locationsDocumentQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:{Definitions,References}
 SELECT
 	dump_id,
 	path,
@@ -175,7 +175,6 @@ func (s *store) translateIDsToResultChunkIndexes(ctx context.Context, bundleID i
 }
 
 const translateIDsToResultChunkIndexesQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:translateIDsToResultChunkIndexes
 SELECT num_result_chunks FROM lsif_data_metadata WHERE dump_id = %s
 `
 
@@ -243,7 +242,6 @@ func (s *store) readLocationsFromResultChunks(ctx context.Context, bundleID int,
 }
 
 const readLocationsFromResultChunksQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:readLocationsFromResultChunks
 SELECT idx, data FROM lsif_data_result_chunks WHERE dump_id = %s AND idx IN (%s)
 `
 
@@ -287,7 +285,6 @@ func (s *store) readRangesFromDocuments(ctx context.Context, bundleID int, ids [
 }
 
 const readRangesFromDocumentsQuery = `
--- source: internal/codeintel/stores/lsifstore/locations.go:readRangesFromDocuments
 SELECT
 	dump_id,
 	path,
@@ -339,13 +336,13 @@ func (s *store) readRangesFromDocument(bundleID int, rangeIDsByResultID map[prec
 	return totalCount
 }
 
-func newRange(startLine, startCharacter, endLine, endCharacter int) shared.Range {
-	return shared.Range{
-		Start: shared.Position{
+func newRange(startLine, startCharacter, endLine, endCharacter int) types.Range {
+	return types.Range{
+		Start: types.Position{
 			Line:      startLine,
 			Character: startCharacter,
 		},
-		End: shared.Position{
+		End: types.Position{
 			Line:      endLine,
 			Character: endCharacter,
 		},
@@ -364,7 +361,7 @@ func sortLocations(locations []shared.Location) {
 }
 
 // compareBundleRanges returns true if r1's start position occurs before r2's start position.
-func compareBundleRanges(r1, r2 shared.Range) bool {
+func compareBundleRanges(r1, r2 types.Range) bool {
 	cmp := r1.Start.Line - r2.Start.Line
 	if cmp == 0 {
 		cmp = r1.Start.Character - r2.Start.Character

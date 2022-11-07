@@ -159,7 +159,7 @@ export const DidYouMean: React.FunctionComponent<React.PropsWithChildren<DidYouM
                                     to={createLinkUrl({ pathname: '/search', search: builtURLQuery })}
                                     className={styles.link}
                                 >
-                                    <span className={styles.description}>Did you mean: {suggestion.text}</span>
+                                    <span className={styles.listItemDescription}>Did you mean: {suggestion.text}</span>
                                     <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
                                     <span className={styles.suggestion}>
                                         <SyntaxHighlightedSearchQuery query={suggestion.query.trim()} />

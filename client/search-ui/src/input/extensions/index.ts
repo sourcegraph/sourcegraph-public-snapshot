@@ -2,7 +2,7 @@ import { ChangeSpec, EditorState, Extension } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import { Observable } from 'rxjs'
 
-import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers'
+import { createCancelableFetchSuggestions } from '@sourcegraph/shared/src/search/query/providers-utils'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import {

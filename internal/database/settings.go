@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,7 +19,7 @@ import (
 type SettingsStore interface {
 	CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (*api.Settings, error)
 	Done(error) error
-	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
 	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
 	ListAll(ctx context.Context, impreciseSubstring string) ([]*api.Settings, error)
 	Transact(context.Context) (SettingsStore, error)
@@ -47,21 +46,8 @@ func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 }
 
 func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	if strings.TrimSpace(contents) == "" {
-		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
-	}
-
-	// Validate JSON syntax before saving.
-	if _, errs := jsonx.Parse(contents, jsonx.ParseOptions{Comments: true, TrailingCommas: true}); len(errs) > 0 {
-		return nil, errors.Errorf("invalid settings JSON: %v", errs)
-	}
-
-	// Validate setting schema
-	problems, err := conf.ValidateSetting(contents)
-	if err != nil {
-		return nil, err
-	}
-	if len(problems) > 0 {
+	// Validate settings for syntax and by the JSON Schema.
+	if problems := conf.ValidateSettings(contents); len(problems) > 0 {
 		return nil, errors.Errorf("invalid settings: %s", strings.Join(problems, ","))
 	}
 
@@ -131,7 +117,7 @@ func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubje
 	return settings[0], nil
 }
 
-func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
 	apiSettings, err := o.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err

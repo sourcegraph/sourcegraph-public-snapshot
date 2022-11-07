@@ -6,6 +6,7 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { logger } from '@sourcegraph/common'
 import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Input, Label } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -226,7 +227,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     private handleError = (error: Error): [] => {
-        console.error(error)
+        logger.error(error)
         this.setState({ loading: false, saved: false, error })
         return []
     }

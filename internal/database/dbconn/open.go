@@ -88,27 +88,27 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // For all mandatory methods the sqlHooks driver is used. For the optional methods namely Ping, ResetSession and CheckNamedValue
 // (which the sqlHooks driver does not implement), extendedConn goes to the original default driver.
 //
-//                             Ping()
-//                             ResetSession()
-//                             CheckNamedValue()
-//                    ┌──────────────────────────────┐
-//                    │                              │
-//                    │                              │
-//                    │                              │
-// ┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
-// │       │   │            │   │        │     │             │
-// │otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
-// │       │   │            │   │        │     │             │
-// └─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
-//   │           │                │              │
-//   │           │                │              │Implements all SQL driver methods
-//   │           │                │
-//   │           │                │Only implements mandatory ones
-//   │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
-//   │           │
-//   │           │Implement all SQL driver methods
-//   │
-//   │Expects all SQL driver methods
+//	                            Ping()
+//	                            ResetSession()
+//	                            CheckNamedValue()
+//	                   ┌──────────────────────────────┐
+//	                   │                              │
+//	                   │                              │
+//	                   │                              │
+//	┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
+//	│       │   │            │   │        │     │             │
+//	│otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
+//	│       │   │            │   │        │     │             │
+//	└─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
+//	  │           │                │              │
+//	  │           │                │              │Implements all SQL driver methods
+//	  │           │                │
+//	  │           │                │Only implements mandatory ones
+//	  │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
+//	  │           │
+//	  │           │Implement all SQL driver methods
+//	  │
+//	  │Expects all SQL driver methods
 //
 // A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
 type extendedDriver struct {
@@ -119,11 +119,12 @@ type extendedDriver struct {
 // CheckNamedValue into one that does, by accessing the underlying conn from the
 // original driver that does implement these methods.
 type extendedConn struct {
-	driver.ExecerContext
-	driver.QueryerContext
 	driver.Conn
 	driver.ConnPrepareContext
 	driver.ConnBeginTx
+
+	execerContext  driver.ExecerContext
+	queryerContext driver.QueryerContext
 }
 
 var _ driver.Pinger = &extendedConn{}
@@ -161,11 +162,11 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 
 	// Build the extended connection.
 	return &extendedConn{
-		ExecerContext:      c.(any).(driver.ExecerContext),
-		QueryerContext:     c.(any).(driver.QueryerContext),
 		Conn:               c.(any).(driver.Conn),
 		ConnPrepareContext: c.(any).(driver.ConnPrepareContext),
 		ConnBeginTx:        c.(any).(driver.ConnBeginTx),
+		execerContext:      c.(any).(driver.ExecerContext),
+		queryerContext:     c.(any).(driver.QueryerContext),
 	}, nil
 }
 
@@ -186,6 +187,16 @@ func (n *extendedConn) ResetSession(ctx context.Context) error {
 
 func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+}
+
+func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.execerContext.ExecContext(ctx, query, args)
+}
+
+func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.queryerContext.QueryContext(ctx, query, args)
 }
 
 func registerPostgresProxy() {

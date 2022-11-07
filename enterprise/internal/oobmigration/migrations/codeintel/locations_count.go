@@ -6,12 +6,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
-	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize)
+func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
+	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize, numRoutines)
 }
 
-func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize int) *migrator {
-	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize)
+func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
+	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize, numRoutines)
 }
 
 type locationsCountMigrator struct {
@@ -23,7 +23,7 @@ type locationsCountMigrator struct {
 // newLocationsCountMigrator creates a new Migrator instance that reads records from
 // the given table with a schema version of 1 and populates that record's (new) num_locations
 // column. Updated records will have a schema version of 2.
-func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize int) *migrator {
+func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize, numRoutines int) *migrator {
 	driver := &locationsCountMigrator{
 		id:         id,
 		interval:   interval,
@@ -34,6 +34,7 @@ func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Dur
 		tableName:     tableName,
 		targetVersion: 2,
 		batchSize:     batchSize,
+		numRoutines:   numRoutines,
 		fields: []fieldSpec{
 			{name: "scheme", postgresType: "text not null", primaryKey: true},
 			{name: "identifier", postgresType: "text not null", primaryKey: true},

@@ -7,7 +7,6 @@ import { Subscription } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Icon, H2, H3, Tooltip, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
@@ -15,6 +14,7 @@ import { FilteredConnection, FilteredConnectionFilter } from '../components/Filt
 import { PageTitle } from '../components/PageTitle'
 import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
+import { CustomersResult, SiteUsageStatisticsResult, UserUsageStatisticsResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
@@ -38,7 +38,7 @@ const CHART_ID_KEY = 'latest-usage-statistics-chart-id'
 
 interface UsageChartPageProps {
     isLightTheme: boolean
-    stats: GQL.ISiteUsageStatistics
+    stats: SiteUsageStatisticsResult['site']['usageStatistics']
     chartID: keyof ChartOptions
     header?: JSX.Element
     showLegend?: boolean
@@ -70,8 +70,10 @@ export const UsageChart: React.FunctionComponent<UsageChartPageProps> = (props: 
     </div>
 )
 
+type UserUsageStatisticsResultUser = UserUsageStatisticsResult['users']['nodes']
+
 interface UserUsageStatisticsHeaderFooterProps {
-    nodes: GQL.IUser[]
+    nodes: UserUsageStatisticsResultUser
 }
 
 class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsHeaderFooterProps> {
@@ -128,7 +130,7 @@ interface UserUsageStatisticsNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
+    node: UserUsageStatisticsResultUser[number]
 }
 
 class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNodeProps> {
@@ -160,7 +162,7 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
     }
 }
 
-class FilteredUserConnection extends FilteredConnection<GQL.IUser, {}> {}
+class FilteredUserConnection extends FilteredConnection<UserUsageStatisticsResultUser[number], {}> {}
 export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     {
         label: '',
@@ -200,8 +202,8 @@ interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
 }
 
 interface SiteAdminUsageStatisticsPageState {
-    users?: GQL.IUserConnection
-    stats?: GQL.ISiteUsageStatistics
+    users?: CustomersResult['users']
+    stats?: SiteUsageStatisticsResult['site']['usageStatistics']
     error?: Error
     chartID: keyof ChartOptions
 }

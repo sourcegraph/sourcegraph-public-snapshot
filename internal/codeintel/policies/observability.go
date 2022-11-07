@@ -8,10 +8,6 @@ import (
 )
 
 type operations struct {
-	// Not used yet.
-	commitsMatchingIndexingPolicies  *observation.Operation
-	commitsMatchingRetentionPolicies *observation.Operation
-
 	// Configurations
 	getConfigurationPolicies      *observation.Operation
 	getConfigurationPoliciesByID  *observation.Operation
@@ -23,8 +19,10 @@ type operations struct {
 	getRetentionPolicyOverview *observation.Operation
 
 	// Repository
-	getPreviewRepositoryFilter *observation.Operation
-	getPreviewGitObjectFilter  *observation.Operation
+	getPreviewRepositoryFilter                  *observation.Operation
+	getPreviewGitObjectFilter                   *observation.Operation
+	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
+	updateReposMatchingPatterns                 *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -44,10 +42,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		// Not used yet.
-		commitsMatchingIndexingPolicies:  op("CommitsMatchingIndexingPolicies"),
-		commitsMatchingRetentionPolicies: op("CommitsMatchingRetentionPolicies"),
-
 		// Configurations
 		getConfigurationPolicies:      op("GetConfigurationPolicies"),
 		getConfigurationPoliciesByID:  op("GetConfigurationPoliciesByID"),
@@ -59,7 +53,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
 
 		// Repository
-		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
-		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),
+		getPreviewRepositoryFilter:                  op("GetPreviewRepositoryFilter"),
+		getPreviewGitObjectFilter:                   op("GetPreviewGitObjectFilter"),
+		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
 	}
 }

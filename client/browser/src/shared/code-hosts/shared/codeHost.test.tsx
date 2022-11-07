@@ -21,11 +21,11 @@ import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/c
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
-import { IQuery } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { ResolveRepoResult } from '../../../graphql-operations'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 
@@ -270,7 +270,7 @@ describe('codeHost', () => {
                                         },
                                     },
                                     errors: undefined,
-                                } as SuccessGraphQLResult<IQuery>),
+                                } as SuccessGraphQLResult<ResolveRepoResult>),
                         }),
                     }),
                 })

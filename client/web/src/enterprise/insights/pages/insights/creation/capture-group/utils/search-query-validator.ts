@@ -11,8 +11,8 @@ export interface Checks {
     isNoNewLines: true | false | undefined
 }
 
-export const searchQueryValidator = (value: string, touched: boolean): Checks => {
-    if (!touched || !value || value.length === 0) {
+export const searchQueryValidator = (value: string | undefined): Checks => {
+    if (!value || value.length === 0) {
         return {
             isValidOperator: undefined,
             isValidPatternType: undefined,

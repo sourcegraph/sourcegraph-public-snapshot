@@ -8,12 +8,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -47,7 +48,7 @@ func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes
 		execution:    execution,
 		batchSpec:    batchSpec,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserver.NewClient(store.DatabaseDB()), repo),
 	}
 }
 
@@ -123,7 +124,11 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
+		entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec")
+		// Backcompat: The step was unnamed before.
+		if !ok {
+			entry, ok = findExecutionLogEntry(r.execution, "step.src.0")
+		}
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
 			stepInfo = btypes.ParseLogLines(entry, logLines)
@@ -241,7 +246,7 @@ func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceS
 	return &batchSpecWorkspaceStagesResolver{store: r.store, execution: r.execution}
 }
 
-func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) StartedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -251,10 +256,10 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 	if r.execution.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.StartedAt}
+	return &gqlutil.DateTime{Time: r.execution.StartedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) QueuedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -264,10 +269,10 @@ func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
 	if r.execution.CreatedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.CreatedAt}
+	return &gqlutil.DateTime{Time: r.execution.CreatedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) FinishedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -277,7 +282,7 @@ func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
 	if r.execution.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.FinishedAt}
+	return &gqlutil.DateTime{Time: r.execution.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
@@ -424,24 +429,27 @@ func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
 	if r.execution == nil {
 		return nil, nil
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		if err != backend.ErrMustBeSiteAdmin {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		if err != auth.ErrMustBeSiteAdmin {
 			return nil, err
 		}
 		return nil, nil
 	}
 
-	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	e, found, err := r.store.DatabaseDB().Executors().GetByHostname(ctx, r.execution.WorkerHostname)
 	if err != nil {
 		return nil, err
 	}
+	if !found {
+		return nil, nil
+	}
 
-	return executor, nil
+	return graphqlbackend.NewExecutorResolver(e), nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {
@@ -456,6 +464,11 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 }
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
+	if entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec"); ok {
+		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+	}
+
+	// Backcompat: The step was unnamed before.
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
 		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 	}

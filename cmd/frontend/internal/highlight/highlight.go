@@ -304,7 +304,7 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 	return lineRanges, nil
 }
 
-/// identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err matches a known error.
 func identifyError(err error) (bool, string) {
 	var problem string
 	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
@@ -562,10 +562,10 @@ func generatePlainTable(code string) (*HighlightedCode, error) {
 		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
 		table.AppendChild(tr)
 
-		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
-		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
-		tr.AppendChild(tdLineNumber)
+		thLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Th, Data: atom.Th.String()}
+		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+		thLineNumber.Attr = append(thLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
+		tr.AppendChild(thLineNumber)
 
 		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
 		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
@@ -609,15 +609,15 @@ func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
 // normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
 // following transformations:
 //
-// 	a/b/c/FOO.TXT → a/b/c/FOO.txt
-// 	FOO.Sh → FOO.sh
+//	a/b/c/FOO.TXT → a/b/c/FOO.txt
+//	FOO.Sh → FOO.sh
 //
 // The following are left unmodified, as they already have lowercase extensions:
 //
-// 	a/b/c/FOO.txt
-// 	a/b/c/Makefile
-// 	Makefile.am
-// 	FOO.txt
+//	a/b/c/FOO.txt
+//	a/b/c/Makefile
+//	Makefile.am
+//	FOO.txt
 //
 // It expects the filepath uses forward slashes always.
 func normalizeFilepath(p string) string {

@@ -1,4 +1,4 @@
-import { ContentMatch, SearchMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import { LineMatch, SearchMatch, MatchedSymbol } from '@sourcegraph/shared/src/search/stream'
 
 const SUPPORTED_TYPES = new Set(['commit', 'content', 'path', 'symbol', 'repo'])
 const ID_SEPERATOR = '-#-'
@@ -10,7 +10,9 @@ export function getFirstResultId(results: SearchMatch[]): string | null {
         return getResultId(
             firstSupportedMatch,
             firstSupportedMatch.type === 'content'
-                ? firstSupportedMatch.lineMatches[0]
+                ? firstSupportedMatch.lineMatches
+                    ? firstSupportedMatch.lineMatches[0]
+                    : undefined
                 : firstSupportedMatch.type === 'symbol'
                 ? firstSupportedMatch.symbols[0]
                 : undefined
@@ -42,11 +44,11 @@ export function getMatchIdForResult(resultId: string): string {
     return resultId.split(ID_SEPERATOR)[0]
 }
 
-export type LineMatchItem = ContentMatch['lineMatches'][0]
-export type SymbolMatchItem = SymbolMatch['symbols'][0]
+export type LineMatchItem = LineMatch
+export type SymbolMatchItem = MatchedSymbol
 export function getResultId(match: SearchMatch, lineOrSymbolMatch?: LineMatchItem | SymbolMatchItem): string {
     if (match.type === 'content') {
-        return `${getMatchId(match)}${ID_SEPERATOR}${match.lineMatches.indexOf(lineOrSymbolMatch as LineMatchItem)}`
+        return `${getMatchId(match)}${ID_SEPERATOR}${match.lineMatches?.indexOf(lineOrSymbolMatch as LineMatchItem)}`
     }
     if (match.type === 'symbol') {
         return `${getMatchId(match)}${ID_SEPERATOR}${match.symbols.indexOf(lineOrSymbolMatch as SymbolMatchItem)}`

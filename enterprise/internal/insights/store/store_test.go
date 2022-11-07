@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestSeriesPoints(t *testing.T) {
@@ -43,20 +46,17 @@ func TestSeriesPoints(t *testing.T) {
 	_, err = insightsDB.ExecContext(context.Background(), `
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-original');
 INSERT INTO repo_names(name) VALUES ('github.com/gorilla/mux-renamed');
-INSERT INTO metadata(metadata) VALUES ('{"hello": "world", "languages": ["Go", "Python", "Java"]}');
 SELECT setseed(0.5);
 INSERT INTO series_points(
     time,
 	series_id,
     value,
-    metadata_id,
     repo_id,
     repo_name_id,
     original_repo_name_id)
 SELECT time,
     'somehash',
     random()*80 - 40,
-    (SELECT id FROM metadata WHERE metadata = '{"hello": "world", "languages": ["Go", "Python", "Java"]}'),
     2,
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-renamed'),
     (SELECT id FROM repo_names WHERE name = 'github.com/gorilla/mux-original')
@@ -155,43 +155,37 @@ func TestCountData(t *testing.T) {
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	// Record some duplicate data points.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: timeValue("2020-03-01T00:00:00Z"), Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:00:00Z"), Value: 2.2},
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "two",
 			Point:       SeriesPoint{Time: timeValue("2020-03-02T00:01:00Z"), Value: 2.2},
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "three",
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:00:00Z"), Value: 3.3},
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
 		{
 			SeriesID:    "three",
 			Point:       SeriesPoint{Time: timeValue("2020-03-03T00:01:00Z"), Value: 3.3},
-			Metadata:    nil,
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// How many data points on 02-29?
@@ -238,19 +232,22 @@ func TestRecordSeriesPoints(t *testing.T) {
 	permStore := NewInsightPermissionStore(postgres)
 	store := NewWithClock(insightsDB, permStore, clock)
 
+	// First test it does not error with no records.
+	if err := store.RecordSeriesPoints(ctx, []RecordSeriesPointArgs{}); err != nil {
+		t.Fatal(err)
+	}
+
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -258,7 +255,6 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 14), Value: 2.2},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    []any{"some", "data", "two"},
 			PersistMode: RecordMode,
 		},
 		{
@@ -266,21 +262,18 @@ func TestRecordSeriesPoints(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 28), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    nil,
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current.Add(-time.Hour * 24 * 42), Value: 3.3},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    nil,
-			PersistMode: RecordMode,
+			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	want := []SeriesPoint{
@@ -311,22 +304,14 @@ func TestRecordSeriesPoints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Want("len(points)", int(4)).Equal(t, len(points))
-	if diff := cmp.Diff(4, len(points)); diff != "" {
-		t.Errorf("len(points): %v", diff)
+	stringify := func(points []SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		return s
 	}
-	if diff := cmp.Diff(want[0], points[0]); diff != "" {
-		t.Errorf("points[0].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[1], points[1]); diff != "" {
-		t.Errorf("points[1].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[2], points[2]); diff != "" {
-		t.Errorf("points[2].String(): %v", diff)
-	}
-	if diff := cmp.Diff(want[3], points[3]); diff != "" {
-		t.Errorf("points[3].String(): %v", diff)
-	}
+	autogold.Want("wanted points = gotten points", stringify(want)).Equal(t, stringify(points))
 }
 
 func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
@@ -347,20 +332,17 @@ func TestRecordSeriesPointsSnapshotOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -413,20 +395,17 @@ func TestRecordSeriesPointsRecordingOnly(t *testing.T) {
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
 
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
-	for _, record := range []RecordSeriesPointArgs{
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    "one",
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	if err := store.RecordSeriesPoints(ctx, records); err != nil {
+		t.Fatal(err)
 	}
 
 	// check snapshots table has a row
@@ -472,22 +451,40 @@ func TestDeleteSnapshots(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	permStore := NewInsightPermissionStore(postgres)
+	insightStore := NewInsightStore(insightsDB)
 	store := NewWithClock(insightsDB, permStore, clock)
 
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }
 
 	current := time.Date(2021, time.September, 10, 10, 0, 0, 0, time.UTC)
-
 	seriesID := "one"
-	// Metadata is currently not queried and will not resolve to reduce cardinality.
-	for _, record := range []RecordSeriesPointArgs{
+
+	series := types.InsightSeries{
+		SeriesID:           seriesID,
+		Query:              "query-1",
+		OldestHistoricalAt: current.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     current.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: current,
+		LastSnapshotAt:     current,
+		NextSnapshotAfter:  current,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	series, err := insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if series.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
+	records := []RecordSeriesPointArgs{
 		{
 			SeriesID:    seriesID,
 			Point:       SeriesPoint{Time: current, Value: 1.1},
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: SnapshotMode,
 		},
 		{
@@ -495,13 +492,15 @@ func TestDeleteSnapshots(t *testing.T) {
 			Point:       SeriesPoint{Time: current.Add(time.Hour), Value: 1.1}, // offsetting the time by an hour so that the point is not deduplicated
 			RepoName:    optionalString("repo1"),
 			RepoID:      optionalRepoID(3),
-			Metadata:    map[string]any{"some": "data"},
 			PersistMode: RecordMode,
 		},
-	} {
-		if err := store.RecordSeriesPoint(ctx, record); err != nil {
-			t.Fatal(err)
-		}
+	}
+	recordingTimes := types.InsightSeriesRecordingTimes{
+		InsightSeriesID: 1,
+		RecordingTimes:  []types.RecordingTime{{current, true}, {current.Add(time.Hour), false}},
+	}
+	if err := store.RecordSeriesPointsAndRecordingTimes(ctx, records, recordingTimes); err != nil {
+		t.Fatal(err)
 	}
 
 	// first check that we have one recording and one snapshot
@@ -514,7 +513,7 @@ func TestDeleteSnapshots(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("unexpected count of series points prior to deleting snapshots (want/got): %v", diff)
 	}
-	err = store.DeleteSnapshots(ctx, &types.InsightSeries{SeriesID: seriesID})
+	err = store.DeleteSnapshots(ctx, &series)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,6 +528,13 @@ func TestDeleteSnapshots(t *testing.T) {
 		t.Errorf("unexpected count of series points after deleting snapshots (want/got): %v", diff)
 	}
 	autogold.Equal(t, points, autogold.ExportedOnly())
+
+	gotRecordingTimes, err := store.GetInsightSeriesRecordingTimes(ctx, 1, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRecordingTimes := types.InsightSeriesRecordingTimes{1, []types.RecordingTime{{Timestamp: current.Add(time.Hour)}}}
+	autogold.Want("snapshot recording time should have been deleted", gotRecordingTimes).Equal(t, wantRecordingTimes)
 }
 
 func TestValues(t *testing.T) {
@@ -620,10 +626,8 @@ func TestDelete(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log(table)
 		q := sqlf.Sprintf("select count(*) from %s where series_id = %s;", sqlf.Sprintf(table), seriesId)
-		row := timeseriesStore.QueryRow(ctx, q)
-		val, err := basestore.ScanInt(row)
+		val, err := basestore.ScanInt(timeseriesStore.QueryRow(ctx, q))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -636,11 +640,264 @@ func TestDelete(t *testing.T) {
 	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series1") != 0 {
 		t.Errorf("expected 0 count for series1 in snapshot table")
 	}
-
 	if getCountForSeries(ctx, timeseriesStore, RecordMode, "series2") != 1 {
 		t.Errorf("expected 1 count for series2 in record table")
 	}
 	if getCountForSeries(ctx, timeseriesStore, SnapshotMode, "series2") != 1 {
 		t.Errorf("expected 1 count for series2 in snapshot table")
+	}
+}
+
+func getTableForPersistMode(mode PersistMode) (string, error) {
+	switch mode {
+	case RecordMode:
+		return recordingTable, nil
+	case SnapshotMode:
+		return snapshotsTable, nil
+	default:
+		return "", errors.Newf("unsupported insights series point persist mode: %v", mode)
+	}
+}
+
+func TestInsightSeriesRecordingTimes(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	clock := timeutil.Now
+	insightsdb := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+
+	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	permStore := NewInsightPermissionStore(postgres)
+	insightStore := NewInsightStore(insightsdb)
+	timeseriesStore := NewWithClock(insightsdb, permStore, clock)
+
+	series := types.InsightSeries{
+		SeriesID:           "series1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
+	}
+	got, err := insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 1 {
+		t.Errorf("expected first series to have id 1")
+	}
+	series.SeriesID = "series2" // copy to make a new one
+	got, err = insightStore.CreateSeries(ctx, series)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 2 {
+		t.Errorf("expected second series to have id 2")
+	}
+
+	makeRecordings := func(times []time.Time, snapshot bool) []types.RecordingTime {
+		recordings := make([]types.RecordingTime, 0, len(times))
+		for _, t := range times {
+			recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: t})
+		}
+		return recordings
+	}
+
+	series1Times := []time.Time{now, now.AddDate(0, 1, 0)}
+	series2Times := []time.Time{now, now.AddDate(0, 1, 1), now.AddDate(0, -1, 1)}
+	series1 := types.InsightSeriesRecordingTimes{
+		1,
+		makeRecordings(series1Times, false),
+	}
+	series2 := types.InsightSeriesRecordingTimes{
+		2,
+		makeRecordings(series2Times, false),
+	}
+
+	err = timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
+		series1,
+		series2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stringifyTimes := func(times []time.Time) string {
+		s := []string{}
+		for _, t := range times {
+			s = append(s, t.String())
+		}
+		sort.Strings(s)
+		return strings.Join(s, " ")
+	}
+
+	oldTime := now.AddDate(-1, 1, 1)
+	afterNow := now.AddDate(0, 0, 1)
+
+	testCases := []struct {
+		insert  *types.InsightSeriesRecordingTimes
+		getFor  int
+		getFrom *time.Time
+		getTo   *time.Time
+		want    autogold.Value
+	}{
+		{
+			getFor: 1,
+			want:   autogold.Want("get all recording times for series1", stringifyTimes(series1Times)),
+		},
+		{
+			insert: &types.InsightSeriesRecordingTimes{1, makeRecordings([]time.Time{now}, true)},
+			getFor: 1,
+			want:   autogold.Want("duplicates are not inserted", stringifyTimes(series1Times)),
+		},
+		{
+			insert: &types.InsightSeriesRecordingTimes{2, makeRecordings([]time.Time{now.Local()}, true)},
+			getFor: 2,
+			want:   autogold.Want("UTC is always used", stringifyTimes(series2Times)),
+		},
+		{
+			getFor:  2,
+			getFrom: &now,
+			want:    autogold.Want("gets subset of series 2 recording times", stringifyTimes(series2Times[:2])),
+		},
+		{
+			getFor: 1,
+			getTo:  &now,
+			want:   autogold.Want("gets subset of series 1 recording times", stringifyTimes(series1Times[:1])),
+		},
+		{
+			getFor:  2,
+			getFrom: &oldTime,
+			getTo:   &afterNow,
+			want:    autogold.Want("gets subset from and to", stringifyTimes(append(series2Times[:1], series2Times[2]))),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			if tc.insert != nil {
+				if err := timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{*tc.insert}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			got, err := timeseriesStore.GetInsightSeriesRecordingTimes(ctx, tc.getFor, tc.getFrom, tc.getTo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			recordingTimes := []time.Time{}
+			for _, recording := range got.RecordingTimes {
+				recordingTimes = append(recordingTimes, recording.Timestamp)
+			}
+			tc.want.Equal(t, stringifyTimes(recordingTimes))
+		})
+	}
+}
+
+func Test_coalesceZeroValues(t *testing.T) {
+	stringify := func(points []SeriesPoint) []string {
+		s := []string{}
+		for _, point := range points {
+			s = append(s, point.String())
+		}
+		// Sort for determinism.
+		sort.Strings(s)
+		return s
+	}
+	testTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	generateTimes := func(n int) []time.Time {
+		times := []time.Time{}
+		for i := 0; i < n; i++ {
+			times = append(times, testTime.AddDate(0, 0, i))
+		}
+		return times
+	}
+	capture := func(s string) *string {
+		return &s
+	}
+	makeRecordingTimes := func(times []time.Time) []types.RecordingTime {
+		recordingTimes := make([]types.RecordingTime, len(times))
+		for i, t := range times {
+			recordingTimes[i] = types.RecordingTime{Timestamp: t}
+		}
+		return recordingTimes
+	}
+
+	testCases := []struct {
+		points         map[string]*SeriesPoint
+		recordingTimes []time.Time
+		captureValues  map[string]struct{}
+		want           autogold.Value
+	}{
+		{
+			nil,
+			nil,
+			nil,
+			autogold.Want("empty returns empty", []string{}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 12, nil},
+			},
+			[]time.Time{},
+			map[string]struct{}{"": {}},
+			autogold.Want("empty recording times returns empty", []string{}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"seriesID", testTime, 1, nil},
+			},
+			generateTimes(2),
+			map[string]struct{}{"": {}},
+			autogold.Want("augment one data point", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 0}`,
+			}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTCone":   {"1", testTime, 1, capture("one")},
+				"2020-01-01 00:00:00 +0000 UTCtwo":   {"1", testTime, 2, capture("two")},
+				"2020-01-01 00:00:00 +0000 UTCthree": {"1", testTime, 3, capture("three")},
+				"2020-01-02 00:00:00 +0000 UTCone":   {"1", testTime.AddDate(0, 0, 1), 1, capture("one")},
+			},
+			generateTimes(2),
+			map[string]struct{}{"one": {}, "two": {}, "three": {}},
+			autogold.Want("augment capture data points", []string{
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "three", Value: 3}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Capture: "two", Value: 2}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "one", Value: 1}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "three", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Capture: "two", Value: 0}`,
+			}),
+		},
+		{
+			map[string]*SeriesPoint{
+				"2020-01-01 00:00:00 +0000 UTC": {"1", testTime, 11, nil},
+				"2020-01-02 00:00:00 +0000 UTC": {"1", testTime.AddDate(0, 0, 1), 22, nil},
+			},
+			append([]time.Time{testTime.AddDate(0, 0, -1)}, generateTimes(2)...),
+			map[string]struct{}{"": {}},
+			autogold.Want("augment data point in the past", []string{
+				`SeriesPoint{Time: "2019-12-31 00:00:00 +0000 UTC", Value: 0}`,
+				`SeriesPoint{Time: "2020-01-01 00:00:00 +0000 UTC", Value: 11}`,
+				`SeriesPoint{Time: "2020-01-02 00:00:00 +0000 UTC", Value: 22}`,
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := coalesceZeroValues("1", tc.points, tc.captureValues, makeRecordingTimes(tc.recordingTimes))
+			tc.want.Equal(t, stringify(got))
+		})
 	}
 }

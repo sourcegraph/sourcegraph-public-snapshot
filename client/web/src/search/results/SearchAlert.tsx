@@ -26,7 +26,16 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
     <Alert className="my-2" data-testid="alert-container" variant="info">
         <H3>{alert.title}</H3>
 
-        {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}
+        {alert.description && (
+            <Markdown
+                className="mb-3"
+                dangerousInnerHTML={renderMarkdown(alert.description, {
+                    // Disable autolinks so revision specifications are not rendered as email links
+                    // (for example, "sourcegraph@4.0.1")
+                    disableAutolinks: true,
+                })}
+            />
+        )}
 
         {alert.proposedQueries && (
             <>

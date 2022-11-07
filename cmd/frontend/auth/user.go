@@ -31,20 +31,20 @@ type GetAndSaveUserOp struct {
 // the necessary updates to the DB, and returns the user ID after the updates have been applied.
 //
 // At a high level, it does the following:
-// 1. Determine the identity of the user by applying the following rules in order:
-//    a. If ctx contains an authenticated Actor, the Actor's identity is the user identity.
-//    b. Look up the user by external account ID.
-//    c. If the email specified in op.UserProps is verified, Look up the user by verified email.
-//       If op.LookUpByUsername is true, look up by username instead of verified email.
-//       (Note: most clients should look up by email, as username is typically insecure.)
-//    d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
-//       specified in op.UserProps. This may fail if the desired username is already taken.
-//    e. If a new user is successfully created, attempt to grant pending permissions.
-// 2. Ensure that the user is associated with the external account information. This means
-//    creating the external account if it does not already exist or updating it if it
-//    already does.
-// 3. Update any user props that have changed.
-// 4. Return the user ID.
+//  1. Determine the identity of the user by applying the following rules in order:
+//     a. If ctx contains an authenticated Actor, the Actor's identity is the user identity.
+//     b. Look up the user by external account ID.
+//     c. If the email specified in op.UserProps is verified, Look up the user by verified email.
+//     If op.LookUpByUsername is true, look up by username instead of verified email.
+//     (Note: most clients should look up by email, as username is typically insecure.)
+//     d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
+//     specified in op.UserProps. This may fail if the desired username is already taken.
+//     e. If a new user is successfully created, attempt to grant pending permissions.
+//  2. Ensure that the user is associated with the external account information. This means
+//     creating the external account if it does not already exist or updating it if it
+//     already does.
+//  3. Update any user props that have changed.
+//  4. Return the user ID.
 //
 // 🚨 SECURITY: It is the caller's responsibility to ensure the veracity of the information that
 // op contains (e.g., by receiving it from the appropriate authentication mechanism). It must

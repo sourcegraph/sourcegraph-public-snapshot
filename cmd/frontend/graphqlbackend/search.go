@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -39,6 +40,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Version,
 		args.PatternType,
 		args.Query,
+		search.Precise,
 		search.Batch,
 		settings,
 		envvar.SourcegraphDotComMode(),
@@ -84,7 +86,7 @@ func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 		return MockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := newSchemaResolver(db).ViewerSettings(ctx)
+	cascade, err := newSchemaResolver(db, gitserver.NewClient(db)).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

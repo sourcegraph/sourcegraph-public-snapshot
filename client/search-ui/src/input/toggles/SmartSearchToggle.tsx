@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiClose, mdiLightningBolt, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
+import { mdiClose, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
 import classNames from 'classnames'
 
 import {
     Button,
-    H3,
     Icon,
     Input,
     Label,
@@ -14,12 +13,17 @@ import {
     PopoverTrigger,
     Tooltip,
     Position,
+    H4,
+    H2,
 } from '@sourcegraph/wildcard'
 
 import { ToggleProps } from './QueryInputToggle'
 
 import smartStyles from './SmartSearchToggle.module.scss'
 import styles from './Toggles.module.scss'
+
+export const smartSearchIconSvgPath =
+    'M11.3956 20H10.2961L11.3956 13.7778H7.54754C6.58003 13.7778 7.18473 13.1111 7.20671 13.0844C8.62499 11.0578 10.7579 8.03556 13.6054 4H14.7049L13.6054 10.2222H17.4645C17.9042 10.2222 18.1461 10.3911 17.9042 10.8089C13.5615 16.9333 11.3956 20 11.3956 20Z'
 
 interface SmartSearchToggleProps extends Omit<ToggleProps, 'title' | 'iconSvgPath' | 'onToggle'> {
     onSelect: (enabled: boolean) => void
@@ -47,23 +51,24 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-            <PopoverTrigger
-                as={Button}
-                className={classNames(
-                    styles.toggle,
-                    className,
-                    !!disabledRule && styles.disabled,
-                    isActive && styles.toggleActive,
-                    !interactive && styles.toggleNonInteractive
-                )}
-                variant="icon"
-                aria-checked={isActive}
-                {...interactiveProps}
-            >
-                <Tooltip content={tooltipValue} placement="bottom">
-                    <Icon aria-label={tooltipValue} svgPath={mdiLightningBolt} />
-                </Tooltip>
-            </PopoverTrigger>
+            <Tooltip content={tooltipValue} placement="bottom">
+                <PopoverTrigger
+                    as={Button}
+                    className={classNames(
+                        styles.toggle,
+                        smartStyles.button,
+                        className,
+                        !!disabledRule && styles.disabled,
+                        isActive && styles.toggleActive,
+                        !interactive && styles.toggleNonInteractive
+                    )}
+                    variant="icon"
+                    aria-checked={isActive}
+                    {...interactiveProps}
+                >
+                    <Icon aria-label={tooltipValue} svgPath={smartSearchIconSvgPath} />
+                </PopoverTrigger>
+            </Tooltip>
 
             <SmartSearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
         </Popover>
@@ -73,10 +78,16 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 const SmartSearchToggleMenu: React.FunctionComponent<
     Pick<SmartSearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
 > = ({ onSelect, isActive, closeMenu }) => {
+    const [visibleIsEnabled, setVisibleIsEnabled] = useState(isActive)
+
     const onChange = useCallback(
         (value: boolean) => {
-            onSelect(value)
-            closeMenu()
+            setVisibleIsEnabled(value)
+            // Wait a tiny bit for user to see the selection change before closing the popover
+            setTimeout(() => {
+                onSelect(value)
+                closeMenu()
+            }, 100)
         },
         [onSelect, closeMenu]
     )
@@ -88,9 +99,9 @@ const SmartSearchToggleMenu: React.FunctionComponent<
             className={smartStyles.popoverWindow}
         >
             <div className="d-flex align-items-center px-3 py-2">
-                <H3 id="smart-search-popover-header" className="m-0 flex-1">
+                <H4 as={H2} id="smart-search-popover-header" className="m-0 flex-1">
                     Smart Search
-                </H3>
+                </H4>
                 <Button onClick={() => closeMenu()} variant="icon" aria-label="Close">
                     <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
@@ -99,14 +110,14 @@ const SmartSearchToggleMenu: React.FunctionComponent<
                 value={true}
                 header="Enable"
                 description="Suggest variations of your query to find more results that may relate."
-                isChecked={isActive}
+                isChecked={visibleIsEnabled}
                 onSelect={onChange}
             />
             <RadioItem
                 value={false}
                 header="Disable"
                 description="Only show results that precisely match your query."
-                isChecked={!isActive}
+                isChecked={!visibleIsEnabled}
                 onSelect={onChange}
             />
         </PopoverContent>

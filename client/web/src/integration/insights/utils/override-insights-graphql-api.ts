@@ -29,7 +29,7 @@ interface CustomInsightsOperations {
     BulkSearch: () => Record<string, BulkSearchFields>
 }
 
-interface OverrideGraphQLExtensionsProps {
+export interface OverrideGraphQLExtensionsProps {
     testContext: WebIntegrationTestContext
     overrides?: Partial<WebGraphQlOperations & SharedGraphQlOperations & CustomInsightsOperations>
 }
@@ -39,26 +39,19 @@ interface OverrideGraphQLExtensionsProps {
  * extension js bundle requests.
  *
  * @param props - Custom override for code insight APIs (gql, user setting, extensions)
+ * @param [props.overrides] - GraphQL calls to override. Note: Overrides need all __typename fields included for Apollo cache to work.
  */
 export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps): void {
     const { testContext, overrides = {} } = props
 
+    // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
+    // modal UI on all code insights related pages.
+    testContext.overrideInitialTemporarySettings({
+        'insights.freeGaAccepted': true,
+        'insights.wasMainPageOpen': true,
+    })
     testContext.overrideGraphQL({
         ...commonWebGraphQlResults,
-        // Mock temporary settings cause code insights beta modal UI relies on this handler to show/hide
-        // modal UI on all code insights related pages.
-        GetTemporarySettings: () => ({
-            temporarySettings: {
-                __typename: 'TemporarySettings',
-                contents: JSON.stringify({
-                    'user.daysActiveCount': 1,
-                    'user.lastDayActive': new Date().toDateString(),
-                    'search.usedNonGlobalContext': true,
-                    'insights.freeGaAccepted': true,
-                    'insights.wasMainPageOpen': true,
-                }),
-            },
-        }),
         // Mock insight config query
         GetInsights: () => ({
             __typename: 'Query',

@@ -155,19 +155,6 @@
                         font-weight: bold;
                     }
 
-                    .tabStyle {
-                        border: 1px solid var(--text-muted);
-                        border-radius: 0.25rem;
-                        height: 1.25rem;
-                        font-size: 0.65rem;
-                        line-height: 1;
-                        padding: 0.25rem 0.375rem;
-                        margin-left: auto;
-                        color: var(--text-muted);
-                        opacity: 0.75;
-                        display: none;
-                    }
-
                     &[aria-selected] {
                         color: var(--search-query-text-color);
                         background-color: var(--color-bg-2);

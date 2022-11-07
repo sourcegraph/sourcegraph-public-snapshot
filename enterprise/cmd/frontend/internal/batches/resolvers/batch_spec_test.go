@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
@@ -51,7 +54,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	orgname := "test-org"
 	userID := bt.CreateTestUser(t, db, false).ID
 	adminID := bt.CreateTestUser(t, db, true).ID
-	orgID := bt.InsertTestOrg(t, db, orgname)
+	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
 
 	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
@@ -115,8 +118,8 @@ func TestBatchSpecResolver(t *testing.T) {
 		Creator:             &apitest.User{ID: userAPIID, DatabaseID: userID},
 		ViewerCanAdminister: true,
 
-		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			TotalCount: 1,
@@ -136,7 +139,6 @@ func TestBatchSpecResolver(t *testing.T) {
 
 		DiffStat: apitest.DiffStat{
 			Added:   changesetSpec.DiffStatAdded,
-			Changed: changesetSpec.DiffStatChanged,
 			Deleted: changesetSpec.DiffStatDeleted,
 		},
 
@@ -324,8 +326,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		AllCodeHosts:          codeHosts,
 		OnlyWithoutCredential: codeHosts,
 
-		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 
 		ChangesetSpecs: apitest.ChangesetSpecConnection{
 			Nodes: []apitest.ChangesetSpec{},
@@ -370,7 +372,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	jobs[1].StartedAt = minAgo(99)
 	setJobProcessing(t, ctx, bstore, jobs[1])
 	want.State = "PROCESSING"
-	want.StartedAt = graphqlbackend.DateTime{Time: jobs[1].StartedAt}
+	want.StartedAt = gqlutil.DateTime{Time: jobs[1].StartedAt}
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 processing
@@ -392,7 +394,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCompleted(t, ctx, bstore, jobs[1])
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
-	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
 	// Nothing to retry
 	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
@@ -412,7 +414,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
 	want.State = "PROCESSING"
-	want.FinishedAt = graphqlbackend.DateTime{}
+	want.FinishedAt = gqlutil.DateTime{}
 	want.ApplyURL = nil
 	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
@@ -435,7 +437,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCanceled(t, ctx, bstore, jobs[2])
 
 	want.State = "CANCELED"
-	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
 	want.ViewerCanRetry = true
 	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
@@ -472,9 +474,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
 	want.ApplyURL = nil
-	want.DiffStat.Added = 20
-	want.DiffStat.Deleted = 4
-	want.DiffStat.Changed = 10
+	want.DiffStat.Added = 30
+	want.DiffStat.Deleted = 14
 	want.ViewerCanRetry = true
 
 	codeHosts = apitest.BatchChangesCodeHostsConnection{
@@ -487,13 +488,38 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.OnlyWithoutCredential = codeHosts
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
-	// PERMISSIONS: Now we view the same batch spec but as another non-admin user.
-	// This should still work.
+	// PERMISSIONS: Now we view the same batch spec but as another non-admin user, for
+	// example if a user is sharing a preview link with another user. This should still
+	// work.
 	want.ViewerCanAdminister = false
 	want.ViewerCanRetry = false
 	otherUser := bt.CreateTestUser(t, db, false)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
 	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
+}
+
+func TestBatchSpecResolver_Files(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	resolver := batchSpecResolver{
+		store:     bstore,
+		batchSpec: &btypes.BatchSpec{RandID: "123"},
+	}
+
+	after := "1"
+	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
+		First: int32(10),
+		After: &after,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, connectionResolver)
 }
 
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
@@ -616,7 +642,7 @@ query($batchSpec: ID!) {
       createdAt
       expiresAt
 
-      diffStat { added, deleted, changed }
+      diffStat { added, deleted }
 
 	  appliesToBatchChange { id }
 	  supersedingBatchSpec { id }

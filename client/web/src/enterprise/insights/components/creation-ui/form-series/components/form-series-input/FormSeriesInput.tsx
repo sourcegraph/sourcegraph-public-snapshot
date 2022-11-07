@@ -11,7 +11,7 @@ import { EditableDataSeries } from '../../types'
 import { FormColorInput } from '../form-color-input/FormColorInput'
 
 import { getQueryPatternTypeFilter } from './get-pattern-type-filter'
-import { requiredNameField, validQuery } from './validators'
+import { SERIES_NAME_VALIDATORS, SERIES_QUERY_VALIDATORS } from './validators'
 
 interface FormSeriesInputProps {
     series: EditableDataSeries
@@ -104,13 +104,13 @@ export const FormSeriesInput: FC<FormSeriesInputProps> = props => {
     const nameField = useField({
         name: 'seriesName',
         formApi: formAPI,
-        validators: { sync: requiredNameField },
+        validators: { sync: SERIES_NAME_VALIDATORS },
     })
 
     const queryField = useField({
         name: 'seriesQuery',
         formApi: formAPI,
-        validators: { sync: validQuery },
+        validators: { sync: SERIES_QUERY_VALIDATORS },
     })
 
     const colorField = useField({

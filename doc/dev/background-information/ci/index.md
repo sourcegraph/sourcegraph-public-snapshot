@@ -28,6 +28,7 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
   </a>
 </div>
 
+
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
@@ -40,7 +41,11 @@ To see what checks will get run against your current branch, use [`sg`](../../se
 sg ci preview
 ```
 
-You can also request builds manually for your builds using `sg ci build`.
+You can also request builds manually for your builds using `sg ci build`. You'll find below a summary video about some useful `sg ci *` commands, to learn how move fast when interacting with the CI:
+
+<div style="position: relative; padding-bottom: 82%; height: 0;">
+  <iframe src="https://www.loom.com/embed/f451d05978b34d97bdc06d411aacc69d" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+</div>
 
 To learn about making changes to our Buildkite pipelines, see [Pipeline development](./development.md).
 

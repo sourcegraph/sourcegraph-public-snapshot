@@ -2,17 +2,11 @@ package licensing
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// EnforceTiers is a temporary flag to indicate whether to enforce new license tier constraints defined in
-// RFC 167 to incrementally merge changes into main branch, we'll remove it once fully implemented the RFC.
-var EnforceTiers, _ = strconv.ParseBool(env.Get("SRC_ENFORCE_TIERS", "false", "Enforce license tier constraints defined in RFC 167"))
 
 // Feature is a product feature that is selectively activated based on the current license key.
 type Feature string

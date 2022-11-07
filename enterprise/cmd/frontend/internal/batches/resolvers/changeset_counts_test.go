@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -94,6 +95,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
+			Token: "abc",
 			Repos: []string{"sourcegraph/sourcegraph"},
 		})),
 	}
@@ -189,12 +191,12 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, bstore, src, githubRepo, c); err != nil {
+		if err := syncer.SyncChangeset(ctx, bstore, mockState.MockClient, src, githubRepo, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	s, err := newSchema(db, New(bstore))
+	s, err := newSchema(db, New(bstore, gitserver.NewMockClient()))
 	if err != nil {
 		t.Fatal(err)
 	}

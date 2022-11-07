@@ -1,7 +1,7 @@
 import { asError } from '@sourcegraph/common'
 import { GRAPHQL_URI, GraphQLResult } from '@sourcegraph/http-client'
 
-import { getAccessToken, getInstanceURL } from '..'
+import { getAccessToken, getCustomRequestHeaders, getInstanceURL } from '..'
 
 export const requestGraphQL = async <R, V = object>(
     request: string,
@@ -10,6 +10,7 @@ export const requestGraphQL = async <R, V = object>(
 ): Promise<GraphQLResult<R>> => {
     const instanceURL = getInstanceURL()
     const accessToken = getAccessToken()
+    const customRequestHeaders = getCustomRequestHeaders()
 
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
@@ -19,6 +20,11 @@ export const requestGraphQL = async <R, V = object>(
     headers.set('X-Sourcegraph-Should-Trace', new URLSearchParams(window.location.search).get('trace') || 'false')
     if (accessToken) {
         headers.set('Authorization', `token ${accessToken}`)
+    }
+    if (customRequestHeaders) {
+        for (const [name, value] of Object.entries(customRequestHeaders)) {
+            headers.set(name, value)
+        }
     }
 
     let response: Response | null = null

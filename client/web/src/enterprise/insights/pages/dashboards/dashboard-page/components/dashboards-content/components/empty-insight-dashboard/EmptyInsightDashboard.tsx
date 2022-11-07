@@ -4,8 +4,9 @@ import { mdiPlus } from '@mdi/js'
 
 import { Button, Link, Card, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD, InsightDashboard } from '../../../../../../../core'
-import { useUiFeatures } from '../../../../../../../hooks/use-ui-features'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../constants'
+import { InsightDashboard } from '../../../../../../../core'
+import { useUiFeatures } from '../../../../../../../hooks'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
@@ -71,6 +72,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<
                 onClick={onAddInsight}
                 variant="secondary"
                 className="p-0 w-100 border-0"
+                data-testid="add-insights-button-card"
             >
                 <Tooltip content={addRemoveInsightPermissions.tooltip} placement="right">
                     <Card className={styles.itemCard}>

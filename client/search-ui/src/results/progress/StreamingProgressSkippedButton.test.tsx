@@ -93,8 +93,8 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         renderWithBrandedContext(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutlineDanger')
-        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutlineSecondary')
+        expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutline btnDanger')
+        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutline btnSecondary')
     })
 
     it('should open and close popover when button is clicked', async () => {

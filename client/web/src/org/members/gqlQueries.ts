@@ -7,15 +7,19 @@ export const ORG_MEMBERS_QUERY = gql`
                 viewerCanAdminister
                 members {
                     nodes {
-                        id
-                        username
-                        displayName
-                        avatarURL
+                        ...OrganizationMemberNode
                     }
                     totalCount
                 }
             }
         }
+    }
+
+    fragment OrganizationMemberNode on User {
+        id
+        username
+        displayName
+        avatarURL
     }
 `
 

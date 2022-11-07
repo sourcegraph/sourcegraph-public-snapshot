@@ -13,6 +13,7 @@ const triggerReload = process.env.AUTO_RELOAD === 'false' ? noop : autoReloading
 
 const buildChrome = tasks.buildChrome('dev')
 const buildFirefox = tasks.buildFirefox('dev')
+const buildEdge = tasks.buildEdge('dev')
 
 tasks.copyAssets()
 
@@ -36,6 +37,7 @@ compiler.watch(
         signale.success('Webpack compilation done')
 
         buildChrome()
+        buildEdge()
         buildFirefox()
         tasks.copyIntegrationAssets()
         triggerReload()

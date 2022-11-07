@@ -16,6 +16,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -406,7 +407,6 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool) (_ int,
 }
 
 const queuedCountQuery = `
--- source: internal/workerutil/store.go:QueuedCount
 SELECT
 	COUNT(*)
 FROM %s
@@ -453,7 +453,6 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 }
 
 const maxDurationInQueueQuery = `
--- source: internal/workerutil/store.go:MaxDurationInQueue
 WITH
 oldest_queued AS (
 	SELECT
@@ -568,7 +567,6 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 }
 
 const dequeueQuery = `
--- source: internal/workerutil/store.go:Dequeue
 WITH potential_candidates AS (
 	SELECT
 		{id} AS candidate_id,
@@ -705,7 +703,6 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 }
 
 const updateCandidateQuery = `
--- source: internal/workerutil/store.go:Heartbeat
 WITH alive_candidates AS (
 	SELECT
 		{id}
@@ -743,7 +740,6 @@ func (s *store) CanceledJobs(ctx context.Context, knownIDs []int, options Cancel
 }
 
 const canceledJobsQuery = `
--- source: internal/workerutil/store.go:CanceledJobs
 SELECT
 	{id}
 FROM
@@ -772,7 +768,6 @@ func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error
 }
 
 const requeueQuery = `
--- source: internal/workerutil/store.go:Requeue
 UPDATE %s
 SET
 	{state} = 'queued',
@@ -826,7 +821,6 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 }
 
 const addExecutionLogEntryQuery = `
--- source: internal/workerutil/store.go:AddExecutionLogEntry
 UPDATE
 	%s
 SET {execution_logs} = {execution_logs} || %s::json
@@ -882,7 +876,6 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 }
 
 const updateExecutionLogEntryQuery = `
--- source: internal/workerutil/store.go:UpdateExecutionLogEntry
 UPDATE
 	%s
 SET {execution_logs}[%s] = %s::json
@@ -912,7 +905,6 @@ func (s *store) MarkComplete(ctx context.Context, id int, options MarkFinalOptio
 }
 
 const markCompleteQuery = `
--- source: internal/workerutil/store.go:MarkComplete
 UPDATE %s
 SET {state} = 'completed', {finished_at} = clock_timestamp()
 WHERE %s
@@ -940,7 +932,6 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 }
 
 const markErroredQuery = `
--- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
 SET {state} = CASE WHEN {cancel} THEN 'canceled' WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
@@ -971,7 +962,6 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 }
 
 const markFailedQuery = `
--- source: internal/workerutil/store.go:MarkFailed
 UPDATE %s
 SET {state} = CASE WHEN {cancel} THEN 'canceled' ELSE 'failed' END,
 	{finished_at} = clock_timestamp(),
@@ -1059,7 +1049,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 }
 
 const resetStalledQuery = `
--- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
 	SELECT {id} FROM %s
 	WHERE
@@ -1079,7 +1068,6 @@ RETURNING {id}, {last_heartbeat_at}
 `
 
 const resetStalledMaxResetsQuery = `
--- source: internal/workerutil/store.go:ResetStalled
 WITH stalled AS (
 	SELECT {id} FROM %s
 	WHERE
@@ -1106,7 +1094,6 @@ func (s *store) now() time.Time {
 }
 
 const fetchDebugInformationForJob = `
--- source: internal/workerutil/store.go:UpdateExecutionLogEntry
 SELECT
 	row_to_json(%s)
 FROM

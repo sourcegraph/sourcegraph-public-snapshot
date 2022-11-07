@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { Diagnostic as CMDiagnostic, linter } from '@codemirror/lint'
+import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
 import {
     EditorSelection,
     Extension,
@@ -25,13 +25,13 @@ import {
     TooltipView,
     WidgetType,
 } from '@codemirror/view'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -76,7 +76,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onBlur,
     isSourcegraphDotCom,
     globbing,
-    onHandleFuzzyFinder,
     onEditorCreated,
     interpretComments,
     isLightTheme,
@@ -212,10 +211,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onFocus,
                 onBlur,
                 onCompletionItemSelected,
-                onHandleFuzzyFinder,
             })
         }
-    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
+    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
@@ -324,7 +322,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     history(),
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    queryDiagnostic,
+                    queryDiagnostic(),
                     // The precedence of these extensions needs to be decreased
                     // explicitly, otherwise the diagnostic indicators will be
                     // hidden behind the highlight background color
@@ -435,10 +433,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 // Instead of creating a separate field for every handler, all handlers are set
 // via a single field to keep complexity manageable.
 const [callbacksField, setCallbacks] = createUpdateableField<
-    Pick<
-        MonacoQueryInputProps,
-        'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
-    >
+    Pick<MonacoQueryInputProps, 'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected'>
 >({ onChange: () => {} }, callbacks => [
     Prec.high(
         keymap.of([
@@ -457,19 +452,6 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             },
         ])
     ),
-    keymap.of([
-        {
-            key: 'Mod-k',
-            run: view => {
-                const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                if (onHandleFuzzyFinder) {
-                    onHandleFuzzyFinder(true)
-                    return true
-                }
-                return false
-            },
-        },
-    ]),
     EditorView.updateListener.of((update: ViewUpdate) => {
         const { state, view } = update
         const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
@@ -780,38 +762,58 @@ function getTokensTooltipInformation(
     return { tokensAtCursor, range, value: values.join('') }
 }
 
-// Hooks query diagnostics into the editor.
-// The facet stores the diagnostics data which is used by the text decoration
-// and the tooltip extensions.
-const queryDiagnostic: Extension = [
-    linter(
-        view => {
-            const query = view.state.facet(queryTokens)
-            return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
-        },
-        {
-            delay: 200,
-        }
-    ),
-    EditorView.theme({
-        '.cm-diagnosticText': {
-            display: 'block',
-        },
-        '.cm-diagnosticAction': {
-            color: 'var(--body-color)',
-            borderColor: 'var(--secondary)',
-            backgroundColor: 'var(--secondary)',
-            borderRadius: 'var(--border-radius)',
-            padding: 'var(--btn-padding-y-sm) .5rem',
-            fontSize: 'calc(min(0.75rem, 0.9166666667em))',
-            lineHeight: '1rem',
-            margin: '0.5rem 0 0 0',
-        },
-        '.cm-diagnosticAction + .cm-diagnosticAction': {
-            marginLeft: '1rem',
-        },
-    }),
-]
+/**
+ * Sets up client side query validation.
+ */
+function queryDiagnostic(): Extension {
+    // The setup is a bit "strange" because @codemirror/lint only triggers
+    // linting when the document changes. But in our case the linting rules
+    // change depending on the query "type" (regexp, structural, ...). Changing
+    // the query type does not involve changing the document and to linting
+    // wouldn't be triggered. To work around this we explictly reconfigure the
+    // linter via a compartment when the parsed query changes but the document
+    // hadsn't change. This queues a new linting pass.
+    // See
+    // - https://discuss.codemirror.net/t/can-we-manually-force-linting-even-if-the-document-hasnt-changed/3570/2
+    // - https://github.com/sourcegraph/sourcegraph/issues/43836
+    //
+    const source: LintSource = view => {
+        const query = view.state.facet(queryTokens)
+        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
+    }
+    const config = {
+        delay: 200,
+    }
+
+    const linterCompartment = new Compartment()
+
+    return [
+        linterCompartment.of(linter(source, config)),
+        EditorView.updateListener.of(update => {
+            if (update.state.facet(queryTokens) !== update.startState.facet(queryTokens) && !update.docChanged) {
+                update.view.dispatch({ effects: linterCompartment.reconfigure(linter(source, config)) })
+            }
+        }),
+        EditorView.theme({
+            '.cm-diagnosticText': {
+                display: 'block',
+            },
+            '.cm-diagnosticAction': {
+                color: 'var(--body-color)',
+                borderColor: 'var(--secondary)',
+                backgroundColor: 'var(--secondary)',
+                borderRadius: 'var(--border-radius)',
+                padding: 'var(--btn-padding-y-sm) .5rem',
+                fontSize: 'calc(min(0.75rem, 0.9166666667em))',
+                lineHeight: '1rem',
+                margin: '0.5rem 0 0 0',
+            },
+            '.cm-diagnosticAction + .cm-diagnosticAction': {
+                marginLeft: '1rem',
+            },
+        }),
+    ]
+}
 
 function renderMarkdownNode(message: string): Element {
     const div = document.createElement('div')

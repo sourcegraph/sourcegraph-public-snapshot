@@ -118,6 +118,14 @@ $positions: static, relative, absolute, fixed, sticky;
 
 // Sizing
 
+$sizes: (
+    25: 25%,
+    50: 50%,
+    75: 75%,
+    100: 100%,
+    auto: auto,
+);
+
 @each $prop, $abbrev in (width: w, height: h) {
     @each $size, $length in $sizes {
         .#{$abbrev}-#{$size} {

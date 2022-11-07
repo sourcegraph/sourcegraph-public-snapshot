@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -113,19 +114,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
-					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},
@@ -165,19 +164,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
-					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},
@@ -217,19 +214,17 @@ func TestChangesetSpecResolver(t *testing.T) {
 						Diff: struct{ FileDiffs apitest.FileDiffs }{
 							FileDiffs: apitest.FileDiffs{
 								DiffStat: apitest.DiffStat{
-									Added:   1,
-									Deleted: 1,
-									Changed: 2,
+									Added:   3,
+									Deleted: 3,
 								},
 							},
 						},
 						DiffStat: apitest.DiffStat{
-							Added:   1,
-							Deleted: 1,
-							Changed: 2,
+							Added:   3,
+							Deleted: 3,
 						},
 					},
-					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},
@@ -247,7 +242,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 						},
 						ExternalID: spec.ExternalID,
 					},
-					ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
 				}
 			},
 		},
@@ -326,10 +321,10 @@ query($id: ID!) {
 
           diff {
             fileDiffs {
-              diffStat { added, changed, deleted }
+              diffStat { added, deleted }
             }
           }
-          diffStat { added, changed, deleted }
+          diffStat { added, deleted }
         }
       }
 

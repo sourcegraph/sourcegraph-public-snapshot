@@ -9,7 +9,145 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// TODO: Is renamed_files intentionally omitted from the docs?
+func TestValidateBatchSpecTemplate(t *testing.T) {
+	tests := []struct {
+		name      string
+		batchSpec string
+		wantValid bool
+		wantErr   error
+	}{
+		{
+			name: "full batch spec, all valid template variables",
+			batchSpec: `name: valid-batch-spec
+				on:
+				- repository: github.com/fake/fake
+
+				steps:
+				- run: |
+						${{ repository.search_result_paths }}
+						${{ repository.name }}
+						${{ batch_change.name }}
+						${{ batch_change.description }}
+						${{ previous_step.modified_files }}
+						${{ previous_step.added_files }}
+						${{ previous_step.deleted_files }}
+						${{ previous_step.renamed_files }}
+						${{ previous_step.stdout }}
+						${{ previous_step.stderr}}
+						${{ step.modified_files }}
+						${{ step.added_files }}
+						${{ step.deleted_files }}
+						${{ step.renamed_files }}
+						${{ step.stdout}}
+						${{ step.stderr}}
+						${{ steps.modified_files }}
+						${{ steps.added_files }}
+						${{ steps.deleted_files }}
+						${{ steps.renamed_files }}
+						${{ steps.path }}
+					container: my-container
+
+				changesetTemplate:
+				title: |
+					${{ repository.search_result_paths }}
+					${{ repository.name }}
+					${{ repository.branch }}
+					${{ batch_change.name }}
+					${{ batch_change.description }}
+					${{ steps.modified_files }}
+					${{ steps.added_files }}
+					${{ steps.deleted_files }}
+					${{ steps.renamed_files }}
+					${{ steps.path }}
+					${{ batch_change_link }}
+					body: I'm a changeset yay!
+					branch: my-branch
+					commit:
+						message: I'm a changeset yay!
+					`,
+			wantValid: true,
+		},
+		{
+			name: "valid template helpers",
+			batchSpec: `${{ join repository.search_result_paths "\n" }}
+				${{ join_if "---" "a" "b" "" "d" }}
+				${{ replace "a/b/c/d" "/" "-" }}
+				${{ split repository.name "/" }}
+				${{ matches repository.name "github.com/my-org/terra*" }}
+				${{ index steps.modified_files 1 }}`,
+			wantValid: true,
+		},
+		{
+			name:      "invalid step template variable",
+			batchSpec: `${{ resipotory.search_result_paths }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'resipotory'"),
+		},
+		{
+			name:      "invalid step template variable, 1 level nested",
+			batchSpec: `${{ repository.search_resalt_paths }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'repository.search_resalt_paths'"),
+		},
+		{
+			name:      "invalid changeset template variable",
+			batchSpec: `${{ batch_chang_link }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'batch_chang_link'"),
+		},
+		{
+			name:      "invalid changeset template variable, 1 level nested",
+			batchSpec: `${{ steps.mofidied_files }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'steps.mofidied_files'"),
+		},
+		{
+			name:      "escaped templating (github expression syntax) is ignored",
+			batchSpec: `${{ "${{ ignore_me }}" }}`,
+			wantValid: true,
+		},
+		{
+			name: "output variables are ignored",
+			batchSpec: `${{ outputs.IDontExist }}
+						${{OUTPUTS.anotherOne}}
+						${{ join outputs.myArray "," }}
+						${{ index outputs.env.something 1 }}`,
+			wantValid: true,
+		},
+		{
+			name:      "output variables are ignored, but invalid step template variable still fails",
+			batchSpec: `${{ outputs.unknown }} ${{ outputz.unknown }}`,
+			wantValid: false,
+			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'outputz'"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			gotValid, gotErr := ValidateBatchSpecTemplate(tc.batchSpec)
+
+			if tc.wantValid != gotValid {
+				t.Fatalf("unexpected valid status. want valid=%t, got valid=%t\nerror message: %s", tc.wantValid, gotValid, gotErr)
+			}
+
+			if tc.wantErr == nil && gotErr != nil {
+				t.Fatalf("unexpected non-nil error.\nwant=nil\n---\ngot=%s", gotErr)
+			}
+
+			if tc.wantErr != nil && gotErr == nil {
+				t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+			}
+
+			if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
+				t.Fatalf("unexpected error message\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+			}
+		})
+	}
+}
 
 var testChanges = git.Changes{
 	Modified: []string{"go.mod"},
@@ -176,8 +314,6 @@ ${{ previous_step.deleted_files }}
 ${{ previous_step.renamed_files }}
 ${{ previous_step.stdout }}
 ${{ previous_step.stderr}}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ step.modified_files }}
 ${{ step.added_files }}
 ${{ step.deleted_files }}
@@ -198,8 +334,6 @@ ${{ steps.path }}
 []
 
 
-<no value>
-<no value>
 []
 []
 []
@@ -334,17 +468,13 @@ ${{ batch_change_link }}`,
 			tmplCtx: &ChangesetTemplateContext{},
 			tmpl: `${{ repository.search_result_paths }}
 ${{ repository.name }}
-${{ outputs.lastLine }}
-${{ outputs.project }}
 ${{ steps.modified_files }}
 ${{ steps.added_files }}
 ${{ steps.deleted_files }}
 ${{ steps.renamed_files }}
 ${{ batch_change_link }}
 `,
-			want: `<no value>
-<no value>
-[]
+			want: `[]
 []
 []
 []

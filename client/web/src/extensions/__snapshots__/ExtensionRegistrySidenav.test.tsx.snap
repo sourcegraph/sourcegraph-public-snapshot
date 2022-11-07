@@ -76,7 +76,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
     <button
       aria-controls=""
       aria-haspopup="true"
-      class="btn btnOutlineSecondary btnSm"
+      class="btn btnSecondary btnOutline btnSm"
       data-reach-menu-button=""
       id="menu-button-2"
       type="button"

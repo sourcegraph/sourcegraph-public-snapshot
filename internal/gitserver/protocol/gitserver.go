@@ -96,6 +96,7 @@ type ExecRequest struct {
 
 	EnsureRevision string      `json:"ensureRevision"`
 	Args           []string    `json:"args"`
+	Stdin          []byte      `json:"stdin,omitempty"`
 	Opt            *RemoteOpts `json:"opt"`
 	NoTimeout      bool        `json:"noTimeout"`
 }
@@ -177,6 +178,16 @@ type RepoUpdateResponse struct {
 	LastChanged *time.Time `json:",omitempty"`
 
 	// Error is an error reported by the update operation, and not a network protocol error.
+	Error string `json:",omitempty"`
+}
+
+// RepoCloneRequest is a request to clone a repository asynchronously.
+type RepoCloneRequest struct {
+	Repo api.RepoName `json:"repo"`
+}
+
+// RepoCloneResponse returns an error if the repo clone request failed.
+type RepoCloneResponse struct {
 	Error string `json:",omitempty"`
 }
 

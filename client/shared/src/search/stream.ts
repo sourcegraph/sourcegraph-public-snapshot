@@ -5,6 +5,7 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
@@ -40,6 +41,7 @@ export interface PathMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    debug?: string
 }
 
 export interface ContentMatch {
@@ -51,8 +53,10 @@ export interface ContentMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
-    lineMatches: LineMatch[]
+    lineMatches?: LineMatch[]
+    chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    debug?: string
 }
 
 export interface DecoratedHunk {
@@ -78,10 +82,17 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
+    aggregableBadges?: AggregableBadge[]
+}
+
+interface ChunkMatch {
+    content: string
+    contentStart: Location
+    ranges: Range[]
     aggregableBadges?: AggregableBadge[]
 }
 
@@ -94,6 +105,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    debug?: string
 }
 
 export interface MatchedSymbol {
@@ -225,7 +237,7 @@ export interface Filter {
     kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
-export type AlertKind = 'lucky-search-queries'
+export type AlertKind = 'smart-search-additional-results' | 'smart-search-pure-results'
 
 interface Alert {
     title: string
@@ -426,10 +438,13 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
+    searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
     displayLimit?: number
+    chunkMatches?: boolean
 }
 
 function initiateSearchStream(
@@ -439,10 +454,13 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        featureOverrides,
         decorationKinds,
         decorationContextLines,
+        searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
+        chunkMatches = false,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -453,13 +471,18 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['sm', searchMode.toString()],
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
+            ['cm', chunkMatches ? 't' : 'f'],
         ]
         if (trace) {
             parameters.push(['trace', trace])
+        }
+        for (const v of featureOverrides || []) {
+            parameters.push(['feat', v])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 

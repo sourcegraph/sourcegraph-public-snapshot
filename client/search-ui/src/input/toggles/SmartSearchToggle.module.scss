@@ -1,7 +1,26 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+        // Tweak icon size and position to match design and be optically centered
+        transform: scale(1.2);
+        margin-left: -0.125rem;
+    }
+}
+
 .popover-window {
     // Move the popover a bit so the close button aligns with the smart search icon
     margin-top: 0.5rem;
     margin-left: 0.875rem;
+
+    @media (--xs-breakpoint-down) {
+        margin-top: 0.25rem;
+        margin-left: 1rem;
+    }
 }
 
 .label {

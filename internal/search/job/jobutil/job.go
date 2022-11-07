@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -43,7 +42,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b)
 	}
-	if inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky || inputs.Features.AbLuckySearch {
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
@@ -83,8 +82,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
 		// flat queries.
-		types, _ := b.IncludeExcludeValues(query.FieldType)
-		resultTypes := computeResultTypes(types, b, inputs.PatternType)
+		resultTypes := computeResultTypes(b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
@@ -180,12 +178,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
 			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
-		}
-	}
-
-	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); inputs.Features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
-			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -285,8 +277,7 @@ func orderSearcherJob(j job.Job) job.Job {
 // NewFlatJob creates all jobs that are built from a query.Flat.
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
-	types, _ := f.IncludeExcludeValues(query.FieldType)
-	resultTypes := computeResultTypes(types, f.ToBasic(), searchInputs.PatternType)
+	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
 	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Protocol)
 
 	// searcher to use full deadline if timeout: set or we are streaming.
@@ -607,19 +598,33 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 
 // computeResultTypes returns result types based three inputs: `type:...` in the query,
 // the `pattern`, and top-level `searchType` (coming from a GQL value).
-func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
-	var rts result.Types
+func computeResultTypes(b query.Basic, searchType query.SearchType) result.Types {
 	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
-		rts = result.TypeStructural
-	} else {
-		if len(types) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
-		} else {
-			for _, t := range types {
-				rts = rts.With(result.TypeFromString[t])
+		return result.TypeStructural
+	}
+
+	types, _ := b.IncludeExcludeValues(query.FieldType)
+
+	if len(types) == 0 && b.Pattern != nil {
+		if p, ok := b.Pattern.(query.Pattern); ok {
+			annot := p.Annotation
+			if annot.Labels.IsSet(query.IsAlias) {
+				// This query set the pattern via `content:`, so we
+				// imply that only content should be searched.
+				return result.TypeFile
 			}
 		}
 	}
+
+	if len(types) == 0 {
+		return result.TypeFile | result.TypePath | result.TypeRepo
+	}
+
+	var rts result.Types
+	for _, t := range types {
+		rts = rts.With(result.TypeFromString[t])
+	}
+
 	return rts
 }
 
@@ -723,6 +728,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		Typ:            typ,
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
+		Features:       *b.features,
 	}
 
 	switch typ {
@@ -755,6 +761,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Query:          zoektQuery,
 			FileMatchLimit: b.fileMatchLimit,
 			Select:         b.selector,
+			Features:       *b.features,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
@@ -763,6 +770,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 			Typ:               typ,
 			FileMatchLimit:    b.fileMatchLimit,
 			Select:            b.selector,
+			Features:          *b.features,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)
@@ -943,7 +951,7 @@ func isGlobal(op search.RepoOptions) bool {
 
 	// repo:has.commit.after() is handled during the repo resolution step,
 	// and we cannot depend on Zoekt for this information.
-	if op.CommitAfter != "" {
+	if op.CommitAfter != nil {
 		return false
 	}
 

@@ -10,9 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -22,7 +22,7 @@ import (
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}

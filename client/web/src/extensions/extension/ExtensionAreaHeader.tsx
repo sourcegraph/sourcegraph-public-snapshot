@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 
 import { mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,8 +7,7 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { PageHeader, AlertLink, useTimeoutManager, Alert, Icon, Text } from '@sourcegraph/wildcard'
+import { PageHeader, useTimeoutManager, Alert, Icon, Text } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -67,19 +66,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
         [feedbackTimeoutManager, isSiteAdmin]
     )
 
-    /**
-     * Display a CTA on hover over the toggle only when the user is unauthenticated
-     */
-    const [showCta, setShowCta] = useState(false)
-    const ctaTimeoutManager = useTimeoutManager()
-
-    const onHover = useCallback(() => {
-        if (!props.authenticatedUser && !showCta) {
-            setShowCta(true)
-            ctaTimeoutManager.setTimeout(() => setShowCta(false), FEEDBACK_DELAY * 2)
-        }
-    }, [ctaTimeoutManager, showCta, props.authenticatedUser])
-
     return (
         <div className={props.className}>
             <div className="container">
@@ -116,14 +102,8 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                             <span className="font-weight-medium">{name}</span> is {change}
                                         </Alert>
                                     )}
-                                    {showCta && (
-                                        <Alert className={classNames('mb-0 py-1', styles.alert)} variant="info">
-                                            An account is required to create and configure extensions.{' '}
-                                            <AlertLink to={buildGetStartedURL('extension')}>Get started!</AlertLink>
-                                        </Alert>
-                                    )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}
-                                    {props.authenticatedUser?.siteAdmin && siteSubject?.subject ? (
+                                    {isSiteAdmin && siteSubject?.subject ? (
                                         (() => {
                                             const enabledForMe = isExtensionEnabled(
                                                 props.settingsCascade.final,
@@ -151,8 +131,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             platformContext={props.platformContext}
                                                             onToggleChange={onToggleChange}
                                                             big={false}
-                                                            onHover={onHover}
-                                                            userCannotToggle={!props.authenticatedUser}
                                                             subject={props.authenticatedUser}
                                                         />
                                                     </div>
@@ -175,8 +153,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                                             platformContext={props.platformContext}
                                                             onToggleChange={onToggleChange}
                                                             big={false}
-                                                            onHover={onHover}
-                                                            userCannotToggle={!props.authenticatedUser}
                                                             subject={siteSubject.subject}
                                                         />
                                                     </div>
@@ -195,8 +171,6 @@ export const ExtensionAreaHeader: React.FunctionComponent<React.PropsWithChildre
                                             platformContext={props.platformContext}
                                             onToggleChange={onToggleChange}
                                             big={true}
-                                            onHover={onHover}
-                                            userCannotToggle={!props.authenticatedUser}
                                             subject={props.authenticatedUser}
                                         />
                                     )}

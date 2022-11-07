@@ -28,6 +28,8 @@ Before starting your audit, you should ensure the following statements are true:
     - **Note:** You don't need to use a physical mobile device to test this. Most browsers support emulating a mobile viewport - just ensure it is set to **320px**.
       - [Chrome documentation](https://developer.chrome.com/docs/devtools/device-mode/#viewport)
       - [Firefox documentation](https://developer.mozilla.org/en-US/docs/Tools/Responsive_Design_Mode)
+    - **Note:** This does not imply full mobile device support (i.e. Touch navigation). [Sourcegraph does not target mobile devices](https://handbook.sourcegraph.com/departments/engineering/#launch).
+    - This is to support proper reflow when the browser is zoomed in. See the [WCAG 1.4.10 Reflow criterion](https://www.w3.org/WAI/WCAG21/Understanding/reflow.html) for more information.
 4. Work through relevant sections from the [detailed checklist](detailed-checklist.md) and ensure that there are no issues.
 
 ## Raising a bug

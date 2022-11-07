@@ -76,7 +76,7 @@ func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 }
 
 func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
-	err := os.MkdirAll(bareGitDirectory, 0755)
+	err := os.MkdirAll(bareGitDirectory, 0o755)
 	if err != nil {
 		return nil, err
 	}
@@ -275,14 +275,13 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	defer os.RemoveAll(workDir)
 
 	err = s.source.Download(ctx, workDir, dep)
-	// We should not return err when dependency is not found
-	if err != nil && errcode.IsNotFound(err) {
-		s.logger.With(
-			log.String("dependency", dep.VersionedPackageSyntax()),
-			log.String("error", err.Error()),
-		).Warn("Error during dependency download")
-		return nil
-	} else if err != nil {
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			s.logger.With(
+				log.String("dependency", dep.VersionedPackageSyntax()),
+				log.String("error", err.Error()),
+			).Warn("Error during dependency download")
+		}
 		return err
 	}
 
@@ -342,7 +341,6 @@ func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource
 		Name:        packageName,
 		NewestFirst: true,
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list dependencies from db")
 	}

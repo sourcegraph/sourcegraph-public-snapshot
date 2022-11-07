@@ -223,7 +223,15 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		return batchSpec
 	}
 
-	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult) *btypes.BatchSpecExecutionCacheEntry {
+	createBatchSpecMounts := func(t *testing.T, mounts []*btypes.BatchSpecWorkspaceFile) {
+		for _, mount := range mounts {
+			if err := s.UpsertBatchSpecWorkspaceFile(context.Background(), mount); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, mounts []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
 		key := cache.KeyForWorkspace(
@@ -242,6 +250,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			workspace.OnlyFetchWorkspace,
 			batchSpec.Spec.Steps,
 			result.StepIndex,
+			&remoteFileMetadataRetriever{mounts: mounts},
 		)
 		rawKey, err := key.Key()
 		if err != nil {
@@ -262,7 +271,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled")
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -441,7 +450,7 @@ changesetTemplate:
 		resultWithoutDiff := *executionResult
 		resultWithoutDiff.Diff = ""
 
-		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff)
+		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -479,7 +488,7 @@ changesetTemplate:
 		workspace := buildWorkspace("caching-disabled")
 
 		batchSpec := createBatchSpec(t, true, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -528,7 +537,7 @@ changesetTemplate:
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -558,7 +567,7 @@ changesetTemplate:
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, nil)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -579,6 +588,197 @@ changesetTemplate:
 		reloadedEntry := reloadedEntries[0]
 		if !reloadedEntry.LastUsedAt.IsZero() {
 			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		}
+	})
+
+	t.Run("caching found with mount file", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-mount")
+
+		rawSpec := `
+name: my-unique-name
+description: My description
+'on':
+- repositoriesMatchingQuery: lang:go func main
+- repository: github.com/sourcegraph/src-cli
+steps:
+- run: echo 'foobar'
+  container: alpine
+  mount:
+    - path: ./hello.txt
+      mountpoint: /tmp/hello.txt
+  env:
+    PATH: "/work/foobar:$PATH"
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`
+
+		batchSpec := createBatchSpec(t, false, rawSpec)
+		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
+		createBatchSpecMounts(t, mounts)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			t.Fatalf("listing workspaces failed: %s", err)
+		}
+
+		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+			{
+				RepoID:             repos[0].ID,
+				BatchSpecID:        batchSpec.ID,
+				ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
+				Branch:             "refs/heads/main",
+				Commit:             "caching-enabled-mount",
+				FileMatches:        []string{},
+				Path:               "",
+				OnlyFetchWorkspace: true,
+				CachedResultFound:  true,
+				StepCacheResults: map[int]btypes.StepCacheResult{
+					1: {
+						Key:   entry.Key,
+						Value: executionResult,
+					},
+				},
+			},
+		})
+
+		changesetSpecIDs := have[0].ChangesetSpecIDs
+		if len(changesetSpecIDs) == 0 {
+			t.Fatal("BatchSpecWorkspace has no changeset specs")
+		}
+
+		changesetSpec, err := s.GetChangesetSpec(context.Background(), store.GetChangesetSpecOpts{ID: have[0].ChangesetSpecIDs[0]})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveDiff := changesetSpec.Diff
+		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.Equal(now) {
+			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		}
+	})
+
+	t.Run("caching found with multiple mount files", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-mounts")
+
+		rawSpec := `
+name: my-unique-name
+description: My description
+'on':
+- repositoriesMatchingQuery: lang:go func main
+- repository: github.com/sourcegraph/src-cli
+steps:
+- run: echo 'foobar'
+  container: alpine
+  mount:
+    - path: ./hello.txt
+      mountpoint: /tmp/hello.txt
+    - path: ./world.txt
+      mountpoint: /tmp/world.txt
+  env:
+    PATH: "/work/foobar:$PATH"
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`
+
+		batchSpec := createBatchSpec(t, false, rawSpec)
+		mounts := []*btypes.BatchSpecWorkspaceFile{
+			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+		}
+		createBatchSpecMounts(t, mounts)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult, mounts)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			t.Fatalf("listing workspaces failed: %s", err)
+		}
+
+		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+			{
+				RepoID:             repos[0].ID,
+				BatchSpecID:        batchSpec.ID,
+				ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
+				Branch:             "refs/heads/main",
+				Commit:             "caching-enabled-mounts",
+				FileMatches:        []string{},
+				Path:               "",
+				OnlyFetchWorkspace: true,
+				CachedResultFound:  true,
+				StepCacheResults: map[int]btypes.StepCacheResult{
+					1: {
+						Key:   entry.Key,
+						Value: executionResult,
+					},
+				},
+			},
+		})
+
+		changesetSpecIDs := have[0].ChangesetSpecIDs
+		if len(changesetSpecIDs) == 0 {
+			t.Fatal("BatchSpecWorkspace has no changeset specs")
+		}
+
+		changesetSpec, err := s.GetChangesetSpec(context.Background(), store.GetChangesetSpecOpts{ID: have[0].ChangesetSpecIDs[0]})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveDiff := changesetSpec.Diff
+		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.Equal(now) {
+			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
 		}
 	})
 }

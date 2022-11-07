@@ -37,10 +37,11 @@ type MutexOptions struct {
 // If, on release, we are unable to unlock the mutex it will continue to be locked until
 // it is expired by Redis.
 // The returned context will be cancelled if any of the following occur:
-// * The parent context in cancelled
-// * The release function is called
-// * There is an error extending the lock expiry or the expiry can't be extended because
-//   they key no longer exists in Redis
+//   - The parent context in cancelled
+//   - The release function is called
+//   - There is an error extending the lock expiry or the expiry can't be extended because
+//     they key no longer exists in Redis
+//
 // A caller can therefore assume that they are the sole holder of the lock as long as the
 // context has not been cancelled.
 func TryAcquireMutex(ctx context.Context, name string, options MutexOptions) (context.Context, func(), bool) {

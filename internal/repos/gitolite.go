@@ -82,7 +82,12 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 	for _, r := range all {
 		repo := s.makeRepo(r)
 		if !s.excludes(r, repo) {
-			results <- SourceResult{Source: s, Repo: repo}
+			select {
+			case <-ctx.Done():
+				results <- SourceResult{Err: ctx.Err()}
+				return
+			case results <- SourceResult{Source: s, Repo: repo}:
+			}
 		}
 	}
 }
