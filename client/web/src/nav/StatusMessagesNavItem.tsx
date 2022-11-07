@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiMagnifyScan, mdiCheckboxMarkedCircle } from '@mdi/js'
+import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -182,15 +182,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
             icon = CloudCheckIconRefresh
         }
 
-        const iconProps = { as: icon }
-
         return (
             <Tooltip content={isOpen ? undefined : codeHostMessage}>
-                <Icon
-                    {...iconProps}
-                    size="md"
-                    {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })}
-                />
+                <Icon as={icon} size="md" {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })} />
             </Tooltip>
         )
     }, [data, isOpen])
