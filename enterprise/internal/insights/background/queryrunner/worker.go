@@ -344,11 +344,7 @@ order by series_id;
 `
 
 func QuerySeriesSearchFailures(ctx context.Context, workerBaseStore *basestore.Store, seriesID string, limit int) (_ []types.InsightSearchFailure, err error) {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("series_id = %s", seriesID),
-		sqlf.Sprintf("state in (%s)", "failed,errored"),
-	}
-
+	errorStates := []string{"errored", "failed"}
 	switch {
 	case limit <= 0:
 		limit = 50
@@ -356,7 +352,19 @@ func QuerySeriesSearchFailures(ctx context.Context, workerBaseStore *basestore.S
 		limit = 500
 	}
 
-	q := sqlf.Sprintf(querySeriesFailuresSql, sqlf.Join(preds, "AND"), limit)
+	q := sqlf.Sprintf(`
+						SELECT
+							search_query,
+							queued_at,
+							failure_message,
+							state,
+							record_time,
+							persist_mode
+					FROM insights_query_runner_jobs
+					WHERE series_id = %s AND state = ANY (%s)
+					ORDER BY queued_at desc
+					LIMIT %d;`,
+		seriesID, pq.Array(&errorStates), limit)
 	query, err := workerBaseStore.Query(ctx, q)
 	return scanSearchFailureRows(query, err)
 }
@@ -384,20 +392,6 @@ func scanSearchFailureRows(rows *sql.Rows, queryErr error) (_ []types.InsightSea
 	}
 	return results, nil
 }
-
-const querySeriesFailuresSql = `
-SELECT
-	search_query,
-	queued_at,
-	failure_message,
-	state,
-	record_time,
-	persist_mode
-FROM insights_query_runner_jobs
-WHERE %s
-ORDER BY queued_at desc
-LIMIT %d;
-`
 
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that
