@@ -37,6 +37,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 	)
 
 	conf.Watch(func() {
+		logger.Debug("RunScheduler: watching config")
 		c := conf.Get()
 
 		want := schedulerConfig{
@@ -48,9 +49,10 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 			return
 		}
 
+		logger.Debug("RunScheduler: config changed")
 		if stop != nil {
 			stop()
-			logger.Info("stopped previous scheduler")
+			logger.Info("RunScheduler: stopped previous scheduler")
 		}
 
 		// We setup a separate sub-context so that we can reuse the original
@@ -66,7 +68,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 		}
 
 		logger.Debug(
-			"started configured scheduler",
+			"RunScheduler: started configured scheduler",
 			log.String("version", "new"),
 			log.Bool("auto-git-updates", want.autoGitUpdatesEnabled),
 		)

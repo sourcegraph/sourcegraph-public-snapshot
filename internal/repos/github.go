@@ -298,8 +298,11 @@ func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult)
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
+
+		s.logger.Debug("unfiltered", log.String("repo", fmt.Sprintf("%v", res.repo.NameWithOwner)))
 		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", fmt.Sprintf("%v", res.repo.NameWithOwner)))
 			seen[res.repo.DatabaseID] = true
 		}
 	}
@@ -567,12 +570,14 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	for i := len(repos) - 1; i >= 0; i-- {
 		nameWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
+			s.logger.Debug("context error", log.String("nameWithOwner", nameWithOwner))
 			results <- &githubResult{err: err}
 			return
 		}
 
 		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
+			s.logger.Debug("invalid repository", log.String("nameWithOwner", nameWithOwner))
 			results <- &githubResult{err: errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)}
 			return
 		}
@@ -941,6 +946,7 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 
 	// Admins normally add to end of lists, so end of list most likely has new
 	// repos => stream them first.
+	s.logger.Debug("fetching list of repos", log.Int("len", len(s.config.Repos)))
 	for end := len(s.config.Repos); end > 0; end -= batchSize {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -954,17 +960,19 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 
 		repos, err := s.v4Client.GetReposByNameWithOwner(ctx, batch...)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "GetReposByNameWithOwner failed")
 		}
 
 		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
+				s.logger.Debug("context error", log.String("repo", fmt.Sprintf("%v", r)))
 				return err
 			}
 
 			results <- &githubResult{repo: r}
+			s.logger.Debug("sent repo to result", log.String("repo", fmt.Sprintf("%v", r)))
 		}
 	}
 
