@@ -12273,13 +12273,307 @@ Query: `max(rate(src_repoupdater_sched_error[1m]))`
 
 ### Repo Updater: Permissions
 
+#### repo-updater: permissions_syncs_scheduled_reason
+
+<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by reason</p>
+
+Indicates the number of users/repos scheduled for permissions sync grouped by reason.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (src_repoupdater_perms_syncer_items_sync_scheduled)`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_syncs_scheduled_priority
+
+<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by priority</p>
+
+Indicates the number of users/repos scheduled for permissions sync grouped by priority.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (priority) (src_repoupdater_perms_syncer_items_sync_scheduled)`
+
+</details>
+
+<br />
+
+#### repo-updater: user_success_syncs_total
+
+<p class="subtitle">Total number of user permissions syncs</p>
+
+Indicates the total number of user permissions sync completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `src_repoupdater_perms_syncer_success_syncs{type="user"}`
+
+</details>
+
+<br />
+
+#### repo-updater: user_success_syncs
+
+<p class="subtitle">Number of user permissions syncs [10m]</p>
+
+Indicates the number of users permissions syncs completed in last minute.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_repoupdater_perms_syncer_success_syncs{type="user"}[10m]) * 10`
+
+</details>
+
+<br />
+
+#### repo-updater: user_initial_syncs
+
+<p class="subtitle">Number of first user permissions syncs [10m]</p>
+
+Indicates the number of permissions syncs done for the first time for the user in last minute.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_repoupdater_perms_syncer_initial_syncs{type="user"}[10m]) * 10`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_success_syncs_total
+
+<p class="subtitle">Total number of repo permissions syncs</p>
+
+Indicates the total number of repo permissions sync completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `src_repoupdater_perms_syncer_success_syncs{type="repo"}`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_success_syncs
+
+<p class="subtitle">Number of repo permissions syncs [10m]</p>
+
+Indicates the number of repos permissions syncs completed in last minute.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_repoupdater_perms_syncer_success_syncs{type="repo"}[10m]) * 10`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_initial_syncs
+
+<p class="subtitle">Number of first repo permissions syncs [10m]</p>
+
+Indicates the number of permissions syncs done for the first time for the repo in last minute.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100122` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[10m]) * 10`
+
+</details>
+
+<br />
+
+#### repo-updater: users_consecutive_sync_delay
+
+<p class="subtitle">Max duration between two consecutive permissions sync for user (minutes) [10m]</p>
+
+Indicates the max delay between two consecutive permissions sync for a user during the period.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [10m]) / 60.0`
+
+</details>
+
+<br />
+
+#### repo-updater: repos_consecutive_sync_delay
+
+<p class="subtitle">Max duration between two consecutive permissions sync for repo (minutes) [10m]</p>
+
+Indicates the max delay between two consecutive permissions sync for a repo during the period.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [10m]) / 60.0`
+
+</details>
+
+<br />
+
+#### repo-updater: users_first_sync_delay
+
+<p class="subtitle">Max duration between user creation and first permissions sync (minutes) [10m]</p>
+
+Indicates the max delay between user creation and their permissions sync
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100140` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [10m]) / 60.0`
+
+</details>
+
+<br />
+
+#### repo-updater: repos_first_sync_delay
+
+<p class="subtitle">Max duration between repo creation and first permissions sync (minutes) [10m]</p>
+
+Indicates the max delay between repo creation and their permissions sync
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100141` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [10m]) / 60.0`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_found_count
+
+<p class="subtitle">Number of permissions found during user/repo permissions sync</p>
+
+Indicates the number permissions found during users/repos complete sync.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100150` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (src_repoupdater_perms_syncer_perms_found)`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_found_avg
+
+<p class="subtitle">Number of permissions found during user/repo permissions sync</p>
+
+Indicates the number permissions found during users/repos complete sync.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100151` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `avg by (type) (src_repoupdater_perms_syncer_perms_found)`
+
+</details>
+
+<br />
+
 #### repo-updater: perms_syncer_perms
 
 <p class="subtitle">Time gap between least and most up to date permissions</p>
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100160` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12298,7 +12592,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-stale-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100161` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12317,7 +12611,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100170` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12336,7 +12630,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100171` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12355,7 +12649,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100180` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12374,7 +12668,7 @@ Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_s
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100181` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12393,7 +12687,7 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100190` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
@@ -12415,7 +12709,7 @@ More about repository permissions synchronization [here](https://docs.sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100191` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
 
