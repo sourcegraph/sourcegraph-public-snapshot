@@ -39,11 +39,11 @@ type sessionIssuerHelper struct {
 }
 
 func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
-	return database.SecurityEventGithubAuthSucceeded
+	return database.SecurityEventGitHubAuthSucceeded
 }
 
 func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
-	return database.SecurityEventGithubAuthFailed
+	return database.SecurityEventGitHubAuthFailed
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
