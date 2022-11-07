@@ -30,6 +30,7 @@ type webhookLogsArgs struct {
 	OnlyErrors *bool
 	Since      *time.Time
 	Until      *time.Time
+	WebhookID  *int32
 }
 
 // webhookLogsExternalServiceID is used to represent an external service ID,
@@ -79,6 +80,12 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 
 	if args.OnlyErrors != nil && *args.OnlyErrors {
 		opts.OnlyErrors = true
+	}
+
+	// Both nil and "-1" webhook IDs should be resolved to nil WebhookID
+	// WebhookLogListOpts option
+	if args.WebhookID != nil && *args.WebhookID != -1 {
+		opts.WebhookID = args.WebhookID
 	}
 
 	return opts, nil
