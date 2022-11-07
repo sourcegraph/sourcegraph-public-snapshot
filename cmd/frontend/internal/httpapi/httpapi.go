@@ -40,9 +40,9 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook                   webhooks.Registerer
 	GitHubSyncWebhook               webhooks.Registerer
-	GitLabWebhook                   webhooks.RegistererHandler
+	GitHubBatchesWebhook            webhooks.Registerer
+	GitLabBatchesWebhook            webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
@@ -92,8 +92,8 @@ func NewHandler(
 		DB: db,
 	}
 	webhookhandlers.Init(db, &wh)
-	handlers.GitHubWebhook.Register(&wh)
-	handlers.GitLabWebhook.Register(&wh)
+	handlers.GitHubBatchesWebhook.Register(&wh)
+	handlers.GitLabBatchesWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
@@ -104,7 +104,7 @@ func NewHandler(
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabBatchesWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
 	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))

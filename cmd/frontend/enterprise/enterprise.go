@@ -17,9 +17,9 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook                   webhooks.Registerer
 	GitHubSyncWebhook               webhooks.Registerer
-	GitLabWebhook                   webhooks.RegistererHandler
+	GitHubBatchesWebhook            webhooks.Registerer
+	GitLabBatchesWebhook            webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
@@ -62,8 +62,8 @@ type NewComputeStreamHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:                   &emptyWebhookHandler{name: "github webhook"},
-		GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
+		GitHubBatchesWebhook:            &emptyWebhookHandler{name: "github batches webhook"},
+		GitLabBatchesWebhook:            &emptyWebhookHandler{name: "gitlab batches webhook"},
 		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),

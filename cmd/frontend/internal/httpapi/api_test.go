@@ -33,8 +33,8 @@ func newTest(t *testing.T) *httptestutil.Client {
 		nil,
 		rateLimiter,
 		&Handlers{
-			GitHubWebhook:             enterpriseServices.GitHubWebhook,
-			GitLabWebhook:             enterpriseServices.GitLabWebhook,
+			GitHubBatchesWebhook:      enterpriseServices.GitHubBatchesWebhook,
+			GitLabBatchesWebhook:      enterpriseServices.GitLabBatchesWebhook,
 			GitHubSyncWebhook:         enterpriseServices.GitHubSyncWebhook,
 			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
 			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
