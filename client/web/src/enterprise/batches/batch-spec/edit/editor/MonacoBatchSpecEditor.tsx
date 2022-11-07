@@ -68,6 +68,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
             componentUpdates
                 .pipe(
                     filter(props => !props.readOnly && props.batchChangeNamespace !== undefined),
+                    distinctUntilChanged((prev, next) => prev.batchChangeNamespace === next.batchChangeNamespace),
                     switchMap(props =>
                         requestGraphQL<
                             BatchSpecExecutionAvailableSecretKeysResult,
