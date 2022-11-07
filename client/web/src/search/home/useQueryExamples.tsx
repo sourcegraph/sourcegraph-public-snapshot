@@ -13,12 +13,13 @@ export interface QueryExamplesContent {
     author: string
 }
 
-interface QueryExample {
+export interface QueryExamplesSection {
     title: string
     queryExamples: {
         id: string
         query: string
         helperText?: string
+        slug?: string
     }[]
 }
 
@@ -68,7 +69,7 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
 export function useQueryExamples(
     selectedSearchContextSpec: string,
     isSourcegraphDotCom: boolean = false
-): QueryExample[][] {
+): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,

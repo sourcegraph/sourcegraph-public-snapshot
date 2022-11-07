@@ -12,7 +12,7 @@ import { Button, H2, H4, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } f
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
-import { useQueryExamples } from './useQueryExamples'
+import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
@@ -173,7 +173,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 
 interface QueryExamplesLayout {
     queryColumns: QueryExamplesSection[][]
-    onQueryExampleClick?: (id: string, query: string, slug?: string) => void
+    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
 }
 
 export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ queryColumns, onQueryExampleClick }) => (
@@ -181,7 +181,7 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[0][0].title}`}>
                 {column.map(({ title, queryExamples }) => (
-                    <QueryExamplesSection
+                    <ExamplesSection
                         key={title}
                         title={title}
                         queryExamples={queryExamples}
@@ -202,13 +202,11 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
     </div>
 )
 
-interface QueryExamplesSection {
-    title: string
-    queryExamples: QueryExample[]
-    onQueryExampleClick?: (id: string, query: string, slug?: string) => void
+interface ExamplesSection extends QueryExamplesSection {
+    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
 }
 
-export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
+export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
     title,
     queryExamples,
     onQueryExampleClick,
@@ -236,12 +234,12 @@ interface QueryExample {
     id?: string
     query: string
     helperText?: string
-    slug?: string
+    slug?: string | undefined
 }
 
 interface QueryExampleChipProps extends QueryExample {
     className?: string
-    onClick: (id: string | undefined, query: string, slug?: string | undefined) => void
+    onClick: (id: string | undefined, query: string, slug: string | undefined) => void | undefined
 }
 
 export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
