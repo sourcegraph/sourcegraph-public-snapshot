@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS insight_series_incomplete_points
 (
     id        SERIAL CONSTRAINT insight_series_incomplete_points_pk PRIMARY KEY,
     series_id INT                         NOT NULL,
-    source    TEXT                        NOT NULL,
+    reason    TEXT                        NOT NULL,
     time      TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     repo_id   INT,
 
@@ -11,4 +11,4 @@ CREATE TABLE IF NOT EXISTS insight_series_incomplete_points
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS insight_series_incomplete_points_unique_idx
-    ON insight_series_incomplete_points (series_id, source, time, repo_id);
+    ON insight_series_incomplete_points (series_id, reason, time, repo_id);
