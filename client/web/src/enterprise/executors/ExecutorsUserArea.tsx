@@ -9,7 +9,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Scalars } from '../../graphql-operations'
 
 import type { UserExecutorSecretsListPageProps } from './secrets/ExecutorSecretsListPage'
-import { Link } from '@sourcegraph/wildcard'
 
 const UserExecutorSecretsListPage = lazyComponent<UserExecutorSecretsListPageProps, 'UserExecutorSecretsListPage'>(
     () => import('./secrets/ExecutorSecretsListPage'),
@@ -30,21 +29,7 @@ export const ExecutorsUserArea: React.FunctionComponent<React.PropsWithChildren<
             <Route
                 path={`${match.url}/secrets`}
                 render={props => (
-                    <UserExecutorSecretsListPage
-                        userID={outerProps.namespaceID}
-                        headerLine={
-                            <>
-                                Configure executor secrets that will only be available to your executions.
-                                <br />
-                                Global secrets are available to executions in this namespace. Secrets in this namespace
-                                with the same name as a global secret will overwrite the global secret. Site admins can
-                                configure global secrets{' '}
-                                <Link to="/admin/executors/secrets">in site admin settings</Link>.
-                            </>
-                        }
-                        {...outerProps}
-                        {...props}
-                    />
+                    <UserExecutorSecretsListPage userID={outerProps.namespaceID} {...outerProps} {...props} />
                 )}
                 exact={true}
             />

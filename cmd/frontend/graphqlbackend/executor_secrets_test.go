@@ -647,8 +647,9 @@ query ExecutorSecretsIntegrationTest {
 						Creator: executorSecretsIntegrationTestResponseCreator{
 							ID: MarshalUserID(user.ID),
 						},
-						CreatedAt: secret2.CreatedAt.Format(time.RFC3339),
-						UpdatedAt: secret2.UpdatedAt.Format(time.RFC3339),
+						OverwritesGlobalSecret: true,
+						CreatedAt:              secret2.CreatedAt.Format(time.RFC3339),
+						UpdatedAt:              secret2.UpdatedAt.Format(time.RFC3339),
 						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
 							TotalCount: 2,
 							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
@@ -689,8 +690,9 @@ query ExecutorSecretsIntegrationTest {
 						Creator: executorSecretsIntegrationTestResponseCreator{
 							ID: MarshalUserID(user.ID),
 						},
-						CreatedAt: secret3.CreatedAt.Format(time.RFC3339),
-						UpdatedAt: secret3.UpdatedAt.Format(time.RFC3339),
+						OverwritesGlobalSecret: false,
+						CreatedAt:              secret3.CreatedAt.Format(time.RFC3339),
+						UpdatedAt:              secret3.UpdatedAt.Format(time.RFC3339),
 						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
 							TotalCount: 0,
 							PageInfo: executorSecretsIntegrationTestResponsePageInfo{

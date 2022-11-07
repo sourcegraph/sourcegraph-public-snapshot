@@ -8,7 +8,7 @@ import { Badge, Button, Icon, H3, Link } from '@sourcegraph/wildcard'
 import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 
 import { RemoveSecretModal } from './RemoveSecretModal'
-import { SecretAccessLogsModal } from './SecretAccessLogModal'
+import { SecretAccessLogsModal } from './SecretAccessLogsModal'
 import { UpdateSecretModal } from './UpdateSecretModal'
 
 import styles from './ExecutorSecretNode.module.scss'
@@ -77,8 +77,8 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         {node.overwritesGlobalSecret && (
                             <Badge
                                 variant="secondary"
-                                // tooltip="This secret will be usable by all users of the Sourcegraph instance."
-                                // aria-label="This secret will be usable by all users of the Sourcegraph instance."
+                                tooltip="This secret overwrites an existing secret set globally in this Sourcegraph instance."
+                                aria-label="This secret overwrites an existing secret set globally in this Sourcegraph instance."
                                 className="mr-2"
                             >
                                 Overwrites global secret

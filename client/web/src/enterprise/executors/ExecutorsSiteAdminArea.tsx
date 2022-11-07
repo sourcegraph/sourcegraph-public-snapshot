@@ -32,18 +32,7 @@ export const ExecutorsSiteAdminArea: React.FunctionComponent<React.PropsWithChil
             <Route render={props => <ExecutorsListPage {...outerProps} {...props} />} path={match.url} exact={true} />
             <Route
                 path={`${match.url}/secrets`}
-                render={props => (
-                    <GlobalExecutorSecretsListPage
-                        headerLine={
-                            <>
-                                Configure executor secrets that will be available to everyone on the Sourcegraph
-                                instance.
-                            </>
-                        }
-                        {...outerProps}
-                        {...props}
-                    />
-                )}
+                render={props => <GlobalExecutorSecretsListPage {...outerProps} {...props} />}
                 exact={true}
             />
             <Route component={NotFoundPage} key="hardcoded-key" />

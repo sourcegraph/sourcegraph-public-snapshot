@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { JSONSchemaType } from 'ajv'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
 // eslint-disable-next-line import/order
@@ -24,7 +25,6 @@ import {
 import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'
 
 import styles from './MonacoBatchSpecEditor.module.scss'
-import { JSONSchemaType } from 'ajv'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are

@@ -1,12 +1,8 @@
 import React, { useCallback } from 'react'
 
-import classNames from 'classnames'
-
-import { Button, Text } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretScope } from '../../../graphql-operations'
-
-import styles from './ExecutorSecretScopeSelector.module.scss'
 
 export interface Props {
     scope: ExecutorSecretScope
@@ -31,14 +27,10 @@ export const ExecutorSecretScopeSelector: React.FunctionComponent<React.PropsWit
     }, [onSelect, scope])
 
     return (
-        <Button
-            className={classNames(styles.selector, 'px-4', 'py-3', selected && styles.selected, className)}
-            onClick={onClick}
-            outline={true}
-            variant="secondary"
-        >
-            <Text className={classNames(styles.count)}>{label}</Text>
-            <span className={classNames('text-muted')}>{description}</span>
-        </Button>
+        <Tooltip content={description}>
+            <Button className={className} onClick={onClick} disabled={selected} outline={true} variant="secondary">
+                {label}
+            </Button>
+        </Tooltip>
     )
 }

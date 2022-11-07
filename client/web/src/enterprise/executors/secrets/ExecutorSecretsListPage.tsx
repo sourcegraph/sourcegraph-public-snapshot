@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -16,22 +16,30 @@ import { ExecutorSecretFields, ExecutorSecretScope, Scalars } from '../../../gra
 
 import { AddSecretModal } from './AddSecretModal'
 import {
-    useGlobalExecutorSecretsConnection,
-    useOrgExecutorSecretsConnection,
-    useUserExecutorSecretsConnection,
+    globalExecutorSecretsConnectionFactory,
+    userExecutorSecretsConnectionFactory,
+    orgExecutorSecretsConnectionFactory,
 } from './backend'
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 import { ExecutorSecretScopeSelector } from './ExecutorSecretScopeSelector'
 
-export interface GlobalExecutorSecretsListPageProps {
-    headerLine: JSX.Element
-}
+export interface GlobalExecutorSecretsListPageProps {}
 
 export const GlobalExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<GlobalExecutorSecretsListPageProps>
 > = props => {
-    const connectionLoader = useCallback((scope: ExecutorSecretScope) => useGlobalExecutorSecretsConnection(scope), [])
-    return <ExecutorSecretsListPage namespaceID={null} connectionLoader={connectionLoader} {...props} />
+    const connectionLoader = useCallback(
+        (scope: ExecutorSecretScope) => globalExecutorSecretsConnectionFactory(scope),
+        []
+    )
+    return (
+        <ExecutorSecretsListPage
+            namespaceID={null}
+            headerLine={<>Configure executor secrets that will be available to everyone on the Sourcegraph instance.</>}
+            connectionLoader={connectionLoader}
+            {...props}
+        />
+    )
 }
 
 export interface UserExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
@@ -42,10 +50,25 @@ export const UserExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<UserExecutorSecretsListPageProps>
 > = props => {
     const connectionLoader = useCallback(
-        (scope: ExecutorSecretScope) => useUserExecutorSecretsConnection(props.userID, scope),
+        (scope: ExecutorSecretScope) => userExecutorSecretsConnectionFactory(props.userID, scope),
         [props.userID]
     )
-    return <ExecutorSecretsListPage namespaceID={props.userID} connectionLoader={connectionLoader} {...props} />
+    return (
+        <ExecutorSecretsListPage
+            namespaceID={props.userID}
+            headerLine={
+                <>
+                    Configure executor secrets that will only be available to your executions.
+                    <br />
+                    Global secrets are available to executions in this namespace. Secrets in this namespace with the
+                    same name as a global secret will overwrite the global secret. Site admins can configure global
+                    secrets <Link to="/admin/executors/secrets">in site admin settings</Link>.
+                </>
+            }
+            connectionLoader={connectionLoader}
+            {...props}
+        />
+    )
 }
 
 export interface OrgExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
@@ -56,14 +79,30 @@ export const OrgExecutorSecretsListPage: React.FunctionComponent<
     React.PropsWithChildren<OrgExecutorSecretsListPageProps>
 > = props => {
     const connectionLoader = useCallback(
-        (scope: ExecutorSecretScope) => useOrgExecutorSecretsConnection(props.orgID, scope),
+        (scope: ExecutorSecretScope) => orgExecutorSecretsConnectionFactory(props.orgID, scope),
         [props.orgID]
     )
-    return <ExecutorSecretsListPage namespaceID={props.orgID} connectionLoader={connectionLoader} {...props} />
+    return (
+        <ExecutorSecretsListPage
+            namespaceID={props.orgID}
+            headerLine={
+                <>
+                    Configure executor secrets that will only be available to executions in this organization.
+                    <br />
+                    Global secrets are available to executions in this namespace. Secrets in this namespace with the
+                    same name as a global secret will overwrite the global secret. Site admins can configure global
+                    secrets <Link to="/admin/executors/secrets">in site admin settings</Link>.
+                </>
+            }
+            connectionLoader={connectionLoader}
+            {...props}
+        />
+    )
 }
 
 interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
+    headerLine: JSX.Element
     connectionLoader: (scope: ExecutorSecretScope) => UseConnectionResult<ExecutorSecretFields>
 }
 

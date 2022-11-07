@@ -29,10 +29,44 @@ const secret: ExecutorSecretFields = {
     scope: ExecutorSecretScope.BATCHES,
     // Global secret.
     namespace: null,
+    overwritesGlobalSecret: false,
     createdAt: subDays(new Date(), 1).toISOString(),
     updatedAt: subHours(new Date(), 12).toISOString(),
 }
 
 export const Overview: Story = () => (
-    <WebStory>{props => <ExecutorSecretNode {...props} node={secret} refetchAll={() => {}} />}</WebStory>
+    <WebStory>
+        {props => <ExecutorSecretNode {...props} namespaceID={null} node={secret} refetchAll={() => {}} />}
+    </WebStory>
 )
+
+const overwrittenSecret: ExecutorSecretFields = {
+    __typename: 'ExecutorSecret',
+    id: 'secret1',
+    creator: {
+        __typename: 'User',
+        username: 'test',
+        displayName: 'Test user',
+        id: 'testID',
+        url: '/users/test',
+    },
+    key: 'SG_TOKEN',
+    scope: ExecutorSecretScope.BATCHES,
+    namespace: {
+        __typename: 'User',
+        id: 'namespace',
+        namespaceName: 'user',
+        url: '/users/user',
+    },
+    overwritesGlobalSecret: true,
+    createdAt: subDays(new Date(), 1).toISOString(),
+    updatedAt: subHours(new Date(), 12).toISOString(),
+}
+
+export const OverwritesGlobal: Story = () => (
+    <WebStory>
+        {props => <ExecutorSecretNode {...props} namespaceID={null} node={overwrittenSecret} refetchAll={() => {}} />}
+    </WebStory>
+)
+
+OverwritesGlobal.storyName = 'Overwrites global secret'

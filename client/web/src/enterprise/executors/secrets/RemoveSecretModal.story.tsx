@@ -38,6 +38,7 @@ const secret: ExecutorSecretFields = {
     scope: ExecutorSecretScope.BATCHES,
     // Global secret.
     namespace: null,
+    overwritesGlobalSecret: false,
     createdAt: subDays(new Date(), 1).toISOString(),
     updatedAt: subHours(new Date(), 12).toISOString(),
 }

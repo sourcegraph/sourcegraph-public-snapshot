@@ -215,6 +215,9 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 			if err == nil {
 				t.Fatal("no error for duplicate key")
 			}
+			if err != ErrDuplicateExecutorSecret {
+				t.Fatal("incorrect error returned")
+			}
 		})
 		t.Run("update", func(t *testing.T) {
 			newSecretValue := "evenmoresecret"
@@ -453,6 +456,10 @@ func TestExecutorSecrets_GetListCount(t *testing.T) {
 			}
 			if diff := cmp.Diff(userGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
+			}
+
+			if !secret.OverwritesGlobalSecret {
+				t.Fatal("not marked as overwriting global secret")
 			}
 
 			t.Run("accessing other users secret", func(t *testing.T) {
