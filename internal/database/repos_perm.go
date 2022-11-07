@@ -120,5 +120,5 @@ func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID
 	conditions = append(conditions, restrictedRepositoriesQuery)
 
 	// Have to manually wrap the result in parenthesis so that they're evaluated together
-	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "OR"))
+	return sqlf.Sprintf("(%s)", sqlf.Join(conditions, "\nOR\n"))
 }
