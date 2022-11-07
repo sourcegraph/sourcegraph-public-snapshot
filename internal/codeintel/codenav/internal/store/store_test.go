@@ -42,25 +42,25 @@ func TestGetUploadsForRanking(t *testing.T) {
 	}
 
 	// Initial batch of records
-	uploads, err := store.GetUploadsForRanking(ctx, "test", 2)
+	uploads, err := store.GetUploadsForRanking(ctx, "test", "ranking", 2)
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads := []Upload{
-		{ID: 102, Repo: "bar"},
-		{ID: 103, Repo: "baz"},
+	expectedUploads := []ExportedUpload{
+		{ID: 102, Repo: "bar", ObjectPrefix: "ranking/test/102"},
+		{ID: 103, Repo: "baz", ObjectPrefix: "ranking/test/103"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
 	}
 
 	// Remaining records
-	uploads, err = store.GetUploadsForRanking(ctx, "test", 2)
+	uploads, err = store.GetUploadsForRanking(ctx, "test", "ranking", 2)
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads = []Upload{
-		{ID: 100, Repo: "foo"},
+	expectedUploads = []ExportedUpload{
+		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
@@ -95,14 +95,14 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 	}
 
 	// Insert all records
-	uploads, err := store.GetUploadsForRanking(ctx, "test", 10)
+	uploads, err := store.GetUploadsForRanking(ctx, "test", "ranking", 10)
 	if err != nil {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
-	expectedUploads := []Upload{
-		{ID: 100, Repo: "foo"}, // replaced by upload 102
-		{ID: 103, Repo: "bar"}, // repo gets deleted
-		{ID: 105, Repo: "baz"},
+	expectedUploads := []ExportedUpload{
+		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"}, // replaced by upload 102
+		{ID: 103, Repo: "bar", ObjectPrefix: "ranking/test/103"}, // repo gets deleted
+		{ID: 105, Repo: "baz", ObjectPrefix: "ranking/test/105"},
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
@@ -111,7 +111,7 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 	// Mess some stuff up
 	if _, err := db.ExecContext(ctx, `
 		UPDATE repo SET deleted_at = NOW() WHERE id = 51;
-		-- DELETE FROM lsif_uploads WHERE id = 105;
+		DELETE FROM lsif_uploads WHERE id = 105;
 		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 100;
 		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 50, true);
 	`); err != nil {
@@ -119,25 +119,25 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 	}
 
 	// Assert that these records will be marked for deletion
-	var deletedIDs []int
-	numDeleted, err := store.ProcessStaleExportedUplods(ctx, "test", 100, func(ctx context.Context, id int) error {
-		deletedIDs = append(deletedIDs, id)
+	var deletedObjectPrefixes []string
+	numDeleted, err := store.ProcessStaleExportedUplods(ctx, "test", 100, func(ctx context.Context, objectPrefix string) error {
+		deletedObjectPrefixes = append(deletedObjectPrefixes, objectPrefix)
 		return nil
 	})
 	if err != nil {
 		t.Fatalf("unexpected error processing stale exported uploads: %s", err)
 	}
-	if numDeleted != len(deletedIDs) {
-		t.Fatalf("expected numDeleted to match number of invocations. numDeleted=%d len(deleted)=%d", numDeleted, len(deletedIDs))
+	if numDeleted != len(deletedObjectPrefixes) {
+		t.Fatalf("expected numDeleted to match number of invocations. numDeleted=%d len(deleted)=%d", numDeleted, len(deletedObjectPrefixes))
 	}
 
-	expectedDeletedIDs := []int{
-		100,
-		103,
-		// 105,
+	expectedDeletedObjectPrefixes := []string{
+		"ranking/test/100",
+		"ranking/test/103",
+		"ranking/test/105",
 	}
-	sort.Ints(deletedIDs)
-	if diff := cmp.Diff(expectedDeletedIDs, deletedIDs); diff != "" {
+	sort.Strings(deletedObjectPrefixes)
+	if diff := cmp.Diff(expectedDeletedObjectPrefixes, deletedObjectPrefixes); diff != "" {
 		t.Fatalf("unexpected deleted IDs (-want +got):\n%s", diff)
 	}
 }

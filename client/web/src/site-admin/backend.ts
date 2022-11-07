@@ -12,6 +12,7 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 import {
     RepositoriesVariables,
     RepositoriesResult,
@@ -58,6 +59,9 @@ import {
     SiteMonitoringStatisticsResult,
     SiteAdminSettingsCascadeFields,
     UserUsageStatisticsResult,
+    WebhooksListResult,
+    WebhooksListVariables,
+    WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -893,3 +897,37 @@ export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
         }
     }
 `
+
+export const WEBHOOKS = gql`
+    fragment WebhookFields on Webhook {
+        id
+        uuid
+        url
+        codeHostKind
+        codeHostURN
+        secret
+        updatedAt
+        createdAt
+    }
+    query WebhooksList {
+        webhooks {
+            nodes {
+                ...WebhookFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+            }
+        }
+    }
+`
+
+export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
+    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+        query: WEBHOOKS,
+        variables: {},
+        getConnection: result => {
+            const { webhooks } = dataOrThrowErrors(result)
+            return webhooks
+        },
+    })

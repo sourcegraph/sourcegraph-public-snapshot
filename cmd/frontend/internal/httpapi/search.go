@@ -160,7 +160,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 
 	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, indexedIDs)
 	if err != nil {
-		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no rankingx",
+		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no ranking",
 			log.Int("repos", len(indexedIDs)),
 			log.Error(err),
 		)
