@@ -69,12 +69,12 @@ func TestListWebhooks(t *testing.T) {
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
-	schema := mustParseGraphQLSchema(t, db)
+	gqlSchema := mustParseGraphQLSchema(t, db)
 	RunTests(t, []*Test{
 		{
 			Label:   "basic",
 			Context: ctx,
-			Schema:  schema,
+			Schema:  gqlSchema,
 			Query: `
 				{
 					webhooks {
@@ -99,7 +99,7 @@ func TestListWebhooks(t *testing.T) {
 		{
 			Label:   "specify first",
 			Context: ctx,
-			Schema:  schema,
+			Schema:  gqlSchema,
 			Query: `query Webhooks($first: Int!) {
 						webhooks(first: $first) {
 							nodes { id }
@@ -124,7 +124,7 @@ func TestListWebhooks(t *testing.T) {
 		{
 			Label:   "specify kind",
 			Context: ctx,
-			Schema:  schema,
+			Schema:  gqlSchema,
 			Query: `query Webhooks($kind: ExternalServiceKind) {
 						webhooks(kind: $kind) {
 							nodes { id }
@@ -150,7 +150,7 @@ func TestListWebhooks(t *testing.T) {
 		{
 			Label:   "specify cursor",
 			Context: ctx,
-			Schema:  schema,
+			Schema:  gqlSchema,
 			Query: `query Webhooks($first: Int!, $after: String!) {
 						webhooks(first: $first, after: $after) {
 							nodes { id }
