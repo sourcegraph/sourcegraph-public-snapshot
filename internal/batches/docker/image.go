@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	goexec "os/exec"
 	"strings"
 	"sync"
 
@@ -87,7 +88,7 @@ func (image *image) Ensure(ctx context.Context) error {
 				defer cancel()
 
 				args := []string{"image", "inspect", "--format", "{{ .Id }}", image.name}
-				out, err := exec.CommandContext(dctx, "docker", args...).CombinedOutput()
+				out, err := exec.CommandContext(dctx, "docker", args...).Output()
 				id := string(bytes.TrimSpace(out))
 
 				if errors.IsDeadlineExceeded(err) || errors.IsDeadlineExceeded(dctx.Err()) {
@@ -108,7 +109,14 @@ func (image *image) Ensure(ctx context.Context) error {
 				return err
 			} else if err != nil {
 				// Let's try pulling the image.
-				if err := exec.CommandContext(ctx, "docker", "image", "pull", image.name).Run(); err != nil {
+				pullCmd := exec.CommandContext(ctx, "docker", "image", "pull", image.name)
+				var stderr bytes.Buffer
+				pullCmd.Stderr = &stderr
+				if err := pullCmd.Run(); err != nil {
+					exitErr := &goexec.ExitError{}
+					if errors.As(err, &exitErr) {
+						return errors.Newf("failed to pull image: %s\ndocker pull exited with code %d", stderr.String(), exitErr.ExitCode())
+					}
 					return errors.Wrap(err, "pulling image")
 				}
 				// And try again to get the image digest.
