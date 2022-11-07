@@ -933,6 +933,12 @@ type InsightView implements Node {
     The total number of series on this insight.
     """
     seriesCount: Int
+
+    backfillStatus: BackfillStatus!
+}
+
+type BackfillStatus {
+    percentComplete: Float!
 }
 
 """

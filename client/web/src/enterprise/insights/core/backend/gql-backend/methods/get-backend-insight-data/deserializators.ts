@@ -9,10 +9,12 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
     const seriesData = response.dataSeries
     const isFetchingHistoricalData = seriesData.some(({ status: { isLoadingData } }) => isLoadingData)
     // const percentComplete = seriesData.map(({ status: { percentComplete } }) => percentComplete)
-    let pct = 0
-    seriesData.forEach(({ status: { percentComplete } }) => {
-        pct = percentComplete?.valueOf() || 0
-    })
+    // let pct = 0
+    // seriesData.forEach(({ status: { percentComplete } }) => {
+    //     pct = percentComplete?.valueOf() || 0
+    // })
+
+    const percentComplete: number = response.backfillStatus.percentComplete?.valueOf() || 0
 
     if (isComputeInsight(insight)) {
         return {
@@ -20,7 +22,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
             // insights have problem with generated data series status info
             // see https://github.com/sourcegraph/sourcegraph/issues/38893
             isFetchingHistoricalData,
-            percentComplete: pct,
+            percentComplete,
             data: {
                 type: InsightContentType.Categorical,
                 content: createComputeCategoricalChart(insight, seriesData),
@@ -30,7 +32,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
 
     return {
         isFetchingHistoricalData,
-        percentComplete: pct,
+        percentComplete,
         data: {
             type: InsightContentType.Series,
             content: createLineChartContent(insight, seriesData),

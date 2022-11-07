@@ -200,6 +200,11 @@ type InsightViewResolver interface {
 	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
 	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
 	SeriesCount(ctx context.Context) (*int32, error)
+	BackfillStatus(ctx context.Context) (BackfillStatus, error)
+}
+
+type BackfillStatus interface {
+	PercentComplete() float64
 }
 
 type InsightDataSeriesDefinition interface {

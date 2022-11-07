@@ -44,6 +44,14 @@ var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnection
 var _ graphqlbackend.InsightViewSeriesDisplayOptionsResolver = &insightViewSeriesDisplayOptionsResolver{}
 var _ graphqlbackend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
 
+type backfillStatusResolver struct {
+	percent float64
+}
+
+func (b *backfillStatusResolver) PercentComplete() float64 {
+	return b.percent
+}
+
 type insightViewResolver struct {
 	view                  *types.Insight
 	overrideFilters       *types.InsightViewFilters
@@ -357,6 +365,15 @@ func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
 	_, err := i.computeDataSeries(ctx)
 	total := int32(i.totalSeries)
 	return &total, err
+}
+
+func (i *insightViewResolver) BackfillStatus(ctx context.Context) (graphqlbackend.BackfillStatus, error) {
+	backfillStore := scheduler.NewBackfillStore(i.insightsDB)
+	percent, err := backfillStore.PercentComplete(ctx, scheduler.StatusArgs{ViewID: i.view.ViewID})
+	if err != nil {
+		return nil, err
+	}
+	return &backfillStatusResolver{percent: percent}, nil
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {

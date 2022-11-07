@@ -133,7 +133,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 				continue
 			}
 
-			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+			logger.Info("doing iteration work", log.Int("repo_id", int(repoId)))
 			runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
 			if runErr != nil {
 				logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
@@ -146,12 +146,12 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		return nil
 	}
 
-	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
+	logger.Info("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
 	if err := itrLoop(itr.NextWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
 	}
 
-	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
+	logger.Info("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
 	if err := itrLoop(itr.NextRetryWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.RetryLoop")
 	}

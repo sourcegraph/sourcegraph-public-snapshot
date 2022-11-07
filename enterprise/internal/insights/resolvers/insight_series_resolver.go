@@ -191,7 +191,7 @@ func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSerie
 		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
 	}
 	getPercentComplete := func(ctx context.Context, seriesID int) (float64, error) {
-		percent, err := backfillStore.PercentComplete(ctx, seriesID)
+		percent, err := backfillStore.PercentComplete(ctx, scheduler.StatusArgs{SeriesID: seriesID})
 		if err != nil {
 			return 0, nil
 		}

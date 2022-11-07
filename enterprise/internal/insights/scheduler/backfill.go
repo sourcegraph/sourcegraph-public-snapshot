@@ -88,9 +88,29 @@ func scanBackfill(scanner dbutil.Scanner) (*SeriesBackfill, error) {
 	return &tmp, nil
 }
 
-func (b *BackfillStore) PercentComplete(ctx context.Context, seriesID int) (float64, error) {
-	q := sqlf.Sprintf("select coalesce(sum(ri.success_count), 0) success, coalesce(sum(ri.total_count), 0) total from insight_series_backfill isb join repo_iterator ri ON isb.repo_iterator_id = ri.id where isb.series_id = %s", seriesID)
-	row := b.QueryRow(ctx, q)
+type StatusArgs struct {
+	SeriesID int
+	ViewID   int
+}
+
+func (b *BackfillStore) PercentComplete(ctx context.Context, args StatusArgs) (float64, error) {
+	var condition *sqlf.Query
+	q := `select coalesce(sum(ri.success_count), 0) success, coalesce(sum(ri.total_count), 0) total from insight_series_backfill isb 
+			join repo_iterator ri ON isb.repo_iterator_id = ri.id WHERE %s`
+
+	if args.SeriesID != 0 {
+		condition = sqlf.Sprintf("isb.series_id = %s", args.SeriesID)
+	} else if args.ViewID != 0 {
+		sub := `isb.series_id in (
+					select i.id from insight_series i
+					join insight_view_series ivs on i.id = ivs.insight_series_id
+					join insight_view iv on iv.id = ivs.insight_view_id
+					where iv.id = %s
+				)`
+		condition = sqlf.Sprintf(sub, args.ViewID)
+	}
+
+	row := b.QueryRow(ctx, sqlf.Sprintf(q, condition))
 	var success, total int
 	if err := row.Scan(
 		&success,

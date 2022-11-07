@@ -25,6 +25,9 @@ const INSIGHT_DATA_NODE_FRAGMENT = gql`
         dataSeries {
             ...InsightDataSeries
         }
+        backfillStatus {
+            percentComplete
+        }
     }
     ${INSIGHT_DATA_SERIES_FRAGMENT}
 `
@@ -43,3 +46,5 @@ export const GET_INSIGHT_VIEW_GQL = gql`
     }
     ${INSIGHT_DATA_NODE_FRAGMENT}
 `
+
+
