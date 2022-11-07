@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash';
+import { noop } from 'lodash'
 
 import {
     Button,
@@ -44,11 +44,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
     return (
         <Menu>
             <Tooltip content={tooltipText} placement="right">
-                <MenuButton
-                    variant="icon"
-                    outline={true}
-                    className={classNames(className, styles.triggerButton)}
-                >
+                <MenuButton variant="icon" outline={true} className={classNames(className, styles.triggerButton)}>
                     <Icon svgPath={mdiDotsVertical} height={16} width={16} aria-label="dashboard options" />
                 </MenuButton>
             </Tooltip>

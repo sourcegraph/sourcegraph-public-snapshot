@@ -80,34 +80,34 @@ describe('buildRepoBaseNameAndPath tests', () => {
 })
 
 describe('buildEditorUrl tests', () => {
-    const defaultRange = { start: { line: 43, character: 0 }, end: { line: 43, character: 0 } }
+    const defaultPosition = { line: 43, character: 0 }
     const defaultPath = 'sourcegraph/.gitignore'
     const baseUrl = 'https://sourcegraph.com'
     describe('happy paths', () => {
         it('builds the correct URL for some basic settings and VS Code', () => {
-            const url = buildEditorUrl(defaultPath, defaultRange, buildSettings(), baseUrl)
+            const url = buildEditorUrl(defaultPath, defaultPosition, buildSettings(), baseUrl)
             expect(url.toString()).toBe('vscode://file/home/user/projects/sourcegraph/.gitignore:43:0')
         })
 
         it('builds the correct URL for some basic settings and IDEA', () => {
-            const url = buildEditorUrl(defaultPath, defaultRange, buildSettings({ editorIds: ['idea'] }), baseUrl)
+            const url = buildEditorUrl(defaultPath, defaultPosition, buildSettings({ editorIds: ['idea'] }), baseUrl)
             expect(url.toString()).toBe('idea://open?file=/home/user/projects/sourcegraph/.gitignore&line=43&column=0')
         })
 
         it('builds the correct URL for some basic settings and Atom', () => {
-            const url = buildEditorUrl(defaultPath, defaultRange, buildSettings({ editorIds: ['atom'] }), baseUrl)
+            const url = buildEditorUrl(defaultPath, defaultPosition, buildSettings({ editorIds: ['atom'] }), baseUrl)
             expect(url.toString()).toBe(
                 'atom://core/open/file?filename=/home/user/projects/sourcegraph/.gitignore:43:0'
             )
         })
 
         it('builds the correct URL for some basic settings and Sublime', () => {
-            const url = buildEditorUrl(defaultPath, defaultRange, buildSettings({ editorIds: ['sublime'] }), baseUrl)
+            const url = buildEditorUrl(defaultPath, defaultPosition, buildSettings({ editorIds: ['sublime'] }), baseUrl)
             expect(url.toString()).toBe('subl://open?url=/home/user/projects/sourcegraph/.gitignore&line=43&column=0')
         })
 
         it('builds the correct URL for some basic settings and PyCharm', () => {
-            const url = buildEditorUrl(defaultPath, defaultRange, buildSettings({ editorIds: ['pycharm'] }), baseUrl)
+            const url = buildEditorUrl(defaultPath, defaultPosition, buildSettings({ editorIds: ['pycharm'] }), baseUrl)
             expect(url.toString()).toBe(
                 'pycharm://open?file=/home/user/projects/sourcegraph/.gitignore&line=43&column=0'
             )
@@ -118,7 +118,7 @@ describe('buildEditorUrl tests', () => {
             Object.defineProperty(navigator, 'userAgent', { value: 'MacOS', writable: true })
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     editorIds: ['goland'],
                     'projectPaths.default': '/home/user/projects',
@@ -135,7 +135,7 @@ describe('buildEditorUrl tests', () => {
         it('performs replacements', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({ replacements: { projects: 'new-projects' } }),
                 baseUrl
             )
@@ -145,7 +145,7 @@ describe('buildEditorUrl tests', () => {
         it('forces JetBrains built-in server', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     editorIds: ['goland'],
                     'jetbrains.forceApi': 'builtInServer',
@@ -160,7 +160,7 @@ describe('buildEditorUrl tests', () => {
         it('handles UNC paths for VS Code', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     'projectPaths.default': '/server/projects',
                     'vscode.isProjectPathUNCPath': true,
@@ -173,7 +173,7 @@ describe('buildEditorUrl tests', () => {
         it('handles Windows paths for VS Code', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({ 'projectPaths.default': 'C:\\Projects' }),
                 baseUrl
             )
@@ -188,7 +188,7 @@ describe('buildEditorUrl tests', () => {
         it('can use insiders build of VS Code', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({ 'vscode.useInsiders': true }),
                 baseUrl
             )
@@ -198,7 +198,7 @@ describe('buildEditorUrl tests', () => {
         it('can use SSH with VS Code', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     'vscode.useSSH': true,
                     'vscode.remoteHostForSSH': '127.0.0.1',
@@ -213,7 +213,7 @@ describe('buildEditorUrl tests', () => {
         it('can use SSH with VS Code Insiders', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     'vscode.useInsiders': true,
                     'vscode.useSSH': true,
@@ -229,7 +229,7 @@ describe('buildEditorUrl tests', () => {
         it('can use a custom URL pattern', () => {
             const url = buildEditorUrl(
                 defaultPath,
-                defaultRange,
+                defaultPosition,
                 buildSettings({
                     editorIds: ['custom'],
                     'custom.urlPattern': 'idea://test?file=%file&line=%line&column=%col',
@@ -243,13 +243,13 @@ describe('buildEditorUrl tests', () => {
     describe('unhappy paths', () => {
         it('recognizes missing editor settings', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, undefined, baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, undefined, baseUrl)
             }).toThrow()
         })
 
         it('recognizes missing project path', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, { editorIds: ['vscode'] }, baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, { editorIds: ['vscode'] }, baseUrl)
             }).toThrow()
         })
 
@@ -257,7 +257,7 @@ describe('buildEditorUrl tests', () => {
             expect(() => {
                 buildEditorUrl(
                     defaultPath,
-                    defaultRange,
+                    defaultPosition,
                     buildSettings({ 'projectPaths.default': '../projects' }),
                     baseUrl
                 )
@@ -266,7 +266,7 @@ describe('buildEditorUrl tests', () => {
 
         it('recognizes missing editor ID', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, { 'projectPaths.default': '/home/user/projects' }, baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, { 'projectPaths.default': '/home/user/projects' }, baseUrl)
             }).toThrow()
         })
 
@@ -274,7 +274,7 @@ describe('buildEditorUrl tests', () => {
             expect(() => {
                 buildEditorUrl(
                     defaultPath,
-                    defaultRange,
+                    defaultPosition,
                     buildSettings({
                         editorIds: ['custom'],
                         'projectPaths.default': '/home/user/projects',
@@ -286,19 +286,19 @@ describe('buildEditorUrl tests', () => {
 
         it('recognizes missing editor settings', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, { editorIds: ['vscode'] }, baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, { editorIds: ['vscode'] }, baseUrl)
             }).toThrow()
         })
 
         it('recognizes missing SSH remote setting if vscode SSH mode is enabled', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, buildSettings({ 'vscode.useSSH': true }), baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, buildSettings({ 'vscode.useSSH': true }), baseUrl)
             }).toThrow()
         })
 
         it('builds the right "Learn more" URL', () => {
             expect(() => {
-                buildEditorUrl(defaultPath, defaultRange, { editorIds: ['vscode'] }, baseUrl)
+                buildEditorUrl(defaultPath, defaultPosition, { editorIds: ['vscode'] }, baseUrl)
             }).toThrow(/https:\/\/docs\.sourcegraph\.com\/integration\/open_in_editor/)
         })
     })
