@@ -28,9 +28,9 @@ import { InsightContext } from '../InsightContext'
 
 import styles from './BuiltInInsight.module.scss'
 
-interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLLIElement> {
+interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: LangStatsInsight
-    innerRef: Ref<HTMLLIElement>
+    innerRef: Ref<HTMLElement>
     resizing: boolean
 }
 
