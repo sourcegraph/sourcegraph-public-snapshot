@@ -168,6 +168,7 @@ Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_incomplete_points" CONSTRAINT "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```
@@ -209,6 +210,23 @@ Foreign-key constraints:
     "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 Referenced by:
     TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
+
+# Table "public.insight_series_incomplete_points"
+```
+  Column   |            Type             | Collation | Nullable |                           Default                            
+-----------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id        | integer                     |           | not null | nextval('insight_series_incomplete_points_id_seq'::regclass)
+ series_id | integer                     |           | not null | 
+ reason    | text                        |           | not null | 
+ time      | timestamp without time zone |           | not null | 
+ repo_id   | integer                     |           |          | 
+Indexes:
+    "insight_series_incomplete_points_pk" PRIMARY KEY, btree (id)
+    "insight_series_incomplete_points_unique_idx" UNIQUE, btree (series_id, reason, "time", repo_id)
+Foreign-key constraints:
+    "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
 
