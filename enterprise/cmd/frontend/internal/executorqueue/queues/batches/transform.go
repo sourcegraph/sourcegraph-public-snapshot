@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -60,8 +61,40 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 
 	// 🚨 SECURITY: Set the actor on the context so we check for permissions
-	// when loading the repository.
+	// when loading the repository and getting secret values.
 	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+
+	// Next, we fetch all secrets that are requested for the execution.
+	rk := batchSpec.Spec.RequiredEnvVars()
+	var secrets []*database.ExecutorSecret
+	if len(rk) > 0 {
+		esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+			NamespaceUserID: batchSpec.NamespaceUserID,
+			NamespaceOrgID:  batchSpec.NamespaceOrgID,
+			Keys:            rk,
+		})
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+	}
+
+	// And build the env vars from the secrets.
+	secretEnvVars := make([]string, len(secrets))
+	redactedEnvVars := make(map[string]string, len(secrets))
+	esalStore := s.DatabaseDB().ExecutorSecretAccessLogs()
+	for i, secret := range secrets {
+		// Get the secret value. This also creates an access log entry in the
+		// name of the user.
+		val, err := secret.Value(ctx, esalStore)
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+
+		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		// We redact secret values as ${{ secrets.NAME }}.
+		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+	}
 
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
@@ -150,8 +183,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// Later we might allow to tweak more git parameters, like submodules and LFS.
 		ShallowClone:   true,
 		SparseCheckout: sparseCheckout,
-		// Nothing to redact for now. We want to add secrets here once implemented.
-		RedactedValues: map[string]string{},
+		RedactedValues: redactedEnvVars,
 	}
 
 	if job.Version == 2 {
@@ -217,9 +249,8 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
 				Key:   fmt.Sprintf("step.%d.pre", i),
 				Image: helperImage,
-				// Inject secret values. TODO: Only the ones that are requested.
-				Env: []string{},
-				Dir: ".",
+				Env:   secretEnvVars,
+				Dir:   ".",
 				Commands: []string{
 					// TODO: This doesn't handle skipped steps right, it assumes
 					// there are outputs from i-1 present at all times.
@@ -271,7 +302,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				Key:      "batch-exec",
 				Commands: commands,
 				Dir:      ".",
-				Env:      []string{},
+				Env:      secretEnvVars,
 			},
 		}
 	}
