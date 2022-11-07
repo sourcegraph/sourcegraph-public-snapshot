@@ -27,7 +27,7 @@ DOCKERFILE="cmd/gitserver/Dockerfile"
 for arg in "$@"; do
   shift
   case "$arg" in
-    '--ms-git')  DOCKERFILE="cmd/gitserver/Dockerfile_ms_git";;
+    '--microsoft-git')  DOCKERFILE="cmd/gitserver/Dockerfile_ms_git";;
   esac
 done
 

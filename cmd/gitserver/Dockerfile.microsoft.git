@@ -43,7 +43,7 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-#Install ms git, see: https://github.com/microsoft/git#other-distributions
+# Install Microsoft's git fork, see: https://github.com/microsoft/git#other-distributions
 RUN wget -O git-$GIT_VERSION.tar.gz https://github.com/microsoft/git/archive/refs/tags/v$GIT_VERSION.tar.gz
 RUN apk add --no-cache $PACKAGES
 
