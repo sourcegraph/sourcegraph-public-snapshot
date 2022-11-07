@@ -44,5 +44,5 @@ export function addTimeEventsToSpan<T extends Record<string, TimeInput | undefin
 }
 
 export function areOnTheSameTrace(a?: Span | ReadableSpan, b?: Span | ReadableSpan): boolean {
-    return a?.spanContext().traceId !== b?.spanContext().traceId
+    return a?.spanContext().traceId === b?.spanContext().traceId
 }

@@ -1,8 +1,8 @@
 import { useMemo, useContext } from 'react'
 
-import { trace, Span, ROOT_CONTEXT, Context, Attributes } from '@opentelemetry/api'
+import { context, trace, Span, Context, Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
 
-import { areOnTheSameTrace, sharedSpanStore } from '../../sdk'
+import { sharedSpanStore, areOnTheSameTrace } from '../../sdk'
 import { TraceContext, reactManualTracer } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
@@ -10,13 +10,8 @@ import type { TraceSpanProviderProps } from './TraceSpanProvider'
 /**
  * This function ensures that all React spans are connected to the parent or current navigation context.
  */
-function getRelevantContext(parentContext: Context, customContext?: Context): Context {
-    // Use `customContext` if provided, otherwise use `parentContext`.
-    if (customContext) {
-        return customContext
-    }
-
-    const currentNavigationContext = sharedSpanStore.getRootNavigationContext() || ROOT_CONTEXT
+function getReactTracerContext(parentContext: Context = context.active()): Context {
+    const currentNavigationContext = sharedSpanStore.getRootNavigationContext() || parentContext
 
     // If no `parentContext` is available, use the current navigation context.
     if (parentContext === ROOT_CONTEXT) {
@@ -24,7 +19,7 @@ function getRelevantContext(parentContext: Context, customContext?: Context): Co
     }
 
     // If `parentContext` is linked to the old `PageView` trace, use the current navigation context.
-    if (!areOnTheSameTrace(sharedSpanStore.getRootNavigationSpan(), trace.getSpan(parentContext))) {
+    if (!areOnTheSameTrace(trace.getSpan(currentNavigationContext), trace.getSpan(parentContext))) {
         return currentNavigationContext
     }
 
@@ -47,7 +42,7 @@ export function useNewTraceContextProviderValue(
 
     return useMemo(() => {
         const { name, attributes, options: spanOptions, context: customContext } = options
-        const parentContext = getRelevantContext(providedParentContext, customContext)
+        const parentContext = getReactTracerContext(customContext || providedParentContext)
 
         const newSpan = reactManualTracer.startSpan(name, spanOptions, parentContext)
         const newContext = trace.setSpan(parentContext, newSpan)
