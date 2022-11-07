@@ -338,9 +338,6 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 		createdFork := strings.TrimPrefix(parent.Project.Key+"-"+parent.Slug, "~")
 		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{Name: &createdFork})
 
-		fmt.Println(createdFork)
-		fmt.Println(parent.Project.Key)
-
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
