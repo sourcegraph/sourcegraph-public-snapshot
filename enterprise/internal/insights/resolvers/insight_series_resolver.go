@@ -527,6 +527,7 @@ var _ graphqlbackend.IncompleteDatapointAlert = &incompleteDataPointAlertResolve
 
 type incompleteDataPointAlertResolver struct {
 	resolver any
+	graphqlbackend.IncompleteDatapointAlert
 }
 
 func (i *incompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbackend.TimeoutDatapointAlert, bool) {
@@ -536,10 +537,7 @@ func (i *incompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbac
 
 type timeoutDatapointAlertResolver struct {
 	point store.IncompleteDatapoint
-}
-
-func (t *timeoutDatapointAlertResolver) Repository(ctx context.Context) (graphqlbackend.RepositoryResolver, error) {
-	panic("implement me")
+	baseInsightResolver
 }
 
 func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
@@ -549,6 +547,12 @@ func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
 func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
 	var reasons []store.IncompleteDatapoint
 	// todo actually load
+
+	reasons = append(reasons, store.IncompleteDatapoint{
+		Reason: store.ReasonTimeout,
+		RepoId: nil,
+		Time:   time.Now(),
+	})
 
 	for _, reason := range reasons {
 		switch reason.Reason {

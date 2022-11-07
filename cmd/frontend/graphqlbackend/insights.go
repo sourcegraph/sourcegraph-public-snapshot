@@ -454,9 +454,9 @@ type SearchInsightLivePreviewSeriesResolver interface {
 
 type IncompleteDatapointAlert interface {
 	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	Time() gqlutil.DateTime
 }
 
 type TimeoutDatapointAlert interface {
-	Repository(ctx context.Context) (RepositoryResolver, error)
 	Time() gqlutil.DateTime
 }
