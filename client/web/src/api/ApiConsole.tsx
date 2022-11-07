@@ -247,6 +247,9 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         if (searchParameters.get('trace') === '1') {
             headers.set('x-sourcegraph-should-trace', 'true')
         }
+        for (const feature of searchParameters.getAll('feat')) {
+            headers.append('x-sourcegraph-override-feature', feature)
+        }
         const response = await fetch('/.api/graphql', {
             method: 'POST',
             body: JSON.stringify(graphQLParameters),

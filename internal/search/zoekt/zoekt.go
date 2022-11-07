@@ -135,8 +135,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		k := o.resultCountFactor()
 		searchOpts.ShardMaxMatchCount = 100 * k
 		searchOpts.TotalMaxMatchCount = 100 * k
-		searchOpts.ShardMaxImportantMatch = 15 * k
-		searchOpts.TotalMaxImportantMatch = 25 * k
 		// Ask for 2000 more results so we have results to populate
 		// RepoStatusLimitHit.
 		searchOpts.MaxDocDisplayCount = int(o.FileMatchLimit) + 2000
