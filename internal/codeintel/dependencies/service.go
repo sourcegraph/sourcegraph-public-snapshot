@@ -3,7 +3,6 @@ package dependencies
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -12,21 +11,15 @@ import (
 
 // Service encapsulates the resolution and persistence of dependencies at the repository and package levels.
 type Service struct {
-	store         store.Store
-	backgroundJob background.BackgroundJob
-	operations    *operations
+	store      store.Store
+	operations *operations
 }
 
-func newService(store store.Store, backgroundJob background.BackgroundJob, observationContext *observation.Context) *Service {
+func newService(store store.Store, observationContext *observation.Context) *Service {
 	return &Service{
-		store:         store,
-		backgroundJob: backgroundJob,
-		operations:    newOperations(observationContext),
+		store:      store,
+		operations: newOperations(observationContext),
 	}
-}
-
-func GetBackgroundJobs(s *Service) background.BackgroundJob {
-	return s.backgroundJob
 }
 
 type Repo = shared.Repo

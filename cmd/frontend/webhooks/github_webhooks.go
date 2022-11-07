@@ -85,7 +85,12 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
 		logger.Error("Error handling github webhook event", log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		switch err.(type) {
+		case eventTypeNotFoundError:
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 }

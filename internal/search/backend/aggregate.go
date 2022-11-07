@@ -24,16 +24,14 @@ var (
 // Note: It aggregates Progress as well, and expects that the
 // MaxPendingPriority it receives are monotonically decreasing.
 type collectSender struct {
-	aggregate          *zoekt.SearchResult
-	maxDocDisplayCount int
-	useDocumentRanks   bool
-	sizeBytes          uint64
+	aggregate *zoekt.SearchResult
+	opts      *zoekt.SearchOptions
+	sizeBytes uint64
 }
 
 func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
 	return &collectSender{
-		maxDocDisplayCount: opts.MaxDocDisplayCount,
-		useDocumentRanks:   opts.UseDocumentRanks,
+		opts: opts,
 	}
 }
 
@@ -74,9 +72,9 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 	c.aggregate = nil
 	c.sizeBytes = 0
 
-	zoekt.SortFiles(agg.Files, c.useDocumentRanks)
+	zoekt.SortFiles(agg.Files, c.opts)
 
-	if max := c.maxDocDisplayCount; max > 0 && len(agg.Files) > max {
+	if max := c.opts.MaxDocDisplayCount; max > 0 && len(agg.Files) > max {
 		agg.Files = agg.Files[:max]
 	}
 
