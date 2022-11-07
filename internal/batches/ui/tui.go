@@ -23,6 +23,8 @@ var (
 	batchPendingColor = output.StylePending
 	batchSuccessColor = output.StyleSuccess
 	batchSuccessEmoji = output.EmojiSuccess
+	batchWarningColor = output.StyleWarning
+	batchWarningEmoji = output.EmojiWarning
 )
 
 var _ ExecUI = &TUI{}
@@ -263,6 +265,10 @@ func (ui *TUI) UploadingWorkspaceFiles() {
 	ui.pending = batchCreatePending(ui.Out, "Uploading workspace files")
 }
 
+func (ui *TUI) UploadingWorkspaceFilesWarning(err error) {
+	batchCompleteWarning(ui.pending, err.Error())
+}
+
 func (ui *TUI) UploadingWorkspaceFilesSuccess() {
 	batchCompletePending(ui.pending, "Uploading workspace files")
 }
@@ -438,4 +444,8 @@ func batchCreatePending(out *output.Output, message string) output.Pending {
 
 func batchCompletePending(p output.Pending, message string) {
 	p.Complete(output.Line(batchSuccessEmoji, batchSuccessColor, message))
+}
+
+func batchCompleteWarning(p output.Pending, message string) {
+	p.Complete(output.Line(batchWarningEmoji, batchWarningColor, message))
 }

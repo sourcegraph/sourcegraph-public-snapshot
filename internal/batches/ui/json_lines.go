@@ -335,6 +335,18 @@ func (ui *stepsExecutionJSONLines) StepFailed(step int, err error, exitCode int)
 	)
 }
 
+func (ui *JSONLines) UploadingWorkspaceFiles() {
+	// No workspace file upload required for executor mode.
+}
+
+func (ui *JSONLines) UploadingWorkspaceFilesWarning(err error) {
+	// No workspace file upload required for executor mode.
+}
+
+func (ui *JSONLines) UploadingWorkspaceFilesSuccess() {
+	// No workspace file upload required for executor mode.
+}
+
 func logOperationStart(op batcheslib.LogEventOperation, metadata interface{}) {
 	logEvent(batcheslib.LogEvent{Operation: op, Status: batcheslib.LogEventStatusStarted, Metadata: metadata})
 }
