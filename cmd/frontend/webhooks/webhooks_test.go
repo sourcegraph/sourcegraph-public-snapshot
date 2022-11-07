@@ -62,7 +62,10 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	gh := GitHubWebhook{WebhookRouter: &WebhookRouter{DB: db}}
+	wr := WebhookRouter{
+		DB: db,
+	}
+	gh := GitHubWebhook{WebhookRouter: &wr}
 
 	webhookMiddleware := NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
@@ -77,6 +80,11 @@ func TestWebhooksHandler(t *testing.T) {
 
 		event := webhooks.EventCommon{
 			ObjectKind: "pipeline",
+		}
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindGitLab: {
+				"pipeline": []WebhookHandler{fakeWebhookHandler},
+			},
 		}
 		payload, err := json.Marshal(event)
 		require.NoError(t, err)
@@ -126,6 +134,12 @@ func TestWebhooksHandler(t *testing.T) {
 		payload := []byte(`{"body": "text"}`)
 		h.Write(payload)
 		res := h.Sum(nil)
+
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindGitHub: {
+				"member": []WebhookHandler{fakeWebhookHandler},
+			},
+		}
 
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
@@ -183,4 +197,8 @@ func TestWebhooksHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+}
+
+func fakeWebhookHandler(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	return nil
 }

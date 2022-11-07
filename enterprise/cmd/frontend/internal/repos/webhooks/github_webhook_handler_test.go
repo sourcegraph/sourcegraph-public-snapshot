@@ -1,4 +1,4 @@
-package repos_test
+package webhooks
 
 import (
 	"bytes"
@@ -68,7 +68,7 @@ func TestGitHubWebhookHandle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := repos.GitHubWebhookHandler{}
+	handler := NewGitHubWebhookHandler()
 	router := &webhooks.GitHubWebhook{
 		WebhookRouter: &webhooks.WebhookRouter{
 			DB: db,
