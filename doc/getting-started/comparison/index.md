@@ -1,17 +1,17 @@
 Please note: this docs page was last updated November 7, 2022, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve. 
 
 
-## GitHub code search vs. Sourcegraph
+# GitHub code search vs. Sourcegraph
 
 GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in technical preview and is separate from GitHub’s primary UI (GitHub will eventually [integrate this functionality](https://cs.github.com/about/faq#new-ui) into the primary UI). 
 
 Sourcegraph is a code intelligence platform that makes codebases intelligible by semantically indexing and analyzing all of an organization’s code, providing developers and engineering leaders with a complete understanding of their codebase. In addition to universal code search across every code host, Sourcegraph has features to help developers find code, understand and answer questions about code, and fix code faster.
 
 
-### Searching code
+## Searching code
 
 
-#### Code host integrations
+### Code host integrations
 
 GitHub code search can only be used to search across code that is stored in GitHub. Organizations with code stored in multiple code hosts cannot use GitHub code search to search across their entire codebase. 
 
@@ -90,7 +90,7 @@ You can also integrate Sourcegraph with other Git-based code hosts using [these]
 
 
 
-#### Searching repositories, branches, and forks
+### Searching repositories, branches, and forks
 
 GitHub allows you to search indexed **repositories**, but not all code is indexed. GitHub’s [current limitations](https://cs.github.com/about/faq#indexed-content) on indexed code are:
 
@@ -219,7 +219,7 @@ Limitations for code that is indexed:
 
 
 
-#### Search syntax
+### Search syntax
 
 Both GitHub code search and Sourcegraph support regular expression and literal search. [Regular expression](https://docs.sourcegraph.com/code_search/reference/queries#standard-search-default) helps you find code that matches a pattern (including classes of characters like letters, numbers, and whitespace) and can restrict the results to anchors like the start of a line, the end of a line, or word boundary. Literal (standard) search matches literal patterns exactly, including punctuation, like quotes.
 
@@ -237,14 +237,14 @@ In addition to regular expression and literal search, Sourcegraph offers [struct
 Regardless of the type of search method you use, GitHub’s search is line-oriented, and Sourcegraph supports multi-line search. This means that Sourcegraph’s search queries can find results that cross multiple lines. For example, here is an [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Parsely/pykafka%24+Not+leader+for+partition&patternType=regexp&_ga=2.114069518.827352295.1667227568-1057140468.1661198534&_gac=1.47310293.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*zwylx9*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzU3NDA3OC4xMTcuMS4xNjY3NTc2NjIyLjAuMC4w) of matching multiple text strings in a file using regex.  
 
 
-#### Commit diff search and commit message search
+### Commit diff search and commit message search
 
 Commit diff and commit message searches help you see how your codebase has changed over time. With Sourcegraph, you can search within [commit diffs](https://docs.sourcegraph.com/code_search/explanations/features#commit-diff-search) to find changes to particular functions, classes, or specific areas of the codebase, and you can search over [commit messages](https://docs.sourcegraph.com/code_search/explanations/features#commit-message-search) and narrow down searches with additional filters such as author or time. 
 
 Neither commit diff search nor commit message search is available with GitHub code search. 
 
 
-#### Symbol search
+### Symbol search
 
 Symbol search makes it easier to find specific functions, variables, and more by filtering searches for symbol results. Symbol results also allow you to jump directly to symbols by name.
 
@@ -316,7 +316,7 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 
 
 
-#### Search results and result types
+### Search results and result types
 
 **Search results**
 
@@ -380,7 +380,7 @@ Limited to 10 pages of results
 
 
 
-#### Search aggregations
+### Search aggregations
 
 To help you understand and refine search results, Sourcegraph’s search results also include visual search aggregation charts. These charts help you answer unique questions about the overall results set that individual search results cannot, like how many different versions of a library or package are present in your code, which repositories in a given library are most used, and more. They can also help you quickly refine your search by seeing which files, repositories, authors, or capture group returned the most results, and then clicking a result in the chart to add a filter to your query. 
 
@@ -389,7 +389,7 @@ You can group your search results by location (repository or file), author, or a
 GitHub code search does not currently offer this functionality. 
 
 
-#### Search filters and contexts
+### Search filters and contexts
 
 **Filters**
 
@@ -441,12 +441,12 @@ Repository-based and query-based
 
 
 
-### Understanding and navigating code
+## Understanding and navigating code
 
 **Code navigation **helps you explore code in depth. It includes features such as “Go to definition” and “Find references,” which let you quickly move between files to understand code.
 
 
-#### Search-based code navigation
+### Search-based code navigation
 
 Both GitHub and Sourcegraph offer out-of-the-box, search-based code navigation. This version of code navigation uses search-based heuristics to find references and definitions across a codebase without any setup required. It is powerful and convenient, but it can sometimes present inaccurate results. For example, it can return false positive references for symbols with common names. It is limited to returning definitions and references within a single repository (it won’t track references across multiple repositories).
 
@@ -510,7 +510,7 @@ C#, CodeQL, Elixir, Go, Java, JavaScript, TypeScript, PHP, Python, Ruby
 
 
 
-#### Precise code navigation
+### Precise code navigation
 
 GitHub and Sourcegraph both offer precise code navigation as well. Despite having the same name, the two versions of precise code navigation are very different in terms of the underlying technology and accuracy they provide. Only Sourcegraph’s precise code navigation is 100% accurate. 
 
@@ -587,13 +587,13 @@ Go, TypeScript, JavaScript, C, C++, Java, Scala, Kotlin, Rust, Python, Ruby
 
 
 
-### Codebase insights and analytics
+## Codebase insights and analytics
 
  \
 GitHub and Sourcegraph have offerings that are called “insights,” but they differ. Generally, insights can be split into two categories:
 
 
-#### Codebase insights
+### Codebase insights
 
 GitHub does not offer comprehensive insights that account for the content of the code itself. Rather, GitHub’s insights are based primarily on GitHub’s product-level data. GitHub offers [dependency insights](https://docs.github.com/en/enterprise-cloud@latest/admin/policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-dependency-insights-in-your-enterprise) that show all the packages your organization’s repositories depend on, e.g. aggregated information about security advisories and licenses. \
 
@@ -601,8 +601,7 @@ GitHub does not offer comprehensive insights that account for the content of the
 [Sourcegraph’s Code Insights](https://docs.sourcegraph.com/code_insights) is based on codebase-level data: aggregation of lines, patterns, and other search targets in the codebase. It reveals high-level information about the entire codebase, accounting for all of your repositories and code hosts. With Code Insights, you can track anything that can be expressed with a Sourcegraph search query and turn it into customizable dashboards. Code Insights can be used to track migrations, package use, version adoption, code smells, vulnerability remediation, codebase size, and more. 
 
 
-####  \
-App activity insights
+### App activity insights
 
 With [insights for Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects/viewing-insights-from-your-project/about-insights-for-projects), you can view, create, and customize charts that are built from the project’s data. [Organization activity insights](https://docs.github.com/en/enterprise-cloud@latest/organizations/collaborating-with-groups-in-organizations/viewing-insights-for-your-organization) help you understand how members of the organization are using GitHub, e.g. issue and pull request activity, top languages used, and cumulative information about where members spend their time. 
 
@@ -640,7 +639,7 @@ Offers dependency insights. Does not offer comprehensive insights about the cont
 
 
 
-### Large-scale code changes
+## Large-scale code changes
 
 GitHub does not offer a way to automate arbitrary large-scale code changes. For repositories where [Dependabot security updates](https://docs.github.com/en/enterprise-cloud@latest/code-security/dependabot/dependabot-security-updates/about-dependabot-security-updates) are enabled, when GitHub Enterprise Cloud detects a vulnerable dependency in the default branch, Dependabot creates a pull request to fix it.
 
@@ -676,17 +675,17 @@ With Sourcegraph’s [Batch Changes](https://docs.sourcegraph.com/batch_changes/
 
 
 
-### Integrations and API 
+## Integrations and API 
 
 
-#### Integrations
+### Integrations
 
 Both GitHub and Sourcegraph offer integrations to help optimize your workflow. GitHub’s owned integrations are built and managed by GitHub, and they have a marketplace with nearly a thousand third-party applications spanning across categories such as code quality, code review, IDEs, monitoring, security, and more. These integrations are available for GitHub overall, but there aren’t any integrations related to GitHub code search. For example, the [VS Code integration](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) allows you to review and manage pull requests, but it does not let you use GitHub code search in VS Code. 
 
 Sourcegraph’s [editor integrations](https://docs.sourcegraph.com/integration/editor) let you search and navigate across all of your repositories from all your code hosts and across all GitHub instances and organizations without leaving your IDE. Sourcegraph currently integrates with VS Code, JetBrains IDEs, Sublime Text, Atom, and Gitpod. You can also add Sourcegraph to your preferred [browser](https://docs.sourcegraph.com/integration/browser_extension/how-tos/browser_search_engine) to quickly search across your entire codebase from within your browser. 
 
 
-#### API
+### API
 
 GitHub has a REST API for web clients, but it is not yet documented. On the other hand, Sourcegraph offers a few different APIs that help you access data related to the code available on a Sourcegraph instance. The [GraphQL API](https://docs.sourcegraph.com/api/graphql) is for accessing data stored and computed by Sourcegraph. This API can be [used](https://docs.sourcegraph.com/api/graphql/examples) to fetch file contents without cloning a repository or search for a new framework or API you are using and determine all of the repositories that haven’t been migrated yet. The [Stream API](https://docs.sourcegraph.com/api/stream_api) is for consuming search results as a stream of events, and it can be used to [search](https://docs.sourcegraph.com/api/stream_api#example-curl) over all indexed repositories. Lastly, the [interactive API explorer](https://sourcegraph.com/api/console#%7B%22query%22%3A%22%23%20Type%20queries%20here%2C%20with%20completion%2C%20validation%2C%20and%20hovers.%5Cn%23%5Cn%23%20Here's%20an%20example%20query%20to%20get%20you%20started%3A%5Cn%5Cnquery%20%7B%5Cn%20%20currentUser%20%7B%5Cn%20%20%20%20username%5Cn%20%20%7D%5Cn%20%20repositories(first%3A%201)%20%7B%5Cn%20%20%20%20nodes%20%7B%5Cn%20%20%20%20%20%20name%5Cn%20%20%20%20%7D%5Cn%20%20%7D%5Cn%7D%5Cn%22%7D) is meant for building and testing your API queries. 
 
@@ -728,7 +727,7 @@ Stream API
 
 
 
-### Alerting
+## Alerting
 
 GitHub and Sourcegraph offer alerting on code in different forms.
 
@@ -743,7 +742,7 @@ Sourcegraph offers [code monitors](https://docs.sourcegraph.com/code_monitoring)
 Each code monitor can span any scope of your choosing, such as a single repository, multiple repositories, or multiple code hosts. They can also be scoped to specific branches of a repository. Code monitor alerts can be configured to send notifications via email, Slack message, or webhook. Most queries used for a code monitor can also be reused for a Code Insights chart or a fix with Batch Changes. 
 
 
-### Embedded code search and documentation
+## Embedded code search and documentation
 
 Sourcegaph’s [Notebooks](https://docs.sourcegraph.com/notebooks) integrate code search with Markdown for knowledge sharing. Notebooks are created with blocks, and each block can be Markdown, a code search query, a live code snippet, a file, or a symbol.
 
@@ -752,7 +751,7 @@ Notebooks pull information directly from your codebase, so the information serve
 GitHub does not currently offer functionality to embed code search within notebooks or documentation.
 
 
-### Licensing
+## Licensing
 
 GitHub is closed source, while Sourcegraph’s code is publicly available. 
 
@@ -761,7 +760,7 @@ Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal 
 Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
 
 
-### Which code search is best for you?
+## Which code search is best for you?
 
 **Who should use GitHub code search?**
 
@@ -781,7 +780,7 @@ As your codebase grows in complexity, the value of code search quickly increases
 If you frequently rely on your editor’s “go to definition” and “find references” features, you’ll also be able to take advantage of Sourcegraph's precise code navigation. Only Sourcegraph's offering features IDE-level accuracy and works across repositories.
 
 
-### Availability
+## Availability
 
 GitHub code search is currently available through a technical preview (you can sign up for their [waitlist](https://cs.github.com/about) to request access). This technical preview is not yet available for GitHub Enterprise. 
 
