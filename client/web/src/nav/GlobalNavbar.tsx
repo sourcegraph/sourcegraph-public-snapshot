@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -29,7 +29,7 @@ import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinde
 import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
-import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
+import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
@@ -75,6 +75,7 @@ export interface GlobalNavbarProps
     enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
 }
@@ -155,15 +156,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     extensionsController,
     enableLegacyExtensions,
+    showFeedbackModal,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
     const routeMatch = useRoutesMatch(props.routes)
-    const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch,
-    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
@@ -287,24 +286,18 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
+                    {props.authenticatedUser && isSourcegraphDotCom &&
+                        <ButtonLink
+                            className={styles.signUp}
+                            to="https://signup.sourcegraph.com"
+                            size="sm"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
+                    }
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
@@ -364,6 +357,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
+                                showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
                     )}

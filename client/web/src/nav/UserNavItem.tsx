@@ -37,6 +37,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 }
 
 /**
@@ -165,6 +166,9 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
+
+                            <MenuItem onSelect={props.showFeedbackModal}>Feedback</MenuItem>
+
                             <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                             {props.authenticatedUser.session?.canSignOut && (

@@ -190,7 +190,7 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     position?: Position
     modal?: boolean
     modalLabelId?: string
-    children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
+    children?: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
 }
 
 export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
