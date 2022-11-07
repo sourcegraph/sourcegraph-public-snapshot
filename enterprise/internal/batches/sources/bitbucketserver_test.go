@@ -750,25 +750,25 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		assert.Contains(t, err.Error(), "getting username")
 	})
 
-	// t.Run("not a fork", func(t *testing.T) {
-	// 	name := testName(t)
-	// 	cf, save := newClientFactory(t, name)
-	// 	defer save(t)
+	t.Run("not a fork", func(t *testing.T) {
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
 
-	// 	svc := newExternalService(t, nil)
-	// 	// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
-	// 	// access or update this test. If an update is run by someone who's not aharvey, this
-	// 	// needs to be a repo that isn't a fork.
-	// 	target := newBitbucketServerRepo(urn, "~milton", "vcr-fork-test-repo", 0)
+		svc := newExternalService(t, nil)
+		// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
+		// access or update this test. If an update is run by someone who's not aharvey, this
+		// needs to be a repo that isn't a fork.
+		// This test is to ensure that a user cannot fork a repo that is already in their user namespace
+		target := newBitbucketServerRepo(urn, "~milton", "vcr-fork-test-repo", 0)
 
-	// 	ctx := context.Background()
-	// 	bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
-	// 	assert.Nil(t, err)
+		ctx := context.Background()
+		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+		assert.Nil(t, err)
 
-	// 	fork, err := bbsSrc.GetUserFork(ctx, target)
-	// 	assert.Nil(t, fork)
-	// 	assert.ErrorIs(t, err, errNotAFork)
-	// })
+		_, err = bbsSrc.GetUserFork(ctx, target)
+		assert.ErrorContains(t, err, "This repository URL is already taken")
+	})
 
 	t.Run("not forked from parent", func(t *testing.T) {
 		// This test expects that:

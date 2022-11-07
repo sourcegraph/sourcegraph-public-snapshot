@@ -19,7 +19,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 03 Nov 2022 19:06:33 GMT
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
@@ -27,9 +27,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@LSXTKNx1146x292956x3'
+      - '@1KBB873x1070x1023881x1'
       X-Asessionid:
-      - 1j7oqrz
+      - pgcmqf
       X-Auserid:
       - "1"
       X-Ausername:
@@ -57,7 +57,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 03 Nov 2022 19:06:33 GMT
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
@@ -65,9 +65,9 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@LSXTKNx1146x292959x1'
+      - '@1KBB873x1070x1023883x1'
       X-Asessionid:
-      - 1lasw5e
+      - dpf8zg
       X-Auserid:
       - "1"
       X-Ausername:
@@ -86,46 +86,7 @@ interactions:
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/~milton/repos/BAT-vcr-fork-test-repo
     method: GET
   response:
-    body: '{"errors":[{"context":null,"message":"Repository ~milton/BAT-vcr-fork-test-repo
-      does not exist.","exceptionName":"com.atlassian.bitbucket.repository.NoSuchRepositoryException"}]}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Thu, 03 Nov 2022 19:06:33 GMT
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - x-ausername,x-auserid,cookie,accept-encoding
-      X-Arequestid:
-      - '@LSXTKNx1146x292964x2'
-      X-Asessionid:
-      - 1kg9hye
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 404 Not Found
-    code: 404
-    duration: ""
-- request:
-    body: |
-      {"name":"BAT-vcr-fork-test-repo"}
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/BAT/repos/vcr-fork-test-repo
-    method: POST
-  response:
-    body: '{"slug":"bat-vcr-fork-test-repo","id":24377,"name":"BAT-vcr-fork-test-repo","description":"This
+    body: '{"slug":"bat-vcr-fork-test-repo","id":24385,"name":"BAT-vcr-fork-test-repo","description":"This
       repo is intended to be used for recording batch changes VCR tests","hierarchyId":"0e8e237d3bcf0c1a6dc4","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"origin":{"slug":"vcr-fork-test-repo","id":24373,"name":"vcr-fork-test-repo","description":"This
       repo is intended to be used for recording batch changes VCR tests","hierarchyId":"0e8e237d3bcf0c1a6dc4","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"BAT","id":183,"name":"batch-changes-testing","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/bat/vcr-fork-test-repo.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/bat/vcr-fork-test-repo.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/BAT/repos/vcr-fork-test-repo/browse"}]}},"project":{"key":"~MILTON","id":2,"name":"milton
       woof","type":"PERSONAL","owner":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
@@ -137,9 +98,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 03 Nov 2022 19:06:34 GMT
-      Location:
-      - https://bitbucket.sgdev.org/rest/api/1.0/projects/~MILTON/repos/bat-vcr-fork-test-repo
+      - Mon, 07 Nov 2022 17:50:11 GMT
       Pragma:
       - no-cache
       Server:
@@ -147,15 +106,15 @@ interactions:
       Vary:
       - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@LSXTKNx1146x292965x0'
+      - '@1KBB873x1070x1023884x1'
       X-Asessionid:
-      - qusav
+      - 4k4i17
       X-Auserid:
       - "1"
       X-Ausername:
       - milton
       X-Content-Type-Options:
       - nosniff
-    status: 201 Created
-    code: 201
+    status: 200 OK
+    code: 200
     duration: ""
