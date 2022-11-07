@@ -19,7 +19,7 @@ export interface SmartInsightProps extends TelemetryProps, HTMLAttributes<HTMLEl
  * Render smart insight with ф(gql or extension api) fetcher and independent mutation
  * actions.
  */
-export const SmartInsight = forwardRef<HTMLLIElement, SmartInsightProps>((props, reference) => {
+export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
     const { insight, resizing = false, telemetryService, ...attributes } = props
 
     const mergedReference = useMergeRefs([reference])

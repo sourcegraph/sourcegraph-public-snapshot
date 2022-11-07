@@ -35,12 +35,12 @@ import {
 
 import styles from './BackendInsight.module.scss'
 
-interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLLIElement> {
+interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
     resizing?: boolean
 }
 
-export const BackendInsightView = forwardRef<HTMLLIElement, BackendInsightProps>((props, ref) => {
+export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
     const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
