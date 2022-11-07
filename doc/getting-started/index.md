@@ -52,6 +52,8 @@ Sourcegraph's main features are:
 
 You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a public instance of Sourcegraph for use on open-source code only.
 
+## How is Sourcegraph different than GitHub code search? 
+- [See how Sourcegraph compares to GitHub code search](/github-vs-sourcegraph.md)
 ---
 
 ## Code search
