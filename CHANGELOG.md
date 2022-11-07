@@ -21,6 +21,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 4.1.1
+
+### Changed
+
+- Improved output for failing docker pulls in batch change execution. [#880](https://github.com/sourcegraph/src-cli/pull/880)
+
 ## 4.1.0
 
 ### Changed
