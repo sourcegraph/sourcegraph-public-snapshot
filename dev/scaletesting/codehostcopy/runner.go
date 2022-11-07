@@ -22,6 +22,8 @@ type Runner struct {
 	logger      log.Logger
 }
 
+type GitOpt func(cmd *run.Command) *run.Command
+
 func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
 	return append([]log.Field{
 		log.Object("repo",
@@ -41,9 +43,33 @@ func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest Co
 	}
 }
 
+func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
+	// Add SSH Key to source and dest
+	srcKey, err := r.source.AddSSHKey(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	destKey, err := r.destination.AddSSHKey(ctx)
+	if err != nil {
+		// Have to remove the source since it was added earlier
+		r.source.DropSSHKey(ctx, srcKey)
+		return nil, err
+	}
+	return func() {
+		r.source.DropSSHKey(ctx, srcKey)
+		r.destination.DropSSHKey(ctx, destKey)
+	}, nil
+}
+
 func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
-	r.logger.Info("test")
+
+	cleanup, err := r.addSSHKey(ctx)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
 
 	// Load existing repositories.
 	srcRepos, err := r.store.Load()
@@ -101,7 +127,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 
 			// Push the repo on destination.
 			if !repo.Pushed && repo.Created {
-				err := pushRepo(ctx, repo)
+				err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
 				if err != nil {
 					repo.Failed = err.Error()
 					r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
@@ -128,7 +154,7 @@ func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	return nil
 }
 
-func pushRepo(ctx context.Context, repo *store.Repo) error {
+func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts []GitOpt) error {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
 	if err != nil {
 		return err
@@ -137,22 +163,34 @@ func pushRepo(ctx context.Context, repo *store.Repo) error {
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	err = run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir).Run().Wait()
+	cmd := run.Bash(ctx, "git clone", repo.GitURL).Dir(tmpDir)
+	for _, opt := range srcOpts {
+		cmd = opt(cmd)
+	}
+	err = cmd.Run().Wait()
 	if err != nil {
 		return err
 	}
 	repoDir := filepath.Join(tmpDir, repo.Name)
-	err = run.Bash(ctx, "git remote add destination", repo.ToGitURL).Dir(repoDir).Run().Wait()
+	cmd = run.Bash(ctx, "git remote add destination", repo.ToGitURL).Dir(repoDir)
+	for _, opt := range destOpts {
+		cmd = opt(cmd)
+	}
+	err = cmd.Run().Wait()
 	if err != nil {
 		return err
 	}
-	return gitPushWithRetry(ctx, repoDir, 3)
+	return gitPushWithRetry(ctx, repoDir, 3, destOpts...)
 }
 
-func gitPushWithRetry(ctx context.Context, dir string, retry int) error {
+func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpt ...GitOpt) error {
 	var err error
 	for i := 0; i < retry; i++ {
-		err = run.Bash(ctx, "git push destination").Dir(dir).Run().Wait()
+		cmd := run.Bash(ctx, "git push destination").Dir(dir)
+		for _, opt := range destOpt {
+			cmd = opt(cmd)
+		}
+		err = cmd.Run().Wait()
 		if err != nil {
 			if strings.Contains(err.Error(), "timed out") {
 				continue

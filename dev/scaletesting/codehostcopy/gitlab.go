@@ -13,6 +13,8 @@ type GitLabCodeHost struct {
 	c   *gitlab.Client
 }
 
+var _ CodeHostDestination = (*GitLabCodeHost)(nil)
+
 func NewGitLabCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
 	baseURL, err := url.Parse(def.URL)
 	if err != nil {
@@ -28,6 +30,18 @@ func NewGitLabCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitLabCod
 		def: def,
 		c:   gl,
 	}, nil
+}
+
+func (g *GitLabCodeHost) GitOpts() []GitOpt {
+	return []GitOpt{}
+}
+
+func (g *GitLabCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+	return 0, errors.New("Not implemented")
+}
+
+func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+	return errors.New("Not implemented")
 }
 
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
