@@ -275,6 +275,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
 				Key:   fmt.Sprintf("step.%d.post", i),
 				Image: helperImage,
+				Env:   secretEnvVars,
 				Dir:   ".",
 				Commands: []string{
 					shellquote.Join("batcheshelper", "post", strconv.Itoa(i)),

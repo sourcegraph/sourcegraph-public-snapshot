@@ -101,6 +101,7 @@ func execPost(ctx context.Context, stepIdx int, executionInput batcheslib.Worksp
 			FileMatches: executionInput.SearchResultPaths,
 		},
 		executionInput.Path,
+		os.Environ(),
 		executionInput.OnlyFetchWorkspace,
 		executionInput.Steps,
 		stepIdx,
