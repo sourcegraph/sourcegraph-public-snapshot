@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 	"os"
+	"strings"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
