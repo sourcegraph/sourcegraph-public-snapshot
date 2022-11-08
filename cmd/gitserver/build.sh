@@ -24,14 +24,15 @@ pkg="github.com/sourcegraph/sourcegraph/cmd/gitserver"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 DOCKERFILE="cmd/gitserver/Dockerfile"
-for arg in "$@"; do
-  shift
-  case "$arg" in
-    '--microsoft-git')  DOCKERFILE="cmd/gitserver/Dockerfile.microsoft.git";;
-  esac
-done
+DOCKERFILE_MS_GIT="cmd/gitserver/Dockerfile.microsoft.git"
 
 docker build -f "$DOCKERFILE" -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
+
+docker build -f "$DOCKERFILE_MS_GIT" -t "$IMAGE-ms-git" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
