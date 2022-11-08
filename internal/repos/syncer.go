@@ -434,7 +434,7 @@ func (s *Syncer) syncRepo(
 
 	repo, err = rg.GetRepo(ctx, path)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get repo: %q")
+		return nil, errors.Wrapf(err, "failed to get repo with path: %q", path)
 	}
 
 	if repo.Private {
