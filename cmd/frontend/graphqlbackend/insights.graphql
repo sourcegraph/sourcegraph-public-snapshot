@@ -455,9 +455,9 @@ extend type Query {
 
 type InsightViewDebug {
     """
-    A list of series that are part of the insight view with debug information.
+    A list debug information in json format about series on the insightview
     """
-    series: [InsightSeriesQueryStatus!]!
+    series: [String!]!
 }
 
 """
@@ -509,92 +509,6 @@ type InsightSeriesQueryStatus {
     This count only represents the queries that have yet to be pruned by the background maintenance workers.
     """
     queued: Int!
-
-    """
-    A list of the `limit` most recent failure reasons for queries in the terminally `failed` state.
-    The max limit is 500.
-    """
-    queueSearchFailures(limit: Int = 50): [InsightSearchError]!
-
-    backfills: [SeriesBackfillDebug]!
-}
-
-"""
-A type which contains debug information about an insight series backfill
-"""
-type SeriesBackfillDebug {
-    """
-    An estimate of the cost of the search query.
-    """
-    estimatedCost: Float!
-    """
-    The state of the backfill record
-    """
-    state: String!
-    """
-    The total number of repos that this backfill it attempt to run over
-    """
-    numberOfRepos: Int
-    """
-    The current % complete of the backfill
-    """
-    percentComplete: Int
-    """
-    The number of seconds the backfill has been actively running.  Does not include time spent waiting for other backfills to run
-    """
-    runtimeSeconds: Int
-    """
-    The clock time the backfill started to run
-    """
-    startedAt: DateTime
-    """
-    The clock time the backfill completed
-    """
-    completedAt: DateTime
-    """
-    A list of errors up to the limit. The maximum limit is 500
-    """
-    errors(limit: Int = 50): [InsightSeriesBackfillError]!
-}
-"""
-A type which contains error information that occured for a repo during a backfill
-"""
-type InsightSeriesBackfillError {
-    """
-    The id of the repo that errored
-    """
-    repoId: Int!
-    """
-    A list of the error messages
-    """
-    messages: [String!]!
-}
-
-type InsightSearchError {
-    """
-    The attempted search query
-    """
-    query: String!
-    """
-    The search mode Recording or Snapshot
-    """
-    searchMode: String!
-    """
-    The error message
-    """
-    failureMessage: String!
-    """
-    The state of the queued search.  Errored state will retry, Failed is terminal
-    """
-    state: String!
-    """
-    The time the search query was queued for running
-    """
-    queuedAt: DateTime!
-    """
-    The time the search is attempting to record data for
-    """
-    recordTime: DateTime
 }
 
 """

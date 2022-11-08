@@ -85,7 +85,7 @@ type InsightsDataPointResolver interface {
 }
 
 type InsightViewDebugResolver interface {
-	Series(context.Context) ([]InsightSeriesQueryStatusResolver, error)
+	Series(context.Context) ([]string, error)
 }
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
@@ -306,12 +306,6 @@ type InsightSeriesQueryStatusResolver interface {
 	Processing(ctx context.Context) (int32, error)
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
-	QueueSearchFailures(ctx context.Context, args LimitArg) ([]InsightSearchErrorResolver, error)
-	Backfills(ctx context.Context) ([]InsightSeriesBackfillDebugResolver, error)
-}
-
-type LimitArg struct {
-	Limit int32
 }
 type InsightSearchErrorResolver interface {
 	Query(ctx context.Context) (string, error)
@@ -326,23 +320,6 @@ type InsightViewFiltersResolver interface {
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
 	SearchContexts(ctx context.Context) (*[]string, error)
 }
-
-type InsightSeriesBackfillDebugResolver interface {
-	EstimatedCost(ctx context.Context) (float64, error)
-	State(ctx context.Context) (string, error)
-	NumberOfRepos(ctx context.Context) (*int32, error)
-	PercentComplete(ctx context.Context) (*int32, error)
-	RuntimeSeconds(ctx context.Context) (*int32, error)
-	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	CompletedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	Errors(ctx context.Context, args LimitArg) []InsightSeriesBackfillErrorResolver
-}
-
-type InsightSeriesBackfillErrorResolver interface {
-	RepoId(ctx context.Context) (int32, error)
-	Messages(ctx context.Context) ([]string, error)
-}
-
 type InsightViewSeriesDisplayOptionsResolver interface {
 	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
 	Limit(ctx context.Context) (*int32, error)

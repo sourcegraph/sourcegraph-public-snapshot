@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"time"
 
@@ -81,7 +82,7 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 			id = &series.ID
 		}
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{backfillStore: scheduler.NewBackfillStore(r.insightsDB), workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
 	}
 	return resolvers, nil
 }
@@ -141,7 +142,6 @@ type insightSeriesQueryStatusResolver struct {
 	seriesID        string
 	id              *int
 	workerBaseStore *basestore.Store
-	backfillStore   *scheduler.BackfillStore
 }
 
 func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
@@ -174,35 +174,6 @@ func (i *insightSeriesQueryStatusResolver) Failed(ctx context.Context) (int32, e
 
 func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, error) {
 	return int32(i.status.Queued), nil
-}
-
-func (i *insightSeriesQueryStatusResolver) QueueSearchFailures(ctx context.Context, args graphqlbackend.LimitArg) ([]graphqlbackend.InsightSearchErrorResolver, error) {
-	seriesFailures, err := queryrunner.QuerySeriesSearchFailures(ctx, i.workerBaseStore, i.seriesID, int(args.Limit))
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightSearchErrorResolver, 0, len(seriesFailures))
-	for i := 0; i < len(seriesFailures); i++ {
-		resolvers = append(resolvers, &insightSearchErrorResolver{failure: seriesFailures[i]})
-	}
-
-	return resolvers, nil
-}
-
-func (i *insightSeriesQueryStatusResolver) Backfills(ctx context.Context) ([]graphqlbackend.InsightSeriesBackfillDebugResolver, error) {
-	if i.id == nil {
-		return nil, nil
-	}
-
-	backfillDebugInfo, err := i.backfillStore.LoadSeriesBackfillsDebugInfo(ctx, *i.id)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightSeriesBackfillDebugResolver, 0, len(backfillDebugInfo))
-	for i := 0; i < len(backfillDebugInfo); i++ {
-		resolvers = append(resolvers, &insightBackfillDebugResolver{backfill: backfillDebugInfo[i]})
-	}
-	return resolvers, nil
 }
 
 type insightBackfillDebugResolver struct {
@@ -252,18 +223,6 @@ func (r *insightBackfillDebugResolver) CompletedAt(ctx context.Context) (*gqluti
 	return gqlutil.DateTimeOrNil(r.backfill.Info.CompletedAt), nil
 }
 
-func (r *insightBackfillDebugResolver) Errors(ctx context.Context, args graphqlbackend.LimitArg) []graphqlbackend.InsightSeriesBackfillErrorResolver {
-	limit := int(math.Min(float64(args.Limit), 500))
-	resolvers := make([]graphqlbackend.InsightSeriesBackfillErrorResolver, 0, limit)
-	for i, backfillError := range r.backfill.Errors {
-		if i >= limit {
-			break
-		}
-		resolvers = append(resolvers, &backfillErrorResolver{backfillError: backfillError})
-	}
-	return resolvers
-}
-
 type backfillErrorResolver struct {
 	backfillError iterator.IterationError
 }
@@ -310,7 +269,17 @@ type insightViewDebugResolver struct {
 	backfillStore   *scheduler.BackfillStore
 }
 
-func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
+func (r *insightViewDebugResolver) Series(ctx context.Context) ([]string, error) {
+
+	type queueDebug struct {
+		types.InsightSeriesStatus
+		searchErrors []types.InsightSearchFailure
+	}
+
+	type insightDebugInfo struct {
+		QueueStatus queueDebug
+		Backfills   []scheduler.SeriesBackfillDebug
+	}
 
 	ids := make([]string, 0, len(r.viewSeries))
 	for i := 0; i < len(r.viewSeries); i++ {
@@ -329,10 +298,11 @@ func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend
 		queueStatusBySeries[status.SeriesId] = &seriesStatus[i]
 	}
 
-	var resolvers []graphqlbackend.InsightSeriesQueryStatusResolver
+	var viewDebug []string
 	// we will treat the results from the queue as the "secondary" and left join it to the series metadata.
 
 	for _, series := range r.viewSeries {
+		// Build the Queue Info
 		status := types.InsightSeriesStatus{
 			SeriesId: series.SeriesID,
 			Query:    series.Query,
@@ -346,9 +316,30 @@ func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend
 			status.Queued = tmpStatus.Queued
 			status.Processing = tmpStatus.Processing
 		}
-		id := series.InsightSeriesID
+		seriesErrors, err := queryrunner.QuerySeriesSearchFailures(ctx, r.workerBaseStore, series.SeriesID, 100)
+		if err != nil {
+			return nil, err
+		}
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{backfillStore: r.backfillStore, workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: &id})
+		// Build the Backfill Info
+		backfillDebugInfo, err := r.backfillStore.LoadSeriesBackfillsDebugInfo(ctx, series.InsightSeriesID)
+		if err != nil {
+			return nil, err
+		}
+
+		seriesDebug := insightDebugInfo{
+			QueueStatus: queueDebug{
+				searchErrors:        seriesErrors,
+				InsightSeriesStatus: status,
+			},
+			Backfills: backfillDebugInfo,
+		}
+		debugJson, err := json.Marshal(seriesDebug)
+		if err != nil {
+			return nil, err
+		}
+		viewDebug = append(viewDebug, string(debugJson))
+
 	}
-	return resolvers, nil
+	return viewDebug, nil
 }
