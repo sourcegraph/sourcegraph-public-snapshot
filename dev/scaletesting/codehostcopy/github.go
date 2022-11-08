@@ -56,7 +56,6 @@ func (g *GithubCodeHost) GitOpts() []GitOpt {
 	}
 
 	return []GitOpt{GitEnv}
-
 }
 
 // AddSSHKey adds the SSH key defined in the code host configuration to
