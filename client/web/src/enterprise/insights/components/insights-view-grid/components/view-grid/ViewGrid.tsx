@@ -1,34 +1,30 @@
-import React, { PropsWithChildren, useCallback, useMemo } from 'react'
+import { FC, PropsWithChildren, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import {
-    Layout,
     Layout as ReactGridLayout,
-    Layouts,
     Layouts as ReactGridLayouts,
-    Responsive,
-    WidthProvider,
+    Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
 
 import { isFirefox } from '@sourcegraph/common'
+import { useMeasure } from '@sourcegraph/wildcard'
 
 import styles from './ViewGrid.module.scss'
 
-// TODO use a method to get width that also triggers when file explorer is closed
-// (WidthProvider only listens to window resize events)
-const ResponsiveGridLayout = WidthProvider(Responsive)
-
 export const BREAKPOINTS_NAMES = ['xs', 'sm', 'md', 'lg'] as const
-
 export type BreakpointName = typeof BREAKPOINTS_NAMES[number]
 
 /** Minimum size in px after which a breakpoint is active. */
-export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 } // no xl because TreePage's max-width is the xl breakpoint.
+export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 }
 export const COLUMNS: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
 export const DEFAULT_ITEMS_PER_ROW: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
 export const MIN_WIDTHS: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
 export const DEFAULT_HEIGHT = 3.25
+export const ROW_HEIGHT = 6 * 16 // 6rem
+export const CONTAINER_PADDING: [number, number] = [0, 0]
+export const GRID_MARGIN: [number, number] = [12, 12]
 
 const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
     Object.fromEntries(
@@ -64,9 +60,7 @@ export type ViewGridProps =
           layouts?: never
       }
     | {
-          /**
-           * Sets custom layout for react-grid-layout library.
-           */
+          /** Sets custom layout for react-grid-layout library. */
           layouts: ReactGridLayouts
           viewIds?: never
       }
@@ -75,21 +69,17 @@ interface ViewGridCommonProps {
     /** Custom classname for root element of the grid. */
     className?: string
 
-    onLayoutChange?: (currentLayout: Layout[], allLayouts: Layouts) => void
-    onResizeStart?: (newItem: Layout) => void
-    onResizeStop?: (newItem: Layout) => void
-    onDragStart?: (newItem: Layout) => void
+    onLayoutChange?: (currentLayout: ReactGridLayout[], allLayouts: ReactGridLayouts) => void
+    onResizeStart?: (newItem: ReactGridLayout) => void
+    onResizeStop?: (newItem: ReactGridLayout) => void
+    onDragStart?: (newItem: ReactGridLayout) => void
 }
 
-/**
- * Renders drag and drop and resizable views grid.
- */
-export const ViewGrid: React.FunctionComponent<
-    React.PropsWithChildren<PropsWithChildren<ViewGridProps & ViewGridCommonProps>>
-> = props => {
+/** Renders drag and drop and resizable views grid. */
+export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
     const {
         layouts,
-        viewIds = [],
+        viewIds,
         children,
         className,
         onLayoutChange,
@@ -97,6 +87,11 @@ export const ViewGrid: React.FunctionComponent<
         onResizeStop = noop,
         onDragStart = noop,
     } = props
+
+    const gridRef = useRef<HTMLDivElement>(null)
+    const [, { width }] = useMeasure(gridRef.current)
+
+    const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),
@@ -122,25 +117,32 @@ export const ViewGrid: React.FunctionComponent<
     // Back to css transforms when this bug will be resolved in Firefox.
     const useCSSTransforms = useMemo(() => !isFirefox(), [])
 
+    useLayoutEffect(() => {
+        // React grid layout doesn't expose API in order to override rendered elements
+        // (like as='ul' prop). Internally it always renders div element, we can't just
+        // render UL element, so we have to tune aria-role attribute manually here
+        gridRef.current?.setAttribute('role', 'list')
+    }, [])
+
     return (
-        <div className={classNames(className, styles.viewGrid)}>
-            <ResponsiveGridLayout
-                measureBeforeMount={true}
-                breakpoints={BREAKPOINTS}
-                layouts={layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds)}
-                cols={COLUMNS}
-                autoSize={true}
-                rowHeight={6 * 16}
-                containerPadding={[0, 0]}
-                useCSSTransforms={useCSSTransforms}
-                margin={[12, 12]}
-                onResizeStart={handleResizeStart}
-                onResizeStop={handleResizeStop}
-                onLayoutChange={onLayoutChange}
-                onDragStart={handleDragStart}
-            >
-                {children}
-            </ResponsiveGridLayout>
-        </div>
+        <ResponsiveGridLayout
+            breakpoints={BREAKPOINTS}
+            cols={COLUMNS}
+            rowHeight={ROW_HEIGHT}
+            containerPadding={CONTAINER_PADDING}
+            margin={GRID_MARGIN}
+            innerRef={gridRef}
+            width={width}
+            autoSize={true}
+            layouts={gridLayouts}
+            useCSSTransforms={useCSSTransforms}
+            onResizeStart={handleResizeStart}
+            onResizeStop={handleResizeStop}
+            onDragStart={handleDragStart}
+            onLayoutChange={onLayoutChange}
+            className={classNames(className, styles.viewGrid)}
+        >
+            {width && children}
+        </ResponsiveGridLayout>
     )
 }
