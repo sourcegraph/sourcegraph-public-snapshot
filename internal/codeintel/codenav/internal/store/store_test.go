@@ -100,9 +100,9 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
 	}
 	expectedUploads := []ExportedUpload{
-		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"}, // replaced by upload 102
+		{ID: 100, Repo: "foo", ObjectPrefix: "ranking/test/100"}, // shadowed by upload 102
 		{ID: 103, Repo: "bar", ObjectPrefix: "ranking/test/103"}, // repo gets deleted
-		{ID: 105, Repo: "baz", ObjectPrefix: "ranking/test/105"},
+		{ID: 105, Repo: "baz", ObjectPrefix: "ranking/test/105"}, // upload gets deleted
 	}
 	if diff := cmp.Diff(expectedUploads, uploads); diff != "" {
 		t.Fatalf("unexpected uploads (-want +got):\n%s", diff)
@@ -110,9 +110,12 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 
 	// Mess some stuff up
 	if _, err := db.ExecContext(ctx, `
-		UPDATE repo SET deleted_at = NOW() WHERE id = 51;
-		DELETE FROM lsif_uploads WHERE id = 105;
-		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 100;
+		UPDATE repo SET deleted_at = NOW() WHERE id = 51;              -- delete repo (attached to upload 103)
+		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 103; -- eventual effect (after janitor runs)
+		DELETE FROM lsif_uploads WHERE id = 105;                       -- delete upload
+		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 105; -- eventual effect (after janitor runs)
+
+		DELETE FROM lsif_uploads_visible_at_tip WHERE upload_id = 100; -- Shadow upload 100 with upload 102
 		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 50, true);
 	`); err != nil {
 		t.Fatalf("unexpected error setting up test: %s", err)

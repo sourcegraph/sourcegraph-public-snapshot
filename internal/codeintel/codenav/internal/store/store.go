@@ -157,19 +157,12 @@ SELECT
 	re.id,
 	re.object_prefix
 FROM codeintel_ranking_exports re
-LEFT JOIN lsif_uploads u ON u.id = re.upload_id
-LEFT JOIN repo r ON r.id = u.repository_id
 WHERE
-	re.graph_key = %s AND NOT (
-		u.id IN (
-			SELECT uvt.upload_id
-			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		r.id IS NOT NULL AND
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL
-	)
+	re.graph_key = %s AND (re.upload_id IS NULL OR re.upload_id NOT IN (
+		SELECT uvt.upload_id
+		FROM lsif_uploads_visible_at_tip uvt
+		WHERE uvt.is_default_branch
+	))
 ORDER BY re.upload_id DESC
 LIMIT %s
 FOR UPDATE OF re SKIP LOCKED
