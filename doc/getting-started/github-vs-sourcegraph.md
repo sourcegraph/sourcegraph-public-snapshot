@@ -455,7 +455,7 @@ C#, CodeQL, Elixir, Go, Java, JavaScript, TypeScript, PHP, Python, Ruby
    </td>
    <td>Moderate (some false positives)
    </td>
-   <td>Moderate to high based on language (some false positives)
+   <td>Moderate (some false positives)
    </td>
   </tr>
   <tr>
