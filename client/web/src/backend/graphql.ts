@@ -16,7 +16,7 @@ const getHeaders = (): { [header: string]: string } => {
         headers['X-Sourcegraph-Should-Trace'] = trace
     }
     const feat = parameters.getAll('feat')
-    if (feat) {
+    if (feat.length) {
         headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
     }
     return headers
