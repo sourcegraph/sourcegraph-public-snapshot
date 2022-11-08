@@ -138,7 +138,7 @@ With Sourcegraph, typically, the latest code on the default **branch** of each r
 In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. 
 
 
-
+<table>
   <tr>
    <td>
    </td>
@@ -184,6 +184,7 @@ Using the [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_con
 
    </td>
   </tr>
+</table>
 
 ### Search syntax
 
