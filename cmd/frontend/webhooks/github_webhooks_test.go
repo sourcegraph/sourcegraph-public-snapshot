@@ -12,6 +12,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	gh "github.com/google/go-github/v43/github"
 	"github.com/stretchr/testify/require"
 
@@ -45,10 +47,10 @@ func TestGithubWebhookDispatchSuccess(t *testing.T) {
 func TestGithubWebhookDispatchNoHandler(t *testing.T) {
 	h := GitHubWebhook{WebhookRouter: &WebhookRouter{}}
 	ctx := context.Background()
-	// no op
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
-		t.Errorf("Expected no error, got %s", err)
-	}
+
+	eventType := "test-event-1"
+	err := h.Dispatch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil)
+	assert.Equal(t, eventTypeNotFoundError{codeHostKind: extsvc.KindGitHub, eventType: eventType}, err)
 }
 
 func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {

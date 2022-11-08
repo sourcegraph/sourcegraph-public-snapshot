@@ -36,6 +36,8 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 		stop context.CancelFunc
 	)
 
+	logger = logger.Scoped("RunScheduler", "git fetch scheduler")
+
 	conf.Watch(func() {
 		c := conf.Get()
 
@@ -48,6 +50,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 			return
 		}
 
+		logger.Debug("config changed")
 		if stop != nil {
 			stop()
 			logger.Info("stopped previous scheduler")

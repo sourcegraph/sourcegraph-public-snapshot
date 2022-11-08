@@ -1581,6 +1581,11 @@ type Query {
         Only include webhook logs on or before this time.
         """
         until: DateTime
+
+        """
+        Only include webhook logs of given webhook ID.
+        """
+        webhookID: ID
     ): WebhookLogConnection!
 
     """
@@ -7684,9 +7689,24 @@ type SyncError {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when repositories are being
+indexed for search.
+"""
+type IndexingProgress {
+    """
+    The number of repositories that have not been indexed yet.
+    """
+    notIndexed: Int!
+    """
+    The number of repositories that have been indexed.
+    """
+    indexed: Int!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.

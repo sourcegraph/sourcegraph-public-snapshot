@@ -1,4 +1,4 @@
-package repos
+package webhooks
 
 import (
 	"context"
@@ -20,8 +20,13 @@ type GitHubWebhookHandler struct {
 }
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.WebhookRouter) {
-	g.logger = log.Scoped("repos.GitHubWebhookHandler", "github webhook handler")
-	router.Register(g.handleGitHubWebhook, "push")
+	router.Register(g.handleGitHubWebhook, extsvc.KindGitHub, "push")
+}
+
+func NewGitHubWebhookHandler() *GitHubWebhookHandler {
+	return &GitHubWebhookHandler{
+		logger: log.Scoped("repos.GitHubWebhookHandler", "github webhook handler"),
+	}
 }
 
 func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, payload any) error {

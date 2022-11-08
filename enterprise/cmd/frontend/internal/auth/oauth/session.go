@@ -38,6 +38,8 @@ type SessionIssuerHelper interface {
 	CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error)
 	DeleteStateCookie(w http.ResponseWriter)
 	SessionData(token *oauth2.Token) SessionData
+	AuthSucceededEventName() database.SecurityEventName
+	AuthFailedEventName() database.SecurityEventName
 }
 
 func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
@@ -126,6 +128,13 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			span.SetError(err)
 			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
+			db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
+				Name:            s.AuthFailedEventName(),
+				URL:             r.URL.Path, // don't log query params w/ OAuth data
+				AnonymousUserID: anonymousId,
+				Source:          "BACKEND",
+				Timestamp:       time.Now(),
+			})
 			return
 		}
 
@@ -136,6 +145,16 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 			return
 		}
+
+		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
+		ctx = actor.WithActor(ctx, actr)
+		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
+			Name:      s.AuthSucceededEventName(),
+			URL:       r.URL.Path, // don't log query params w/ OAuth data
+			UserID:    uint32(user.ID),
+			Source:    "BACKEND",
+			Timestamp: time.Now(),
+		})
 
 		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
 			span.SetError(err)

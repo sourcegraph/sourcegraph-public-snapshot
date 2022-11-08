@@ -1,4 +1,4 @@
-name: Move labled issues to Project (Beta)
+name: Move labled issues to Project
 
 on:
   issues:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   add-to-project-beta:
-    name: Add issue to project (beta)
+    name: Add issue to project
     runs-on: ubuntu-latest
     steps:
       - name: Move team/devops or team/cloud issues
@@ -19,7 +19,7 @@ jobs:
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: team/cloud
           label-operator: OR
-          
+
       - name: Move team/repo-management issues
         uses: actions/add-to-project@main
         with:
@@ -27,7 +27,15 @@ jobs:
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: team/repo-management
           label-operator: OR
-          
+
+      - name: Move team/code-exploration issues
+        uses: actions/add-to-project@main
+        with:
+          project-url: https://github.com/orgs/sourcegraph/projects/297
+          github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+          labeled: team/code-exploration
+          label-operator: OR
+
       - name: Move design issues
         uses: actions/add-to-project@main
         with:
@@ -35,7 +43,7 @@ jobs:
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: design, needs-design
           label-operator: OR
-          
+
 #       - name: Move team/CHANGEME issues
 #         uses: actions/add-to-project@main
 #         with:

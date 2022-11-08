@@ -183,7 +183,7 @@ func (p *PersistentRepoIterator) NextRetryWithFinish() (api.RepoID, bool, Finish
 // This can be called at any time to mark the iterator as complete, and does not require the cursor have passed all the way through the set.
 func (p *PersistentRepoIterator) MarkComplete(ctx context.Context, store *basestore.Store) error {
 	now := p.glock.Now()
-	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 1, completed_at = %S, last_updated_at = %S", now, now))
+	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET percent_complete = 1, completed_at = %S, last_updated_at = %S where id = %s", now, now, p.Id))
 	if err != nil {
 		return err
 	}
