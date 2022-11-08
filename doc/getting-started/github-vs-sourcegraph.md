@@ -303,7 +303,7 @@ Sourcegraph uses a repository’s number of stars to [rank](https://docs.sourceg
 
 When submitting a search query, the quality of a match is scored based on language-specific heuristics (Java classes rank higher than variables), word boundaries, and symbol ranges. The score that is received at the time of the query is combined with the index time rank and the repository’s priority to determine the final ranking.
 
-Sourcegraph.com (Sourcegraph's public instance for open source code search) utilizes an algorithm inspired by Google PageRank to measure code reuse and return the most reusable search results first. This new ranking algorithm will be implemented for Sourcegraph customers instances (on-prem and Cloud) in the future.
+[Sourcegraph.com](https://sourcegraph.com/search) (Sourcegraph's public instance for searching open source code) utilizes an algorithm inspired by Google PageRank to measure code reuse and return the most relevant search results first. This new ranking algorithm will be implemented for Sourcegraph customer instances (self-hosted and Cloud) in the future.
 
 <table>
   <tr>
