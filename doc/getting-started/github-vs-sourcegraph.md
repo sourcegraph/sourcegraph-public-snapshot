@@ -324,7 +324,7 @@ Limited to 10 pages of results
    </td>
    <td>✓ 
 <p>
-500 searches are returned by default, but this number can be increased by increasing the ‘count’ value. A maximum of 1500 matches can be displayed, and more matches can be fetched using the src CLI, the Stream API, or GraphQL API.
+500 searches are returned by default, but this number can be increased by increasing the ‘count’ value. A maximum of 1,500 matches can be displayed, and more matches can be fetched using the src CLI, the Stream API, or GraphQL API.
    </td>
   </tr>
   <tr>
