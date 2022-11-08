@@ -111,7 +111,7 @@ Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegrap
 
 * Files larger than 1 MB are excluded* 
 * Binary files are excluded 
-* Files other then UTF-9 are excluded 
+* Files other than UTF-8 are excluded 
 
 *You can use the [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) keyword to specify files to be indexed and searched regardless of size.
 
