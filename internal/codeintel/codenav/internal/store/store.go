@@ -18,7 +18,7 @@ type Store interface {
 	GetUnsafeDB() database.DB
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
-	ProcessStaleExportedUplods(
+	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
 		batchSize int,
@@ -117,7 +117,7 @@ WHERE c.id IN (SELECT id FROM inserted)
 ORDER BY c.id
 `
 
-func (s *store) ProcessStaleExportedUplods(
+func (s *store) ProcessStaleExportedUploads(
 	ctx context.Context,
 	graphKey string,
 	batchSize int,
