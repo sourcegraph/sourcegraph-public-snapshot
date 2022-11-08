@@ -771,7 +771,11 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 				// Allow all
 				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			if app == "gitserver-ms-git" {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
+			} else {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			}
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
