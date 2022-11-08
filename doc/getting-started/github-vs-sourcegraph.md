@@ -192,15 +192,7 @@ Sourcegraph offers [structural search](https://docs.sourcegraph.com/code_search/
 Both GitHub code search and Sourcegraph support regular expression and literal search. [Regular expression](https://docs.sourcegraph.com/code_search/reference/queries#standard-search-default) helps you find code that matches a pattern (including classes of characters like letters, numbers, and whitespace) and can restrict the results to anchors like the start of a line, the end of a line, or word boundary. Literal (standard) search matches literal patterns exactly, including punctuation, like quotes.
 
 
-<table>
-  <tr>
-  </tr>
-</table>
-
-
 GitHub’s search syntax can be found [here](https://cs.github.com/about/syntax), and Sourcegraph’s search syntax can be found [here](https://docs.sourcegraph.com/code_search/reference/queries). 
-
-In addition to regular expression and literal search, Sourcegraph offers [structural search.](https://docs.sourcegraph.com/code_search/reference/structural) GitHub code search does not offer this search method. Structural search lets you match richer syntax patterns, specifically in code and structured data formats like JSON. Sourcegraph offers structural search on indexed code and uses [Comby syntax](https://comby.dev/docs/syntax-reference) for structural matching of code blocks or nested expressions. For example, the fmt.Sprintf function is a popular print function in Go. [Here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=structural&_ga=2.204781593.827352295.1667227568-1057140468.1661198534&_gac=1.118615675.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*1r2u5zs*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzUwODExNC4xMTQuMS4xNjY3NTA5NjUyLjAuMC4w) is a pattern that matches all of the arguments in fmt.Sprintf in our code using structural search compared to the [search](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=regexp) using regex. 
 
 Regardless of the type of search method you use, GitHub’s search is line-oriented, and Sourcegraph supports multi-line search. This means that Sourcegraph’s search queries can find results that cross multiple lines. For example, here is an [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Parsely/pykafka%24+Not+leader+for+partition&patternType=regexp&_ga=2.114069518.827352295.1667227568-1057140468.1661198534&_gac=1.47310293.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*zwylx9*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzU3NDA3OC4xMTcuMS4xNjY3NTc2NjIyLjAuMC4w) of matching multiple text strings in a file using regex, and here is a second explicit multi-line search [example](https://sourcegraph.com/search?q=context:global+app.terraform.io/example_corp+%5Cn+version+%3D%28.*%290.9.%5Cd+lang:Terraform&patternType=regexp) for terraform module verisions.   
 
