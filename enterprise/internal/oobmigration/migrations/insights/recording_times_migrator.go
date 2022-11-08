@@ -39,19 +39,85 @@ func (m *recordingTimesMigrator) Progress(ctx context.Context) (float64, error) 
 	return progress, err
 }
 
-//func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
-//	tx, err := m.store.Transact(ctx)
-//	if err != nil {
-//		return err
-//	}
-//	defer func() { err = tx.Done(err) }()
-//
-//	rows, err := tx.Query(ctx, sqlf.Sprintf(
-//		"SELECT id FROM insight_series WHERE supports_augmentation IS FALSE LIMIT %s FOR UPDATE SKIP LOCKED",
-//		m.batchSize,
-//	))
-//	if err != nil {
-//		return err
-//	}
-//	defer func() { err = basestore.CloseRows(rows, err) }()
-//}
+func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
+	tx, err := m.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	rows, err := tx.Query(ctx, sqlf.Sprintf(
+		"SELECT DISTINCT s.id, s.created_at, s.last_recorded_at, s.sample_interval_unit, s.sample_interval_value, sp.time FROM insight_series AS s JOIN series_points AS sp ON s.series_id = sp.series_id WHERE supports_augmentation IS FALSE LIMIT %s FOR UPDATE SKIP LOCKED",
+		m.batchSize, // if we ever have over `batchSize` unique series_points.recording_times a graph would be unreadable
+		// so this is an acceptable limit.
+	))
+	if err != nil {
+		return err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	series := make(map[int]seriesMetadata) // id -> metadata
+	for rows.Next() {
+		var id int
+		var createdAt, lastRecordedAt time.Time
+		var sampleIntervalUnit string
+		var sampleIntervalValue int
+		var newTime time.Time
+		if err := rows.Scan(
+			&id,
+			&createdAt,
+			&lastRecordedAt,
+			&sampleIntervalUnit,
+			&sampleIntervalValue,
+			&newTime,
+		); err != nil {
+			return err
+		}
+		exists, ok := series[id]
+		if !ok {
+			series[id] = seriesMetadata{
+				id:             id,
+				createdAt:      createdAt,
+				lastRecordedAt: lastRecordedAt,
+				interval: timeInterval{
+					unit:  intervalUnit(sampleIntervalUnit),
+					value: sampleIntervalValue,
+				},
+				existingTimes: []time.Time{newTime},
+			}
+		} else {
+			exists.existingTimes = append(exists.existingTimes, newTime)
+		}
+	}
+
+	// using the inserter is probably the most efficient way however it creates a dependency so commenting out for now
+	// inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
+	for id, metadata := range series {
+		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, metadata.existingTimes)
+		for _, recordTime := range calculatedTimes {
+			if err := tx.Exec(ctx, sqlf.Sprintf(
+				"INSERT INTO insight_series_recording_times (insight_series_id, recording_time, snapshot) VALUES(%s, %s, false) ON CONFLICT DO NOTHING",
+				id,
+				recordTime.UTC(),
+			)); err != nil {
+				return err
+			}
+		}
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			"UPDATE insight_series SET supports_augmentation = TRUE WHERE id = %s",
+			id,
+		)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type seriesMetadata struct {
+	id             int
+	createdAt      time.Time
+	lastRecordedAt time.Time
+	interval       timeInterval
+	existingTimes  []time.Time
+}

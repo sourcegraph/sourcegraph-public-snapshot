@@ -1,7 +1,6 @@
 package insights
 
 import (
-	"fmt"
 	"sort"
 	"time"
 )
@@ -12,7 +11,6 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 		// If we've had recordings since we need to step through them.
 		referenceTimes = append(referenceTimes, buildRecordingTimesBetween(createdAt, lastRecordedAt, interval)[1:]...)
 	}
-	fmt.Println(referenceTimes)
 
 	if len(existingPoints) == 0 {
 		return referenceTimes
