@@ -783,7 +783,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
-				s.Logger.Debug("context done")
+				s.Logger.Debug("sync context done")
 			case s.Synced <- d:
 				s.Logger.Debug("diff synced")
 			}
