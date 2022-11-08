@@ -159,11 +159,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             // extension set aria-hidden="true" on the placeholder, which is
             // what we want.
             const element = document.createElement('span')
-            element.appendChild(document.createTextNode(placeholder))
-            extensions.push(
-                placeholderExtension(element),
-                EditorView.contentAttributes.of({ 'aria-placeholder': placeholder })
-            )
+            element.append(document.createTextNode(placeholder))
+            extensions.push(placeholderExtension(element))
         }
 
         if (editorOptions?.readOnly) {
