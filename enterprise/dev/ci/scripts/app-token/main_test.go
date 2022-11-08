@@ -27,7 +27,6 @@ func TestGenJwtToken(t *testing.T) {
 		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
 		keyPath := os.Getenv("KEY_PATH")
 		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-
 		_, err := genJwtToken(appID, keyPath)
 		require.NoError(t, err)
 	}
