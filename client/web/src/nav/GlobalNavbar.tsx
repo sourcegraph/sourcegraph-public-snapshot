@@ -28,7 +28,6 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -51,16 +50,16 @@ import styles from './GlobalNavbar.module.scss'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        ThemeProps,
-        ThemePreferenceProps,
-        SearchContextInputProps,
-        CodeInsightsProps,
-        BatchChangesProps,
-        NotebookProps,
-        CodeMonitoringProps {
+    PlatformContextProps,
+    ExtensionsControllerProps,
+    TelemetryProps,
+    ThemeProps,
+    ThemePreferenceProps,
+    SearchContextInputProps,
+    CodeInsightsProps,
+    BatchChangesProps,
+    NotebookProps,
+    CodeMonitoringProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
@@ -123,21 +122,6 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                     {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
                 </span>
             </Button>
-        </NavAction>
-    )
-}
-const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
-
-    if (isAdminAnalyticsDisabled) {
-        return null
-    }
-
-    return (
-        <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin" className={styles.link}>
-                Analytics
-            </Link>
         </NavAction>
     )
 }
@@ -296,7 +280,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             Try Sourcegraph Cloud
                         </ButtonLink>
                     }
-                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
@@ -323,8 +306,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                             '/sign-in?returnTo=' +
                                             encodeURI(
                                                 history.location.pathname +
-                                                    history.location.search +
-                                                    history.location.hash
+                                                history.location.search +
+                                                history.location.hash
                                             )
                                         }
                                         variant="secondary"

@@ -211,4 +211,13 @@ export const commonWebGraphQlResults: Partial<
         },
         savedSearches: savedSearchesPayload(),
     }),
+    SearchHistoryEventLogsQuery: () => ({
+        currentUser: {
+            __typename: 'User',
+            recentSearchLogs: {
+                __typename: 'EventLogsConnection',
+                nodes: [],
+            },
+        },
+    }),
 }

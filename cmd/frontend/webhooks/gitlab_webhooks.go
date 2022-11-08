@@ -48,8 +48,13 @@ func (h *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWr
 	// Route the request based on the event type.
 	err = h.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
 	if err != nil {
-		logger.Error("Error handling github webhook event", log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("Error handling gitlab webhook event", log.Error(err))
+		switch err.(type) {
+		case eventTypeNotFoundError:
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 }

@@ -1,6 +1,5 @@
 package com.sourcegraph.website;
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
@@ -26,6 +25,7 @@ import java.util.Optional;
 /**
  * JetBrains IDE action to open a selected revision in Sourcegraph.
  */
+@SuppressWarnings("MissingActionUpdateThread")
 public class OpenRevisionAction extends DumbAwareAction {
     private final Logger logger = Logger.getInstance(this.getClass());
 
@@ -87,11 +87,6 @@ public class OpenRevisionAction extends DumbAwareAction {
                 BrowserOpener.openInBrowser(project, url);
             }
         );
-    }
-
-    @Override
-    public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return ActionUpdateThread.BGT;
     }
 
     @Override

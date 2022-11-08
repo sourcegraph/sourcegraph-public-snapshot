@@ -35,19 +35,37 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 
 1. Update `pluginVersion` in `gradle.properties`
 
-   - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+- To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`,
+  then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md` then remove any empty headers
 3. Go through
    the [manual test cases](https://docs.sourcegraph.com/integration/jetbrains/manual_testing)
 4. Make sure `runIde` is not running
 5. Commit your changes
-6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
+6. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You
+   can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
 7. Commit changes and create PR
+
+## Retrying a release
+
+It happened in the past that we had compatibility issues and the version got rejected.
+Here is what to do in this case:
+
+1. Go to the [versions](https://plugins.jetbrains.com/plugin/9682-sourcegraph/versions/) page logged in with a JetBrains
+   plugin admin account
+2. Go to the latest (failed) version, and click the Trash icon to delete it.
+3. Fix the problem in the code
+4. **Important:** Don't forget to revert the info in CHANGELOG.md to the pre-release state. Then you'll need to commit.
+5. Publish the version again
+6. (Here, of course, you'll need to commit CHANGELOG.md again)
+7. You don't need to wait for JetBrains' email—compatibility checks are visible after a few minutes on the same page.
+8. If the version is still rejected, repeat the process.
 
 ## Enabling web view debugging
 
-Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
+Parts of this extension rely on the [JCEF](https://plugins.jetbrains.com/docs/intellij/jcef.html) web view features
+built into the JetBrains platform. To enable debugging tools for this view, please follow these steps:
 
 1. [Enable JetBrains internal mode](https://plugins.jetbrains.com/docs/intellij/enabling-internal.html)
 2. Open Find Actions: (<kbd>Ctrl+Shift+A</kbd> / <kbd>⌘⇧A</kbd>)
