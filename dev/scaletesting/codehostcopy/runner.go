@@ -22,6 +22,7 @@ type Runner struct {
 	logger      log.Logger
 }
 
+// GitOpt is an option which changes the git command that gets invoked
 type GitOpt func(cmd *run.Command) *run.Command
 
 func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
@@ -56,6 +57,8 @@ func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
 		r.source.DropSSHKey(ctx, srcKey)
 		return nil, err
 	}
+
+	// create a func that cleans the ssh keys up when called
 	return func() {
 		r.source.DropSSHKey(ctx, srcKey)
 		r.destination.DropSSHKey(ctx, destKey)
@@ -65,11 +68,15 @@ func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
 func (r *Runner) Run(ctx context.Context, concurrency int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Adding codehost ssh key"))
 	cleanup, err := r.addSSHKey(ctx)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	defer func() {
+		out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Removing codehost ssh key"))
+		cleanup()
+	}()
 
 	// Load existing repositories.
 	srcRepos, err := r.store.Load()

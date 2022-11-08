@@ -20,6 +20,9 @@ type GithubCodeHost struct {
 	c   *github.Client
 }
 
+var _ CodeHostSource = (*GithubCodeHost)(nil)
+var _ CodeHostDestination = (*GithubCodeHost)(nil)
+
 func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCodeHost, error) {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: def.Token},
@@ -41,6 +44,7 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 	}, nil
 }
 
+// GitOpts returns the options that should be used when a git command is invoked for Github
 func (g *GithubCodeHost) GitOpts() []GitOpt {
 	if len(g.def.SSHKey) == 0 {
 		return []GitOpt{}
@@ -54,6 +58,11 @@ func (g *GithubCodeHost) GitOpts() []GitOpt {
 
 }
 
+// AddSSHKey adds the SSH key defined in the code host configuration to
+// the current authenticated user.
+//
+// If there is no ssh key defined on the code host configuration this
+// is is a noop and returns a 0 for the key ID
 func (g *GithubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 	if len(g.def.SSHKey) == 0 {
 		return 0, nil
@@ -64,7 +73,7 @@ func (g *GithubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 	}
 
 	keyData := string(data)
-	keyTitle := "CodeHostCopy key"
+	keyTitle := "codehost-copy key"
 	githubKey := github.Key{
 		Key:   &keyData,
 		Title: &keyTitle,
@@ -74,14 +83,21 @@ func (g *GithubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if res.StatusCode != 200 {
+	if res.StatusCode >= 300 {
 		return 0, errors.Newf("failed to add key. Got status %d code", res.StatusCode)
 	}
 
 	return *result.ID, nil
 }
 
+// DropSSHKey removes the ssh key by by ID for the current authenticated user. If there is no
+// ssh key set on the codehost configuration this method is a noop
 func (g *GithubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+	// if there is no ssh key in the code host definition
+	// then we have nothing to drop
+	if len(g.def.SSHKey) == 0 {
+		return nil
+	}
 	res, err := g.c.Users.DeleteKey(ctx, keyID)
 	if err != nil {
 		return err
@@ -126,4 +142,8 @@ func (g *GithubCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
 	}
 
 	return res, nil
+}
+
+func (g *GithubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
+	return nil, errors.New("not implemented")
 }

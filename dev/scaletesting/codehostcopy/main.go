@@ -18,6 +18,7 @@ import (
 //go:embed config.example.cue
 var exampleConfig string
 
+// SSHKeyHandler enables one to add and remove SSH keys
 type SSHKeyHandler interface {
 	AddSSHKey(ctx context.Context) (int64, error)
 	DropSSHKey(ctx context.Context, keyID int64) error
