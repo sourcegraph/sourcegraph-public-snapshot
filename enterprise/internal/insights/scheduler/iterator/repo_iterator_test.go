@@ -26,7 +26,7 @@ func testForNextAndFinish(t *testing.T, store *basestore.Store, itr *PersistentR
 	ctx := context.Background()
 
 	for true {
-		repoId, more, finish := itr.NextWithFinish()
+		repoId, more, finish := itr.NextWithFinish(IterationConfig{})
 		if !more {
 			break
 		}
@@ -144,14 +144,14 @@ func TestForNextAndFinish(t *testing.T) {
 		var finishFunc FinishFunc
 
 		// iterate once
-		_, _, finishFunc = itr.NextWithFinish()
+		_, _, finishFunc = itr.NextWithFinish(IterationConfig{})
 		err := finishFunc(ctx, store, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		// then twice
-		_, _, finishFunc = itr.NextWithFinish()
+		_, _, finishFunc = itr.NextWithFinish(IterationConfig{})
 		err = finishFunc(ctx, store, nil)
 		if err != nil {
 			t.Fatal(err)
@@ -213,7 +213,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 				t.Fatal(err)
 			}
 			return true
-		})
+		}, IterationConfig{})
 		jsonify, _ := json.Marshal(got)
 		autogold.Want("iterate retry with one error after retry iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
 	})
@@ -243,7 +243,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 				t.Fatal(err)
 			}
 			return true
-		})
+		}, IterationConfig{})
 		require.Equal(t, 1, len(itr.errors))
 		require.Equal(t, 2, itr.Cursor)
 		require.Equal(t, 0.5, itr.PercentComplete)
@@ -290,7 +290,7 @@ func TestForNextRetryAndFinish(t *testing.T) {
 				t.Fatal(err)
 			}
 			return true
-		})
+		}, IterationConfig{})
 		require.Equal(t, 0, len(itr.errors))
 		require.Equal(t, 2, itr.Cursor)
 		require.Equal(t, float64(1), itr.PercentComplete)
@@ -303,18 +303,18 @@ func TestForNextRetryAndFinish(t *testing.T) {
 
 func addError(ctx context.Context, itr *PersistentRepoIterator, store *basestore.Store, t *testing.T) {
 	// create an error
-	_, _, finish := itr.NextWithFinish()
+	_, _, finish := itr.NextWithFinish(IterationConfig{})
 	err := finish(ctx, store, errors.New("fake err"))
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func testForNextRetryAndFinish(t *testing.T, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
+func testForNextRetryAndFinish(t *testing.T, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc, config IterationConfig) (*PersistentRepoIterator, []api.RepoID) {
 	ctx := context.Background()
 
 	for true {
-		repoId, more, finish := itr.NextRetryWithFinish()
+		repoId, more, finish := itr.NextRetryWithFinish(config)
 		if !more {
 			break
 		}

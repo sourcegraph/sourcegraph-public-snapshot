@@ -42,6 +42,14 @@ type PersistentRepoIterator struct {
 
 type errorMap map[int32]*IterationError
 
+func (em errorMap) FailureCount(repo int32) int {
+	v, ok := em[repo]
+	if !ok {
+		return 0
+	}
+	return v.FailureCount
+}
+
 type IterationError struct {
 	id            int
 	RepoId        int32
@@ -134,6 +142,13 @@ func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock gl
 	return &tmp, nil
 }
 
+type IterationConfig struct {
+	MaxAttempts int
+	OnTerminal  OnTerminalFunc
+}
+
+type OnTerminalFunc func(ctx context.Context, store *basestore.Store, terminalErr error) error
+
 // NextWithFinish will iterate the repository set from the current cursor position. If the iterator is marked complete
 // or has no more repositories this will do nothing. The finish function returned is a mechanism to have atomic updates,
 // callers will need to call the finish function when complete with work. Errors during work processing can be passed
@@ -141,7 +156,7 @@ func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock gl
 // finish function will infinitely loop on the current cursor. This iteration for a given repo iterator is not
 // concurrency safe and should only be called from a single thread. Care should be taken to ensure in a distributed
 // environment only one consumer is able to access this resource at a time.
-func (p *PersistentRepoIterator) NextWithFinish() (api.RepoID, bool, FinishFunc) {
+func (p *PersistentRepoIterator) NextWithFinish(config IterationConfig) (api.RepoID, bool, FinishFunc) {
 	current, got := peek(p.Cursor, p.repos)
 	if !p.CompletedAt.IsZero() || !got {
 		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
@@ -151,28 +166,38 @@ func (p *PersistentRepoIterator) NextWithFinish() (api.RepoID, bool, FinishFunc)
 	p.itrStart = p.glock.Now()
 	return api.RepoID(current), true, func(ctx context.Context, store *basestore.Store, maybeErr error) error {
 		p.itrEnd = p.glock.Now()
-		if err := p.doFinish(ctx, store, maybeErr, current, false); err != nil {
+		if err := p.doFinish(ctx, store, maybeErr, current, false, config); err != nil {
 			return err
 		}
 		return nil
 	}
 }
 
-func (p *PersistentRepoIterator) NextRetryWithFinish() (api.RepoID, bool, FinishFunc) {
+func (p *PersistentRepoIterator) NextRetryWithFinish(config IterationConfig) (api.RepoID, bool, FinishFunc) {
 	if len(p.retryRepos) == 0 {
 		p.resetRetry()
 	}
-	current, got := peek(p.retryCursor, p.retryRepos)
-	if !p.CompletedAt.IsZero() || !got {
-		return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
-			return nil
+	var current int32
+	var got bool
+	for {
+		current, got = peek(p.retryCursor, p.retryRepos)
+		if !p.CompletedAt.IsZero() || !got {
+			return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
+				return nil
+			}
+		} else if config.MaxAttempts > 0 && p.errors.FailureCount(current) >= config.MaxAttempts {
+			// this repo has exceeded its retry count, skip it
+			p.advanceRetry()
+			continue
 		}
+		break
 	}
+
 	p.itrStart = p.glock.Now()
 	return api.RepoID(current), true, func(ctx context.Context, store *basestore.Store, maybeErr error) error {
 		p.itrEnd = p.glock.Now()
-		p.retryCursor += 1
-		if err := p.doFinish(ctx, store, maybeErr, current, true); err != nil {
+		p.advanceRetry()
+		if err := p.doFinish(ctx, store, maybeErr, current, true, config); err != nil {
 			return err
 		}
 		return nil
@@ -224,6 +249,10 @@ func peek(offset int, repos []int32) (int32, bool) {
 	return repos[offset], true
 }
 
+func (p *PersistentRepoIterator) advanceRetry() {
+	p.retryCursor += 1
+}
+
 func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store *basestore.Store, repoId int32, msg string) (err error) {
 	var query *sqlf.Query
 	if p.Id == 0 {
@@ -254,9 +283,11 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 	return nil
 }
 
-func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32, isRetry bool) (err error) {
+func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32, isRetry bool, config IterationConfig) (err error) {
 	didSucceed := 0
 	cursorOffset := 1
+	totalAttemptsForRepo := 1 + p.errors.FailureCount(currentRepo)
+
 	if maybeErr == nil {
 		// if this was for a success then we will want to update
 		didSucceed = 1
@@ -271,6 +302,14 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	if maybeErr != nil && config.MaxAttempts != 0 && totalAttemptsForRepo >= config.MaxAttempts && config.OnTerminal != nil {
+		// the condition is if there was an error, and we have configured both a max attempts + callback, and the total attempts exceeds the config
+		err = config.OnTerminal(ctx, tx, maybeErr)
+		if err != nil {
+			return errors.Wrap(err, "iterator.OnTerminal")
+		}
+	}
 
 	if p.StartedAt.IsZero() {
 		if err = stampStartedAt(ctx, tx, p.Id, p.itrStart); err != nil {
