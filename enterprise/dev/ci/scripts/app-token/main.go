@@ -26,7 +26,7 @@ func main() {
 
 	if len(*appID) == 0 || len(*keyPath) == 0 {
 		flag.PrintDefaults()
-		os.Exit(0)
+		os.Exit(1)
 	}
 
 	jwt, err := genJwtToken(*appID, *keyPath)
