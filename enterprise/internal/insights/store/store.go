@@ -23,12 +23,15 @@ import (
 // Interface is the interface describing a code insights store. See the Store struct
 // for actual API usage.
 type Interface interface {
+	WithOther(other basestore.ShareableStore) Interface
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
 
 var _ Interface = &Store{}
@@ -70,10 +73,15 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-var _ Interface = &Store{}
+// WithOther creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+}
 
 // SeriesPoint describes a single insights' series data point.
 //
@@ -826,4 +834,5 @@ type IncompleteReason string
 
 const (
 	ReasonTimeout IncompleteReason = "timeout"
+	ReasonGeneric IncompleteReason = "generic"
 )

@@ -321,12 +321,13 @@ func TestForNextRetryAndFinish(t *testing.T) {
 				t.Fatal(err)
 			}
 			return true
-		}, IterationConfig{MaxFailures: 2, OnTerminal: func(ctx context.Context, store *basestore.Store, terminalErr error) error {
+		}, IterationConfig{MaxFailures: 2, OnTerminal: func(ctx context.Context, store *basestore.Store, repoId int32, terminalErr error) error {
 			terminalCount += 1
 			return nil
 		}})
 
-		require.Equal(t, 2, len(itr.errors))
+		require.Equal(t, 0, len(itr.errors))
+		require.Equal(t, 2, len(itr.terminalErrors))
 		require.Equal(t, 2, itr.Cursor)
 		require.Equal(t, float64(0), itr.PercentComplete)
 		require.Equal(t, 2, terminalCount)

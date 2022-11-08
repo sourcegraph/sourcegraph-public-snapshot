@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -150,7 +151,25 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 	timeExpired := h.clock.After(h.config.interruptAfter)
 
-	itrConfig := iterator.IterationConfig{MaxFailures: 5}
+	itrConfig := iterator.IterationConfig{
+		MaxFailures: 3,
+		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
+			// switch terminalErr.Error()
+			logger.Info("insights backfill incomplete repo writing all datapoints", log.Int32("repoId", repoId), log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+			id := int(repoId)
+			for _, frame := range frames {
+				tss := h.insightsStore.WithOther(tx)
+				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+					SeriesID: series.ID,
+					RepoID:   &id,
+					Reason:   store.ReasonGeneric,
+					Time:     frame.From,
+				}); err != nil {
+					return errors.Wrap(err, "AddIncompleteDatapoint")
+				}
+			}
+			return nil
+		}}
 
 	type nextFunc func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {
@@ -213,9 +232,8 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 			return err
 		}
 	} else {
-		// this is a rudimentary way of getting this job to retry. Eventually we should manually queue up work so that
-		// we aren't bound by the retry limits placed on the queue, but for now this will work.
-		return incompleteBackfillErr
+		// in this state we have some errors that will need reprocessing, we will place this job back in queue
+		return h.doInterrupt(ctx, job)
 	}
 
 	return nil
