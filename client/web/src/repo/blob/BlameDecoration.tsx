@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
@@ -178,6 +179,14 @@ export const BlameDecoration: React.FunctionComponent<{
                             onClick={logCommitClick}
                         >
                             {blameHunk.message}
+                        </Link>
+                    </div>
+                    <div className="px-3 my-2">
+                        <Link
+                            to={replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)}
+                            className={styles.link}
+                        >
+                            View blame prior to this change
                         </Link>
                     </div>
                 </div>
