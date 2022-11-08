@@ -306,11 +306,11 @@ type InsightSeriesQueryStatusResolver interface {
 	Processing(ctx context.Context) (int32, error)
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
-	QueueSearchFailures(ctx context.Context, args QueueSearchFailuresArgs) ([]InsightSearchErrorResolver, error)
+	QueueSearchFailures(ctx context.Context, args LimitArg) ([]InsightSearchErrorResolver, error)
 	Backfills(ctx context.Context) ([]InsightSeriesBackfillDebugResolver, error)
 }
 
-type QueueSearchFailuresArgs struct {
+type LimitArg struct {
 	Limit int32
 }
 type InsightSearchErrorResolver interface {
@@ -335,7 +335,7 @@ type InsightSeriesBackfillDebugResolver interface {
 	RuntimeSeconds(ctx context.Context) (*int32, error)
 	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
 	CompletedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	Errors(ctx context.Context) []InsightSeriesBackfillErrorResolver
+	Errors(ctx context.Context, args LimitArg) []InsightSeriesBackfillErrorResolver
 }
 
 type InsightSeriesBackfillErrorResolver interface {

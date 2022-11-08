@@ -176,7 +176,7 @@ func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, e
 	return int32(i.status.Queued), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) QueueSearchFailures(ctx context.Context, args graphqlbackend.QueueSearchFailuresArgs) ([]graphqlbackend.InsightSearchErrorResolver, error) {
+func (i *insightSeriesQueryStatusResolver) QueueSearchFailures(ctx context.Context, args graphqlbackend.LimitArg) ([]graphqlbackend.InsightSearchErrorResolver, error) {
 	seriesFailures, err := queryrunner.QuerySeriesSearchFailures(ctx, i.workerBaseStore, i.seriesID, int(args.Limit))
 	if err != nil {
 		return nil, err
@@ -252,9 +252,13 @@ func (r *insightBackfillDebugResolver) CompletedAt(ctx context.Context) (*gqluti
 	return gqlutil.DateTimeOrNil(r.backfill.Info.CompletedAt), nil
 }
 
-func (r *insightBackfillDebugResolver) Errors(ctx context.Context) []graphqlbackend.InsightSeriesBackfillErrorResolver {
-	resolvers := make([]graphqlbackend.InsightSeriesBackfillErrorResolver, 0, len(r.backfill.Errors))
-	for _, backfillError := range r.backfill.Errors {
+func (r *insightBackfillDebugResolver) Errors(ctx context.Context, args graphqlbackend.LimitArg) []graphqlbackend.InsightSeriesBackfillErrorResolver {
+	limit := int(math.Min(float64(args.Limit), 500))
+	resolvers := make([]graphqlbackend.InsightSeriesBackfillErrorResolver, 0, limit)
+	for i, backfillError := range r.backfill.Errors {
+		if i >= limit {
+			break
+		}
 		resolvers = append(resolvers, &backfillErrorResolver{backfillError: backfillError})
 	}
 	return resolvers
