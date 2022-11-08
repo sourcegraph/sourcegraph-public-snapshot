@@ -85,7 +85,7 @@ type InsightsDataPointResolver interface {
 }
 
 type InsightViewDebugResolver interface {
-	Series(context.Context) ([]string, error)
+	Raw(context.Context) ([]string, error)
 }
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
