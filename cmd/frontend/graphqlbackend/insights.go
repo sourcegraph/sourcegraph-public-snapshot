@@ -307,14 +307,6 @@ type InsightSeriesQueryStatusResolver interface {
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
 }
-type InsightSearchErrorResolver interface {
-	Query(ctx context.Context) (string, error)
-	QueuedAt(ctx context.Context) (gqlutil.DateTime, error)
-	RecordTime(ctx context.Context) (*gqlutil.DateTime, error)
-	SearchMode(ctx context.Context) (string, error)
-	FailureMessage(ctx context.Context) (string, error)
-	State(ctx context.Context) (string, error)
-}
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)

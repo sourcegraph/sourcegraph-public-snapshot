@@ -3,21 +3,17 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
-	"math"
-	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -174,92 +170,6 @@ func (i *insightSeriesQueryStatusResolver) Failed(ctx context.Context) (int32, e
 
 func (i *insightSeriesQueryStatusResolver) Queued(ctx context.Context) (int32, error) {
 	return int32(i.status.Queued), nil
-}
-
-type insightBackfillDebugResolver struct {
-	backfill scheduler.SeriesBackfillDebug
-}
-
-func (r *insightBackfillDebugResolver) EstimatedCost(ctx context.Context) (float64, error) {
-	return r.backfill.Info.EstimatedCost, nil
-}
-
-func (r *insightBackfillDebugResolver) State(ctx context.Context) (string, error) {
-	return string(r.backfill.Info.State), nil
-}
-
-func (r *insightBackfillDebugResolver) NumberOfRepos(ctx context.Context) (*int32, error) {
-	if r.backfill.Info.NumRepos == nil {
-		return nil, nil
-	}
-	num := int32(*r.backfill.Info.NumRepos)
-	return &num, nil
-}
-
-func (r *insightBackfillDebugResolver) PercentComplete(ctx context.Context) (*int32, error) {
-	if r.backfill.Info.PercentComplete == nil {
-		return nil, nil
-	}
-
-	percentComplete := int32(math.RoundToEven(*r.backfill.Info.PercentComplete * 100.0))
-	return &percentComplete, nil
-}
-
-func (r *insightBackfillDebugResolver) RuntimeSeconds(ctx context.Context) (*int32, error) {
-	if r.backfill.Info.RuntimeDuration != nil {
-		duration := time.Duration(*r.backfill.Info.RuntimeDuration)
-		seconds := int32(duration / time.Second)
-		return &seconds, nil
-	}
-	return nil, nil
-}
-
-func (r *insightBackfillDebugResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	return gqlutil.DateTimeOrNil(r.backfill.Info.StartedAt), nil
-
-}
-
-func (r *insightBackfillDebugResolver) CompletedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	return gqlutil.DateTimeOrNil(r.backfill.Info.CompletedAt), nil
-}
-
-type backfillErrorResolver struct {
-	backfillError iterator.IterationError
-}
-
-func (r *backfillErrorResolver) RepoId(ctx context.Context) (int32, error) {
-	return r.backfillError.RepoId, nil
-}
-func (r *backfillErrorResolver) Messages(ctx context.Context) ([]string, error) {
-	return r.backfillError.ErrorMessages, nil
-}
-
-type insightSearchErrorResolver struct {
-	failure types.InsightSearchFailure
-}
-
-func (i *insightSearchErrorResolver) Query(ctx context.Context) (string, error) {
-	return i.failure.Query, nil
-}
-
-func (i *insightSearchErrorResolver) QueuedAt(ctx context.Context) (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: i.failure.QueuedAt}, nil
-}
-
-func (i *insightSearchErrorResolver) RecordTime(ctx context.Context) (*gqlutil.DateTime, error) {
-	return gqlutil.DateTimeOrNil(i.failure.RecordTime), nil
-}
-
-func (i *insightSearchErrorResolver) SearchMode(ctx context.Context) (string, error) {
-	return i.failure.PersistMode, nil
-}
-
-func (i *insightSearchErrorResolver) FailureMessage(ctx context.Context) (string, error) {
-	return i.failure.FailureMessage, nil
-}
-
-func (i *insightSearchErrorResolver) State(ctx context.Context) (string, error) {
-	return i.failure.State, nil
 }
 
 type insightViewDebugResolver struct {
