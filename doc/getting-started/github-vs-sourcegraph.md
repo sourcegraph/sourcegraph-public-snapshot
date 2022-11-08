@@ -320,7 +320,7 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 
 GitHub only returns the first 10 pages of search results. You cannot currently go past the 10th page or retrieve all search results.
 
-All search results can be retrieved with Sourcegraph. By default, 500 search results are returned, but this number can be increased by increasing the ‘count’ value. A maximum of 1500 matches can be displayed, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
+Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1500 matches, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
 GitHub code search returns a list of repositories and files. Sourcegraph results can include repositories, files, diffs, commits, and symbols; however, you must use the ‘type’ filter to return anything outside of repositories and files. 
 
