@@ -1,6 +1,6 @@
 import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
 
-import { sharedSpanStore, SharedSpanName } from '../sdk'
+import { sharedSpanStore, SharedSpanName, isSharedSpanName } from '../sdk'
 
 /**
  * Saves created navigation spans to the `sharedSpanStore` for other spans
@@ -12,7 +12,7 @@ export class SharedSpanStoreProcessor implements SpanProcessor {
     public onStart(span: ReadableSpan): void {
         const { name: spanName } = span
 
-        if (Object.values(SharedSpanName).some(name => name === spanName)) {
+        if (isSharedSpanName(spanName)) {
             sharedSpanStore.set(spanName as SharedSpanName, span)
         }
     }

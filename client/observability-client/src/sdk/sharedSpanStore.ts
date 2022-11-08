@@ -4,9 +4,18 @@ import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 export enum SharedSpanName {
     PageView = 'PageView',
     WindowLoad = 'WindowLoad',
+    AppMount = 'AppMount',
 }
 
 type SharedSpanNames = keyof typeof SharedSpanName
+
+export function isSharedSpanName(spanName: string): boolean {
+    return Object.values(SharedSpanName).some(name => name === spanName)
+}
+
+export function isNavigationSpanName(spanName: string): boolean {
+    return [SharedSpanName.PageView, SharedSpanName.WindowLoad].some(name => name === spanName)
+}
 
 /**
  * Used to store recent navigation spans to group other types of spans
@@ -47,6 +56,13 @@ class SharedSpanStore {
      */
     public getRootNavigationSpan(): ReadableSpan | undefined {
         return (this.spanMap.PageView || this.spanMap.WindowLoad)?.span
+    }
+
+    /**
+     * Get the most recent `AppMount` span.
+     */
+    public getAppMountSpan(): ReadableSpan | undefined {
+        return this.spanMap.AppMount?.span
     }
 }
 
