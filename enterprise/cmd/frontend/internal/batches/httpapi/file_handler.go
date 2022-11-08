@@ -139,8 +139,8 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	}
 }
 
-func unmarshalGraphqlID(id graphql.ID) (umarshalledID string, err error) {
-	err = relay.UnmarshalSpec(id, &umarshalledID)
+func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
 	return
 }
 
@@ -149,7 +149,7 @@ func getPathParts(r *http.Request) (string, string, error) {
 	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
-	batchSpecRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecRandID))
+	batchSpecRandID, err := unmarshalWorkspaceFileRandID(graphql.ID(rawBatchSpecRandID))
 	if err != nil {
 		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
 		// and it's not a valid graphql.ID.
@@ -160,7 +160,7 @@ func getPathParts(r *http.Request) (string, string, error) {
 	if rawBatchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
 	}
-	batchSpecWorkspaceFileRandID, err := unmarshalGraphqlID(graphql.ID(rawBatchSpecWorkspaceFileRandID))
+	batchSpecWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(graphql.ID(rawBatchSpecWorkspaceFileRandID))
 	if err != nil {
 		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
 		// and it's not a valid graphl.ID.

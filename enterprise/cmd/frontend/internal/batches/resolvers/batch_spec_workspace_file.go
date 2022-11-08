@@ -29,7 +29,31 @@ var _ graphqlbackend.BatchWorkspaceFileResolver = &batchSpecWorkspaceFileResolve
 type batchSpecWorkspaceFileResolver struct {
 	batchSpecRandID string
 	file            *btypes.BatchSpecWorkspaceFile
+
+	/*
+	 * Added this to the struct, so it's easy to mock in tests.
+	 */
+	createVirtualFile func(content []byte, path string) *graphqlbackend.VirtualFileResolver
 }
+
+func newBatchSpecWorkspaceFileResolver(batchSpecRandID string, file *btypes.BatchSpecWorkspaceFile) *batchSpecWorkspaceFileResolver {
+	return &batchSpecWorkspaceFileResolver{
+		batchSpecRandID:   batchSpecRandID,
+		file:              file,
+		createVirtualFile: createVirtualFile,
+	}
+}
+
+func createVirtualFile(content []byte, path string) *graphqlbackend.VirtualFileResolver {
+	fileInfo := graphqlbackend.CreateFileInfo(path, false)
+	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
+		return string(content), nil
+	})
+}
+
+// func NewMockBatchSpecWorkspaceFileResolver() {
+
+// }
 
 func (r *batchSpecWorkspaceFileResolver) ID() graphql.ID {
 	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
@@ -71,7 +95,7 @@ func (r *batchSpecWorkspaceFileResolver) ByteSize(ctx context.Context) (int32, e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Binary(ctx context.Context) (bool, error) {
-	vfr := r.createVirtualFile()
+	vfr := r.createVirtualFile(r.file.Content, r.file.Path)
 	return vfr.Binary(ctx)
 }
 
@@ -92,7 +116,7 @@ func (r *batchSpecWorkspaceFileResolver) ExternalURLs(ctx context.Context) ([]*e
 }
 
 func (r *batchSpecWorkspaceFileResolver) Highlight(ctx context.Context, args *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
-	vfr := r.createVirtualFile()
+	vfr := r.createVirtualFile(r.file.Content, r.file.Path)
 	return vfr.Highlight(ctx, args)
 }
 
@@ -106,11 +130,4 @@ func (r *batchSpecWorkspaceFileResolver) ToVirtualFile() (*graphqlbackend.Virtua
 
 func (r *batchSpecWorkspaceFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {
 	return r, true
-}
-
-func (r *batchSpecWorkspaceFileResolver) createVirtualFile() *graphqlbackend.VirtualFileResolver {
-	fileInfo := graphqlbackend.CreateFileInfo(r.file.Path, false)
-	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
-		return string(r.file.Content), nil
-	})
 }

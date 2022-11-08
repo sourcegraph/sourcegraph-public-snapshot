@@ -129,6 +129,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecWorkspaceByID(ctx, id)
 		},
+		workspaceFileIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecWorkspaceFileByID(ctx, id)
+		},
 	}
 }
 
@@ -1886,33 +1889,14 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) BatchWorkspaceFile(ctx context.Context, args *graphqlbackend.BatchWorkspaceFileArgs) (_ graphqlbackend.BatchWorkspaceFileResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.BatchWorkspaceFile", fmt.Sprintf("BatchSpec: %q, BatchWorkspaceFile: %q", args.BatchSpec, args.BatchWorkspaceFile))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
+func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql.ID) (_ graphqlbackend.BatchWorkspaceFileResolver, err error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	batchWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(gqlID)
 	if err != nil {
 		return nil, err
-	}
-
-	if batchSpecRandID == "" {
-		return nil, nil
-	}
-
-	batchWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(args.BatchWorkspaceFile)
-	if err != nil {
-		return nil, err
-	}
-
-	if batchWorkspaceFileRandID == "" {
-		return nil, nil
 	}
 
 	file, err := r.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: batchWorkspaceFileRandID})
@@ -1920,7 +1904,9 @@ func (r *Resolver) BatchWorkspaceFile(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	return &batchSpecWorkspaceFileResolver{batchSpecRandID: batchSpecRandID, file: file}, nil
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: file.BatchSpecID})
+
+	return newBatchSpecWorkspaceFileResolver(spec.RandID, file), nil
 }
 
 func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {

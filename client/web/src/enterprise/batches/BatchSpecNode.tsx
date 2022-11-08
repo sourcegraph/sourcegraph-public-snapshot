@@ -15,13 +15,15 @@ import {
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
+import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Code, Link, Icon, H3, H4, Tooltip, Text, Button } from '@sourcegraph/wildcard'
+import { Code, Link, Icon, H3, H4, Tooltip, Text, Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
-import { BatchSpecListFields, Scalars, PartialBatchWorkspaceFileFields } from '../../graphql-operations'
+import { BatchSpecListFields, Scalars, PartialBatchWorkspaceFileFields, BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables } from '../../graphql-operations'
+import { BATCH_SPEC_WORKSPACE_FILE } from './backend'
 
 import { BatchSpec } from './BatchSpec'
 import { humanizeSize } from './utils/size'
@@ -211,22 +213,47 @@ const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileConte
         )
     }
 
-    return <NonBinaryBatchWorkspaceFile file={file} specId={specId} />
+    return <NonBinaryBatchWorkspaceFile id={file.id} />
 }
 
-const NonBinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+const NonBinaryBatchWorkspaceFile: React.FunctionComponent<Pick<BatchWorkspaceFile, 'id'>> = ({ id }) => {
+    const { data, loading, error } = useQuery<BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables>(BATCH_SPEC_WORKSPACE_FILE, {
+        variables: { id },
+        fetchPolicy: 'cache-first',
+    })
 
-    return <div>Render something nice: {specId}</div>
-    // return (
-    //     <pre className={styles.blobWrapper}>
-    //         <Code
-    //             className={styles.blobCode}
-    //             dangerouslySetInnerHTML={{
-    //                 __html: content,
-    //             }}
-    //         />
-    //     </pre>
-    // )
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Error fetching file content: {error?.message}</Text>
+            </Alert>
+        )
+    }
+
+    if (!data || data.node?.__typename !== 'BatchSpecWorkspaceFile') {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Not a valid BatchSpecWorkspaceFile</Text>
+            </Alert>
+        )
+    }
+
+    const { html } = data.node.highlight
+
+    return (
+        <pre className={styles.blobWrapper}>
+            <Code
+                className={styles.blobCode}
+                dangerouslySetInnerHTML={{
+                    __html: html,
+                }}
+            />
+        </pre>
+    )
 }
 
 const StateIcon: React.FunctionComponent<

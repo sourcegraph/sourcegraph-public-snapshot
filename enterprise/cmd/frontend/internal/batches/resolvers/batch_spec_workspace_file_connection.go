@@ -52,10 +52,7 @@ func (r *batchSpecWorkspaceFileConnectionResolver) Nodes(ctx context.Context) ([
 
 	resolvers := make([]graphqlbackend.BatchWorkspaceFileResolver, len(nodes))
 	for i, node := range nodes {
-		resolvers[i] = &batchSpecWorkspaceFileResolver{
-			batchSpecRandID: r.opts.BatchSpecRandID,
-			file:            node,
-		}
+		resolvers[i] = newBatchSpecWorkspaceFileResolver(r.opts.BatchSpecRandID, node)
 	}
 	return resolvers, nil
 }

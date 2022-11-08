@@ -17,20 +17,19 @@ import (
 
 func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	date := time.Date(2022, 1, 2, 3, 5, 6, 0, time.UTC)
-
-	resolver := batchSpecWorkspaceFileResolver{
-		batchSpecRandID: "123abc",
-		file: &btypes.BatchSpecWorkspaceFile{
-			RandID:     "987xyz",
-			FileName:   "hello.txt",
-			Path:       "foo/bar",
-			Size:       12,
-			Content:    []byte("hello world!"),
-			ModifiedAt: date,
-			CreatedAt:  date,
-			UpdatedAt:  date,
-		},
+	batchSpecRandID := "123abc"
+	file := &btypes.BatchSpecWorkspaceFile{
+		RandID:     "987xyz",
+		FileName:   "hello.txt",
+		Path:       "foo/bar",
+		Size:       12,
+		Content:    []byte("hello world!"),
+		ModifiedAt: date,
+		CreatedAt:  date,
+		UpdatedAt:  date,
 	}
+
+	resolver := newBatchSpecWorkspaceFileResolver(batchSpecRandID, file)
 
 	tests := []struct {
 		name        string

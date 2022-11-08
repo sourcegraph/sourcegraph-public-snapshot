@@ -50,11 +50,6 @@ export const queryBatchSpecs = ({
         map(data => data.batchSpecs)
     )
 
-export const queryBatchWorkspaceFile = ({
-    spec,
-    batchWorkspaceFile
-}): Observable<BatchWorkspaceFile>
-
 export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
     first,
     after,
@@ -108,7 +103,7 @@ export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
     )
 
 const PARTIAL_BATCH_WORKSPACE_FILE_FIELDS = gql`
-    fragment PartialBatchWorkspaceFileFields on BatchSpecWorkspaceFile {
+    fragment PartialBatchSpecWorkspaceFileFields on BatchSpecWorkspaceFile {
         __typename
         id
         name
@@ -117,9 +112,9 @@ const PARTIAL_BATCH_WORKSPACE_FILE_FIELDS = gql`
     }
 `
 
-const BATCH_WORKSPACE_HIGHLIGHTED_FILE_FIELD = gql`
-    fragment BatchWorkspaceHighlightedField on BatchSpecWorkspaceFile {
-        ...PartialBatchWorkspaceFileFields
+const BATCH_WORKSPACE_FILE_FIELDS = gql`
+    fragment BatchSpecWorkspaceFileFields on BatchSpecWorkspaceFile {
+        ...PartialBatchSpecWorkspaceFileFields
         highlight(disableTimeout: false) {
             aborted
             html
@@ -156,7 +151,7 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
                 hasNextPage
             }
             nodes {
-                ...PartialBatchWorkspaceFileFields
+                ...PartialBatchSpecWorkspaceFileFields
             }
         }
     }
@@ -177,4 +172,16 @@ const BATCH_SPEC_LIST_CONNECTION_FIELDS = gql`
     }
 
     ${BATCH_SPEC_LIST_FIELDS_FRAGMENT}
+`
+
+export const BATCH_SPEC_WORKSPACE_FILE = gql`
+     query BatchSpecWorkspaceFile($id: ID!) {
+            node(id: $id) {
+                ... on BatchSpecWorkspaceFile {
+                    ...BatchSpecWorkspaceFileFields
+                }
+            }
+        }
+
+    ${BATCH_WORKSPACE_FILE_FIELDS}
 `
