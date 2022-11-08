@@ -425,7 +425,7 @@ func (s *Syncer) syncRepo(
 						log.Error(err2),
 					)
 				}
-				s.Logger.Debug("external service repo deleted", log.Int32("stored.ID", int32(stored.ID)))
+				s.Logger.Debug("external service repo deleted", log.Int32("deleted ID", int32(stored.ID)))
 				s.notifyDeleted(ctx, stored.ID)
 			}
 		}()
