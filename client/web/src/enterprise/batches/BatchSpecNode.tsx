@@ -22,7 +22,13 @@ import { Code, Link, Icon, H3, H4, Tooltip, Text, Button, LoadingSpinner, Alert 
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
-import { BatchSpecListFields, Scalars, PartialBatchWorkspaceFileFields, BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables } from '../../graphql-operations'
+import {
+    BatchSpecListFields,
+    Scalars,
+    PartialBatchWorkspaceFileFields,
+    BatchSpecWorkspaceFileResult,
+    BatchSpecWorkspaceFileVariables,
+} from '../../graphql-operations'
 import { BATCH_SPEC_WORKSPACE_FILE } from './backend'
 
 import { BatchSpec } from './BatchSpec'
@@ -217,10 +223,13 @@ const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileConte
 }
 
 const NonBinaryBatchWorkspaceFile: React.FunctionComponent<Pick<BatchWorkspaceFile, 'id'>> = ({ id }) => {
-    const { data, loading, error } = useQuery<BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables>(BATCH_SPEC_WORKSPACE_FILE, {
-        variables: { id },
-        fetchPolicy: 'cache-first',
-    })
+    const { data, loading, error } = useQuery<BatchSpecWorkspaceFileResult, BatchSpecWorkspaceFileVariables>(
+        BATCH_SPEC_WORKSPACE_FILE,
+        {
+            variables: { id },
+            fetchPolicy: 'cache-first',
+        }
+    )
 
     if (loading) {
         return <LoadingSpinner />

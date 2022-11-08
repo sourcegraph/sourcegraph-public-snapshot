@@ -175,13 +175,13 @@ const BATCH_SPEC_LIST_CONNECTION_FIELDS = gql`
 `
 
 export const BATCH_SPEC_WORKSPACE_FILE = gql`
-     query BatchSpecWorkspaceFile($id: ID!) {
-            node(id: $id) {
-                ... on BatchSpecWorkspaceFile {
-                    ...BatchSpecWorkspaceFileFields
-                }
+    query BatchSpecWorkspaceFile($id: ID!) {
+        node(id: $id) {
+            ... on BatchSpecWorkspaceFile {
+                ...BatchSpecWorkspaceFileFields
             }
         }
+    }
 
     ${BATCH_WORKSPACE_FILE_FIELDS}
 `
