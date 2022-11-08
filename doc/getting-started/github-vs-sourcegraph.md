@@ -138,97 +138,51 @@ With Sourcegraph, typically, the latest code on the default **branch** of each r
 In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. 
 
 
-<table>
   <tr>
    <td>
    </td>
-   <td><strong>GitHub</strong>
+   <td>**GitHub**
+
    </td>
-   <td><strong>Sourcegraph</strong>
-   </td>
-  </tr>
-  <tr>
-   <td><strong>Search across all repositories</strong>
-   </td>
-   <td>✓ 
-<p>
-Limitations include: 
-<ul>
+   <td>**Sourcegraph**
 
-<li>Files over 350 KiB and empty files are excluded
-
-<li>Only UTF-8 encoded files are included
-
-<li>Very large repositories may not be indexed
-
-<li>Vendored and generated code is excluded (as determined by <a href="https://github.com/go-enry/go-enry">Enry</a>)
-</li>
-</ul>
-   </td>
-   <td>✓ 
-<p>
-Sourcegraph allows you to search indexed and unindexed code. 
-<p>
-Limitations for code that is indexed: 
-<ul>
-
-<li>Files larger than 1 MB*
-
-<li>Binary files
-
-<li>Files other than UTF-8 
-
-<p>
-*You can use the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-largeFile">search.largeFiles</a> keyword to specify files to be indexed and searched regardless of size.
-</li>
-</ul>
    </td>
   </tr>
   <tr>
-   <td><strong>Search across all branches</strong>
+   <td>**Search across all repositories and forks**
+
+   </td>
+   <td>✓ with limitations 
+
+   </td>
+   <td>✓ with limitations 
+
+   </td>
+  </tr>
+  <tr>
+   <td>**Sarch across files larger than 350 KiB**
+
+   </td>
+   <td>✗
+
+   </td>
+   <td>✓ 
+
+Using the [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) keyword
+
+   </td>
+  </tr>
+  <tr>
+   <td>**Search across all branches**
+
    </td>
    <td>Only the default branch is searchable
+
    </td>
    <td>✓
+
    </td>
   </tr>
-  <tr>
-   <td><strong>Search across all forks </strong>
-   </td>
-   <td>✓ 
-<p>
-Limitations include: 
-<ul>
-
-<li>Files over 350 KiB and empty files are excluded
-
-<li>Only UTF-8 encoded files are included
-
-<li>Very large repositories may not be indexed
-
-<li>Vendored and generated code is excluded (as determined by <a href="https://github.com/go-enry/go-enry">Enry</a>)
-</li>
-</ul>
-   </td>
-   <td>✓
-<p>
-Sourcegraph allows you to search indexed and unindexed code within forks. 
-<p>
-Limitations for code that is indexed: 
-<ul>
-
-<li>Files larger than 1 MB are excluded unless you explicitly specify them in [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) to be indexed and searched regardless of size 
-
-<li>Binary files
-
-<li>Files other than UTF-8 
-
-</li>
-</ul>
-   </td>
-  </tr>
-</table>
-
 
 
 ### Search syntax
