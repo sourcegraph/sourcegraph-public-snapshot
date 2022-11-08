@@ -570,14 +570,12 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	for i := len(repos) - 1; i >= 0; i-- {
 		nameWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
-			s.logger.Debug("context error", log.String("nameWithOwner", nameWithOwner))
-			results <- &githubResult{err: err}
+			results <- &githubResult{err: errors.Wrap(err, "context error for repository: namewithOwner="+nameWithOwner)}
 			return
 		}
 
 		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
-			s.logger.Debug("invalid repository", log.String("nameWithOwner", nameWithOwner))
 			results <- &githubResult{err: errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)}
 			return
 		}
