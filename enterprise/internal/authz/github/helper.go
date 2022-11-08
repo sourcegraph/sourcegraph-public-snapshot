@@ -1,4 +1,4 @@
-package database
+package github
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -18,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceStore, installationID int64, svc *types.ExternalService, appClient *github.V3Client) func(context.Context, httpcli.Doer) (string, time.Time, error) {
+func getGitHubAppInstallationRefreshFunc(externalServiceStore database.ExternalServiceStore, installationID int64, svc *types.ExternalService, appClient *github.V3Client) func(context.Context, httpcli.Doer) (string, time.Time, error) {
 	return func(ctx context.Context, cli httpcli.Doer) (string, time.Time, error) {
 		token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 		if err != nil {
@@ -38,7 +39,7 @@ func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceSto
 		externalServiceStore.Update(context.Background(),
 			conf.Get().AuthProviders,
 			svc.ID,
-			&ExternalServiceUpdate{
+			&database.ExternalServiceUpdate{
 				Config:         &rawConfig,
 				TokenExpiresAt: token.ExpiresAt,
 			},
@@ -48,13 +49,13 @@ func getGitHubAppInstallationRefreshFunc(externalServiceStore ExternalServiceSto
 	}
 }
 
-// BuildGitHubAppInstallationAuther builds a GitHub App Installation authenticator.
+// buildGitHubAppInstallationAuther builds a GitHub App Installation authenticator.
 // First it creates a GitHub App Authenticator, as it is required to create App Installation
 // Access Tokens. The App Authenticator is used in the refresh function of the
 // Installation Authenticator, as installation tokens cannot be refreshed on their own.
 // The App Authenticator is used to generate a new token once it expires.
-func BuildGitHubAppInstallationAuther(
-	externalServiceStore ExternalServiceStore,
+func buildGitHubAppInstallationAuther(
+	externalServiceStore database.ExternalServiceStore,
 	appID string,
 	pkey []byte,
 	urn string,
