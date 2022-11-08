@@ -22,7 +22,6 @@
   interfaces:
     - IndexableReposLister
     - RepoStore
-    - SettingStore
 - filename: enterprise/internal/insights/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:

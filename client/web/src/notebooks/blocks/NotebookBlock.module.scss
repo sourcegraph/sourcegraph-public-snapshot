@@ -1,5 +1,6 @@
 .block-wrapper {
     position: relative;
+    margin-bottom: 0.125rem;
 }
 
 .block {
@@ -7,6 +8,7 @@
     // Prevents moving content
     border: 1px solid transparent;
     border-radius: 0.25rem;
+    padding: 0.5rem;
 
     &:hover {
         border: 1px solid var(--border-color);

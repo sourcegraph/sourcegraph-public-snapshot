@@ -30,6 +30,7 @@ type EventContentMatch struct {
 	Hunks           []DecoratedHunk  `json:"hunks"`
 	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
 	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Debug           string           `json:"debug,omitempty"`
 }
 
 func (e *EventContentMatch) eventMatch() {}

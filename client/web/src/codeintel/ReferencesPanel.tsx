@@ -100,6 +100,11 @@ export interface ReferencesPanelProps
      */
     externalHistory: H.History
     externalLocation: H.Location
+
+    /**
+     * Used to overwrite the initial active URL
+     */
+    initialActiveURL?: string
 }
 
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
@@ -304,7 +309,7 @@ const ReferencesList: React.FunctionComponent<
     // in the browser history.
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
-        undefined
+        props.initialActiveURL
     )
     const setActiveLocation = useCallback(
         (location: Location | undefined): void => {
@@ -935,7 +940,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         if (range !== undefined) {
             const lineNumber = range.start.line + 1
             const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
+            const tableLine = `<tr><th class="line" data-line="${lineNumber}"></th><td class="code">${lineContent}</td></tr>`
             return of([tableLine])
         }
         return of([])

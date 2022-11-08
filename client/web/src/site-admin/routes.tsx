@@ -94,4 +94,9 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             'SiteAdminFeatureFlagConfigurationPage'
         ),
     },
+    {
+        path: '/webhooks',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminWebhooksPage'), 'SiteAdminWebhooksPage'),
+    },
 ]

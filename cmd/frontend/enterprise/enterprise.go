@@ -18,6 +18,7 @@ import (
 // enterprise frontend setup hook.
 type Services struct {
 	GitHubWebhook                   webhooks.Registerer
+	GitHubSyncWebhook               webhooks.Registerer
 	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
@@ -63,6 +64,7 @@ func DefaultServices() Services {
 	return Services{
 		GitHubWebhook:                   &emptyWebhookHandler{name: "github webhook"},
 		GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
+		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
