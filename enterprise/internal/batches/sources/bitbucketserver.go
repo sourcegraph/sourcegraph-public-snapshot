@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -394,7 +393,6 @@ var (
 
 func (s BitbucketServerSource) getFork(ctx context.Context, parent *bitbucketserver.Repo, namespace string) (*bitbucketserver.Repo, error) {
 	repo, err := s.client.Repo(ctx, namespace, parent.Project.Key+"-"+parent.Slug)
-	fmt.Println(parent.Project.Key)
 	if err != nil {
 		if bitbucketserver.IsNotFound(err) {
 			return nil, nil
