@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS codeintel_path_rank_inputs_graph_key_repository_name_id_processed;

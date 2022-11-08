@@ -22,9 +22,10 @@ const TestRawBatchSpec = `{
     {
       "run": "echo 'foobar'",
       "container": "alpine",
-      "env": {
-        "PATH": "/work/foobar:$PATH"
-      }
+      "env": [
+		{ "PATH": "/work/foobar:$PATH" },
+		"FOO"
+	  ]
     }
   ],
   "changesetTemplate": {
@@ -48,7 +49,8 @@ steps:
 - run: echo 'foobar'
   container: alpine
   env:
-    PATH: "/work/foobar:$PATH"
+    - PATH: "/work/foobar:$PATH"
+    - FOO
 changesetTemplate:
   title: Hello World
   body: My first batch change!

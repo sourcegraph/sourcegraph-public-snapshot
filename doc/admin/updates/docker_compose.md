@@ -21,6 +21,9 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 <!-- Add changes changes to this section before release. -->
 
 _Upgrade notes for the next version will appear here._
+
+This upgrade adds the [node-exporter](https://github.com/prometheus/node_exporter) deployment, which collects crucial machine-level metrics that help Sourcegraph scale your deployment.
+
 ## v4.0 ➔ v4.1.2
 
 <!-- Add changes changes to this section before release. -->

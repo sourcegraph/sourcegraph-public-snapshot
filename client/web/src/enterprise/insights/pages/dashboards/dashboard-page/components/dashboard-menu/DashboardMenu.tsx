@@ -2,6 +2,7 @@ import React from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 
 import {
     Button,
@@ -28,15 +29,14 @@ export enum DashboardMenuAction {
 }
 
 export interface DashboardMenuProps {
-    innerRef: React.Ref<HTMLButtonElement>
     dashboard?: InsightDashboard
-    onSelect?: (action: DashboardMenuAction) => void
     tooltipText?: string
     className?: string
+    onSelect?: (action: DashboardMenuAction) => void
 }
 
 export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<DashboardMenuProps>> = props => {
-    const { innerRef, dashboard, onSelect = () => {}, tooltipText, className } = props
+    const { dashboard, tooltipText, className, onSelect = noop } = props
 
     const { dashboard: dashboardPermission } = useUiFeatures()
     const menuPermissions = dashboardPermission.getContextActionsPermissions(dashboard)
@@ -44,12 +44,7 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
     return (
         <Menu>
             <Tooltip content={tooltipText} placement="right">
-                <MenuButton
-                    ref={innerRef}
-                    variant="icon"
-                    outline={true}
-                    className={classNames(className, styles.triggerButton)}
-                >
+                <MenuButton variant="icon" outline={true} className={classNames(className, styles.triggerButton)}>
                     <Icon svgPath={mdiDotsVertical} height={16} width={16} aria-label="dashboard options" />
                 </MenuButton>
             </Tooltip>

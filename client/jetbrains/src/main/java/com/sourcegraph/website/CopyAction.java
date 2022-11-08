@@ -20,7 +20,7 @@ public class CopyAction extends FileActionBase {
 
         // Display notification
         Notification notification = new Notification("Sourcegraph URL sharing", "Sourcegraph",
-            "File URL copied to clipboard." + urlWithoutUtm, NotificationType.INFORMATION);
+            "File URL copied to clipboard: " + urlWithoutUtm, NotificationType.INFORMATION);
         Notifications.Bus.notify(notification);
     }
 }

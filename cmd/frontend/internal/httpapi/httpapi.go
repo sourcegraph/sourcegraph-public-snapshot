@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -42,6 +41,7 @@ import (
 
 type Handlers struct {
 	GitHubWebhook                   webhooks.Registerer
+	GitHubSyncWebhook               webhooks.Registerer
 	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
@@ -94,8 +94,7 @@ func NewHandler(
 	webhookhandlers.Init(db, &wh)
 	handlers.GitHubWebhook.Register(&wh)
 	handlers.GitLabWebhook.Register(&wh)
-	ghSync := repos.GitHubWebhookHandler{}
-	ghSync.Register(&wh)
+	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	// TODO: Integrate with webhookMiddleware.Logger
