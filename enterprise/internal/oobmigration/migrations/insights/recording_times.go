@@ -7,14 +7,12 @@ import (
 )
 
 func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, interval timeInterval, existingPoints []time.Time) []time.Time {
-	var referenceTimes []time.Time
-	if lastRecordedAt.IsZero() {
-		// We never had a recording, so we know this insight should have 12 points.
-		referenceTimes = buildRecordingTimes(12, interval, createdAt)
-	} else {
-		// Otherwise step through each frame to record every planned recording time (historical and recording).
-		referenceTimes = buildRecordingTimesBetween(createdAt, lastRecordedAt, interval)
+	referenceTimes := buildRecordingTimes(12, interval, createdAt)
+	if !lastRecordedAt.IsZero() {
+		// If we've had recordings since we need to step through them.
+		referenceTimes = append(referenceTimes, buildRecordingTimesBetween(createdAt, lastRecordedAt, interval)[1:]...)
 	}
+	fmt.Println(referenceTimes)
 
 	if len(existingPoints) == 0 {
 		return referenceTimes
@@ -26,19 +24,18 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	// Else if the existing point is +/- half an interval close to the reference time, we add that to the list.
 	currentPointIndex := 0
 	for _, referenceTime := range referenceTimes {
-		fmt.Println(referenceTime)
 		referenceTime := referenceTime
-		for currentPointIndex < len(existingPoints) {
+		if currentPointIndex < len(existingPoints) {
 			existingTime := existingPoints[currentPointIndex]
 			halfAnInterval := interval.toDuration() / 2
 			if existingTime.Sub(referenceTime).Abs() <= halfAnInterval {
 				calculatedRecordingTimes = append(calculatedRecordingTimes, existingTime)
 				currentPointIndex++
-				break
 			} else {
 				calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
-				break
 			}
+		} else {
+			calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
 		}
 	}
 
@@ -94,12 +91,12 @@ func buildRecordingTimes(numPoints int, interval timeInterval, now time.Time) []
 
 // buildRecordingTimesBetween builds times starting at `start` up until `end` at the given interval.
 func buildRecordingTimesBetween(start time.Time, end time.Time, interval timeInterval) []time.Time {
-	times := []time.Time{start}
+	times := []time.Time{}
 
 	current := start
 	for current.Before(end) {
-		current = interval.stepForwards(current)
 		times = append(times, current)
+		current = interval.stepForwards(current)
 	}
 
 	return times
