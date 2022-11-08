@@ -168,7 +168,7 @@ In addition to searching your organization’s private code, you can use Sourceg
    </td>
    <td>✓ 
 
-Using the [search.largeFiles] keyword
+Using the search.largeFiles keyword
 
    </td>
   </tr>
