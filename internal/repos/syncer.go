@@ -596,7 +596,7 @@ func (s *Syncer) SyncExternalService(
 
 	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
-		return errors.Wrap(err, "failed to get sourcer")
+		return err
 	}
 
 	results := make(chan SourceResult)
