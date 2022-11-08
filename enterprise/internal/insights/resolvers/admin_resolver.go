@@ -2,11 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"math"
+	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -70,12 +74,14 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 	// we will treat the results from the queue as the "primary" and perform a left join on query metadata. That way
 	// we never have a situation where we can't inspect the records in the queue, that's the entire point of this operation.
 	for _, status := range seriesStatus {
+		var id *int
 		if series, ok := metadataBySeries[status.SeriesId]; ok {
 			status.Query = series.Query
 			status.Enabled = series.Enabled
+			id = &series.ID
 		}
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId})
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
 	}
 	return resolvers, nil
 }
@@ -132,7 +138,9 @@ func (i *insightSeriesMetadataResolver) Enabled(ctx context.Context) (bool, erro
 type insightSeriesQueryStatusResolver struct {
 	status          types.InsightSeriesStatus
 	seriesID        string
+	id              *int
 	workerBaseStore *basestore.Store
+	backfillStore   *scheduler.BackfillStore
 }
 
 func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
@@ -178,6 +186,88 @@ func (i *insightSeriesQueryStatusResolver) QueueSearchFailures(ctx context.Conte
 	}
 
 	return resolvers, nil
+}
+
+func (i *insightSeriesQueryStatusResolver) Backfills(ctx context.Context) ([]graphqlbackend.InsightSeriesBackfillDebugResolver, error) {
+	if i.id == nil {
+		return nil, nil
+	}
+
+	backfillDebugInfo, err := i.backfillStore.LoadSeriesBackfillsDebugInfo(ctx, *i.id)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.InsightSeriesBackfillDebugResolver, 0, len(backfillDebugInfo))
+	for i := 0; i < len(backfillDebugInfo); i++ {
+		resolvers = append(resolvers, &insightBackfillDebugResolver{backfill: backfillDebugInfo[i]})
+	}
+	return nil, nil
+}
+
+type insightBackfillDebugResolver struct {
+	backfill scheduler.SeriesBackfillDebug
+}
+
+func (r *insightBackfillDebugResolver) EstimatedCost(ctx context.Context) (float64, error) {
+	return r.backfill.Info.EstimatedCost, nil
+}
+
+func (r *insightBackfillDebugResolver) State(ctx context.Context) (string, error) {
+	return string(r.backfill.Info.State), nil
+}
+
+func (r *insightBackfillDebugResolver) NumberOfRepos(ctx context.Context) (*int32, error) {
+	if r.backfill.Info.NumRepos == nil {
+		return nil, nil
+	}
+	num := int32(*r.backfill.Info.NumRepos)
+	return &num, nil
+}
+
+func (r *insightBackfillDebugResolver) PercentComplete(ctx context.Context) (*int32, error) {
+	if r.backfill.Info.PercentComplete == nil {
+		return nil, nil
+	}
+
+	percentComplete := int32(math.RoundToEven(*r.backfill.Info.PercentComplete * 100.0))
+	return &percentComplete, nil
+}
+
+func (r *insightBackfillDebugResolver) RuntimeSeconds(ctx context.Context) (*int32, error) {
+	if r.backfill.Info.RuntimeDuration != nil {
+		duration := time.Duration(*r.backfill.Info.RuntimeDuration)
+		seconds := int32(duration / time.Second)
+		return &seconds, nil
+	}
+	return nil, nil
+}
+
+func (r *insightBackfillDebugResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	return gqlutil.DateTimeOrNil(r.backfill.Info.StartedAt), nil
+
+}
+
+func (r *insightBackfillDebugResolver) CompletedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	return gqlutil.DateTimeOrNil(r.backfill.Info.CompletedAt), nil
+}
+
+func (r *insightBackfillDebugResolver) Errors(ctx context.Context) []graphqlbackend.InsightSeriesBackfillErrorResolver {
+	resolvers := make([]graphqlbackend.InsightSeriesBackfillErrorResolver, 0, len(r.backfill.Errors))
+	for _, backfillError := range r.backfill.Errors {
+		resolvers = append(resolvers, &backfillErrorResolver{backfillError: backfillError})
+	}
+	return resolvers
+}
+
+type backfillErrorResolver struct {
+	backfillError iterator.IterationError
+}
+
+func (r *backfillErrorResolver) RepoId(ctx context.Context) (int32, error) {
+	return r.backfillError.RepoId, nil
+}
+func (r *backfillErrorResolver) Messages(ctx context.Context) ([]string, error) {
+	return r.backfillError.ErrorMessages, nil
 }
 
 type insightSearchErrorResolver struct {

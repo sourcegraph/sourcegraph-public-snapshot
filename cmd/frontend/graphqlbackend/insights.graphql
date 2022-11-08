@@ -512,6 +512,29 @@ type InsightSeriesQueryStatus {
     The max limit is 500.
     """
     queueSearchFailures(limit: Int = 50): [InsightSearchError]!
+
+    backfills: [SeriesBackfillDebug]!
+}
+
+"""
+A type which contains debug information about an insight series backfill
+"""
+type SeriesBackfillDebug {
+    estimatedCost: Float!
+    state: String!
+    numberOfRepos: Int
+    percentComplete: Int
+    runtimeSeconds: Int
+    startedAt: DateTime
+    completedAt: DateTime
+    errors: [InsightSeriesBackfillError]!
+}
+"""
+A type which contains error information that occured for a repo during a backfill
+"""
+type InsightSeriesBackfillError {
+    repoId: Int!
+    messages: [String!]!
 }
 
 type InsightSearchError {
