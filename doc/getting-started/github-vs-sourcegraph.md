@@ -26,8 +26,6 @@ Sourcegraph integrates with multiple code hosts to provide universal code search
 
 You can also integrate Sourcegraph with other Git-based code hosts using [these](https://docs.sourcegraph.com/admin/external_service/other) instructions or use the [Sourcegraph CLI (src)](https://docs.sourcegraph.com/admin/external_service/src_serve_git) to load local repositories without a code host into Sourcegraph. Sourcegraph is continuously adding [Tier 1](https://docs.sourcegraph.com/admin/external_service) support for additional code hosts. 
 
-**Code host integrations**
-
 
 <table>
   <tr>
