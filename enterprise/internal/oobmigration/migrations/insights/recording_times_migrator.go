@@ -121,3 +121,27 @@ type seriesMetadata struct {
 	interval       timeInterval
 	existingTimes  []time.Time
 }
+
+func (m *recordingTimesMigrator) Down(ctx context.Context) error {
+	// Drop recording times for migrated records
+	if err := m.store.Exec(ctx, sqlf.Sprintf(
+		"DELETE FROM insight_series_recording_times WHERE insight_series_id IN (SELECT id FROM insight_series WHERE supports_augmentation = TRUE LIMIT %s)",
+		m.batchSize,
+	)); err != nil {
+		return err
+	}
+
+	tx, err := m.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+	// Records no longer support augmentation
+	if err := m.store.Exec(ctx, sqlf.Sprintf(
+		"UPDATE insight_series SET supports_augmentation = FALSE"),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
