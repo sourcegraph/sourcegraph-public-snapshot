@@ -1,6 +1,6 @@
 import * as path from 'path'
 
-import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ExternalServiceKind } from '../graphql-operations'
 
@@ -29,7 +29,7 @@ export function buildRepoBaseNameAndPath(
 
 export function buildEditorUrl(
     repoBaseNameAndPath: string,
-    range: UIRangeSpec['range'] | undefined,
+    position: UIPositionSpec['position'] | undefined,
     editorSettings: EditorSettings | undefined,
     sourcegraphBaseUrl: string,
     editorIndex = 0
@@ -49,7 +49,7 @@ export function buildEditorUrl(
             : ''
 
     const absolutePath = path.join(projectPath, repoBaseNameAndPath)
-    const { line, column } = range ? { line: range.start.line, column: range.start.character } : { line: 1, column: 1 }
+    const { line, column } = position ? { line: position.line, column: position.character } : { line: 1, column: 1 }
     const url = urlPattern
         .replace('%file', pathPrefix + absolutePath)
         .replace('%line', `${line}`)

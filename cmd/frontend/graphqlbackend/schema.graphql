@@ -1581,6 +1581,11 @@ type Query {
         Only include webhook logs on or before this time.
         """
         until: DateTime
+
+        """
+        Only include webhook logs of given webhook ID.
+        """
+        webhookID: ID
     ): WebhookLogConnection!
 
     """

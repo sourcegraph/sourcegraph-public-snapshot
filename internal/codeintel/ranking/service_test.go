@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -16,7 +17,7 @@ func TestGetRepoRank(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, nil, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil, &observation.TestContext)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
@@ -70,7 +71,7 @@ func TestGetDocumentRanks(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, siteConfigQuerier{}, nil, &observation.TestContext)
+	svc := newService(mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil, &observation.TestContext)
 
 	mockStore.GetDocumentRanksFunc.SetDefaultReturn(map[string][2]float64{
 		"rust/main.rs": {1.00, 0.84},
