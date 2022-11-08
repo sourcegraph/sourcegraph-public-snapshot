@@ -1,4 +1,4 @@
-import React, { Ref, useContext, useMemo, useState } from 'react'
+import React, { forwardRef, useContext, useMemo, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -30,7 +30,6 @@ import styles from './BuiltInInsight.module.scss'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: LangStatsInsight
-    innerRef: Ref<HTMLElement>
     resizing: boolean
 }
 
@@ -42,13 +41,14 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
  * Component sends FE network request to get and process information but does that in
  * main work thread instead of using Extension API.
  */
-export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
-    const { insight, resizing, telemetryService, innerRef, children, ...attributes } = props
+export const BuiltInInsight = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
+    const { insight, resizing, telemetryService, children, ...attributes } = props
+
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const seriesToggleState = useSeriesToggle()
 
-    const cardRef = useMergeRefs([innerRef])
+    const cardRef = useMergeRefs([ref])
     const cachedInsight = useDeepMemo(insight)
     const { state, isVisible } = useInsightData(
         useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight }), [getBuiltInInsightData, cachedInsight]),
@@ -65,13 +65,13 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     return (
         <InsightCard
-            role="listitem"
+            {...attributes}
             ref={cardRef}
             data-testid={`insight-card.${insight.id}`}
             aria-label={`${insight.title} insight`}
+            role="listitem"
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
-            {...attributes}
         >
             <InsightCardHeader
                 title={
@@ -141,4 +141,4 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             }
         </InsightCard>
     )
-}
+})
