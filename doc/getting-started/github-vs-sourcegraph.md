@@ -239,7 +239,7 @@ Regardless of the type of search method you use, GitHub’s search is line-orien
 
 Commit diff and commit message searches help you see how your codebase has changed over time. With Sourcegraph, you can search within [commit diffs](https://docs.sourcegraph.com/code_search/explanations/features#commit-diff-search) to find changes to particular functions, classes, or specific areas of the codebase, and you can search over [commit messages](https://docs.sourcegraph.com/code_search/explanations/features#commit-message-search) and narrow down searches with additional filters such as author or time. 
 
-Neither commit diff search nor commit message search is available with GitHub code search. 
+GitHub code search does not offer commit diff search or commit message search. 
 
 
 ### Symbol search
