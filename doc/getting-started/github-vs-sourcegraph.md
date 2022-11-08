@@ -292,8 +292,6 @@ GitHub analyzes how many matches are in the file, the quality of the matches, th
 
 Sourcegraph uses a repository’s number of stars to [rank](https://docs.sourcegraph.com/dev/background-information/architecture/indexed-ranking) the most important repositories first. The priority of a repository can be altered by admins with this [configuration](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+repoRankFromConfig&patternType=regexp&_ga=2.18586544.827352295.1667227568-1057140468.1661198534&_gac=1.82582244.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*5o6st*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzM0MDAzNy4xMDQuMS4xNjY3MzQxNjUyLjAuMC4w). There are several other heuristic signals that help to make sure that the most important documents are searched first, including:
 
-
-
 * Up rank files with a lot of symbols
 * Up rank small files
 * Up rank short names
@@ -304,6 +302,7 @@ Sourcegraph uses a repository’s number of stars to [rank](https://docs.sourceg
 
 When submitting a search query, the quality of a match is scored based on language-specific heuristics (Java classes rank higher than variables), word boundaries, and symbol ranges. The score that is received at the time of the query is combined with the index time rank and the repository’s priority to determine the final ranking.
 
+[Sourcegraph.com](https://sourcegraph.com/search) (Sourcegraph's public instance for searching open source code) utilizes an algorithm inspired by Google PageRank to measure code reuse and return the most relevant search results first. This new ranking algorithm will be implemented for Sourcegraph customer instances (self-hosted and Cloud) in the future.
 
 <table>
   <tr>
