@@ -1,4 +1,5 @@
-import { Span, trace, context, Context } from '@opentelemetry/api'
+import { trace, context, Context, Span } from '@opentelemetry/api'
+import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 export enum SharedSpanName {
     PageView = 'PageView',
@@ -24,10 +25,13 @@ type SharedSpanNames = keyof typeof SharedSpanName
  * 2. https://github.com/open-telemetry/opentelemetry-js-contrib/issues/732
  */
 class SharedSpanStore {
-    private spanMap: { [key in SharedSpanNames]?: Context } = {}
+    private spanMap: { [key in SharedSpanNames]?: { context: Context; span: ReadableSpan } } = {}
 
-    public set(spanName: SharedSpanName, span: Span): void {
-        this.spanMap[spanName] = trace.setSpan(context.active(), span)
+    public set(spanName: SharedSpanName, span: ReadableSpan): void {
+        this.spanMap[spanName] = {
+            span,
+            context: trace.setSpan(context.active(), (span as unknown) as Span),
+        }
     }
 
     /**
@@ -35,20 +39,14 @@ class SharedSpanStore {
      * Context created by either `PageView` or `WindowLoad` spans.
      */
     public getRootNavigationContext(): Context | undefined {
-        return this.spanMap.PageView || this.spanMap.WindowLoad
+        return (this.spanMap.PageView || this.spanMap.WindowLoad)?.context
     }
 
     /**
      * Get the most recent navigation span: either `PageView` or `WindowLoad` spans.
      */
-    public getRootNavigationSpan(): Span | undefined {
-        const navigationContext = this.getRootNavigationContext()
-
-        if (navigationContext) {
-            return trace.getSpan(navigationContext)
-        }
-
-        return undefined
+    public getRootNavigationSpan(): ReadableSpan | undefined {
+        return (this.spanMap.PageView || this.spanMap.WindowLoad)?.span
     }
 }
 
