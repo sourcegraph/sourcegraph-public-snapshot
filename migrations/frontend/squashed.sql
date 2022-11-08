@@ -4346,7 +4346,7 @@ CREATE UNIQUE INDEX codeintel_path_ranks_repository_id_precision ON codeintel_pa
 
 CREATE INDEX codeintel_path_ranks_updated_at ON codeintel_path_ranks USING btree (updated_at) INCLUDE (repository_id);
 
-CREATE UNIQUE INDEX codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports USING btree (upload_id, graph_key);
+CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
 CREATE INDEX configuration_policies_audit_logs_policy_id ON configuration_policies_audit_logs USING btree (policy_id);
 

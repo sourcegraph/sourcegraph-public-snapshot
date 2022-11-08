@@ -929,7 +929,7 @@ Triggers:
  object_prefix | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_exports_upload_id_graph_key" UNIQUE, btree (upload_id, graph_key)
+    "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
