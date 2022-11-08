@@ -35,7 +35,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed a bug where path matches on files in the root directory of a repository were not highlighted. [#43275](https://github.com/sourcegraph/sourcegraph/pull/43275)
 - Fixed a bug where a search query wouldn't be validated after the query type has changed. [#43849](https://github.com/sourcegraph/sourcegraph/pull/43849)
-- Fixed a bug that prevented search result exports to load. [#43344](https://github.com/sourcegraph/sourcegraph/pull/43344)
 
 ### Removed
 
@@ -49,6 +48,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a bug that caused the Phabricator native extension to not load the right CSS assets. [#43868](https://github.com/sourcegraph/sourcegraph/pull/43868)
+
+## 4.1.3
+
+### Fixed
+
+- Fixed a bug that prevented search result exports to load. [#43344](https://github.com/sourcegraph/sourcegraph/pull/43344)
 
 ## 4.1.2
 
