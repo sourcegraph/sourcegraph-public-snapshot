@@ -223,6 +223,14 @@ Sourcegraph’s [symbol search](https://docs.sourcegraph.com/code_navigation/exp
    </td>
   </tr>
   <tr>
+   <td><strong>Structural search </strong>
+   </td>
+   <td>✗
+   </td>
+   <td>✓
+   </td>
+  </tr>
+  <tr>
    <td><strong>Literal search </strong>
    </td>
    <td> ✓
@@ -237,15 +245,6 @@ Sourcegraph’s [symbol search](https://docs.sourcegraph.com/code_navigation/exp
    </td>
    <td>✓
    </td>
-  </tr>
-  <tr>
-   <td><strong>Structural search </strong>
-   </td>
-   <td>✗
-   </td>
-   <td>✓
-   </td>
-  </tr>
   <tr>
    <td><strong>Multi-line search support</strong>
    </td>
