@@ -511,7 +511,7 @@ Sourcegraph’s precise code navigation [supports 11 languages](https://docs.sou
    </td>
    <td>High (some false positives)
    </td>
-   <td>Perfect (compiler accurate)
+   <td>Perfect (compiler-accurate)
    </td>
   </tr>
   <tr>
