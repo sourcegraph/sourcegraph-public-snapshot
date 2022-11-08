@@ -36,7 +36,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 		stop context.CancelFunc
 	)
 
-	logger.Scoped("RunScheduler", "git fetch scheduler")
+	logger = logger.Scoped("RunScheduler", "git fetch scheduler")
 
 	conf.Watch(func() {
 		logger.Debug("watching config")
