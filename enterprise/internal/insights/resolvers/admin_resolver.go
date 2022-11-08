@@ -81,7 +81,7 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 			id = &series.ID
 		}
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{backfillStore: scheduler.NewBackfillStore(r.insightsDB), workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
 	}
 	return resolvers, nil
 }
