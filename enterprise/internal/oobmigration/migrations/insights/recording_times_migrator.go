@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 type recordingTimesMigrator struct {
@@ -15,18 +16,19 @@ type recordingTimesMigrator struct {
 	batchSize int
 }
 
-func NewRecordingTimesMigrator() *recordingTimesMigrator {
+func NewRecordingTimesMigrator(store *basestore.Store) *recordingTimesMigrator {
 	return &recordingTimesMigrator{
+		store:     store,
 		batchSize: 500,
 	}
 }
 
-//var _ oobmigration.Migrator = &recordingTimesMigrator{}
+var _ oobmigration.Migrator = &recordingTimesMigrator{}
 
 func (m *recordingTimesMigrator) ID() int                 { return 17 }
 func (m *recordingTimesMigrator) Interval() time.Duration { return time.Second * 10 }
 
-func (m *recordingTimesMigrator) Progress(ctx context.Context) (float64, error) {
+func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
@@ -47,9 +49,8 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT DISTINCT s.id, s.created_at, s.last_recorded_at, s.sample_interval_unit, s.sample_interval_value, sp.time FROM insight_series AS s JOIN series_points AS sp ON s.series_id = sp.series_id WHERE supports_augmentation IS FALSE LIMIT %s FOR UPDATE SKIP LOCKED",
-		m.batchSize, // if we ever have over `batchSize` unique series_points.recording_times a graph would be unreadable
-		// so this is an acceptable limit.
+		"SELECT id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE LIMIT %s FOR UPDATE SKIP LOCKED",
+		m.batchSize,
 	))
 	if err != nil {
 		return err
@@ -62,32 +63,43 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 		var createdAt, lastRecordedAt time.Time
 		var sampleIntervalUnit string
 		var sampleIntervalValue int
-		var newTime time.Time
 		if err := rows.Scan(
 			&id,
 			&createdAt,
 			&lastRecordedAt,
 			&sampleIntervalUnit,
 			&sampleIntervalValue,
-			&newTime,
 		); err != nil {
 			return err
 		}
-		exists, ok := series[id]
-		if !ok {
-			series[id] = seriesMetadata{
-				id:             id,
-				createdAt:      createdAt,
-				lastRecordedAt: lastRecordedAt,
-				interval: timeInterval{
-					unit:  intervalUnit(sampleIntervalUnit),
-					value: sampleIntervalValue,
-				},
-				existingTimes: []time.Time{newTime},
-			}
-		} else {
-			exists.existingTimes = append(exists.existingTimes, newTime)
+		series[id] = seriesMetadata{
+			id:             id,
+			createdAt:      createdAt,
+			lastRecordedAt: lastRecordedAt,
+			interval: timeInterval{
+				unit:  intervalUnit(sampleIntervalUnit),
+				value: sampleIntervalValue,
+			},
 		}
+	}
+
+	for id, metadata := range series {
+		recordingTimesRows, err := tx.Query(ctx, sqlf.Sprintf(
+			"SELECT DISTINCT recording_time FROM insight_series_recording_times WHERE insight_series_id = %s", id,
+		))
+		if err != nil {
+			return err
+		}
+		defer func() { err = basestore.CloseRows(recordingTimesRows, err) }()
+		var recordingTimes []time.Time
+		for rows.Next() {
+			var record time.Time
+			if err := recordingTimesRows.Scan(&record); err != nil {
+				return err
+			}
+			recordingTimes = append(recordingTimes, record)
+		}
+		metadata.existingTimes = recordingTimes
 	}
 
 	// using the inserter is probably the most efficient way however it creates a dependency so commenting out for now
