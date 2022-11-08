@@ -832,6 +832,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
 
+		if app == "gitserver-ms-git" && !c.RunType.Is(runtype.MainBranch) {
+			// Just NOP if we're not on main, we don't want to publish anything involving this experiment.
+			return
+		}
+
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
