@@ -29,7 +29,7 @@ jobs:
         run: |
           echo ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }} | base64 -d > progress-bot-credentials.json
       - name: Report to Slack
-        uses: docker://sourcegraph/progress-bot:latest@sha256:f2dab38f09b2293e261d072bb386f6885f63e64322986beae8ff3544f354efee
+        uses: docker://sourcegraph/progress-bot:latest@sha256:adbce46dde34527bcb27027a552c76cc0622683297dd935111fe6e1067c53efa
         env:
           SINCE: ${{ github.event.inputs.since || '24h' }}
           DRY: ${{ github.event.inputs.dry || 'false' }}
