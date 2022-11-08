@@ -89,10 +89,7 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 		if err != nil {
 			return opts, errors.Wrap(err, "unmarshalling webhook ID")
 		}
-
-		if id > 0 {
-			opts.WebhookID = &id
-		}
+		opts.WebhookID = &id
 	}
 
 	return opts, nil
