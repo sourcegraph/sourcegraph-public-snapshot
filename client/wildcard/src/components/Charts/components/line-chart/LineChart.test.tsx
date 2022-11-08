@@ -5,8 +5,6 @@ import { assert, stub } from 'sinon'
 import { LineChart } from './LineChart'
 import { FLAT_SERIES } from './story/mocks'
 
-const totalSeries = FLAT_SERIES.length
-const totalDataPoints = FLAT_SERIES.reduce((acc, series) => acc + series.data.length, 0)
 const defaultArgs: RenderChartArgs = { series: FLAT_SERIES }
 
 interface RenderChartArgs {
@@ -26,13 +24,20 @@ describe('LineChart', () => {
             renderChart(defaultArgs)
 
             // Query chart series list
-            const element = screen.getByLabelText('Chart series')
+            const series = screen.getByLabelText('Chart series')
 
-            // Check number of series rendered
-            expect(within(element).getAllByRole('listitem')).toHaveLength(totalSeries)
+            // Check that series were rendered
+            const series1 = within(series).getByLabelText('A metric')
+            const series2 = within(series).getByLabelText('C metric')
+            const series3 = within(series).getByLabelText('B metric')
+            expect(series1)
+            expect(series2)
+            expect(series3)
 
             // Check number of data points rendered
-            expect(screen.getAllByRole(/(link|graphics-dataunit)/)).toHaveLength(totalDataPoints)
+            expect(within(series1).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[0].data.length)
+            expect(within(series2).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[1].data.length)
+            expect(within(series3).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[2].data.length)
 
             // Spot check y axis labels
             expect(screen.getByLabelText(/axis tick, value: 8/i)).toBeInTheDocument()
@@ -52,9 +57,9 @@ describe('LineChart', () => {
 
             renderChart(defaultArgs)
 
-            const [firstPoint, secondPoint, thirdPoint] = screen.getAllByRole('link', {
-                name: 'Click to view data point detail',
-            })
+            // Query chart series list
+            const series = screen.getByLabelText('Chart series')
+            const [firstPoint, secondPoint, thirdPoint] = within(series).getAllByRole('listitem')
 
             // Spot checking multiple points
             // related issue https://github.com/sourcegraph/sourcegraph/issues/38304
