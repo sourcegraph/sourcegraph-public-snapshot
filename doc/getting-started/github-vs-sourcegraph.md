@@ -7,7 +7,7 @@ GitHub code search is the next iteration of GitHub’s native code search and na
 
 Sourcegraph is a code intelligence platform that makes codebases intelligible by semantically indexing and analyzing all of an organization’s code, providing developers and engineering leaders with a complete understanding of their codebase. In addition to universal code search across every code host, Sourcegraph has features to help developers find code, understand and answer questions about code, and fix code faster.
 
-## Which code search is best for you?
+## Which is best for you?
 
 **Who should use GitHub code search?**
 
