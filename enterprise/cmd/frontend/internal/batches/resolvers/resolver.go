@@ -1905,6 +1905,9 @@ func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql
 	}
 
 	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: file.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
 
 	return newBatchSpecWorkspaceFileResolver(spec.RandID, file), nil
 }

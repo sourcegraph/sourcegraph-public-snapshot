@@ -161,11 +161,6 @@ type BatchChangeArgs struct {
 	Name      string
 }
 
-type BatchWorkspaceFileArgs struct {
-	BatchSpec          graphql.ID
-	BatchWorkspaceFile graphql.ID
-}
-
 type ChangesetEventsConnectionArgs struct {
 	First int32
 	After *string

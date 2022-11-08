@@ -93,7 +93,6 @@ func (r *VirtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs
 	if err != nil {
 		return nil, err
 	}
-
 	timer := prometheus.NewTimer(highlightHistogram)
 	defer timer.ObserveDuration()
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{

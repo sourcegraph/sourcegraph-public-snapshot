@@ -24,8 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const batchSpecIDKind = "BatchSpec"
-
 // FileHandler handles retrieving and uploading of files.
 type FileHandler struct {
 	logger     sglog.Logger
@@ -144,12 +142,17 @@ func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID strin
 	return
 }
 
+func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchSpecRandID)
+	return
+}
+
 func getPathParts(r *http.Request) (string, string, error) {
 	rawBatchSpecRandID := mux.Vars(r)["spec"]
 	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
-	batchSpecRandID, err := unmarshalWorkspaceFileRandID(graphql.ID(rawBatchSpecRandID))
+	batchSpecRandID, err := unmarshalBatchSpecID(graphql.ID(rawBatchSpecRandID))
 	if err != nil {
 		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
 		// and it's not a valid graphql.ID.
