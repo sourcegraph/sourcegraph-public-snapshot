@@ -48,7 +48,7 @@ RUN wget -O git-$GIT_VERSION.tar.gz https://github.com/microsoft/git/archive/ref
 RUN apk add --no-cache $PACKAGES
 
 RUN tar -xf git-$GIT_VERSION.tar.gz
-WORKDIR git-$GIT_VERSION
+WORKDIR /git-$GIT_VERSION
 RUN make -j12 prefix=/usr/local \
   && make -j12 prefix=/usr/local install
 
