@@ -632,7 +632,7 @@ func (s *Syncer) SyncExternalService(
 	// Insert or update repos as they are sourced. Keep track of what was seen so we
 	// can remove anything else at the end.
 	for res := range results {
-		logger.Debug("received result", log.String("repo", string(res.Repo.Name)))
+		logger.Debug("received result", log.String("repo", fmt.Sprintf("%v", res)))
 
 		if err := progressRecorder(ctx, syncProgress, false); err != nil {
 			logger.Warn("recording sync progress", log.Error(err))
